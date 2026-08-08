@@ -21,6 +21,7 @@
 import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from './rng.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
+import { rollWeather, weatherEffect, seasonOf } from './weather.js';
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
@@ -45,9 +46,14 @@ export function reachableOf(district) {
 // ----------------------------------------------------------------------------
 export function createInitialState(seed = 'novograd') {
   const rng = createRng(seed);
+  // Погода первой недели и публичный прогноз на вторую
+  const weather = rollWeather(rng, 1);
+  const weatherNext = rollWeather(rng, 2);
   return {
     seed,
     rngState: rng.state(),
+    weather,
+    weatherNext,
     week: 0,
     cash: CONFIG.startCash,
     equity: 1,               // доля основателей, 1.0 = 100%
@@ -189,6 +195,12 @@ export function step(prevState, input = {}) {
   const commission = effectiveCommission(state, decisions);
   const season = seasonality(week);
 
+  // --- 2а. Погода недели ---
+  // Игрок знал её заранее: она была объявлена в конце прошлого хода.
+  // Бьёт с двух сторон сразу — поднимает спрос и режет пропускную способность.
+  const weatherType = state.weather ?? 'clear';
+  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0);
+
   // --- 2б. Алгоритмы: доступность, внедрение, настройки ---
   const quality = algoQuality(state);
   let installCost = 0;
@@ -221,7 +233,7 @@ export function step(prevState, input = {}) {
   // Плата за это — время: заказ ждёт попутчика и едет по цепочке.
   const batchCapacityMult = 1 + 0.60 * batchLevel * quality;
   const batchTimeMult = 1 + 0.16 * batchLevel * (1 - 0.6 * quality);
-  const courierPayEff = decisions.courierPay * (1 - 0.20 * batchLevel * quality);
+  const courierPayEff = decisions.courierPay * (1 - 0.20 * batchLevel * quality) + wx.payPerOrder;
 
   // Персональные скидки: платим за долю заказов, а эффект близок к скидке всем.
   // Точность = качество алгоритмов; при плохой модели скидка уходит не туда.
@@ -271,6 +283,7 @@ export function step(prevState, input = {}) {
       * Math.pow(speedFactor, 0.5)
       * Math.pow(Math.max(0.001, selectionFactor), 0.5)
       * season
+      * wx.demandMult
       * mods.demandMult;
 
     const demand = ds.customers * freq;
@@ -285,7 +298,8 @@ export function step(prevState, input = {}) {
       / (totalDemand > 0 ? demandWeight : activeDefs.reduce((s, d) => s + d.potential, 0) || 1)
     : CONFIG.courierRefDistanceKm;
 
-  const perCourier = ordersPerCourier(state, avgDistance, mods.capacityMult * batchCapacityMult);
+  const perCourier = ordersPerCourier(state, avgDistance,
+    mods.capacityMult * batchCapacityMult * wx.capacityMult);
   const capacity = state.couriers * perCourier;
 
   // Динамическое ценообразование. Надбавка появляется только в перегрузе:
@@ -387,6 +401,9 @@ export function step(prevState, input = {}) {
 
   // Прогноз спроса: штат подбирается автоматически под ожидаемую нагрузку.
   // Ошибка прогноза детерминирована (не трогает ГПСЧ) и падает с ростом качества.
+  // Наём этой недели выходит на линию на следующей, поэтому и прогноз, и ручное
+  // решение игрока должны смотреть на погоду СЛЕДУЮЩЕЙ недели. Она объявлена публично.
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0);
   let forecastDemand = null;
   let targetCouriers = Math.max(0, Math.round(decisions.targetCouriers));
   if (forecastOn) {
@@ -395,14 +412,20 @@ export function step(prevState, input = {}) {
     const growth = prevDemand > 0 ? clamp(effDemandTotal / prevDemand, 0.85, 1.35) : 1.1;
     const noise = Math.sin(week * 127.1) * Math.cos(week * 311.7);
     const error = noise * (1 - quality) * 0.30;
-    forecastDemand = Math.max(0, effDemandTotal * growth * (1 + error));
-    targetCouriers = Math.round(forecastDemand / Math.max(1, perCourier) / serviceTarget);
+    // Спрос текущей недели уже включает сегодняшнюю погоду — переводим его
+    // в «безпогодный» вид и накладываем прогноз на следующую
+    const weatherShift = wxNext.demandMult / Math.max(0.01, wx.demandMult);
+    forecastDemand = Math.max(0, effDemandTotal * growth * weatherShift * (1 + error));
+    targetCouriers = Math.round(
+      forecastDemand / Math.max(1, perCourier * (wxNext.capacityMult / Math.max(0.01, wx.capacityMult)))
+      / serviceTarget);
   }
 
   const churnRate = clamp(
     CONFIG.courierBaseChurn
     + Math.max(0, 1.15 - realizedAttractiveness) * 0.55
     + Math.max(0, utilization - 0.9) * 0.35
+    + wx.churnAdd
     + mods.courierChurnAdd,
     0, 0.7
   );
@@ -589,6 +612,17 @@ export function step(prevState, input = {}) {
     techLevel: techLevel(state),
     season,
 
+    // --- погода ---
+    weather: weatherType,
+    weatherNext: state.weatherNext ?? 'clear',
+    weatherDemandMult: wx.demandMult,
+    weatherCapacityMult: wx.capacityMult,
+    weatherSeverity: wx.severity,
+    weatherBonusPerOrder: wx.payPerOrder,
+    weatherBonusCost: orders * wx.payPerOrder,
+    weatherChurnAdd: wx.churnAdd,
+    seasonName: seasonOf(week),
+
     // --- алгоритмы ---
     algoQuality: quality,
     dataLevel: dataLevel(state),
@@ -643,6 +677,8 @@ export function step(prevState, input = {}) {
   state.rngState = rng.state();
   state.pendingChoice = null;
   state.pendingEvent = rollEvent(rng, week + 1, state.flags);
+  state.weather = state.weatherNext ?? 'clear';
+  state.weatherNext = rollWeather(rng, week + 2);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';

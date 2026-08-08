@@ -283,3 +283,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
 .algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
 .algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------- Погода --------------------------------- */
+.weather { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.weather-now, .weather-next {
+  flex: 1 1 220px; display: flex; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: var(--panel-2);
+}
+.weather-next.alarm { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.09); }
+.weather-icon { font-size: 26px; line-height: 1; }
+.weather-body { min-width: 0; }
+.weather-when { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.weather-name { font-weight: 700; font-size: 14px; }
+.weather-fx { color: var(--muted); font-size: 11px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.weather-fx b.up { color: var(--good); }
+.weather-fx b.down { color: var(--bad); }

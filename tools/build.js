@@ -16,6 +16,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODULES = [
   'src/model/rng.js',
   'src/model/config.js',
+  'src/model/weather.js',
   'src/model/events.js',
   'src/model/engine.js',
   'src/ui/format.js',

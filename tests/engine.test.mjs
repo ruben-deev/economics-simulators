@@ -7,6 +7,9 @@ import {
   ordersPerCourier, techLevel, reachableOf, aovOf,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../src/model/engine.js';
+import { rollWeather, seasonOf, weatherEffect, WEATHER } from '../src/model/weather.js';
+import { createRng } from '../src/model/rng.js';
+import { EVENTS } from '../src/model/events.js';
 
 const baseDecisions = (over = {}) => ({ ...DEFAULT_DECISIONS, districts: ['center'], ...over });
 
@@ -96,15 +99,19 @@ test('рост цены доставки снижает спрос при про
   assert.ok(cheap.report.avgPriceFactor > pricey.report.avgPriceFactor);
 });
 
-test('перегрузка курьеров разворачивает эффект дешёвой доставки', () => {
-  // Важный учебный сюжет: спрос, который нечем везти, ломает удержание.
-  // При жёстком ограничении по курьерам низкая цена даёт меньше заказов, а не больше.
-  const cheap = run(30, baseDecisions({ deliveryFee: 79, sales: 400_000, marketing: 2_000_000, targetCouriers: 150 }), 'spiral');
-  const pricey = run(30, baseDecisions({ deliveryFee: 249, sales: 400_000, marketing: 2_000_000, targetCouriers: 150 }), 'spiral');
-  const a = cheap.reports.at(-1);
-  const b = pricey.reports.at(-1);
-  assert.ok(a.avgDeliveryTime > b.avgDeliveryTime, 'дешёвая доставка перегружает курьеров');
-  assert.ok(a.fillRate < b.fillRate, 'часть спроса остаётся невыполненной');
+test('спрос, который нечем везти, ломает сроки и теряет заказы', () => {
+  // Важный учебный сюжет: при жёстком ограничении по курьерам дешёвая доставка
+  // не приносит заказы, а перегружает линию. Сравниваем один ход из общей позиции,
+  // чтобы эффект не смешивался с накопленной разницей в базе клиентов.
+  const warm = run(20, baseDecisions({ sales: 400_000, marketing: 2_000_000, targetCouriers: 400 }), 'spiral');
+  const tight = { ...warm.state, couriers: 300 };
+  const cheap = step(tight, { decisions: baseDecisions({ deliveryFee: 79, sales: 400_000, marketing: 2_000_000, targetCouriers: 300 }), eventChoice: 0 }).report;
+  const pricey = step(tight, { decisions: baseDecisions({ deliveryFee: 249, sales: 400_000, marketing: 2_000_000, targetCouriers: 300 }), eventChoice: 0 }).report;
+
+  assert.ok(cheap.utilization > pricey.utilization, 'дешёвая доставка грузит линию сильнее');
+  assert.ok(cheap.avgDeliveryTime > pricey.avgDeliveryTime, 'сроки ломаются');
+  assert.ok(cheap.fillRate < pricey.fillRate, 'часть спроса остаётся невыполненной');
+  assert.ok(cheap.lostOrders > pricey.lostOrders);
 });
 
 test('высокая комиссия отпугивает рестораны', () => {
@@ -243,14 +250,16 @@ test('средний чек растёт вместе с доходом райо
 // проверяют сам алгоритм, а не то, успел ли игрок до него дожить.
 function warmState(seed = 'algo', weeks = 30, over = {}) {
   let state = createInitialState(seed);
-  const d = baseDecisions({ sales: 400_000, marketing: 0, targetCouriers: 40, ...over });
+  const d = baseDecisions({
+    deliveryFee: 169, commissionRate: 0.24,
+    sales: 400_000, marketing: 0, targetCouriers: 40, ...over });
   for (let i = 0; i < weeks; i++) {
     const last = state.history.at(-1);
     if (over.targetCouriers === undefined && last) {
       d.targetCouriers = Math.min(4000,
-        Math.ceil(last.demand * 1.15 / Math.max(1, last.perCourier) / 0.8));
+        Math.ceil(last.demand * 1.15 / Math.max(1, last.perCourier) / 0.75));
     }
-    if (over.marketing === undefined) d.marketing = (last?.restaurants ?? 0) > 60 ? 1_000_000 : 0;
+    if (over.marketing === undefined) d.marketing = (last?.restaurants ?? 0) > 60 ? 900_000 : 0;
     state = step(state, { decisions: d, eventChoice: 0 }).state;
     assert.ok(!state.over, `прогрев партии не должен заканчиваться банкротством (${seed}, неделя ${state.week})`);
   }
@@ -433,4 +442,121 @@ test('рестораны уходят при комиссии выше поро�
   const greedy = run(30, baseDecisions({ commissionRate: 0.38, sales: 400_000, marketing: 1_000_000, targetCouriers: 300 }));
   assert.ok(greedy.reports.at(-1).restaurants < ok.reports.at(-1).restaurants * 0.5,
     'выше порога поток заказов уже не удерживает партнёров');
+});
+
+// ============================================================================
+// Погода
+// ============================================================================
+
+test('погода разыгрывается по сезону: гололёд только зимой, жара только летом', () => {
+  const rng = createRng('weather-seasons');
+  const seen = { winter: new Set(), spring: new Set(), summer: new Set(), autumn: new Set() };
+  for (let week = 1; week <= 5200; week++) seen[seasonOf(week)].add(rollWeather(rng, week));
+
+  assert.ok(seen.winter.has('ice') && seen.winter.has('snow'));
+  assert.ok(!seen.summer.has('ice') && !seen.summer.has('snow'));
+  assert.ok(seen.summer.has('heat'));
+  assert.ok(!seen.winter.has('heat') && !seen.autumn.has('heat'));
+  for (const season of Object.keys(seen)) assert.ok(seen[season].has('clear'), season);
+});
+
+test('календарь сезонов покрывает год без дыр', () => {
+  const counts = {};
+  for (let week = 1; week <= 52; week++) {
+    const s = seasonOf(week);
+    counts[s] = (counts[s] ?? 0) + 1;
+  }
+  assert.deepEqual(Object.keys(counts).sort(), ['autumn', 'spring', 'summer', 'winter']);
+  assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), 52);
+  assert.equal(seasonOf(1), seasonOf(53), 'год замыкается');
+});
+
+test('погода зависит только от seed, а не от решений игрока', () => {
+  const calm = run(30, baseDecisions({ sales: 400_000, marketing: 500_000, targetCouriers: 100 }), 'wx');
+  const wild = run(30, baseDecisions({ sales: 600_000, marketing: 1_500_000, targetCouriers: 400, deliveryFee: 199 }), 'wx');
+  // Партии могут закончиться на разной неделе — сравниваем общий отрезок
+  const n = Math.min(calm.reports.length, wild.reports.length);
+  assert.ok(n >= 10, 'нужен осмысленный отрезок для сравнения');
+  assert.deepEqual(
+    calm.reports.slice(0, n).map((r) => r.weather),
+    wild.reports.slice(0, n).map((r) => r.weather));
+});
+
+test('прогноз погоды честен: объявленная погода наступает', () => {
+  const { reports } = run(25, baseDecisions({ sales: 400_000, marketing: 1_000_000, targetCouriers: 300 }), 'wx2');
+  for (let i = 0; i < reports.length - 1; i++) {
+    assert.equal(reports[i].weatherNext, reports[i + 1].weather,
+      `неделя ${reports[i].week}: обещали ${reports[i].weatherNext}`);
+  }
+});
+
+test('плохая погода поднимает спрос и режет пропускную способность', () => {
+  const warm = warmState('wx3');
+  const decisions = baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600 });
+
+  const clear = step({ ...warm, weather: 'clear' }, { decisions, eventChoice: 0 }).report;
+  const storm = step({ ...warm, weather: 'storm' }, { decisions, eventChoice: 0 }).report;
+
+  assert.ok(storm.demand > clear.demand, 'в шторм заказывают чаще');
+  assert.ok(storm.perCourier < clear.perCourier, 'а курьер успевает меньше');
+  assert.ok(storm.utilization > clear.utilization, 'загрузка растёт с двух сторон сразу');
+  assert.ok(storm.avgDeliveryTime > clear.avgDeliveryTime);
+});
+
+test('надбавка за погоду не стоит ничего в ясный день', () => {
+  const warm = warmState('wx4');
+  const without = step({ ...warm, weather: 'clear' },
+    { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: 0 }), eventChoice: 0 }).report;
+  const with100 = step({ ...warm, weather: 'clear' },
+    { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: 100 }), eventChoice: 0 }).report;
+
+  assert.equal(with100.weatherBonusCost, 0);
+  assert.equal(with100.courierPayEff, without.courierPayEff);
+  assert.equal(with100.profit, without.profit);
+});
+
+test('надбавка удерживает курьеров и возвращает часть мощности в шторм', () => {
+  const warm = warmState('wx5');
+  const mk = (bonus) => step({ ...warm, weather: 'storm' },
+    { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: bonus }), eventChoice: 0 }).report;
+
+  const none = mk(0);
+  const paid = mk(100);
+
+  assert.ok(paid.weatherBonusCost > 0, 'в шторм надбавка реально платится');
+  assert.ok(paid.courierPayEff > none.courierPayEff);
+  assert.ok(paid.perCourier > none.perCourier, 'больше курьеров выходит на смену');
+  assert.ok(paid.weatherChurnAdd < none.weatherChurnAdd, 'меньше уходит');
+  assert.ok(paid.avgDeliveryTime < none.avgDeliveryTime, 'сроки держатся лучше');
+  assert.ok(paid.cmPerOrder < none.cmPerOrder, 'но каждый заказ дороже');
+});
+
+test('надбавка не отменяет погоду полностью', () => {
+  const warm = warmState('wx6');
+  const mk = (weather, bonus) => step({ ...warm, weather },
+    { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: bonus }), eventChoice: 0 }).report;
+  const paidStorm = mk('storm', 150);
+  const clear = mk('clear', 0);
+  assert.ok(paidStorm.perCourier < clear.perCourier,
+    'деньгами можно вернуть смены, но не отменить физику дороги');
+});
+
+test('алгоритм прогноза нанимает под погоду следующей недели', () => {
+  const warm = warmState('wx7');
+  const decisions = {
+    ...baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600 }),
+    algoOn: { forecast: true },
+    algoParam: { ...DEFAULT_DECISIONS.algoParam, forecast: 0.8 },
+  };
+  const calmAhead = step({ ...warm, weather: 'clear', weatherNext: 'clear' }, { decisions, eventChoice: 0 }).report;
+  const stormAhead = step({ ...warm, weather: 'clear', weatherNext: 'storm' }, { decisions, eventChoice: 0 }).report;
+
+  assert.ok(stormAhead.forecastDemand > calmAhead.forecastDemand, 'прогноз спроса учитывает шторм');
+  assert.ok(stormAhead.couriers > calmAhead.couriers, 'штат набирается заранее');
+});
+
+test('погодных событий больше нет — погода вынесена в отдельную систему', () => {
+  const ids = EVENTS.map((e) => e.id);
+  assert.ok(!ids.includes('rain') && !ids.includes('heat'));
+  assert.ok(ids.length >= 10);
 });

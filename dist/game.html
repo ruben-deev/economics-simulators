@@ -291,6 +291,21 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
 .algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
 
+/* ------------------------------- Погода --------------------------------- */
+.weather { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.weather-now, .weather-next {
+  flex: 1 1 220px; display: flex; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: var(--panel-2);
+}
+.weather-next.alarm { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.09); }
+.weather-icon { font-size: 26px; line-height: 1; }
+.weather-body { min-width: 0; }
+.weather-when { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.weather-name { font-weight: 700; font-size: 14px; }
+.weather-fx { color: var(--muted); font-size: 11px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.weather-fx b.up { color: var(--good); }
+.weather-fx b.down { color: var(--bad); }
+
 </style>
 </head>
 <body>
@@ -329,6 +344,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 
     <!-- ЦЕНТР: события, разбор недели, графики -->
     <section class="col-center">
+      <div id="weather-slot"></div>
       <div id="event-slot"></div>
       <div id="report-slot"></div>
       <div class="panel charts">
@@ -429,7 +445,7 @@ const CONFIG = {
   refMarketingPerUser: 12, // эталонные маркетинговые траты на 1 потенц. клиента в неделю, ₽
 
   // --- Курьеры ---
-  courierBaseOrders: 95,       // заказов в неделю на курьера при эталонной дистанции
+  courierBaseOrders: 105,      // заказов в неделю на курьера при эталонной дистанции и ясной погоде
   courierRefDistanceKm: 3.5,   // эталонное плечо доставки
   courierMarketWeeklyPay: 14_000, // сколько курьер заработает у конкурента / на другой работе
   courierHireCost: 8_000,      // разовая стоимость найма, проверки и экипировки
@@ -564,6 +580,11 @@ const LEVERS = [
     tip: 'Скидка клиенту за ваш счёт. Мгновенно поднимает спрос и убивает маржу — классическая ловушка «покупки роста».',
   },
   {
+    key: 'weatherBonus', label: 'Надбавка за плохую погоду', unit: '₽',
+    min: 0, max: 150, step: 10, def: 0,
+    tip: 'Доплата курьеру за заказ в дождь, снег и гололёд. В ясную погоду не стоит ничего: расход появляется ровно тогда, когда без него срываются смены.',
+  },
+  {
     key: 'sales', label: 'Подключение ресторанов', unit: '₽/нед',
     min: 0, max: 5_000_000, step: 100_000, def: 0,
     tip: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
@@ -669,10 +690,88 @@ const DEFAULT_DECISIONS = {
 };
 
 
+// ===== src/model/weather.js ==============================================
+// ============================================================================
+// Погода — постоянно действующий фактор, а не редкое событие.
+//
+// Каждая неделя имеет свой тип погоды, разыгрываемый по сезонной таблице.
+// Погода бьёт с двух сторон одновременно: поднимает спрос (никто не хочет
+// выходить из дома) и режет пропускную способность (курьеры едут медленнее).
+// Именно это сочетание ломает сроки доставки в реальных сервисах.
+//
+// Прогноз на следующую неделю публичен — метеосводка доступна всем. Ценность
+// не в информации, а в реакции: успеть нанять курьеров и поднять надбавку.
+// ============================================================================
+
+
+// severity — насколько погода «плохая» (0 = ясно, 1 = максимум).
+// От неё зависит и размер надбавки курьеру, и то, как сильно она помогает.
+const WEATHER = {
+  clear:  { id: 'clear',  icon: '☀️', demand: 1.00, capacity: 1.00, churn: 0,    severity: 0 },
+  rain:   { id: 'rain',   icon: '🌧️', demand: 1.16, capacity: 0.92, churn: 0.04, severity: 0.45 },
+  storm:  { id: 'storm',  icon: '⛈️', demand: 1.30, capacity: 0.80, churn: 0.12, severity: 1.00 },
+  heat:   { id: 'heat',   icon: '🔥', demand: 1.04, capacity: 0.86, churn: 0.10, severity: 0.70 },
+  snow:   { id: 'snow',   icon: '🌨️', demand: 1.22, capacity: 0.82, churn: 0.09, severity: 0.80 },
+  ice:    { id: 'ice',    icon: '🧊', demand: 1.10, capacity: 0.74, churn: 0.16, severity: 1.00 },
+  frost:  { id: 'frost',  icon: '❄️', demand: 1.14, capacity: 0.88, churn: 0.07, severity: 0.60 },
+};
+
+// Неделя 1 — начало января, дальше по календарю
+function seasonOf(week) {
+  const w = ((Math.max(1, week) - 1) % 52) + 1;
+  if (w <= 8 || w >= 49) return 'winter';
+  if (w <= 21) return 'spring';
+  if (w <= 34) return 'summer';
+  return 'autumn';
+}
+
+// Сезонные вероятности. Гололёд бывает только зимой, жара — только летом.
+const SEASON_WEIGHTS = {
+  winter: { clear: 30, snow: 28, frost: 24, ice: 12, storm: 6 },
+  spring: { clear: 45, rain: 35, storm: 10, frost: 10 },
+  summer: { clear: 45, rain: 25, storm: 12, heat: 18 },
+  autumn: { clear: 35, rain: 38, storm: 15, frost: 12 },
+};
+
+function rollWeather(rng, week) {
+  const table = SEASON_WEIGHTS[seasonOf(week)];
+  const picked = weightedPick(rng, Object.entries(table).map(([id, weight]) => ({ id, weight })));
+  return picked ? picked.id : 'clear';
+}
+
+/**
+ * Итоговые множители недели с учётом надбавки курьерам за плохую погоду.
+ *
+ * Надбавка — условный расход: в ясную погоду она не стоит ничего, потому что
+ * severity = 0. В шторм она возвращает часть сорванных смен и удерживает людей.
+ */
+function weatherEffect(type, weatherBonus = 0) {
+  const w = WEATHER[type] ?? WEATHER.clear;
+  // Полное покрытие — 80 ₽ надбавки в самую скверную погоду
+  const coverage = Math.min(1, Math.max(0, weatherBonus) / 80);
+
+  return {
+    ...w,
+    // Надбавка платится пропорционально тяжести погоды и лишь за ту часть недели,
+    // когда она реально держится: даже сильный шторм редко стоит все семь дней.
+    payPerOrder: weatherBonus * w.severity * 0.4,
+    // Деньги возвращают до 70% потерянной пропускной способности:
+    // курьеры выходят на смену, но физику дороги надбавкой не отменишь
+    capacityMult: w.capacity + (1 - w.capacity) * 0.70 * coverage,
+    churnAdd: w.churn * (1 - 0.85 * coverage),
+    demandMult: w.demand,
+  };
+}
+
+
 // ===== src/model/events.js ===============================================
 // ============================================================================
 // Случайные события. Каждое событие возвращает набор модификаторов на неделю.
 // Часть событий требует решения игрока — это точки, где видно цену компромисса.
+//
+// Погоды здесь нет: она действует каждую неделю и живёт в weather.js.
+// Событие — это то, что случается редко и требует реакции; погода —
+// постоянный фон, к которому нужно уметь готовиться заранее.
 // ============================================================================
 
 
@@ -695,20 +794,6 @@ function neutralModifiers() {
 // Событие без выбора: effects применяются автоматически.
 // Событие с выбором: options[] — игрок решает до расчёта недели.
 const EVENTS = [
-  {
-    id: 'rain', weight: 10, minWeek: 2,
-    title: 'Затяжные дожди',
-    text: 'Неделю льёт. Люди не хотят выходить из дома — спрос на доставку подскочил, но курьеры едут медленнее и злее.',
-    effects: { demandMult: 1.22, capacityMult: 0.88, courierChurnAdd: 0.02 },
-    lesson: 'Пик спроса при падении пропускной способности — самый частый сценарий провала SLA.',
-  },
-  {
-    id: 'heat', weight: 6, minWeek: 10,
-    title: 'Аномальная жара',
-    text: 'Курьеры на велосипедах выгорают быстрее обычного, часть смен сорвана.',
-    effects: { capacityMult: 0.9, courierChurnAdd: 0.03 },
-    lesson: 'Пропускная способность — это не число курьеров, а число курьеро-часов.',
-  },
   {
     id: 'holiday', weight: 7, minWeek: 4,
     title: 'Длинные выходные',
@@ -912,9 +997,14 @@ function reachableOf(district) {
 // ----------------------------------------------------------------------------
 function createInitialState(seed = 'novograd') {
   const rng = createRng(seed);
+  // Погода первой недели и публичный прогноз на вторую
+  const weather = rollWeather(rng, 1);
+  const weatherNext = rollWeather(rng, 2);
   return {
     seed,
     rngState: rng.state(),
+    weather,
+    weatherNext,
     week: 0,
     cash: CONFIG.startCash,
     equity: 1,               // доля основателей, 1.0 = 100%
@@ -1056,6 +1146,12 @@ function step(prevState, input = {}) {
   const commission = effectiveCommission(state, decisions);
   const season = seasonality(week);
 
+  // --- 2а. Погода недели ---
+  // Игрок знал её заранее: она была объявлена в конце прошлого хода.
+  // Бьёт с двух сторон сразу — поднимает спрос и режет пропускную способность.
+  const weatherType = state.weather ?? 'clear';
+  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0);
+
   // --- 2б. Алгоритмы: доступность, внедрение, настройки ---
   const quality = algoQuality(state);
   let installCost = 0;
@@ -1088,7 +1184,7 @@ function step(prevState, input = {}) {
   // Плата за это — время: заказ ждёт попутчика и едет по цепочке.
   const batchCapacityMult = 1 + 0.60 * batchLevel * quality;
   const batchTimeMult = 1 + 0.16 * batchLevel * (1 - 0.6 * quality);
-  const courierPayEff = decisions.courierPay * (1 - 0.20 * batchLevel * quality);
+  const courierPayEff = decisions.courierPay * (1 - 0.20 * batchLevel * quality) + wx.payPerOrder;
 
   // Персональные скидки: платим за долю заказов, а эффект близок к скидке всем.
   // Точность = качество алгоритмов; при плохой модели скидка уходит не туда.
@@ -1138,6 +1234,7 @@ function step(prevState, input = {}) {
       * Math.pow(speedFactor, 0.5)
       * Math.pow(Math.max(0.001, selectionFactor), 0.5)
       * season
+      * wx.demandMult
       * mods.demandMult;
 
     const demand = ds.customers * freq;
@@ -1152,7 +1249,8 @@ function step(prevState, input = {}) {
       / (totalDemand > 0 ? demandWeight : activeDefs.reduce((s, d) => s + d.potential, 0) || 1)
     : CONFIG.courierRefDistanceKm;
 
-  const perCourier = ordersPerCourier(state, avgDistance, mods.capacityMult * batchCapacityMult);
+  const perCourier = ordersPerCourier(state, avgDistance,
+    mods.capacityMult * batchCapacityMult * wx.capacityMult);
   const capacity = state.couriers * perCourier;
 
   // Динамическое ценообразование. Надбавка появляется только в перегрузе:
@@ -1254,6 +1352,9 @@ function step(prevState, input = {}) {
 
   // Прогноз спроса: штат подбирается автоматически под ожидаемую нагрузку.
   // Ошибка прогноза детерминирована (не трогает ГПСЧ) и падает с ростом качества.
+  // Наём этой недели выходит на линию на следующей, поэтому и прогноз, и ручное
+  // решение игрока должны смотреть на погоду СЛЕДУЮЩЕЙ недели. Она объявлена публично.
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0);
   let forecastDemand = null;
   let targetCouriers = Math.max(0, Math.round(decisions.targetCouriers));
   if (forecastOn) {
@@ -1262,14 +1363,20 @@ function step(prevState, input = {}) {
     const growth = prevDemand > 0 ? clamp(effDemandTotal / prevDemand, 0.85, 1.35) : 1.1;
     const noise = Math.sin(week * 127.1) * Math.cos(week * 311.7);
     const error = noise * (1 - quality) * 0.30;
-    forecastDemand = Math.max(0, effDemandTotal * growth * (1 + error));
-    targetCouriers = Math.round(forecastDemand / Math.max(1, perCourier) / serviceTarget);
+    // Спрос текущей недели уже включает сегодняшнюю погоду — переводим его
+    // в «безпогодный» вид и накладываем прогноз на следующую
+    const weatherShift = wxNext.demandMult / Math.max(0.01, wx.demandMult);
+    forecastDemand = Math.max(0, effDemandTotal * growth * weatherShift * (1 + error));
+    targetCouriers = Math.round(
+      forecastDemand / Math.max(1, perCourier * (wxNext.capacityMult / Math.max(0.01, wx.capacityMult)))
+      / serviceTarget);
   }
 
   const churnRate = clamp(
     CONFIG.courierBaseChurn
     + Math.max(0, 1.15 - realizedAttractiveness) * 0.55
     + Math.max(0, utilization - 0.9) * 0.35
+    + wx.churnAdd
     + mods.courierChurnAdd,
     0, 0.7
   );
@@ -1456,6 +1563,17 @@ function step(prevState, input = {}) {
     techLevel: techLevel(state),
     season,
 
+    // --- погода ---
+    weather: weatherType,
+    weatherNext: state.weatherNext ?? 'clear',
+    weatherDemandMult: wx.demandMult,
+    weatherCapacityMult: wx.capacityMult,
+    weatherSeverity: wx.severity,
+    weatherBonusPerOrder: wx.payPerOrder,
+    weatherBonusCost: orders * wx.payPerOrder,
+    weatherChurnAdd: wx.churnAdd,
+    seasonName: seasonOf(week),
+
     // --- алгоритмы ---
     algoQuality: quality,
     dataLevel: dataLevel(state),
@@ -1510,6 +1628,8 @@ function step(prevState, input = {}) {
   state.rngState = rng.state();
   state.pendingChoice = null;
   state.pendingEvent = rollEvent(rng, week + 1, state.flags);
+  state.weather = state.weatherNext ?? 'clear';
+  state.weatherNext = rollWeather(rng, week + 2);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';
@@ -1952,6 +2072,7 @@ function buildLevers() {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
       renderOpsReadout();
+      if (l.key === 'weatherBonus') renderWeather();
       renderRightTab();
       save();
     });
@@ -1999,8 +2120,10 @@ function renderOpsReadout() {
     ? (state.decisions.algoParam?.batching ?? 0) : 0;
   const forecastOn = Boolean(state.decisions.algoOn?.forecast && state.installed?.forecast);
 
-  const perCourier = ordersPerCourier(state, avgDistance, 1 + 0.60 * batch * q);
-  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q);
+  // Штат, набранный сейчас, выйдет на линию на следующей неделе — считаем по её погоде
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', state.decisions.weatherBonus ?? 0);
+  const perCourier = ordersPerCourier(state, avgDistance, (1 + 0.60 * batch * q) * wxNext.capacityMult);
+  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q) + wxNext.payPerOrder;
   const expected = perCourier * CONFIG.courierExpectedLoad * payEff;
   const ratio = expected / CONFIG.courierMarketWeeklyPay;
   const capacity = state.decisions.targetCouriers * perCourier;
@@ -2030,9 +2153,62 @@ function renderOpsReadout() {
         util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>`}
     ${batch > 0 ? `<div>Батчинг: ставка за отдельный заказ снижена до <b>${num(payEff)} ₽</b>,
       но заказ едет дольше.</div>` : ''}
+    ${(WEATHER[state.weatherNext]?.severity ?? 0) > 0 ? `<div>Расчёт уже учитывает прогноз
+      (${(WEATHER_NAME[state.weatherNext] ?? '').toLowerCase()}): спрос вырастет примерно на
+      <b>${signedPct(wxNext.demandMult - 1, 0)}</b>.</div>` : ''}
     ${ratio < CONFIG.courierHireThreshold
       ? `<div class="neg">Наём начнётся от <b>${num(minPay)} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.</div>`
       : ''}
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Погода
+// ----------------------------------------------------------------------------
+const WEATHER_NAME = {
+  clear: 'Ясно', rain: 'Дождь', storm: 'Шторм', heat: 'Жара',
+  snow: 'Снегопад', ice: 'Гололёд', frost: 'Мороз',
+};
+const SEASON_NAME = { winter: 'зима', spring: 'весна', summer: 'лето', autumn: 'осень' };
+
+function weatherCard(type, when, cls = '') {
+  const fx = weatherEffect(type, state.decisions.weatherBonus ?? 0);
+  const effects = type === 'clear'
+    ? 'без влияния на спрос и сроки'
+    : `спрос <b class="up">${signedPct(fx.demandMult - 1, 0)}</b>,
+       мощность курьеров <b class="down">${signedPct(fx.capacityMult - 1, 0)}</b>,
+       отток курьеров <b class="down">+${(fx.churnAdd * 100).toFixed(1)} п.п.</b>`;
+  return `<div class="${cls}">
+    <span class="weather-icon">${WEATHER[type]?.icon ?? '☀️'}</span>
+    <span class="weather-body">
+      <span class="weather-when">${when}</span>
+      <div class="weather-name">${WEATHER_NAME[type] ?? type}</div>
+      <div class="weather-fx">${effects}</div>
+    </span>
+  </div>`;
+}
+
+function renderWeather() {
+  if (state.over) { el('weather-slot').innerHTML = ''; return; }
+  const now = state.weather ?? 'clear';
+  const next = state.weatherNext ?? 'clear';
+  const nextSeverity = WEATHER[next]?.severity ?? 0;
+
+  const bonus = state.decisions.weatherBonus ?? 0;
+  const advice = nextSeverity >= 0.7 && bonus < 30
+    ? `<div class="funding-note" style="flex-basis:100%">
+        На следующей неделе спрос подскочит, а курьеров на линии станет меньше. Нанимать надо
+        <b>сейчас</b> — те, кого вы наймёте, выйдут именно на эту неделю. Надбавка за плохую погоду
+        удержит смены и в ясные дни не стоит ничего.</div>`
+    : '';
+
+  el('weather-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">Погода · ${SEASON_NAME[seasonOf(state.week + 1)]}, неделя ${state.week + 1}</h2>
+    <div class="weather">
+      ${weatherCard(now, 'эта неделя', 'weather-now')}
+      ${weatherCard(next, 'прогноз на следующую', `weather-next ${nextSeverity >= 0.7 ? 'alarm' : ''}`)}
+      ${advice}
+    </div>
   </div>`;
 }
 
@@ -2273,6 +2449,12 @@ function buildAlerts(r) {
     if (r.ltvCac < 1) alerts.push(['bad', `LTV/CAC = ${r.ltvCac.toFixed(2)}: вы платите за клиента больше, чем он принесёт за всю жизнь.`]);
     else if (r.ltvCac > 3) alerts.push(['good', `LTV/CAC = ${r.ltvCac.toFixed(2)} — привлечение окупается с запасом, есть смысл давить на маркетинг.`]);
   }
+  if ((WEATHER[r.weather]?.severity ?? 0) >= 0.7 && r.utilization > 1) {
+    alerts.push(['bad', `${WEATHER_NAME[r.weather]} совпал с нехваткой курьеров: спрос ${signedPct(r.weatherDemandMult - 1, 0)}, мощность ${signedPct(r.weatherCapacityMult - 1, 0)}. Это худшее сочетание в доставке — плохая погода поднимает спрос ровно тогда, когда везти его некому.`]);
+  }
+  if (r.weatherBonusCost > 0) {
+    alerts.push(['good', `Надбавка за погоду обошлась в ${money(r.weatherBonusCost)} (${num(r.weatherBonusPerOrder)} ₽ на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.`]);
+  }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
   if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
     alerts.push(['warn', `Data Science стоит ${money(r.decisions.rnd)}/нед, но ни один алгоритм не включён. Команда копит качество (${pct(r.algoQuality, 0)}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.`]);
@@ -2349,6 +2531,9 @@ function renderReport() {
       ${stat('Курьеры', num(r.couriers), `+${num(r.hires)} / −${num(r.courierLeft)}, ${num(r.perCourier)} зак/нед`)}
       ${stat('Рестораны', num(r.restaurants), `выбор ×${r.avgSelectionFactor.toFixed(2)}`)}
       ${stat('Время доставки', `${num(r.avgDeliveryTime)} мин`, `загрузка ${pct(r.utilization, 0)}`)}
+      ${stat('Погода', `${WEATHER[r.weather]?.icon ?? ''} ${WEATHER_NAME[r.weather] ?? r.weather}`,
+        r.weather === 'clear' ? 'без влияния'
+          : `спрос ${signedPct(r.weatherDemandMult - 1, 0)}, мощность ${signedPct(r.weatherCapacityMult - 1, 0)}`)}
       ${stat('Вклад с заказа', `${num(r.cmPerOrder)} ₽`, `${pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders)))} от чека`)}
       ${stat('Прибыль', money(r.profit), `постоянные ${money(r.opex)}`)}
       ${stat('CAC / LTV', r.cac > 0 ? `${num(r.cac)} ₽` : '—', r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : 'маркетинг выключен')}
@@ -2515,6 +2700,7 @@ function renderPnlTab() {
         ${line('Плата за доставку', r.feeRevenue, 'pos', true)}
         <tr class="total"><td>Выручка</td><td class="pos">${moneyExact(r.netRevenue)}</td></tr>
         ${line('Оплата курьерам', -r.courierCost, 'neg', true)}
+        ${r.weatherBonusCost > 0 ? line('в т. ч. надбавка за погоду', -r.weatherBonusCost, 'neg', true) : ''}
         ${line('Промо и скидки', -r.promoCost, 'neg', true)}
         ${line('Эквайринг', -r.paymentCost, 'neg', true)}
         ${line('Поддержка', -r.supportCost, 'neg', true)}
@@ -2825,6 +3011,7 @@ function renderAll() {
   renderKpis();
   renderDistricts();
   renderFunding();
+  renderWeather();
   renderEvent();
   renderReport();
   renderChart();

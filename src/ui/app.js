@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { CONFIG, DISTRICTS, LEVERS, ALGORITHMS } from '../model/config.js';
+import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
   fundingOffer, raise, finalScore, aovOf, techLevel, ordersPerCourier,
@@ -111,6 +112,7 @@ function buildLevers() {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
       renderOpsReadout();
+      if (l.key === 'weatherBonus') renderWeather();
       renderRightTab();
       save();
     });
@@ -158,8 +160,10 @@ function renderOpsReadout() {
     ? (state.decisions.algoParam?.batching ?? 0) : 0;
   const forecastOn = Boolean(state.decisions.algoOn?.forecast && state.installed?.forecast);
 
-  const perCourier = ordersPerCourier(state, avgDistance, 1 + 0.60 * batch * q);
-  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q);
+  // Штат, набранный сейчас, выйдет на линию на следующей неделе — считаем по её погоде
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', state.decisions.weatherBonus ?? 0);
+  const perCourier = ordersPerCourier(state, avgDistance, (1 + 0.60 * batch * q) * wxNext.capacityMult);
+  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q) + wxNext.payPerOrder;
   const expected = perCourier * CONFIG.courierExpectedLoad * payEff;
   const ratio = expected / CONFIG.courierMarketWeeklyPay;
   const capacity = state.decisions.targetCouriers * perCourier;
@@ -189,9 +193,62 @@ function renderOpsReadout() {
         util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>`}
     ${batch > 0 ? `<div>Батчинг: ставка за отдельный заказ снижена до <b>${num(payEff)} ₽</b>,
       но заказ едет дольше.</div>` : ''}
+    ${(WEATHER[state.weatherNext]?.severity ?? 0) > 0 ? `<div>Расчёт уже учитывает прогноз
+      (${(WEATHER_NAME[state.weatherNext] ?? '').toLowerCase()}): спрос вырастет примерно на
+      <b>${signedPct(wxNext.demandMult - 1, 0)}</b>.</div>` : ''}
     ${ratio < CONFIG.courierHireThreshold
       ? `<div class="neg">Наём начнётся от <b>${num(minPay)} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.</div>`
       : ''}
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Погода
+// ----------------------------------------------------------------------------
+const WEATHER_NAME = {
+  clear: 'Ясно', rain: 'Дождь', storm: 'Шторм', heat: 'Жара',
+  snow: 'Снегопад', ice: 'Гололёд', frost: 'Мороз',
+};
+const SEASON_NAME = { winter: 'зима', spring: 'весна', summer: 'лето', autumn: 'осень' };
+
+function weatherCard(type, when, cls = '') {
+  const fx = weatherEffect(type, state.decisions.weatherBonus ?? 0);
+  const effects = type === 'clear'
+    ? 'без влияния на спрос и сроки'
+    : `спрос <b class="up">${signedPct(fx.demandMult - 1, 0)}</b>,
+       мощность курьеров <b class="down">${signedPct(fx.capacityMult - 1, 0)}</b>,
+       отток курьеров <b class="down">+${(fx.churnAdd * 100).toFixed(1)} п.п.</b>`;
+  return `<div class="${cls}">
+    <span class="weather-icon">${WEATHER[type]?.icon ?? '☀️'}</span>
+    <span class="weather-body">
+      <span class="weather-when">${when}</span>
+      <div class="weather-name">${WEATHER_NAME[type] ?? type}</div>
+      <div class="weather-fx">${effects}</div>
+    </span>
+  </div>`;
+}
+
+function renderWeather() {
+  if (state.over) { el('weather-slot').innerHTML = ''; return; }
+  const now = state.weather ?? 'clear';
+  const next = state.weatherNext ?? 'clear';
+  const nextSeverity = WEATHER[next]?.severity ?? 0;
+
+  const bonus = state.decisions.weatherBonus ?? 0;
+  const advice = nextSeverity >= 0.7 && bonus < 30
+    ? `<div class="funding-note" style="flex-basis:100%">
+        На следующей неделе спрос подскочит, а курьеров на линии станет меньше. Нанимать надо
+        <b>сейчас</b> — те, кого вы наймёте, выйдут именно на эту неделю. Надбавка за плохую погоду
+        удержит смены и в ясные дни не стоит ничего.</div>`
+    : '';
+
+  el('weather-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">Погода · ${SEASON_NAME[seasonOf(state.week + 1)]}, неделя ${state.week + 1}</h2>
+    <div class="weather">
+      ${weatherCard(now, 'эта неделя', 'weather-now')}
+      ${weatherCard(next, 'прогноз на следующую', `weather-next ${nextSeverity >= 0.7 ? 'alarm' : ''}`)}
+      ${advice}
+    </div>
   </div>`;
 }
 
@@ -432,6 +489,12 @@ function buildAlerts(r) {
     if (r.ltvCac < 1) alerts.push(['bad', `LTV/CAC = ${r.ltvCac.toFixed(2)}: вы платите за клиента больше, чем он принесёт за всю жизнь.`]);
     else if (r.ltvCac > 3) alerts.push(['good', `LTV/CAC = ${r.ltvCac.toFixed(2)} — привлечение окупается с запасом, есть смысл давить на маркетинг.`]);
   }
+  if ((WEATHER[r.weather]?.severity ?? 0) >= 0.7 && r.utilization > 1) {
+    alerts.push(['bad', `${WEATHER_NAME[r.weather]} совпал с нехваткой курьеров: спрос ${signedPct(r.weatherDemandMult - 1, 0)}, мощность ${signedPct(r.weatherCapacityMult - 1, 0)}. Это худшее сочетание в доставке — плохая погода поднимает спрос ровно тогда, когда везти его некому.`]);
+  }
+  if (r.weatherBonusCost > 0) {
+    alerts.push(['good', `Надбавка за погоду обошлась в ${money(r.weatherBonusCost)} (${num(r.weatherBonusPerOrder)} ₽ на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.`]);
+  }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
   if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
     alerts.push(['warn', `Data Science стоит ${money(r.decisions.rnd)}/нед, но ни один алгоритм не включён. Команда копит качество (${pct(r.algoQuality, 0)}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.`]);
@@ -508,6 +571,9 @@ function renderReport() {
       ${stat('Курьеры', num(r.couriers), `+${num(r.hires)} / −${num(r.courierLeft)}, ${num(r.perCourier)} зак/нед`)}
       ${stat('Рестораны', num(r.restaurants), `выбор ×${r.avgSelectionFactor.toFixed(2)}`)}
       ${stat('Время доставки', `${num(r.avgDeliveryTime)} мин`, `загрузка ${pct(r.utilization, 0)}`)}
+      ${stat('Погода', `${WEATHER[r.weather]?.icon ?? ''} ${WEATHER_NAME[r.weather] ?? r.weather}`,
+        r.weather === 'clear' ? 'без влияния'
+          : `спрос ${signedPct(r.weatherDemandMult - 1, 0)}, мощность ${signedPct(r.weatherCapacityMult - 1, 0)}`)}
       ${stat('Вклад с заказа', `${num(r.cmPerOrder)} ₽`, `${pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders)))} от чека`)}
       ${stat('Прибыль', money(r.profit), `постоянные ${money(r.opex)}`)}
       ${stat('CAC / LTV', r.cac > 0 ? `${num(r.cac)} ₽` : '—', r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : 'маркетинг выключен')}
@@ -674,6 +740,7 @@ function renderPnlTab() {
         ${line('Плата за доставку', r.feeRevenue, 'pos', true)}
         <tr class="total"><td>Выручка</td><td class="pos">${moneyExact(r.netRevenue)}</td></tr>
         ${line('Оплата курьерам', -r.courierCost, 'neg', true)}
+        ${r.weatherBonusCost > 0 ? line('в т. ч. надбавка за погоду', -r.weatherBonusCost, 'neg', true) : ''}
         ${line('Промо и скидки', -r.promoCost, 'neg', true)}
         ${line('Эквайринг', -r.paymentCost, 'neg', true)}
         ${line('Поддержка', -r.supportCost, 'neg', true)}
@@ -984,6 +1051,7 @@ function renderAll() {
   renderKpis();
   renderDistricts();
   renderFunding();
+  renderWeather();
   renderEvent();
   renderReport();
   renderChart();
