@@ -258,3 +258,28 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;
 }
 .hint-box b { color: var(--accent-2); }
+
+/* ------------------------------ Алгоритмы ------------------------------- */
+.quality-box { margin-bottom: 10px; }
+.quality-row { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 4px; }
+.quality-row .q-name { width: 74px; color: var(--muted); flex-shrink: 0; }
+.quality-row .q-bar { flex: 1; height: 6px; background: rgba(148, 163, 184, 0.12); border-radius: 3px; overflow: hidden; }
+.quality-row .q-fill { height: 100%; border-radius: 3px; background: var(--accent-2); }
+.quality-row .q-val { width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.algo {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px;
+  background: var(--panel-2); margin-bottom: 8px;
+}
+.algo.locked { opacity: 0.5; }
+.algo.on { border-color: rgba(96, 165, 250, 0.5); background: rgba(96, 165, 250, 0.07); }
+.algo-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.algo-title { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.algo-title input { accent-color: var(--accent-2); cursor: pointer; }
+.algo-what { color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 4px; }
+.algo-tradeoff { color: #cbd5e1; font-size: 11px; line-height: 1.45; margin-top: 5px;
+  border-left: 2px solid rgba(251, 191, 36, 0.5); padding-left: 7px; }
+.algo-param { margin-top: 7px; }
+.algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
+.algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
+.algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }

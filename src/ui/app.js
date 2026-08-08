@@ -3,15 +3,16 @@
 // Вся экономика живёт в src/model — здесь только показ и управление.
 // ============================================================================
 
-import { CONFIG, DISTRICTS, LEVERS } from '../model/config.js';
+import { CONFIG, DISTRICTS, LEVERS, ALGORITHMS } from '../model/config.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
   fundingOffer, raise, finalScore, aovOf, techLevel, ordersPerCourier,
+  algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../model/engine.js';
 import { drawLineChart, legendHtml, PALETTE } from './charts.js';
 import { money, moneyExact, num, pct, signedPct, compact } from './format.js';
 
-const SAVE_KEY = 'novoeda-save-v1';
+const SAVE_KEY = 'novoeda-save-v2';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -63,7 +64,8 @@ function renderKpis() {
   const parts = [
     kpi('Неделя', `${state.week} / ${CONFIG.weeksTotal}`, r?.event ? '⚡ событие' : 'город Новоград'),
     kpi('Касса', money(state.cash),
-      Number.isFinite(runway) ? `хватит на ${runway.toFixed(0)} нед.` : 'операционно прибыльны',
+      state.cash < 0 ? 'деньги кончились'
+        : Number.isFinite(runway) ? `хватит на ${runway.toFixed(0)} нед.` : 'операционно прибыльны',
       state.cash < 0 ? 'down' : runway < 8 ? 'down' : runway < 20 ? 'neutral' : 'up'),
   ];
 
@@ -149,8 +151,16 @@ function renderOpsReadout() {
   }
   const wsum = active.reduce((s, d) => s + d.potential, 0);
   const avgDistance = active.reduce((s, d) => s + d.distanceKm * d.potential, 0) / wsum;
-  const perCourier = ordersPerCourier(state, avgDistance);
-  const expected = perCourier * CONFIG.courierExpectedLoad * state.decisions.courierPay;
+
+  // Батчинг меняет и производительность курьера, и его ставку за отдельный заказ
+  const q = algoQuality(state);
+  const batch = state.decisions.algoOn?.batching && state.installed?.batching
+    ? (state.decisions.algoParam?.batching ?? 0) : 0;
+  const forecastOn = Boolean(state.decisions.algoOn?.forecast && state.installed?.forecast);
+
+  const perCourier = ordersPerCourier(state, avgDistance, 1 + 0.60 * batch * q);
+  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q);
+  const expected = perCourier * CONFIG.courierExpectedLoad * payEff;
   const ratio = expected / CONFIG.courierMarketWeeklyPay;
   const capacity = state.decisions.targetCouriers * perCourier;
   const r = last();
@@ -165,18 +175,108 @@ function renderOpsReadout() {
   // Минимальная ставка, при которой вообще пойдут отклики на этом плече доставки
   const minPay = Math.ceil(
     (CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
-    / (CONFIG.courierExpectedLoad * perCourier) / 10) * 10;
+    / (CONFIG.courierExpectedLoad * perCourier * (1 - 0.20 * batch * q)) / 10) * 10;
 
   el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>Курьер увезёт <b>${num(perCourier)}</b> заказов/нед (плечо ${avgDistance.toFixed(1)} км).</div>
     <div>Его заработок при 75% загрузки: <b>${money(expected)}</b> против ${money(CONFIG.courierMarketWeeklyPay)} на рынке
       (<span class="${ratio >= 1 ? 'pos' : 'neg'}">×${ratio.toFixed(2)}</span>) — ${hiring[1]}.</div>
-    <div>Штат ${num(state.decisions.targetCouriers)} чел. увезёт <b>${compact(capacity)}</b> заказов/нед${
-      util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>
+    ${forecastOn
+      ? `<div>Штат подбирает <b>алгоритм прогноза</b> под целевую загрузку
+          ${pct(state.decisions.algoParam?.forecast ?? 0.75, 0)} — ползунок штата не используется.
+          На прошлой неделе он вывел ${num(r?.couriers ?? 0)} чел.</div>`
+      : `<div>Штат ${num(state.decisions.targetCouriers)} чел. увезёт <b>${compact(capacity)}</b> заказов/нед${
+        util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>`}
+    ${batch > 0 ? `<div>Батчинг: ставка за отдельный заказ снижена до <b>${num(payEff)} ₽</b>,
+      но заказ едет дольше.</div>` : ''}
     ${ratio < CONFIG.courierHireThreshold
       ? `<div class="neg">Наём начнётся от <b>${num(minPay)} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.</div>`
       : ''}
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Алгоритмы: качество, карточки, настройки
+// ----------------------------------------------------------------------------
+function qualityBar(name, value, hint) {
+  return `<div class="quality-row">
+    <span class="q-name" title="${hint}">${name}</span>
+    <span class="q-bar"><span class="q-fill" style="width:${Math.min(100, value * 100).toFixed(0)}%"></span></span>
+    <span class="q-val">${pct(value, 0)}</span>
+  </div>`;
+}
+
+function renderAlgos() {
+  const q = algoQuality(state);
+  const head = `<div class="quality-box">
+    ${qualityBar('Данные', dataLevel(state), 'Накоплено заказов — это обучающая выборка')}
+    ${qualityBar('Команда', rndLevel(state), 'Накопленные вложения в data science')}
+    ${qualityBar('Качество', q, 'Среднее геометрическое: нужно и то и другое')}
+    <div class="funding-note">Качество алгоритмов = √(данные × команда). Модель без данных не обучишь,
+      а данные без команды никто не превратит в решения. Данные копятся только от выполненных заказов.</div>
+  </div>`;
+
+  const cards = ALGORITHMS.map((a) => {
+    const installed = Boolean(state.installed?.[a.key]);
+    const unlocked = installed || q >= a.unlock;
+    const on = Boolean(state.decisions.algoOn?.[a.key]);
+    const raw = (state.decisions.algoParam?.[a.key] ?? a.param.def * (a.param.scale ?? 1)) / (a.param.scale ?? 1);
+
+    const badge = installed
+      ? '<span class="badge on">внедрён</span>'
+      : unlocked
+        ? `<span class="badge">внедрение ${money(a.install)}</span>`
+        : `<span class="badge">нужно качество ${pct(a.unlock, 0)}</span>`;
+
+    const slider = installed && on ? `<div class="algo-param">
+        <div class="algo-param-head"><span>${a.param.label}</span><b>${raw}${a.param.unit ?? ''}</b></div>
+        <input type="range" data-algo-param="${a.key}"
+          min="${a.param.min}" max="${a.param.max}" step="${a.param.step}" value="${raw}" />
+      </div>` : '';
+
+    const pending = on && !installed && unlocked
+      ? `<div class="algo-tradeoff">Будет внедрён при переходе к следующей неделе: разовые ${money(a.install)}.</div>`
+      : '';
+
+    return `<div class="algo ${!unlocked ? 'locked' : ''} ${on && installed ? 'on' : ''}">
+      <div class="algo-head">
+        <label class="algo-title">
+          <input type="checkbox" data-algo="${a.key}" ${on ? 'checked' : ''} ${unlocked ? '' : 'disabled'} />
+          ${a.name}
+        </label>
+        ${badge}
+      </div>
+      <div class="algo-what">${a.what}</div>
+      ${slider}
+      ${installed && on ? `<div class="algo-tradeoff">${a.tradeoff}</div>` : pending}
+    </div>`;
+  }).join('');
+
+  el('algos').innerHTML = head + cards;
+
+  el('algos').querySelectorAll('[data-algo]').forEach((box) => {
+    box.addEventListener('change', () => {
+      state.decisions.algoOn = { ...state.decisions.algoOn, [box.dataset.algo]: box.checked };
+      renderAlgos();
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  });
+  el('algos').querySelectorAll('[data-algo-param]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const a = ALGORITHMS.find((x) => x.key === input.dataset.algoParam);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [a.key]: Number(input.value) * (a.param.scale ?? 1),
+      };
+      const head = input.parentElement.querySelector('b');
+      if (head) head.textContent = `${input.value}${a.param.unit ?? ''}`;
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  });
 }
 
 // ----------------------------------------------------------------------------
@@ -332,6 +432,14 @@ function buildAlerts(r) {
     if (r.ltvCac < 1) alerts.push(['bad', `LTV/CAC = ${r.ltvCac.toFixed(2)}: вы платите за клиента больше, чем он принесёт за всю жизнь.`]);
     else if (r.ltvCac > 3) alerts.push(['good', `LTV/CAC = ${r.ltvCac.toFixed(2)} — привлечение окупается с запасом, есть смысл давить на маркетинг.`]);
   }
+  const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
+  if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
+    alerts.push(['warn', `Data Science стоит ${money(r.decisions.rnd)}/нед, но ни один алгоритм не включён. Команда копит качество (${pct(r.algoQuality, 0)}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.`]);
+  }
+  const ready = ALGORITHMS.filter((a) => !state.installed?.[a.key] && r.algoQuality >= a.unlock);
+  if (ready.length) {
+    alerts.push(['good', `Доступно к внедрению: ${ready.map((a) => a.name).join(', ')}. Качество алгоритмов ${pct(r.algoQuality, 0)}.`]);
+  }
   if (r.profit > 0) alerts.push(['good', `Неделя закрыта в плюс: ${money(r.profit)}.`]);
   return alerts;
 }
@@ -351,6 +459,9 @@ function renderReport() {
           <li>Только потом включайте <b>маркетинг</b>: платить за клиента, которому нечего заказать и некому привезти, — самый дорогой способ купить отток.</li>
         </ol>
         Следите за панелью «Юнит-экономика» справа: она пересчитывается прямо во время движения ползунков.
+        <br><br><b>Алгоритмы</b> (динамическое ценообразование, персональные скидки, батчинг) откроются позже:
+        им нужны данные, а данные копятся только от выполненных заказов. Не спешите включать Data Science
+        в первую неделю — платить будете сразу, а получать нечего.
       </div>
     </div>`;
     return;
@@ -381,6 +492,8 @@ function renderReport() {
 
   const eventNote = r.event
     ? `<div class="lesson"><b>${r.event.title}.</b> ${r.event.lesson ?? ''}</div>` : '';
+  const installNote = r.installedNow?.length
+    ? `<div class="alert good" style="margin-top:8px">Внедрено: ${r.installedNow.join(', ')} — разовые ${money(r.installCost)}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.</div>` : '';
   const launchNote = r.launched.length
     ? `<div class="alert warn" style="margin-top:8px">Запущены районы: ${r.launched.join(', ')} — разовые затраты ${money(r.launchCost)}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.</div>` : '';
 
@@ -399,6 +512,7 @@ function renderReport() {
       ${stat('Прибыль', money(r.profit), `постоянные ${money(r.opex)}`)}
       ${stat('CAC / LTV', r.cac > 0 ? `${num(r.cac)} ₽` : '—', r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : 'маркетинг выключен')}
     </div>
+    ${installNote}
     ${launchNote}
     ${driversHtml}
     ${alertsHtml}
@@ -456,6 +570,16 @@ const CHART_TABS = {
     series: (h) => [
       { label: 'Курьеры', data: h.map((r) => r.couriers), color: PALETTE[4] },
       { label: 'Рестораны', data: h.map((r) => r.restaurants), color: PALETTE[5] },
+    ],
+    format: (v) => `${Math.round(v)}`,
+  },
+  algos: {
+    label: 'Алгоритмы',
+    caption: 'Качество алгоритмов = √(данные × команда). Оно растёт медленно и с запозданием: деньги в data science превращаются в прибыль через несколько месяцев, а не на следующей неделе.',
+    series: (h) => [
+      { label: 'Качество, %', data: h.map((r) => (r.algoQuality ?? 0) * 100), color: PALETTE[4] },
+      { label: 'Данные, %', data: h.map((r) => (r.dataLevel ?? 0) * 100), color: PALETTE[1] },
+      { label: 'Команда, %', data: h.map((r) => (r.rndLevel ?? 0) * 100), color: PALETTE[3] },
     ],
     format: (v) => `${Math.round(v)}`,
   },
@@ -559,8 +683,9 @@ function renderPnlTab() {
         ${line('Маркетинг', -r.decisions.marketing, 'neg', true)}
         ${line('Подключение ресторанов', -r.decisions.sales, 'neg', true)}
         ${line('Технологии', -r.decisions.tech, 'neg', true)}
+        ${line('Data Science', -(r.decisions.rnd ?? 0), 'neg', true)}
         <tr class="total"><td>Операционная прибыль</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
-        ${r.oneOff > 0 ? line('Разовые расходы (запуск, найм, события)', -r.oneOff, 'neg', true) : ''}
+        ${r.oneOff > 0 ? line('Разовые расходы (запуск, найм, внедрение, события)', -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>Изменение кассы</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table>
@@ -602,6 +727,74 @@ function renderDistrictsTab() {
     <p class="funding-note">Множители показывают, во сколько раз фактор меняет частоту заказов относительно эталона (1.00). Их произведение и есть ваш спрос.</p>`;
 }
 
+function renderAlgosTab() {
+  const r = last();
+  const q = algoQuality(state);
+  const impact = r ? algorithmImpact(state) : [];
+  const totalGain = impact.reduce((sum, i) => sum + i.profit, 0);
+  const rndSpend = state.decisions.rnd ?? 0;
+
+  const table = impact.length ? `
+    <table class="data">
+      <thead><tr><th>Алгоритм</th><th>₽ / нед</th><th>Заказы</th><th>Мин</th></tr></thead>
+      <tbody>
+        ${impact.map((i) => `<tr>
+          <td>${i.name}</td>
+          <td class="${i.profit >= 0 ? 'pos' : 'neg'}">${i.profit >= 0 ? '+' : ''}${compact(i.profit)}</td>
+          <td class="${i.orders >= 0 ? 'pos' : 'neg'}">${i.orders >= 0 ? '+' : ''}${compact(i.orders)}</td>
+          <td class="${i.deliveryTime <= 0 ? 'pos' : 'neg'}">${i.deliveryTime >= 0 ? '+' : ''}${i.deliveryTime.toFixed(1)}</td>
+        </tr>`).join('')}
+        <tr class="total">
+          <td>Итого от алгоритмов</td>
+          <td class="${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${compact(totalGain)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr class="total">
+          <td>Стоимость команды</td>
+          <td class="neg">−${compact(rndSpend)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr class="total">
+          <td>Чистый эффект</td>
+          <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:8px">
+      Каждая строка — честный контрфактический расчёт: прошлая неделя пересчитана заново
+      с выключенным алгоритмом, и разница показана здесь. В реальной компании такой ответ
+      стоит нескольких недель A/B-теста.
+    </p>` : `<p class="funding-note">Ни один алгоритм не включён — сравнивать нечего.
+      Начните с бюджета на Data Science: качество алгоритмов растёт как √(данные × команда),
+      а данные копятся только от выполненных заказов.</p>`;
+
+  const zero = impact.filter((i) => Math.abs(i.profit) < 1000);
+  const zeroNote = zero.length ? `<div class="hint-box" style="margin-top:10px">
+    ${zero.map((i) => i.name).join(', ')} сейчас ничего не меняет. Это не поломка:
+    surge включается только при загрузке выше 70%, аллокация — только когда мощности не хватает,
+    а прогноз бесполезен, если вы и так угадываете штат. Алгоритм стоит денег ровно столько же,
+    работает он или нет.</div>` : '';
+
+  return `
+    <p class="funding-note">Качество алгоритмов: <b>${pct(q, 0)}</b>
+      (данные ${pct(dataLevel(state), 0)} × команда ${pct(rndLevel(state), 0)}).
+      Оно определяет и точность каждого алгоритма, и то, какие из них вообще доступны.</p>
+    ${table}
+    ${zeroNote}
+    <h4 style="margin:14px 0 6px;font-size:13px">Чем алгоритм отличается от ползунка</h4>
+    <p class="funding-note">Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда.
+      Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз).
+      Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах.
+      Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса,
+      который для одного числа неразрешим.</p>
+    ${ALGORITHMS.map((a) => `<div style="margin-top:10px">
+      <b style="font-size:12px">${a.name}</b>
+      <div class="funding-note">${a.lesson}</div>
+    </div>`).join('')}
+  `;
+}
+
 function renderHelpTab() {
   return `<div class="help">
     <h4>Что это такое</h4>
@@ -641,6 +834,32 @@ function renderHelpTab() {
       <li><b>Запас кассы</b> в неделях — сколько у вас осталось времени на ошибки.</li>
     </ul>
 
+    <h4>Оптимизации второго порядка</h4>
+    <p>Ползунки задают <b>числа</b>. Алгоритмы задают <b>правила</b>: цена = f(загрузка),
+    скидка = f(клиент), штат = f(прогноз). Правило умеет быть разным в разных обстоятельствах —
+    поэтому способно улучшить сразу оба конца компромисса, неразрешимого для одного числа.</p>
+    <div class="formula">качество алгоритмов = √(данные × команда)
+данные  = накопленные заказы / (заказы + 400 000)
+команда = вложения в Data Science / (вложения + 25 млн ₽)</div>
+    <p>Ни данные, ни команда по отдельности не работают. Отсюда естественный порядок:
+    сначала объём, потом алгоритмы. Data Science, купленный до того, как появились заказы, —
+    просто строка расходов.</p>
+    <ul>
+      <li><b>Батчинг</b> повышает число заказов на курьера и снижает ставку за отдельный заказ
+      в связке — но каждый заказ едет дольше.</li>
+      <li><b>Прогноз спроса</b> сам подбирает штат под целевую загрузку; вы выбираете,
+      что важнее — скорость или экономия на курьерах.</li>
+      <li><b>Персональные скидки</b> дают тот же прирост спроса за меньшие деньги.
+      Чем уже охват, тем дешевле — и тем больнее промахи модели.</li>
+      <li><b>Surge</b> зарабатывает не столько надбавкой, сколько сглаживанием пика.
+      Но непредсказуемая цена сама по себе раздражает клиента.</li>
+      <li><b>Аллокация курьеров</b> помогает только при дефиците мощности: при избытке
+      перекос лишь ухудшает сервис в обделённых районах.</li>
+      <li><b>Гибкая комиссия</b> позволяет держать высокую ставку, не теряя партнёров.</li>
+    </ul>
+    <p>Проверяйте их вкладку «Алгоритмы»: там каждая неделя пересчитана заново с выключенным
+    алгоритмом, и видно, сколько он принёс на самом деле. Часто ответ — ноль.</p>
+
     <h4>Как считается финальный счёт</h4>
     <div class="formula">оценка = годовая выручка × мультипликатор
 мультипликатор растёт от темпа роста и рентабельности
@@ -662,6 +881,7 @@ function renderRightTab() {
   const content = {
     unit: renderUnitTab,
     pnl: renderPnlTab,
+    algos: renderAlgosTab,
     districts: renderDistrictsTab,
     help: renderHelpTab,
   }[rightTab];
@@ -759,6 +979,7 @@ function restart() {
 function renderAll() {
   if (!leversBuilt) buildLevers();
   syncLevers();
+  renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderDistricts();

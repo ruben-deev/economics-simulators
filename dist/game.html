@@ -266,6 +266,31 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 }
 .hint-box b { color: var(--accent-2); }
 
+/* ------------------------------ Алгоритмы ------------------------------- */
+.quality-box { margin-bottom: 10px; }
+.quality-row { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 4px; }
+.quality-row .q-name { width: 74px; color: var(--muted); flex-shrink: 0; }
+.quality-row .q-bar { flex: 1; height: 6px; background: rgba(148, 163, 184, 0.12); border-radius: 3px; overflow: hidden; }
+.quality-row .q-fill { height: 100%; border-radius: 3px; background: var(--accent-2); }
+.quality-row .q-val { width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.algo {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px;
+  background: var(--panel-2); margin-bottom: 8px;
+}
+.algo.locked { opacity: 0.5; }
+.algo.on { border-color: rgba(96, 165, 250, 0.5); background: rgba(96, 165, 250, 0.07); }
+.algo-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.algo-title { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.algo-title input { accent-color: var(--accent-2); cursor: pointer; }
+.algo-what { color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 4px; }
+.algo-tradeoff { color: #cbd5e1; font-size: 11px; line-height: 1.45; margin-top: 5px;
+  border-left: 2px solid rgba(251, 191, 36, 0.5); padding-left: 7px; }
+.algo-param { margin-top: 7px; }
+.algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
+.algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
+.algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
 </style>
 </head>
 <body>
@@ -291,6 +316,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <h2 class="panel-title">Рычаги управления</h2>
       <div id="levers"></div>
       <div id="ops-readout"></div>
+
+      <h2 class="panel-title">Алгоритмы и данные</h2>
+      <div id="algos"></div>
 
       <h2 class="panel-title">Покрытие города</h2>
       <div id="districts" class="districts"></div>
@@ -319,6 +347,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div class="tabs" id="tabs">
         <button class="tab active" data-tab="unit">Юнит-экономика</button>
         <button class="tab" data-tab="pnl">P&amp;L</button>
+        <button class="tab" data-tab="algos">Алгоритмы</button>
         <button class="tab" data-tab="districts">Районы</button>
         <button class="tab" data-tab="help">Справка</button>
       </div>
@@ -403,7 +432,7 @@ const CONFIG = {
   courierBaseOrders: 95,       // заказов в неделю на курьера при эталонной дистанции
   courierRefDistanceKm: 3.5,   // эталонное плечо доставки
   courierMarketWeeklyPay: 14_000, // сколько курьер заработает у конкурента / на другой работе
-  courierHireCost: 3_500,      // разовая стоимость найма и экипировки
+  courierHireCost: 8_000,      // разовая стоимость найма, проверки и экипировки
   courierBaseChurn: 0.05,      // базовый недельный отток курьеров
   courierApplicantsBase: 400,  // максимум откликов в неделю при отличных условиях
   courierExpectedLoad: 0.75,   // на какую загрузку смены рассчитывает кандидат
@@ -414,6 +443,10 @@ const CONFIG = {
   restaurantRefOrders: 45,     // «нормальный» поток заказов на ресторан в неделю
   restaurantRefCommission: 0.20,
   restaurantBaseChurn: 0.015,
+  // У ресторана своя экономика: выше этой комиссии доставка для него убыточна
+  // при любом объёме заказов, и никакой поток это не компенсирует.
+  restaurantMaxCommission: 0.30,
+  restaurantCommissionSpan: 0.12,
   salesRefBudget: 150_000,     // эталонный недельный бюджет отдела подключения, ₽
 
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
@@ -428,9 +461,17 @@ const CONFIG = {
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
   supportTechDiscount: 8,      // на сколько ₽ снижает поддержку максимальный уровень техно
-  hqWeeklyBase: 1_200_000,     // офис, разработка, менеджмент, ₽/нед
-  hqPerCourier: 400,           // диспетчеризация и HR на курьера, ₽/нед
+  hqWeeklyBase: 900_000,       // офис, разработка, менеджмент, ₽/нед
+  // Курьер стоит денег, даже когда не везёт заказ: выходы на слот, гарантии,
+  // экипировка, страховка, диспетчеризация. Поэтому запас мощности не бесплатен.
+  hqPerCourier: 2_200,         // содержание одного курьера, ₽/нед
   techSaturation: 40_000_000,  // сколько нужно вложить в технологии для «половины» эффекта
+
+  // --- Данные и алгоритмы ---
+  // Качество алгоритмов = √(данные × команда). Нужно и то и другое: модель без
+  // данных не обучишь, а данные без команды никто не превратит в решения.
+  rndSaturation: 25_000_000,   // вложения в data science для «половины» эффекта
+  dataSaturation: 400_000,     // накопленных заказов для «половины» эффекта
 
   // --- Инвестиции ---
   minWeekForFunding: 4,
@@ -532,11 +573,100 @@ const LEVERS = [
     min: 0, max: 8_000_000, step: 100_000, def: 0,
     tip: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
   },
+  {
+    key: 'rnd', label: 'Data Science', unit: '₽/нед',
+    min: 0, max: 6_000_000, step: 100_000, def: 0,
+    tip: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
+  },
 ];
 
-const DEFAULT_DECISIONS = Object.fromEntries(
-  LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])
-);
+// ============================================================================
+// Алгоритмы — «оптимизации второго порядка».
+//
+// Обычный рычаг задаёт ЧИСЛО (цена = 149 ₽). Алгоритм задаёт ПРАВИЛО
+// (цена = f(загрузка)) и потому способен улучшить сразу оба конца компромисса.
+// Но у каждого правила есть цена: неточность модели, недовольство клиентов,
+// потеря части выручки. Оптимум всегда внутри диапазона, а не на его краю.
+//
+// unlock — требуемое качество алгоритмов (√(данные × команда)).
+// install — разовая стоимость внедрения.
+// ============================================================================
+
+const ALGORITHMS = [
+  {
+    key: 'batching',
+    name: 'Объединение заказов',
+    short: 'батчинг',
+    unlock: 0.10,
+    install: 1_500_000,
+    param: { label: 'Агрессивность', min: 0, max: 100, step: 5, def: 40, scale: 0.01, unit: '%' },
+    what: 'Курьер везёт несколько заказов за одну поездку, если они по пути.',
+    tradeoff: 'Производительность курьера растёт, но каждый заказ едет дольше. Чем хуже алгоритм, тем сильнее страдает время доставки.',
+    lesson: 'Классический компромисс «эффективность против скорости». Хороший алгоритм не убирает компромисс, а сдвигает его границу.',
+  },
+  {
+    key: 'forecast',
+    name: 'Прогноз спроса и автонайм',
+    short: 'прогноз',
+    unlock: 0.15,
+    install: 2_000_000,
+    param: { label: 'Целевая загрузка', min: 50, max: 95, step: 5, def: 75, scale: 0.01, unit: '%' },
+    what: 'Штат курьеров подбирается автоматически под прогноз спроса следующей недели.',
+    tradeoff: 'Вы больше не двигаете ползунок штата вручную — но платите за ошибку прогноза. Точность растёт вместе с качеством алгоритмов.',
+    lesson: 'Планирование мощности — это выбор между простоем и нарушением сроков. Алгоритм не отменяет выбор, он лишь сужает разброс.',
+  },
+  {
+    key: 'targeting',
+    name: 'Персональные скидки',
+    short: 'таргетинг',
+    unlock: 0.25,
+    install: 3_000_000,
+    param: { label: 'Охват скидкой', min: 5, max: 100, step: 5, def: 35, scale: 0.01, unit: '% клиентов' },
+    what: 'Промо-скидка уходит не всем подряд, а тем, кто без неё не сделает заказ.',
+    tradeoff: 'Вы платите только за часть заказов, но при слабой модели промахиваетесь: скидку получают те, кто заказал бы и так, а обделённые клиенты замечают несправедливость.',
+    lesson: 'Ценовая дискриминация: та же прибавка спроса за меньшие деньги. Это самый прибыльный из «умных» инструментов и самый требовательный к качеству данных.',
+  },
+  {
+    key: 'surge',
+    name: 'Динамическое ценообразование',
+    short: 'surge',
+    unlock: 0.35,
+    install: 3_500_000,
+    param: { label: 'Сила надбавки', min: 0, max: 100, step: 5, def: 50, scale: 0.01, unit: '%' },
+    what: 'В часы пик стоимость доставки растёт, в спокойные часы остаётся базовой.',
+    tradeoff: 'Пиковая выручка выше, а часть пикового спроса сдвигается на свободные часы — курьеры разгружаются. Но клиенты не любят непредсказуемую цену.',
+    lesson: 'Цена — не число, а инструмент управления спросом. Surge зарабатывает не столько на надбавке, сколько на сглаживании пика.',
+  },
+  {
+    key: 'allocation',
+    name: 'Умное распределение курьеров',
+    short: 'аллокация',
+    unlock: 0.45,
+    install: 2_500_000,
+    param: { label: 'Приоритет маржи', min: 0, max: 100, step: 5, def: 40, scale: 0.01, unit: '%' },
+    what: 'Курьеры перераспределяются в районы с более высоким вкладом с заказа.',
+    tradeoff: 'Прибыльные районы получают лучший сервис, остальные — худший. Там растёт время доставки и отток клиентов.',
+    lesson: 'Оптимизация по одной метрике всегда кому-то ухудшает жизнь. Вопрос не «оптимизировать ли», а «что именно вы согласны ухудшить».',
+  },
+  {
+    key: 'flexCommission',
+    name: 'Гибкая комиссия для ресторанов',
+    short: 'гибкая комиссия',
+    unlock: 0.40,
+    install: 2_000_000,
+    param: { label: 'Разброс ставок', min: 0, max: 100, step: 5, def: 40, scale: 0.01, unit: '%' },
+    what: 'Комиссия считается индивидуально: крупным и востребованным — ниже, остальным — выше.',
+    tradeoff: 'Рестораны в среднем довольнее и реже уходят, но средняя комиссия падает.',
+    lesson: 'Сегментация вместо единой цены работает на обеих сторонах маркетплейса — и для клиентов, и для партнёров.',
+  },
+];
+
+const DEFAULT_DECISIONS = {
+  ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
+  districts: [],
+  algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),
+  algoParam: Object.fromEntries(ALGORITHMS.map((a) => [a.key, a.param.def * (a.param.scale ?? 1)])),
+};
 
 
 // ===== src/model/events.js ===============================================
@@ -790,6 +920,9 @@ function createInitialState(seed = 'novograd') {
     equity: 1,               // доля основателей, 1.0 = 100%
     raisedTotal: 0,
     techStock: 0,
+    rndStock: 0,             // накопленные вложения в data science
+    dataStock: 0,            // накопленный объём заказов = обучающая выборка
+    installed: {},           // внедрённые алгоритмы
     couriers: 0,
     courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
     decisions: { ...DEFAULT_DECISIONS, districts: [] },
@@ -809,6 +942,7 @@ function createInitialState(seed = 'novograd') {
     pendingEvent: null,
     pendingChoice: null,
     history: [],
+    lastSnapshot: null,      // состояние до последнего хода — для «что было бы, если»
     over: null,   // 'bankrupt' | 'finished'
   };
 }
@@ -819,6 +953,25 @@ function createInitialState(seed = 'novograd') {
 
 function techLevel(state) {
   return state.techStock / (state.techStock + CONFIG.techSaturation);
+}
+
+// Данные и команда по отдельности бесполезны — качество алгоритмов растёт
+// только когда есть и то и другое. Отсюда среднее геометрическое.
+function dataLevel(state) {
+  return (state.dataStock ?? 0) / ((state.dataStock ?? 0) + CONFIG.dataSaturation);
+}
+function rndLevel(state) {
+  return (state.rndStock ?? 0) / ((state.rndStock ?? 0) + CONFIG.rndSaturation);
+}
+function algoQuality(state) {
+  return Math.sqrt(dataLevel(state) * rndLevel(state));
+}
+
+// Доступен ли алгоритм: либо уже внедрён, либо качество доросло до порога
+function algoAvailable(state, key) {
+  const def = ALGORITHMS.find((a) => a.key === key);
+  if (!def) return false;
+  return Boolean(state.installed?.[key]) || algoQuality(state) >= def.unlock;
 }
 
 // Заказов в неделю на одного курьера с учётом плеча доставки, технологий и мотивации.
@@ -849,6 +1002,14 @@ function effectiveCommission(state, decisions) {
 function step(prevState, input = {}) {
   const state = structuredClone(prevState);
   if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
+
+  // Компактный снимок «как было до хода» — по нему интерфейс считает контрфактические
+  // сценарии «сколько бы мы заработали без этого алгоритма».
+  const snapshot = structuredClone({
+    ...prevState,
+    history: prevState.history.slice(-2),
+    lastSnapshot: null,
+  });
 
   const decisions = { ...state.decisions, ...(input.decisions ?? {}) };
   state.decisions = decisions;
@@ -895,6 +1056,65 @@ function step(prevState, input = {}) {
   const commission = effectiveCommission(state, decisions);
   const season = seasonality(week);
 
+  // --- 2б. Алгоритмы: доступность, внедрение, настройки ---
+  const quality = algoQuality(state);
+  let installCost = 0;
+  const installedNow = [];
+  for (const a of ALGORITHMS) {
+    if (decisions.algoOn?.[a.key] && !state.installed[a.key] && quality >= a.unlock) {
+      state.installed[a.key] = true;
+      installCost += a.install;
+      installedNow.push(a.name);
+    }
+  }
+  // Интенсивность алгоритма: 0 = выключен или недоступен
+  const algo = (key) => (decisions.algoOn?.[key] && state.installed[key]
+    ? clamp(decisions.algoParam?.[key] ?? 0, 0, 1)
+    : 0);
+
+  const batchLevel = algo('batching');
+  const surgeStrength = algo('surge');
+  const targetShare = decisions.algoOn?.targeting && state.installed.targeting
+    ? clamp(decisions.algoParam?.targeting ?? 1, 0.05, 1) : 1;
+  const targetingOn = decisions.algoOn?.targeting && state.installed.targeting;
+  const allocSkew = algo('allocation');
+  const flexSpread = algo('flexCommission');
+  const forecastOn = Boolean(decisions.algoOn?.forecast && state.installed.forecast);
+  const serviceTarget = clamp(decisions.algoParam?.forecast ?? 0.8, 0.55, 0.95);
+
+  // Батчинг: курьер везёт несколько заказов за одну поездку. Растёт и число заказов
+  // на курьера, и заработок курьера — а ставка за отдельный заказ в связке ниже,
+  // потому что второй адрес по пути стоит платформе дешевле первого.
+  // Плата за это — время: заказ ждёт попутчика и едет по цепочке.
+  const batchCapacityMult = 1 + 0.60 * batchLevel * quality;
+  const batchTimeMult = 1 + 0.16 * batchLevel * (1 - 0.6 * quality);
+  const courierPayEff = decisions.courierPay * (1 - 0.20 * batchLevel * quality);
+
+  // Персональные скидки: платим за долю заказов, а эффект близок к скидке всем.
+  // Точность = качество алгоритмов; при плохой модели скидка уходит не туда.
+  const precision = quality;
+  const promoLift = targetingOn
+    ? 1 + precision * (1 / targetShare - 1) * 0.75
+    : 1;
+  const promoCostPerOrder = targetingOn ? decisions.promo * targetShare : decisions.promo;
+  // Потолок: даже идеальная модель не создаст больше спроса, чем скидка всем подряд,
+  // а неточная упирается заметно раньше.
+  const promoCeiling = decisions.promo * (0.4 + 0.6 * precision);
+  const effPromo = targetingOn
+    ? Math.min(promoCeiling, decisions.promo * targetShare * promoLift)
+    : decisions.promo;
+  // Чем уже охват и хуже модель, тем больше клиентов замечают, что скидка досталась
+  // не им. Штраф пропорционален размеру скидки: без скидок обижаться не на что.
+  const targetingPenalty = targetingOn
+    ? Math.pow(1 - targetShare, 2) * (1 - precision) * 0.35
+      * Math.min(1, decisions.promo / 50)
+    : 0;
+
+  // Гибкая комиссия: крупным партнёрам ниже, остальным выше. Рестораны в среднем
+  // довольнее (ниже воспринимаемая ставка), но часть выручки мы отдаём.
+  const commissionForRevenue = commission * (1 - 0.06 * flexSpread);
+  const commissionPerceived = commission * (1 - 0.35 * flexSpread * quality);
+
   // --- 3. Спрос по районам (время доставки берём прошлой недели — лаг обратной связи) ---
   const totalPotentialActive = activeDefs.reduce((s, d) => s + d.potential, 0) || 1;
   const perDistrict = [];
@@ -903,7 +1123,7 @@ function step(prevState, input = {}) {
   for (const def of activeDefs) {
     const ds = state.districts[def.id];
     const aov = aovOf(def);
-    const customerPrice = aov + decisions.deliveryFee - decisions.promo;
+    const customerPrice = aov + decisions.deliveryFee - effPromo;
     const refPrice = aov + CONFIG.refDeliveryFee;
     const priceFactor = clamp(Math.pow(refPrice / Math.max(50, customerPrice), def.elasticity), 0.2, 2.5);
 
@@ -932,34 +1152,73 @@ function step(prevState, input = {}) {
       / (totalDemand > 0 ? demandWeight : activeDefs.reduce((s, d) => s + d.potential, 0) || 1)
     : CONFIG.courierRefDistanceKm;
 
-  const perCourier = ordersPerCourier(state, avgDistance, mods.capacityMult);
+  const perCourier = ordersPerCourier(state, avgDistance, mods.capacityMult * batchCapacityMult);
   const capacity = state.couriers * perCourier;
-  const utilization = capacity > 0 ? totalDemand / capacity : (totalDemand > 0 ? 3 : 0);
-  const fillRate = capacity > 0 ? Math.min(1, capacity / Math.max(1e-9, totalDemand)) : 0;
+
+  // Динамическое ценообразование. Надбавка появляется только в перегрузе:
+  // surge зарабатывает не столько на цене, сколько на сглаживании пика.
+  const rawUtil = capacity > 0 ? totalDemand / capacity : (totalDemand > 0 ? 3 : 0);
+  const surgeUp = surgeStrength * clamp((rawUtil - 0.7) / 0.6, 0, 1);
+  const surgeFeeMult = 1 + 0.35 * surgeUp;
+  const surgeShave = 1 - 0.10 * surgeUp;          // часть пикового спроса отказывается
+  const surgeTimeMult = 1 - 0.12 * surgeUp * quality;
+  const surgePenalty = Math.pow(surgeStrength, 1.5) * (0.03 + 0.35 * surgeUp) * (1 - 0.5 * quality);
+
+  const effDemandTotal = totalDemand * surgeShave;
+  for (const p of perDistrict) p.demandEff = p.demand * surgeShave;
+
+  // Распределение курьеров по районам. Без алгоритма — пропорционально спросу
+  // (одинаковая загрузка везде). С алгоритмом — с перекосом в пользу маржи.
+  const cmOf = (p) => p.aov * commissionForRevenue + decisions.deliveryFee * surgeFeeMult
+    - courierPayEff - promoCostPerOrder
+    - (p.aov + decisions.deliveryFee * surgeFeeMult - promoCostPerOrder) * CONFIG.paymentFeeRate
+    - Math.max(2, CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state));
+  const cmAvg = effDemandTotal > 0
+    ? perDistrict.reduce((acc, p) => acc + cmOf(p) * p.demandEff, 0) / effDemandTotal
+    : 1;
+
+  let weightSum = 0;
+  for (const p of perDistrict) {
+    const edge = cmAvg !== 0 ? cmOf(p) / cmAvg - 1 : 0;
+    p.allocWeight = Math.max(0.2 * p.demandEff, p.demandEff * (1 + 2.5 * allocSkew * quality * edge));
+    weightSum += p.allocWeight;
+  }
+
+  // Мощность закрепляется за районом. Лишние курьеры в одном районе не спасают
+  // соседний — они просто простаивают. Поэтому перекос всегда чем-то оплачен.
+  for (const p of perDistrict) {
+    p.capacity = weightSum > 0 ? capacity * (p.allocWeight / weightSum) : 0;
+  }
+
+  const utilization = capacity > 0 ? effDemandTotal / capacity : (effDemandTotal > 0 ? 3 : 0);
 
   let orders = 0;
   let gmv = 0;
   let paymentBase = 0;
 
   for (const p of perDistrict) {
-    p.served = p.demand * fillRate;
+    p.util = p.capacity > 0 ? p.demandEff / p.capacity : (p.demandEff > 0 ? 3 : 0);
+    p.fill = p.demandEff > 0 ? clamp(p.capacity / p.demandEff, 0, 1) : 1;
+    p.served = Math.min(p.demandEff, p.capacity);
     // Новое время доставки: перегрузка кубически бьёт по скорости
-    const congestion = 1 + 0.85 * Math.pow(Math.min(utilization, 2.2), 3);
+    const congestion = 1 + 0.85 * Math.pow(Math.min(p.util, 2.2), 3);
     p.newTime = state.couriers > 0
-      ? clamp(p.def.baseTime * congestion * (1 - 0.12 * techLevel(state)), 10, 120)
+      ? clamp(p.def.baseTime * congestion * batchTimeMult * surgeTimeMult
+          * (1 - 0.12 * techLevel(state)), 10, 120)
       : 120;
     orders += p.served;
     gmv += p.served * p.aov;
-    paymentBase += p.served * (p.aov + decisions.deliveryFee - decisions.promo);
+    paymentBase += p.served * (p.aov + decisions.deliveryFee * surgeFeeMult - promoCostPerOrder);
   }
+  const fillRate = effDemandTotal > 0 ? orders / effDemandTotal : (capacity > 0 ? 1 : 0);
 
   // --- 5. P&L недели ---
-  const commissionRevenue = gmv * commission;
-  const feeRevenue = orders * decisions.deliveryFee;
+  const commissionRevenue = gmv * commissionForRevenue;
+  const feeRevenue = orders * decisions.deliveryFee * surgeFeeMult;
   const netRevenue = commissionRevenue + feeRevenue;
 
-  const courierCost = orders * decisions.courierPay;
-  const promoCost = orders * decisions.promo;
+  const courierCost = orders * courierPayEff;
+  const promoCost = orders * promoCostPerOrder;
   const paymentCost = Math.max(0, paymentBase) * CONFIG.paymentFeeRate;
   const supportCost = orders * Math.max(2,
     CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state) + mods.variableCostAdd);
@@ -974,11 +1233,11 @@ function step(prevState, input = {}) {
   // рассчитывает набрать хотя бы 60% полной смены. Поэтому у ставки есть «пол».
   const realizedPerCourier = state.couriers > 0 ? orders / state.couriers : 0;
   const expectedOrdersPerCourier = Math.max(realizedPerCourier, perCourier * CONFIG.courierExpectedLoad);
-  const courierEarnings = expectedOrdersPerCourier * decisions.courierPay;
+  const courierEarnings = expectedOrdersPerCourier * courierPayEff;
   const attractiveness = courierEarnings / CONFIG.courierMarketWeeklyPay;
   // Удержание же зависит от фактического заработка: простой злит не меньше низкой ставки.
   const realizedEarnings = state.couriers > 0
-    ? realizedPerCourier * decisions.courierPay
+    ? realizedPerCourier * courierPayEff
     : courierEarnings;
   const realizedAttractiveness = realizedEarnings / CONFIG.courierMarketWeeklyPay;
 
@@ -993,16 +1252,30 @@ function step(prevState, input = {}) {
     * mods.courierSupplyMult
     * (activeDefs.length ? 1 : 0);
 
+  // Прогноз спроса: штат подбирается автоматически под ожидаемую нагрузку.
+  // Ошибка прогноза детерминирована (не трогает ГПСЧ) и падает с ростом качества.
+  let forecastDemand = null;
+  let targetCouriers = Math.max(0, Math.round(decisions.targetCouriers));
+  if (forecastOn) {
+    const hist = state.history;
+    const prevDemand = hist.length ? hist[hist.length - 1].demand : effDemandTotal;
+    const growth = prevDemand > 0 ? clamp(effDemandTotal / prevDemand, 0.85, 1.35) : 1.1;
+    const noise = Math.sin(week * 127.1) * Math.cos(week * 311.7);
+    const error = noise * (1 - quality) * 0.30;
+    forecastDemand = Math.max(0, effDemandTotal * growth * (1 + error));
+    targetCouriers = Math.round(forecastDemand / Math.max(1, perCourier) / serviceTarget);
+  }
+
   const churnRate = clamp(
     CONFIG.courierBaseChurn
-    + Math.max(0, 1 - realizedAttractiveness) * 0.35
+    + Math.max(0, 1.15 - realizedAttractiveness) * 0.55
     + Math.max(0, utilization - 0.9) * 0.35
     + mods.courierChurnAdd,
     0, 0.7
   );
   state.courierMorale = state.couriers > 0 ? realizedAttractiveness : 1;
   const courierLeft = state.couriers * churnRate;
-  const target = Math.max(0, Math.round(decisions.targetCouriers));
+  const target = targetCouriers;
   const after = state.couriers - courierLeft;
   const hires = clamp(target - after, 0, applicants);
   const hiringCost = hires * CONFIG.courierHireCost;
@@ -1012,7 +1285,8 @@ function step(prevState, input = {}) {
   const remainingPoolTotal = activeDefs.reduce(
     (s, d) => s + Math.max(0, d.restaurantPool - state.districts[d.id].restaurants), 0) || 1;
   const salesPower = clamp(0.35 * Math.pow(decisions.sales / CONFIG.salesRefBudget, 0.6), 0, 0.8);
-  const commissionTerm = clamp(Math.pow(CONFIG.restaurantRefCommission / Math.max(0.02, commission), 0.8), 0.3, 1.6);
+  const commissionTerm = clamp(
+    Math.pow(CONFIG.restaurantRefCommission / Math.max(0.02, commissionPerceived), 0.8), 0.3, 1.6);
 
   for (const def of activeDefs) {
     const ds = state.districts[def.id];
@@ -1020,7 +1294,12 @@ function step(prevState, input = {}) {
     const served = p ? p.served : 0;
     const ordersPerRest = ds.restaurants > 0 ? served / ds.restaurants : 0;
     const volumeTerm = clamp(Math.pow(ordersPerRest / CONFIG.restaurantRefOrders, 0.5), 0, 1.5);
-    const attractR = clamp((0.35 + 0.65 * volumeTerm) * commissionTerm, 0, 1.6);
+    // Поток заказов компенсирует высокую комиссию лишь до предела: когда доставка
+    // перестаёт быть рентабельной для самого ресторана, объём его уже не удержит.
+    const viability = clamp(
+      (CONFIG.restaurantMaxCommission - commissionPerceived) / CONFIG.restaurantCommissionSpan, 0, 1);
+    const attractR = clamp(
+      (0.35 + 0.65 * volumeTerm) * commissionTerm * (0.25 + 0.75 * viability), 0, 1.6);
 
     const remaining = Math.max(0, def.restaurantPool - ds.restaurants);
     const share = remaining / remainingPoolTotal;
@@ -1062,13 +1341,15 @@ function step(prevState, input = {}) {
     );
 
     const newSpeedFactor = clamp(Math.pow(CONFIG.refDeliveryTime / p.newTime, 0.6), 0.4, 1.3);
-    const lostShare = 1 - fillRate;
+    const lostShare = 1 - p.fill;
     const satisfaction = clamp(
       0.35 * newSpeedFactor
       + 0.25 * Math.min(p.selectionFactor, 1.2)
       + 0.25 * Math.min(p.priceFactor, 1.3)
       + 0.15 * (1 - lostShare * 2)
-      + mods.satisfactionAdd,
+      + mods.satisfactionAdd
+      - surgePenalty
+      - targetingPenalty,
       0, 1.4
     );
     ds.satisfaction = satisfaction;
@@ -1093,11 +1374,14 @@ function step(prevState, input = {}) {
   }
 
   // --- 9. Деньги ---
-  const opex = districtFixed + hqCost + decisions.marketing + decisions.sales + decisions.tech;
-  const oneOff = launchCost + hiringCost + (mods.oneOffCost ?? 0);
+  const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
+    + decisions.tech + (decisions.rnd ?? 0);
+  const oneOff = launchCost + hiringCost + installCost + (mods.oneOffCost ?? 0);
   const profit = contribution - opex;
   state.cash += profit - oneOff;
   state.techStock += decisions.tech;
+  state.rndStock += decisions.rnd ?? 0;
+  state.dataStock += orders;   // каждая доставка — строчка в обучающей выборке
 
   // --- 10. Метрики для интерфейса ---
   const totalCustomers = activeDefs.reduce((s, d) => s + state.districts[d.id].customers, 0);
@@ -1127,8 +1411,9 @@ function step(prevState, input = {}) {
   const report = {
     week,
     orders,
-    demand: totalDemand,
-    lostOrders: Math.max(0, totalDemand - orders),
+    demand: effDemandTotal,
+    demandRaw: totalDemand,
+    lostOrders: Math.max(0, effDemandTotal - orders),
     gmv,
     netRevenue,
     commissionRevenue,
@@ -1170,6 +1455,25 @@ function step(prevState, input = {}) {
     ltvCac: cac > 0 ? ltv / cac : null,
     techLevel: techLevel(state),
     season,
+
+    // --- алгоритмы ---
+    algoQuality: quality,
+    dataLevel: dataLevel(state),
+    rndLevel: rndLevel(state),
+    installCost,
+    installedNow,
+    algoActive: Object.fromEntries(ALGORITHMS.map((a) => [a.key, Boolean(decisions.algoOn?.[a.key] && state.installed[a.key])])),
+    courierPayEff,
+    surgeUplift: surgeUp,
+    surgeFeeMult,
+    effectivePromo: effPromo,
+    promoCostPerOrder,
+    promoLift: targetingOn ? promoLift : 1,
+    batchCapacityMult,
+    batchTimeMult,
+    forecastDemand,
+    commissionForRevenue,
+    commissionPerceived,
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),
@@ -1187,20 +1491,21 @@ function step(prevState, input = {}) {
       awareness: state.districts[p.def.id].awareness,
       deliveryTime: p.newTime,
       satisfaction: p.satisfaction,
+      fill: p.fill,
+      util: p.util,
       aov: p.aov,
       priceFactor: p.priceFactor,
       selectionFactor: p.selectionFactor,
       speedFactor: p.speedFactor,
-      contribution: p.served * (p.aov * commission + decisions.deliveryFee
-        - decisions.courierPay - decisions.promo
-        - (p.aov + decisions.deliveryFee - decisions.promo) * CONFIG.paymentFeeRate
-        - Math.max(2, CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state))),
+      contribution: p.served * cmOf(p),
+      cmPerOrder: cmOf(p),
     })),
-    decisions: { ...decisions, districts: [...(decisions.districts ?? [])] },
+    decisions: structuredClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
   };
 
   // --- 11. Завершение недели ---
   state.week = week;
+  state.lastSnapshot = snapshot;
   state.history.push(report);
   state.rngState = rng.state();
   state.pendingChoice = null;
@@ -1214,6 +1519,45 @@ function step(prevState, input = {}) {
   report.equityValue = report.valuation * state.equity;
 
   return { state, report };
+}
+
+// ----------------------------------------------------------------------------
+// Контрфактический разбор: «сколько на самом деле принёс каждый алгоритм».
+//
+// Для каждого включённого алгоритма прошлая неделя пересчитывается заново с
+// выключенным алгоритмом — и сравнивается с тем, что получилось на самом деле.
+// Это честный ответ на вопрос «а стоило ли оно того», который в реальной
+// компании требует A/B-теста, а здесь считается мгновенно.
+// ----------------------------------------------------------------------------
+function algorithmImpact(state) {
+  const snap = state.lastSnapshot;
+  const actual = state.history[state.history.length - 1];
+  if (!snap || !actual) return [];
+
+  const out = [];
+  for (const a of ALGORITHMS) {
+    if (!actual.algoActive?.[a.key]) continue;
+    const decisions = structuredClone(actual.decisions);
+    decisions.algoOn = { ...decisions.algoOn, [a.key]: false };
+    let alt;
+    try {
+      alt = step(snap, { decisions, eventChoice: actual.event?.choice ?? 0 }).report;
+    } catch {
+      continue;
+    }
+    if (!alt) continue;
+    out.push({
+      key: a.key,
+      name: a.name,
+      short: a.short,
+      profit: actual.profit - alt.profit,
+      orders: actual.orders - alt.orders,
+      deliveryTime: actual.avgDeliveryTime - alt.avgDeliveryTime,
+      cmPerOrder: actual.cmPerOrder - alt.cmPerOrder,
+      customers: actual.customers - alt.customers,
+    });
+  }
+  return out.sort((x, y) => y.profit - x.profit);
 }
 
 // ----------------------------------------------------------------------------
@@ -1296,18 +1640,24 @@ function unitEconomics(state, decisions) {
   const commission = effectiveCommission(state, decisions);
   const t = techLevel(state);
 
-  const commissionRevenue = aov * commission;
+  // Алгоритмы меняют экономику заказа ещё до того, как сыграна неделя
+  const on = (key) => Boolean(decisions.algoOn?.[key] && state.installed?.[key]);
+  const flexSpread = on('flexCommission') ? clamp(decisions.algoParam?.flexCommission ?? 0, 0, 1) : 0;
+  const commissionForRevenue = commission * (1 - 0.06 * flexSpread);
+  const targetShare = on('targeting') ? clamp(decisions.algoParam?.targeting ?? 1, 0.05, 1) : 1;
+  const promo = on('targeting') ? decisions.promo * targetShare : decisions.promo;
+
+  const commissionRevenue = aov * commissionForRevenue;
   const feeRevenue = decisions.deliveryFee;
   const revenue = commissionRevenue + feeRevenue;
 
   const courier = decisions.courierPay;
-  const promo = decisions.promo;
-  const payment = (aov + decisions.deliveryFee - decisions.promo) * CONFIG.paymentFeeRate;
+  const payment = (aov + decisions.deliveryFee - promo) * CONFIG.paymentFeeRate;
   const support = Math.max(2, CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * t);
   const variable = courier + promo + payment + support;
 
   return {
-    aov, commission,
+    aov, commission: commissionForRevenue, commissionBase: commission, targetShare,
     commissionRevenue, feeRevenue, revenue,
     courier, promo, payment, support, variable,
     contribution: revenue - variable,
@@ -1503,7 +1853,7 @@ function legendHtml(series) {
 // ============================================================================
 
 
-const SAVE_KEY = 'novoeda-save-v1';
+const SAVE_KEY = 'novoeda-save-v2';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -1555,7 +1905,8 @@ function renderKpis() {
   const parts = [
     kpi('Неделя', `${state.week} / ${CONFIG.weeksTotal}`, r?.event ? '⚡ событие' : 'город Новоград'),
     kpi('Касса', money(state.cash),
-      Number.isFinite(runway) ? `хватит на ${runway.toFixed(0)} нед.` : 'операционно прибыльны',
+      state.cash < 0 ? 'деньги кончились'
+        : Number.isFinite(runway) ? `хватит на ${runway.toFixed(0)} нед.` : 'операционно прибыльны',
       state.cash < 0 ? 'down' : runway < 8 ? 'down' : runway < 20 ? 'neutral' : 'up'),
   ];
 
@@ -1641,8 +1992,16 @@ function renderOpsReadout() {
   }
   const wsum = active.reduce((s, d) => s + d.potential, 0);
   const avgDistance = active.reduce((s, d) => s + d.distanceKm * d.potential, 0) / wsum;
-  const perCourier = ordersPerCourier(state, avgDistance);
-  const expected = perCourier * CONFIG.courierExpectedLoad * state.decisions.courierPay;
+
+  // Батчинг меняет и производительность курьера, и его ставку за отдельный заказ
+  const q = algoQuality(state);
+  const batch = state.decisions.algoOn?.batching && state.installed?.batching
+    ? (state.decisions.algoParam?.batching ?? 0) : 0;
+  const forecastOn = Boolean(state.decisions.algoOn?.forecast && state.installed?.forecast);
+
+  const perCourier = ordersPerCourier(state, avgDistance, 1 + 0.60 * batch * q);
+  const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q);
+  const expected = perCourier * CONFIG.courierExpectedLoad * payEff;
   const ratio = expected / CONFIG.courierMarketWeeklyPay;
   const capacity = state.decisions.targetCouriers * perCourier;
   const r = last();
@@ -1657,18 +2016,108 @@ function renderOpsReadout() {
   // Минимальная ставка, при которой вообще пойдут отклики на этом плече доставки
   const minPay = Math.ceil(
     (CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
-    / (CONFIG.courierExpectedLoad * perCourier) / 10) * 10;
+    / (CONFIG.courierExpectedLoad * perCourier * (1 - 0.20 * batch * q)) / 10) * 10;
 
   el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>Курьер увезёт <b>${num(perCourier)}</b> заказов/нед (плечо ${avgDistance.toFixed(1)} км).</div>
     <div>Его заработок при 75% загрузки: <b>${money(expected)}</b> против ${money(CONFIG.courierMarketWeeklyPay)} на рынке
       (<span class="${ratio >= 1 ? 'pos' : 'neg'}">×${ratio.toFixed(2)}</span>) — ${hiring[1]}.</div>
-    <div>Штат ${num(state.decisions.targetCouriers)} чел. увезёт <b>${compact(capacity)}</b> заказов/нед${
-      util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>
+    ${forecastOn
+      ? `<div>Штат подбирает <b>алгоритм прогноза</b> под целевую загрузку
+          ${pct(state.decisions.algoParam?.forecast ?? 0.75, 0)} — ползунок штата не используется.
+          На прошлой неделе он вывел ${num(r?.couriers ?? 0)} чел.</div>`
+      : `<div>Штат ${num(state.decisions.targetCouriers)} чел. увезёт <b>${compact(capacity)}</b> заказов/нед${
+        util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>`}
+    ${batch > 0 ? `<div>Батчинг: ставка за отдельный заказ снижена до <b>${num(payEff)} ₽</b>,
+      но заказ едет дольше.</div>` : ''}
     ${ratio < CONFIG.courierHireThreshold
       ? `<div class="neg">Наём начнётся от <b>${num(minPay)} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.</div>`
       : ''}
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Алгоритмы: качество, карточки, настройки
+// ----------------------------------------------------------------------------
+function qualityBar(name, value, hint) {
+  return `<div class="quality-row">
+    <span class="q-name" title="${hint}">${name}</span>
+    <span class="q-bar"><span class="q-fill" style="width:${Math.min(100, value * 100).toFixed(0)}%"></span></span>
+    <span class="q-val">${pct(value, 0)}</span>
+  </div>`;
+}
+
+function renderAlgos() {
+  const q = algoQuality(state);
+  const head = `<div class="quality-box">
+    ${qualityBar('Данные', dataLevel(state), 'Накоплено заказов — это обучающая выборка')}
+    ${qualityBar('Команда', rndLevel(state), 'Накопленные вложения в data science')}
+    ${qualityBar('Качество', q, 'Среднее геометрическое: нужно и то и другое')}
+    <div class="funding-note">Качество алгоритмов = √(данные × команда). Модель без данных не обучишь,
+      а данные без команды никто не превратит в решения. Данные копятся только от выполненных заказов.</div>
+  </div>`;
+
+  const cards = ALGORITHMS.map((a) => {
+    const installed = Boolean(state.installed?.[a.key]);
+    const unlocked = installed || q >= a.unlock;
+    const on = Boolean(state.decisions.algoOn?.[a.key]);
+    const raw = (state.decisions.algoParam?.[a.key] ?? a.param.def * (a.param.scale ?? 1)) / (a.param.scale ?? 1);
+
+    const badge = installed
+      ? '<span class="badge on">внедрён</span>'
+      : unlocked
+        ? `<span class="badge">внедрение ${money(a.install)}</span>`
+        : `<span class="badge">нужно качество ${pct(a.unlock, 0)}</span>`;
+
+    const slider = installed && on ? `<div class="algo-param">
+        <div class="algo-param-head"><span>${a.param.label}</span><b>${raw}${a.param.unit ?? ''}</b></div>
+        <input type="range" data-algo-param="${a.key}"
+          min="${a.param.min}" max="${a.param.max}" step="${a.param.step}" value="${raw}" />
+      </div>` : '';
+
+    const pending = on && !installed && unlocked
+      ? `<div class="algo-tradeoff">Будет внедрён при переходе к следующей неделе: разовые ${money(a.install)}.</div>`
+      : '';
+
+    return `<div class="algo ${!unlocked ? 'locked' : ''} ${on && installed ? 'on' : ''}">
+      <div class="algo-head">
+        <label class="algo-title">
+          <input type="checkbox" data-algo="${a.key}" ${on ? 'checked' : ''} ${unlocked ? '' : 'disabled'} />
+          ${a.name}
+        </label>
+        ${badge}
+      </div>
+      <div class="algo-what">${a.what}</div>
+      ${slider}
+      ${installed && on ? `<div class="algo-tradeoff">${a.tradeoff}</div>` : pending}
+    </div>`;
+  }).join('');
+
+  el('algos').innerHTML = head + cards;
+
+  el('algos').querySelectorAll('[data-algo]').forEach((box) => {
+    box.addEventListener('change', () => {
+      state.decisions.algoOn = { ...state.decisions.algoOn, [box.dataset.algo]: box.checked };
+      renderAlgos();
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  });
+  el('algos').querySelectorAll('[data-algo-param]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const a = ALGORITHMS.find((x) => x.key === input.dataset.algoParam);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [a.key]: Number(input.value) * (a.param.scale ?? 1),
+      };
+      const head = input.parentElement.querySelector('b');
+      if (head) head.textContent = `${input.value}${a.param.unit ?? ''}`;
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  });
 }
 
 // ----------------------------------------------------------------------------
@@ -1824,6 +2273,14 @@ function buildAlerts(r) {
     if (r.ltvCac < 1) alerts.push(['bad', `LTV/CAC = ${r.ltvCac.toFixed(2)}: вы платите за клиента больше, чем он принесёт за всю жизнь.`]);
     else if (r.ltvCac > 3) alerts.push(['good', `LTV/CAC = ${r.ltvCac.toFixed(2)} — привлечение окупается с запасом, есть смысл давить на маркетинг.`]);
   }
+  const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
+  if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
+    alerts.push(['warn', `Data Science стоит ${money(r.decisions.rnd)}/нед, но ни один алгоритм не включён. Команда копит качество (${pct(r.algoQuality, 0)}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.`]);
+  }
+  const ready = ALGORITHMS.filter((a) => !state.installed?.[a.key] && r.algoQuality >= a.unlock);
+  if (ready.length) {
+    alerts.push(['good', `Доступно к внедрению: ${ready.map((a) => a.name).join(', ')}. Качество алгоритмов ${pct(r.algoQuality, 0)}.`]);
+  }
   if (r.profit > 0) alerts.push(['good', `Неделя закрыта в плюс: ${money(r.profit)}.`]);
   return alerts;
 }
@@ -1843,6 +2300,9 @@ function renderReport() {
           <li>Только потом включайте <b>маркетинг</b>: платить за клиента, которому нечего заказать и некому привезти, — самый дорогой способ купить отток.</li>
         </ol>
         Следите за панелью «Юнит-экономика» справа: она пересчитывается прямо во время движения ползунков.
+        <br><br><b>Алгоритмы</b> (динамическое ценообразование, персональные скидки, батчинг) откроются позже:
+        им нужны данные, а данные копятся только от выполненных заказов. Не спешите включать Data Science
+        в первую неделю — платить будете сразу, а получать нечего.
       </div>
     </div>`;
     return;
@@ -1873,6 +2333,8 @@ function renderReport() {
 
   const eventNote = r.event
     ? `<div class="lesson"><b>${r.event.title}.</b> ${r.event.lesson ?? ''}</div>` : '';
+  const installNote = r.installedNow?.length
+    ? `<div class="alert good" style="margin-top:8px">Внедрено: ${r.installedNow.join(', ')} — разовые ${money(r.installCost)}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.</div>` : '';
   const launchNote = r.launched.length
     ? `<div class="alert warn" style="margin-top:8px">Запущены районы: ${r.launched.join(', ')} — разовые затраты ${money(r.launchCost)}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.</div>` : '';
 
@@ -1891,6 +2353,7 @@ function renderReport() {
       ${stat('Прибыль', money(r.profit), `постоянные ${money(r.opex)}`)}
       ${stat('CAC / LTV', r.cac > 0 ? `${num(r.cac)} ₽` : '—', r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : 'маркетинг выключен')}
     </div>
+    ${installNote}
     ${launchNote}
     ${driversHtml}
     ${alertsHtml}
@@ -1948,6 +2411,16 @@ const CHART_TABS = {
     series: (h) => [
       { label: 'Курьеры', data: h.map((r) => r.couriers), color: PALETTE[4] },
       { label: 'Рестораны', data: h.map((r) => r.restaurants), color: PALETTE[5] },
+    ],
+    format: (v) => `${Math.round(v)}`,
+  },
+  algos: {
+    label: 'Алгоритмы',
+    caption: 'Качество алгоритмов = √(данные × команда). Оно растёт медленно и с запозданием: деньги в data science превращаются в прибыль через несколько месяцев, а не на следующей неделе.',
+    series: (h) => [
+      { label: 'Качество, %', data: h.map((r) => (r.algoQuality ?? 0) * 100), color: PALETTE[4] },
+      { label: 'Данные, %', data: h.map((r) => (r.dataLevel ?? 0) * 100), color: PALETTE[1] },
+      { label: 'Команда, %', data: h.map((r) => (r.rndLevel ?? 0) * 100), color: PALETTE[3] },
     ],
     format: (v) => `${Math.round(v)}`,
   },
@@ -2051,8 +2524,9 @@ function renderPnlTab() {
         ${line('Маркетинг', -r.decisions.marketing, 'neg', true)}
         ${line('Подключение ресторанов', -r.decisions.sales, 'neg', true)}
         ${line('Технологии', -r.decisions.tech, 'neg', true)}
+        ${line('Data Science', -(r.decisions.rnd ?? 0), 'neg', true)}
         <tr class="total"><td>Операционная прибыль</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
-        ${r.oneOff > 0 ? line('Разовые расходы (запуск, найм, события)', -r.oneOff, 'neg', true) : ''}
+        ${r.oneOff > 0 ? line('Разовые расходы (запуск, найм, внедрение, события)', -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>Изменение кассы</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table>
@@ -2094,6 +2568,74 @@ function renderDistrictsTab() {
     <p class="funding-note">Множители показывают, во сколько раз фактор меняет частоту заказов относительно эталона (1.00). Их произведение и есть ваш спрос.</p>`;
 }
 
+function renderAlgosTab() {
+  const r = last();
+  const q = algoQuality(state);
+  const impact = r ? algorithmImpact(state) : [];
+  const totalGain = impact.reduce((sum, i) => sum + i.profit, 0);
+  const rndSpend = state.decisions.rnd ?? 0;
+
+  const table = impact.length ? `
+    <table class="data">
+      <thead><tr><th>Алгоритм</th><th>₽ / нед</th><th>Заказы</th><th>Мин</th></tr></thead>
+      <tbody>
+        ${impact.map((i) => `<tr>
+          <td>${i.name}</td>
+          <td class="${i.profit >= 0 ? 'pos' : 'neg'}">${i.profit >= 0 ? '+' : ''}${compact(i.profit)}</td>
+          <td class="${i.orders >= 0 ? 'pos' : 'neg'}">${i.orders >= 0 ? '+' : ''}${compact(i.orders)}</td>
+          <td class="${i.deliveryTime <= 0 ? 'pos' : 'neg'}">${i.deliveryTime >= 0 ? '+' : ''}${i.deliveryTime.toFixed(1)}</td>
+        </tr>`).join('')}
+        <tr class="total">
+          <td>Итого от алгоритмов</td>
+          <td class="${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${compact(totalGain)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr class="total">
+          <td>Стоимость команды</td>
+          <td class="neg">−${compact(rndSpend)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr class="total">
+          <td>Чистый эффект</td>
+          <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:8px">
+      Каждая строка — честный контрфактический расчёт: прошлая неделя пересчитана заново
+      с выключенным алгоритмом, и разница показана здесь. В реальной компании такой ответ
+      стоит нескольких недель A/B-теста.
+    </p>` : `<p class="funding-note">Ни один алгоритм не включён — сравнивать нечего.
+      Начните с бюджета на Data Science: качество алгоритмов растёт как √(данные × команда),
+      а данные копятся только от выполненных заказов.</p>`;
+
+  const zero = impact.filter((i) => Math.abs(i.profit) < 1000);
+  const zeroNote = zero.length ? `<div class="hint-box" style="margin-top:10px">
+    ${zero.map((i) => i.name).join(', ')} сейчас ничего не меняет. Это не поломка:
+    surge включается только при загрузке выше 70%, аллокация — только когда мощности не хватает,
+    а прогноз бесполезен, если вы и так угадываете штат. Алгоритм стоит денег ровно столько же,
+    работает он или нет.</div>` : '';
+
+  return `
+    <p class="funding-note">Качество алгоритмов: <b>${pct(q, 0)}</b>
+      (данные ${pct(dataLevel(state), 0)} × команда ${pct(rndLevel(state), 0)}).
+      Оно определяет и точность каждого алгоритма, и то, какие из них вообще доступны.</p>
+    ${table}
+    ${zeroNote}
+    <h4 style="margin:14px 0 6px;font-size:13px">Чем алгоритм отличается от ползунка</h4>
+    <p class="funding-note">Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда.
+      Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз).
+      Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах.
+      Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса,
+      который для одного числа неразрешим.</p>
+    ${ALGORITHMS.map((a) => `<div style="margin-top:10px">
+      <b style="font-size:12px">${a.name}</b>
+      <div class="funding-note">${a.lesson}</div>
+    </div>`).join('')}
+  `;
+}
+
 function renderHelpTab() {
   return `<div class="help">
     <h4>Что это такое</h4>
@@ -2133,6 +2675,32 @@ function renderHelpTab() {
       <li><b>Запас кассы</b> в неделях — сколько у вас осталось времени на ошибки.</li>
     </ul>
 
+    <h4>Оптимизации второго порядка</h4>
+    <p>Ползунки задают <b>числа</b>. Алгоритмы задают <b>правила</b>: цена = f(загрузка),
+    скидка = f(клиент), штат = f(прогноз). Правило умеет быть разным в разных обстоятельствах —
+    поэтому способно улучшить сразу оба конца компромисса, неразрешимого для одного числа.</p>
+    <div class="formula">качество алгоритмов = √(данные × команда)
+данные  = накопленные заказы / (заказы + 400 000)
+команда = вложения в Data Science / (вложения + 25 млн ₽)</div>
+    <p>Ни данные, ни команда по отдельности не работают. Отсюда естественный порядок:
+    сначала объём, потом алгоритмы. Data Science, купленный до того, как появились заказы, —
+    просто строка расходов.</p>
+    <ul>
+      <li><b>Батчинг</b> повышает число заказов на курьера и снижает ставку за отдельный заказ
+      в связке — но каждый заказ едет дольше.</li>
+      <li><b>Прогноз спроса</b> сам подбирает штат под целевую загрузку; вы выбираете,
+      что важнее — скорость или экономия на курьерах.</li>
+      <li><b>Персональные скидки</b> дают тот же прирост спроса за меньшие деньги.
+      Чем уже охват, тем дешевле — и тем больнее промахи модели.</li>
+      <li><b>Surge</b> зарабатывает не столько надбавкой, сколько сглаживанием пика.
+      Но непредсказуемая цена сама по себе раздражает клиента.</li>
+      <li><b>Аллокация курьеров</b> помогает только при дефиците мощности: при избытке
+      перекос лишь ухудшает сервис в обделённых районах.</li>
+      <li><b>Гибкая комиссия</b> позволяет держать высокую ставку, не теряя партнёров.</li>
+    </ul>
+    <p>Проверяйте их вкладку «Алгоритмы»: там каждая неделя пересчитана заново с выключенным
+    алгоритмом, и видно, сколько он принёс на самом деле. Часто ответ — ноль.</p>
+
     <h4>Как считается финальный счёт</h4>
     <div class="formula">оценка = годовая выручка × мультипликатор
 мультипликатор растёт от темпа роста и рентабельности
@@ -2154,6 +2722,7 @@ function renderRightTab() {
   const content = {
     unit: renderUnitTab,
     pnl: renderPnlTab,
+    algos: renderAlgosTab,
     districts: renderDistrictsTab,
     help: renderHelpTab,
   }[rightTab];
@@ -2251,6 +2820,7 @@ function restart() {
 function renderAll() {
   if (!leversBuilt) buildLevers();
   syncLevers();
+  renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderDistricts();
