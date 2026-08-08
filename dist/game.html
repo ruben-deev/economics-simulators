@@ -94,8 +94,17 @@ button { font-family: inherit; }
   padding: 14px;
   align-items: start;
 }
-@media (max-width: 1400px) { .layout { grid-template-columns: 320px 1fr; } .col-right { grid-column: 1 / -1; } }
-@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+/* На средних экранах правая колонка уходит под центральную, но остаётся во
+   ВТОРОЙ колонке. Растягивать её на всю ширину нельзя: липкая левая колонка
+   не ограничена своей строкой грида и накрывала бы её левый край. */
+@media (max-width: 1400px) {
+  .layout { grid-template-columns: 320px minmax(0, 1fr); }
+  .col-right { grid-column: 2; }
+}
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .col-right { grid-column: auto; }
+}
 
 .panel {
   background: var(--panel);
