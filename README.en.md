@@ -16,6 +16,10 @@ a weekly P&L, and the formulas behind all of it.
 The interface is bilingual — use the **RU / EN** button in the header. The choice is
 remembered between sessions.
 
+> If the link does not open, GitHub Pages is not enabled yet: Settings → Pages →
+> Source: **GitHub Actions**. After that, re-run the "Deploy game to GitHub Pages"
+> workflow once — from then on it publishes on every push.
+
 ## Quick start
 
 The easiest way is to [open the game in your browser](https://ruben-deev.github.io/Foodtech-delivery-game/). Nothing to install.

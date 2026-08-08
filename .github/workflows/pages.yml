@@ -6,6 +6,11 @@
 #
 # Перед публикацией прогоняются тесты и пересобирается dist/game.html,
 # поэтому на сайт физически не может попасть версия, не прошедшая проверки.
+#
+# ВАЖНО: один раз нужно включить Pages вручную —
+#   Settings → Pages → Build and deployment → Source: GitHub Actions
+# Сам workflow этого сделать не может: у GITHUB_TOKEN нет прав создавать
+# Pages-сайт, и без ручного включения шаг configure-pages падает с Not Found.
 
 name: Deploy game to GitHub Pages
 
@@ -59,9 +64,9 @@ jobs:
           cp -r src _site/
           cp dist/game.html _site/dist/
 
+      # Требует, чтобы Pages были включены в настройках репозитория
+      # с источником «GitHub Actions» (см. комментарий вверху файла).
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
