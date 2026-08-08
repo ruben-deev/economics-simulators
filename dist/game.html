@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Доставка: экономический симулятор фудтех-сервиса</title>
+  <style>
+:root {
+  --bg: #0b1120;
+  --panel: #111a2e;
+  --panel-2: #16213a;
+  --line: rgba(148, 163, 184, 0.16);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #4ade80;
+  --accent-2: #60a5fa;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --good: #4ade80;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 20% -10%, #16233d 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  min-height: 100%;
+}
+
+button { font-family: inherit; }
+
+/* ------------------------------- Шапка ---------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(11, 17, 32, 0.9);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo { font-size: 26px; }
+.brand-title { font-weight: 800; letter-spacing: 0.14em; font-size: 15px; }
+.brand-sub { color: var(--muted); font-size: 11px; }
+
+.kpis { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px 10px;
+  min-width: 96px;
+}
+.kpi .k-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.kpi .k-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.kpi .k-delta { font-size: 10px; font-variant-numeric: tabular-nums; }
+.up { color: var(--good); }
+.down { color: var(--bad); }
+.neutral { color: var(--muted); }
+
+.topbar-actions { display: flex; gap: 8px; }
+
+.btn {
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.15s;
+}
+.btn:hover { border-color: rgba(148, 163, 184, 0.4); }
+.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 5px 9px; font-size: 12px; font-weight: 500; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ------------------------------- Сетка ---------------------------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(420px, 1fr) 360px;
+  gap: 14px;
+  padding: 14px;
+  align-items: start;
+}
+@media (max-width: 1400px) { .layout { grid-template-columns: 320px 1fr; } .col-right { grid-column: 1 / -1; } }
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.col-center { display: flex; flex-direction: column; gap: 14px; }
+.col-left { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
+.col-right { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
+@media (max-width: 1400px) { .col-right { position: static; max-height: none; } }
+@media (max-width: 980px) { .col-left { position: static; max-height: none; } }
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 4px 0 10px;
+  font-weight: 700;
+}
+.panel-title.inline { margin: 0; }
+
+/* ------------------------------- Рычаги --------------------------------- */
+.lever { margin-bottom: 14px; }
+.lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.lever-label { font-weight: 600; font-size: 13px; }
+.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
+.lever input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent); }
+.lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
+.lever.open .lever-tip { display: block; }
+.lever-why {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 11px; padding: 0; text-decoration: underline dotted;
+}
+
+/* ------------------------------- Районы --------------------------------- */
+.districts { display: flex; flex-direction: column; gap: 8px; }
+.district {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--panel-2);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.district:hover { border-color: rgba(148, 163, 184, 0.35); }
+.district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
+.district-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.district-name { font-weight: 700; font-size: 13px; }
+.district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }
+.badge {
+  font-size: 10px; padding: 2px 6px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.badge.on { color: var(--good); border-color: rgba(74, 222, 128, 0.4); }
+
+/* ------------------------------ Инвестиции ------------------------------ */
+.funding { display: flex; flex-direction: column; gap: 8px; }
+.funding-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel-2);
+}
+.funding-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+/* ------------------------------- Событие -------------------------------- */
+.event {
+  border-left: 3px solid var(--warn);
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.09), transparent 60%);
+}
+.event h3 { margin: 0 0 6px; font-size: 15px; }
+.event p { margin: 0 0 10px; color: #cbd5e1; line-height: 1.5; }
+.event-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.event-option {
+  flex: 1 1 200px; text-align: left; border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
+}
+.event-option:hover { border-color: var(--warn); }
+.event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
+.event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
+.event-option span { color: var(--muted); font-size: 11px; }
+.lesson {
+  margin-top: 10px; font-size: 11px; color: var(--muted);
+  border-top: 1px dashed var(--line); padding-top: 8px;
+}
+.lesson b { color: var(--warn); }
+
+/* ------------------------------- Отчёт ---------------------------------- */
+.report-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.report-head h3 { margin: 0; font-size: 15px; }
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat .s-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .s-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.stat .s-sub { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.drivers { margin-top: 12px; }
+.driver { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
+.driver .d-name { width: 150px; color: var(--muted); flex-shrink: 0; }
+.driver .d-bar { flex: 1; height: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 4px; position: relative; }
+.driver .d-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.driver .d-val { width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.alerts { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.alert { font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); line-height: 1.45; }
+.alert.bad { border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
+.alert.warn { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
+.alert.good { border-color: rgba(74, 222, 128, 0.4); background: rgba(74, 222, 128, 0.08); }
+
+/* ------------------------------- Графики -------------------------------- */
+.charts-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chart-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.chart-tabs button {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 3px 10px; font-size: 11px; cursor: pointer;
+}
+.chart-tabs button.active { color: var(--text); border-color: var(--accent-2); background: rgba(96, 165, 250, 0.12); }
+#chart { width: 100%; height: 230px; margin-top: 6px; }
+.chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.legend-item i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.chart-caption { color: var(--muted); font-size: 11px; margin-top: 6px; line-height: 1.45; }
+
+/* -------------------------------- Табы ---------------------------------- */
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.tab {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer;
+}
+.tab.active { color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1); }
+.tab-content { font-size: 12px; line-height: 1.5; }
+
+table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+
+.help h4 { margin: 14px 0 6px; font-size: 13px; }
+.help p, .help li { color: #cbd5e1; }
+.help ul { padding-left: 18px; margin: 6px 0; }
+.help code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.formula {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; margin: 6px 0; font-family: ui-monospace, monospace; font-size: 11px; color: #cbd5e1;
+  overflow-x: auto; white-space: pre-wrap;
+}
+
+/* ------------------------------- Модалка -------------------------------- */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(2, 6, 16, 0.8);
+  display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px;
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px; max-width: 620px; width: 100%; max-height: 86vh; overflow-y: auto;
+}
+.modal h2 { margin: 0 0 10px; font-size: 20px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+.score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 14px 0; }
+.hint-box {
+  border: 1px dashed rgba(96, 165, 250, 0.45); background: rgba(96, 165, 250, 0.07);
+  border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;
+}
+.hint-box b { color: var(--accent-2); }
+
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🛵</span>
+      <div>
+        <div class="brand-title">НОВОЕДА</div>
+        <div class="brand-sub">экономический симулятор доставки еды · г. Новоград</div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="topbar-actions">
+      <button id="btn-help" class="btn ghost" title="Как играть">?</button>
+      <button id="btn-restart" class="btn ghost">Заново</button>
+      <button id="btn-next" class="btn primary">Прожить неделю →</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ЛЕВАЯ КОЛОНКА: рычаги -->
+    <aside class="panel col-left">
+      <h2 class="panel-title">Рычаги управления</h2>
+      <div id="levers"></div>
+      <div id="ops-readout"></div>
+
+      <h2 class="panel-title">Покрытие города</h2>
+      <div id="districts" class="districts"></div>
+
+      <h2 class="panel-title">Финансирование</h2>
+      <div id="funding" class="funding"></div>
+    </aside>
+
+    <!-- ЦЕНТР: события, разбор недели, графики -->
+    <section class="col-center">
+      <div id="event-slot"></div>
+      <div id="report-slot"></div>
+      <div class="panel charts">
+        <div class="charts-head">
+          <h2 class="panel-title inline">Динамика</h2>
+          <div class="chart-tabs" id="chart-tabs"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend"></div>
+        <canvas id="chart" height="230"></canvas>
+        <div class="chart-caption" id="chart-caption"></div>
+      </div>
+    </section>
+
+    <!-- ПРАВАЯ КОЛОНКА: аналитика -->
+    <aside class="panel col-right">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="unit">Юнит-экономика</button>
+        <button class="tab" data-tab="pnl">P&amp;L</button>
+        <button class="tab" data-tab="districts">Районы</button>
+        <button class="tab" data-tab="help">Справка</button>
+      </div>
+      <div id="tab-content" class="tab-content"></div>
+    </aside>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script>
+(function () {
+'use strict';
+// ===== src/model/rng.js ==================================================
+// Детерминированный генератор псевдослучайных чисел (mulberry32).
+// Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
+// это важно и для тестов, и для учебных сценариев («у всей группы одинаковый город»).
+
+function hashSeed(str) {
+  const s = String(str);
+  let h = 1779033703 ^ s.length;
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+
+function createRng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashSeed(seed);
+  const rng = () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  rng.state = () => a >>> 0;
+  rng.restore = (s) => { a = s >>> 0; };
+  return rng;
+}
+
+// Случайное число из диапазона
+function between(rng, min, max) {
+  return min + rng() * (max - min);
+}
+
+// Выбор элемента с весами: items = [{weight, ...}]
+function weightedPick(rng, items) {
+  const total = items.reduce((s, i) => s + (i.weight ?? 1), 0);
+  if (total <= 0) return null;
+  let r = rng() * total;
+  for (const item of items) {
+    r -= item.weight ?? 1;
+    if (r <= 0) return item;
+  }
+  return items[items.length - 1];
+}
+
+
+// ===== src/model/config.js ===============================================
+// ============================================================================
+// Параметры мира. Все константы вынесены сюда, чтобы преподаватель мог
+// менять баланс без правки логики симуляции.
+// Денежная единица — рубли, шаг времени — 1 неделя.
+// ============================================================================
+
+const CONFIG = {
+  weeksTotal: 52,          // длительность партии, недель
+  startCash: 50_000_000,   // стартовый капитал (посевной раунд)
+
+  // --- Средний чек ---
+  aovBase: 900,            // средний чек заказа в «среднем» районе, ₽
+  aovIncomeExponent: 0.7,  // насколько чек растёт с доходом района
+
+  // --- Эталонные значения (точка, в которой все коэффициенты равны 1.0) ---
+  refDeliveryFee: 149,     // эталонная стоимость доставки для клиента, ₽
+  refDeliveryTime: 35,     // эталонное время доставки, мин
+  refRestaurants: 80,      // эталонное число ресторанов в районе
+  refMarketingPerUser: 12, // эталонные маркетинговые траты на 1 потенц. клиента в неделю, ₽
+
+  // --- Курьеры ---
+  courierBaseOrders: 95,       // заказов в неделю на курьера при эталонной дистанции
+  courierRefDistanceKm: 3.5,   // эталонное плечо доставки
+  courierMarketWeeklyPay: 14_000, // сколько курьер заработает у конкурента / на другой работе
+  courierHireCost: 3_500,      // разовая стоимость найма и экипировки
+  courierBaseChurn: 0.05,      // базовый недельный отток курьеров
+  courierApplicantsBase: 400,  // максимум откликов в неделю при отличных условиях
+  courierExpectedLoad: 0.75,   // на какую загрузку смены рассчитывает кандидат
+  courierHireThreshold: 0.9,   // отклики начинаются, когда заработок подходит к рыночному
+  courierHireSpan: 0.6,        // насколько «круто» растёт поток откликов сверх порога
+
+  // --- Рестораны ---
+  restaurantRefOrders: 45,     // «нормальный» поток заказов на ресторан в неделю
+  restaurantRefCommission: 0.20,
+  restaurantBaseChurn: 0.015,
+  salesRefBudget: 150_000,     // эталонный недельный бюджет отдела подключения, ₽
+
+  competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
+
+  // --- Клиенты ---
+  customerBaseChurn: 0.07,     // базовый недельный отток клиентов
+  trialRate: 0.05,             // доля «узнавших», пробующих сервис за неделю
+  awarenessDecay: 0.05,        // забывание бренда за неделю
+  awarenessMaxGain: 0.35,      // потолок прироста узнаваемости за неделю
+
+  // --- Операционные издержки ---
+  paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
+  supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
+  supportTechDiscount: 8,      // на сколько ₽ снижает поддержку максимальный уровень техно
+  hqWeeklyBase: 1_200_000,     // офис, разработка, менеджмент, ₽/нед
+  hqPerCourier: 400,           // диспетчеризация и HR на курьера, ₽/нед
+  techSaturation: 40_000_000,  // сколько нужно вложить в технологии для «половины» эффекта
+
+  // --- Инвестиции ---
+  minWeekForFunding: 4,
+  fundingOptions: [20_000_000, 50_000_000, 120_000_000],
+};
+
+// ============================================================================
+// Районы вымышленного города Новоград (~1.4 млн жителей).
+// households — потенциальные клиенты (взрослые, готовые заказывать доставку).
+// ============================================================================
+
+const DISTRICTS = [
+  {
+    id: 'center', name: 'Центр',
+    potential: 130_000, income: 1.35, distanceKm: 2.4, baseTime: 19,
+    elasticity: 1.0, baseFreq: 0.60, competitor: 0.50,
+    restaurantPool: 340, launchCost: 3_000_000, weeklyFixed: 300_000,
+    hint: 'Дорогой, плотный, высокая конкуренция. Лучшая юнит-экономика, но клиента надо отбивать у конкурента.',
+  },
+  {
+    id: 'sever', name: 'Северный',
+    potential: 180_000, income: 1.00, distanceKm: 3.6, baseTime: 23,
+    elasticity: 1.4, baseFreq: 0.45, competitor: 0.35,
+    restaurantPool: 260, launchCost: 2_200_000, weeklyFixed: 260_000,
+    hint: 'Самый большой спальный район. Средний по всем параметрам — основной объём.',
+  },
+  {
+    id: 'zarechie', name: 'Заречье',
+    potential: 150_000, income: 0.90, distanceKm: 5.0, baseTime: 27,
+    elasticity: 1.6, baseFreq: 0.38, competitor: 0.25,
+    restaurantPool: 180, launchCost: 1_800_000, weeklyFixed: 230_000,
+    hint: 'Разбросанная застройка: длинное плечо, курьеры теряют производительность.',
+  },
+  {
+    id: 'univer', name: 'Университетский',
+    potential: 90_000, income: 0.70, distanceKm: 3.0, baseTime: 21,
+    elasticity: 2.2, baseFreq: 0.75, competitor: 0.40,
+    restaurantPool: 120, launchCost: 1_200_000, weeklyFixed: 180_000,
+    hint: 'Студенты: заказывают часто, но крайне чувствительны к цене. Рай для промо, ад для маржи.',
+  },
+  {
+    id: 'promzona', name: 'Промзона',
+    potential: 110_000, income: 0.75, distanceKm: 6.0, baseTime: 31,
+    elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
+    restaurantPool: 90, launchCost: 1_000_000, weeklyFixed: 200_000,
+    hint: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота.',
+  },
+  {
+    id: 'zagorod', name: 'Загородный',
+    potential: 60_000, income: 1.60, distanceKm: 9.0, baseTime: 38,
+    elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
+    restaurantPool: 70, launchCost: 1_600_000, weeklyFixed: 240_000,
+    hint: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
+  },
+];
+
+// ============================================================================
+// Рычаги управления. Описания используются в интерфейсе как обучающие подсказки.
+// ============================================================================
+
+const LEVERS = [
+  {
+    key: 'deliveryFee', label: 'Стоимость доставки', unit: '₽',
+    min: 0, max: 399, step: 10, def: 149,
+    tip: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
+  },
+  {
+    key: 'commissionRate', label: 'Комиссия с ресторана', unit: '%',
+    min: 5, max: 40, step: 1, def: 20, scale: 0.01,
+    tip: 'Главный источник выручки. Высокая комиссия отпугивает рестораны — падает выбор, а вместе с ним и спрос клиентов.',
+  },
+  {
+    key: 'courierPay', label: 'Оплата курьеру за заказ', unit: '₽',
+    min: 60, max: 400, step: 10, def: 180,
+    tip: 'Основная переменная себестоимость. Мало платите — курьеры уходят, растёт время доставки и падает удержание клиентов.',
+  },
+  {
+    key: 'targetCouriers', label: 'Целевой штат курьеров', unit: 'чел',
+    min: 0, max: 4000, step: 50, def: 0,
+    tip: 'Сколько курьеров вы хотите иметь. Нанять получится столько, сколько придёт откликов — а они зависят от заработка курьера.',
+  },
+  {
+    key: 'marketing', label: 'Маркетинг', unit: '₽/нед',
+    min: 0, max: 20_000_000, step: 250_000, def: 0,
+    tip: 'Растит узнаваемость → приток новых клиентов. Работает с убывающей отдачей и «забывается» ~5% в неделю.',
+  },
+  {
+    key: 'promo', label: 'Промо-скидка на заказ', unit: '₽',
+    min: 0, max: 300, step: 10, def: 0,
+    tip: 'Скидка клиенту за ваш счёт. Мгновенно поднимает спрос и убивает маржу — классическая ловушка «покупки роста».',
+  },
+  {
+    key: 'sales', label: 'Подключение ресторанов', unit: '₽/нед',
+    min: 0, max: 5_000_000, step: 100_000, def: 0,
+    tip: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
+  },
+  {
+    key: 'tech', label: 'Технологии и логистика', unit: '₽/нед',
+    min: 0, max: 8_000_000, step: 100_000, def: 0,
+    tip: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
+  },
+];
+
+const DEFAULT_DECISIONS = Object.fromEntries(
+  LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])
+);
+
+
+// ===== src/model/events.js ===============================================
+// ============================================================================
+// Случайные события. Каждое событие возвращает набор модификаторов на неделю.
+// Часть событий требует решения игрока — это точки, где видно цену компромисса.
+// ============================================================================
+
+
+// Нейтральные модификаторы недели
+function neutralModifiers() {
+  return {
+    demandMult: 1,          // множитель спроса
+    capacityMult: 1,        // множитель производительности курьеров
+    courierChurnAdd: 0,     // прибавка к оттоку курьеров
+    courierSupplyMult: 1,   // множитель притока откликов
+    restaurantChurnAdd: 0,  // прибавка к оттоку ресторанов
+    satisfactionAdd: 0,     // прибавка к удовлетворённости клиентов
+    awarenessAdd: 0,        // разовый прирост узнаваемости
+    oneOffCost: 0,          // разовые расходы, ₽
+    variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
+    notes: [],
+  };
+}
+
+// Событие без выбора: effects применяются автоматически.
+// Событие с выбором: options[] — игрок решает до расчёта недели.
+const EVENTS = [
+  {
+    id: 'rain', weight: 10, minWeek: 2,
+    title: 'Затяжные дожди',
+    text: 'Неделю льёт. Люди не хотят выходить из дома — спрос на доставку подскочил, но курьеры едут медленнее и злее.',
+    effects: { demandMult: 1.22, capacityMult: 0.88, courierChurnAdd: 0.02 },
+    lesson: 'Пик спроса при падении пропускной способности — самый частый сценарий провала SLA.',
+  },
+  {
+    id: 'heat', weight: 6, minWeek: 10,
+    title: 'Аномальная жара',
+    text: 'Курьеры на велосипедах выгорают быстрее обычного, часть смен сорвана.',
+    effects: { capacityMult: 0.9, courierChurnAdd: 0.03 },
+    lesson: 'Пропускная способность — это не число курьеров, а число курьеро-часов.',
+  },
+  {
+    id: 'holiday', weight: 7, minWeek: 4,
+    title: 'Длинные выходные',
+    text: 'Праздники: заказов заметно больше, средний чек выше.',
+    effects: { demandMult: 1.3 },
+    lesson: 'Сезонность надо планировать наймом заранее, а не постфактум.',
+  },
+  {
+    id: 'competitor_promo', weight: 9, minWeek: 6,
+    title: 'Конкурент раздаёт промокоды',
+    text: 'Крупный конкурент залил рынок скидками — часть ваших клиентов ушла пробовать.',
+    effects: { demandMult: 0.88, satisfactionAdd: -0.08 },
+    lesson: 'Клиенты в фудтехе почти не лояльны: удержание держится на скорости и ассортименте, а не на бренде.',
+  },
+  {
+    id: 'viral', weight: 5, minWeek: 8,
+    title: 'Вирусный ролик о сервисе',
+    text: 'Блогер снял добрый ролик про вашего курьера. Бесплатная узнаваемость.',
+    effects: { awarenessAdd: 0.06, demandMult: 1.05 },
+    lesson: 'Органический охват снижает CAC, но им нельзя управлять — это не строка бюджета.',
+  },
+  {
+    id: 'outage', weight: 6, minWeek: 5,
+    title: 'Сбой в приложении',
+    text: 'Платёжный шлюз лежал полтора дня. Заказы терялись, поддержка перегружена.',
+    effects: { demandMult: 0.85, satisfactionAdd: -0.12, oneOffCost: 1_200_000 },
+    lesson: 'Технический долг — это тоже строка P&L, просто отложенная.',
+  },
+  {
+    id: 'fuel', weight: 6, minWeek: 6,
+    title: 'Топливо и самокаты подорожали',
+    text: 'Курьеры требуют компенсацию расходов.',
+    effects: { variableCostAdd: 12, courierChurnAdd: 0.02 },
+    lesson: 'Инфляция издержек бьёт по марже мгновенно, а цену клиенту поднять можно не всегда.',
+  },
+  {
+    id: 'food_inspection', weight: 4, minWeek: 12,
+    title: 'Проверка Роспотребнадзора',
+    text: 'Проверяют условия перевозки готовой еды у партнёров.',
+    effects: { restaurantChurnAdd: 0.03, oneOffCost: 800_000 },
+    lesson: 'Регуляторные риски масштабируются вместе с вами.',
+  },
+
+  // --- События с выбором ---
+  {
+    id: 'courier_strike', weight: 7, minWeek: 8,
+    title: 'Курьеры угрожают забастовкой',
+    text: 'Курьерский чат бурлит: ставка за заказ не покрывает пробки и ожидание у ресторана. Требуют разовую доплату.',
+    lesson: 'Труд в гиг-экономике — это рынок, а не ресурс: цена предложения меняется быстрее ваших планов.',
+    options: [
+      {
+        label: 'Выплатить бонус (1,5 млн ₽)',
+        detail: 'Разовые расходы, но отток курьеров резко падает.',
+        effects: { oneOffCost: 1_500_000, courierChurnAdd: -0.02, courierSupplyMult: 1.25 },
+      },
+      {
+        label: 'Проигнорировать',
+        detail: 'Экономим деньги, но теряем людей и скорость.',
+        effects: { courierChurnAdd: 0.10, capacityMult: 0.9 },
+      },
+    ],
+  },
+  {
+    id: 'big_chain', weight: 6, minWeek: 10,
+    title: 'Крупная сеть ресторанов идёт на переговоры',
+    text: 'Сеть из 40 популярных ресторанов готова подключиться, но только на льготной комиссии 10%.',
+    lesson: 'Переговорная сила крупных партнёров — причина, по которой средняя комиссия всегда ниже прайса.',
+    options: [
+      {
+        label: 'Согласиться на 10%',
+        detail: '+40 ресторанов сразу, но комиссия по всему городу просядет.',
+        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.02, demandMult: 1.06 },
+      },
+      {
+        label: 'Держать прайс',
+        detail: 'Маржа сохранена, ассортимент — нет.',
+        effects: { restaurantChurnAdd: 0.01 },
+      },
+    ],
+  },
+  {
+    id: 'investor_pressure', weight: 5, minWeek: 16,
+    title: 'Инвесторы требуют показать рост',
+    text: 'Совет директоров хочет увидеть +25% заказов к следующему кварталу и намекает на агрессивное промо.',
+    lesson: 'Рост, купленный за скидки, исчезает вместе со скидками. Проверьте retention, а не GMV.',
+    options: [
+      {
+        label: 'Залить рынок промо',
+        detail: 'Спрос вверх, маржа вниз, зато оценка компании выше.',
+        effects: { demandMult: 1.18, variableCostAdd: 35, valuationBonus: 0.15 },
+      },
+      {
+        label: 'Отстоять юнит-экономику',
+        detail: 'Инвесторы недовольны, оценка ниже.',
+        effects: { valuationBonus: -0.1 },
+      },
+    ],
+  },
+  {
+    id: 'city_regulation', weight: 4, minWeek: 20,
+    title: 'Мэрия обсуждает регулирование курьеров',
+    text: 'Городу не нравятся самокаты на тротуарах. Обсуждают обязательное страхование курьеров.',
+    lesson: 'Стоимость соответствия регулированию — постоянная, а не переменная: она бьёт по маленьким сильнее.',
+    options: [
+      {
+        label: 'Ввести страховку добровольно',
+        detail: '+8 ₽ к себестоимости заказа, но курьеры довольны и репутация растёт.',
+        effects: { variableCostAdd: 8, courierChurnAdd: -0.02, awarenessAdd: 0.03 },
+      },
+      {
+        label: 'Ждать закона',
+        detail: 'Экономим сейчас, рискуем штрафом позже.',
+        effects: { regulationRisk: true },
+      },
+    ],
+  },
+];
+
+// Выбирает событие недели (или null). Вероятность события ~35%.
+function rollEvent(rng, week, flags = {}) {
+  if (week < 2) return null;
+  if (rng() > 0.35) return null;
+  const pool = EVENTS.filter((e) => week >= (e.minWeek ?? 0));
+  if (flags.regulationRisk) {
+    pool.push({
+      id: 'regulation_fine', weight: 12, title: 'Штраф за нарушение правил перевозки',
+      text: 'Вы решили дождаться закона — закон дождался вас. Городская инспекция выписала штраф.',
+      effects: { oneOffCost: 4_000_000, awarenessAdd: -0.03 },
+      lesson: 'Отложенный риск не исчезает, он лишь накапливает проценты.',
+    });
+  }
+  const picked = weightedPick(rng, pool);
+  return picked ? { ...picked } : null;
+}
+
+// Собирает модификаторы недели из события и выбранной игроком опции
+function applyEvent(mods, event, optionIndex) {
+  if (!event) return mods;
+  const effects = { ...(event.effects ?? {}) };
+  if (event.options && event.options[optionIndex]) {
+    Object.assign(effects, event.options[optionIndex].effects);
+  }
+  for (const [key, value] of Object.entries(effects)) {
+    if (key === 'demandMult' || key === 'capacityMult' || key === 'courierSupplyMult') {
+      mods[key] *= value;
+    } else if (key === 'notes') {
+      continue;
+    } else if (typeof value === 'number' && key in mods) {
+      mods[key] += value;
+    } else {
+      mods[key] = value;
+    }
+  }
+  mods.notes.push(event.title);
+  return mods;
+}
+
+
+// ===== src/model/engine.js ===============================================
+// ============================================================================
+// Ядро симуляции. Чистые функции: step(state) -> {state, report}.
+// Никакой работы с DOM — модуль можно гонять в тестах и в ноутбуке.
+//
+// Смысловая структура модели (её же объясняем игроку):
+//
+//   маркетинг -> узнаваемость -> пробные заказы -> база клиентов (запас)
+//                                                        |
+//   цена, скорость, ассортимент  ------------------> частота заказов
+//                                                        |
+//                                             спрос = база x частота
+//                                                        |
+//                                   пропускная способность курьеров (ограничение)
+//                                                        |
+//                                   выполненные заказы -> выручка -> P&L -> касса
+//
+// Ключевая обратная связь: не хватает курьеров -> растёт время доставки ->
+// падает удовлетворённость -> растёт отток клиентов -> спрос падает.
+// ============================================================================
+
+
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
+
+function districtById(id) {
+  return DISTRICTS.find((d) => d.id === id);
+}
+
+// Средний чек района зависит от уровня дохода
+function aovOf(district) {
+  return CONFIG.aovBase * Math.pow(district.income, CONFIG.aovIncomeExponent);
+}
+
+// Доступный вам рынок района: часть жителей прочно сидит у конкурента.
+// Это потолок охвата — сколько ни трать на маркетинг, всех не заберёшь.
+function reachableOf(district) {
+  return district.potential * (1 - district.competitor * CONFIG.competitorLock);
+}
+
+// ----------------------------------------------------------------------------
+// Начальное состояние
+// ----------------------------------------------------------------------------
+function createInitialState(seed = 'novograd') {
+  const rng = createRng(seed);
+  return {
+    seed,
+    rngState: rng.state(),
+    week: 0,
+    cash: CONFIG.startCash,
+    equity: 1,               // доля основателей, 1.0 = 100%
+    raisedTotal: 0,
+    techStock: 0,
+    couriers: 0,
+    courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
+    decisions: { ...DEFAULT_DECISIONS, districts: [] },
+    districts: Object.fromEntries(
+      DISTRICTS.map((d) => [d.id, {
+        id: d.id,
+        active: false,
+        launchedWeek: null,
+        awareness: 0,
+        customers: 0,
+        restaurants: 0,
+        deliveryTime: d.baseTime,
+        satisfaction: 1,
+      }])
+    ),
+    flags: { commissionDelta: 0, valuationBonus: 0, regulationRisk: false },
+    pendingEvent: null,
+    pendingChoice: null,
+    history: [],
+    over: null,   // 'bankrupt' | 'finished'
+  };
+}
+
+// ----------------------------------------------------------------------------
+// Производные показатели
+// ----------------------------------------------------------------------------
+
+function techLevel(state) {
+  return state.techStock / (state.techStock + CONFIG.techSaturation);
+}
+
+// Заказов в неделю на одного курьера с учётом плеча доставки, технологий и мотивации.
+// Недоплаченный курьер не увольняется мгновенно — он просто работает вполсилы
+// и берёт заказы у конкурента (мультиаппинг). Мораль берётся с лагом в неделю.
+function ordersPerCourier(state, avgDistanceKm, capacityMult = 1) {
+  const t = techLevel(state);
+  const distanceFactor = Math.pow(CONFIG.courierRefDistanceKm / Math.max(0.5, avgDistanceKm), 0.45);
+  const morale = clamp(0.85 + 0.15 * (state.courierMorale ?? 1), 0.75, 1.08);
+  return CONFIG.courierBaseOrders * (1 + 0.35 * t) * distanceFactor * morale * capacityMult;
+}
+
+// Сезонность: годовая волна + новогодний всплеск
+function seasonality(week) {
+  const wave = 1 + 0.10 * Math.sin((2 * Math.PI * (week - 6)) / 52);
+  const newYear = week % 52 >= 50 || week % 52 <= 1 ? 1.15 : 1;
+  return wave * newYear;
+}
+
+// Эффективная комиссия с учётом сделок с сетями
+function effectiveCommission(state, decisions) {
+  return clamp(decisions.commissionRate + state.flags.commissionDelta, 0.02, 0.45);
+}
+
+// ----------------------------------------------------------------------------
+// Главный шаг симуляции
+// ----------------------------------------------------------------------------
+function step(prevState, input = {}) {
+  const state = structuredClone(prevState);
+  if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
+
+  const decisions = { ...state.decisions, ...(input.decisions ?? {}) };
+  state.decisions = decisions;
+
+  const rng = createRng(state.seed);
+  rng.restore(state.rngState);
+
+  const week = state.week + 1;
+
+  // --- 1. Событие недели (было объявлено в конце прошлой недели) ---
+  const mods = neutralModifiers();
+  const event = state.pendingEvent;
+  const choice = input.eventChoice ?? state.pendingChoice ?? 0;
+  applyEvent(mods, event, choice);
+  if (mods.commissionOverrideDelta) state.flags.commissionDelta += mods.commissionOverrideDelta;
+  if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
+  if (mods.regulationRisk) state.flags.regulationRisk = true;
+
+  // --- 2. Запуск и закрытие районов ---
+  const wanted = new Set(decisions.districts ?? []);
+  let launchCost = 0;
+  const launched = [];
+  const closed = [];
+  for (const def of DISTRICTS) {
+    const ds = state.districts[def.id];
+    if (wanted.has(def.id) && !ds.active) {
+      ds.active = true;
+      ds.launchedWeek = week;
+      ds.deliveryTime = def.baseTime;
+      // Часть жителей уже привыкла заказывать еду — стартовое ядро аудитории
+      ds.awareness = Math.max(ds.awareness, 0.02);
+      ds.customers = Math.max(ds.customers, reachableOf(def) * 0.005);
+      launchCost += def.launchCost;
+      launched.push(def.name);
+    } else if (!wanted.has(def.id) && ds.active) {
+      ds.active = false;
+      ds.customers = 0;
+      ds.restaurants = 0;
+      closed.push(def.name);
+    }
+  }
+
+  const activeDefs = DISTRICTS.filter((d) => state.districts[d.id].active);
+  const commission = effectiveCommission(state, decisions);
+  const season = seasonality(week);
+
+  // --- 3. Спрос по районам (время доставки берём прошлой недели — лаг обратной связи) ---
+  const totalPotentialActive = activeDefs.reduce((s, d) => s + d.potential, 0) || 1;
+  const perDistrict = [];
+  let totalDemand = 0;
+
+  for (const def of activeDefs) {
+    const ds = state.districts[def.id];
+    const aov = aovOf(def);
+    const customerPrice = aov + decisions.deliveryFee - decisions.promo;
+    const refPrice = aov + CONFIG.refDeliveryFee;
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(50, customerPrice), def.elasticity), 0.2, 2.5);
+
+    const selRaw = ds.restaurants / (ds.restaurants + 50);
+    const selRef = CONFIG.refRestaurants / (CONFIG.refRestaurants + 50);
+    const selectionFactor = clamp(selRaw / selRef, 0, 1.35);
+
+    const speedFactor = clamp(Math.pow(CONFIG.refDeliveryTime / Math.max(8, ds.deliveryTime), 0.6), 0.4, 1.3);
+
+    const freq = def.baseFreq
+      * priceFactor
+      * Math.pow(speedFactor, 0.5)
+      * Math.pow(Math.max(0.001, selectionFactor), 0.5)
+      * season
+      * mods.demandMult;
+
+    const demand = ds.customers * freq;
+    totalDemand += demand;
+    perDistrict.push({ def, ds, aov, priceFactor, selectionFactor, speedFactor, freq, demand });
+  }
+
+  // --- 4. Пропускная способность курьеров ---
+  const demandWeight = totalDemand > 0 ? totalDemand : 1;
+  const avgDistance = perDistrict.length
+    ? perDistrict.reduce((s, p) => s + p.def.distanceKm * (totalDemand > 0 ? p.demand : p.def.potential), 0)
+      / (totalDemand > 0 ? demandWeight : activeDefs.reduce((s, d) => s + d.potential, 0) || 1)
+    : CONFIG.courierRefDistanceKm;
+
+  const perCourier = ordersPerCourier(state, avgDistance, mods.capacityMult);
+  const capacity = state.couriers * perCourier;
+  const utilization = capacity > 0 ? totalDemand / capacity : (totalDemand > 0 ? 3 : 0);
+  const fillRate = capacity > 0 ? Math.min(1, capacity / Math.max(1e-9, totalDemand)) : 0;
+
+  let orders = 0;
+  let gmv = 0;
+  let paymentBase = 0;
+
+  for (const p of perDistrict) {
+    p.served = p.demand * fillRate;
+    // Новое время доставки: перегрузка кубически бьёт по скорости
+    const congestion = 1 + 0.85 * Math.pow(Math.min(utilization, 2.2), 3);
+    p.newTime = state.couriers > 0
+      ? clamp(p.def.baseTime * congestion * (1 - 0.12 * techLevel(state)), 10, 120)
+      : 120;
+    orders += p.served;
+    gmv += p.served * p.aov;
+    paymentBase += p.served * (p.aov + decisions.deliveryFee - decisions.promo);
+  }
+
+  // --- 5. P&L недели ---
+  const commissionRevenue = gmv * commission;
+  const feeRevenue = orders * decisions.deliveryFee;
+  const netRevenue = commissionRevenue + feeRevenue;
+
+  const courierCost = orders * decisions.courierPay;
+  const promoCost = orders * decisions.promo;
+  const paymentCost = Math.max(0, paymentBase) * CONFIG.paymentFeeRate;
+  const supportCost = orders * Math.max(2,
+    CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state) + mods.variableCostAdd);
+  const variableCost = courierCost + promoCost + paymentCost + supportCost;
+  const contribution = netRevenue - variableCost;
+
+  const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0);
+  const hqCost = CONFIG.hqWeeklyBase + CONFIG.hqPerCourier * state.couriers;
+
+  // --- 6. Курьеры: наём и отток ---
+  // Курьер оценивает не фактический, а ожидаемый заработок: он видит ставку и
+  // рассчитывает набрать хотя бы 60% полной смены. Поэтому у ставки есть «пол».
+  const realizedPerCourier = state.couriers > 0 ? orders / state.couriers : 0;
+  const expectedOrdersPerCourier = Math.max(realizedPerCourier, perCourier * CONFIG.courierExpectedLoad);
+  const courierEarnings = expectedOrdersPerCourier * decisions.courierPay;
+  const attractiveness = courierEarnings / CONFIG.courierMarketWeeklyPay;
+  // Удержание же зависит от фактического заработка: простой злит не меньше низкой ставки.
+  const realizedEarnings = state.couriers > 0
+    ? realizedPerCourier * decisions.courierPay
+    : courierEarnings;
+  const realizedAttractiveness = realizedEarnings / CONFIG.courierMarketWeeklyPay;
+
+  const avgAwareness = activeDefs.length
+    ? activeDefs.reduce((s, d) => s + state.districts[d.id].awareness, 0) / activeDefs.length
+    : 0;
+
+  // Предложение труда: отклики появляются, только когда заработок обгоняет рынок
+  const applicants = CONFIG.courierApplicantsBase
+    * clamp((attractiveness - CONFIG.courierHireThreshold) / CONFIG.courierHireSpan, 0, 1.4)
+    * (1 + 0.6 * avgAwareness)
+    * mods.courierSupplyMult
+    * (activeDefs.length ? 1 : 0);
+
+  const churnRate = clamp(
+    CONFIG.courierBaseChurn
+    + Math.max(0, 1 - realizedAttractiveness) * 0.35
+    + Math.max(0, utilization - 0.9) * 0.35
+    + mods.courierChurnAdd,
+    0, 0.7
+  );
+  state.courierMorale = state.couriers > 0 ? realizedAttractiveness : 1;
+  const courierLeft = state.couriers * churnRate;
+  const target = Math.max(0, Math.round(decisions.targetCouriers));
+  const after = state.couriers - courierLeft;
+  const hires = clamp(target - after, 0, applicants);
+  const hiringCost = hires * CONFIG.courierHireCost;
+  state.couriers = Math.max(0, Math.round(after + hires));
+
+  // --- 7. Рестораны ---
+  const remainingPoolTotal = activeDefs.reduce(
+    (s, d) => s + Math.max(0, d.restaurantPool - state.districts[d.id].restaurants), 0) || 1;
+  const salesPower = clamp(0.35 * Math.pow(decisions.sales / CONFIG.salesRefBudget, 0.6), 0, 0.8);
+  const commissionTerm = clamp(Math.pow(CONFIG.restaurantRefCommission / Math.max(0.02, commission), 0.8), 0.3, 1.6);
+
+  for (const def of activeDefs) {
+    const ds = state.districts[def.id];
+    const p = perDistrict.find((x) => x.def.id === def.id);
+    const served = p ? p.served : 0;
+    const ordersPerRest = ds.restaurants > 0 ? served / ds.restaurants : 0;
+    const volumeTerm = clamp(Math.pow(ordersPerRest / CONFIG.restaurantRefOrders, 0.5), 0, 1.5);
+    const attractR = clamp((0.35 + 0.65 * volumeTerm) * commissionTerm, 0, 1.6);
+
+    const remaining = Math.max(0, def.restaurantPool - ds.restaurants);
+    const share = remaining / remainingPoolTotal;
+    const localSales = salesPower * (activeDefs.length > 1 ? share * activeDefs.length : 1);
+    const newRest = remaining * clamp(localSales * attractR * 0.5, 0, 0.4);
+
+    const restChurn = clamp(CONFIG.restaurantBaseChurn
+      + Math.max(0, 1 - attractR) * 0.12 + mods.restaurantChurnAdd, 0, 0.5);
+
+    ds.restaurants = clamp(ds.restaurants * (1 - restChurn) + newRest, 0, def.restaurantPool);
+    ds.attractR = attractR;
+  }
+
+  // Событие «крупная сеть» добавляет рестораны сразу
+  if (mods.restaurantsAdd && activeDefs.length) {
+    const per = mods.restaurantsAdd / activeDefs.length;
+    for (const def of activeDefs) {
+      const ds = state.districts[def.id];
+      ds.restaurants = Math.min(def.restaurantPool, ds.restaurants + per);
+    }
+  }
+
+  // --- 8. Клиенты: узнаваемость, приток, отток ---
+  let newCustomers = 0;
+  let lostCustomers = 0;
+  let weightedSat = 0;
+
+  for (const p of perDistrict) {
+    const { def, ds } = p;
+    const marketingShare = def.potential / totalPotentialActive;
+    const spendPerUser = (decisions.marketing * marketingShare) / def.potential;
+    const gain = clamp(
+      0.30 * Math.pow(spendPerUser / CONFIG.refMarketingPerUser, 0.55),
+      0, CONFIG.awarenessMaxGain
+    );
+    ds.awareness = clamp(
+      ds.awareness + (1 - ds.awareness) * safe(gain) - ds.awareness * CONFIG.awarenessDecay + mods.awarenessAdd,
+      0, 1
+    );
+
+    const newSpeedFactor = clamp(Math.pow(CONFIG.refDeliveryTime / p.newTime, 0.6), 0.4, 1.3);
+    const lostShare = 1 - fillRate;
+    const satisfaction = clamp(
+      0.35 * newSpeedFactor
+      + 0.25 * Math.min(p.selectionFactor, 1.2)
+      + 0.25 * Math.min(p.priceFactor, 1.3)
+      + 0.15 * (1 - lostShare * 2)
+      + mods.satisfactionAdd,
+      0, 1.4
+    );
+    ds.satisfaction = satisfaction;
+    weightedSat += satisfaction * def.potential;
+
+    const churn = clamp(
+      CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012,
+      0, 0.6
+    );
+    const leaving = ds.customers * churn;
+
+    const untapped = Math.max(0, reachableOf(def) - ds.customers);
+    const trial = untapped * ds.awareness * CONFIG.trialRate
+      * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2);
+    const wom = ds.customers * 0.02 * Math.max(0, satisfaction - 1);
+
+    ds.customers = Math.max(0, ds.customers - leaving + trial + wom);
+    ds.deliveryTime = p.newTime;
+    newCustomers += trial + wom;
+    lostCustomers += leaving;
+    p.satisfaction = satisfaction;
+  }
+
+  // --- 9. Деньги ---
+  const opex = districtFixed + hqCost + decisions.marketing + decisions.sales + decisions.tech;
+  const oneOff = launchCost + hiringCost + (mods.oneOffCost ?? 0);
+  const profit = contribution - opex;
+  state.cash += profit - oneOff;
+  state.techStock += decisions.tech;
+
+  // --- 10. Метрики для интерфейса ---
+  const totalCustomers = activeDefs.reduce((s, d) => s + state.districts[d.id].customers, 0);
+  const totalRestaurants = activeDefs.reduce((s, d) => s + state.districts[d.id].restaurants, 0);
+  const avgDeliveryTime = orders > 0
+    ? perDistrict.reduce((s, p) => s + p.newTime * p.served, 0) / orders
+    : (perDistrict.length ? perDistrict.reduce((s, p) => s + p.newTime, 0) / perDistrict.length : 0);
+
+  const cityMarketOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  const marketShare = orders / cityMarketOrders;
+
+  const cac = newCustomers > 0 ? (decisions.marketing) / newCustomers : 0;
+  const cmPerOrder = orders > 0 ? contribution / orders : 0;
+  // LTV = вклад с заказа x частота x ожидаемое число недель жизни клиента
+  const avgFreq = totalCustomers > 0 ? orders / totalCustomers : 0;
+  const avgChurn = clamp(CONFIG.customerBaseChurn
+    + Math.max(0, 1 - (totalPotentialActive ? weightedSat / totalPotentialActive : 1)) * 0.30, 0.01, 0.6);
+  const ltv = cmPerOrder * avgFreq / avgChurn;
+
+  const wGeo = (key) => {
+    if (!perDistrict.length || totalDemand <= 0) return 1;
+    let acc = 0;
+    for (const p of perDistrict) acc += Math.log(Math.max(1e-6, p[key])) * (p.demand / totalDemand);
+    return Math.exp(acc);
+  };
+
+  const report = {
+    week,
+    orders,
+    demand: totalDemand,
+    lostOrders: Math.max(0, totalDemand - orders),
+    gmv,
+    netRevenue,
+    commissionRevenue,
+    feeRevenue,
+    courierCost,
+    promoCost,
+    paymentCost,
+    supportCost,
+    variableCost,
+    contribution,
+    cmPerOrder,
+    opex,
+    districtFixed,
+    hqCost,
+    oneOff,
+    launchCost,
+    hiringCost,
+    profit,
+    cash: state.cash,
+    couriers: state.couriers,
+    hires,
+    courierLeft,
+    applicants,
+    courierEarnings: state.couriers > 0 ? realizedEarnings : courierEarnings,
+    courierAttractiveness: state.couriers > 0 ? realizedAttractiveness : attractiveness,
+    utilization,
+    fillRate,
+    capacity,
+    perCourier,
+    avgDeliveryTime,
+    customers: totalCustomers,
+    newCustomers,
+    lostCustomers,
+    restaurants: totalRestaurants,
+    marketShare,
+    commission,
+    cac,
+    ltv,
+    ltvCac: cac > 0 ? ltv / cac : null,
+    techLevel: techLevel(state),
+    season,
+    avgPriceFactor: wGeo('priceFactor'),
+    avgSpeedFactor: wGeo('speedFactor'),
+    avgSelectionFactor: wGeo('selectionFactor'),
+    event: event ? { id: event.id, title: event.title, choice, lesson: event.lesson } : null,
+    launched,
+    closed,
+    districts: perDistrict.map((p) => ({
+      id: p.def.id,
+      name: p.def.name,
+      orders: p.served,
+      demand: p.demand,
+      customers: state.districts[p.def.id].customers,
+      penetration: state.districts[p.def.id].customers / reachableOf(p.def),
+      restaurants: state.districts[p.def.id].restaurants,
+      awareness: state.districts[p.def.id].awareness,
+      deliveryTime: p.newTime,
+      satisfaction: p.satisfaction,
+      aov: p.aov,
+      priceFactor: p.priceFactor,
+      selectionFactor: p.selectionFactor,
+      speedFactor: p.speedFactor,
+      contribution: p.served * (p.aov * commission + decisions.deliveryFee
+        - decisions.courierPay - decisions.promo
+        - (p.aov + decisions.deliveryFee - decisions.promo) * CONFIG.paymentFeeRate
+        - Math.max(2, CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state))),
+    })),
+    decisions: { ...decisions, districts: [...(decisions.districts ?? [])] },
+  };
+
+  // --- 11. Завершение недели ---
+  state.week = week;
+  state.history.push(report);
+  state.rngState = rng.state();
+  state.pendingChoice = null;
+  state.pendingEvent = rollEvent(rng, week + 1, state.flags);
+  state.rngState = rng.state();
+
+  if (state.cash < 0) state.over = 'bankrupt';
+  else if (week >= CONFIG.weeksTotal) state.over = 'finished';
+
+  report.valuation = valuation(state);
+  report.equityValue = report.valuation * state.equity;
+
+  return { state, report };
+}
+
+// ----------------------------------------------------------------------------
+// Оценка компании и раунды инвестиций
+// ----------------------------------------------------------------------------
+function valuation(state) {
+  const h = state.history;
+  if (!h.length) return 40_000_000;
+  const last = h[h.length - 1];
+  const netRevenueRunRate = last.netRevenue * 52;
+
+  const tail = h.slice(-4).reduce((s, r) => s + r.orders, 0);
+  const prev = h.slice(-8, -4).reduce((s, r) => s + r.orders, 0);
+  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.5 : 1);
+  const growthScore = clamp(growth - 1, 0, 1);
+
+  const margin = last.netRevenue > 0 ? last.profit / last.netRevenue : -0.5;
+  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
+
+  const multiple = clamp(2.0 + 5 * growthScore + 4 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  const base = netRevenueRunRate * multiple;
+  const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
+  return Math.max(40_000_000, base * bonus);
+}
+
+function fundingOffer(state, amount) {
+  const pre = valuation(state);
+  const dilution = amount / (pre + amount);
+  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+}
+
+function raise(state, amount) {
+  const offer = fundingOffer(state, amount);
+  const next = structuredClone(state);
+  next.cash += amount;
+  next.equity = offer.newEquity;
+  next.raisedTotal += amount;
+  return { state: next, offer };
+}
+
+// ----------------------------------------------------------------------------
+// Разбор недели: раскладываем изменение числа заказов на факторы.
+// ln(orders) = ln(клиенты) + ln(частота) + ln(доля выполненных)
+// ----------------------------------------------------------------------------
+function explain(prev, cur) {
+  if (!prev || !cur) return [];
+  const parts = [
+    ['База клиентов', prev.customers, cur.customers],
+    ['Цена для клиента', prev.avgPriceFactor, cur.avgPriceFactor],
+    ['Скорость доставки', Math.pow(prev.avgSpeedFactor, 0.5), Math.pow(cur.avgSpeedFactor, 0.5)],
+    ['Выбор ресторанов', Math.pow(prev.avgSelectionFactor, 0.5), Math.pow(cur.avgSelectionFactor, 0.5)],
+    ['Сезонность и события', prev.season, cur.season],
+    ['Нехватка курьеров', Math.max(0.01, prev.fillRate), Math.max(0.01, cur.fillRate)],
+  ];
+  return parts
+    .map(([label, a, b]) => ({
+      label,
+      effect: a > 0 && b > 0 ? Math.exp(Math.log(b) - Math.log(a)) - 1 : 0,
+    }))
+    .filter((p) => Math.abs(p.effect) > 0.002)
+    .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
+}
+
+// ----------------------------------------------------------------------------
+// Экономика одного заказа «на салфетке» — считается мгновенно, до расчёта недели.
+// Именно эту таблицу студент должен научиться держать в голове.
+// ----------------------------------------------------------------------------
+function unitEconomics(state, decisions) {
+  const active = DISTRICTS.filter((d) => state.districts[d.id].active);
+  const weights = active.length
+    ? active.map((d) => {
+        const ds = state.districts[d.id];
+        return Math.max(1, ds.customers || d.potential * 0.01);
+      })
+    : [1];
+  const pool = active.length ? active : [DISTRICTS[0]];
+  const wsum = weights.reduce((s, w) => s + w, 0);
+  const aov = pool.reduce((s, d, i) => s + aovOf(d) * weights[i], 0) / wsum;
+
+  const commission = effectiveCommission(state, decisions);
+  const t = techLevel(state);
+
+  const commissionRevenue = aov * commission;
+  const feeRevenue = decisions.deliveryFee;
+  const revenue = commissionRevenue + feeRevenue;
+
+  const courier = decisions.courierPay;
+  const promo = decisions.promo;
+  const payment = (aov + decisions.deliveryFee - decisions.promo) * CONFIG.paymentFeeRate;
+  const support = Math.max(2, CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * t);
+  const variable = courier + promo + payment + support;
+
+  return {
+    aov, commission,
+    commissionRevenue, feeRevenue, revenue,
+    courier, promo, payment, support, variable,
+    contribution: revenue - variable,
+    takeRate: revenue / aov,
+    marginOfGmv: (revenue - variable) / aov,
+  };
+}
+
+// Итоговый счёт партии
+function finalScore(state) {
+  const v = valuation(state);
+  return {
+    valuation: v,
+    equity: state.equity,
+    equityValue: v * state.equity,
+    raised: state.raisedTotal,
+    cash: state.cash,
+    weeks: state.week,
+    bankrupt: state.over === 'bankrupt',
+  };
+}
+
+
+// ===== src/ui/format.js ==================================================
+// Форматирование чисел для интерфейса
+
+const nf = new Intl.NumberFormat('ru-RU');
+
+function num(x, digits = 0) {
+  if (!Number.isFinite(x)) return '—';
+  return x.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function money(x) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(x);
+  const sign = x < 0 ? '−' : '';
+  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} млрд ₽`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} млн ₽`;
+  if (abs >= 1e3) return `${sign}${nf.format(Math.round(abs))} ₽`;
+  return `${sign}${abs.toFixed(0)} ₽`;
+}
+
+function moneyExact(x) {
+  if (!Number.isFinite(x)) return '—';
+  return `${x < 0 ? '−' : ''}${nf.format(Math.round(Math.abs(x)))} ₽`;
+}
+
+function pct(x, digits = 1) {
+  if (!Number.isFinite(x)) return '—';
+  return `${(x * 100).toFixed(digits)}%`;
+}
+
+function signedPct(x, digits = 1) {
+  if (!Number.isFinite(x)) return '—';
+  return `${x > 0 ? '+' : ''}${(x * 100).toFixed(digits)}%`;
+}
+
+function compact(x) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(x);
+  if (abs >= 1e6) return `${(x / 1e6).toFixed(1)} млн`;
+  if (abs >= 1e3) return `${(x / 1e3).toFixed(1)} тыс`;
+  return nf.format(Math.round(x));
+}
+
+
+// ===== src/ui/charts.js ==================================================
+// Минималистичные графики на canvas — без внешних библиотек,
+// чтобы игра открывалась одним файлом и работала офлайн.
+
+const PALETTE = ['#4ade80', '#60a5fa', '#f472b6', '#fbbf24', '#a78bfa', '#22d3ee'];
+
+function niceTicks(min, max, count = 4) {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+    return [min || 0, (min || 0) + 1];
+  }
+  const span = max - min;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(raw) || 1)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
+  const start = Math.floor(min / step) * step;
+  const ticks = [];
+  for (let v = start; v <= max + step * 0.5; v += step) ticks.push(v);
+  return ticks;
+}
+
+/**
+ * series: [{ label, color?, data: number[] }]
+ * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string }
+ */
+function drawLineChart(canvas, series, opts = {}) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 320;
+  const cssH = canvas.clientHeight || 180;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const fmt = opts.format ?? ((v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}к` : String(Math.round(v))));
+  const padL = 52, padR = 10, padT = 16, padB = 22;
+  const w = cssW - padL - padR;
+  const h = cssH - padT - padB;
+
+  const visible = series.filter((s) => s.data && s.data.length);
+  if (!visible.length || visible.every((s) => s.data.length < 1)) {
+    ctx.fillStyle = 'rgba(226,232,240,0.35)';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('нет данных — сыграйте первую неделю', cssW / 2, cssH / 2);
+    return;
+  }
+
+  const n = Math.max(...visible.map((s) => s.data.length));
+  let min = Infinity, max = -Infinity;
+  for (const s of visible) for (const v of s.data) {
+    if (!Number.isFinite(v)) continue;
+    min = Math.min(min, v); max = Math.max(max, v);
+  }
+  if (!Number.isFinite(min)) { min = 0; max = 1; }
+  if (opts.zeroLine) { min = Math.min(min, 0); max = Math.max(max, 0); }
+  if (min === max) { max = min + Math.abs(min || 1) * 0.2 + 1; }
+  const pad = (max - min) * 0.08;
+  min -= pad; max += pad;
+
+  const x = (i) => padL + (n <= 1 ? w / 2 : (i / (n - 1)) * w);
+  const y = (v) => padT + h - ((v - min) / (max - min)) * h;
+
+  // сетка
+  const ticks = niceTicks(min, max, 4);
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (const t of ticks) {
+    if (t < min || t > max) continue;
+    const py = y(t);
+    ctx.strokeStyle = Math.abs(t) < 1e-9 ? 'rgba(148,163,184,0.35)' : 'rgba(148,163,184,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, py + 0.5);
+    ctx.lineTo(padL + w, py + 0.5);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.fillText(fmt(t), padL - 6, py);
+  }
+
+  // ось X — номера недель
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelEvery = Math.max(1, Math.ceil(n / 8));
+  for (let i = 0; i < n; i += labelEvery) {
+    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.fillText(String(i + 1), x(i), padT + h + 6);
+  }
+
+  // линии
+  visible.forEach((s, si) => {
+    ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let started = false;
+    s.data.forEach((v, i) => {
+      if (!Number.isFinite(v)) return;
+      const px = x(i), py = y(v);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // последняя точка
+    const lastIdx = s.data.length - 1;
+    if (lastIdx >= 0 && Number.isFinite(s.data[lastIdx])) {
+      ctx.fillStyle = s.color ?? PALETTE[si % PALETTE.length];
+      ctx.beginPath();
+      ctx.arc(x(lastIdx), y(s.data[lastIdx]), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+function legendHtml(series) {
+  return series.map((s, i) => `<span class="legend-item"><i style="background:${s.color ?? PALETTE[i % PALETTE.length]}"></i>${s.label}</span>`).join('');
+}
+
+
+
+// ===== src/ui/app.js =====================================================
+// ============================================================================
+// Слой интерфейса: состояние партии, отрисовка, обработка ввода.
+// Вся экономика живёт в src/model — здесь только показ и управление.
+// ============================================================================
+
+
+const SAVE_KEY = 'novoeda-save-v1';
+const el = (id) => document.getElementById(id);
+
+let state = null;
+let chartTab = 'orders';
+let rightTab = 'unit';
+let leversBuilt = false;
+
+// ----------------------------------------------------------------------------
+// Сохранение
+// ----------------------------------------------------------------------------
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    return s && s.districts && Array.isArray(s.history) ? s : null;
+  } catch { return null; }
+}
+
+const last = () => state.history[state.history.length - 1] ?? null;
+const prev = () => state.history[state.history.length - 2] ?? null;
+
+// ----------------------------------------------------------------------------
+// KPI в шапке
+// ----------------------------------------------------------------------------
+function kpi(label, value, sub, cls = 'neutral') {
+  return `<div class="kpi">
+    <div class="k-label">${label}</div>
+    <div class="k-value">${value}</div>
+    <div class="k-delta ${cls}">${sub ?? ''}</div>
+  </div>`;
+}
+
+function delta(cur, before) {
+  if (!Number.isFinite(cur) || !Number.isFinite(before) || before === 0) return ['', 'neutral'];
+  const d = cur / before - 1;
+  return [signedPct(d), d > 0.001 ? 'up' : d < -0.001 ? 'down' : 'neutral'];
+}
+
+function renderKpis() {
+  const r = last();
+  const p = prev();
+  const burn = r ? r.opex + r.oneOff - r.contribution : 0;
+  const runway = burn > 0 ? state.cash / burn : Infinity;
+
+  const parts = [
+    kpi('Неделя', `${state.week} / ${CONFIG.weeksTotal}`, r?.event ? '⚡ событие' : 'город Новоград'),
+    kpi('Касса', money(state.cash),
+      Number.isFinite(runway) ? `хватит на ${runway.toFixed(0)} нед.` : 'операционно прибыльны',
+      state.cash < 0 ? 'down' : runway < 8 ? 'down' : runway < 20 ? 'neutral' : 'up'),
+  ];
+
+  if (r) {
+    const [dOrders, cOrders] = delta(r.orders, p?.orders);
+    const [dProfit] = delta(r.profit, p?.profit);
+    parts.push(
+      kpi('Заказы / нед', compact(r.orders), dOrders, cOrders),
+      kpi('Прибыль / нед', money(r.profit), `вклад ${money(r.contribution)}`, r.profit >= 0 ? 'up' : 'down'),
+      kpi('Вклад с заказа', `${num(r.cmPerOrder)} ₽`, `take rate ${pct(r.netRevenue / Math.max(1, r.gmv))}`,
+        r.cmPerOrder >= 0 ? 'up' : 'down'),
+      kpi('Доставка', `${num(r.avgDeliveryTime)} мин`, `загрузка ${pct(r.utilization, 0)}`,
+        r.avgDeliveryTime <= 35 ? 'up' : r.avgDeliveryTime <= 45 ? 'neutral' : 'down'),
+      kpi('Доля рынка', pct(r.marketShare), `${compact(r.customers)} клиентов`, 'neutral'),
+      kpi('Оценка × доля', money(r.equityValue ?? 0), `ваша доля ${pct(state.equity, 1)}`, 'neutral'),
+    );
+  } else {
+    parts.push(kpi('Старт', money(CONFIG.startCash), 'посевной раунд, 100% ваши', 'up'));
+  }
+
+  el('kpis').innerHTML = parts.join('');
+}
+
+// ----------------------------------------------------------------------------
+// Рычаги
+// ----------------------------------------------------------------------------
+function buildLevers() {
+  el('levers').innerHTML = LEVERS.map((l) => `
+    <div class="lever" data-key="${l.key}">
+      <div class="lever-head">
+        <span class="lever-label">${l.label}</span>
+        <span class="lever-value" id="val-${l.key}"></span>
+      </div>
+      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+      <button class="lever-why" type="button">зачем это?</button>
+      <div class="lever-tip">${l.tip}</div>
+    </div>
+  `).join('');
+
+  for (const l of LEVERS) {
+    const input = el(`in-${l.key}`);
+    input.addEventListener('input', () => {
+      state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
+      syncLevers();
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  }
+  el('levers').querySelectorAll('.lever-why').forEach((b) => {
+    b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
+  });
+  leversBuilt = true;
+}
+
+function leverDisplay(l, raw) {
+  if (l.unit === '₽/нед') return money(raw);
+  if (l.unit === '%') return `${raw}%`;
+  if (l.unit === 'чел') return num(raw);
+  return `${num(raw)} ${l.unit}`;
+}
+
+function syncLevers() {
+  for (const l of LEVERS) {
+    const raw = state.decisions[l.key] / (l.scale ?? 1);
+    const input = el(`in-${l.key}`);
+    if (input && document.activeElement !== input) input.value = String(raw);
+    else if (input) input.value = String(raw);
+    el(`val-${l.key}`).textContent = leverDisplay(l, raw);
+  }
+}
+
+// Оперативная сводка под ползунками: сколько курьер заработает и сколько
+// заказов увезёт выбранный штат. Считается мгновенно, до перехода к неделе —
+// именно здесь видно, что ставка ниже рынка означает «никто не выйдет на смену».
+function renderOpsReadout() {
+  const active = DISTRICTS.filter((d) => state.decisions.districts?.includes(d.id));
+  if (!active.length) {
+    el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
+      Ни один район не выбран: заказов не будет. Начните с одного района —
+      запуск списывается разово, а содержание идёт каждую неделю.</div>`;
+    return;
+  }
+  const wsum = active.reduce((s, d) => s + d.potential, 0);
+  const avgDistance = active.reduce((s, d) => s + d.distanceKm * d.potential, 0) / wsum;
+  const perCourier = ordersPerCourier(state, avgDistance);
+  const expected = perCourier * CONFIG.courierExpectedLoad * state.decisions.courierPay;
+  const ratio = expected / CONFIG.courierMarketWeeklyPay;
+  const capacity = state.decisions.targetCouriers * perCourier;
+  const r = last();
+  const demand = r ? r.demand : 0;
+  const util = capacity > 0 ? demand / capacity : null;
+
+  const hiring = ratio >= CONFIG.courierHireThreshold + 0.35 ? ['good', 'очередь из кандидатов']
+    : ratio >= CONFIG.courierHireThreshold + 0.1 ? ['good', 'наём идёт ровно']
+    : ratio >= CONFIG.courierHireThreshold ? ['warn', 'кандидаты идут тонкой струйкой']
+    : ['bad', 'откликов не будет — ставка ниже рынка'];
+
+  // Минимальная ставка, при которой вообще пойдут отклики на этом плече доставки
+  const minPay = Math.ceil(
+    (CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
+    / (CONFIG.courierExpectedLoad * perCourier) / 10) * 10;
+
+  el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
+    <div>Курьер увезёт <b>${num(perCourier)}</b> заказов/нед (плечо ${avgDistance.toFixed(1)} км).</div>
+    <div>Его заработок при 75% загрузки: <b>${money(expected)}</b> против ${money(CONFIG.courierMarketWeeklyPay)} на рынке
+      (<span class="${ratio >= 1 ? 'pos' : 'neg'}">×${ratio.toFixed(2)}</span>) — ${hiring[1]}.</div>
+    <div>Штат ${num(state.decisions.targetCouriers)} чел. увезёт <b>${compact(capacity)}</b> заказов/нед${
+      util !== null && demand > 0 ? `, спрос прошлой недели ${compact(demand)} → загрузка <b class="${util > 1 ? 'neg' : util < 0.55 ? 'neg' : 'pos'}">${pct(util, 0)}</b>` : ''}.</div>
+    ${ratio < CONFIG.courierHireThreshold
+      ? `<div class="neg">Наём начнётся от <b>${num(minPay)} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.</div>`
+      : ''}
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Районы
+// ----------------------------------------------------------------------------
+function renderDistricts() {
+  const chosen = new Set(state.decisions.districts ?? []);
+  el('districts').innerHTML = DISTRICTS.map((d) => {
+    const ds = state.districts[d.id];
+    const on = chosen.has(d.id);
+    const live = ds.active;
+    const stats = live
+      ? `${compact(ds.customers)} клиентов · ${num(ds.restaurants)} ресторанов · ${num(ds.deliveryTime)} мин · охват ${pct(ds.customers / d.potential, 1)}`
+      : `${compact(d.potential)} потенц. клиентов · чек ${num(aovOf(d))} ₽ · плечо ${d.distanceKm} км`;
+    return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
+      <div class="district-head">
+        <span class="district-name">${d.name}</span>
+        <span class="badge ${live ? 'on' : ''}">${live ? 'работает' : `запуск ${money(d.launchCost)}`}</span>
+      </div>
+      <div class="district-meta">${stats}</div>
+      <div class="district-meta">${d.hint}</div>
+    </div>`;
+  }).join('');
+
+  el('districts').querySelectorAll('.district').forEach((node) => {
+    node.addEventListener('click', () => {
+      const id = node.dataset.id;
+      const set = new Set(state.decisions.districts ?? []);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      state.decisions.districts = [...set];
+      renderDistricts();
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Инвестиции
+// ----------------------------------------------------------------------------
+function renderFunding() {
+  const canRaise = state.week >= CONFIG.minWeekForFunding && !state.over;
+  const v = valuation(state);
+  const rows = CONFIG.fundingOptions.map((amount) => {
+    const o = fundingOffer(state, amount);
+    return `<div class="funding-row">
+      <div>
+        <div><b>${money(amount)}</b></div>
+        <div class="funding-note">размытие ${pct(o.dilution, 1)} → ваша доля ${pct(o.newEquity, 1)}</div>
+      </div>
+      <button class="btn small" data-raise="${amount}" ${canRaise ? '' : 'disabled'}>Взять</button>
+    </div>`;
+  }).join('');
+
+  el('funding').innerHTML = `
+    <div class="funding-note">
+      Оценка компании: <b>${money(v)}</b> (pre-money). Ваша доля: <b>${pct(state.equity, 1)}</b>,
+      привлечено: ${money(state.raisedTotal)}.
+    </div>
+    ${rows}
+    <div class="funding-note">
+      Оценка растёт от <i>годовой выручки × мультипликатор</i>. Мультипликатор зависит от темпа роста
+      и рентабельности. Поэтому деньги дешевле брать, когда бизнес уже растёт — но именно тогда они и не нужны.
+      ${state.week < CONFIG.minWeekForFunding ? `<br><b>Раунд доступен с ${CONFIG.minWeekForFunding}-й недели.</b>` : ''}
+    </div>`;
+
+  el('funding').querySelectorAll('[data-raise]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const amount = Number(b.dataset.raise);
+      const { state: next, offer } = raise(state, amount);
+      state = next;
+      save();
+      renderAll();
+      toast(`Раунд закрыт: ${money(amount)} за ${pct(offer.dilution, 1)} компании.`);
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Событие недели
+// ----------------------------------------------------------------------------
+function renderEvent() {
+  const ev = state.pendingEvent;
+  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+
+  const options = ev.options
+    ? `<div class="event-options">${ev.options.map((o, i) => `
+        <button class="event-option ${state.pendingChoice === i ? 'selected' : ''}" data-choice="${i}">
+          <b>${o.label}</b><span>${o.detail}</span>
+        </button>`).join('')}</div>`
+    : '<div class="funding-note">Событие сработает автоматически при переходе к следующей неделе.</div>';
+
+  el('event-slot').innerHTML = `<div class="panel event">
+    <h3>⚡ ${ev.title}</h3>
+    <p>${ev.text}</p>
+    ${options}
+    ${ev.lesson ? `<div class="lesson"><b>Экономический смысл:</b> ${ev.lesson}</div>` : ''}
+  </div>`;
+
+  el('event-slot').querySelectorAll('[data-choice]').forEach((b) => {
+    b.addEventListener('click', () => {
+      state.pendingChoice = Number(b.dataset.choice);
+      renderEvent();
+      save();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Отчёт недели + разбор факторов + предупреждения
+// ----------------------------------------------------------------------------
+function stat(label, value, sub) {
+  return `<div class="stat"><div class="s-label">${label}</div>
+    <div class="s-value">${value}</div><div class="s-sub">${sub ?? ''}</div></div>`;
+}
+
+function buildAlerts(r) {
+  const alerts = [];
+  const burn = r.opex + r.oneOff - r.contribution;
+  const runway = burn > 0 ? state.cash / burn : Infinity;
+
+  if (r.utilization > 1.02) {
+    alerts.push(['bad', `Курьеров не хватает: спрос покрыт на ${pct(r.fillRate, 0)}. Потеряно ${compact(r.lostOrders)} заказов, время доставки выросло до ${num(r.avgDeliveryTime)} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.`]);
+  } else if (r.utilization < 0.55 && r.couriers > 20) {
+    alerts.push(['warn', `Курьеры простаивают (загрузка ${pct(r.utilization, 0)}). Каждый лишний курьер стоит ${num(CONFIG.hqPerCourier)} ₽/нед диспетчеризации, а заработок на человека падает — начнётся отток.`]);
+  }
+  if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
+    const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
+      / (CONFIG.courierExpectedLoad * Math.max(1, r.perCourier)) / 10) * 10;
+    alerts.push(['bad', `Никто не откликнулся на вакансию курьера: при ставке ${num(r.decisions.courierPay)} ₽ и ${num(r.perCourier)} заказах за смену заработок не дотягивает до рыночных ${money(CONFIG.courierMarketWeeklyPay)}. Отклики пойдут примерно от ${num(minPay)} ₽ за заказ.`]);
+  } else if (r.courierAttractiveness < 1) {
+    alerts.push(['warn', `Курьер зарабатывает ${money(r.courierEarnings)}/нед против ${money(CONFIG.courierMarketWeeklyPay)} на рынке. Отток ${pct(r.courierLeft / Math.max(1, r.couriers + r.courierLeft), 0)}, откликов почти нет.`]);
+  }
+  if (r.cmPerOrder < 0) {
+    alerts.push(['bad', `Вклад с заказа отрицательный (${num(r.cmPerOrder)} ₽). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.`]);
+  } else if (r.cmPerOrder > 0 && r.profit < 0) {
+    alerts.push(['warn', `Каждый заказ приносит ${num(r.cmPerOrder)} ₽ вклада, но постоянных расходов на ${money(r.opex)}. Точка безубыточности: ${compact(r.opex / r.cmPerOrder)} заказов в неделю.`]);
+  }
+  if (runway < 8 && state.cash >= 0) {
+    alerts.push(['bad', `Денег на ${runway.toFixed(0)} недель при текущем сжигании ${money(burn)}/нед. Пора резать расходы или привлекать раунд.`]);
+  }
+  if (r.restaurants < 5 && r.decisions.sales === 0) {
+    alerts.push(['bad', 'Ресторанов нет и бюджет на подключение равен нулю. В маркетплейсе предложение первично: пока заказывать нечего, ни один рубль маркетинга не сработает.']);
+  }
+  if (r.decisions.marketing === 0 && r.restaurants > 40) {
+    alerts.push(['warn', `Маркетинг выключен: узнаваемость тает на ${pct(CONFIG.awarenessDecay, 0)} в неделю, приток новых клиентов почти иссяк (+${compact(r.newCustomers)} против −${compact(r.lostCustomers)} ушедших). Ассортимент уже есть — самое время покупать спрос.`]);
+  }
+  if (r.restaurants < 40 && r.customers > 0) {
+    alerts.push(['warn', `Всего ${num(r.restaurants)} ресторанов — ассортимент режет спрос множителем ${r.avgSelectionFactor.toFixed(2)}. Без выбора маркетинг работает вхолостую.`]);
+  }
+  if (r.ltvCac !== null && r.ltvCac !== undefined && Number.isFinite(r.ltvCac) && r.cac > 0) {
+    if (r.ltvCac < 1) alerts.push(['bad', `LTV/CAC = ${r.ltvCac.toFixed(2)}: вы платите за клиента больше, чем он принесёт за всю жизнь.`]);
+    else if (r.ltvCac > 3) alerts.push(['good', `LTV/CAC = ${r.ltvCac.toFixed(2)} — привлечение окупается с запасом, есть смысл давить на маркетинг.`]);
+  }
+  if (r.profit > 0) alerts.push(['good', `Неделя закрыта в плюс: ${money(r.profit)}.`]);
+  return alerts;
+}
+
+function renderReport() {
+  const r = last();
+  if (!r) {
+    el('report-slot').innerHTML = `<div class="panel">
+      <h3 style="margin:0 0 8px">Неделя 0. Город ждёт.</h3>
+      <div class="hint-box">
+        <b>С чего начать.</b> У вас ${money(CONFIG.startCash)} и пустой город.
+        Порядок запуска почти всегда такой:
+        <ol style="margin:6px 0 0 16px;padding:0">
+          <li>Откройте <b>один</b> район (дешевле всего — Промзона, выгоднее всего — Центр).</li>
+          <li>Дайте бюджет на <b>подключение ресторанов</b>: без ассортимента спрос равен нулю.</li>
+          <li>Наймите курьеров под ожидаемый спрос — и проверьте, что заработок курьера выше ${money(CONFIG.courierMarketWeeklyPay)}/нед.</li>
+          <li>Только потом включайте <b>маркетинг</b>: платить за клиента, которому нечего заказать и некому привезти, — самый дорогой способ купить отток.</li>
+        </ol>
+        Следите за панелью «Юнит-экономика» справа: она пересчитывается прямо во время движения ползунков.
+      </div>
+    </div>`;
+    return;
+  }
+
+  const drivers = explain(prev(), r);
+  const maxAbs = Math.max(0.02, ...drivers.map((d) => Math.abs(d.effect)));
+  const driversHtml = drivers.length ? `
+    <div class="drivers">
+      <div class="panel-title">Почему заказы изменились (${signedPct(r.orders / Math.max(1e-9, prev().orders) - 1)})</div>
+      ${drivers.slice(0, 6).map((d) => {
+        const w = (Math.abs(d.effect) / maxAbs) * 50;
+        const pos = d.effect > 0;
+        return `<div class="driver">
+          <span class="d-name">${d.label}</span>
+          <span class="d-bar">
+            <span class="d-fill" style="${pos ? `left:50%;width:${w}%` : `right:50%;width:${w}%`};background:${pos ? 'var(--good)' : 'var(--bad)'}"></span>
+          </span>
+          <span class="d-val ${pos ? 'pos' : 'neg'}">${signedPct(d.effect)}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const alerts = buildAlerts(r);
+  const alertsHtml = alerts.length
+    ? `<div class="alerts">${alerts.map(([k, t]) => `<div class="alert ${k}">${t}</div>`).join('')}</div>`
+    : '';
+
+  const eventNote = r.event
+    ? `<div class="lesson"><b>${r.event.title}.</b> ${r.event.lesson ?? ''}</div>` : '';
+  const launchNote = r.launched.length
+    ? `<div class="alert warn" style="margin-top:8px">Запущены районы: ${r.launched.join(', ')} — разовые затраты ${money(r.launchCost)}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.</div>` : '';
+
+  el('report-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h3>Итоги недели ${r.week}</h3>
+      <span class="funding-note">GMV ${money(r.gmv)} · выручка ${money(r.netRevenue)} · take rate ${pct(r.netRevenue / Math.max(1, r.gmv))}</span>
+    </div>
+    <div class="report-grid">
+      ${stat('Заказы', compact(r.orders), `спрос ${compact(r.demand)}, потеряно ${compact(r.lostOrders)}`)}
+      ${stat('Клиенты', compact(r.customers), `+${compact(r.newCustomers)} / −${compact(r.lostCustomers)}`)}
+      ${stat('Курьеры', num(r.couriers), `+${num(r.hires)} / −${num(r.courierLeft)}, ${num(r.perCourier)} зак/нед`)}
+      ${stat('Рестораны', num(r.restaurants), `выбор ×${r.avgSelectionFactor.toFixed(2)}`)}
+      ${stat('Время доставки', `${num(r.avgDeliveryTime)} мин`, `загрузка ${pct(r.utilization, 0)}`)}
+      ${stat('Вклад с заказа', `${num(r.cmPerOrder)} ₽`, `${pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders)))} от чека`)}
+      ${stat('Прибыль', money(r.profit), `постоянные ${money(r.opex)}`)}
+      ${stat('CAC / LTV', r.cac > 0 ? `${num(r.cac)} ₽` : '—', r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : 'маркетинг выключен')}
+    </div>
+    ${launchNote}
+    ${driversHtml}
+    ${alertsHtml}
+    ${eventNote}
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Графики
+// ----------------------------------------------------------------------------
+const CHART_TABS = {
+  orders: {
+    label: 'Спрос',
+    caption: 'Разрыв между спросом и заказами — это заказы, которые вы не смогли развезти. Он не просто теряет выручку: он портит удержание.',
+    series: (h) => [
+      { label: 'Спрос', data: h.map((r) => r.demand), color: PALETTE[1] },
+      { label: 'Выполнено', data: h.map((r) => r.orders), color: PALETTE[0] },
+    ],
+  },
+  money: {
+    label: 'Деньги',
+    caption: 'Вклад (contribution) = выручка − переменные расходы. Прибыль = вклад − постоянные. Бизнес живёт, когда вклад покрывает постоянные, а не когда растёт GMV.',
+    series: (h) => [
+      { label: 'Выручка', data: h.map((r) => r.netRevenue), color: PALETTE[1] },
+      { label: 'Вклад', data: h.map((r) => r.contribution), color: PALETTE[0] },
+      { label: 'Прибыль', data: h.map((r) => r.profit), color: PALETTE[3] },
+    ],
+    zeroLine: true,
+  },
+  cash: {
+    label: 'Касса',
+    caption: 'Компания умирает не от убытка, а от нуля на счету. Следите за наклоном кривой, а не за её высотой.',
+    series: (h) => [{ label: 'Касса', data: h.map((r) => r.cash), color: PALETTE[2] }],
+    zeroLine: true,
+  },
+  unit: {
+    label: 'Юнит',
+    caption: 'Вклад с одного заказа — главный индикатор здоровья. Если он отрицателен, каждый новый заказ увеличивает убыток.',
+    series: (h) => [{ label: 'Вклад с заказа, ₽', data: h.map((r) => r.cmPerOrder), color: PALETTE[0] }],
+    zeroLine: true,
+    format: (v) => `${Math.round(v)}`,
+  },
+  ops: {
+    label: 'Операции',
+    caption: 'Время доставки — производная от загрузки курьеров. Оно растёт нелинейно: при загрузке выше 90% минуты добавляются лавиной.',
+    series: (h) => [
+      { label: 'Время доставки, мин', data: h.map((r) => r.avgDeliveryTime), color: PALETTE[3] },
+      { label: 'Загрузка, %', data: h.map((r) => r.utilization * 100), color: PALETTE[2] },
+    ],
+    format: (v) => `${Math.round(v)}`,
+  },
+  supply: {
+    label: 'Предложение',
+    caption: 'Курьеры и рестораны — две стороны маркетплейса. Перекос в любую сторону мгновенно бьёт по спросу.',
+    series: (h) => [
+      { label: 'Курьеры', data: h.map((r) => r.couriers), color: PALETTE[4] },
+      { label: 'Рестораны', data: h.map((r) => r.restaurants), color: PALETTE[5] },
+    ],
+    format: (v) => `${Math.round(v)}`,
+  },
+  customers: {
+    label: 'Клиенты',
+    caption: 'База клиентов — это запас, а не поток. Маркетинг наполняет её, недовольство опустошает.',
+    series: (h) => [
+      { label: 'Клиенты', data: h.map((r) => r.customers), color: PALETTE[1] },
+      { label: 'Новые за неделю', data: h.map((r) => r.newCustomers), color: PALETTE[0] },
+      { label: 'Ушли за неделю', data: h.map((r) => r.lostCustomers), color: PALETTE[2] },
+    ],
+  },
+};
+
+function renderChart() {
+  el('chart-tabs').innerHTML = Object.entries(CHART_TABS)
+    .map(([k, v]) => `<button data-chart="${k}" class="${k === chartTab ? 'active' : ''}">${v.label}</button>`).join('');
+  el('chart-tabs').querySelectorAll('[data-chart]').forEach((b) => {
+    b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
+  });
+
+  const conf = CHART_TABS[chartTab];
+  const series = conf.series(state.history);
+  el('chart-legend').innerHTML = legendHtml(series);
+  el('chart-caption').textContent = conf.caption;
+  drawLineChart(el('chart'), series, {
+    zeroLine: conf.zeroLine,
+    format: conf.format ?? ((v) => (Math.abs(v) >= 1e6 ? `${(v / 1e6).toFixed(1)}м` : Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}к` : String(Math.round(v)))),
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Правая колонка
+// ----------------------------------------------------------------------------
+function renderUnitTab() {
+  const u = unitEconomics(state, state.decisions);
+  const r = last();
+  const row = (name, value, cls = '', sub = false) =>
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
+
+  const breakEven = r && u.contribution > 0 ? r.opex / u.contribution : null;
+
+  return `
+    <p class="funding-note">Экономика одного среднего заказа при текущих настройках ползунков — пересчитывается мгновенно, до перехода к следующей неделе.</p>
+    <table class="data">
+      <thead><tr><th>Статья</th><th>₽ / заказ</th><th>% от чека</th></tr></thead>
+      <tbody>
+        <tr><td><b>Средний чек (GMV)</b></td><td><b>${num(u.aov)} ₽</b></td><td>100%</td></tr>
+        ${row(`Комиссия с ресторана (${pct(u.commission, 0)})`, u.commissionRevenue, 'pos', true)}
+        ${row('Плата за доставку', u.feeRevenue, 'pos', true)}
+        <tr class="total"><td>Выручка сервиса</td><td class="pos">${num(u.revenue)} ₽</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
+        ${row('Оплата курьеру', -u.courier, 'neg', true)}
+        ${row('Промо-скидка', -u.promo, 'neg', true)}
+        ${row('Эквайринг', -u.payment, 'neg', true)}
+        ${row('Поддержка и возвраты', -u.support, 'neg', true)}
+        <tr class="total"><td>Вклад с заказа</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:10px">
+      <b>Take rate</b> — доля чека, которая остаётся сервису (${pct(u.takeRate, 1)}). В реальных фудтех-сервисах она
+      обычно 20–30%, а вклад с заказа — единицы процентов от GMV. Именно поэтому отрасль так долго идёт к прибыли.
+    </p>
+    ${breakEven ? `<div class="hint-box" style="margin-top:10px">
+      При постоянных расходах ${money(r.opex)}/нед точка безубыточности —
+      <b>${compact(breakEven)} заказов в неделю</b> (сейчас ${compact(r.orders)}).
+    </div>` : u.contribution <= 0 ? `<div class="hint-box" style="margin-top:10px">
+      Вклад с заказа ≤ 0: точки безубыточности <b>не существует</b> ни при каком объёме.
+      Сначала чините экономику заказа, потом растите.</div>` : ''}
+    ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">Привлечение клиента</h4>
+    <table class="data"><tbody>
+      <tr><td>CAC (маркетинг / новые клиенты)</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>Частота заказов клиента</td><td>${(r.customers > 0 ? r.orders / r.customers : 0).toFixed(2)} / нед</td></tr>
+      <tr><td>LTV (вклад за всё время жизни)</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
+    </tbody></table>
+    <p class="funding-note">Ориентир венчурной индустрии: LTV/CAC ≥ 3. Ниже 1 — вы покупаете убыток.</p>` : ''}
+  `;
+}
+
+function renderPnlTab() {
+  const r = last();
+  if (!r) return '<p class="funding-note">Отчёт появится после первой прожитой недели.</p>';
+  const line = (name, v, cls = '', sub = false) =>
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${moneyExact(v)}</td></tr>`;
+  return `
+    <table class="data">
+      <tbody>
+        <tr><td><b>GMV (оборот)</b></td><td>${moneyExact(r.gmv)}</td></tr>
+        ${line('Комиссия с ресторанов', r.commissionRevenue, 'pos', true)}
+        ${line('Плата за доставку', r.feeRevenue, 'pos', true)}
+        <tr class="total"><td>Выручка</td><td class="pos">${moneyExact(r.netRevenue)}</td></tr>
+        ${line('Оплата курьерам', -r.courierCost, 'neg', true)}
+        ${line('Промо и скидки', -r.promoCost, 'neg', true)}
+        ${line('Эквайринг', -r.paymentCost, 'neg', true)}
+        ${line('Поддержка', -r.supportCost, 'neg', true)}
+        <tr class="total"><td>Вклад (contribution)</td><td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
+        ${line('Содержание районов', -r.districtFixed, 'neg', true)}
+        ${line('Офис, разработка, диспетчеризация', -r.hqCost, 'neg', true)}
+        ${line('Маркетинг', -r.decisions.marketing, 'neg', true)}
+        ${line('Подключение ресторанов', -r.decisions.sales, 'neg', true)}
+        ${line('Технологии', -r.decisions.tech, 'neg', true)}
+        <tr class="total"><td>Операционная прибыль</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
+        ${r.oneOff > 0 ? line('Разовые расходы (запуск, найм, события)', -r.oneOff, 'neg', true) : ''}
+        <tr class="total"><td>Изменение кассы</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:10px">
+      Разделение на <b>переменные</b> и <b>постоянные</b> расходы — не бухгалтерская формальность.
+      Переменные определяют, стоит ли вообще принимать заказ; постоянные — какой масштаб нужен, чтобы выжить.
+    </p>`;
+}
+
+function renderDistrictsTab() {
+  const r = last();
+  if (!r || !r.districts.length) return '<p class="funding-note">Запустите хотя бы один район.</p>';
+  return `
+    <table class="data">
+      <thead><tr><th>Район</th><th>Заказы</th><th>Мин</th><th>Охват</th><th>Вклад</th></tr></thead>
+      <tbody>
+        ${r.districts.map((d) => `<tr>
+          <td>${d.name}</td>
+          <td>${compact(d.orders)}</td>
+          <td>${num(d.deliveryTime)}</td>
+          <td>${pct(d.penetration, 1)}</td>
+          <td class="${d.contribution >= 0 ? 'pos' : 'neg'}">${money(d.contribution)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:8px">Вклад района указан <i>до</i> вычета постоянных расходов на его содержание.</p>
+    <table class="data" style="margin-top:10px">
+      <thead><tr><th>Район</th><th>Цена ×</th><th>Скорость ×</th><th>Выбор ×</th><th>Узнав.</th></tr></thead>
+      <tbody>
+        ${r.districts.map((d) => `<tr>
+          <td>${d.name}</td>
+          <td class="${d.priceFactor >= 1 ? 'pos' : 'neg'}">${d.priceFactor.toFixed(2)}</td>
+          <td class="${d.speedFactor >= 1 ? 'pos' : 'neg'}">${d.speedFactor.toFixed(2)}</td>
+          <td class="${d.selectionFactor >= 1 ? 'pos' : 'neg'}">${d.selectionFactor.toFixed(2)}</td>
+          <td>${pct(d.awareness, 0)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <p class="funding-note">Множители показывают, во сколько раз фактор меняет частоту заказов относительно эталона (1.00). Их произведение и есть ваш спрос.</p>`;
+}
+
+function renderHelpTab() {
+  return `<div class="help">
+    <h4>Что это такое</h4>
+    <p>Вы — операционный директор сервиса доставки еды в городе на 1,4 млн человек. Один ход = одна неделя.
+    Цель за год (52 недели) — построить бизнес, который стоит дорого <i>и</i> в котором вам всё ещё принадлежит большая доля.</p>
+
+    <h4>Как считается спрос</h4>
+    <div class="formula">заказы = клиенты × частота
+частота = базовая × Цена × √Скорость × √Выбор × сезонность
+Цена   = (эталонная цена / ваша цена) ^ эластичность района
+Скорость = (35 мин / ваше время) ^ 0.6
+Выбор  = насыщение по числу подключённых ресторанов</div>
+    <p>Клиенты — это <b>запас</b>: он пополняется пробными заказами (их даёт узнаваемость от маркетинга)
+    и убывает от оттока (его определяет удовлетворённость).</p>
+
+    <h4>Как считается предложение</h4>
+    <div class="formula">пропускная способность = курьеры × заказов на курьера
+заказов на курьера ≈ 95 × (1 + 0.35 × уровень технологий) × (3.5 км / плечо) ^ 0.45
+загрузка = спрос / пропускная способность
+время доставки = базовое × (1 + 0.85 × загрузка³)</div>
+    <p>Куб в формуле — это очередь: при загрузке 100% время доставки почти удваивается.
+    Это главная нелинейность игры и главная причина, по которой доставка ломается внезапно, а не постепенно.</p>
+
+    <h4>Обратные связи, которые вас погубят</h4>
+    <ul>
+      <li><b>Спираль скорости.</b> Мало курьеров → долгая доставка → недовольство → отток клиентов → падение выручки → нечем платить курьерам.</li>
+      <li><b>Спираль промо.</b> Скидка → рост заказов → отрицательный вклад → сжигание кассы → отмена скидки → обвал спроса.</li>
+      <li><b>Спираль комиссии.</b> Подняли комиссию → рестораны уходят → падает выбор → падает спрос → падает выручка с ресторана → уходят ещё.</li>
+      <li><b>Спираль зарплаты.</b> Срезали ставку курьеру → отток курьеров → рост загрузки оставшихся → выгорание → ещё больший отток.</li>
+    </ul>
+
+    <h4>На что смотреть каждую неделю</h4>
+    <ul>
+      <li><b>Вклад с заказа</b> — положителен ли он вообще.</li>
+      <li><b>Загрузка курьеров</b> — держите 70–90%: ниже платите за простой, выше ломаете сроки.</li>
+      <li><b>LTV/CAC</b> — есть ли смысл покупать ещё клиентов.</li>
+      <li><b>Запас кассы</b> в неделях — сколько у вас осталось времени на ошибки.</li>
+    </ul>
+
+    <h4>Как считается финальный счёт</h4>
+    <div class="formula">оценка = годовая выручка × мультипликатор
+мультипликатор растёт от темпа роста и рентабельности
+счёт = оценка × ваша доля</div>
+    <p>Поэтому привлечь много денег — не победа: каждый раунд размывает вашу долю.
+    Выиграет тот, кто дошёл до прибыльности с наименьшим разводнением.</p>
+
+    <h4>Ограничения модели</h4>
+    <p>Это учебная модель, а не прогноз. Конкурент здесь не адаптируется к вашим действиям,
+    рестораны не торгуются индивидуально, а клиенты однородны внутри района.
+    Модель предназначена показать <i>структуру</i> зависимостей, а не предсказать конкретный рынок.</p>
+  </div>`;
+}
+
+function renderRightTab() {
+  el('tabs').querySelectorAll('.tab').forEach((t) => {
+    t.classList.toggle('active', t.dataset.tab === rightTab);
+  });
+  const content = {
+    unit: renderUnitTab,
+    pnl: renderPnlTab,
+    districts: renderDistrictsTab,
+    help: renderHelpTab,
+  }[rightTab];
+  el('tab-content').innerHTML = content();
+}
+
+// ----------------------------------------------------------------------------
+// Модальные окна
+// ----------------------------------------------------------------------------
+function modal(html, actions = []) {
+  const root = el('modal-root');
+  root.innerHTML = `<div class="modal-bg"><div class="modal">${html}
+    <div class="modal-actions">${actions.map((a, i) => `<button class="btn ${a.primary ? 'primary' : 'ghost'}" data-act="${i}">${a.label}</button>`).join('')}</div>
+  </div></div>`;
+  root.querySelectorAll('[data-act]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const a = actions[Number(b.dataset.act)];
+      root.innerHTML = '';
+      a.onClick?.();
+    });
+  });
+}
+
+function toast(text) {
+  const root = el('modal-root');
+  const node = document.createElement('div');
+  node.className = 'alert good';
+  node.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:60;max-width:340px;background:#0f2018';
+  node.textContent = text;
+  root.appendChild(node);
+  setTimeout(() => node.remove(), 3500);
+}
+
+function showGameOver() {
+  const s = finalScore(state);
+  const r = last();
+  const grade = s.bankrupt ? 'Банкротство'
+    : s.equityValue > 3e9 ? 'Отличный результат'
+    : s.equityValue > 1e9 ? 'Крепкий бизнес'
+    : s.equityValue > 3e8 ? 'Выжили' : 'Скромно';
+
+  modal(`
+    <h2>${s.bankrupt ? '💀 Деньги кончились' : '🏁 Год пройден'}</h2>
+    <p class="funding-note">${s.bankrupt
+      ? `Касса ушла в минус на неделе ${s.weeks}. В фудтехе это происходит быстро: постоянные расходы идут каждый день, а вклад с заказа появляется не сразу.`
+      : `52 недели позади. Итоговая оценка компании и ваша доля в ней:`}</p>
+    <div class="score-grid">
+      <div class="stat"><div class="s-label">Оценка компании</div><div class="s-value">${money(s.valuation)}</div></div>
+      <div class="stat"><div class="s-label">Ваша доля</div><div class="s-value">${pct(s.equity, 1)}</div></div>
+      <div class="stat"><div class="s-label">Ваш результат</div><div class="s-value">${money(s.equityValue)}</div></div>
+      <div class="stat"><div class="s-label">Привлечено</div><div class="s-value">${money(s.raised)}</div></div>
+      <div class="stat"><div class="s-label">Касса</div><div class="s-value">${money(s.cash)}</div></div>
+      <div class="stat"><div class="s-label">Оценка результата</div><div class="s-value">${grade}</div></div>
+    </div>
+    ${r ? `<p class="funding-note">Последняя неделя: ${compact(r.orders)} заказов, вклад с заказа ${num(r.cmPerOrder)} ₽,
+      прибыль ${money(r.profit)}, доля рынка ${pct(r.marketShare)}, время доставки ${num(r.avgDeliveryTime)} мин.</p>` : ''}
+    <div class="hint-box" style="margin-top:10px">
+      <b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом —
+      курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?
+    </div>
+  `, [
+    { label: 'Сыграть ещё раз', primary: true, onClick: () => restart() },
+    { label: 'Посмотреть графики', onClick: () => {} },
+  ]);
+}
+
+function showHelp() {
+  modal(`<h2>Как играть</h2>${renderHelpTab()}`, [{ label: 'Понятно', primary: true }]);
+}
+
+// ----------------------------------------------------------------------------
+// Ход игры
+// ----------------------------------------------------------------------------
+function nextWeek() {
+  if (state.over) { showGameOver(); return; }
+  const ev = state.pendingEvent;
+  if (ev && ev.options && state.pendingChoice === null) {
+    toast('Сначала выберите решение по событию недели.');
+    return;
+  }
+  const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });
+  state = next;
+  save();
+  renderAll();
+  if (state.over) showGameOver();
+}
+
+function restart() {
+  const seed = `novograd-${Math.floor(Math.random() * 1e6)}`;
+  state = createInitialState(seed);
+  save();
+  renderAll();
+}
+
+function renderAll() {
+  if (!leversBuilt) buildLevers();
+  syncLevers();
+  renderOpsReadout();
+  renderKpis();
+  renderDistricts();
+  renderFunding();
+  renderEvent();
+  renderReport();
+  renderChart();
+  renderRightTab();
+  el('btn-next').textContent = state.over ? 'Итоги партии' : `Прожить неделю ${state.week + 1} →`;
+}
+
+function init() {
+  state = load() ?? createInitialState('novograd');
+
+  el('btn-next').addEventListener('click', nextWeek);
+  el('btn-help').addEventListener('click', showHelp);
+  el('btn-restart').addEventListener('click', () => {
+    modal('<h2>Начать заново?</h2><p class="funding-note">Текущая партия будет потеряна, город сгенерируется с новым случайным набором событий.</p>',
+      [{ label: 'Да, заново', primary: true, onClick: restart }, { label: 'Отмена' }]);
+  });
+  el('tabs').querySelectorAll('.tab').forEach((t) => {
+    t.addEventListener('click', () => { rightTab = t.dataset.tab; renderRightTab(); });
+  });
+  window.addEventListener('resize', () => renderChart());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextWeek();
+  });
+
+  renderAll();
+  if (state.week === 0) rightTab = 'unit';
+}
+
+
+init();
+})();
+</script>
+</body>
+</html>

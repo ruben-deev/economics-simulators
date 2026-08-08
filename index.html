@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Доставка: экономический симулятор фудтех-сервиса</title>
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🛵</span>
+      <div>
+        <div class="brand-title">НОВОЕДА</div>
+        <div class="brand-sub">экономический симулятор доставки еды · г. Новоград</div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="topbar-actions">
+      <button id="btn-help" class="btn ghost" title="Как играть">?</button>
+      <button id="btn-restart" class="btn ghost">Заново</button>
+      <button id="btn-next" class="btn primary">Прожить неделю →</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ЛЕВАЯ КОЛОНКА: рычаги -->
+    <aside class="panel col-left">
+      <h2 class="panel-title">Рычаги управления</h2>
+      <div id="levers"></div>
+      <div id="ops-readout"></div>
+
+      <h2 class="panel-title">Покрытие города</h2>
+      <div id="districts" class="districts"></div>
+
+      <h2 class="panel-title">Финансирование</h2>
+      <div id="funding" class="funding"></div>
+    </aside>
+
+    <!-- ЦЕНТР: события, разбор недели, графики -->
+    <section class="col-center">
+      <div id="event-slot"></div>
+      <div id="report-slot"></div>
+      <div class="panel charts">
+        <div class="charts-head">
+          <h2 class="panel-title inline">Динамика</h2>
+          <div class="chart-tabs" id="chart-tabs"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend"></div>
+        <canvas id="chart" height="230"></canvas>
+        <div class="chart-caption" id="chart-caption"></div>
+      </div>
+    </section>
+
+    <!-- ПРАВАЯ КОЛОНКА: аналитика -->
+    <aside class="panel col-right">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="unit">Юнит-экономика</button>
+        <button class="tab" data-tab="pnl">P&amp;L</button>
+        <button class="tab" data-tab="districts">Районы</button>
+        <button class="tab" data-tab="help">Справка</button>
+      </div>
+      <div id="tab-content" class="tab-content"></div>
+    </aside>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

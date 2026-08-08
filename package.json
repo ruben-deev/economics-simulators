@@ -1,0 +1,15 @@
+{
+  "name": "novoeda-delivery-simulator",
+  "version": "0.1.0",
+  "description": "Учебный экономический симулятор сервиса доставки еды в городе",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node tools/serve.js",
+    "test": "node --test tests/",
+    "build": "node tools/build.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
