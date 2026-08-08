@@ -1,0 +1,79 @@
+# Публикация игры на GitHub Pages.
+#
+# На сайт выкладываются:
+#   /                 — игра (модульная версия, работает прямо в браузере)
+#   /dist/game.html   — та же игра одним файлом, для раздачи студентам офлайн
+#
+# Перед публикацией прогоняются тесты и пересобирается dist/game.html,
+# поэтому на сайт физически не может попасть версия, не прошедшая проверки.
+
+name: Deploy game to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/delivery-simulator-prototype-qy5zst
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Одновременно идёт только один деплой; новый пуш отменяет незавершённый.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Тесты и сборка
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Тесты модели и перевода
+        run: npm test
+
+      - name: Сборка одного файла
+        run: node tools/build.js
+
+      - name: Проверить, что dist/game.html в репозитории не устарел
+        run: |
+          if ! git diff --quiet -- dist/game.html; then
+            echo "dist/game.html отличается от собранного из текущего исходника."
+            echo "Запустите 'node tools/build.js' и закоммитьте результат."
+            git diff --stat -- dist/game.html
+            exit 1
+          fi
+
+      - name: Собрать содержимое сайта
+        run: |
+          mkdir -p _site/dist
+          cp index.html _site/
+          cp -r src _site/
+          cp dist/game.html _site/dist/
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Публикация
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

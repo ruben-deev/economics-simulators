@@ -2,6 +2,8 @@
 
 *[English version](README.en.md)*
 
+**▶ [Играть онлайн](https://ruben-deev.github.io/Foodtech-delivery-game/)** · офлайн-версия одним файлом: [dist/game.html](https://ruben-deev.github.io/Foodtech-delivery-game/dist/game.html)
+
 Учебная браузерная игра: вы управляете сервисом доставки еды (аналог Яндекс Еды) в вымышленном
 городе Новоград. Каждый ход — одна неделя. Вы двигаете рычаги бизнеса и смотрите, как они
 проходят через модель спроса, предложения и денег.
@@ -14,7 +16,12 @@
 
 ## Быстрый старт
 
-Вариант 1 — один файл, без установки:
+Проще всего — [открыть игру в браузере](https://ruben-deev.github.io/Foodtech-delivery-game/). Ничего ставить не нужно.
+
+Для раздачи студентам офлайн скачайте [dist/game.html](https://ruben-deev.github.io/Foodtech-delivery-game/dist/game.html) — это
+самодостаточный файл, который открывается двойным кликом и работает без сети.
+
+Вариант 1 — собрать этот файл самому:
 
 ```
 node tools/build.js

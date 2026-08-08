@@ -2,6 +2,8 @@
 
 *[Русская версия](README.md)*
 
+**▶ [Play online](https://ruben-deev.github.io/Foodtech-delivery-game/)** · single-file offline build: [dist/game.html](https://ruben-deev.github.io/Foodtech-delivery-game/dist/game.html)
+
 A browser-based teaching game. You run a food delivery service in the fictional city of
 Novograd. Each turn is one week. You move the levers of the business and watch how they
 travel through a model of demand, supply and money.
@@ -16,7 +18,12 @@ remembered between sessions.
 
 ## Quick start
 
-Option 1 — a single file, nothing to install:
+The easiest way is to [open the game in your browser](https://ruben-deev.github.io/Foodtech-delivery-game/). Nothing to install.
+
+To hand it out offline, download [dist/game.html](https://ruben-deev.github.io/Foodtech-delivery-game/dist/game.html) — a self-contained
+file that opens with a double click and works without a network.
+
+Option 1 — build that file yourself:
 
 ```
 node tools/build.js
