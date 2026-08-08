@@ -5,6 +5,8 @@
 // Погоды здесь нет: она действует каждую неделю и живёт в weather.js.
 // Событие — это то, что случается редко и требует реакции; погода —
 // постоянный фон, к которому нужно уметь готовиться заранее.
+//
+// Тексты двуязычны: { ru, en }. Разворачивает их i18n.tx().
 // ============================================================================
 
 import { weightedPick } from './rng.js';
@@ -30,135 +32,232 @@ export function neutralModifiers() {
 export const EVENTS = [
   {
     id: 'holiday', weight: 7, minWeek: 4,
-    title: 'Длинные выходные',
-    text: 'Праздники: заказов заметно больше, средний чек выше.',
+    title: { ru: 'Длинные выходные', en: 'A long holiday weekend' },
+    text: {
+      ru: 'Праздники: заказов заметно больше, средний чек выше.',
+      en: 'Public holidays: noticeably more orders, and a bigger basket on each one.',
+    },
     effects: { demandMult: 1.3 },
-    lesson: 'Сезонность надо планировать наймом заранее, а не постфактум.',
+    lesson: {
+      ru: 'Сезонность надо планировать наймом заранее, а не постфактум.',
+      en: 'Seasonality has to be staffed for in advance, not explained afterwards.',
+    },
   },
   {
     id: 'competitor_promo', weight: 9, minWeek: 6,
-    title: 'Конкурент раздаёт промокоды',
-    text: 'Крупный конкурент залил рынок скидками — часть ваших клиентов ушла пробовать.',
+    title: { ru: 'Конкурент раздаёт промокоды', en: 'A rival floods the city with promo codes' },
+    text: {
+      ru: 'Крупный конкурент залил рынок скидками — часть ваших клиентов ушла пробовать.',
+      en: 'A large competitor has drowned the market in discounts, and some of your customers went to try it.',
+    },
     effects: { demandMult: 0.88, satisfactionAdd: -0.08 },
-    lesson: 'Клиенты в фудтехе почти не лояльны: удержание держится на скорости и ассортименте, а не на бренде.',
+    lesson: {
+      ru: 'Клиенты в фудтехе почти не лояльны: удержание держится на скорости и ассортименте, а не на бренде.',
+      en: 'Food delivery customers are barely loyal: retention rests on speed and selection, not on your brand.',
+    },
   },
   {
     id: 'viral', weight: 5, minWeek: 8,
-    title: 'Вирусный ролик о сервисе',
-    text: 'Блогер снял добрый ролик про вашего курьера. Бесплатная узнаваемость.',
+    title: { ru: 'Вирусный ролик о сервисе', en: 'A video about your service goes viral' },
+    text: {
+      ru: 'Блогер снял добрый ролик про вашего курьера. Бесплатная узнаваемость.',
+      en: 'A blogger filmed a warm story about one of your couriers. Free awareness.',
+    },
     effects: { awarenessAdd: 0.06, demandMult: 1.05 },
-    lesson: 'Органический охват снижает CAC, но им нельзя управлять — это не строка бюджета.',
+    lesson: {
+      ru: 'Органический охват снижает CAC, но им нельзя управлять — это не строка бюджета.',
+      en: 'Organic reach lowers CAC, but you cannot manage it — it is not a budget line.',
+    },
   },
   {
     id: 'outage', weight: 6, minWeek: 5,
-    title: 'Сбой в приложении',
-    text: 'Платёжный шлюз лежал полтора дня. Заказы терялись, поддержка перегружена.',
+    title: { ru: 'Сбой в приложении', en: 'App outage' },
+    text: {
+      ru: 'Платёжный шлюз лежал полтора дня. Заказы терялись, поддержка перегружена.',
+      en: 'The payment gateway was down for a day and a half. Orders were lost and support drowned.',
+    },
     effects: { demandMult: 0.85, satisfactionAdd: -0.12, oneOffCost: 1_200_000 },
-    lesson: 'Технический долг — это тоже строка P&L, просто отложенная.',
+    lesson: {
+      ru: 'Технический долг — это тоже строка P&L, просто отложенная.',
+      en: 'Technical debt is a P&L line too — just a deferred one.',
+    },
   },
   {
     id: 'fuel', weight: 6, minWeek: 6,
-    title: 'Топливо и самокаты подорожали',
-    text: 'Курьеры требуют компенсацию расходов.',
+    title: { ru: 'Топливо и самокаты подорожали', en: 'Fuel and scooters get more expensive' },
+    text: {
+      ru: 'Курьеры требуют компенсацию расходов.',
+      en: 'Couriers are demanding that their costs be covered.',
+    },
     effects: { variableCostAdd: 12, courierChurnAdd: 0.02 },
-    lesson: 'Инфляция издержек бьёт по марже мгновенно, а цену клиенту поднять можно не всегда.',
+    lesson: {
+      ru: 'Инфляция издержек бьёт по марже мгновенно, а цену клиенту поднять можно не всегда.',
+      en: 'Cost inflation hits margin immediately, while raising the customer price is not always an option.',
+    },
   },
   {
     id: 'food_inspection', weight: 4, minWeek: 12,
-    title: 'Проверка Роспотребнадзора',
-    text: 'Проверяют условия перевозки готовой еды у партнёров.',
+    title: { ru: 'Проверка Роспотребнадзора', en: 'Food safety inspection' },
+    text: {
+      ru: 'Проверяют условия перевозки готовой еды у партнёров.',
+      en: 'Inspectors are checking how partners transport prepared food.',
+    },
     effects: { restaurantChurnAdd: 0.03, oneOffCost: 800_000 },
-    lesson: 'Регуляторные риски масштабируются вместе с вами.',
+    lesson: {
+      ru: 'Регуляторные риски масштабируются вместе с вами.',
+      en: 'Regulatory risk scales with you.',
+    },
   },
 
   // --- События с выбором ---
   {
     id: 'courier_strike', weight: 7, minWeek: 8,
-    title: 'Курьеры угрожают забастовкой',
-    text: 'Курьерский чат бурлит: ставка за заказ не покрывает пробки и ожидание у ресторана. Требуют разовую доплату.',
-    lesson: 'Труд в гиг-экономике — это рынок, а не ресурс: цена предложения меняется быстрее ваших планов.',
+    title: { ru: 'Курьеры угрожают забастовкой', en: 'Couriers threaten to strike' },
+    text: {
+      ru: 'Курьерский чат бурлит: ставка за заказ не покрывает пробки и ожидание у ресторана. Требуют разовую доплату.',
+      en: 'The courier chat is boiling over: the per-order rate does not cover traffic and waiting at restaurants. They want a one-off payment.',
+    },
+    lesson: {
+      ru: 'Труд в гиг-экономике — это рынок, а не ресурс: цена предложения меняется быстрее ваших планов.',
+      en: 'Gig labour is a market, not a resource: the price of supply moves faster than your plans do.',
+    },
     options: [
       {
-        label: 'Выплатить бонус (1,5 млн ₽)',
-        detail: 'Разовые расходы, но отток курьеров резко падает.',
+        label: { ru: 'Выплатить бонус (1,5 млн ₽)', en: 'Pay the bonus (₽1.5M)' },
+        detail: {
+          ru: 'Разовые расходы, но отток курьеров резко падает.',
+          en: 'A one-off cost, but courier churn drops sharply.',
+        },
         effects: { oneOffCost: 1_500_000, courierChurnAdd: -0.02, courierSupplyMult: 1.25 },
       },
       {
-        label: 'Проигнорировать',
-        detail: 'Экономим деньги, но теряем людей и скорость.',
+        label: { ru: 'Проигнорировать', en: 'Ignore it' },
+        detail: {
+          ru: 'Экономим деньги, но теряем людей и скорость.',
+          en: 'Saves money, costs you people and speed.',
+        },
         effects: { courierChurnAdd: 0.10, capacityMult: 0.9 },
       },
     ],
   },
   {
     id: 'big_chain', weight: 6, minWeek: 10,
-    title: 'Крупная сеть ресторанов идёт на переговоры',
-    text: 'Сеть из 40 популярных ресторанов готова подключиться, но только на льготной комиссии 10%.',
-    lesson: 'Переговорная сила крупных партнёров — причина, по которой средняя комиссия всегда ниже прайса.',
+    title: { ru: 'Крупная сеть ресторанов идёт на переговоры', en: 'A large restaurant chain comes to the table' },
+    text: {
+      ru: 'Сеть из 40 популярных ресторанов готова подключиться, но только на льготной комиссии 10%.',
+      en: 'A chain of 40 popular restaurants will join — but only at a preferential 10% commission.',
+    },
+    lesson: {
+      ru: 'Переговорная сила крупных партнёров — причина, по которой средняя комиссия всегда ниже прайса.',
+      en: 'The bargaining power of large partners is why your average commission is always below your rate card.',
+    },
     options: [
       {
-        label: 'Согласиться на 10%',
-        detail: '+40 ресторанов сразу, но комиссия по всему городу просядет.',
+        label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
+        detail: {
+          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет.',
+          en: '+40 restaurants at once, but the citywide commission sags.',
+        },
         effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.02, demandMult: 1.06 },
       },
       {
-        label: 'Держать прайс',
-        detail: 'Маржа сохранена, ассортимент — нет.',
+        label: { ru: 'Держать прайс', en: 'Hold your rate card' },
+        detail: {
+          ru: 'Маржа сохранена, ассортимент — нет.',
+          en: 'Margin preserved, selection not so much.',
+        },
         effects: { restaurantChurnAdd: 0.01 },
       },
     ],
   },
   {
     id: 'investor_pressure', weight: 5, minWeek: 16,
-    title: 'Инвесторы требуют показать рост',
-    text: 'Совет директоров хочет увидеть +25% заказов к следующему кварталу и намекает на агрессивное промо.',
-    lesson: 'Рост, купленный за скидки, исчезает вместе со скидками. Проверьте retention, а не GMV.',
+    title: { ru: 'Инвесторы требуют показать рост', en: 'Investors demand growth' },
+    text: {
+      ru: 'Совет директоров хочет увидеть +25% заказов к следующему кварталу и намекает на агрессивное промо.',
+      en: 'The board wants orders up 25% by next quarter and is hinting at aggressive promotions.',
+    },
+    lesson: {
+      ru: 'Рост, купленный за скидки, исчезает вместе со скидками. Проверьте retention, а не GMV.',
+      en: 'Growth bought with discounts disappears with the discounts. Check retention, not GMV.',
+    },
     options: [
       {
-        label: 'Залить рынок промо',
-        detail: 'Спрос вверх, маржа вниз, зато оценка компании выше.',
+        label: { ru: 'Залить рынок промо', en: 'Flood the market with promos' },
+        detail: {
+          ru: 'Спрос вверх, маржа вниз, зато оценка компании выше.',
+          en: 'Demand up, margin down, valuation up.',
+        },
         effects: { demandMult: 1.18, variableCostAdd: 35, valuationBonus: 0.15 },
       },
       {
-        label: 'Отстоять юнит-экономику',
-        detail: 'Инвесторы недовольны, оценка ниже.',
+        label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
+        detail: {
+          ru: 'Инвесторы недовольны, оценка ниже.',
+          en: 'Investors are unhappy and the valuation suffers.',
+        },
         effects: { valuationBonus: -0.1 },
       },
     ],
   },
   {
     id: 'city_regulation', weight: 4, minWeek: 20,
-    title: 'Мэрия обсуждает регулирование курьеров',
-    text: 'Городу не нравятся самокаты на тротуарах. Обсуждают обязательное страхование курьеров.',
-    lesson: 'Стоимость соответствия регулированию — постоянная, а не переменная: она бьёт по маленьким сильнее.',
+    title: { ru: 'Мэрия обсуждает регулирование курьеров', en: 'City hall debates courier regulation' },
+    text: {
+      ru: 'Городу не нравятся самокаты на тротуарах. Обсуждают обязательное страхование курьеров.',
+      en: 'The city dislikes scooters on pavements and is discussing mandatory courier insurance.',
+    },
+    lesson: {
+      ru: 'Стоимость соответствия регулированию — постоянная, а не переменная: она бьёт по маленьким сильнее.',
+      en: 'Compliance cost is fixed, not variable — which is why it hurts small players hardest.',
+    },
     options: [
       {
-        label: 'Ввести страховку добровольно',
-        detail: '+8 ₽ к себестоимости заказа, но курьеры довольны и репутация растёт.',
+        label: { ru: 'Ввести страховку добровольно', en: 'Introduce insurance voluntarily' },
+        detail: {
+          ru: '+8 ₽ к себестоимости заказа, но курьеры довольны и репутация растёт.',
+          en: '+₽8 per order, but couriers are happy and your reputation grows.',
+        },
         effects: { variableCostAdd: 8, courierChurnAdd: -0.02, awarenessAdd: 0.03 },
       },
       {
-        label: 'Ждать закона',
-        detail: 'Экономим сейчас, рискуем штрафом позже.',
+        label: { ru: 'Ждать закона', en: 'Wait for the law' },
+        detail: {
+          ru: 'Экономим сейчас, рискуем штрафом позже.',
+          en: 'Save now, risk a fine later.',
+        },
         effects: { regulationRisk: true },
       },
     ],
   },
 ];
 
+// Штраф прилетает только тем, кто решил дождаться закона
+const REGULATION_FINE = {
+  id: 'regulation_fine', weight: 12,
+  title: { ru: 'Штраф за нарушение правил перевозки', en: 'Fine for breaching transport rules' },
+  text: {
+    ru: 'Вы решили дождаться закона — закон дождался вас. Городская инспекция выписала штраф.',
+    en: 'You decided to wait for the law. The law waited for you: the city inspectorate has issued a fine.',
+  },
+  effects: { oneOffCost: 4_000_000, awarenessAdd: -0.03 },
+  lesson: {
+    ru: 'Отложенный риск не исчезает, он лишь накапливает проценты.',
+    en: 'Deferred risk does not disappear, it only accrues interest.',
+  },
+};
+
+export function eventById(id) {
+  if (id === REGULATION_FINE.id) return REGULATION_FINE;
+  return EVENTS.find((e) => e.id === id) ?? null;
+}
+
 // Выбирает событие недели (или null). Вероятность события ~35%.
 export function rollEvent(rng, week, flags = {}) {
   if (week < 2) return null;
   if (rng() > 0.35) return null;
   const pool = EVENTS.filter((e) => week >= (e.minWeek ?? 0));
-  if (flags.regulationRisk) {
-    pool.push({
-      id: 'regulation_fine', weight: 12, title: 'Штраф за нарушение правил перевозки',
-      text: 'Вы решили дождаться закона — закон дождался вас. Городская инспекция выписала штраф.',
-      effects: { oneOffCost: 4_000_000, awarenessAdd: -0.03 },
-      lesson: 'Отложенный риск не исчезает, он лишь накапливает проценты.',
-    });
-  }
+  if (flags.regulationRisk) pool.push(REGULATION_FINE);
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
@@ -181,6 +280,6 @@ export function applyEvent(mods, event, optionIndex) {
       mods[key] = value;
     }
   }
-  mods.notes.push(event.title);
+  mods.notes.push(event.id);
   return mods;
 }

@@ -41,7 +41,7 @@ export function drawLineChart(canvas, series, opts = {}) {
     ctx.fillStyle = 'rgba(226,232,240,0.35)';
     ctx.font = '12px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('нет данных — сыграйте первую неделю', cssW / 2, cssH / 2);
+    ctx.fillText(opts.emptyText ?? '', cssW / 2, cssH / 2);
     return;
   }
 

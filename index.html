@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Доставка: экономический симулятор фудтех-сервиса</title>
+  <title>НОВОЕДА · food delivery economics simulator</title>
   <link rel="stylesheet" href="./src/styles.css" />
 </head>
 <body>
@@ -11,32 +11,33 @@
     <div class="brand">
       <span class="logo">🛵</span>
       <div>
-        <div class="brand-title">НОВОЕДА</div>
-        <div class="brand-sub">экономический симулятор доставки еды · г. Новоград</div>
+        <div class="brand-title" id="brand-title"></div>
+        <div class="brand-sub" id="brand-sub"></div>
       </div>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="topbar-actions">
-      <button id="btn-help" class="btn ghost" title="Как играть">?</button>
-      <button id="btn-restart" class="btn ghost">Заново</button>
-      <button id="btn-next" class="btn primary">Прожить неделю →</button>
+      <button id="btn-lang" class="btn ghost"></button>
+      <button id="btn-help" class="btn ghost">?</button>
+      <button id="btn-restart" class="btn ghost"></button>
+      <button id="btn-next" class="btn primary"></button>
     </div>
   </header>
 
   <main class="layout">
     <!-- ЛЕВАЯ КОЛОНКА: рычаги -->
     <aside class="panel col-left">
-      <h2 class="panel-title">Рычаги управления</h2>
+      <h2 class="panel-title" id="title-levers"></h2>
       <div id="levers"></div>
       <div id="ops-readout"></div>
 
-      <h2 class="panel-title">Алгоритмы и данные</h2>
+      <h2 class="panel-title" id="title-algos"></h2>
       <div id="algos"></div>
 
-      <h2 class="panel-title">Покрытие города</h2>
+      <h2 class="panel-title" id="title-coverage"></h2>
       <div id="districts" class="districts"></div>
 
-      <h2 class="panel-title">Финансирование</h2>
+      <h2 class="panel-title" id="title-funding"></h2>
       <div id="funding" class="funding"></div>
     </aside>
 
@@ -47,7 +48,7 @@
       <div id="report-slot"></div>
       <div class="panel charts">
         <div class="charts-head">
-          <h2 class="panel-title inline">Динамика</h2>
+          <h2 class="panel-title inline" id="title-dynamics"></h2>
           <div class="chart-tabs" id="chart-tabs"></div>
         </div>
         <div class="chart-legend" id="chart-legend"></div>
@@ -59,11 +60,11 @@
     <!-- ПРАВАЯ КОЛОНКА: аналитика -->
     <aside class="panel col-right">
       <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="unit">Юнит-экономика</button>
-        <button class="tab" data-tab="pnl">P&amp;L</button>
-        <button class="tab" data-tab="algos">Алгоритмы</button>
-        <button class="tab" data-tab="districts">Районы</button>
-        <button class="tab" data-tab="help">Справка</button>
+        <button class="tab active" data-tab="unit"></button>
+        <button class="tab" data-tab="pnl"></button>
+        <button class="tab" data-tab="algos"></button>
+        <button class="tab" data-tab="districts"></button>
+        <button class="tab" data-tab="help"></button>
       </div>
       <div id="tab-content" class="tab-content"></div>
     </aside>

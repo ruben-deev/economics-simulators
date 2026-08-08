@@ -182,12 +182,12 @@ export function step(prevState, input = {}) {
       ds.awareness = Math.max(ds.awareness, 0.02);
       ds.customers = Math.max(ds.customers, reachableOf(def) * 0.005);
       launchCost += def.launchCost;
-      launched.push(def.name);
+      launched.push(def.id);
     } else if (!wanted.has(def.id) && ds.active) {
       ds.active = false;
       ds.customers = 0;
       ds.restaurants = 0;
-      closed.push(def.name);
+      closed.push(def.id);
     }
   }
 
@@ -209,7 +209,7 @@ export function step(prevState, input = {}) {
     if (decisions.algoOn?.[a.key] && !state.installed[a.key] && quality >= a.unlock) {
       state.installed[a.key] = true;
       installCost += a.install;
-      installedNow.push(a.name);
+      installedNow.push(a.key);
     }
   }
   // Интенсивность алгоритма: 0 = выключен или недоступен
@@ -644,12 +644,11 @@ export function step(prevState, input = {}) {
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),
-    event: event ? { id: event.id, title: event.title, choice, lesson: event.lesson } : null,
+    event: event ? { id: event.id, choice } : null,
     launched,
     closed,
     districts: perDistrict.map((p) => ({
       id: p.def.id,
-      name: p.def.name,
       orders: p.served,
       demand: p.demand,
       customers: state.districts[p.def.id].customers,
@@ -717,8 +716,6 @@ export function algorithmImpact(state) {
     if (!alt) continue;
     out.push({
       key: a.key,
-      name: a.name,
-      short: a.short,
       profit: actual.profit - alt.profit,
       orders: actual.orders - alt.orders,
       deliveryTime: actual.avgDeliveryTime - alt.avgDeliveryTime,
@@ -773,17 +770,18 @@ export function raise(state, amount) {
 // ----------------------------------------------------------------------------
 export function explain(prev, cur) {
   if (!prev || !cur) return [];
+  // Возвращаем ключи, а не текст: подпись подставит слой интерфейса
   const parts = [
-    ['База клиентов', prev.customers, cur.customers],
-    ['Цена для клиента', prev.avgPriceFactor, cur.avgPriceFactor],
-    ['Скорость доставки', Math.pow(prev.avgSpeedFactor, 0.5), Math.pow(cur.avgSpeedFactor, 0.5)],
-    ['Выбор ресторанов', Math.pow(prev.avgSelectionFactor, 0.5), Math.pow(cur.avgSelectionFactor, 0.5)],
-    ['Сезонность и события', prev.season, cur.season],
-    ['Нехватка курьеров', Math.max(0.01, prev.fillRate), Math.max(0.01, cur.fillRate)],
+    ['driverCustomers', prev.customers, cur.customers],
+    ['driverPrice', prev.avgPriceFactor, cur.avgPriceFactor],
+    ['driverSpeed', Math.pow(prev.avgSpeedFactor, 0.5), Math.pow(cur.avgSpeedFactor, 0.5)],
+    ['driverSelection', Math.pow(prev.avgSelectionFactor, 0.5), Math.pow(cur.avgSelectionFactor, 0.5)],
+    ['driverSeason', prev.season * prev.weatherDemandMult, cur.season * cur.weatherDemandMult],
+    ['driverFill', Math.max(0.01, prev.fillRate), Math.max(0.01, cur.fillRate)],
   ];
   return parts
-    .map(([label, a, b]) => ({
-      label,
+    .map(([key, a, b]) => ({
+      key,
       effect: a > 0 && b > 0 ? Math.exp(Math.log(b) - Math.log(a)) - 1 : 0,
     }))
     .filter((p) => Math.abs(p.effect) > 0.002)

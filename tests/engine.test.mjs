@@ -211,7 +211,7 @@ test('разбор недели раскладывает изменение за
   const parts = explain(reports.at(-2), reports.at(-1));
   assert.ok(Array.isArray(parts));
   for (const p of parts) {
-    assert.equal(typeof p.label, 'string');
+    assert.equal(typeof p.key, 'string');
     assert.ok(Number.isFinite(p.effect));
   }
 });
@@ -225,7 +225,7 @@ test('игра завершается ровно через заданное ч�
 test('запуск района списывает разовую стоимость', () => {
   let state = createInitialState('launch');
   const res = step(state, { decisions: baseDecisions({ districts: ['center', 'univer'] }), eventChoice: 0 });
-  assert.equal(res.report.launched.length, 2);
+  assert.deepEqual(res.report.launched, ['center', 'univer']);
   assert.equal(res.report.launchCost, 3_000_000 + 1_200_000);
 });
 
@@ -308,7 +308,7 @@ test('алгоритм недоступен без качества и опла�
   const a = step(warm, { decisions: algoDecisions({ batching: 0.5 }), eventChoice: 0 });
   assert.equal(a.report.algoActive.batching, true);
   assert.ok(a.report.installCost > 0);
-  assert.deepEqual(a.report.installedNow, ['Объединение заказов']);
+  assert.deepEqual(a.report.installedNow, ['batching']);
   const b = step(a.state, { decisions: algoDecisions({ batching: 0.5 }), eventChoice: 0 });
   assert.equal(b.report.installCost, 0);
   assert.equal(b.report.algoActive.batching, true);

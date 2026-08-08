@@ -14,6 +14,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Порядок важен: зависимость должна идти раньше того, кто её использует.
 const MODULES = [
+  'src/i18n.js',
   'src/model/rng.js',
   'src/model/config.js',
   'src/model/weather.js',
@@ -47,16 +48,41 @@ function stripModuleSyntax(source) {
   return out.join('\n');
 }
 
+// Склейка модулей в одну область видимости ловит только одинаковые имена
+// на верхнем уровне — проверяем их заранее, иначе поломка всплывёт в браузере.
+function checkCollisions(chunks) {
+  const seen = new Map();
+  const clashes = [];
+  const declaration = /^(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/;
+  for (const { rel, code } of chunks) {
+    for (const line of code.split('\n')) {
+      const m = declaration.exec(line);
+      if (!m) continue;
+      const name = m[1];
+      if (seen.has(name)) clashes.push(`${name}: ${seen.get(name)} и ${rel}`);
+      else seen.set(name, rel);
+    }
+  }
+  if (clashes.length) {
+    throw new Error(`Одинаковые имена на верхнем уровне разных модулей:\n  ${clashes.join('\n  ')}`);
+  }
+}
+
 async function build() {
   const html = await fs.readFile(path.join(root, 'index.html'), 'utf8');
   const css = await fs.readFile(path.join(root, 'src/styles.css'), 'utf8');
 
   const chunks = [];
   for (const rel of MODULES) {
-    const code = await fs.readFile(path.join(root, rel), 'utf8');
-    chunks.push(`// ===== ${rel} ${'='.repeat(Math.max(0, 66 - rel.length))}\n${stripModuleSyntax(code)}`);
+    const source = await fs.readFile(path.join(root, rel), 'utf8');
+    chunks.push({ rel, code: stripModuleSyntax(source) });
   }
-  const bundle = `(function () {\n'use strict';\n${chunks.join('\n\n')}\n\ninit();\n})();`;
+  checkCollisions(chunks);
+
+  const body = chunks
+    .map(({ rel, code }) => `// ===== ${rel} ${'='.repeat(Math.max(0, 66 - rel.length))}\n${code}`)
+    .join('\n\n');
+  const bundle = `(function () {\n'use strict';\n${body}\n\ninit();\n})();`;
 
   const page = html
     .replace('<link rel="stylesheet" href="./src/styles.css" />', `<style>\n${css}\n</style>`)
