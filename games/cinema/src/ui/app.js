@@ -7,6 +7,9 @@
 import { CONFIG, SEGMENTS, GENRES, LEVERS, ALGORITHMS } from '../model/config.js';
 import { RIVAL_RELEASES, rivalEffect, seasonOf } from '../model/market.js';
 import { eventById } from '../model/events.js';
+import { rivalSubs } from '../model/rival.js';
+import { goalProgress } from '../model/board.js';
+import { crisisById, resolutionCost, severityOf } from '../model/crises.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation, fundingOffer, raise,
   finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact,
@@ -21,9 +24,10 @@ const SAVE_KEY = 'kinopotok-save-v1';
 const el = (id) => document.getElementById(id);
 
 let state = null;
-let chartTab = 'subs';
+let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
+let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
@@ -41,6 +45,7 @@ const last = () => state.history[state.history.length - 1] ?? null;
 const prev = () => state.history[state.history.length - 2] ?? null;
 const algoByKey = (key) => ALGORITHMS.find((a) => a.key === key);
 const rivalName = (type) => t(`rival${type.charAt(0).toUpperCase()}${type.slice(1)}`);
+const stanceName = (id) => t(`stance${id.charAt(0).toUpperCase()}${id.slice(1)}`);
 const seasonName = (season) => t(`season${season.charAt(0).toUpperCase()}${season.slice(1)}`);
 
 // ----------------------------------------------------------------------------
@@ -87,6 +92,9 @@ function renderKpis() {
       kpi(t('kpiHours'), num(r.hoursPerSub, 1),
         t('kpiHoursSub', { value: money(r.cdnCost) }),
         'neutral'),
+      kpi(t('kpiShare'), pct(r.duopolyShare ?? 0, 0),
+        t('kpiShareSub', { them: compact(r.rivalSubs ?? 0) }),
+        (r.duopolyShare ?? 0) >= 0.5 ? 'up' : (r.duopolyShare ?? 0) >= 0.35 ? 'neutral' : 'down'),
       kpi(t('kpiEquity'), money(r.equityValue ?? 0),
         t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
       kpi('', dSubs, '', cSubs),
@@ -243,17 +251,148 @@ function renderRival() {
   const now = state.rival ?? 'none';
   const next = state.rivalNext ?? 'none';
   const alarm = (RIVAL_RELEASES[next]?.pull ?? 0) >= 0.7;
+  const riv = state.rivalState;
+  const r = last();
+  const you = r ? r.subs : 0;
+  const them = rivalSubs(riv);
+  const share = you + them > 0 ? you / (you + them) : 0;
+  const myPrice = state.decisions.pricePremium;
+  const priceGap = riv.price - myPrice;
+
+  const dead = !riv.alive;
+  const stance = dead ? 'gone' : riv.stance;
+  const stanceCls = dead ? 'pos' : riv.stance === 'war' ? 'neg'
+    : riv.stance === 'press' ? 'warn' : riv.stance === 'retreat' ? 'pos' : '';
 
   el('rival-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('rivalPanel', {
       season: seasonName(seasonOf(state.month + 1)), month: state.month + 1,
     })}</h2>
+
+    <div class="rival-head">
+      <div class="rival-stance">
+        <span class="badge ${stanceCls}">${dead ? t('stanceGone') : stanceName(riv.stance)}</span>
+        <span class="rival-stance-hint">${dead ? t('stanceGoneHint') : t(`stance${stance.charAt(0).toUpperCase()}${stance.slice(1)}Hint`)}</span>
+      </div>
+      <div class="rival-facts">
+        <span>${t('rivalTheirPrice')} <b>${num(riv.price)} ₽</b>
+          <span class="${priceGap > 0 ? 'pos' : priceGap < 0 ? 'neg' : ''}">
+            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: num(Math.abs(priceGap)) })}</span></span>
+        <span>${t('rivalTheirCatalog')} <b>${compact(riv.catalogLicensed + riv.catalogOriginal)} ${t('unitHours')}</b>
+          (${t('rivalTheirOriginals', { hours: compact(riv.catalogOriginal) })})</span>
+        <span>${t('rivalTheirFocus')} <b>${tx(genreById(riv.focus)?.name ?? '')}</b></span>
+      </div>
+    </div>
+
+    <div class="share-bar" title="${t('shareBarHint')}">
+      <span class="share-you" style="width:${(share * 100).toFixed(1)}%">${share > 0.12 ? `${t('shareYou')} ${pct(share, 0)}` : ''}</span>
+      <span class="share-them">${share < 0.88 ? `${t('shareThem')} ${pct(1 - share, 0)}` : ''}</span>
+    </div>
+    <div class="funding-note">${t('shareCaption', {
+      you: compact(you), them: compact(them),
+      flow: r ? (r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`) : '0',
+    })}</div>
+
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
       ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`)}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Совет директоров: цель года и её последствия
+// ----------------------------------------------------------------------------
+function renderBoard() {
+  const goal = state.board?.goal;
+  const r = last();
+  if (!goal) { el('board').innerHTML = `<div class="hint-box">${t('boardDone')}</div>`; return; }
+
+  const p = goalProgress(goal, {
+    subs: r?.subs ?? 0,
+    rivalSubs: rivalSubs(state.rivalState),
+    profitableMonths: state.board.profitableMonths,
+  });
+  const monthsLeft = goal.year * CONFIG.boardYearMonths - state.month;
+
+  let line = '';
+  let ratio = 0;
+  if (goal.type === 'subscribers') {
+    ratio = p.value / goal.target;
+    line = t('goalSubs', { have: compact(p.value), need: compact(goal.target) });
+  } else if (goal.type === 'profit') {
+    ratio = Math.min(p.value / goal.target, p.subs / goal.subsFloor);
+    line = t('goalProfit', {
+      have: p.value, need: goal.target,
+      subs: compact(p.subs), floor: compact(goal.subsFloor),
+    });
+  } else {
+    ratio = Math.min(p.value / goal.target, p.subs / goal.subsFloor);
+    line = t('goalShare', {
+      have: pct(p.value, 0), need: pct(goal.target, 0),
+      subs: compact(p.subs), floor: compact(goal.subsFloor),
+    });
+  }
+  ratio = Math.max(0, Math.min(1, ratio));
+
+  const restr = state.restrictions && state.month < state.restrictions.until
+    ? `<div class="alert bad">${t('boardCapActive', {
+        cap: money(state.restrictions.contentCap),
+        months: state.restrictions.until - state.month,
+      })}</div>` : '';
+
+  const past = (state.board.history ?? []).map((h) =>
+    `<div class="goal-past ${h.passed ? 'pos' : 'neg'}">${t('goalYear', { year: h.year })}: ${
+      h.passed ? t('goalPassed') : t(`goalFailed_${h.effect}`)}</div>`).join('');
+
+  el('board').innerHTML = `
+    <div class="goal-card ${p.done ? 'done' : monthsLeft <= 3 ? 'urgent' : ''}">
+      <div class="goal-head">
+        <span class="goal-year">${t('goalYear', { year: goal.year })}</span>
+        <span class="goal-left">${t('goalMonthsLeft', { months: monthsLeft })}</span>
+      </div>
+      <div class="goal-line">${line}</div>
+      <span class="q-bar"><span class="q-fill ${p.done ? 'ok' : ''}" style="width:${(ratio * 100).toFixed(0)}%"></span></span>
+      <div class="funding-note">${p.done ? t('goalOnTrack') : t(`goalStake_${goal.penalty}`)}</div>
+    </div>
+    ${restr}
+    ${past}`;
+}
+
+// ----------------------------------------------------------------------------
+// Кризис: проблема, которая не рассосётся сама
+// ----------------------------------------------------------------------------
+function renderCrisis() {
+  const active = state.crisis;
+  if (!active || state.over) { el('crisis-slot').innerHTML = ''; return; }
+  const def = crisisById(active.id);
+  if (!def) { el('crisis-slot').innerHTML = ''; return; }
+  const sev = severityOf(active);
+
+  const options = def.resolutions.map((res, i) => {
+    const cost = resolutionCost(active, res.id);
+    return `<button class="event-option ${res.resolves ? 'primary' : ''}" data-crisis="${res.id}">
+      <span class="opt-label">${tx(res.label)}</span>
+      <span class="opt-detail">${tx(res.detail)}${cost > 0 ? ` · ${money(cost)}` : ''}</span>
+    </button>`;
+  }).join('');
+
+  el('crisis-slot').innerHTML = `<div class="panel event-card crisis">
+    <h3>🔥 ${tx(def.title)} <span class="badge neg">${t('crisisMonths', { months: sev })}</span></h3>
+    <p>${tx(def.text)}</p>
+    <div class="alert bad">${t('crisisWorsening')}</div>
+    <div class="event-options">${options}</div>
+    <div class="lesson">${tx(def.lesson)}</div>
+  </div>`;
+
+  for (const btn of el('crisis-slot').querySelectorAll('[data-crisis]')) {
+    btn.addEventListener('click', () => {
+      pendingCrisisChoice = btn.dataset.crisis;
+      for (const b of el('crisis-slot').querySelectorAll('[data-crisis]')) b.classList.remove('chosen');
+      btn.classList.add('chosen');
+    });
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -501,6 +640,23 @@ function renderReport() {
     </div>` : '';
 
   const alerts = buildAlerts(r);
+  if (r.goalOutcome) {
+    alerts.unshift([r.goalOutcome.passed ? 'good' : 'bad',
+      r.goalOutcome.passed
+        ? t('alertGoalPassed', { year: r.goalOutcome.year })
+        : t(`alertGoalFailed_${r.goalOutcome.effect}`, { year: r.goalOutcome.year })]);
+  }
+  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) })]);
+  if (r.crisisResolved) {
+    alerts.unshift(['good', t('alertCrisisResolved', {
+      name: tx(crisisById(r.crisisResolved.id)?.title ?? ''), cost: money(r.crisisCost) })]);
+  }
+  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) })]);
+  else if (r.netSwitch > 1000) alerts.push(['good', t('alertWinningSubs', { count: compact(r.netSwitch) })]);
+  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) })]);
+  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
+  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
+  if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   const alertsHtml = alerts.length
     ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>` : '';
 
@@ -541,6 +697,10 @@ function renderReport() {
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
       ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
+      ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
+        t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
+      ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
+        t('statPricesSub', { project: money(r.projectCost) }))}
     </div>
     ${premiereNote}${startedNote}${installNote}
     ${driversHtml}${alertsHtml}${eventNote}
@@ -551,6 +711,14 @@ function renderReport() {
 // Графики
 // ----------------------------------------------------------------------------
 const CHART_TABS = {
+  // Главный график новой версии: вы против конкурента на одном рынке
+  war: {
+    label: 'chartWar', caption: 'chartWarCaption',
+    series: (h) => [
+      { label: t('seriesYou'), data: h.map((r) => r.subs), color: PALETTE[1] },
+      { label: t('seriesThem'), data: h.map((r) => r.rivalSubs ?? 0), color: PALETTE[3] },
+    ],
+  },
   subs: {
     label: 'chartSubs', caption: 'chartSubsCaption',
     series: (h) => [
@@ -856,7 +1024,12 @@ function nextMonth() {
   if (state.over) { showGameOver(); return; }
   const ev = state.pendingEvent;
   if (ev && ev.options && state.pendingChoice === null) { toast(t('eventChoiceNeeded')); return; }
-  state = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 }).state;
+  state = step(state, {
+    decisions: state.decisions,
+    eventChoice: state.pendingChoice ?? 0,
+    crisisChoice: pendingCrisisChoice,
+  }).state;
+  pendingCrisisChoice = null;
   save();
   renderAll();
   if (state.over) showGameOver();
@@ -874,6 +1047,7 @@ function renderChrome() {
   el('title-levers').textContent = t('panelLevers');
   el('title-studio').textContent = t('panelStudio');
   el('title-algos').textContent = t('panelAlgos');
+  el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
@@ -898,7 +1072,9 @@ function renderAll() {
   renderOpsReadout();
   renderKpis();
   renderFunding();
+  renderBoard();
   renderRival();
+  renderCrisis();
   renderEvent();
   renderReport();
   renderChart();

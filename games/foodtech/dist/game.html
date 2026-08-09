@@ -315,6 +315,63 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-fx b.up { color: var(--good); }
 .weather-fx b.down { color: var(--bad); }
 
+/* ---------------- Конкурент, цели совета, кризис (КИНОПОТОК) ------------- */
+.rival-head {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.rival-stance { flex: 1 1 220px; }
+.rival-stance-hint { display: block; color: var(--muted); font-size: 12px; line-height: 1.5; margin-top: 5px; }
+.rival-facts { flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.rival-facts b { color: var(--text); }
+
+.share-bar {
+  display: flex;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+}
+.share-bar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.35s ease;
+}
+.share-you { background: rgba(74, 222, 128, 0.30); color: var(--good); }
+.share-them { background: rgba(248, 113, 113, 0.20); color: var(--bad); flex: 1; }
+
+.goal-card {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.goal-card.done { border-left-color: var(--good); }
+.goal-card.urgent { border-left-color: var(--warn); }
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.goal-year { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.goal-left { color: var(--muted); font-size: 11px; }
+.goal-line { margin: 6px 0 8px; line-height: 1.5; font-size: 13px; }
+.goal-card .q-bar { display: block; margin-bottom: 6px; }
+.q-fill.ok { background: var(--good); }
+.goal-past { font-size: 11px; padding: 3px 0; color: var(--muted); }
+.goal-past.pos { color: var(--good); }
+.goal-past.neg { color: var(--bad); }
+
+.event-card.crisis { border-left: 3px solid var(--bad); }
+.event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
+
 </style>
 </head>
 <body>

@@ -43,6 +43,32 @@ function stripModuleSyntax(source) {
 
 // Склейка модулей в одну область видимости ловит только одинаковые имена
 // на верхнем уровне — проверяем их заранее, иначе поломка всплывёт в браузере.
+/**
+ * Проверяет, что в манифесте перечислены все модули, которые игра реально
+ * импортирует. Забытый модуль в браузере проявляется как «X is not defined»
+ * посреди партии, а не при сборке, — поэтому ловим его здесь.
+ */
+function checkManifestComplete(dir, manifest, raw) {
+  const listed = new Set(manifest.modules.map((rel) => path.resolve(dir, rel)));
+  const missing = new Map();
+  const importFrom = /(?:^|\n)\s*import\s[\s\S]*?from\s*['"]([^'"]+)['"]/g;
+
+  for (const { rel, source } of raw) {
+    for (const m of source.matchAll(importFrom)) {
+      const spec = m[1];
+      if (!spec.startsWith('.')) continue;            // внешних зависимостей у нас нет
+      const resolved = path.resolve(path.dirname(path.resolve(dir, rel)), spec);
+      if (!listed.has(resolved)) {
+        missing.set(path.relative(dir, resolved), rel);
+      }
+    }
+  }
+  if (missing.size) {
+    const lines = [...missing].map(([mod, from]) => `${mod} (импортируется из ${from})`);
+    throw new Error(`В манифесте нет модулей, которые импортирует игра:\n  ${lines.join('\n  ')}`);
+  }
+}
+
 function checkCollisions(chunks) {
   const seen = new Map();
   const clashes = [];
@@ -87,11 +113,13 @@ async function buildGame(name) {
     styles.push(await fs.readFile(path.join(dir, rel), 'utf8'));
   }
 
-  const chunks = [];
+  const raw = [];
   for (const rel of manifest.modules) {
-    const source = await fs.readFile(path.join(dir, rel), 'utf8');
-    chunks.push({ rel, code: stripModuleSyntax(source) });
+    raw.push({ rel, source: await fs.readFile(path.join(dir, rel), 'utf8') });
   }
+  checkManifestComplete(dir, manifest, raw);
+
+  const chunks = raw.map(({ rel, source }) => ({ rel, code: stripModuleSyntax(source) }));
   checkCollisions(chunks);
 
   const body = chunks

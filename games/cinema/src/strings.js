@@ -42,6 +42,84 @@ export const STRINGS = {
   panelStudio: { ru: 'Студия и производство', en: 'Studio and production' },
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
+  panelBoard: { ru: 'Совет директоров', en: 'The board' },
+
+  // --- Живой конкурент ---
+  stanceBuild: { ru: 'Ровный рост', en: 'Steady growth' },
+  stanceBuildHint: { ru: 'Держит курс: умеренные бюджеты, цена чуть ниже вашей.', en: 'Holding course: moderate budgets, price a little under yours.' },
+  stanceWar: { ru: 'Война цен', en: 'Price war' },
+  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing him down on price is a losing idea — he has deeper pockets.' },
+  stancePress: { ru: 'Давит', en: 'Pressing' },
+  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from him while he gets expensive.' },
+  stanceHarvest: { ru: 'Снимает сливки', en: 'Harvesting' },
+  stanceHarvestHint: { ru: 'Экономит: режет контент и маркетинг, поднимает цену и рекламу. Его каталог начнёт выдыхаться — ваш шанс.', en: 'Economising: cutting content and marketing, raising price and ad load. His catalogue will start going stale — that is your opening.' },
+  stanceRetreat: { ru: 'Отступает', en: 'Retreating' },
+  stanceRetreatHint: { ru: 'Деньги кончаются, раунды исчерпаны. Если додавить — рынок останется вам одному.', en: 'The money is running out and the rounds are used up. Push now and the market is yours alone.' },
+  stanceGone: { ru: 'Ушёл с рынка', en: 'Out of the market' },
+  stanceGoneHint: { ru: 'Конкурент обанкротился. Его подписчики расходятся по рынку несколько месяцев — успейте их забрать.', en: 'The rival has gone bust. His subscribers disperse over a few months — get to them first.' },
+
+  rivalTheirPrice: { ru: 'Его цена:', en: 'His price:' },
+  rivalPriceAbove: { ru: '(на {gap} ₽ дороже вас)', en: '({gap} ₽ above you)' },
+  rivalPriceBelow: { ru: '(на {gap} ₽ дешевле вас)', en: '({gap} ₽ below you)' },
+  rivalPriceSame: { ru: '(как у вас)', en: '(same as yours)' },
+  rivalTheirCatalog: { ru: 'Его каталог:', en: 'His catalogue:' },
+  rivalTheirOriginals: { ru: 'своего {hours}', en: '{hours} original' },
+  rivalTheirFocus: { ru: 'Снимает:', en: 'Producing:' },
+  shareYou: { ru: 'вы', en: 'you' },
+  shareThem: { ru: 'он', en: 'rival' },
+  shareBarHint: { ru: 'Доля рынка подписок: вы против конкурента', en: 'Share of the subscription market: you versus the rival' },
+  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, he has {them}. Net switching this month: {flow}.' },
+
+  // --- Совет директоров ---
+  goalYear: { ru: 'Цель года {year}', en: 'Year {year} goal' },
+  goalMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
+  goalSubs: { ru: 'Набрать базу подписчиков: {have} из {need}', en: 'Build the subscriber base: {have} of {need}' },
+  goalProfit: { ru: 'Доказать, что бизнес умеет быть прибыльным: {have} прибыльных месяцев из {need}, и база {subs} из {floor}', en: 'Prove the business can be profitable: {have} profitable months of {need}, and a base of {subs} of {floor}' },
+  goalShare: { ru: 'Обойти конкурента: доля {have} из {need}, и база {subs} из {floor}', en: 'Overtake the rival: share {have} of {need}, and a base of {subs} of {floor}' },
+  goalOnTrack: { ru: 'Цель выполнена — совет доволен, оценка компании выше.', en: 'Goal met — the board is happy and the valuation is higher.' },
+  goalStake_dilution: { ru: 'Если провалить: совет введёт деньги сам и заберёт часть вашей доли.', en: 'If you miss: the board injects money itself and takes part of your stake.' },
+  goalStake_contentCap: { ru: 'Если провалить: контентный бюджет режут на полгода.', en: 'If you miss: the content budget is capped for six months.' },
+  goalStake_valuation: { ru: 'Если провалить: оценка компании на финише будет ниже.', en: 'If you miss: the final valuation takes a hit.' },
+  goalPassed: { ru: 'выполнена', en: 'met' },
+  goalFailed_dilution: { ru: 'провалена — размытие доли', en: 'missed — stake diluted' },
+  goalFailed_contentCap: { ru: 'провалена — бюджет порезан', en: 'missed — budget capped' },
+  goalFailed_valuation: { ru: 'провалена — оценка ниже', en: 'missed — valuation cut' },
+  boardCapActive: { ru: 'Совет режет контентный бюджет до {cap} в месяц. Осталось {months} мес.', en: 'The board caps the content budget at {cap} a month. {months} mo. left.' },
+  boardDone: { ru: 'Целей больше нет — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
+
+  // --- Кризисы ---
+  crisisMonths: { ru: '{months}-й месяц', en: 'month {months}' },
+  crisisWorsening: { ru: 'Пока решения нет, каждый месяц дороже предыдущего — и само решение тоже дорожает.', en: 'Until you decide, every month costs more than the last — and the fix gets more expensive too.' },
+
+  // --- Новые показатели месяца ---
+  statSwitch: { ru: 'Переток', en: 'Switching' },
+  statSwitchSub: { ru: 'пришло {inn} · ушло {out}', en: '{inn} in · {out} out' },
+  statPrices: { ru: 'Права / талант', en: 'Rights / talent' },
+  statPricesSub: { ru: 'проект стоит {project}', en: 'a project costs {project}' },
+  kpiShare: { ru: 'Доля рынка', en: 'Market share' },
+  kpiShareSub: { ru: 'у конкурента {them}', en: 'rival has {them}' },
+
+  // --- Новые предупреждения ---
+  alertGoalPassed: { ru: 'Цель года {year} выполнена. Совет повышает оценку компании.', en: 'The year {year} goal is met. The board marks the company up.' },
+  alertGoalFailed_dilution: { ru: 'Цель года {year} провалена. Совет ввёл деньги сам — и забрал часть вашей доли.', en: 'The year {year} goal was missed. The board injected money itself — and took part of your stake.' },
+  alertGoalFailed_contentCap: { ru: 'Цель года {year} провалена. Контентный бюджет порезан на полгода: стратегия «вложим всё в рост» больше недоступна.', en: 'The year {year} goal was missed. The content budget is capped for six months: "pour everything into growth" is no longer available.' },
+  alertGoalFailed_valuation: { ru: 'Цель года {year} провалена. Оценка компании на финише будет ниже.', en: 'The year {year} goal was missed. The final valuation takes a hit.' },
+  alertCapped: { ru: 'Контентный бюджет урезан советом до {cap}. Лишние деньги просто не потрачены.', en: 'The board has capped the content budget at {cap}. The extra money simply was not spent.' },
+  alertCrisisResolved: { ru: '«{name}» — решено за {cost}.', en: '"{name}" resolved for {cost}.' },
+  alertLosingSubs: { ru: 'К конкуренту ушло {count} подписчиков. Люди не отказались от подписки — они выбрали другую.', en: '{count} subscribers went to the rival. They did not give up on streaming — they chose someone else.' },
+  alertWinningSubs: { ru: 'От конкурента пришло {count} подписчиков: ваш сервис сейчас выглядит лучше.', en: '{count} subscribers came over from the rival: your service looks better right now.' },
+  alertLicenseWar: { ru: 'Права подорожали в {index} раза: вы с конкурентом торгуетесь за один и тот же контент. Тот же бюджет покупает меньше часов.', en: 'Rights are {index}× more expensive: you and the rival are bidding for the same content. The same budget buys fewer hours.' },
+  alertTalentCost: { ru: 'Талант подорожал в {index} раза. Успешному сервису звёзды выставляют другой счёт — себестоимость хита растёт быстрее его аудитории.', en: 'Talent is {index}× more expensive. Stars charge a successful service differently — a hit\u2019s cost grows faster than its audience.' },
+  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect his budgets to grow.' },
+  alertRivalDead: { ru: 'Конкурент обанкротился. Его база расходится по рынку — это ваш шанс забрать её.', en: 'The rival has gone bust. His base is dispersing — this is your chance to take it.' },
+
+  // --- График войны ---
+  chartWar: { ru: 'Вы и конкурент', en: 'You and the rival' },
+  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by taking his — and the second is faster.' },
+  seriesYou: { ru: 'Вы', en: 'You' },
+  seriesThem: { ru: 'Конкурент', en: 'Rival' },
+
+
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 

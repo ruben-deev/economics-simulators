@@ -1,22 +1,24 @@
 // ============================================================================
 // Внешний фон месяца: сезон просмотра и афиша конкурента.
 //
-// В стриминге роль погоды играет чужой релиз. Он бьёт с двух сторон сразу:
-// забирает часть новых подписок и вытягивает часть ваших зрителей — ровно
-// тогда, когда вы могли бы расти. Афиша известна на месяц вперёд: даты чужих
-// премьер публикуются задолго до выхода. Ценность не в информации, а в
-// реакции — успеть выпустить своё, поднять маркетинг или переждать.
+// Афиша больше не разыгрывается кубиком. Конкурент — живой (см. rival.js),
+// у него есть свой производственный пайплайн, и на экране вы видите то, что
+// у него действительно выходит. Анонс на следующий месяц честный: это проект,
+// которому остался месяц до премьеры.
+//
+// Здесь остаётся только перевод «шума премьеры» в понятные игроку категории
+// и общий сезонный фон, одинаковый для обеих сторон.
 // ============================================================================
 
-import { weightedPick } from '../../../../shared/rng.js';
-
-// pull — сила оттягивания аудитории, 0 = ничего не происходит
+// pull — сила оттягивания внимания, 0 = ничего не происходит.
+// Это не переток базы (он считается в rival.js), а борьба за внимание:
+// в месяц чужой громкой премьеры хуже конвертируются новые и меньше смотрят все.
 export const RIVAL_RELEASES = {
   none:    { id: 'none',    icon: '·',  pull: 0,    acquisition: 1.00, churnAdd: 0,     hours: 1.00 },
-  small:   { id: 'small',   icon: '▫',  pull: 0.25, acquisition: 0.93, churnAdd: 0.004, hours: 0.98 },
-  notable: { id: 'notable', icon: '◆',  pull: 0.55, acquisition: 0.84, churnAdd: 0.012, hours: 0.95 },
-  major:   { id: 'major',   icon: '★',  pull: 0.80, acquisition: 0.72, churnAdd: 0.024, hours: 0.91 },
-  mega:    { id: 'mega',    icon: '★★', pull: 1.00, acquisition: 0.58, churnAdd: 0.040, hours: 0.86 },
+  small:   { id: 'small',   icon: '▫',  pull: 0.25, acquisition: 0.94, churnAdd: 0.003, hours: 0.98 },
+  notable: { id: 'notable', icon: '◆',  pull: 0.55, acquisition: 0.87, churnAdd: 0.009, hours: 0.96 },
+  major:   { id: 'major',   icon: '★',  pull: 0.80, acquisition: 0.78, churnAdd: 0.017, hours: 0.93 },
+  mega:    { id: 'mega',    icon: '★★', pull: 1.00, acquisition: 0.68, churnAdd: 0.028, hours: 0.89 },
 };
 
 // Месяц 1 — январь
@@ -31,20 +33,23 @@ export function seasonOf(month) {
 // Зимой смотрят заметно больше, летом — заметно меньше. Это касается и вас,
 // и конкурента: в высокий сезон и премьер больше, и борьба за внимание острее.
 const SEASON = {
-  winter: { hours: 1.18, weights: { none: 28, small: 24, notable: 24, major: 16, mega: 8 } },
-  spring: { hours: 1.00, weights: { none: 42, small: 26, notable: 20, major: 10, mega: 2 } },
-  summer: { hours: 0.84, weights: { none: 52, small: 26, notable: 16, major: 6 } },
-  autumn: { hours: 1.06, weights: { none: 34, small: 26, notable: 22, major: 14, mega: 4 } },
+  winter: { hours: 1.18 },
+  spring: { hours: 1.00 },
+  summer: { hours: 0.84 },
+  autumn: { hours: 1.06 },
 };
 
 export function seasonHours(month) {
   return SEASON[seasonOf(month)].hours;
 }
 
-export function rollRivalRelease(rng, month) {
-  const table = SEASON[seasonOf(month)].weights;
-  const picked = weightedPick(rng, Object.entries(table).map(([id, weight]) => ({ id, weight })));
-  return picked ? picked.id : 'none';
+/** Во что превращается шум чужой премьеры на экране игрока. */
+export function classifyRelease(buzz) {
+  if (!buzz || buzz <= 0.01) return 'none';
+  if (buzz < 0.6) return 'small';
+  if (buzz < 1.1) return 'notable';
+  if (buzz < 1.9) return 'major';
+  return 'mega';
 }
 
 /**

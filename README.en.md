@@ -16,7 +16,7 @@ between sessions and shared by both games.
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
 | [🛵 **NOVOEDA**](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
-| [🎬 **KINOPOTOK**](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/) | streaming service | month | 36 months | renting a catalogue against owning a library |
+| [🎬 **KINOPOTOK**](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
 
 The games are built the same way and deliberately model **opposite** kinds of economics:
 in delivery, revenue per customer grows with their activity; in subscription it is fixed
@@ -121,6 +121,13 @@ The catalogue can be rented (licences — cheap, immediate, but they expire and 
 them too) or produced in-house (fifty times more per hour, premiering in six months, but
 yours forever and yours alone). Neither extreme works.
 
+**The environment is non-stationary — there is no constant optimal strategy here.**
+The rival is alive: he has his own cash, catalogue and a policy that answers your
+decisions. Rights and talent get more expensive as you succeed. The board changes the
+goal every year, and the year-two goal directly conflicts with the year-one strategy.
+Crises do not resolve themselves. Measured: the best strategy split across three years
+beats the best constant setting of the sliders by **85%**.
+
 ### What the player controls
 
 | Lever | What it does | The other side |
@@ -154,18 +161,30 @@ yours forever and yours alone). Neither extreme works.
   most expensive one.
 * **Post-premiere hangover** — its own stock: the louder the hit, the more people cancel
   once they have finished it.
-* **The rival's line-up** — a permanent monthly background with a seasonal distribution,
-  known a month in advance.
+* **A living rival** — one market for the two of you. He has his own cash, catalogue,
+  pipeline and five legible stances, each held for at least four months. He answers your
+  price, enters the genre you are strong in, can raise a round — and can go bust.
+* **Switching** — you can grow by bringing in new viewers or by taking his. The second is
+  faster, and exclusives are the one thing the same money cannot buy him.
+* **Escalating resource costs** — rights get dearer when you both bid for them; talent
+  gets dearer with your success. The growth flywheel has a brake.
+* **Board goals** — one per year: growth, then profitability, then market share. Missing
+  one costs equity, a capped budget or valuation.
+* **Crises** — a lawsuit, a scandal, a showrunner leaving, platform decay. Every month
+  without a decision costs more than the last, and the fix gets dearer too. They arrive
+  more often the better you are doing.
+* **The rival's line-up** — derived from his real pipeline, known a month in advance,
+  and cancelled by your own premiere by no more than 65%.
 
-| Rival line-up | New sign-ups | Churn | Hours |
+| Rival stance | When | What he does | Your move |
 |---|---|---|---|
-| Nothing notable | — | — | — |
-| Minor release | −7% | +0.4 pp | −2% |
-| Notable release | −16% | +1.2 pp | −5% |
-| Major release | −28% | +2.4 pp | −9% |
-| Event of the year | −42% | +4.0 pp | −14% |
+| Steady growth | parity | price just under yours | build your catalogue |
+| Price war | losing and rich | undercuts 28%, marketing ×1.6 | do not follow him down |
+| Pressing | winning | price +6%, budgets ×1.15 | take his viewers |
+| Harvesting | cash running low | cuts content, raises price | his catalogue goes stale — attack |
+| Retreating | out of money | barely spends | push and the market is yours |
 
-Your own loud premiere in the same month partly cancels theirs (by no more than 65%):
+Your own loud premiere in the month of his partly cancels it (by no more than 65%):
 viewers choose rather than leave.
 
 ### Algorithms
@@ -219,6 +238,9 @@ games/<game>/
   src/model/config.js           ALL world parameters: constants, levers, algorithms
   src/model/engine.js           the simulation core — pure functions, no DOM
   src/model/events.js           random events
+  src/model/rival.js            the living rival: state and policy (streaming)
+  src/model/board.js            board goals (streaming)
+  src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
   dist/game.html                the built offline version
@@ -242,7 +264,7 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — 127 checks across the two games. The tests
+After editing it is worth running `npm test` — 145 checks across the two games. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 

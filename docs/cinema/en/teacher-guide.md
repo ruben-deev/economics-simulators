@@ -93,7 +93,31 @@ business lives on the release schedule, not on the size of any one release.
 
 ---
 
-## Scenario 4. "The rival's line-up" (35 minutes)
+## Scenario 4. "Reading the rival" (45 minutes)
+
+Task: 18 turns, get to 50% market share.
+
+Running the session:
+1. Show the rival panel. He has five stances, and each is held for at least four
+   months — that is not noise, it is a course you can read.
+2. Ask in advance: what do you do when he is "harvesting"? (Answer: he cuts content
+   and raises price — his catalogue will go stale and you can take his base by
+   switching. That is the best moment to attack.)
+3. Let a team undercut him while he is in "price war". Show the result: he has more
+   money; you do not win a war of attrition.
+4. Work through the "switching" line in the month results: these are people who did
+   not give up on streaming — they chose someone else.
+
+The core idea: there are two ways to grow — bring in people with no subscription, and
+take people who pay the other guy. The second is faster, but the other guy has a
+counter-move and the untapped market does not.
+
+Debrief question: why is a strong rival sometimes useful? (He grows the whole category:
+new sign-ups are computed from the best offer on the market, not only from yours.)
+
+---
+
+## Scenario 4a. "The rival's line-up" (35 minutes)
 
 Task: 15 turns, and answer the rival's "event of the year" at least once.
 
@@ -182,6 +206,58 @@ mistake; a round taken earlier than needed is.)
 
 ---
 
+## Scenario 8. "The year-two goal" (50 minutes)
+
+The single most valuable scenario in the course if you only have time for one.
+
+Task: play 24 turns, meeting the board's goals.
+
+Running the session:
+1. Year one has one goal: reach 900K subscribers. Almost every team pours money into
+   content and marketing and meets it while going deeply into the red.
+2. In the first month of year two the board announces a new goal: **four profitable
+   months out of twelve and a base one and a half times larger**. Pause and ask the
+   teams to say out loud what they will have to change.
+3. It usually turns out that the year-one strategy directly contradicts the year-two
+   goal. They cannot cut content — the base falls; they cannot not cut it — there will
+   be no profit. The working answer usually lies in price and ad load, not in the budget.
+4. If the goal is missed, show the consequence: the content budget is capped for six
+   months. "Pour everything into growth" stops being physically available.
+
+The core idea: a business does not have one goal for life. The strategy that wins year
+one fails year two — and that is not a planning error, it is a normal change of stage.
+What has to be learned is not "the right setting" but the ability to rebuild it.
+
+Debrief question: what should the team have done in month 10 if it had known the
+year-two goal in advance? (It did know — the goal is announced at the start of the year
+and is on screen every turn. The question is who was looking at it.)
+
+---
+
+## Scenario 9. "A crisis will not go away on its own" (35 minutes)
+
+Task: finish a game with a crisis running, explaining every decision.
+
+Running the session:
+1. Wait for a crisis (from month 7 onwards they arrive more often the larger the
+   service is). Show the two buttons: the expensive fix and the cheap inaction.
+2. Split the teams: half resolve immediately, half stall for three months.
+3. Compare the total losses. The cost of the fix grows every month, and churn runs
+   the whole time.
+4. Discuss "A rights holder sues" separately: it freezes part of the **rented** library.
+   What you own cannot be taken away — one more argument for originals that never
+   appears in the P&L.
+
+The core idea: crises arrive more often the better things are going. This is not a
+punishment for success, it is what success actually costs — and no growth model
+includes it.
+
+Debrief question: why is "wait it out" sometimes the right answer after all? (With two
+months left in the game, paying for the fix can cost more than living with the problem.
+What matters is the remaining horizon, not the month.)
+
+---
+
 ## Quick questions for oral debrief
 
 * Churn is 8% a month. How long does a subscription last, and what does that mean for LTV?
@@ -223,7 +299,15 @@ generates a random seed. To hand the whole group the same scenario, fix the seed
 * `rndSaturation` and `dataSaturation` — how quickly algorithms unlock;
 * `unlock` and `install` in the `ALGORITHMS` array — availability threshold and rollout
   cost;
-* `SEASON` in `games/cinema/src/model/market.js` — how aggressive the rival's line-up is.
+* `SEASON` in `games/cinema/src/model/market.js` — seasonality of viewing;
+* `switchIntensity` and `competeSharpness` — how fast the base flows between services.
+  Higher is more dynamic and more brutal; lower is calmer and more predictable;
+* `exclusivePull` — how strongly exclusives pull viewers across;
+* `licenseInflation` and `talentInflation` — how hard the growth flywheel is braked;
+* the rival's starting parameters in `games/cinema/src/model/rival.js` (`createRival`)
+  and the stance thresholds in `chooseStance`;
+* the board's goals in `games/cinema/src/model/board.js` (`makeGoal`);
+* the list and severity of crises in `games/cinema/src/model/crises.js`.
 
 To run a session on algorithms alone without spending turns on the ramp-up, hand students
 a game with `dataStock` and `rndStock` already accumulated — that is what the tests in

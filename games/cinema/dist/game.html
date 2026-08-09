@@ -315,6 +315,63 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-fx b.up { color: var(--good); }
 .weather-fx b.down { color: var(--bad); }
 
+/* ---------------- Конкурент, цели совета, кризис (КИНОПОТОК) ------------- */
+.rival-head {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.rival-stance { flex: 1 1 220px; }
+.rival-stance-hint { display: block; color: var(--muted); font-size: 12px; line-height: 1.5; margin-top: 5px; }
+.rival-facts { flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.rival-facts b { color: var(--text); }
+
+.share-bar {
+  display: flex;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+}
+.share-bar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.35s ease;
+}
+.share-you { background: rgba(74, 222, 128, 0.30); color: var(--good); }
+.share-them { background: rgba(248, 113, 113, 0.20); color: var(--bad); flex: 1; }
+
+.goal-card {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.goal-card.done { border-left-color: var(--good); }
+.goal-card.urgent { border-left-color: var(--warn); }
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.goal-year { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.goal-left { color: var(--muted); font-size: 11px; }
+.goal-line { margin: 6px 0 8px; line-height: 1.5; font-size: 13px; }
+.goal-card .q-bar { display: block; margin-bottom: 6px; }
+.q-fill.ok { background: var(--good); }
+.goal-past { font-size: 11px; padding: 3px 0; color: var(--muted); }
+.goal-past.pos { color: var(--good); }
+.goal-past.neg { color: var(--bad); }
+
+.event-card.crisis { border-left: 3px solid var(--bad); }
+.event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
+
 </style>
 </head>
 <body>
@@ -347,12 +404,16 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <h2 class="panel-title" id="title-algos"></h2>
       <div id="algos"></div>
 
+      <h2 class="panel-title" id="title-board"></h2>
+      <div id="board"></div>
+
       <h2 class="panel-title" id="title-funding"></h2>
       <div id="funding" class="funding"></div>
     </aside>
 
     <section class="col-center">
       <div id="rival-slot"></div>
+      <div id="crisis-slot"></div>
       <div id="event-slot"></div>
       <div id="report-slot"></div>
       <div class="panel charts">
@@ -496,6 +557,84 @@ const STRINGS = {
   panelStudio: { ru: 'Студия и производство', en: 'Studio and production' },
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
+  panelBoard: { ru: 'Совет директоров', en: 'The board' },
+
+  // --- Живой конкурент ---
+  stanceBuild: { ru: 'Ровный рост', en: 'Steady growth' },
+  stanceBuildHint: { ru: 'Держит курс: умеренные бюджеты, цена чуть ниже вашей.', en: 'Holding course: moderate budgets, price a little under yours.' },
+  stanceWar: { ru: 'Война цен', en: 'Price war' },
+  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing him down on price is a losing idea — he has deeper pockets.' },
+  stancePress: { ru: 'Давит', en: 'Pressing' },
+  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from him while he gets expensive.' },
+  stanceHarvest: { ru: 'Снимает сливки', en: 'Harvesting' },
+  stanceHarvestHint: { ru: 'Экономит: режет контент и маркетинг, поднимает цену и рекламу. Его каталог начнёт выдыхаться — ваш шанс.', en: 'Economising: cutting content and marketing, raising price and ad load. His catalogue will start going stale — that is your opening.' },
+  stanceRetreat: { ru: 'Отступает', en: 'Retreating' },
+  stanceRetreatHint: { ru: 'Деньги кончаются, раунды исчерпаны. Если додавить — рынок останется вам одному.', en: 'The money is running out and the rounds are used up. Push now and the market is yours alone.' },
+  stanceGone: { ru: 'Ушёл с рынка', en: 'Out of the market' },
+  stanceGoneHint: { ru: 'Конкурент обанкротился. Его подписчики расходятся по рынку несколько месяцев — успейте их забрать.', en: 'The rival has gone bust. His subscribers disperse over a few months — get to them first.' },
+
+  rivalTheirPrice: { ru: 'Его цена:', en: 'His price:' },
+  rivalPriceAbove: { ru: '(на {gap} ₽ дороже вас)', en: '({gap} ₽ above you)' },
+  rivalPriceBelow: { ru: '(на {gap} ₽ дешевле вас)', en: '({gap} ₽ below you)' },
+  rivalPriceSame: { ru: '(как у вас)', en: '(same as yours)' },
+  rivalTheirCatalog: { ru: 'Его каталог:', en: 'His catalogue:' },
+  rivalTheirOriginals: { ru: 'своего {hours}', en: '{hours} original' },
+  rivalTheirFocus: { ru: 'Снимает:', en: 'Producing:' },
+  shareYou: { ru: 'вы', en: 'you' },
+  shareThem: { ru: 'он', en: 'rival' },
+  shareBarHint: { ru: 'Доля рынка подписок: вы против конкурента', en: 'Share of the subscription market: you versus the rival' },
+  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, he has {them}. Net switching this month: {flow}.' },
+
+  // --- Совет директоров ---
+  goalYear: { ru: 'Цель года {year}', en: 'Year {year} goal' },
+  goalMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
+  goalSubs: { ru: 'Набрать базу подписчиков: {have} из {need}', en: 'Build the subscriber base: {have} of {need}' },
+  goalProfit: { ru: 'Доказать, что бизнес умеет быть прибыльным: {have} прибыльных месяцев из {need}, и база {subs} из {floor}', en: 'Prove the business can be profitable: {have} profitable months of {need}, and a base of {subs} of {floor}' },
+  goalShare: { ru: 'Обойти конкурента: доля {have} из {need}, и база {subs} из {floor}', en: 'Overtake the rival: share {have} of {need}, and a base of {subs} of {floor}' },
+  goalOnTrack: { ru: 'Цель выполнена — совет доволен, оценка компании выше.', en: 'Goal met — the board is happy and the valuation is higher.' },
+  goalStake_dilution: { ru: 'Если провалить: совет введёт деньги сам и заберёт часть вашей доли.', en: 'If you miss: the board injects money itself and takes part of your stake.' },
+  goalStake_contentCap: { ru: 'Если провалить: контентный бюджет режут на полгода.', en: 'If you miss: the content budget is capped for six months.' },
+  goalStake_valuation: { ru: 'Если провалить: оценка компании на финише будет ниже.', en: 'If you miss: the final valuation takes a hit.' },
+  goalPassed: { ru: 'выполнена', en: 'met' },
+  goalFailed_dilution: { ru: 'провалена — размытие доли', en: 'missed — stake diluted' },
+  goalFailed_contentCap: { ru: 'провалена — бюджет порезан', en: 'missed — budget capped' },
+  goalFailed_valuation: { ru: 'провалена — оценка ниже', en: 'missed — valuation cut' },
+  boardCapActive: { ru: 'Совет режет контентный бюджет до {cap} в месяц. Осталось {months} мес.', en: 'The board caps the content budget at {cap} a month. {months} mo. left.' },
+  boardDone: { ru: 'Целей больше нет — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
+
+  // --- Кризисы ---
+  crisisMonths: { ru: '{months}-й месяц', en: 'month {months}' },
+  crisisWorsening: { ru: 'Пока решения нет, каждый месяц дороже предыдущего — и само решение тоже дорожает.', en: 'Until you decide, every month costs more than the last — and the fix gets more expensive too.' },
+
+  // --- Новые показатели месяца ---
+  statSwitch: { ru: 'Переток', en: 'Switching' },
+  statSwitchSub: { ru: 'пришло {inn} · ушло {out}', en: '{inn} in · {out} out' },
+  statPrices: { ru: 'Права / талант', en: 'Rights / talent' },
+  statPricesSub: { ru: 'проект стоит {project}', en: 'a project costs {project}' },
+  kpiShare: { ru: 'Доля рынка', en: 'Market share' },
+  kpiShareSub: { ru: 'у конкурента {them}', en: 'rival has {them}' },
+
+  // --- Новые предупреждения ---
+  alertGoalPassed: { ru: 'Цель года {year} выполнена. Совет повышает оценку компании.', en: 'The year {year} goal is met. The board marks the company up.' },
+  alertGoalFailed_dilution: { ru: 'Цель года {year} провалена. Совет ввёл деньги сам — и забрал часть вашей доли.', en: 'The year {year} goal was missed. The board injected money itself — and took part of your stake.' },
+  alertGoalFailed_contentCap: { ru: 'Цель года {year} провалена. Контентный бюджет порезан на полгода: стратегия «вложим всё в рост» больше недоступна.', en: 'The year {year} goal was missed. The content budget is capped for six months: "pour everything into growth" is no longer available.' },
+  alertGoalFailed_valuation: { ru: 'Цель года {year} провалена. Оценка компании на финише будет ниже.', en: 'The year {year} goal was missed. The final valuation takes a hit.' },
+  alertCapped: { ru: 'Контентный бюджет урезан советом до {cap}. Лишние деньги просто не потрачены.', en: 'The board has capped the content budget at {cap}. The extra money simply was not spent.' },
+  alertCrisisResolved: { ru: '«{name}» — решено за {cost}.', en: '"{name}" resolved for {cost}.' },
+  alertLosingSubs: { ru: 'К конкуренту ушло {count} подписчиков. Люди не отказались от подписки — они выбрали другую.', en: '{count} subscribers went to the rival. They did not give up on streaming — they chose someone else.' },
+  alertWinningSubs: { ru: 'От конкурента пришло {count} подписчиков: ваш сервис сейчас выглядит лучше.', en: '{count} subscribers came over from the rival: your service looks better right now.' },
+  alertLicenseWar: { ru: 'Права подорожали в {index} раза: вы с конкурентом торгуетесь за один и тот же контент. Тот же бюджет покупает меньше часов.', en: 'Rights are {index}× more expensive: you and the rival are bidding for the same content. The same budget buys fewer hours.' },
+  alertTalentCost: { ru: 'Талант подорожал в {index} раза. Успешному сервису звёзды выставляют другой счёт — себестоимость хита растёт быстрее его аудитории.', en: 'Talent is {index}× more expensive. Stars charge a successful service differently — a hit\u2019s cost grows faster than its audience.' },
+  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect his budgets to grow.' },
+  alertRivalDead: { ru: 'Конкурент обанкротился. Его база расходится по рынку — это ваш шанс забрать её.', en: 'The rival has gone bust. His base is dispersing — this is your chance to take it.' },
+
+  // --- График войны ---
+  chartWar: { ru: 'Вы и конкурент', en: 'You and the rival' },
+  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by taking his — and the second is faster.' },
+  seriesYou: { ru: 'Вы', en: 'You' },
+  seriesThem: { ru: 'Конкурент', en: 'Rival' },
+
+
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
@@ -851,6 +990,10 @@ function weightedPick(rng, items) {
 // Текстовые поля двуязычны: { ru, en }. Разворачивает их i18n.tx().
 // ============================================================================
 
+// Мелкие общие помощники живут здесь, а не копией в каждом модуле:
+// в однофайловой сборке все модули склеиваются, и дубль имени ломает игру.
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
 const CONFIG = {
   monthsTotal: 36,          // партия — три года
   startCash: 4_000_000_000, // деньги инвестора на старте
@@ -881,7 +1024,7 @@ const CONFIG = {
   supportCostPerSub: 9,       // поддержка и биллинг на подписчика, ₽/мес
 
   // --- Реклама ---
-  cpm: 480,                   // ₽ за 1000 показов
+  cpm: 640,                   // ₽ за 1000 показов
   adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
   refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
 
@@ -904,6 +1047,43 @@ const CONFIG = {
   // --- Инвестиции ---
   minMonthForFunding: 3,
   fundingOptions: [1_000_000_000, 3_000_000_000, 8_000_000_000],
+
+  // --- Конкуренция ---
+  // Рынок один на двоих. Расти можно двумя способами: приводить тех, у кого
+  // подписки нет вообще, и переманивать тех, кто уже платит конкуренту.
+  // Второй способ работает быстрее, но конкурент умеет отвечать.
+  switchIntensity: 0.035,     // какая доля чужой базы в месяц вообще рассматривает переход
+  switchPremiereBoost: 0.5,   // насколько премьера усиливает переток к её автору
+  competeSharpness: 1.0,      // насколько резко преимущество превращается в переток
+  // Насколько сильно собственный каталог тянет зрителя к вам сверх глубины.
+  // Это то, чего лицензией не купишь: у конкурента ровно те же лицензии.
+  exclusivePull: 1.15,
+  refExclusiveHours: 260,     // взвешенных часов своего для «половины» эффекта
+  // Свободный рынок делится по привлекательности: при паритете каждому по
+  // половине. База поднята вдвое, потому что раньше весь приток шёл вам одному.
+  trialRate: 0.115,
+
+  // --- Дорожающие ресурсы ---
+  // Права дорожают, когда за них торгуетесь вы оба. Индекс общий: сбить его
+  // в одиночку нельзя, можно только перестать в него вкладываться.
+  // Индекс начинается с 1.0 при спокойном рынке и растёт, только когда
+  // совокупная закупка выходит за привычный объём. Разогреть его можно вдвоём,
+  // остудить — только перестав торговаться.
+  licenseInflation: 1.15,
+  licenseCalmSpend: 260_000_000, // совокупная закупка, при которой индекс ещё 1.0
+  refLicenseSpend: 420_000_000,  // масштаб, на котором индекс успевает вырасти
+  licenseIndexInertia: 0.72,     // сглаживание: рынок прав реагирует не мгновенно
+  // Талант дорожает вместе с вашим успехом: успешному сервису звёзды выставляют
+  // другой счёт. Это и есть причина, по которой себестоимость хита растёт
+  // быстрее его аудитории.
+  talentInflation: 0.95,
+  refSubsForTalent: 4_000_000,
+  // Маркетинг насыщается: чем глубже проникновение, тем дороже следующий зритель
+  marketingSaturation: 1.4,
+
+  // --- Совет директоров ---
+  boardYearMonths: 12,        // цели ставятся на год и проверяются в конце года
+  boardCapMonths: 6,          // на сколько месяцев режется бюджет при провале
 };
 
 // ============================================================================
@@ -986,6 +1166,8 @@ const GENRES = [
     costPerHour: 1.25,        // множитель к базовой стоимости часа
     hours: 8,                 // сколько часов контента даёт один проект
     buzz: 1.0,                // сила всплеска подписок на премьере
+    depthValue: 1.35,         // сколько «глубины» даёт час этого жанра
+    decay: 0.004,             // как быстро час жанра теряет ценность (в месяц)
     appeal: { mass: 0.9, cinephile: 1.6, family: 0.7, youth: 0.6 },
     hint: {
       ru: 'Фестивальная драма: киноманы ради неё подписываются и остаются надолго, массовый зритель проходит мимо.',
@@ -996,9 +1178,11 @@ const GENRES = [
     id: 'blockbuster',
     hangover: 1.0,   // отток после того, как премьеру досмотрели
     name: { ru: 'Блокбастер', en: 'Blockbuster' },
-    costPerHour: 2.10,
+    costPerHour: 2.45,
     hours: 4,
     buzz: 1.45,
+    depthValue: 0.90,
+    decay: 0.012,
     appeal: { mass: 1.7, cinephile: 0.7, family: 1.1, youth: 1.4 },
     hint: {
       ru: 'Дорогая премьера с максимальным шумом. Подписки взлетают — и осыпаются через месяц, если дальше смотреть нечего.',
@@ -1012,6 +1196,8 @@ const GENRES = [
     costPerHour: 1.55,
     hours: 6,
     buzz: 0.8,
+    depthValue: 1.25,
+    decay: 0.002,
     appeal: { mass: 1.0, cinephile: 0.5, family: 2.0, youth: 0.7 },
     hint: {
       ru: 'Пересматривают десятки раз. Слабый всплеск на премьере, зато самый сильный эффект на удержание.',
@@ -1022,9 +1208,11 @@ const GENRES = [
     id: 'reality',
     hangover: 0.2,   // отток после того, как премьеру досмотрели
     name: { ru: 'Реалити и шоу', en: 'Reality and shows' },
-    costPerHour: 0.45,
+    costPerHour: 0.55,
     hours: 12,
     buzz: 0.7,
+    depthValue: 0.50,
+    decay: 0.038,
     appeal: { mass: 1.3, cinephile: 0.3, family: 0.8, youth: 1.6 },
     hint: {
       ru: 'Дёшево за час и бесконечно по объёму. Держит молодёжь и наполняет каталог, но киноманы такое не считают за контент.',
@@ -1299,26 +1487,37 @@ const DEFAULT_DECISIONS = {
   algoParam: Object.fromEntries(ALGORITHMS.map((a) => [a.key, a.param.def * (a.param.scale ?? 1)])),
 };
 
+function segmentById(id) {
+  return SEGMENTS.find((s) => s.id === id);
+}
+
+function genreById(id) {
+  return GENRES.find((g) => g.id === id);
+}
+
 
 // ===== src/model/market.js =========================================
 // ============================================================================
 // Внешний фон месяца: сезон просмотра и афиша конкурента.
 //
-// В стриминге роль погоды играет чужой релиз. Он бьёт с двух сторон сразу:
-// забирает часть новых подписок и вытягивает часть ваших зрителей — ровно
-// тогда, когда вы могли бы расти. Афиша известна на месяц вперёд: даты чужих
-// премьер публикуются задолго до выхода. Ценность не в информации, а в
-// реакции — успеть выпустить своё, поднять маркетинг или переждать.
+// Афиша больше не разыгрывается кубиком. Конкурент — живой (см. rival.js),
+// у него есть свой производственный пайплайн, и на экране вы видите то, что
+// у него действительно выходит. Анонс на следующий месяц честный: это проект,
+// которому остался месяц до премьеры.
+//
+// Здесь остаётся только перевод «шума премьеры» в понятные игроку категории
+// и общий сезонный фон, одинаковый для обеих сторон.
 // ============================================================================
 
-
-// pull — сила оттягивания аудитории, 0 = ничего не происходит
+// pull — сила оттягивания внимания, 0 = ничего не происходит.
+// Это не переток базы (он считается в rival.js), а борьба за внимание:
+// в месяц чужой громкой премьеры хуже конвертируются новые и меньше смотрят все.
 const RIVAL_RELEASES = {
   none:    { id: 'none',    icon: '·',  pull: 0,    acquisition: 1.00, churnAdd: 0,     hours: 1.00 },
-  small:   { id: 'small',   icon: '▫',  pull: 0.25, acquisition: 0.93, churnAdd: 0.004, hours: 0.98 },
-  notable: { id: 'notable', icon: '◆',  pull: 0.55, acquisition: 0.84, churnAdd: 0.012, hours: 0.95 },
-  major:   { id: 'major',   icon: '★',  pull: 0.80, acquisition: 0.72, churnAdd: 0.024, hours: 0.91 },
-  mega:    { id: 'mega',    icon: '★★', pull: 1.00, acquisition: 0.58, churnAdd: 0.040, hours: 0.86 },
+  small:   { id: 'small',   icon: '▫',  pull: 0.25, acquisition: 0.94, churnAdd: 0.003, hours: 0.98 },
+  notable: { id: 'notable', icon: '◆',  pull: 0.55, acquisition: 0.87, churnAdd: 0.009, hours: 0.96 },
+  major:   { id: 'major',   icon: '★',  pull: 0.80, acquisition: 0.78, churnAdd: 0.017, hours: 0.93 },
+  mega:    { id: 'mega',    icon: '★★', pull: 1.00, acquisition: 0.68, churnAdd: 0.028, hours: 0.89 },
 };
 
 // Месяц 1 — январь
@@ -1333,20 +1532,23 @@ function seasonOf(month) {
 // Зимой смотрят заметно больше, летом — заметно меньше. Это касается и вас,
 // и конкурента: в высокий сезон и премьер больше, и борьба за внимание острее.
 const SEASON = {
-  winter: { hours: 1.18, weights: { none: 28, small: 24, notable: 24, major: 16, mega: 8 } },
-  spring: { hours: 1.00, weights: { none: 42, small: 26, notable: 20, major: 10, mega: 2 } },
-  summer: { hours: 0.84, weights: { none: 52, small: 26, notable: 16, major: 6 } },
-  autumn: { hours: 1.06, weights: { none: 34, small: 26, notable: 22, major: 14, mega: 4 } },
+  winter: { hours: 1.18 },
+  spring: { hours: 1.00 },
+  summer: { hours: 0.84 },
+  autumn: { hours: 1.06 },
 };
 
 function seasonHours(month) {
   return SEASON[seasonOf(month)].hours;
 }
 
-function rollRivalRelease(rng, month) {
-  const table = SEASON[seasonOf(month)].weights;
-  const picked = weightedPick(rng, Object.entries(table).map(([id, weight]) => ({ id, weight })));
-  return picked ? picked.id : 'none';
+/** Во что превращается шум чужой премьеры на экране игрока. */
+function classifyRelease(buzz) {
+  if (!buzz || buzz <= 0.01) return 'none';
+  if (buzz < 0.6) return 'small';
+  if (buzz < 1.1) return 'notable';
+  if (buzz < 1.9) return 'major';
+  return 'mega';
 }
 
 /**
@@ -1367,6 +1569,589 @@ function rivalEffect(type, ownBuzz = 0) {
     churnAdd: r.churnAdd * (1 - counter),
     hoursMult: r.hours + (1 - r.hours) * counter,
   };
+}
+
+
+// ===== src/model/rival.js ==========================================
+// ============================================================================
+// Живой конкурент.
+//
+// Раньше афиша конкурента разыгрывалась случайно, и он был константой
+// в формуле. Из-за этого у игры существовала фиксированная оптимальная
+// политика: среда не менялась, значит и решение не должно было меняться.
+//
+// Теперь у конкурента есть собственное состояние — касса, каталог, база
+// подписчиков — и политика, которая читает ваши решения и отвечает на них.
+// Рынок один на двоих: сумма ваших и его подписчиков ограничена ёмкостью
+// сегментов, а часть базы каждый месяц перетекает от слабого к сильному.
+//
+// Следствие: оптимальной постоянной стратегии больше не существует. Ответ
+// на вопрос «поднимать ли цену» зависит от того, что конкурент делает
+// сейчас и что он может себе позволить дальше.
+// ============================================================================
+
+
+const genreOr = (id) => genreById(id) ?? GENRES[0];
+
+// Позиции конкурента. Игрок видит их как понятные слова, а не как числа:
+// смысл в том, чтобы можно было предсказать следующий ход.
+const STANCES = {
+  //         цена к вашей   бюджет   агрессия маркетинга
+  build:   { priceRatio: 0.95, budget: 1.00, marketing: 1.00 }, // ровный рост
+  war:     { priceRatio: 0.72, budget: 1.45, marketing: 1.60 }, // демпинг и трата кассы
+  press:   { priceRatio: 1.06, budget: 1.15, marketing: 1.15 }, // давит, пока выигрывает
+  harvest: { priceRatio: 1.18, budget: 0.55, marketing: 0.40 }, // снимает сливки, экономит
+  retreat: { priceRatio: 1.10, budget: 0.30, marketing: 0.15 }, // выживает на остатках
+};
+
+function createRival(rng) {
+  return {
+    alive: true,
+    cash: 5_200_000_000,
+    raises: 0,
+    maxRaises: 2,
+    price: 449,
+    adLoad: 5,
+    stance: 'build',
+    stanceMonths: 0,
+    focus: 'blockbuster',
+    catalogLicensed: 2_200,
+    catalogOriginal: 0,
+    freshHours: 220,
+    pipeline: [],
+    studioFund: 0,
+    lastBuzz: 0,
+    awareness: 0.30,
+    spend: { licensing: 90_000_000, originals: 90_000_000, marketing: 70_000_000 },
+    // Конкурент стартует с уже набранной базой: вы выходите на занятый рынок
+    segments: Object.fromEntries(SEGMENTS.map((s) => [s.id, s.potential * 0.07])),
+    // Что он анонсировал на следующий месяц (игроку это видно заранее)
+    announced: null,
+    exitMonthsLeft: 0,   // после банкротства база расходится не мгновенно
+  };
+}
+
+function rivalSubs(rival) {
+  return Object.values(rival.segments).reduce((s, v) => s + v, 0);
+}
+
+// ----------------------------------------------------------------------------
+// Выбор позиции. Читается как логика живого менеджмента, а не как рулетка.
+// ----------------------------------------------------------------------------
+const STANCE_MIN_MONTHS = 4;
+
+function chooseStance(rival, yourSubs, month) {
+  const mine = rivalSubs(rival);
+  const total = mine + yourSubs;
+  const myShare = total > 0 ? mine / total : 0.5;
+  const runwayMonths = rival.cash / Math.max(1, monthlyBurn(rival));
+
+  if (!rival.alive) return 'retreat';
+  // Деньги кончаются — не до войны, и это сильнее любого гистерезиса
+  if (runwayMonths < 6 && rival.raises >= rival.maxRaises) return 'retreat';
+  if (runwayMonths < 10) return 'harvest';
+
+  // Позиция держится минимум несколько месяцев. Конкурент, меняющий стратегию
+  // каждый месяц, — это шум; конкурент, который держит курс, — это противник,
+  // к которому можно готовиться. Второе и интереснее, и правдоподобнее.
+  if (rival.stanceMonths < STANCE_MIN_MONTHS && STANCES[rival.stance]) return rival.stance;
+
+  if (myShare < 0.34 && month >= 6) return 'war';
+  if (myShare < 0.46) return 'build';
+  if (myShare > 0.66) return 'press';
+  return 'build';
+}
+
+function monthlyBurn(rival) {
+  return rival.spend.licensing + rival.spend.originals + rival.spend.marketing + 20_000_000;
+}
+
+// В какой жанр он идёт: туда, где вы сильнее всего. Контр-вход — самый
+// частый ответ на чужой эксклюзив: если у вас работает драма, он снимает драму.
+function chooseFocus(rival, yourOriginalsByGenre) {
+  const entries = Object.entries(yourOriginalsByGenre ?? {});
+  if (!entries.length) return rival.focus;
+  const [best] = entries.sort((a, b) => b[1] - a[1]);
+  // Пока у вас ничего нет, он делает то, что дешевле в пересчёте на шум
+  if (!best || best[1] <= 0) return 'blockbuster';
+  return best[0];
+}
+
+// ----------------------------------------------------------------------------
+// Ход конкурента. Вызывается до расчёта рынка: игрок видит последствия
+// решений конкурента в том же месяце, что и своих.
+// ----------------------------------------------------------------------------
+function stepRival(rival, ctx, rng) {
+  const { yourPrice, yourSubs, yourOriginalsByGenre, month, licenseIndex, seasonMult } = ctx;
+
+  if (!rival.alive) {
+    // База обанкротившегося конкурента расходится по рынку несколько месяцев
+    rival.exitMonthsLeft = Math.max(0, rival.exitMonthsLeft - 1);
+    const drain = rival.exitMonthsLeft > 0 ? 0.34 : 1;
+    for (const s of SEGMENTS) rival.segments[s.id] *= (1 - drain);
+    rival.premieres = [];
+    rival.buzz = 0;
+    return rival;
+  }
+
+  const stance = chooseStance(rival, yourSubs, month);
+  rival.stanceMonths = stance === rival.stance ? rival.stanceMonths + 1 : 0;
+  rival.stance = stance;
+  rival.stanceChangedIn = rival.stanceMonths === 0;
+  const S = STANCES[stance];
+
+  // --- Цена: движется к цели медленно, чтобы игрок успевал реагировать ---
+  const targetPrice = clamp(yourPrice * S.priceRatio, 149, 899);
+  rival.price = Math.round(clamp(
+    rival.price + clamp(targetPrice - rival.price, -45, 45), 149, 899));
+  rival.adLoad = clamp(stance === 'harvest' ? 9 : stance === 'war' ? 2 : 5, 0, 16);
+
+  // --- Бюджеты: доля выручки плюс база, масштабированная позицией ---
+  // Бюджет крупного игрока менее эластичен к выручке: согласования, легаси,
+  // обязательства. Это и есть шанс маленького — он быстрее переставляет ноги.
+  const revenue = rival.lastRevenue ?? 0;
+  const base = 110_000_000 + revenue * 0.42;
+  rival.spend = {
+    licensing: Math.round(base * 0.5 * S.budget),
+    originals: Math.round(base * 0.5 * S.budget),
+    marketing: Math.round((55_000_000 + revenue * 0.26) * S.marketing),
+  };
+
+  // --- Раунд, если касса на исходе ---
+  if (rival.cash < monthlyBurn(rival) * 4 && rival.raises < rival.maxRaises) {
+    rival.cash += 3_000_000_000;
+    rival.raises += 1;
+    rival.justRaised = true;
+  } else {
+    rival.justRaised = false;
+  }
+
+  // --- Каталог ---
+  // Тот же рубль даёт ему меньше часов: корпоративные накладные — реальная вещь
+  const bought = rival.spend.licensing / (CONFIG.licenseCostPerHour * licenseIndex * 1.08);
+  rival.catalogLicensed = rival.catalogLicensed * (1 - CONFIG.licenseDecay) + bought;
+
+  rival.focus = chooseFocus(rival, yourOriginalsByGenre);
+  const genre = genreOr(rival.focus);
+  const projectCost = genre.hours * CONFIG.originalCostPerHour * genre.costPerHour;
+  rival.studioFund += rival.spend.originals;
+  const started = [];
+  while (rival.studioFund >= projectCost && started.length < 3) {
+    rival.studioFund -= projectCost;
+    started.push({
+      genre: genre.id,
+      monthsLeft: CONFIG.originalLeadMonths,
+      hours: genre.hours,
+      quality: clamp(0.6 + 0.5 * rng(), 0.3, 1.3),
+    });
+  }
+  rival.pipeline.push(...started);
+
+  for (const p of rival.pipeline) p.monthsLeft -= 1;
+  const premieres = rival.pipeline.filter((p) => p.monthsLeft <= 0);
+  rival.pipeline = rival.pipeline.filter((p) => p.monthsLeft > 0);
+
+  let fresh = 0;
+  for (const p of premieres) {
+    rival.catalogOriginal += p.hours;
+    fresh += p.hours;
+  }
+  rival.freshHours = rival.freshHours * (1 - CONFIG.freshDecay)
+    + fresh + bought * CONFIG.licenseFreshShare;
+
+  rival.premieres = premieres.map((p) => ({
+    genre: p.genre, hours: p.hours, quality: p.quality,
+    buzz: genreOr(p.genre).buzz * p.quality,
+  }));
+  rival.buzz = rival.premieres.reduce((s, p) => s + p.buzz, 0);
+
+  // --- Что он анонсирует на следующий месяц ---
+  // Анонс честный: он выпустит именно то, что доедет до премьеры.
+  const next = rival.pipeline.filter((p) => p.monthsLeft <= 1);
+  rival.announced = next.length
+    ? { buzz: next.reduce((s, p) => s + genreOr(p.genre).buzz * p.quality, 0), genre: next[0].genre }
+    : null;
+
+  // --- Узнаваемость и деньги ---
+  rival.awareness = clamp(
+    rival.awareness
+    + (1 - rival.awareness) * clamp(rival.spend.marketing / 1_400_000_000, 0, 0.14)
+    - rival.awareness * CONFIG.awarenessDecay
+    + rival.buzz * 0.015,
+    0.02, 0.9);
+
+  const subs = rivalSubs(rival);
+  const rivalRevenue = subs * (rival.price * 0.55 + rival.price * 0.37 * 0.45)
+    + subs * 22 * seasonMult * rival.adLoad * 2 / 1000 * CONFIG.cpm * 0.45;
+  const rivalCosts = monthlyBurn(rival) + subs * 22 * seasonMult * CONFIG.cdnCostPerHour * 0.9;
+  rival.lastRevenue = rivalRevenue;
+  rival.cash += rivalRevenue - rivalCosts;
+
+  if (rival.cash < 0 && rival.raises >= rival.maxRaises) {
+    rival.alive = false;
+    rival.exitMonthsLeft = 3;
+    rival.stance = 'retreat';
+  }
+  return rival;
+}
+
+// ----------------------------------------------------------------------------
+// Сравнение двух сервисов глазами одного сегмента.
+// Возвращает долю «голосов» за вас: 0.5 — паритет.
+// ----------------------------------------------------------------------------
+function segmentPreference(seg, you, rivalSide) {
+  const pull = (side) => Math.max(1e-6,
+    Math.pow(side.priceFactor, 0.9)
+    * Math.pow(Math.max(0.05, side.appeal), 1.0)
+    * side.adPenalty
+    * Math.pow(Math.max(0.05, side.awareness), 0.35)
+    // Эксклюзив — единственное, что конкурент не может купить теми же деньгами.
+    // Лицензия лежит на обеих полках; своё — только на вашей.
+    * (1 + CONFIG.exclusivePull * (side.exclusive ?? 0))
+    * (1 + side.buzz * CONFIG.switchPremiereBoost));
+
+  const a = Math.pow(pull(you), CONFIG.competeSharpness);
+  const b = Math.pow(pull(rivalSide), CONFIG.competeSharpness);
+  return a / (a + b);
+}
+
+/**
+ * Переток базы между сервисами за месяц.
+ * Возвращает «сколько человек этого сегмента перешло к вам» (может быть < 0).
+ *
+ * Лояльные сегменты переходят неохотно даже при явном перевесе — привычка
+ * сильнее арифметики.
+ */
+function switchFlow(segDef, preference, yourSegSubs, rivalSegSubs) {
+  const advantage = (preference - 0.5) * 2;               // ∈ [−1, 1]
+  // loyalty здесь — множитель оттока: чем он выше, тем легче человек снимается
+  // с места. Семьи почти не переходят, молодёжь уходит за первым же хайпом.
+  const mobility = CONFIG.switchIntensity * segDef.loyalty;
+  if (advantage >= 0) return rivalSegSubs * mobility * advantage;
+  return -yourSegSubs * mobility * (-advantage);
+}
+
+
+// ===== src/model/board.js ==========================================
+// ============================================================================
+// Совет директоров: цели на год и последствия их провала.
+//
+// Зачем это в модели. Одна цель на всю партию («максимизируйте оценку»)
+// позволяет выбрать стратегию на первом ходу и больше к ней не возвращаться.
+// Совет ставит цель на год, и цели устроены так, что тянут в разные стороны:
+// первый год — рост базы, второй — доказать, что бизнес умеет быть прибыльным,
+// третий — отобрать рынок у конкурента. Стратегия, выигрывающая первый год,
+// проваливает второй.
+//
+// Цели известны заранее — они объявляются в первый месяц года. Это не рулетка,
+// а планирование: вы знаете, к чему идёте, и решаете, чем ради этого жертвуете.
+// ============================================================================
+
+
+const GOAL_TYPES = {
+  subscribers: 'subscribers',   // база на конец года
+  profit: 'profit',             // сколько месяцев года закрыты в плюс
+  share: 'share',               // доля рынка против конкурента
+};
+
+/**
+ * Цель года. Считается от фактического состояния на начало года,
+ * поэтому всегда остаётся вызовом и не превращается в формальность.
+ */
+function makeGoal(year, state, yourSubs, rivalSubs) {
+  if (year === 1) {
+    return {
+      year,
+      type: GOAL_TYPES.subscribers,
+      target: 900_000,
+      reward: 0.10,
+      penalty: 'dilution',
+    };
+  }
+  if (year === 2) {
+    return {
+      year,
+      type: GOAL_TYPES.profit,
+      // Не разово, а устойчиво: минимум 4 прибыльных месяца из 12
+      target: 4,
+      subsFloor: Math.round(Math.max(1_800_000, yourSubs * 1.5)),
+      reward: 0.12,
+      penalty: 'contentCap',
+    };
+  }
+  const total = yourSubs + rivalSubs;
+  return {
+    year,
+    type: GOAL_TYPES.share,
+    target: 0.5,
+    subsFloor: Math.round(Math.max(3_000_000, yourSubs * 1.35)),
+    reward: 0.18,
+    penalty: 'valuation',
+    startShare: total > 0 ? yourSubs / total : 0.5,
+  };
+}
+
+/** Текущий прогресс по цели — для отображения каждый месяц, а не только в конце. */
+function goalProgress(goal, ctx) {
+  if (!goal) return null;
+  const { subs, rivalSubs, profitableMonths } = ctx;
+  if (goal.type === GOAL_TYPES.subscribers) {
+    return { value: subs, target: goal.target, done: subs >= goal.target };
+  }
+  if (goal.type === GOAL_TYPES.profit) {
+    return {
+      value: profitableMonths,
+      target: goal.target,
+      subs,
+      subsFloor: goal.subsFloor,
+      done: profitableMonths >= goal.target && subs >= goal.subsFloor,
+    };
+  }
+  const total = subs + rivalSubs;
+  const share = total > 0 ? subs / total : 0;
+  return {
+    value: share,
+    target: goal.target,
+    subs,
+    subsFloor: goal.subsFloor,
+    done: share >= goal.target && subs >= goal.subsFloor,
+  };
+}
+
+/**
+ * Применяет последствия. Провал не убивает партию — он делает следующий год
+ * труднее, и именно это заставляет пересобирать стратегию, а не начинать заново.
+ */
+function applyGoalOutcome(state, goal, progress, month) {
+  const passed = Boolean(progress?.done);
+  const outcome = { year: goal.year, type: goal.type, passed, effect: null };
+
+  if (passed) {
+    state.flags.valuationBonus += goal.reward;
+    outcome.effect = 'reward';
+    return outcome;
+  }
+
+  if (goal.penalty === 'dilution') {
+    // Совет вводит деньги сам — на своих условиях. Долю режет заметно.
+    state.pendingDilution = 0.18;
+    outcome.effect = 'dilution';
+  } else if (goal.penalty === 'contentCap') {
+    // Бюджет на контент режется на полгода: инвесторы больше не верят в «мы
+    // всё вложим в рост». Это ломает стратегию, которая работала до сих пор.
+    state.restrictions = {
+      contentCap: 140_000_000,
+      until: month + CONFIG.boardCapMonths,
+    };
+    state.flags.valuationBonus -= 0.10;
+    outcome.effect = 'contentCap';
+  } else {
+    state.flags.valuationBonus -= 0.15;
+    outcome.effect = 'valuation';
+  }
+  return outcome;
+}
+
+
+// ===== src/model/crises.js =========================================
+// ============================================================================
+// Кризисы: проблемы, которые длятся, пока их не решить.
+//
+// Разовое событие с множителем ±10% — это неудачный бросок кубика: игрок
+// его пережидает, потому что реагировать не на что. Кризис устроен иначе.
+// Он висит на компании, каждый месяц становится хуже и требует явного
+// решения, у которого есть цена. Тянуть можно — но дороже.
+//
+// Кризисы приходят тем чаще, чем лучше у вас дела: успешный сервис судят,
+// у него переманивают команду и о нём пишут. Это не наказание за успех,
+// а его настоящая себестоимость.
+// ============================================================================
+
+
+const CRISES = [
+  {
+    id: 'scandal',
+    weight: 6,
+    minMonth: 7,
+    title: { ru: 'Скандал вокруг сервиса', en: 'A scandal around the service' },
+    text: {
+      ru: 'Разбор вашего шоу разошёлся по соцсетям, и разговор пошёл не про кино. Каждую неделю тема растёт.',
+      en: 'A takedown of your show has spread across social media, and the conversation is no longer about the show. It grows every week.',
+    },
+    lesson: {
+      ru: 'Репутационные издержки не попадают в P&L, пока не превратятся в отток. К этому моменту чинить их уже дорого.',
+      en: 'Reputational costs never show up in the P&L until they turn into churn. By then they are expensive to fix.',
+    },
+    // Эффект растёт с каждым непрожитым месяцем
+    escalate: (m) => ({ churnAdd: 0.012 * m, awarenessMult: 1 - 0.06 * m, demandMult: 1 - 0.05 * m }),
+    resolutions: [
+      {
+        id: 'pr',
+        label: { ru: 'Кампания и публичный ответ', en: 'A campaign and a public answer' },
+        detail: { ru: 'Стоит тем дороже, чем дольше вы молчали.', en: 'Costs more the longer you stayed silent.' },
+        cost: (m) => 70_000_000 * m,
+        resolves: true,
+      },
+      {
+        id: 'wait',
+        label: { ru: 'Переждать', en: 'Wait it out' },
+        detail: { ru: 'Денег не стоит. В следующем месяце будет хуже.', en: 'Costs nothing. Next month it will be worse.' },
+        cost: () => 0,
+        resolves: false,
+      },
+    ],
+  },
+  {
+    id: 'lawsuit',
+    weight: 5,
+    minMonth: 10,
+    title: { ru: 'Иск правообладателя', en: 'A rights holder sues' },
+    text: {
+      ru: 'Студия утверждает, что часть вашей библиотеки лицензирована с нарушением. До решения суда спорные часы заморожены.',
+      en: 'A studio claims part of your library was licensed improperly. The disputed hours are frozen until the court rules.',
+    },
+    lesson: {
+      ru: 'Арендованный каталог — это ещё и юридический риск: чужие права можно потерять по чужому решению.',
+      en: 'A rented catalogue is also a legal risk: rights you do not own can be taken away by someone else’s decision.',
+    },
+    escalate: (m) => ({ licensedFreeze: clamp(0.16 + 0.07 * m, 0, 0.55), oneOffCost: 22_000_000 }),
+    resolutions: [
+      {
+        id: 'settle',
+        label: { ru: 'Урегулировать', en: 'Settle' },
+        detail: { ru: 'Дорого и сразу. Каталог размораживается.', en: 'Expensive and immediate. The catalogue is unfrozen.' },
+        cost: (m) => 180_000_000 + 40_000_000 * m,
+        resolves: true,
+      },
+      {
+        id: 'fight',
+        label: { ru: 'Судиться', en: 'Fight it' },
+        detail: { ru: 'Дешевле в месяц, но заморозка растёт.', en: 'Cheaper per month, but the freeze keeps growing.' },
+        cost: () => 30_000_000,
+        resolves: false,
+      },
+    ],
+  },
+  {
+    id: 'showrunner',
+    weight: 5,
+    minMonth: 9,
+    title: { ru: 'Шоураннер уходит к конкуренту', en: 'Your showrunner leaves for the rival' },
+    text: {
+      ru: 'Человек, на котором держалась вся производственная линейка, забирает с собой команду. Проекты встают.',
+      en: 'The person the whole production slate rested on is taking the team with them. Projects are stalling.',
+    },
+    lesson: {
+      ru: 'Производственный конвейер — это люди, а не бюджет. Деньги в студии не заменяют тех, кто умеет их потратить.',
+      en: 'A production pipeline is people, not budget. Money in the studio does not replace the people who know how to spend it.',
+    },
+    escalate: (m) => ({ pipelineStall: m >= 2 ? 2 : 1, qualityMult: 1 - 0.12 * m }),
+    resolutions: [
+      {
+        id: 'counter',
+        label: { ru: 'Перебить предложение', en: 'Beat the offer' },
+        detail: { ru: 'Команда остаётся, себестоимость производства растёт навсегда.', en: 'The team stays; your production costs rise for good.' },
+        cost: () => 150_000_000,
+        resolves: true,
+        talentPenalty: 0.12,
+      },
+      {
+        id: 'rebuild',
+        label: { ru: 'Собрать новую команду', en: 'Build a new team' },
+        detail: { ru: 'Дешевле, но текущие проекты теряют месяц и качество.', en: 'Cheaper, but current projects lose a month and some quality.' },
+        cost: () => 45_000_000,
+        resolves: true,
+        pipelineDelay: 1,
+        qualityHit: 0.15,
+      },
+    ],
+  },
+  {
+    id: 'degradation',
+    weight: 5,
+    minMonth: 8,
+    title: { ru: 'Платформа не выдерживает нагрузки', en: 'The platform is buckling' },
+    text: {
+      ru: 'Плеер падает на пиках, качество прыгает, поддержка завалена. Каждый месяц без вложений — хуже.',
+      en: 'The player fails at peak, quality fluctuates, support is swamped. Every month without investment makes it worse.',
+    },
+    lesson: {
+      ru: 'Технический долг ведёт себя как заём: пока не отдан, проценты капают оттоком.',
+      en: 'Technical debt behaves like a loan: until it is repaid, the interest is charged in churn.',
+    },
+    escalate: (m) => ({ churnAdd: 0.008 * m, hoursMult: 1 - 0.05 * m, cdnMult: 1 + 0.06 * m }),
+    resolutions: [
+      {
+        id: 'invest',
+        label: { ru: 'Экстренно вложиться в платформу', en: 'Emergency platform investment' },
+        detail: { ru: 'Разовые расходы, зато часть уходит в технологический запас.', en: 'A one-off cost, but part of it lands in your technology stock.' },
+        cost: (m) => 90_000_000 + 30_000_000 * m,
+        resolves: true,
+        techGain: 0.6,
+      },
+      {
+        id: 'patch',
+        label: { ru: 'Заклеить и жить дальше', en: 'Patch it and move on' },
+        detail: { ru: 'Дёшево. Проблема остаётся и растёт.', en: 'Cheap. The problem stays and grows.' },
+        cost: () => 12_000_000,
+        resolves: false,
+      },
+    ],
+  },
+];
+
+function crisisById(id) {
+  return CRISES.find((c) => c.id === id) ?? null;
+}
+
+/**
+ * Кризис приходит тем охотнее, чем крупнее и заметнее сервис.
+ * Одновременно висит не больше одного: игра про управление, а не про пожар.
+ */
+function rollCrisis(rng, month, { subs, active }) {
+  if (active) return null;
+  const pool = CRISES.filter((c) => month >= c.minMonth);
+  if (!pool.length) return null;
+
+  // 2% при пустом сервисе, до ~14% при миллионах подписчиков
+  const scale = clamp(subs / 3_000_000, 0, 1);
+  const chance = 0.02 + 0.12 * scale;
+  if (rng() > chance) return null;
+
+  const total = pool.reduce((s, c) => s + c.weight, 0);
+  let roll = rng() * total;
+  for (const c of pool) {
+    roll -= c.weight;
+    if (roll <= 0) return { id: c.id, months: 0 };
+  }
+  return { id: pool[pool.length - 1].id, months: 0 };
+}
+
+// Кризис ухудшается не бесконечно: через MAX_ESCALATION месяцев он выходит
+// на полку. Это не милосердие, а честность — дальше он просто дорого стоит
+// каждый месяц, и решение всё равно остаётся за игроком.
+const MAX_ESCALATION = 5;
+
+const severityOf = (active) => clamp(Math.max(1, (active?.months ?? 0) + 1), 1, MAX_ESCALATION);
+
+/** Эффекты активного кризиса на текущий месяц. */
+function crisisEffects(active) {
+  if (!active) return {};
+  const def = crisisById(active.id);
+  if (!def) return {};
+  return def.escalate(severityOf(active));
+}
+
+/** Стоимость выбранного решения — зависит от того, сколько вы тянули. */
+function resolutionCost(active, resolutionId) {
+  const def = crisisById(active?.id);
+  const res = def?.resolutions.find((r) => r.id === resolutionId);
+  if (!res) return 0;
+  return res.cost(severityOf(active));
+}
+
+function resolutionById(crisisId, resolutionId) {
+  return crisisById(crisisId)?.resolutions.find((r) => r.id === resolutionId) ?? null;
 }
 
 
@@ -1604,9 +2389,9 @@ function applyEvent(mods, event, optionIndex) {
 //             (лаг 6 месяцев)   ┘         │
 //                                         ▼
 //   маркетинг -> узнаваемость -> пробные подписки -> ПОДПИСЧИКИ (запас)
-//                                         │                   │
-//                    цена, реклама, каталог -> отток           ▼
-//                                                        часы просмотра
+//                    ▲                    │                   │
+//                    │   цена, реклама, каталог -> отток       ▼
+//         ПЕРЕТОК ◄──┴──► КОНКУРЕНТ                      часы просмотра
 //                                                             │
 //                                        выручка (подписка + реклама)
 //                                        минус трафик (растёт с часами!)
@@ -1616,22 +2401,46 @@ function applyEvent(mods, event, optionIndex) {
 // Главная особенность жанра: чем больше зритель смотрит, тем он лояльнее —
 // и тем дороже обходится. Трафик здесь единственная крупная переменная
 // статья, и она растёт вместе с любовью аудитории к сервису.
+//
+// Среда нестационарна: конкурент отвечает на ваши решения, права и талант
+// дорожают вместе с вашим успехом, совет директоров меняет цель каждый год,
+// а кризисы длятся, пока их не решить. Поэтому постоянной оптимальной
+// политики в этой игре не существует — стратегию приходится пересобирать.
 // ============================================================================
 
 
-const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+// Справочники и clamp живут в config.js; здесь они переэкспортируются,
+// чтобы у интерфейса и тестов была одна точка входа в модель.
 
-function segmentById(id) {
-  return SEGMENTS.find((s) => s.id === id);
+// Во сколько обходится один проект выбранного жанра при текущей цене таланта
+function projectCost(genre, talentIndex = 1) {
+  return genre.hours * CONFIG.originalCostPerHour * genre.costPerHour * talentIndex;
 }
 
-function genreById(id) {
-  return GENRES.find((g) => g.id === id);
+// ----------------------------------------------------------------------------
+// Дорожающие ресурсы
+// ----------------------------------------------------------------------------
+
+/** Индекс цен на права: общий для рынка, растёт от совокупной закупки. */
+function licenseIndexOf(state) {
+  return state.licenseIndex ?? 1;
 }
 
-// Во сколько обходится один проект выбранного жанра
-function projectCost(genre) {
-  return genre.hours * CONFIG.originalCostPerHour * genre.costPerHour;
+/**
+ * Индекс стоимости таланта. Растёт вместе с вашим успехом: успешному сервису
+ * звёзды выставляют другой счёт. Это и есть причина, по которой себестоимость
+ * хита растёт быстрее его аудитории.
+ */
+function talentIndexOf(state) {
+  const subs = lastSubs(state);
+  const fromSuccess = Math.pow(clamp(subs / CONFIG.refSubsForTalent, 0, 4), 0.7);
+  return 1 + CONFIG.talentInflation * fromSuccess + (state.talentPenalty ?? 0);
+}
+
+function lastSubs(state) {
+  const last = state.history[state.history.length - 1];
+  if (last) return last.subs;
+  return SEGMENTS.reduce((s, def) => s + state.segments[def.id].premium + state.segments[def.id].ads, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -1639,9 +2448,8 @@ function projectCost(genre) {
 // ----------------------------------------------------------------------------
 function createInitialState(seed = 'kinopotok') {
   const rng = createRng(seed);
-  const rival = rollRivalRelease(rng, 1);
-  const rivalNext = rollRivalRelease(rng, 2);
-  return {
+  const rival = createRival(rng);
+  const state = {
     seed,
     rngState: rng.state(),
     month: 0,
@@ -1654,6 +2462,7 @@ function createInitialState(seed = 'kinopotok') {
     installed: {},
     catalogLicensed: 900,  // стартовая библиотека, доставшаяся от прежнего владельца
     catalogOriginal: 0,
+    originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
     studioFund: 0,         // деньги, накопленные на текущий проект
     pipeline: [],          // проекты в производстве
@@ -1665,8 +2474,25 @@ function createInitialState(seed = 'kinopotok') {
       premium: 0,
       ads: 0,
     }])),
-    rival,
-    rivalNext,
+
+    // --- Живой конкурент ---
+    rivalState: rival,
+    rival: 'none',         // категория его премьеры в этом месяце
+    rivalNext: 'none',     // что он анонсировал на следующий
+
+    // --- Дорожающие ресурсы ---
+    licenseIndex: 1,
+    talentPenalty: 0,
+
+    // --- Совет директоров ---
+    board: { goal: null, history: [], profitableMonths: 0 },
+    restrictions: null,
+    pendingDilution: 0,
+
+    // --- Кризисы ---
+    crisis: null,          // { id, months }
+    crisisHistory: [],
+
     decisions: structuredClone(DEFAULT_DECISIONS),
     flags: { valuationBonus: 0 },
     pendingEvent: null,
@@ -1675,6 +2501,9 @@ function createInitialState(seed = 'kinopotok') {
     lastSnapshot: null,
     over: null,
   };
+  // Цель первого года объявляется сразу: игрок должен её видеть с первого хода
+  state.board.goal = makeGoal(1, state, 0, rivalSubs(rival));
+  return state;
 }
 
 // ----------------------------------------------------------------------------
@@ -1706,6 +2535,37 @@ function catalogFreshness(freshHours) {
   return clamp(Math.pow(Math.max(0, freshHours) / CONFIG.refFreshHours, 0.5), 0, 1.7);
 }
 
+/** Взвешенный «полезный» каталог: час драмы и час реалити стоят разного. */
+function weightedOriginals(originalsByGenre) {
+  let acc = 0;
+  for (const g of GENRES) acc += (originalsByGenre?.[g.id] ?? 0) * g.depthValue;
+  return acc;
+}
+
+/**
+ * Насколько сильно собственный каталог тянет к вам именно этот сегмент.
+ * Учитывает не только объём, но и то, для кого вы снимали: гора реалити
+ * не удержит киноманов, сколько бы её ни было.
+ */
+function exclusivePullOf(weightedHours, segDef, byGenre) {
+  let relevant = weightedHours;
+  if (byGenre) {
+    relevant = 0;
+    for (const g of GENRES) {
+      relevant += (byGenre[g.id] ?? 0) * g.depthValue * CONFIG.originalDepthWeight
+        * (g.appeal[segDef.id] ?? 1);
+    }
+  }
+  return relevant / (relevant + CONFIG.refExclusiveHours * CONFIG.originalDepthWeight);
+}
+
+/** Действующий потолок контентного бюджета, если совет его порезал. */
+function contentCap(state) {
+  const r = state.restrictions;
+  if (!r || state.month >= r.until) return null;
+  return r.contentCap;
+}
+
 // ----------------------------------------------------------------------------
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
@@ -1726,15 +2586,46 @@ function step(prevState, input = {}) {
   rng.restore(state.rngState);
 
   const month = state.month + 1;
+  const season = seasonHours(month);
 
-  // --- 1. Событие месяца ---
+  // --- 1. Ограничения совета директоров ---
+  // Порезанный бюджет — это не совет, а потолок: лишние деньги просто не тратятся.
+  const cap = contentCap(state);
+  const contentBudget = cap === null
+    ? { licensing: decisions.licensing, originals: decisions.originals }
+    : capContent(decisions, cap);
+  const capApplied = cap !== null
+    && (contentBudget.licensing + contentBudget.originals) < (decisions.licensing + decisions.originals) - 1;
+
+  // --- 2. Событие месяца и кризис ---
   const mods = neutralModifiers();
   const event = state.pendingEvent;
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
   applyEvent(mods, event, choice);
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
 
-  // --- 2. Алгоритмы: доступность, внедрение, настройки ---
+  // Решение по кризису принимается до расчёта месяца: подействует сразу
+  let crisisResolved = null;
+  let crisisCost = 0;
+  const crisisChoice = input.crisisChoice ?? null;
+  if (state.crisis && crisisChoice) {
+    const res = resolutionById(state.crisis.id, crisisChoice);
+    if (res) {
+      crisisCost = resolutionCost(state.crisis, crisisChoice);
+      if (res.talentPenalty) state.talentPenalty = (state.talentPenalty ?? 0) + res.talentPenalty;
+      if (res.techGain) state.techStock += crisisCost * res.techGain;
+      if (res.pipelineDelay) for (const p of state.pipeline) p.monthsLeft += res.pipelineDelay;
+      if (res.qualityHit) for (const p of state.pipeline) p.quality *= (1 - res.qualityHit);
+      if (res.resolves) {
+        crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
+        state.crisisHistory.push(crisisResolved);
+        state.crisis = null;
+      }
+    }
+  }
+  const crisisMods = crisisEffects(state.crisis);
+
+  // --- 3. Алгоритмы: доступность, внедрение, настройки ---
   const quality = algoQuality(state);
   let installCost = 0;
   const installedNow = [];
@@ -1755,16 +2646,42 @@ function step(prevState, input = {}) {
   const compression = algo('encoding');
   const pacing = algo('pacing');
 
-  // --- 3. Производство: копилка, старт проектов, премьеры ---
+  // --- 4. Дорожающие ресурсы ---
+  // Индекс прав общий: сбить его в одиночку нельзя, можно только выйти из торгов.
+  const rivalLicSpend = state.rivalState.spend?.licensing ?? 0;
+  const bidPressure = Math.max(0,
+    (contentBudget.licensing + rivalLicSpend - CONFIG.licenseCalmSpend) / CONFIG.refLicenseSpend);
+  const targetIndex = 1 + CONFIG.licenseInflation * clamp(bidPressure, 0, 2.4);
+  state.licenseIndex = state.licenseIndex * CONFIG.licenseIndexInertia
+    + targetIndex * (1 - CONFIG.licenseIndexInertia);
+  const licenseIndex = state.licenseIndex;
+  const talentIndex = talentIndexOf(state);
+
+  // --- 5. Ход конкурента ---
+  const yourSubsBefore = lastSubs(state);
+  const rivalBefore = rivalSubs(state.rivalState);
+  stepRival(state.rivalState, {
+    yourPrice: decisions.pricePremium,
+    yourSubs: yourSubsBefore,
+    yourOriginalsByGenre: state.originalsByGenre,
+    month,
+    licenseIndex,
+    seasonMult: season,
+  }, rng);
+  const riv = state.rivalState;
+
+  // --- 6. Производство: копилка, старт проектов, премьеры ---
   const genre = genreById(decisions.genre) ?? GENRES[0];
-  state.studioFund += decisions.originals;
+  const cost = projectCost(genre, talentIndex);
+  state.studioFund += contentBudget.originals;
   const started = [];
   // Копилка может дать сразу несколько проектов, если бюджет большой
-  while (state.studioFund >= projectCost(genre)) {
-    state.studioFund -= projectCost(genre);
+  while (state.studioFund >= cost && started.length < 4) {
+    state.studioFund -= cost;
     // Качество зависит от команды, технологий и удачи: кино — рискованный бизнес
     const luck = rng();
-    const projectQuality = clamp(0.55 + 0.5 * luck + 0.25 * techLevel(state), 0.25, 1.45);
+    const projectQuality = clamp(
+      (0.55 + 0.5 * luck + 0.25 * techLevel(state)) * (crisisMods.qualityMult ?? 1), 0.25, 1.45);
     state.pipeline.push({
       genre: genre.id,
       monthsLeft: CONFIG.originalLeadMonths,
@@ -1774,15 +2691,25 @@ function step(prevState, input = {}) {
     started.push({ genre: genre.id, quality: projectQuality });
   }
 
+  // Кризис с уходом команды тормозит конвейер, пока не решён
+  const stall = crisisMods.pipelineStall ?? 0;
   const premieres = [];
-  for (const project of state.pipeline) project.monthsLeft -= 1;
+  for (const project of state.pipeline) project.monthsLeft -= (stall > 0 ? 0 : 1);
+  if (stall > 1) for (const project of state.pipeline) project.monthsLeft += 1;
   for (const project of state.pipeline.filter((p) => p.monthsLeft <= 0)) {
     const g = genreById(project.genre);
-    state.catalogOriginal += project.hours;
+    state.originalsByGenre[project.genre] = (state.originalsByGenre[project.genre] ?? 0) + project.hours;
     state.freshHours += project.hours;
     premieres.push({ genre: project.genre, quality: project.quality, hours: project.hours, buzz: g.buzz * project.quality });
   }
   state.pipeline = state.pipeline.filter((p) => p.monthsLeft > 0);
+
+  // Час реалити стареет быстро, час драмы почти не стареет: дешёвая полка
+  // наполняется быстро и так же быстро пустеет.
+  for (const g of GENRES) {
+    state.originalsByGenre[g.id] = (state.originalsByGenre[g.id] ?? 0) * (1 - g.decay);
+  }
+  state.catalogOriginal = GENRES.reduce((s, g) => s + state.originalsByGenre[g.id], 0);
 
   // Календарь релизов растягивает премьеру: часть шума переносится на следующий
   // месяц, зато пик ниже. Отток после «досмотрел всё» сглаживается.
@@ -1797,20 +2724,25 @@ function step(prevState, input = {}) {
   state.hangover = premieres.reduce(
     (s, p) => s + p.buzz * (genreById(p.genre)?.hangover ?? 0.4), 0) * (1 - 0.55 * pacing);
 
-  // --- 4. Каталог ---
+  // --- 7. Каталог ---
   // Прогноз спроса делает тот же бюджет эффективнее, но тянет закупку
   // к уже известному: глубина растёт медленнее, чем просмотры.
   const licensingEfficiency = 1 + 0.45 * forecastTrust * quality;
-  const boughtHours = (decisions.licensing / CONFIG.licenseCostPerHour) * licensingEfficiency;
+  const boughtHours = (contentBudget.licensing / (CONFIG.licenseCostPerHour * licenseIndex))
+    * licensingEfficiency;
   state.catalogLicensed = state.catalogLicensed * (1 - CONFIG.licenseDecay) + boughtHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
   state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
 
-  const catalogHours = state.catalogLicensed + state.catalogOriginal;
+  // Иск замораживает часть арендованной библиотеки — своё отобрать нельзя
+  const freeze = crisisMods.licensedFreeze ?? 0;
+  const availableLicensed = state.catalogLicensed * (1 - freeze);
+
+  const catalogHours = availableLicensed + state.catalogOriginal;
   // Чужой каталог хуже удерживает: он есть и у конкурентов
-  const weightedLicensed = state.catalogLicensed * CONFIG.licenseDepthWeight;
-  const weightedOriginal = state.catalogOriginal * CONFIG.originalDepthWeight;
+  const weightedLicensed = availableLicensed * CONFIG.licenseDepthWeight;
+  const weightedOriginal = weightedOriginals(state.originalsByGenre) * CONFIG.originalDepthWeight;
   const effectiveCatalog = weightedLicensed + weightedOriginal;
   const originalShare = effectiveCatalog > 0 ? weightedOriginal / effectiveCatalog : 0;
   const depth = catalogDepth(effectiveCatalog) * (1 - 0.10 * forecastTrust * quality);
@@ -1827,17 +2759,27 @@ function step(prevState, input = {}) {
   const bubble = 1 - 0.30 * recoStrength ** 2 * (1 - quality);
   const perceivedDepth = depth * recoLift * bubble;
 
-  // --- 5. Внешний фон ---
-  const rivalType = state.rival ?? 'none';
+  // --- 8. Внешний фон: борьба за внимание в месяц чужой премьеры ---
+  const rivalType = classifyRelease(riv.buzz);
+  const rivalNextType = classifyRelease(riv.announced?.buzz ?? 0);
+  state.rival = rivalType;
+  state.rivalNext = rivalNextType;
   const rival = rivalEffect(rivalType, buzz);
-  const season = seasonHours(month);
 
-  // --- 6. Подписчики по сегментам ---
+  // Каталог конкурента глазами зрителя — для сравнения сервисов
+  const rivalEffectiveCatalog = riv.catalogLicensed * CONFIG.licenseDepthWeight
+    + riv.catalogOriginal * CONFIG.originalDepthWeight;
+  const rivalDepth = catalogDepth(rivalEffectiveCatalog);
+  const rivalFreshness = catalogFreshness(riv.freshHours);
+
+  // --- 9. Подписчики по сегментам ---
   const refPrice = 399;
   let newSubs = 0;
   let lostSubs = 0;
   let trialsTotal = 0;
   let winbackCost = 0;
+  let switchedIn = 0;
+  let switchedOut = 0;
   const perSegment = [];
 
   for (const def of SEGMENTS) {
@@ -1870,29 +2812,67 @@ function step(prevState, input = {}) {
     const premiereAppeal = premieres.reduce(
       (s, p) => s + p.buzz * (genreById(p.genre)?.appeal[def.id] ?? 1), 0);
 
-    // Узнаваемость — накопительный запас
+    // Узнаваемость — накопительный запас. Маркетинг насыщается: чем глубже
+    // проникновение, тем дороже обходится следующий зритель.
+    const subsBefore = seg.premium + seg.ads;
+    const penetration = clamp(subsBefore / def.potential, 0, 1);
+    const saturation = 1 / (1 + CONFIG.marketingSaturation * penetration * penetration);
     const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
     const spendPerViewer = (decisions.marketing * shareOfMarket) / def.potential;
     const gain = clamp(
-      0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55),
+      0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55) * saturation,
       0, CONFIG.awarenessMaxGain);
     seg.awareness = clamp(
-      seg.awareness + (1 - seg.awareness) * gain - seg.awareness * CONFIG.awarenessDecay
+      seg.awareness + (1 - seg.awareness) * gain
+      - seg.awareness * CONFIG.awarenessDecay * (crisisMods.awarenessMult ? 2 : 1)
       + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02,
       0, 1);
 
-    // Пробные подписки → платящие
-    const subs = seg.premium + seg.ads;
-    const untapped = Math.max(0, def.potential - subs);
+    // --- Рынок один на двоих ---
+    const rivalSegSubs = riv.segments[def.id] ?? 0;
+    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs);
+
+    // Оба сервиса описываются одним и тем же набором характеристик, и оба
+    // приводят зрителя по одной и той же формуле. Симметрия здесь принципиальна:
+    // иначе выигрывает не тот, кто лучше, а тот, кому модель дала фору.
+    const youSide = {
+      priceFactor, appeal, adPenalty, awareness: seg.awareness, buzz,
+      exclusive: exclusivePullOf(weightedOriginal, def, state.originalsByGenre),
+    };
+    const rivalSide = {
+      priceFactor: clamp(Math.pow(refPrice / Math.max(30, riv.price * 0.82), def.elasticity), 0.15, 2.6),
+      appeal: clamp(
+        Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
+        * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
+      adPenalty: clamp(1 - 0.16 * clamp((riv.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3) * 0.45, 0.45, 1),
+      awareness: riv.awareness,
+      buzz: riv.buzz,
+      exclusive: exclusivePullOf(riv.catalogOriginal * CONFIG.originalDepthWeight, def, null),
+    };
+    const preference = segmentPreference(def, youSide, rivalSide);
+    // Свободный рынок делится по привлекательности: при паритете каждому
+    // достаётся половина новых подписок, а не всё, как было раньше.
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
-    const trials = untapped * seg.awareness * 0.055 * priceFactor * appeal * adPenalty
-      * rival.acquisitionMult * mods.demandMult * (1 + premiereAppeal * 0.6);
+    const trials = untapped * seg.awareness * CONFIG.trialRate * priceFactor * appeal * adPenalty
+      * rival.acquisitionMult * mods.demandMult * (crisisMods.demandMult ?? 1)
+      * preference * (1 + premiereAppeal * 0.6);
     const converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Конкурент забирает свою половину той же поляны по той же формуле.
+    // Если вы его переигрываете, ему достаётся меньше — свободный рынок
+    // это тоже поле боя, а не общий котёл.
+    const rivalConverted = riv.alive
+      ? untapped * rivalSide.awareness * CONFIG.trialRate
+        * rivalSide.priceFactor * rivalSide.appeal * rivalSide.adPenalty
+        * (1 - preference) * CONFIG.trialConversion * (1 + riv.buzz * 0.6)
+      : 0;
+    const rivalAfterOwn = Math.max(0, rivalSegSubs + rivalConverted
+      - rivalSegSubs * clamp(CONFIG.baseChurn * def.loyalty * 1.15, 0.005, 0.5));
 
     // Отток: скучный каталог, дорогая подписка, назойливая реклама, чужая премьера
     const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * 0.055;
     const priceAnger = Math.max(0, 1 - priceFactor) * 0.045;
-    const adAnger = (1 - adPenalty) * 0.25;
+    const adAnger = (1 - adPenalty) * 0.11;
     const techAnnoyance = Math.max(0, 1 - decisions.bitrate / CONFIG.refBitrate) * 0.03
       + compression * (1 - quality) * 0.02 / Math.max(0.3, def.adTolerance);
     // Персональное удержание: скидка тем, кто уже собрался уходить
@@ -1905,22 +2885,31 @@ function step(prevState, input = {}) {
     const exclusiveHold = 1 - CONFIG.exclusiveRetention * originalShare;
     let churnRate = clamp(
       (CONFIG.baseChurn * def.loyalty + boredom + priceAnger + adAnger + techAnnoyance) * exclusiveHold
-      + rival.churnAdd + (mods.churnAdd ?? 0)
+      + rival.churnAdd + (mods.churnAdd ?? 0) + (crisisMods.churnAdd ?? 0)
       + hangover * 0.018 * def.freshnessWeight
       - buzz * 0.030,
       0.005, 0.5);
     const savedShare = winbackPower * 0.45;
     churnRate = churnRate * (1 - savedShare);
 
-    const leaving = subs * churnRate;
+    const leaving = subsBefore * churnRate;
     // Скидку получают удержанные и часть тех, кто и так остался бы (промахи модели)
-    const discounted = subs * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
-      + subs * (1 - quality) * winbackDiscount * 0.03;
+    const discounted = subsBefore * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
+      + subsBefore * (1 - quality) * winbackDiscount * 0.03;
     winbackCost += discounted * decisions.pricePremium * winbackDiscount;
 
+    // --- Переток между сервисами ---
+    // Отдельный поток от общего оттока: эти люди не ушли из категории,
+    // они ушли к соседу. Или пришли от него.
+    const survivorsBeforeSwitch = subsBefore - leaving;
+    let flow = switchFlow(def, preference, survivorsBeforeSwitch, rivalAfterOwn);
+    flow = clamp(flow, -survivorsBeforeSwitch * 0.5, rivalAfterOwn * 0.5);
+    if (flow >= 0) switchedIn += flow; else switchedOut += -flow;
+    riv.segments[def.id] = Math.max(0, rivalAfterOwn - flow);
+
     // Обновляем запасы по тарифам
-    const survivors = subs - leaving;
-    const survivorAdShare = subs > 0 ? seg.ads / subs : adShare;
+    const survivors = survivorsBeforeSwitch + flow;
+    const survivorAdShare = subsBefore > 0 ? seg.ads / subsBefore : adShare;
     seg.ads = Math.max(0, survivors * survivorAdShare + converted * adShare);
     seg.premium = Math.max(0, survivors * (1 - survivorAdShare) + converted * (1 - adShare));
 
@@ -1930,18 +2919,19 @@ function step(prevState, input = {}) {
 
     perSegment.push({
       def, seg, adShare, blendedPrice, priceFactor, appeal, adPenalty,
-      churnRate, converted, leaving, subs: seg.premium + seg.ads,
+      churnRate, converted, leaving, flow, preference,
+      subs: seg.premium + seg.ads, rivalSubs: riv.segments[def.id],
     });
   }
 
-  // --- 7. Часы просмотра и трафик ---
+  // --- 10. Часы просмотра и трафик ---
   let hours = 0;
   let adHours = 0;
   for (const p of perSegment) {
     const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
       * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
       * (1 + 0.22 * recoStrength * quality)
-      * rival.hoursMult * (mods.hoursMult ?? 1);
+      * rival.hoursMult * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
     p.hours = segHours;
     p.adHours = segHours * (p.seg.ads / Math.max(1, p.subs));
     hours += segHours;
@@ -1951,7 +2941,8 @@ function step(prevState, input = {}) {
   // Трафик — крупнейшая переменная статья, и она растёт вместе с лояльностью
   const encodingSaving = 0.35 * compression * (0.4 + 0.6 * quality);
   const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
-    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving) * (mods.cdnMult ?? 1);
+    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving)
+    * (mods.cdnMult ?? 1) * (crisisMods.cdnMult ?? 1);
   const cdnCost = hours * cdnPerHour;
 
   const totalSubs = perSegment.reduce((s, p) => s + p.subs, 0);
@@ -1959,7 +2950,7 @@ function step(prevState, input = {}) {
   const adSubs = perSegment.reduce((s, p) => s + p.seg.ads, 0);
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
 
-  // --- 8. Выручка ---
+  // --- 11. Выручка ---
   const subscriptionRevenue = premiumSubs * decisions.pricePremium + adSubs * decisions.priceAds;
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
@@ -1970,10 +2961,10 @@ function step(prevState, input = {}) {
   const variableCost = cdnCost + supportCost + winbackCost;
   const contribution = revenue - variableCost;
 
-  const contentSpend = decisions.licensing + decisions.originals;
-  const fixed = CONFIG.hqMonthly + decisions.licensing + decisions.originals
+  const contentSpend = contentBudget.licensing + contentBudget.originals;
+  const fixed = CONFIG.hqMonthly + contentSpend
     + decisions.marketing + decisions.tech + decisions.rnd;
-  const oneOff = installCost + (mods.oneOffCost ?? 0);
+  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0) + crisisCost;
   const profit = contribution - fixed;
 
   state.cash += profit - oneOff;
@@ -1981,7 +2972,7 @@ function step(prevState, input = {}) {
   state.rndStock += decisions.rnd;
   state.dataStock += hours;
 
-  // --- 9. Метрики ---
+  // --- 12. Метрики ---
   const arpu = totalSubs > 0 ? revenue / totalSubs : 0;
   const cmPerSub = totalSubs > 0 ? contribution / totalSubs : 0;
   const hoursPerSub = totalSubs > 0 ? hours / totalSubs : 0;
@@ -1990,7 +2981,10 @@ function step(prevState, input = {}) {
     : CONFIG.baseChurn;
   const cac = newSubs > 0 ? decisions.marketing / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
-  const marketShare = totalSubs / SEGMENTS.reduce((s, x) => s + x.potential, 0);
+  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
+  const marketShare = totalSubs / marketPotential;
+  const rivalTotal = rivalSubs(riv);
+  const duopolyShare = totalSubs + rivalTotal > 0 ? totalSubs / (totalSubs + rivalTotal) : 0;
 
   const wGeo = (key) => {
     if (!perSegment.length || totalSubs <= 0) return 1;
@@ -1998,6 +2992,39 @@ function step(prevState, input = {}) {
     for (const p of perSegment) acc += Math.log(Math.max(1e-6, p[key])) * (p.subs / totalSubs);
     return Math.exp(acc);
   };
+
+  // --- 13. Совет директоров ---
+  if (profit > 0) state.board.profitableMonths += 1;
+  const boardCtx = { subs: totalSubs, rivalSubs: rivalTotal, profitableMonths: state.board.profitableMonths };
+  let goalOutcome = null;
+  const progress = goalProgress(state.board.goal, boardCtx);
+
+  if (state.board.goal && month % CONFIG.boardYearMonths === 0) {
+    goalOutcome = applyGoalOutcome(state, state.board.goal, progress, month);
+    state.board.history.push(goalOutcome);
+    state.board.profitableMonths = 0;
+    const nextYear = state.board.goal.year + 1;
+    state.board.goal = month < CONFIG.monthsTotal
+      ? makeGoal(nextYear, state, totalSubs, rivalTotal)
+      : null;
+  }
+
+  // Провал первого года: совет вводит деньги сам, на своих условиях
+  let forcedDilution = 0;
+  let boardInjection = 0;
+  if (state.pendingDilution) {
+    forcedDilution = state.pendingDilution;
+    boardInjection = 1_500_000_000;
+    state.equity *= (1 - forcedDilution);
+    state.cash += boardInjection;
+    state.raisedTotal += boardInjection;
+    state.pendingDilution = 0;
+  }
+
+  // --- 14. Кризисы ---
+  if (state.crisis) state.crisis.months += 1;
+  const newCrisis = rollCrisis(rng, month, { subs: totalSubs, active: Boolean(state.crisis) });
+  if (newCrisis) state.crisis = newCrisis;
 
   const report = {
     month,
@@ -2007,6 +3034,9 @@ function step(prevState, input = {}) {
     adSubs,
     newSubs,
     lostSubs,
+    switchedIn,
+    switchedOut,
+    netSwitch: switchedIn - switchedOut,
     trials: trialsTotal,
     churnRate: avgChurn,
 
@@ -2016,6 +3046,8 @@ function step(prevState, input = {}) {
     catalogHours,
     catalogLicensed: state.catalogLicensed,
     catalogOriginal: state.catalogOriginal,
+    originalsByGenre: { ...state.originalsByGenre },
+    licensedFrozen: freeze,
     freshHours: state.freshHours,
     depth,
     perceivedDepth,
@@ -2034,17 +3066,38 @@ function step(prevState, input = {}) {
     cmPerSub,
     fixed,
     contentSpend,
+    contentCapped: capApplied ? cap : null,
     oneOff,
     installCost,
+    crisisCost,
     installedNow,
     profit,
     cash: state.cash,
 
+    // --- Конкурент ---
     rival: rivalType,
-    rivalNext: state.rivalNext ?? 'none',
+    rivalNext: rivalNextType,
     rivalAcquisition: rival.acquisitionMult,
     rivalChurnAdd: rival.churnAdd,
+    rivalSubs: rivalTotal,
+    rivalSubsDelta: rivalTotal - rivalBefore,
+    rivalPrice: riv.price,
+    rivalAdLoad: riv.adLoad,
+    rivalStance: riv.stance,
+    rivalFocus: riv.focus,
+    rivalAlive: riv.alive,
+    rivalCash: riv.cash,
+    rivalRaised: riv.raises,
+    rivalCatalog: riv.catalogLicensed + riv.catalogOriginal,
+    rivalOriginals: riv.catalogOriginal,
+    rivalJustRaised: Boolean(riv.justRaised),
+    duopolyShare,
     seasonHours: season,
+
+    // --- Дорожающие ресурсы ---
+    licenseIndex,
+    talentIndex,
+    projectCost: cost,
 
     buzz,
     heldBuzz,
@@ -2055,7 +3108,6 @@ function step(prevState, input = {}) {
     started,
     pipeline: state.pipeline.map((p) => ({ genre: p.genre, monthsLeft: p.monthsLeft, quality: p.quality })),
     studioFund: state.studioFund,
-    projectCost: projectCost(genre),
 
     cac,
     ltv,
@@ -2070,6 +3122,18 @@ function step(prevState, input = {}) {
     avgPriceFactor: wGeo('priceFactor'),
     avgAppeal: wGeo('appeal'),
     avgAdPenalty: wGeo('adPenalty'),
+    avgPreference: wGeo('preference'),
+
+    // --- Совет и кризисы ---
+    goal: state.board.goal ? { ...state.board.goal } : null,
+    goalProgress: progress,
+    goalOutcome,
+    forcedDilution,
+    boardInjection,
+    restrictions: state.restrictions && month < state.restrictions.until
+      ? { ...state.restrictions } : null,
+    crisis: state.crisis ? { ...state.crisis } : null,
+    crisisResolved,
 
     event: event ? { id: event.id, choice } : null,
     segments: perSegment.map((p) => ({
@@ -2085,6 +3149,9 @@ function step(prevState, input = {}) {
       priceFactor: p.priceFactor,
       appeal: p.appeal,
       adPenalty: p.adPenalty,
+      preference: p.preference,
+      flow: p.flow,
+      rivalSubs: p.rivalSubs,
       arpu: p.subs > 0
         ? (p.seg.premium * decisions.pricePremium + p.seg.ads * decisions.priceAds
            + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
@@ -2093,14 +3160,12 @@ function step(prevState, input = {}) {
     decisions: structuredClone(decisions),
   };
 
-  // --- 10. Завершение месяца ---
+  // --- 15. Завершение месяца ---
   state.month = month;
   state.lastSnapshot = snapshot;
   state.history.push(report);
   state.pendingChoice = null;
   state.pendingEvent = rollEvent(rng, month + 1, state.flags);
-  state.rival = state.rivalNext ?? 'none';
-  state.rivalNext = rollRivalRelease(rng, month + 2);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';
@@ -2110,6 +3175,18 @@ function step(prevState, input = {}) {
   report.equityValue = report.valuation * state.equity;
 
   return { state, report };
+}
+
+/** Режет контентный бюджет под потолок совета, сохраняя пропорцию игрока. */
+function capContent(decisions, cap) {
+  const total = decisions.licensing + decisions.originals;
+  if (total <= cap) return { licensing: decisions.licensing, originals: decisions.originals };
+  if (total <= 0) return { licensing: 0, originals: 0 };
+  const k = cap / total;
+  return {
+    licensing: Math.round(decisions.licensing * k),
+    originals: Math.round(decisions.originals * k),
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -2125,25 +3202,22 @@ function unitEconomics(state, decisions) {
   const advertising = (impressions / 1000) * CONFIG.cpm;
   const revenue = subscription + advertising;
 
-  const compression = decisions.algoOn?.encoding && state.installed?.encoding
-    ? clamp(decisions.algoParam?.encoding ?? 0, 0, 1) : 0;
-  const encodingSaving = 0.35 * compression * (0.4 + 0.6 * algoQuality(state));
   const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
-    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving);
+    * (1 - 0.30 * techLevel(state));
   const cdn = hoursPerSub * cdnPerHour;
   const support = CONFIG.supportCostPerSub;
+  const variable = cdn + support;
 
   return {
-    hoursPerSub, adShare,
     subscription, advertising, revenue,
-    cdn, support, cdnPerHour,
-    variable: cdn + support,
-    contribution: revenue - cdn - support,
+    cdn, cdnPerHour, bandwidth: cdn, support, variable,
+    contribution: revenue - variable,
+    adShare, hoursPerSub,
   };
 }
 
 // ----------------------------------------------------------------------------
-// Контрфактический разбор: сколько на самом деле принёс каждый алгоритм
+// Контрфактический разбор: что дал каждый включённый алгоритм
 // ----------------------------------------------------------------------------
 function algorithmImpact(state) {
   const snap = state.lastSnapshot;
@@ -2189,10 +3263,19 @@ function valuation(state) {
   const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
 
   // Собственная библиотека — актив, лицензии — аренда. Рынок это видит.
-  const libraryValue = state.catalogOriginal * CONFIG.originalCostPerHour * 0.35;
+  // Час реалити при этом стоит заметно меньше часа драмы: библиотека —
+  // это то, что ещё будут смотреть через два года.
+  const libraryValue = weightedOriginals(state.originalsByGenre ?? {})
+    * CONFIG.originalCostPerHour * 0.28;
 
-  const multiple = clamp(2.2 + 5 * growthScore + 4 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
-  const base = runRate * multiple + libraryValue;
+  // Позиция против конкурента. В дуополии рынок платит не за выручку саму
+  // по себе, а за то, кто из двоих будет диктовать цену через три года.
+  // Проигравший стоит дёшево даже с хорошей маржой — именно поэтому
+  // «снимать сливки, не вкладываясь» здесь не работает.
+  const positionBonus = clamp(0.70 + 0.60 * (last.duopolyShare ?? 0.5), 0.70, 1.30);
+
+  const multiple = clamp(2.2 + 6 * growthScore + 2.5 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  const base = (runRate * multiple + libraryValue) * positionBonus;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   return Math.max(300_000_000, base * bonus);
 }
@@ -2221,7 +3304,7 @@ function explain(prev, cur) {
     ['driverPrice', prev.avgPriceFactor, cur.avgPriceFactor],
     ['driverCatalog', prev.avgAppeal, cur.avgAppeal],
     ['driverAds', prev.avgAdPenalty, cur.avgAdPenalty],
-    ['driverRival', prev.rivalAcquisition, cur.rivalAcquisition],
+    ['driverRival', prev.avgPreference, cur.avgPreference],
     ['driverRetention', 1 - prev.churnRate, 1 - cur.churnRate],
     ['driverAwareness',
       Math.max(1e-6, prev.trials / Math.max(1, prev.subs)),
@@ -2238,6 +3321,7 @@ function explain(prev, cur) {
 
 function finalScore(state) {
   const v = valuation(state);
+  const last = state.history[state.history.length - 1];
   return {
     valuation: v,
     equity: state.equity,
@@ -2246,8 +3330,12 @@ function finalScore(state) {
     cash: state.cash,
     months: state.month,
     bankrupt: state.over === 'bankrupt',
+    duopolyShare: last?.duopolyShare ?? 0,
+    rivalAlive: state.rivalState?.alive ?? true,
+    goals: state.board?.history ?? [],
   };
 }
+
 
 
 // ===== ../../shared/format.js ======================================
@@ -2447,9 +3535,10 @@ const SAVE_KEY = 'kinopotok-save-v1';
 const el = (id) => document.getElementById(id);
 
 let state = null;
-let chartTab = 'subs';
+let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
+let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
@@ -2467,6 +3556,7 @@ const last = () => state.history[state.history.length - 1] ?? null;
 const prev = () => state.history[state.history.length - 2] ?? null;
 const algoByKey = (key) => ALGORITHMS.find((a) => a.key === key);
 const rivalName = (type) => t(`rival${type.charAt(0).toUpperCase()}${type.slice(1)}`);
+const stanceName = (id) => t(`stance${id.charAt(0).toUpperCase()}${id.slice(1)}`);
 const seasonName = (season) => t(`season${season.charAt(0).toUpperCase()}${season.slice(1)}`);
 
 // ----------------------------------------------------------------------------
@@ -2513,6 +3603,9 @@ function renderKpis() {
       kpi(t('kpiHours'), num(r.hoursPerSub, 1),
         t('kpiHoursSub', { value: money(r.cdnCost) }),
         'neutral'),
+      kpi(t('kpiShare'), pct(r.duopolyShare ?? 0, 0),
+        t('kpiShareSub', { them: compact(r.rivalSubs ?? 0) }),
+        (r.duopolyShare ?? 0) >= 0.5 ? 'up' : (r.duopolyShare ?? 0) >= 0.35 ? 'neutral' : 'down'),
       kpi(t('kpiEquity'), money(r.equityValue ?? 0),
         t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
       kpi('', dSubs, '', cSubs),
@@ -2669,17 +3762,148 @@ function renderRival() {
   const now = state.rival ?? 'none';
   const next = state.rivalNext ?? 'none';
   const alarm = (RIVAL_RELEASES[next]?.pull ?? 0) >= 0.7;
+  const riv = state.rivalState;
+  const r = last();
+  const you = r ? r.subs : 0;
+  const them = rivalSubs(riv);
+  const share = you + them > 0 ? you / (you + them) : 0;
+  const myPrice = state.decisions.pricePremium;
+  const priceGap = riv.price - myPrice;
+
+  const dead = !riv.alive;
+  const stance = dead ? 'gone' : riv.stance;
+  const stanceCls = dead ? 'pos' : riv.stance === 'war' ? 'neg'
+    : riv.stance === 'press' ? 'warn' : riv.stance === 'retreat' ? 'pos' : '';
 
   el('rival-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('rivalPanel', {
       season: seasonName(seasonOf(state.month + 1)), month: state.month + 1,
     })}</h2>
+
+    <div class="rival-head">
+      <div class="rival-stance">
+        <span class="badge ${stanceCls}">${dead ? t('stanceGone') : stanceName(riv.stance)}</span>
+        <span class="rival-stance-hint">${dead ? t('stanceGoneHint') : t(`stance${stance.charAt(0).toUpperCase()}${stance.slice(1)}Hint`)}</span>
+      </div>
+      <div class="rival-facts">
+        <span>${t('rivalTheirPrice')} <b>${num(riv.price)} ₽</b>
+          <span class="${priceGap > 0 ? 'pos' : priceGap < 0 ? 'neg' : ''}">
+            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: num(Math.abs(priceGap)) })}</span></span>
+        <span>${t('rivalTheirCatalog')} <b>${compact(riv.catalogLicensed + riv.catalogOriginal)} ${t('unitHours')}</b>
+          (${t('rivalTheirOriginals', { hours: compact(riv.catalogOriginal) })})</span>
+        <span>${t('rivalTheirFocus')} <b>${tx(genreById(riv.focus)?.name ?? '')}</b></span>
+      </div>
+    </div>
+
+    <div class="share-bar" title="${t('shareBarHint')}">
+      <span class="share-you" style="width:${(share * 100).toFixed(1)}%">${share > 0.12 ? `${t('shareYou')} ${pct(share, 0)}` : ''}</span>
+      <span class="share-them">${share < 0.88 ? `${t('shareThem')} ${pct(1 - share, 0)}` : ''}</span>
+    </div>
+    <div class="funding-note">${t('shareCaption', {
+      you: compact(you), them: compact(them),
+      flow: r ? (r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`) : '0',
+    })}</div>
+
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
       ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`)}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Совет директоров: цель года и её последствия
+// ----------------------------------------------------------------------------
+function renderBoard() {
+  const goal = state.board?.goal;
+  const r = last();
+  if (!goal) { el('board').innerHTML = `<div class="hint-box">${t('boardDone')}</div>`; return; }
+
+  const p = goalProgress(goal, {
+    subs: r?.subs ?? 0,
+    rivalSubs: rivalSubs(state.rivalState),
+    profitableMonths: state.board.profitableMonths,
+  });
+  const monthsLeft = goal.year * CONFIG.boardYearMonths - state.month;
+
+  let line = '';
+  let ratio = 0;
+  if (goal.type === 'subscribers') {
+    ratio = p.value / goal.target;
+    line = t('goalSubs', { have: compact(p.value), need: compact(goal.target) });
+  } else if (goal.type === 'profit') {
+    ratio = Math.min(p.value / goal.target, p.subs / goal.subsFloor);
+    line = t('goalProfit', {
+      have: p.value, need: goal.target,
+      subs: compact(p.subs), floor: compact(goal.subsFloor),
+    });
+  } else {
+    ratio = Math.min(p.value / goal.target, p.subs / goal.subsFloor);
+    line = t('goalShare', {
+      have: pct(p.value, 0), need: pct(goal.target, 0),
+      subs: compact(p.subs), floor: compact(goal.subsFloor),
+    });
+  }
+  ratio = Math.max(0, Math.min(1, ratio));
+
+  const restr = state.restrictions && state.month < state.restrictions.until
+    ? `<div class="alert bad">${t('boardCapActive', {
+        cap: money(state.restrictions.contentCap),
+        months: state.restrictions.until - state.month,
+      })}</div>` : '';
+
+  const past = (state.board.history ?? []).map((h) =>
+    `<div class="goal-past ${h.passed ? 'pos' : 'neg'}">${t('goalYear', { year: h.year })}: ${
+      h.passed ? t('goalPassed') : t(`goalFailed_${h.effect}`)}</div>`).join('');
+
+  el('board').innerHTML = `
+    <div class="goal-card ${p.done ? 'done' : monthsLeft <= 3 ? 'urgent' : ''}">
+      <div class="goal-head">
+        <span class="goal-year">${t('goalYear', { year: goal.year })}</span>
+        <span class="goal-left">${t('goalMonthsLeft', { months: monthsLeft })}</span>
+      </div>
+      <div class="goal-line">${line}</div>
+      <span class="q-bar"><span class="q-fill ${p.done ? 'ok' : ''}" style="width:${(ratio * 100).toFixed(0)}%"></span></span>
+      <div class="funding-note">${p.done ? t('goalOnTrack') : t(`goalStake_${goal.penalty}`)}</div>
+    </div>
+    ${restr}
+    ${past}`;
+}
+
+// ----------------------------------------------------------------------------
+// Кризис: проблема, которая не рассосётся сама
+// ----------------------------------------------------------------------------
+function renderCrisis() {
+  const active = state.crisis;
+  if (!active || state.over) { el('crisis-slot').innerHTML = ''; return; }
+  const def = crisisById(active.id);
+  if (!def) { el('crisis-slot').innerHTML = ''; return; }
+  const sev = severityOf(active);
+
+  const options = def.resolutions.map((res, i) => {
+    const cost = resolutionCost(active, res.id);
+    return `<button class="event-option ${res.resolves ? 'primary' : ''}" data-crisis="${res.id}">
+      <span class="opt-label">${tx(res.label)}</span>
+      <span class="opt-detail">${tx(res.detail)}${cost > 0 ? ` · ${money(cost)}` : ''}</span>
+    </button>`;
+  }).join('');
+
+  el('crisis-slot').innerHTML = `<div class="panel event-card crisis">
+    <h3>🔥 ${tx(def.title)} <span class="badge neg">${t('crisisMonths', { months: sev })}</span></h3>
+    <p>${tx(def.text)}</p>
+    <div class="alert bad">${t('crisisWorsening')}</div>
+    <div class="event-options">${options}</div>
+    <div class="lesson">${tx(def.lesson)}</div>
+  </div>`;
+
+  for (const btn of el('crisis-slot').querySelectorAll('[data-crisis]')) {
+    btn.addEventListener('click', () => {
+      pendingCrisisChoice = btn.dataset.crisis;
+      for (const b of el('crisis-slot').querySelectorAll('[data-crisis]')) b.classList.remove('chosen');
+      btn.classList.add('chosen');
+    });
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -2927,6 +4151,23 @@ function renderReport() {
     </div>` : '';
 
   const alerts = buildAlerts(r);
+  if (r.goalOutcome) {
+    alerts.unshift([r.goalOutcome.passed ? 'good' : 'bad',
+      r.goalOutcome.passed
+        ? t('alertGoalPassed', { year: r.goalOutcome.year })
+        : t(`alertGoalFailed_${r.goalOutcome.effect}`, { year: r.goalOutcome.year })]);
+  }
+  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) })]);
+  if (r.crisisResolved) {
+    alerts.unshift(['good', t('alertCrisisResolved', {
+      name: tx(crisisById(r.crisisResolved.id)?.title ?? ''), cost: money(r.crisisCost) })]);
+  }
+  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) })]);
+  else if (r.netSwitch > 1000) alerts.push(['good', t('alertWinningSubs', { count: compact(r.netSwitch) })]);
+  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) })]);
+  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
+  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
+  if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   const alertsHtml = alerts.length
     ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>` : '';
 
@@ -2967,6 +4208,10 @@ function renderReport() {
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
       ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
+      ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
+        t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
+      ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
+        t('statPricesSub', { project: money(r.projectCost) }))}
     </div>
     ${premiereNote}${startedNote}${installNote}
     ${driversHtml}${alertsHtml}${eventNote}
@@ -2977,6 +4222,14 @@ function renderReport() {
 // Графики
 // ----------------------------------------------------------------------------
 const CHART_TABS = {
+  // Главный график новой версии: вы против конкурента на одном рынке
+  war: {
+    label: 'chartWar', caption: 'chartWarCaption',
+    series: (h) => [
+      { label: t('seriesYou'), data: h.map((r) => r.subs), color: PALETTE[1] },
+      { label: t('seriesThem'), data: h.map((r) => r.rivalSubs ?? 0), color: PALETTE[3] },
+    ],
+  },
   subs: {
     label: 'chartSubs', caption: 'chartSubsCaption',
     series: (h) => [
@@ -3282,7 +4535,12 @@ function nextMonth() {
   if (state.over) { showGameOver(); return; }
   const ev = state.pendingEvent;
   if (ev && ev.options && state.pendingChoice === null) { toast(t('eventChoiceNeeded')); return; }
-  state = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 }).state;
+  state = step(state, {
+    decisions: state.decisions,
+    eventChoice: state.pendingChoice ?? 0,
+    crisisChoice: pendingCrisisChoice,
+  }).state;
+  pendingCrisisChoice = null;
   save();
   renderAll();
   if (state.over) showGameOver();
@@ -3300,6 +4558,7 @@ function renderChrome() {
   el('title-levers').textContent = t('panelLevers');
   el('title-studio').textContent = t('panelStudio');
   el('title-algos').textContent = t('panelAlgos');
+  el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
@@ -3324,7 +4583,9 @@ function renderAll() {
   renderOpsReadout();
   renderKpis();
   renderFunding();
+  renderBoard();
   renderRival();
+  renderCrisis();
   renderEvent();
   renderReport();
   renderChart();

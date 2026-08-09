@@ -84,20 +84,34 @@ is a working strategy, just a slow one.
 
 ### Catalogue depth
 
-Hours are not hours. Rivals have the same licences; only you have your exclusives:
+Hours are not hours. Rivals have the same licences; only you have your exclusives.
+And your own hours are not equal to each other either: every genre has its own value
+for depth and its own rate of ageing.
 
 ```
-weighted   = licensed × licenseDepthWeight + original × originalDepthWeight
-           = licensed × 0.5 + original × 6
-depth      = saturation(weighted / refCatalogHours)
-own_share  = original × 6 / weighted
+weighted  = licensed × 0.5 + Σ(genre_hours × genre_value) × 6
+depth     = saturation(weighted / refCatalogHours)
+own_share = weighted_own / weighted
 ```
 
-A 12:1 weight ratio against a 50:1 price ratio is the whole trade-off. An hour of
-exclusive content retains like a dozen hours of someone else's library — and costs five
-times that dozen. **Neither extreme works:** licences alone give you nothing to hold
-people with (own share = 0, no exclusive retention), originals alone leave six months
-with nothing to watch and the cash runs out before the first premiere.
+| Genre | Value per hour | Monthly ageing | Cost per hour | Hangover |
+|---|---|---|---|---|
+| Prestige drama | 1.35 | 0.4% | ×1.25 | 0.45 |
+| Blockbuster | 0.90 | 1.2% | ×2.45 | 1.00 |
+| Family animation | 1.25 | 0.2% | ×1.55 | 0.10 |
+| Reality and shows | 0.50 | 3.8% | ×0.55 | 0.20 |
+
+Reality is the cheapest way to fill a shelf and the fastest way to lose it: two years
+later almost nothing of that library is left. Family animation barely ages at all — it
+gets rewatched. That difference is exactly why two companies with the same "amount of
+content" are worth different amounts.
+
+The weight ratio of roughly 12:1 against a price ratio of 50:1 is the whole trade-off.
+An hour of exclusive content retains like a dozen hours of someone else's library and
+costs five times that dozen. **Neither extreme works:** licences alone give you nothing
+to hold people with and nothing to pull the rival's viewers away with; originals alone
+leave six months with nothing to watch while the rival takes the market. The test named
+`смешанная стратегия бьёт обе крайности` ("a mixed strategy beats both extremes") checks this.
 
 ### Freshness
 
@@ -139,19 +153,32 @@ your own expensive one**. Cannibalisation is not a side effect, it is the main m
 
 ### Inflow
 
+Inflow splits into two independent questions that must not be confused:
+
+1. **How many people will subscribe at all this month.** That depends on the best offer
+   on the market, not only on yours.
+2. **Which of the two gets them.** That is decided by preference (see section 6).
+
 ```
 blended_price = premium × (1 − ad_share) + ad_price × ad_share
 price_factor  = (399 / blended_price) ^ elasticity(segment)
 appeal        = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
 ad_penalty    = 1 − 0.16 × ad_pain × ad_share × (1 − relief)
 
-trials    = untapped × awareness × 0.055 × price_factor × appeal × ad_penalty
-            × rival_lineup × (1 + premiere_pull × 0.6)
-converted = trials × trialConversion × trial_length_factor
+quality(side)   = price_factor × appeal × ad_penalty
+category_trials = untapped × market_awareness × 0.115
+                  × max(quality_you, quality_rival) × line-up × events
+trials          = category_trials × preference × (1 + premiere_pull × 0.6)
+converted       = trials × trialConversion × trial_length_factor
 ```
 
-`untapped = potential(segment) − current subscribers`: the closer you are to a segment's
-ceiling, the more expensive each further subscriber becomes.
+`untapped = potential(segment) − your subscribers − his`: the closer the market is to
+saturation, the more expensive each further subscriber — regardless of who has them now.
+
+The split matters. In the first version service quality entered both the inflow and the
+choice between services, i.e. it was effectively squared. Any imbalance instantly turned
+into a rout, and the decision landscape became not steep but chaotic: you could not learn
+anything from an experiment.
 
 ### Awareness
 
@@ -241,36 +268,184 @@ to whether you can build the base before the cash runs out.
 
 ---
 
-## 6. The rival's line-up
+## 6. A living rival
 
-The analogue of weather in the delivery game: a permanent external background, not a rare
-event. Every month a rival release is drawn from a seasonal table.
+There is one market for the two of you. The rival has its own state — cash, catalogue,
+subscriber base, production pipeline — and a policy that reads your decisions and
+answers them.
+
+This is the main difference from the first version of the game. The rival used to be
+a constant in the formula: the environment never changed, so the optimal decision never
+changed either — one setting of the sliders won the whole game. That setting no longer
+exists. The right answer to "should I raise the price" depends on what the rival is
+doing now and what he can still afford.
+
+### His stances
+
+The rival picks a stance from his market share and his cash runway, and holds it for
+**at least four months**. The hysteresis is not decoration: an opponent who changes
+course every month is noise you cannot prepare for. An opponent who holds a course is
+someone whose behaviour you can read and exploit.
+
+| Stance | When | What he does | Your move |
+|---|---|---|---|
+| Steady growth | parity | price just under yours, moderate budgets | build your catalogue |
+| Price war | losing and rich | undercuts by 28%, marketing ×1.6 | do not follow him down: his pockets are deeper |
+| Pressing | winning | price +6%, budgets ×1.15 | take viewers while he gets expensive |
+| Harvesting | cash running low | cuts content and marketing, raises price and ads | his catalogue goes stale — take the base |
+| Retreating | out of money | barely spends | push, and the market is yours |
+
+The rival has two funding rounds. Once they are spent and his cash goes negative he
+goes bust, and his subscribers disperse across the market over three months. That is
+the only way to get the whole market — and it means surviving the price war first.
+
+### Two ways to grow
+
+```
+occupied = your subscribers + his subscribers
+untapped = segment potential − occupied
+```
+
+**First, bring in people who have no subscription at all.** How many people decide to
+subscribe depends on the best offer available on the market, not only on yours:
+
+```
+quality(side)  = price_factor × catalogue_appeal × ad_penalty
+category_trials = untapped × market_awareness × 0.115 × max(you, rival)
+```
+
+A strong rival grows the whole category — including for you.
+
+**Second, take people who already pay the other guy.** Inflow splits by the segment's
+preference, and part of his base switches every month:
+
+```
+pull(side)  = price_factor^0.9 × catalogue × ad_penalty × awareness^0.35
+              × (1 + 1.15 × exclusive) × (1 + 0.5 × premiere_buzz)
+preference  = pull_you / (pull_you + pull_rival)
+switching   = his_base × 0.035 × segment_loyalty × (2 × preference − 1)
+```
+
+The second route is faster than the first, but the rival knows how to answer.
+
+Note the `exclusive` term. It is the one thing the same money cannot buy: a licence
+sits on both shelves, your own show only on yours. And what counts is not volume in
+general but volume **for this segment**: a mountain of reality TV will not hold
+cinephiles, however large it gets.
+
+```
+exclusive(segment) = Σ(genre_hours × genre_value × genre_appeal_to_segment)
+                     / (the same + threshold)
+```
+
+### The line-up
+
+Rival premieres are no longer drawn from a die: what you see on screen is what actually
+comes out of his pipeline. Next month's announcement is honest — it is a project one
+month from release.
 
 | Line-up | New sign-ups | Churn | Hours |
 |---|---|---|---|
 | Nothing notable | — | — | — |
-| Minor release | −7% | +0.4 pp | −2% |
-| Notable release | −16% | +1.2 pp | −5% |
-| Major release | −28% | +2.4 pp | −9% |
-| Event of the year | −42% | +4.0 pp | −14% |
+| Minor release | −6% | +0.3 pp | −2% |
+| Notable release | −13% | +0.9 pp | −4% |
+| Major release | −22% | +1.7 pp | −7% |
+| Event of the year | −32% | +2.8 pp | −11% |
 
-Winter brings more and louder rival premieres, summer noticeably fewer. The season also
-scales watch hours: `winter 1.18`, `spring 1.00`, `autumn 1.06`, `summer 0.84`.
+This is a fight for attention, not switching: in the month of a loud rival premiere new
+sign-ups convert worse and everyone watches less. Your own premiere in the same month
+partly cancels his (`counter = min(0.65, own_buzz × 0.45)`), but an "event of the year"
+cannot be fully cancelled — sometimes the right move is not to answer at all but to
+release into a quiet month and collect the whole effect.
 
-**The line-up is known a month in advance** — rival release dates are published long
-before the release. The value is not in the information but in the reaction. There are
-three answers:
+The season scales both sides: `winter 1.18`, `spring 1.00`, `autumn 1.06`, `summer 0.84`.
 
-1. **Counter-programming.** Your own loud premiere in the same month partly cancels
-   theirs: `counter = min(0.65, own_buzz × 0.45)`. Viewers choose rather than leave.
-2. **Wait it out.** Spread the release (the `pacing` algorithm) or pull marketing for a
-   month — do not spend money in a month when attention is taken anyway.
-3. **Ignore it.** Sometimes the right answer: a minor rival release is cheaper to absorb
-   than to answer.
+---
 
-There is a real trap here: releasing your premiere against the "event of the year" is the
-loudest move, not the most profitable one. Counter-programming is capped at 65%, whereas
-the same premiere in a quiet month collects the whole effect.
+## 6a. Escalating resource costs
+
+The flywheel "more subscribers → more money → more content → more subscribers" cannot
+spin forever. It has two brakes, and both carry a lesson.
+
+**Rights get more expensive when you are both bidding for them.** The index is shared:
+
+```
+pressure = max(0, (your_buying + his_buying − calm_volume) / scale)
+index    → 1 + 1.15 × pressure          (smoothed, inertia 0.72)
+```
+
+You cannot bring the index down alone — you can only stop bidding. Hence a non-obvious
+consequence that the tests check: trying to buy up the entire rights market on a large
+budget bankrupts you, because you are raising the price against yourself.
+
+**Talent gets more expensive with your success:**
+
+```
+talent_index = 1 + 0.95 × (subscribers / 4M)^0.7
+```
+
+This is exactly why a hit's cost grows faster than its audience: stars charge a
+successful service differently. By the end of a good game a project costs twice what it
+did at the start.
+
+**Marketing saturates:** the deeper your penetration into a segment, the more expensive
+the next viewer (`× 1 / (1 + 1.4 × penetration²)`).
+
+---
+
+## 6b. The board
+
+A single goal for the whole game lets you pick a strategy on turn one and never revisit
+it. The board sets a goal per year, and the goals are built to pull in different
+directions.
+
+| Year | Goal | What it tests |
+|---|---|---|
+| 1 | reach 900K subscribers | can you grow at all |
+| 2 | 4 profitable months of 12 **and** base ×1.5 | can you grow and earn at the same time |
+| 3 | market share ≥ 50% **and** base ×1.35 | have you won the duopoly |
+
+The goal is announced in the first month of the year and is on screen every turn with
+its progress — this is planning, not a lottery.
+
+Consequences of missing:
+
+* **year 1** — the board injects ₽1.5B itself, on its own terms, and takes 18% of your
+  stake;
+* **year 2** — the content budget is capped at ₽140M a month for six months. The
+  "pour everything into growth" strategy that worked until now stops being available;
+* **year 3** — the final valuation drops by 15%.
+
+Meeting a goal instead raises the valuation by 10–18%.
+
+What matters is that the year-2 goal directly conflicts with the year-1 strategy. A team
+that spent the first year pouring money into growth enters the second year deeply
+unprofitable and has to rebuild. That is exactly why the mechanic is there: the strategy
+has to be reassembled mid-game.
+
+---
+
+## 6c. Crises
+
+A one-off event with a ±10% multiplier is an unlucky die roll: the player waits it out
+because there is nothing to react to. A crisis works differently. It sits on the company,
+gets worse every month and demands an explicit decision that costs money. You can stall —
+but stalling is more expensive.
+
+| Crisis | While unresolved | Resolutions |
+|---|---|---|
+| Scandal | churn +1.2 pp per month, awareness decays twice as fast | a campaign (₽70M × months) or wait |
+| Rights holder sues | up to 55% of the rented library frozen + ₽22M/mo | settle (180 + 40 × months) or fight (₽30M/mo) |
+| Showrunner leaves | the pipeline stalls, project quality falls | beat the offer (₽150M, talent costs rise for good) or rebuild the team (₽45M, lose a month and some quality) |
+| Platform degradation | churn rises, hours fall, bandwidth gets dearer | invest (90 + 30 × months, part lands in your tech stock) or patch it |
+
+Escalation hits a ceiling in the fifth month — after that the crisis stops getting worse,
+but it does not go away on its own either.
+
+The key detail: **crises arrive more often the better you are doing** (from 2% a month
+with an empty service to 14% with millions of subscribers). A successful service gets
+sued, gets its team poached and gets written about. This is not a punishment for success,
+it is what success actually costs.
 
 ---
 
@@ -342,18 +517,23 @@ four require a decision:
 ## 9. Valuation and funding
 
 ```
-run-rate   = revenue × 12
-growth     = subscribers over 3 months / subscribers over the previous 3 months
-multiple   = clamp(2.2 + 5 × growth + 4 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
-library    = original_hours × originalCostPerHour × 0.35
-valuation  = run-rate × multiple + library
+run-rate    = revenue × 12
+growth      = subscribers over 3 months / subscribers over the previous 3 months
+multiple    = clamp(2.2 + 6 × growth + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
+library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.28
+position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
+valuation   = (run-rate × multiple + library) × position
 final score = valuation × your stake
 ```
 
 Your own library enters the valuation as a **separate term** — it is an asset on the
-balance sheet, while licences are not. Here the model says out loud what the whole game
-is built to teach: two services with identical revenue are worth different amounts if one
-rents its catalogue and the other owns it.
+balance sheet, while licences are not. And an hour of reality is worth a third of an hour
+of drama in it: a library is what people will still be watching in two years.
+
+The `position` multiplier is not decoration either. In a duopoly the market pays not for
+revenue as such but for who will be setting prices in three years. The loser is cheap
+even with a good margin — which is precisely why "harvest the margin, do not invest in
+content" does not work in this game: it produces profit and loses the market.
 
 A funding round:
 
@@ -375,8 +555,10 @@ produces more subscribers and a smaller result — this is checked by the
 
 This is a teaching model, not a forecasting tool.
 
-* **The rival does not react.** Its line-up is drawn at random and does not depend on your
-  actions. Real streaming is a two-sided game; this is a game against nature.
+* **There is one rival and he is simplified.** He reacts to your price, your share and
+  your genre choice, but his policy is five legible stances, not a full player. A real
+  market has several players with different business models.
+* **The board sets only three goals** and always of the same three types.
 * **No international market.** One language, one country, one audience ceiling.
 * **The catalogue is homogeneous within a type.** All licensed hours are alike, whereas in
   practice one show can cost as much as a thousand others.
