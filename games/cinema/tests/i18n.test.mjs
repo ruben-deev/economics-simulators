@@ -1,0 +1,164 @@
+// Проверка целостности перевода: забытая строка должна ронять тест, а не всплывать
+// в интерфейсе у преподавателя посреди занятия.
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { t, tx, setLang, getLang, setStrings } from '../../../shared/i18n.js';
+import { STRINGS } from '../src/strings.js';
+
+setStrings(STRINGS);
+import { SEGMENTS, GENRES, LEVERS, ALGORITHMS } from '../src/model/config.js';
+import { EVENTS } from '../src/model/events.js';
+import { RIVAL_RELEASES } from '../src/model/market.js';
+
+const LANGS = ['ru', 'en'];
+
+test('у каждой строки интерфейса есть обе версии и они непустые', () => {
+  const missing = [];
+  for (const [key, entry] of Object.entries(STRINGS)) {
+    for (const lang of LANGS) {
+      if (typeof entry[lang] !== 'string' || entry[lang].trim() === '') missing.push(`${key}.${lang}`);
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('у каждой строки интерфейса совпадает набор подстановок {var}', () => {
+  const placeholders = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+  const mismatched = [];
+  for (const [key, entry] of Object.entries(STRINGS)) {
+    const ru = placeholders(entry.ru);
+    const en = placeholders(entry.en);
+    if (JSON.stringify(ru) !== JSON.stringify(en)) mismatched.push(`${key}: ru=${ru} en=${en}`);
+  }
+  assert.deepEqual(mismatched, []);
+});
+
+test('в английских строках нет кириллицы и посторонних алфавитов', () => {
+  const bad = [];
+  // langTitle — подпись кнопки переключения: она намеренно на другом языке
+  for (const [key, entry] of Object.entries(STRINGS)) {
+    if (key === 'langTitle') continue;
+    if (/[а-яА-ЯёЁ]/.test(entry.en)) bad.push(`${key}.en: кириллица`);
+    if (/[぀-ヿ一-鿿]/.test(entry.en + entry.ru)) bad.push(`${key}: иероглифы`);
+  }
+  assert.deepEqual(bad, []);
+});
+
+// Двуязычные поля моделей: { ru, en }
+function checkBilingual(label, field, missing) {
+  if (field === undefined || field === null) return;
+  if (typeof field === 'string') { missing.push(`${label} — одноязычная строка`); return; }
+  for (const lang of LANGS) {
+    if (typeof field[lang] !== 'string' || field[lang].trim() === '') missing.push(`${label}.${lang}`);
+  }
+}
+
+test('сегменты аудитории переведены полностью', () => {
+  const missing = [];
+  for (const s of SEGMENTS) {
+    checkBilingual(`segment ${s.id}.name`, s.name, missing);
+    checkBilingual(`segment ${s.id}.hint`, s.hint, missing);
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('жанры переведены полностью', () => {
+  const missing = [];
+  for (const g of GENRES) {
+    checkBilingual(`genre ${g.id}.name`, g.name, missing);
+    checkBilingual(`genre ${g.id}.hint`, g.hint, missing);
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('рычаги переведены полностью', () => {
+  const missing = [];
+  for (const l of LEVERS) {
+    checkBilingual(`lever ${l.key}.label`, l.label, missing);
+    checkBilingual(`lever ${l.key}.tip`, l.tip, missing);
+    checkBilingual(`lever ${l.key}.unit`, l.unit, missing);
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('алгоритмы переведены полностью', () => {
+  const missing = [];
+  for (const a of ALGORITHMS) {
+    for (const field of ['name', 'short', 'what', 'tradeoff', 'lesson']) {
+      checkBilingual(`algo ${a.key}.${field}`, a[field], missing);
+    }
+    checkBilingual(`algo ${a.key}.param.label`, a.param.label, missing);
+    checkBilingual(`algo ${a.key}.param.unit`, a.param.unit, missing);
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('события и варианты выбора переведены полностью', () => {
+  const missing = [];
+  for (const e of EVENTS) {
+    checkBilingual(`event ${e.id}.title`, e.title, missing);
+    checkBilingual(`event ${e.id}.text`, e.text, missing);
+    checkBilingual(`event ${e.id}.lesson`, e.lesson, missing);
+    for (const [i, o] of (e.options ?? []).entries()) {
+      checkBilingual(`event ${e.id}.option${i}.label`, o.label, missing);
+      checkBilingual(`event ${e.id}.option${i}.detail`, o.detail, missing);
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('у каждого типа чужой премьеры есть подпись на обоих языках', () => {
+  for (const id of Object.keys(RIVAL_RELEASES)) {
+    const key = `rival${id[0].toUpperCase()}${id.slice(1)}`;
+    assert.ok(STRINGS[key], `нет строки ${key}`);
+  }
+});
+
+test('сезоны подписаны на обоих языках', () => {
+  for (const key of ['seasonWinter', 'seasonSpring', 'seasonSummer', 'seasonAutumn']) {
+    assert.ok(STRINGS[key], key);
+  }
+});
+
+test('подписи факторов разбора месяца существуют для всех ключей движка', () => {
+  for (const key of ['driverPrice', 'driverCatalog', 'driverAds',
+    'driverRival', 'driverRetention', 'driverAwareness']) {
+    assert.ok(STRINGS[key], key);
+  }
+});
+
+test('оценки финала подписаны на обоих языках', () => {
+  for (const key of ['gradeBankrupt', 'gradeExcellent', 'gradeSolid', 'gradeSurvived', 'gradeModest']) {
+    assert.ok(STRINGS[key], key);
+  }
+});
+
+test('t() подставляет переменные и переключается вместе с языком', () => {
+  setLang('ru');
+  assert.equal(getLang(), 'ru');
+  assert.match(t('btnNext', { month: 7 }), /7/);
+  const ru = t('kpiCash');
+  setLang('en');
+  const en = t('kpiCash');
+  assert.notEqual(ru, en);
+  assert.match(t('btnNext', { month: 7 }), /7/);
+  setLang('ru');
+});
+
+test('t() для неизвестного ключа возвращает сам ключ, а не пустоту', () => {
+  assert.equal(t('какого-то-ключа-нет'), 'какого-то-ключа-нет');
+});
+
+test('tx() отдаёт нужный язык и переживает одноязычные строки', () => {
+  const mass = SEGMENTS.find((s) => s.id === 'mass');
+  setLang('ru');
+  const ru = tx(mass.name);
+  setLang('en');
+  const en = tx(mass.name);
+  assert.ok(ru && en && ru !== en);
+  assert.equal(tx('уже строка'), 'уже строка');
+  assert.equal(tx(undefined), '');
+  setLang('ru');
+});

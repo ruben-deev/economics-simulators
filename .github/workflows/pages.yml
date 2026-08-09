@@ -1,10 +1,12 @@
-# Публикация игры на GitHub Pages.
+# Публикация игр на GitHub Pages.
 #
 # На сайт выкладываются:
-#   /                 — игра (модульная версия, работает прямо в браузере)
-#   /dist/game.html   — та же игра одним файлом, для раздачи студентам офлайн
+#   /                                — витрина со списком игр
+#   /games/<игра>/                   — игра (модульная версия, работает в браузере)
+#   /games/<игра>/dist/game.html     — та же игра одним файлом, для раздачи офлайн
+#   /docs/                           — разбор моделей и сценарии занятий
 #
-# Перед публикацией прогоняются тесты и пересобирается dist/game.html,
+# Перед публикацией прогоняются тесты и пересобираются dist/game.html,
 # поэтому на сайт физически не может попасть версия, не прошедшая проверки.
 #
 # ВАЖНО: один раз нужно включить Pages вручную —
@@ -12,7 +14,7 @@
 # Сам workflow этого сделать не может: у GITHUB_TOKEN нет прав создавать
 # Pages-сайт, и без ручного включения шаг configure-pages падает с Not Found.
 
-name: Deploy game to GitHub Pages
+name: Deploy games to GitHub Pages
 
 on:
   push:
@@ -42,27 +44,32 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Тесты модели и перевода
+      - name: Тесты моделей и перевода
         run: npm test
 
-      - name: Сборка одного файла
-        run: node tools/build.js
+      - name: Сборка одного файла для каждой игры
+        run: npm run build
 
-      - name: Проверить, что dist/game.html в репозитории не устарел
+      - name: Проверить, что собранные файлы в репозитории не устарели
         run: |
-          if ! git diff --quiet -- dist/game.html; then
-            echo "dist/game.html отличается от собранного из текущего исходника."
-            echo "Запустите 'node tools/build.js' и закоммитьте результат."
-            git diff --stat -- dist/game.html
+          if ! git diff --quiet -- 'games/*/dist/game.html'; then
+            echo "Собранные game.html отличаются от текущих исходников."
+            echo "Запустите 'npm run build' и закоммитьте результат."
+            git diff --stat -- 'games/*/dist/game.html'
             exit 1
           fi
 
       - name: Собрать содержимое сайта
         run: |
-          mkdir -p _site/dist
+          mkdir -p _site
           cp index.html _site/
-          cp -r src _site/
-          cp dist/game.html _site/dist/
+          cp -r shared _site/
+          cp -r docs _site/
+          cp -r games _site/
+          rm -rf _site/shared/tools _site/games/*/tests
+          find _site -name 'build.manifest.js' -delete
+          echo "--- содержимое сайта ---"
+          find _site -maxdepth 3 -type d | sort
 
       # Требует, чтобы Pages были включены в настройках репозитория
       # с источником «GitHub Actions» (см. комментарий вверху файла).

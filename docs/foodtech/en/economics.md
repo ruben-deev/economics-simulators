@@ -2,8 +2,8 @@
 
 *[Русская версия](../economics.md)*
 
-This document describes exactly what `src/model/engine.js` computes. Every constant that
-appears in the formulas lives in `src/model/config.js` and can be changed by the instructor.
+This document describes exactly what `games/foodtech/src/model/engine.js` computes. Every constant that
+appears in the formulas lives in `games/foodtech/src/model/config.js` and can be changed by the instructor.
 
 The time step is **one week**. All flows (orders, revenue, costs) are weekly; all stocks
 (customers, couriers, restaurants, cash) are end-of-week values.

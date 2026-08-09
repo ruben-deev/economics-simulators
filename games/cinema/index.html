@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>КИНОПОТОК · streaming economics simulator</title>
+  <link rel="stylesheet" href="../../shared/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🎬</span>
+      <div>
+        <div class="brand-title" id="brand-title"></div>
+        <div class="brand-sub" id="brand-sub"></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="topbar-actions">
+      <button id="btn-lang" class="btn ghost"></button>
+      <button id="btn-help" class="btn ghost">?</button>
+      <button id="btn-restart" class="btn ghost"></button>
+      <button id="btn-next" class="btn primary"></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel col-left">
+      <h2 class="panel-title" id="title-levers"></h2>
+      <div id="levers"></div>
+      <div id="ops-readout"></div>
+
+      <h2 class="panel-title" id="title-studio"></h2>
+      <div id="studio"></div>
+
+      <h2 class="panel-title" id="title-algos"></h2>
+      <div id="algos"></div>
+
+      <h2 class="panel-title" id="title-funding"></h2>
+      <div id="funding" class="funding"></div>
+    </aside>
+
+    <section class="col-center">
+      <div id="rival-slot"></div>
+      <div id="event-slot"></div>
+      <div id="report-slot"></div>
+      <div class="panel charts">
+        <div class="charts-head">
+          <h2 class="panel-title inline" id="title-dynamics"></h2>
+          <div class="chart-tabs" id="chart-tabs"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend"></div>
+        <canvas id="chart" height="230"></canvas>
+        <div class="chart-caption" id="chart-caption"></div>
+      </div>
+    </section>
+
+    <aside class="panel col-right">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="unit"></button>
+        <button class="tab" data-tab="pnl"></button>
+        <button class="tab" data-tab="algos"></button>
+        <button class="tab" data-tab="segments"></button>
+        <button class="tab" data-tab="help"></button>
+      </div>
+      <div id="tab-content" class="tab-content"></div>
+    </aside>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

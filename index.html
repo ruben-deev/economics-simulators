@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Учебные экономические симуляторы</title>
+  <link rel="stylesheet" href="shared/styles.css" />
+  <style>
+    /* Витрина — единственная страница без игровой сетки, поэтому у неё
+       свои несколько правил поверх общей темы. */
+    .home { max-width: 980px; margin: 0 auto; padding: 40px 20px 60px; }
+    .home h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: 0.02em; }
+    .home .lead { color: var(--muted); max-width: 62ch; line-height: 1.6; margin: 0 0 28px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-icon { font-size: 34px; line-height: 1; }
+    .card h2 { margin: 0; font-size: 18px; }
+    .card .sub { color: var(--muted); font-size: 12px; margin: -6px 0 0; }
+    .card p { margin: 0; line-height: 1.6; color: var(--text); }
+    .card ul { margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.7; font-size: 13px; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
+    .card-actions a {
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: var(--panel-2);
+    }
+    .card-actions a.primary { background: var(--accent); color: #06210f; border-color: transparent; }
+    .home-foot { margin-top: 30px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .home-foot a { color: var(--accent-2); }
+    .home-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  </style>
+</head>
+<body>
+  <main class="home">
+    <div class="home-head">
+      <div>
+        <h1 id="home-title"></h1>
+        <p class="lead" id="home-lead"></p>
+      </div>
+      <button id="btn-lang" class="btn ghost"></button>
+    </div>
+
+    <div class="cards">
+      <section class="card">
+        <div class="card-icon">🛵</div>
+        <h2 id="food-title"></h2>
+        <p class="sub" id="food-sub"></p>
+        <p id="food-text"></p>
+        <ul id="food-list"></ul>
+        <div class="card-actions">
+          <a class="primary" href="games/foodtech/index.html" id="food-play"></a>
+          <a href="games/foodtech/dist/game.html" id="food-file"></a>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-icon">🎬</div>
+        <h2 id="cinema-title"></h2>
+        <p class="sub" id="cinema-sub"></p>
+        <p id="cinema-text"></p>
+        <ul id="cinema-list"></ul>
+        <div class="card-actions">
+          <a class="primary" href="games/cinema/index.html" id="cinema-play"></a>
+          <a href="games/cinema/dist/game.html" id="cinema-file"></a>
+        </div>
+      </section>
+    </div>
+
+    <p class="home-foot" id="home-foot"></p>
+  </main>
+
+  <script type="module">
+    // Витрина живёт по тем же правилам, что и игры: язык хранится в одном
+    // ключе localStorage, поэтому выбор со стартовой страницы переносится внутрь.
+    import { t, setLang, getLang, detectLang, setStrings } from './shared/i18n.js';
+
+    const STRINGS = {
+      homeTitle: {
+        ru: 'Учебные экономические симуляторы',
+        en: 'Economics simulators for the classroom',
+      },
+      homeLead: {
+        ru: 'Две игры про управление бизнесом. Каждая — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
+        en: 'Two games about running a business. Each is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
+      },
+      foodTitle: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
+      foodSub: { ru: 'доставка еды в городе · ход = неделя · 52 недели', en: 'food delivery in a city · turn = week · 52 weeks' },
+      foodText: {
+        ru: 'Вы запускаете сервис доставки: районы, цены, курьеры, рестораны, маркетинг. Курьеров не хватает — время доставки растёт, клиенты уходят. Курьеров много — платите за простой.',
+        en: 'You launch a delivery service: districts, prices, couriers, restaurants, marketing. Too few couriers and delivery time rises and customers leave. Too many and you pay for idle time.',
+      },
+      foodList: {
+        ru: 'Очередь и загрузка курьеров|Погода и сезонность|Динамическое ценообразование и персональные скидки|Юнит-экономика заказа',
+        en: 'Queueing and courier utilisation|Weather and seasonality|Surge pricing and personal discounts|Unit economics of an order',
+      },
+      cinemaTitle: { ru: 'КИНОПОТОК', en: 'KINOPOTOK' },
+      cinemaSub: { ru: 'онлайн-кинотеатр · ход = месяц · 36 месяцев', en: 'streaming service · turn = month · 36 months' },
+      cinemaText: {
+        ru: 'Вы строите стриминг: два тарифа, закупка лицензий, собственная студия с полугодовым циклом производства, афиша конкурента и раунды инвестиций, которые размывают вашу долю.',
+        en: 'You build a streaming service: two tiers, licence buying, an in-house studio with a six-month production cycle, the rival’s release calendar and funding rounds that dilute your stake.',
+      },
+      cinemaList: {
+        ru: 'Аренда каталога против собственной библиотеки|Часы просмотра как расход, а не как успех|Чужие премьеры и контрпрограммирование|Рост базы против сохранения доли',
+        en: 'Renting a catalogue versus owning a library|Watch hours as a cost, not a success|Rival premieres and counter-programming|Growing the base versus keeping your stake',
+      },
+      play: { ru: 'Играть', en: 'Play' },
+      single: { ru: 'Скачать одним файлом', en: 'Download as one file' },
+      foot: {
+        ru: 'Игры работают в браузере без установки и без интернета. Версия «одним файлом» — это один HTML, который можно раздать студентам или открыть с флешки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a>.',
+        en: 'The games run in a browser with no install and no internet. The single-file version is one HTML you can hand out or open from a USB stick. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.md">delivery</a> · <a href="docs/cinema/en/economics.md">streaming</a>.',
+      },
+      langBtn: { ru: 'EN', en: 'RU' },
+    };
+
+    setStrings(STRINGS);
+    setLang(detectLang());
+
+    const set = (id, value) => { document.getElementById(id).innerHTML = value; };
+    const list = (id, key) => {
+      document.getElementById(id).innerHTML = t(key).split('|')
+        .map((item) => `<li>${item}</li>`).join('');
+    };
+
+    function render() {
+      document.documentElement.lang = getLang();
+      document.title = t('homeTitle');
+      set('home-title', t('homeTitle'));
+      set('home-lead', t('homeLead'));
+
+      set('food-title', t('foodTitle'));
+      set('food-sub', t('foodSub'));
+      set('food-text', t('foodText'));
+      list('food-list', 'foodList');
+      set('food-play', t('play'));
+      set('food-file', t('single'));
+
+      set('cinema-title', t('cinemaTitle'));
+      set('cinema-sub', t('cinemaSub'));
+      set('cinema-text', t('cinemaText'));
+      list('cinema-list', 'cinemaList');
+      set('cinema-play', t('play'));
+      set('cinema-file', t('single'));
+
+      set('home-foot', t('foot'));
+      set('btn-lang', t('langBtn'));
+    }
+
+    document.getElementById('btn-lang').addEventListener('click', () => {
+      setLang(getLang() === 'ru' ? 'en' : 'ru');
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,3368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>КИНОПОТОК · streaming economics simulator</title>
+  <style>
+:root {
+  --bg: #0b1120;
+  --panel: #111a2e;
+  --panel-2: #16213a;
+  --line: rgba(148, 163, 184, 0.16);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #4ade80;
+  --accent-2: #60a5fa;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --good: #4ade80;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 20% -10%, #16233d 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  min-height: 100%;
+}
+
+button { font-family: inherit; }
+
+/* ------------------------------- Шапка ---------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(11, 17, 32, 0.9);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo { font-size: 26px; }
+.brand-title { font-weight: 800; letter-spacing: 0.14em; font-size: 15px; }
+.brand-sub { color: var(--muted); font-size: 11px; }
+
+.kpis { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px 10px;
+  min-width: 96px;
+}
+.kpi .k-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.kpi .k-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.kpi .k-delta { font-size: 10px; font-variant-numeric: tabular-nums; }
+.up { color: var(--good); }
+.down { color: var(--bad); }
+.neutral { color: var(--muted); }
+
+.topbar-actions { display: flex; gap: 8px; }
+
+.btn {
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.15s;
+}
+.btn:hover { border-color: rgba(148, 163, 184, 0.4); }
+.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 5px 9px; font-size: 12px; font-weight: 500; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ------------------------------- Сетка ---------------------------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(420px, 1fr) 360px;
+  gap: 14px;
+  padding: 14px;
+  align-items: start;
+}
+/* На средних экранах правая колонка уходит под центральную, но остаётся во
+   ВТОРОЙ колонке. Растягивать её на всю ширину нельзя: липкая левая колонка
+   не ограничена своей строкой грида и накрывала бы её левый край. */
+@media (max-width: 1400px) {
+  .layout { grid-template-columns: 320px minmax(0, 1fr); }
+  .col-right { grid-column: 2; }
+}
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .col-right { grid-column: auto; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.col-center { display: flex; flex-direction: column; gap: 14px; }
+.col-left { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
+.col-right { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
+@media (max-width: 1400px) { .col-right { position: static; max-height: none; } }
+@media (max-width: 980px) { .col-left { position: static; max-height: none; } }
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 4px 0 10px;
+  font-weight: 700;
+}
+.panel-title.inline { margin: 0; }
+
+/* ------------------------------- Рычаги --------------------------------- */
+.lever { margin-bottom: 14px; }
+.lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.lever-label { font-weight: 600; font-size: 13px; }
+.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
+.lever input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent); }
+.lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
+.lever.open .lever-tip { display: block; }
+.lever-why {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 11px; padding: 0; text-decoration: underline dotted;
+}
+
+/* ------------------------------- Районы --------------------------------- */
+.districts { display: flex; flex-direction: column; gap: 8px; }
+.district {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--panel-2);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.district:hover { border-color: rgba(148, 163, 184, 0.35); }
+.district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
+.district-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.district-name { font-weight: 700; font-size: 13px; }
+.district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }
+.badge {
+  font-size: 10px; padding: 2px 6px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.badge.on { color: var(--good); border-color: rgba(74, 222, 128, 0.4); }
+
+/* ------------------------------ Инвестиции ------------------------------ */
+.funding { display: flex; flex-direction: column; gap: 8px; }
+.funding-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel-2);
+}
+.funding-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+/* ------------------------------- Событие -------------------------------- */
+.event {
+  border-left: 3px solid var(--warn);
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.09), transparent 60%);
+}
+.event h3 { margin: 0 0 6px; font-size: 15px; }
+.event p { margin: 0 0 10px; color: #cbd5e1; line-height: 1.5; }
+.event-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.event-option {
+  flex: 1 1 200px; text-align: left; border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
+}
+.event-option:hover { border-color: var(--warn); }
+.event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
+.event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
+.event-option span { color: var(--muted); font-size: 11px; }
+.lesson {
+  margin-top: 10px; font-size: 11px; color: var(--muted);
+  border-top: 1px dashed var(--line); padding-top: 8px;
+}
+.lesson b { color: var(--warn); }
+
+/* ------------------------------- Отчёт ---------------------------------- */
+.report-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.report-head h3 { margin: 0; font-size: 15px; }
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat .s-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .s-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.stat .s-sub { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.drivers { margin-top: 12px; }
+.driver { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
+.driver .d-name { width: 150px; color: var(--muted); flex-shrink: 0; }
+.driver .d-bar { flex: 1; height: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 4px; position: relative; }
+.driver .d-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.driver .d-val { width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.alerts { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.alert { font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); line-height: 1.45; }
+.alert.bad { border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.08); }
+.alert.warn { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.08); }
+.alert.good { border-color: rgba(74, 222, 128, 0.4); background: rgba(74, 222, 128, 0.08); }
+
+/* ------------------------------- Графики -------------------------------- */
+.charts-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chart-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.chart-tabs button {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 3px 10px; font-size: 11px; cursor: pointer;
+}
+.chart-tabs button.active { color: var(--text); border-color: var(--accent-2); background: rgba(96, 165, 250, 0.12); }
+#chart { width: 100%; height: 230px; margin-top: 6px; }
+.chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.legend-item i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.chart-caption { color: var(--muted); font-size: 11px; margin-top: 6px; line-height: 1.45; }
+
+/* -------------------------------- Табы ---------------------------------- */
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.tab {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer;
+}
+.tab.active { color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1); }
+.tab-content { font-size: 12px; line-height: 1.5; }
+
+table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+
+.help h4 { margin: 14px 0 6px; font-size: 13px; }
+.help p, .help li { color: #cbd5e1; }
+.help ul { padding-left: 18px; margin: 6px 0; }
+.help code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.formula {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; margin: 6px 0; font-family: ui-monospace, monospace; font-size: 11px; color: #cbd5e1;
+  overflow-x: auto; white-space: pre-wrap;
+}
+
+/* ------------------------------- Модалка -------------------------------- */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(2, 6, 16, 0.8);
+  display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px;
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px; max-width: 620px; width: 100%; max-height: 86vh; overflow-y: auto;
+}
+.modal h2 { margin: 0 0 10px; font-size: 20px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+.score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 14px 0; }
+.hint-box {
+  border: 1px dashed rgba(96, 165, 250, 0.45); background: rgba(96, 165, 250, 0.07);
+  border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;
+}
+.hint-box b { color: var(--accent-2); }
+
+/* ------------------------------ Алгоритмы ------------------------------- */
+.quality-box { margin-bottom: 10px; }
+.quality-row { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 4px; }
+.quality-row .q-name { width: 74px; color: var(--muted); flex-shrink: 0; }
+.quality-row .q-bar { flex: 1; height: 6px; background: rgba(148, 163, 184, 0.12); border-radius: 3px; overflow: hidden; }
+.quality-row .q-fill { height: 100%; border-radius: 3px; background: var(--accent-2); }
+.quality-row .q-val { width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.algo {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px;
+  background: var(--panel-2); margin-bottom: 8px;
+}
+.algo.locked { opacity: 0.5; }
+.algo.on { border-color: rgba(96, 165, 250, 0.5); background: rgba(96, 165, 250, 0.07); }
+.algo-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.algo-title { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.algo-title input { accent-color: var(--accent-2); cursor: pointer; }
+.algo-what { color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 4px; }
+.algo-tradeoff { color: #cbd5e1; font-size: 11px; line-height: 1.45; margin-top: 5px;
+  border-left: 2px solid rgba(251, 191, 36, 0.5); padding-left: 7px; }
+.algo-param { margin-top: 7px; }
+.algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
+.algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
+.algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------- Погода --------------------------------- */
+.weather { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.weather-now, .weather-next {
+  flex: 1 1 220px; display: flex; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: var(--panel-2);
+}
+.weather-next.alarm { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.09); }
+.weather-icon { font-size: 26px; line-height: 1; }
+.weather-body { min-width: 0; }
+.weather-when { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.weather-name { font-weight: 700; font-size: 14px; }
+.weather-fx { color: var(--muted); font-size: 11px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.weather-fx b.up { color: var(--good); }
+.weather-fx b.down { color: var(--bad); }
+
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🎬</span>
+      <div>
+        <div class="brand-title" id="brand-title"></div>
+        <div class="brand-sub" id="brand-sub"></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="topbar-actions">
+      <button id="btn-lang" class="btn ghost"></button>
+      <button id="btn-help" class="btn ghost">?</button>
+      <button id="btn-restart" class="btn ghost"></button>
+      <button id="btn-next" class="btn primary"></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel col-left">
+      <h2 class="panel-title" id="title-levers"></h2>
+      <div id="levers"></div>
+      <div id="ops-readout"></div>
+
+      <h2 class="panel-title" id="title-studio"></h2>
+      <div id="studio"></div>
+
+      <h2 class="panel-title" id="title-algos"></h2>
+      <div id="algos"></div>
+
+      <h2 class="panel-title" id="title-funding"></h2>
+      <div id="funding" class="funding"></div>
+    </aside>
+
+    <section class="col-center">
+      <div id="rival-slot"></div>
+      <div id="event-slot"></div>
+      <div id="report-slot"></div>
+      <div class="panel charts">
+        <div class="charts-head">
+          <h2 class="panel-title inline" id="title-dynamics"></h2>
+          <div class="chart-tabs" id="chart-tabs"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend"></div>
+        <canvas id="chart" height="230"></canvas>
+        <div class="chart-caption" id="chart-caption"></div>
+      </div>
+    </section>
+
+    <aside class="panel col-right">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="unit"></button>
+        <button class="tab" data-tab="pnl"></button>
+        <button class="tab" data-tab="algos"></button>
+        <button class="tab" data-tab="segments"></button>
+        <button class="tab" data-tab="help"></button>
+      </div>
+      <div id="tab-content" class="tab-content"></div>
+    </aside>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script>
+(function () {
+'use strict';
+// ===== ../../shared/i18n.js ========================================
+// ============================================================================
+// Ядро локализации, общее для всех игр. Два языка: ru (по умолчанию) и en.
+//
+// Словарь строк живёт в самой игре (games/<игра>/src/strings.js) и передаётся
+// сюда через setStrings(). Строки хранятся парами { ru, en } рядом друг с
+// другом — так переводчик видит оригинал и перевод вместе, и невозможно
+// потерять одну из версий незаметно.
+//
+// t(key, vars) — строка интерфейса с подстановкой {переменных}.
+// tx(obj)      — двуязычное поле из модели (район, рычаг, событие, алгоритм).
+// ============================================================================
+
+const LANGS = ['ru', 'en'];
+const STORAGE_KEY = 'game-lang';
+
+let current = 'ru';
+let dictionary = {};
+
+// Игра регистрирует свой словарь при старте
+function setStrings(dict) {
+  dictionary = dict ?? {};
+}
+
+function getStrings() {
+  return dictionary;
+}
+
+function getLang() {
+  return current;
+}
+
+function setLang(lang) {
+  if (!LANGS.includes(lang)) return;
+  current = lang;
+  try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* приватный режим */ }
+  if (typeof document !== 'undefined') document.documentElement.lang = lang;
+}
+
+function detectLang() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (LANGS.includes(saved)) return saved;
+  } catch { /* приватный режим */ }
+  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
+  return 'ru';
+}
+
+// Двуязычное поле модели: { ru: '…', en: '…' }
+function tx(field) {
+  if (field == null) return '';
+  if (typeof field === 'string') return field;
+  return field[current] ?? field.ru ?? '';
+}
+
+function t(key, vars) {
+  const entry = dictionary[key];
+  if (!entry) return key;
+  let out = entry[current] ?? entry.ru ?? key;
+  if (vars) {
+    for (const [name, value] of Object.entries(vars)) {
+      out = out.replaceAll(`{${name}}`, String(value));
+    }
+  }
+  return out;
+}
+
+
+// ===== src/strings.js ==============================================
+// ============================================================================
+// Строки интерфейса игры «КИНОПОТОК». Пары { ru, en }.
+// Регистрируются в ядре локализации вызовом setStrings() при старте.
+// ============================================================================
+
+const STRINGS = {
+  // --- шапка ---
+  brandTitle: { ru: 'КИНОПОТОК', en: 'KINOPOTOK' },
+  brandSub: { ru: 'экономический симулятор онлайн-кинотеатра', en: 'streaming service economics simulator' },
+  btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
+  btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
+  btnResults: { ru: 'Итоги партии', en: 'Final results' },
+  langToggle: { ru: 'EN', en: 'RU' },
+  langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
+
+  // --- KPI ---
+  kpiMonth: { ru: 'Месяц', en: 'Month' },
+  kpiMonthEvent: { ru: '⚡ событие', en: '⚡ event' },
+  kpiMonthCalm: { ru: 'обычный месяц', en: 'a quiet month' },
+  kpiCash: { ru: 'Касса', en: 'Cash' },
+  kpiCashOut: { ru: 'деньги кончились', en: 'out of money' },
+  kpiRunway: { ru: 'хватит на {months} мес.', en: '{months} months of runway' },
+  kpiProfitable: { ru: 'операционно прибыльны', en: 'operationally profitable' },
+  kpiSubs: { ru: 'Подписчики', en: 'Subscribers' },
+  kpiSubsSub: { ru: '{premium} платных · {ads} с рекламой', en: '{premium} ad-free · {ads} on ads' },
+  kpiRevenue: { ru: 'Выручка / мес', en: 'Revenue / mo' },
+  kpiRevenueSub: { ru: 'ARPU {value}', en: 'ARPU {value}' },
+  kpiProfit: { ru: 'Прибыль / мес', en: 'Profit / mo' },
+  kpiProfitSub: { ru: 'вклад {value}', en: 'contribution {value}' },
+  kpiChurn: { ru: 'Отток', en: 'Churn' },
+  kpiChurnSub: { ru: 'жизнь подписки {months} мес.', en: 'subscription lasts {months} mo.' },
+  kpiHours: { ru: 'Часов на подписчика', en: 'Hours per subscriber' },
+  kpiHoursSub: { ru: 'трафик {value}', en: 'bandwidth {value}' },
+  kpiEquity: { ru: 'Оценка × доля', en: 'Valuation × stake' },
+  kpiEquitySub: { ru: 'ваша доля {value}', en: 'your stake {value}' },
+  kpiStart: { ru: 'Старт', en: 'Start' },
+  kpiStartSub: { ru: 'деньги инвестора, 100% ваши', en: 'investor money, 100% yours' },
+
+  // --- панели ---
+  panelLevers: { ru: 'Рычаги управления', en: 'Business levers' },
+  panelStudio: { ru: 'Студия и производство', en: 'Studio and production' },
+  panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
+  panelFunding: { ru: 'Финансирование', en: 'Funding' },
+  panelDynamics: { ru: 'Динамика', en: 'Trends' },
+  leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
+
+  // --- сводка под ползунками ---
+  opsCatalog: { ru: 'Каталог: <b>{hours}</b> часов ({licensed} лицензий + {original} своих). Глубина <b>{depth}</b>, свежесть <b>{fresh}</b>.', en: 'Catalogue: <b>{hours}</b> hours ({licensed} licensed + {original} original). Depth <b>{depth}</b>, freshness <b>{fresh}</b>.' },
+  opsLicensing: { ru: 'Бюджет лицензий купит <b>{hours}</b> часов в месяц, из них истечёт {decay} за месяц.', en: 'The licensing budget buys <b>{hours}</b> hours a month; {decay} of the library expires each month.' },
+  opsUnitCheck: { ru: 'Подписчик приносит <b>{arpu}</b> и стоит <b>{cost}</b> трафика и поддержки → вклад <b class="{cls}">{cm}</b>.', en: 'A subscriber brings <b>{arpu}</b> and costs <b>{cost}</b> in bandwidth and support → contribution <b class="{cls}">{cm}</b>.' },
+  opsAdShare: { ru: 'На дешёвый тариф уходит примерно <b>{share}</b> подписчиков — они платят меньше, но приносят рекламу.', en: 'Roughly <b>{share}</b> of subscribers pick the cheap tier — they pay less but bring advertising.' },
+
+  // --- студия ---
+  studioGenre: { ru: 'Во что вкладывается студия', en: 'What the studio is making' },
+  studioProject: { ru: 'Проект стоит {cost} и выйдет через {months} мес.', en: 'A project costs {cost} and premieres in {months} months.' },
+  studioFund: { ru: 'Накоплено на текущий проект: <b>{fund}</b> из {cost}.', en: 'Saved towards the current project: <b>{fund}</b> of {cost}.' },
+  studioPipelineEmpty: { ru: 'В производстве ничего нет. Премьеры не будет — а значит, не будет и причины подписаться.', en: 'Nothing is in production. There will be no premiere — and therefore no reason to subscribe.' },
+  studioPipeline: { ru: 'В производстве: {list}.', en: 'In production: {list}.' },
+  studioPipelineItem: { ru: '{genre} через {months} мес.', en: '{genre} in {months} mo.' },
+  studioLag: { ru: 'Деньги уходят сегодня, зритель увидит результат через полгода. Решение о премьере вы принимаете сейчас — вслепую.', en: 'The money goes out today and viewers see the result in six months. You are deciding about that premiere now, blind.' },
+
+  // --- афиша конкурента ---
+  rivalPanel: { ru: 'Афиша конкурента · {season}, месяц {month}', en: 'Rival line-up · {season}, month {month}' },
+  rivalNow: { ru: 'этот месяц', en: 'this month' },
+  rivalNext: { ru: 'анонсировано на следующий', en: 'announced for next month' },
+  rivalNone: { ru: 'Тихо', en: 'Quiet' },
+  rivalSmall: { ru: 'Проходной релиз', en: 'Minor release' },
+  rivalNotable: { ru: 'Заметная премьера', en: 'Notable premiere' },
+  rivalMajor: { ru: 'Крупная премьера', en: 'Major premiere' },
+  rivalMega: { ru: 'Событие года', en: 'Event of the year' },
+  rivalNoEffect: { ru: 'ничего не отвлекает зрителя', en: 'nothing is competing for attention' },
+  rivalEffects: { ru: 'приток новых <b class="down">{acq}</b>, отток <b class="down">+{churn} п.п.</b>, часы <b class="down">{hours}</b>', en: 'new sign-ups <b class="down">{acq}</b>, churn <b class="down">+{churn} pp</b>, hours <b class="down">{hours}</b>' },
+  rivalAdvice: { ru: 'В следующем месяце зрителя будут звать в другое место. Своя громкая премьера гасит чужую — но её нужно было запустить в производство полгода назад. Что можно сейчас: усилить маркетинг или переждать и не жечь бюджет впустую.', en: 'Next month someone else will be calling your viewers away. Your own loud premiere blunts theirs — but it had to enter production six months ago. What you can still do: push marketing, or sit it out and not burn the budget for nothing.' },
+
+  seasonWinter: { ru: 'зима', en: 'winter' },
+  seasonSpring: { ru: 'весна', en: 'spring' },
+  seasonSummer: { ru: 'лето', en: 'summer' },
+  seasonAutumn: { ru: 'осень', en: 'autumn' },
+
+  // --- алгоритмы ---
+  algoData: { ru: 'Данные', en: 'Data' },
+  algoTeam: { ru: 'Команда', en: 'Team' },
+  algoQuality: { ru: 'Качество', en: 'Quality' },
+  algoDataHint: { ru: 'Накопленные часы просмотра — обучающая выборка', en: 'Accumulated watch hours — your training set' },
+  algoTeamHint: { ru: 'Накопленные вложения в data science', en: 'Cumulative investment in data science' },
+  algoQualityHint: { ru: 'Среднее геометрическое: нужно и то и другое', en: 'Geometric mean: you need both halves' },
+  algoIntro: { ru: 'Качество алгоритмов = √(данные × команда). Часы просмотра приходят только от подписчиков, поэтому рекомендации нельзя построить раньше, чем появится кому рекомендовать.', en: 'Algorithm quality = √(data × team). Watch hours only come from subscribers, so you cannot build recommendations before there is somebody to recommend to.' },
+  algoInstalled: { ru: 'внедрён', en: 'live' },
+  algoInstallCost: { ru: 'внедрение {cost}', en: 'rollout {cost}' },
+  algoNeedQuality: { ru: 'нужно качество {value}', en: 'needs quality {value}' },
+  algoPending: { ru: 'Будет внедрён при переходе к следующему месяцу: разовые {cost}.', en: 'Will be rolled out when you run the next month: a one-off {cost}.' },
+
+  // --- финансирование ---
+  fundingTake: { ru: 'Взять', en: 'Take it' },
+  fundingDilution: { ru: 'размытие {dilution} → ваша доля {equity}', en: 'dilution {dilution} → your stake {equity}' },
+  fundingHead: { ru: 'Оценка компании: <b>{valuation}</b> (pre-money). Ваша доля: <b>{equity}</b>, привлечено: {raised}.', en: 'Company valuation: <b>{valuation}</b> (pre-money). Your stake: <b>{equity}</b>, raised so far: {raised}.' },
+  fundingNote: { ru: 'В оценку входит и собственная библиотека: оригиналы — актив, лицензии — аренда. Поэтому два сервиса с одинаковой выручкой стоят по-разному.', en: 'The valuation includes your own library: originals are an asset, licences are rent. That is why two services with identical revenue are worth different amounts.' },
+  fundingLocked: { ru: '<br><b>Раунд доступен с {month}-го месяца.</b>', en: '<br><b>Rounds open from month {month}.</b>' },
+  fundingDone: { ru: 'Раунд закрыт: {amount} за {dilution} компании.', en: 'Round closed: {amount} for {dilution} of the company.' },
+
+  // --- события ---
+  eventAuto: { ru: 'Событие сработает автоматически при переходе к следующему месяцу.', en: 'This event resolves automatically when you run the next month.' },
+  eventLesson: { ru: 'Экономический смысл:', en: 'What this teaches:' },
+  eventChoiceNeeded: { ru: 'Сначала выберите решение по событию месяца.', en: 'Choose how to handle this month’s event first.' },
+
+  // --- отчёт ---
+  reportMonth0: { ru: 'Месяц 0. Сервис ещё не запущен.', en: 'Month 0. The service has not launched yet.' },
+  reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
+  reportStartIntro: { ru: 'У вас {cash} и библиотека из нескольких сотен часов старого кино. Порядок почти всегда такой:', en: 'You have {cash} and a library of a few hundred hours of old films. The sequence is almost always this:' },
+  reportStart1: { ru: 'Включите <b>закупку лицензий</b>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <b>licensing</b>: you need a catalogue right now, and your own project will not premiere for six months.' },
+  reportStart2: { ru: 'Одновременно запустите <b>производство</b>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <b>production</b>. An original is the only thing your rival does not have, and it stays yours forever.' },
+  reportStart3: { ru: 'Проверьте вклад с подписчика: трафик растёт вместе с просмотром, и слишком щедрый битрейт съедает подписку целиком.', en: 'Check contribution per subscriber: bandwidth grows with viewing, and an over-generous bitrate can swallow the whole subscription fee.' },
+  reportStart4: { ru: 'Только потом включайте <b>маркетинг</b>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <b>marketing</b>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
+  reportStartAlgos: { ru: '<b>Алгоритмы</b> откроются позже: им нужны часы просмотра, а часы приходят только от подписчиков.', en: '<b>Algorithms</b> unlock later: they need watch hours, and hours only come from subscribers.' },
+  reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
+  reportHeadStats: { ru: 'выручка {revenue} · подписка {subscription} · реклама {ads}', en: 'revenue {revenue} · subscriptions {subscription} · advertising {ads}' },
+
+  statSubs: { ru: 'Подписчики', en: 'Subscribers' },
+  statSubsSub: { ru: '+{gained} / −{lost}', en: '+{gained} / −{lost}' },
+  statHours: { ru: 'Часы просмотра', en: 'Watch hours' },
+  statHoursSub: { ru: '{perSub} ч на подписчика', en: '{perSub} h per subscriber' },
+  unitHours: { ru: 'ч', en: 'h' },
+  genreHours: { ru: '{hours} ч контента', en: '{hours} h of content' },
+  statCatalog: { ru: 'Каталог', en: 'Catalogue' },
+  statCatalogSub: { ru: 'своих {original} ч ({share})', en: '{original} h original ({share})' },
+  statFresh: { ru: 'Свежесть', en: 'Freshness' },
+  statFreshSub: { ru: 'глубина ×{depth}', en: 'depth ×{depth}' },
+  statChurn: { ru: 'Отток', en: 'Churn' },
+  statChurnSub: { ru: 'после премьеры +{hangover}', en: 'post-premiere +{hangover}' },
+  statArpu: { ru: 'ARPU', en: 'ARPU' },
+  statArpuSub: { ru: 'вклад {value}', en: 'contribution {value}' },
+  statTraffic: { ru: 'Трафик', en: 'Bandwidth' },
+  statTrafficSub: { ru: '{perHour} ₽ за час', en: '₽{perHour} per hour' },
+  statProfit: { ru: 'Прибыль', en: 'Profit' },
+  statProfitSub: { ru: 'постоянные {value}', en: 'fixed costs {value}' },
+  statCacLtv: { ru: 'CAC / LTV', en: 'CAC / LTV' },
+  statCacOff: { ru: 'маркетинг выключен', en: 'marketing is off' },
+
+  premiereNote: { ru: 'Премьера: {list}. Шум привёл подписчиков — но через месяц те, кто пришёл только ради неё, начнут уходить.', en: 'Premiere: {list}. The buzz brought subscribers in — but a month from now the ones who came only for it will start leaving.' },
+  premiereItem: { ru: '{genre} (качество {quality})', en: '{genre} (quality {quality})' },
+  startedNote: { ru: 'Запущено в производство: {list}. Премьера через {months} мес.', en: 'Entered production: {list}. Premiere in {months} months.' },
+  installNote: { ru: 'Внедрено: {names} — разовые {cost}.', en: 'Rolled out: {names} — a one-off {cost}.' },
+
+  driversTitle: { ru: 'Почему база подписчиков изменилась ({delta})', en: 'Why the subscriber base changed ({delta})' },
+  driverPrice: { ru: 'Цена подписки', en: 'Subscription price' },
+  driverCatalog: { ru: 'Каталог и новинки', en: 'Catalogue and new releases' },
+  driverAds: { ru: 'Рекламная нагрузка', en: 'Ad load' },
+  driverRival: { ru: 'Премьеры конкурента', en: 'Rival premieres' },
+  driverRetention: { ru: 'Удержание', en: 'Retention' },
+  driverAwareness: { ru: 'Узнаваемость и маркетинг', en: 'Awareness and marketing' },
+
+  // --- предупреждения ---
+  alertNoCatalog: { ru: 'Каталог почти пуст: глубина ×{depth}. Приводить зрителя некуда — маркетинг сейчас сгорает впустую.', en: 'The catalogue is nearly empty: depth ×{depth}. There is nowhere to bring viewers — marketing simply burns right now.' },
+  alertStale: { ru: 'Новинок нет: свежесть ×{fresh}. Каталог не стал меньше, но зритель видит одно и то же и уходит — за месяц {lost}.', en: 'No new releases: freshness ×{fresh}. The catalogue has not shrunk, but viewers see the same shelf and leave — {lost} this month.' },
+  alertNoPipeline: { ru: 'В производстве пусто. Через полгода у вас не будет ни одной премьеры, и остановить отток будет нечем.', en: 'Production is empty. In six months you will have no premiere at all and nothing to stop the churn with.' },
+  alertNegativeCm: { ru: 'Вклад с подписчика отрицательный ({value}). Каждый новый зритель увеличивает убыток: трафик дороже подписки.', en: 'Contribution per subscriber is negative ({value}). Every new viewer deepens the loss: bandwidth costs more than the subscription.' },
+  alertTrafficHeavy: { ru: 'Трафик съедает {share} выручки ({cost}). При {hours} ч на подписчика битрейт {bitrate} Мбит/с — дорогое удовольствие.', en: 'Bandwidth eats {share} of revenue ({cost}). At {hours} h per subscriber, {bitrate} Mbps is an expensive luxury.' },
+  alertBreakEven: { ru: 'Вклад с подписчика {cm}, постоянных расходов на {fixed}. Точка безубыточности: {subs} подписчиков.', en: 'Contribution per subscriber is {cm} against {fixed} of fixed costs. Break-even sits at {subs} subscribers.' },
+  alertRunway: { ru: 'Денег на {months} месяцев при текущем сжигании {burn}/мес. Контентные бюджеты — первое, что придётся резать.', en: '{months} months of cash left at the current burn of {burn}/mo. Content budgets are the first thing you will have to cut.' },
+  alertHangover: { ru: 'Волна отписок после премьеры: отток вырос до {churn}. Те, кто пришёл ради одного сериала, уходят, досмотрев его.', en: 'A post-premiere wave: churn is up to {churn}. Everyone who came for one show leaves once they have finished it.' },
+  alertRivalAhead: { ru: 'В следующем месяце у конкурента {release}. Приток новых упадёт примерно до {acq} — либо отвечайте премьерой, либо не тратьте маркетинг впустую.', en: 'Next month the rival has {release}. New sign-ups will fall to about {acq} — either answer with a premiere or do not waste marketing.' },
+  alertAdHeavy: { ru: 'Реклама {load} мин/час приносит {revenue}, но поднимает отток. Киноманы уходят от неё втрое быстрее молодёжи.', en: 'An ad load of {load} min/hr brings {revenue} but lifts churn. Cinephiles leave over it three times faster than young viewers.' },
+  alertLtvCacBad: { ru: 'LTV/CAC = {value}: подписчик не отобьёт стоимость своего привлечения.', en: 'LTV/CAC = {value}: a subscriber will not repay the cost of acquiring them.' },
+  alertLtvCacGood: { ru: 'LTV/CAC = {value} — привлечение окупается с запасом, есть смысл давить на маркетинг.', en: 'LTV/CAC = {value} — acquisition pays back with room to spare, so it is worth pushing marketing.' },
+  alertRndIdle: { ru: 'Data Science стоит {cost}/мес, но ни один алгоритм не включён. Команда копит качество ({quality}), а деньги делают только внедрённые правила.', en: 'Data science costs {cost}/mo but no algorithm is switched on. The team is building quality ({quality}); only deployed rules make money.' },
+  alertAlgosReady: { ru: 'Доступно к внедрению: {names}. Качество алгоритмов {quality}.', en: 'Ready to roll out: {names}. Algorithm quality is {quality}.' },
+  alertProfit: { ru: 'Месяц закрыт в плюс: {value}.', en: 'The month closed in the black: {value}.' },
+
+  // --- графики ---
+  chartSubs: { ru: 'Подписчики', en: 'Subscribers' },
+  chartSubsCaption: { ru: 'База подписчиков — запас. Приток даёт маркетинг и премьеры, отток — скука и цена. Разница между линиями и есть ваш рост.', en: 'The subscriber base is a stock. Inflow comes from marketing and premieres, outflow from boredom and price. The gap between the lines is your growth.' },
+  seriesSubs: { ru: 'Всего', en: 'Total' },
+  seriesPremium: { ru: 'Без рекламы', en: 'Ad-free' },
+  seriesAds: { ru: 'С рекламой', en: 'Ad tier' },
+  chartMoney: { ru: 'Деньги', en: 'Money' },
+  chartMoneyCaption: { ru: 'Вклад = выручка − трафик и поддержка. Прибыль = вклад − контент, маркетинг и офис. Контент здесь постоянные расходы: они не зависят от числа зрителей.', en: 'Contribution = revenue − bandwidth and support. Profit = contribution − content, marketing and overheads. Content is a fixed cost here: it does not depend on how many people watch.' },
+  seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
+  seriesContribution: { ru: 'Вклад', en: 'Contribution' },
+  seriesProfit: { ru: 'Прибыль', en: 'Profit' },
+  chartCash: { ru: 'Касса', en: 'Cash' },
+  chartCashCaption: { ru: 'Контентные бюджеты уходят каждый месяц, а премьера окупается через полгода. Между этими двумя фактами и живёт касса.', en: 'Content budgets go out every month while a premiere pays back six months later. Your cash lives in the gap between those two facts.' },
+  chartCatalog: { ru: 'Каталог', en: 'Catalogue' },
+  chartCatalogCaption: { ru: 'Лицензии истекают каждый месяц: чтобы каталог просто не уменьшался, платить нужно постоянно. Оригиналы не истекают никогда.', en: 'Licences expire every month: keeping the catalogue merely level requires paying forever. Originals never expire.' },
+  seriesLicensed: { ru: 'Лицензии, ч', en: 'Licensed, h' },
+  seriesOriginal: { ru: 'Свои, ч', en: 'Original, h' },
+  chartEngagement: { ru: 'Просмотр', en: 'Engagement' },
+  chartEngagementCaption: { ru: 'Часы на подписчика — одновременно лучший индикатор лояльности и крупнейшая статья переменных расходов. Радоваться им нужно осторожно.', en: 'Hours per subscriber is at once your best loyalty indicator and your largest variable cost. Enjoy it carefully.' },
+  seriesHoursPerSub: { ru: 'Часов на подписчика', en: 'Hours per subscriber' },
+  seriesChurn: { ru: 'Отток, %', en: 'Churn, %' },
+  chartUnit: { ru: 'Юнит', en: 'Unit' },
+  chartUnitCaption: { ru: 'ARPU против вклада: разница между ними — трафик и поддержка. Чем больше смотрят, тем шире эта щель.', en: 'ARPU against contribution: the gap between them is bandwidth and support. The more people watch, the wider it gets.' },
+  seriesArpu: { ru: 'ARPU, ₽', en: 'ARPU, ₽' },
+  seriesCmPerSub: { ru: 'Вклад с подписчика, ₽', en: 'Contribution per subscriber, ₽' },
+  chartAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
+  chartAlgosCaption: { ru: 'Качество алгоритмов = √(данные × команда). Данные копятся только от часов просмотра, поэтому кривая всегда отстаёт от роста базы.', en: 'Algorithm quality = √(data × team). Data only accumulates from watch hours, so the curve always lags behind the base.' },
+  seriesQuality: { ru: 'Качество, %', en: 'Quality, %' },
+  seriesData: { ru: 'Данные, %', en: 'Data, %' },
+  seriesTeam: { ru: 'Команда, %', en: 'Team, %' },
+
+  // --- вкладки ---
+  tabUnit: { ru: 'Юнит-экономика', en: 'Unit economics' },
+  tabPnl: { ru: 'P&L', en: 'P&L' },
+  tabAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
+  tabSegments: { ru: 'Аудитория', en: 'Audience' },
+  tabHelp: { ru: 'Справка', en: 'Guide' },
+
+  // --- юнит-экономика ---
+  unitIntro: { ru: 'Экономика одного подписчика в месяц при текущих настройках — пересчитывается мгновенно, до перехода к следующему месяцу.', en: 'The economics of one subscriber per month at your current settings — recalculated instantly, before you run the next month.' },
+  unitColItem: { ru: 'Статья', en: 'Line' },
+  unitColPerSub: { ru: '₽ / подписчик', en: '₽ / subscriber' },
+  unitSubscription: { ru: 'Подписка', en: 'Subscription' },
+  unitAdvertising: { ru: 'Реклама', en: 'Advertising' },
+  unitRevenue: { ru: 'ARPU (выручка с подписчика)', en: 'ARPU (revenue per subscriber)' },
+  unitCdn: { ru: 'Трафик ({hours} ч × {perHour} ₽)', en: 'Bandwidth ({hours} h × ₽{perHour})' },
+  unitSupport: { ru: 'Поддержка и биллинг', en: 'Support and billing' },
+  unitContribution: { ru: 'Вклад с подписчика', en: 'Contribution per subscriber' },
+  unitNote: { ru: 'Обратите внимание: контента в этой таблице нет. Он не переменный расход — он постоянный, и потому определяет не выгодность подписчика, а необходимый масштаб.', en: 'Note what is missing: content. It is not a variable cost but a fixed one, so it does not decide whether a subscriber is worth having — it decides what scale you need.' },
+  unitBreakEven: { ru: 'При постоянных расходах {fixed}/мес точка безубыточности — <b>{subs} подписчиков</b> (сейчас {current}).', en: 'At fixed costs of {fixed}/mo, break-even is <b>{subs} subscribers</b> (currently {current}).' },
+  unitNoBreakEven: { ru: 'Вклад с подписчика ≤ 0: точки безубыточности не существует ни при каком масштабе. Сначала чините экономику, потом растите.', en: 'Contribution per subscriber is ≤ 0, so break-even does not exist at any scale. Fix the economics first, then grow.' },
+  unitAcquisition: { ru: 'Привлечение подписчика', en: 'Subscriber acquisition' },
+  unitCac: { ru: 'CAC (маркетинг / новые подписчики)', en: 'CAC (marketing / new subscribers)' },
+  unitLifetime: { ru: 'Срок жизни подписки', en: 'Subscription lifetime' },
+  unitLifetimeValue: { ru: '{value} мес.', en: '{value} mo.' },
+  unitLtv: { ru: 'LTV (вклад за всё время жизни)', en: 'LTV (lifetime contribution)' },
+  unitLtvCacNote: { ru: 'Ориентир индустрии: LTV/CAC ≥ 3. В стриминге эта величина обманчива: она не учитывает контент, без которого подписчик не остался бы ни на месяц.', en: 'The industry benchmark is LTV/CAC ≥ 3. In streaming the number is deceptive: it ignores the content without which the subscriber would not have stayed a single month.' },
+
+  // --- P&L ---
+  pnlEmpty: { ru: 'Отчёт появится после первого прожитого месяца.', en: 'The statement appears after your first completed month.' },
+  pnlSubscription: { ru: 'Выручка от подписки', en: 'Subscription revenue' },
+  pnlAds: { ru: 'Выручка от рекламы', en: 'Advertising revenue' },
+  pnlRevenue: { ru: 'Выручка', en: 'Revenue' },
+  pnlCdn: { ru: 'Трафик', en: 'Bandwidth' },
+  pnlSupport: { ru: 'Поддержка и биллинг', en: 'Support and billing' },
+  pnlWinback: { ru: 'Удерживающие скидки', en: 'Retention discounts' },
+  pnlContribution: { ru: 'Вклад (contribution)', en: 'Contribution' },
+  pnlLicensing: { ru: 'Закупка лицензий', en: 'Licensing' },
+  pnlOriginals: { ru: 'Производство оригиналов', en: 'Originals production' },
+  pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
+  pnlTech: { ru: 'Технологии', en: 'Technology' },
+  pnlRnd: { ru: 'Data Science', en: 'Data science' },
+  pnlHq: { ru: 'Студия, редакция, офис', en: 'Studio, editorial, overheads' },
+  pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
+  pnlOneOff: { ru: 'Разовые расходы (внедрения, события)', en: 'One-off costs (rollouts, events)' },
+  pnlCashChange: { ru: 'Изменение кассы', en: 'Change in cash' },
+  pnlNote: { ru: 'Контент стоит одинаково при десяти тысячах подписчиков и при десяти миллионах. Именно поэтому стриминг — бизнес масштаба, а не бизнес маржи.', en: 'Content costs the same with ten thousand subscribers as with ten million. That is exactly why streaming is a scale business rather than a margin business.' },
+
+  // --- аудитория ---
+  segmentsEmpty: { ru: 'Данные появятся после первого месяца.', en: 'Data appears after the first month.' },
+  colSegment: { ru: 'Сегмент', en: 'Segment' },
+  colSubs: { ru: 'Подписчики', en: 'Subscribers' },
+  colAdShare: { ru: 'С рекламой', en: 'On ads' },
+  colChurn: { ru: 'Отток', en: 'Churn' },
+  colArpu: { ru: 'ARPU', en: 'ARPU' },
+  colPenetration: { ru: 'Охват', en: 'Reach' },
+  colPriceFactor: { ru: 'Цена ×', en: 'Price ×' },
+  colAppeal: { ru: 'Каталог ×', en: 'Catalogue ×' },
+  colAdPenalty: { ru: 'Реклама ×', en: 'Ads ×' },
+  segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь.', en: 'The same lever behaves differently by segment: a rouble of price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched.' },
+
+  // --- алгоритмы (вкладка) ---
+  algosTabQuality: { ru: 'Качество алгоритмов: <b>{quality}</b> (данные {data} × команда {team}).', en: 'Algorithm quality: <b>{quality}</b> (data {data} × team {team}).' },
+  algosColName: { ru: 'Алгоритм', en: 'Algorithm' },
+  algosColProfit: { ru: '₽ / мес', en: '₽ / mo' },
+  algosColSubs: { ru: 'Подписчики', en: 'Subscribers' },
+  algosColHours: { ru: 'Часы', en: 'Hours' },
+  algosTotal: { ru: 'Итого от алгоритмов', en: 'Total from algorithms' },
+  algosTeamCost: { ru: 'Стоимость команды', en: 'Cost of the team' },
+  algosNet: { ru: 'Чистый эффект', en: 'Net effect' },
+  algosCounterfactual: { ru: 'Каждая строка — контрфактический расчёт: прошлый месяц пересчитан заново с выключенным алгоритмом. В реальной компании такой ответ стоит квартала A/B-тестов.', en: 'Every row is a counterfactual: last month was re-simulated with that algorithm switched off. In a real company this answer costs a quarter of A/B testing.' },
+  algosNone: { ru: 'Ни один алгоритм не включён — сравнивать нечего. Начните с бюджета на Data Science.', en: 'No algorithm is switched on, so there is nothing to compare. Start with a data science budget.' },
+  algosZeroNote: { ru: '{names} сейчас почти ничего не меняет. Это не поломка: часть алгоритмов включается только в своём режиме — календарь релизов бесполезен без премьер, удержание — при низком оттоке.', en: '{names} currently changes almost nothing. That is not a bug: some algorithms only engage in their own regime — pacing is useless without premieres, win-back at low churn.' },
+  algosVsSlider: { ru: 'Чем алгоритм отличается от ползунка', en: 'How an algorithm differs from a slider' },
+  algosVsSliderText: { ru: 'Ползунок задаёт <b>число</b>: 4 минуты рекламы всем и всегда. Алгоритм задаёт <b>правило</b>: реклама = f(терпимость зрителя), скидка = f(вероятность ухода), битрейт = f(сцены). Правило умеет быть разным для разных людей — поэтому улучшает оба конца компромисса, неразрешимого для одного числа.', en: 'A slider sets a <b>number</b>: four minutes of ads for everyone, always. An algorithm sets a <b>rule</b>: ads = f(viewer tolerance), discount = f(probability of leaving), bitrate = f(scene). A rule can differ between people, which is why it improves both ends of a trade-off a single number cannot resolve.' },
+
+  // --- справка ---
+  helpWhatTitle: { ru: 'Что это такое', en: 'What this is' },
+  helpWhatText: { ru: 'Вы управляете онлайн-кинотеатром. Один ход — месяц, партия — три года. Цель: построить сервис, который дорого стоит <i>и</i> в котором вам всё ещё принадлежит большая доля.', en: 'You run a streaming service. One turn is a month, a game is three years. The goal: build a service that is worth a lot <i>and</i> in which you still own a large share.' },
+  helpCatalogTitle: { ru: 'Каталог: аренда против актива', en: 'Catalogue: renting versus owning' },
+  helpCatalogFormula: {
+    ru: `лицензии: появляются сразу, истекают 4,5% в месяц, есть у конкурентов
+оригиналы: премьера через 6 месяцев, остаются навсегда, только у вас
+глубина = насыщение(лицензии × 0.5 + оригиналы × 6)
+свежесть = √(новинки / эталон), новинка стареет за ~4 месяца`,
+    en: `licences: available at once, expire at 4.5% a month, rivals have them too
+originals: premiere in 6 months, stay forever, yours alone
+depth = saturation(licensed × 0.5 + originals × 6)
+freshness = √(new releases / reference), a release ages out in ~4 months`,
+  },
+  helpCatalogText: { ru: 'Час собственной премьеры удерживает как несколько часов библиотеки, но стоит в полсотни раз дороже. Ни одна из крайностей не работает: на одних лицензиях нечем удерживать, на одних оригиналах нечего смотреть.', en: 'An hour of your own premiere retains like several hours of library, but costs fifty times more. Neither extreme works: licences alone give you nothing to hold people with, originals alone give them nothing to watch.' },
+  helpMoneyTitle: { ru: 'Почему трафик — главное', en: 'Why bandwidth is the thing to watch' },
+  helpMoneyText: { ru: 'В подписке выручка с человека фиксирована, а расходы растут вместе с просмотром. Самый лояльный зритель — самый дорогой. Это переворачивает привычную логику: здесь рост вовлечённости надо считать, а не праздновать.', en: 'In a subscription business revenue per person is fixed while cost grows with viewing. Your most loyal viewer is your most expensive one. That inverts the usual logic: here engagement growth is something to calculate, not to celebrate.' },
+  helpChurnTitle: { ru: 'Обратные связи, которые вас погубят', en: 'The feedback loops that will kill you' },
+  helpSpiralStale: { ru: '<b>Спираль скуки.</b> Нет премьер → растёт отток → падает выручка → режется контентный бюджет → премьер ещё меньше.', en: '<b>The staleness spiral.</b> No premieres → churn rises → revenue falls → the content budget is cut → even fewer premieres.' },
+  helpSpiralHangover: { ru: '<b>Синдром сериала.</b> Громкая премьера приводит толпу, которая уходит, досмотрев её. Один хит без продолжения — это заём, а не рост.', en: '<b>The one-show syndrome.</b> A loud premiere brings a crowd that leaves once they have finished it. A single hit with nothing behind it is a loan, not growth.' },
+  helpSpiralAds: { ru: '<b>Спираль рекламы.</b> Больше минут → больше выручки сейчас → выше отток → меньше зрителей → меньше показов.', en: '<b>The ad spiral.</b> More minutes → more revenue now → higher churn → fewer viewers → fewer impressions.' },
+  helpSpiralTraffic: { ru: '<b>Ловушка вовлечённости.</b> Зритель смотрит больше → лоялен → но трафик дороже подписки, и рост часов съедает маржу.', en: '<b>The engagement trap.</b> Viewers watch more → they are loyal → but bandwidth outruns the subscription and rising hours eat the margin.' },
+  helpRivalTitle: { ru: 'Афиша конкурента', en: 'The rival’s line-up' },
+  helpRivalText: { ru: 'Чужие премьеры известны за месяц: даты публикуются задолго до выхода. Они забирают приток новых подписок и часть внимания ваших зрителей. Своя громкая премьера в тот же месяц частично гасит чужую — но запускать её в производство нужно было полгода назад.', en: 'Rival premieres are known a month ahead: dates are published long before release. They take away new sign-ups and part of your viewers’ attention. Your own loud premiere in the same month partly blunts theirs — but it had to enter production six months earlier.' },
+  helpAlgosTitle: { ru: 'Оптимизации второго порядка', en: 'Second-order optimisation' },
+  helpAlgosText: { ru: 'Ползунки задают числа, алгоритмы — правила. Качество = √(данные × команда), и данные здесь — часы просмотра. Поэтому алгоритмы всегда приходят позже контента: рекомендовать нечего, пока нечего смотреть.', en: 'Sliders set numbers, algorithms set rules. Quality = √(data × team), and here the data is watch hours. So algorithms always arrive after content: there is nothing to recommend until there is something to watch.' },
+  helpScoreTitle: { ru: 'Как считается финальный счёт', en: 'How the final score works' },
+  helpScoreFormula: {
+    ru: `оценка = годовая выручка × мультипликатор + библиотека оригиналов
+мультипликатор растёт от темпа роста и рентабельности
+счёт = оценка × ваша доля`,
+    en: `valuation = annual revenue × multiple + your original library
+the multiple grows with growth rate and margin
+score = valuation × your stake`,
+  },
+  helpScoreText: { ru: 'Собственная библиотека входит в оценку напрямую — в отличие от лицензий, которые вы всего лишь арендуете. Два сервиса с одинаковой выручкой стоят по-разному.', en: 'Your own library enters the valuation directly, unlike licences, which you merely rent. Two services with identical revenue are worth different amounts.' },
+  helpLimitsTitle: { ru: 'Ограничения модели', en: 'Limits of the model' },
+  helpLimitsText: { ru: 'Это учебная модель, а не прогноз. Конкурент не реагирует на ваши решения, права не торгуются по отдельности, зрители внутри сегмента одинаковы, а качество проекта — одно число вместо сотни решений съёмочной группы.', en: 'This is a teaching model, not a forecast. The rival does not react to your decisions, rights are not negotiated individually, viewers within a segment are identical, and a project’s quality is one number standing in for a hundred decisions on set.' },
+
+  // --- финал ---
+  gameOverBankrupt: { ru: '💀 Деньги кончились', en: '💀 Out of money' },
+  gameOverFinished: { ru: '🏁 Три года позади', en: '🏁 Three years done' },
+  gameOverBankruptText: { ru: 'Касса ушла в минус на {month}-м месяце. Контент оплачивается вперёд, а окупается через полгода — этот разрыв и топит сервисы.', en: 'Cash went negative in month {month}. Content is paid for upfront and pays back six months later — that gap is what sinks services.' },
+  gameOverFinishedText: { ru: 'Тридцать шесть месяцев позади. Итоговая оценка компании и ваша доля в ней:', en: 'Thirty-six months done. Here is the final valuation and your share of it:' },
+  scoreValuation: { ru: 'Оценка компании', en: 'Company valuation' },
+  scoreStake: { ru: 'Ваша доля', en: 'Your stake' },
+  scoreResult: { ru: 'Ваш результат', en: 'Your result' },
+  scoreRaised: { ru: 'Привлечено', en: 'Raised' },
+  scoreCash: { ru: 'Касса', en: 'Cash' },
+  scoreLibrary: { ru: 'Своя библиотека', en: 'Own library' },
+  scoreGrade: { ru: 'Оценка результата', en: 'Verdict' },
+  gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
+  gradeExcellent: { ru: 'Отличный результат', en: 'Excellent' },
+  gradeSolid: { ru: 'Крепкий сервис', en: 'A solid service' },
+  gradeSurvived: { ru: 'Выжили', en: 'Survived' },
+  gradeModest: { ru: 'Скромно', en: 'Modest' },
+  gameOverLastMonth: { ru: 'Последний месяц: {subs} подписчиков, ARPU {arpu}, отток {churn}, прибыль {profit}.', en: 'Final month: {subs} subscribers, ARPU {arpu}, churn {churn}, profit {profit}.' },
+  gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> что удерживало подписчика — каталог или привычка? В какой момент рост часов перестал приносить прибыль? Сколько стоила бы та же база без единого оригинала?', en: '<b>Questions for the debrief:</b> what kept subscribers — the catalogue or the habit? At what point did rising hours stop producing profit? What would the same base be worth without a single original?' },
+  gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
+  gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
+  helpModalTitle: { ru: 'Как играть', en: 'How to play' },
+  helpModalOk: { ru: 'Понятно', en: 'Got it' },
+  restartTitle: { ru: 'Начать заново?', en: 'Start over?' },
+  restartText: { ru: 'Текущая партия будет потеряна, рынок сгенерируется заново.', en: 'The current game will be lost and the market will be regenerated.' },
+  restartYes: { ru: 'Да, заново', en: 'Yes, restart' },
+  restartNo: { ru: 'Отмена', en: 'Cancel' },
+};
+
+
+// ===== ../../shared/rng.js =========================================
+// Детерминированный генератор псевдослучайных чисел (mulberry32).
+// Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
+// это важно и для тестов, и для учебных сценариев («у всей группы одинаковый город»).
+
+function hashSeed(str) {
+  const s = String(str);
+  let h = 1779033703 ^ s.length;
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+
+function createRng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashSeed(seed);
+  const rng = () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  rng.state = () => a >>> 0;
+  rng.restore = (s) => { a = s >>> 0; };
+  return rng;
+}
+
+// Случайное число из диапазона
+function between(rng, min, max) {
+  return min + rng() * (max - min);
+}
+
+// Выбор элемента с весами: items = [{weight, ...}]
+function weightedPick(rng, items) {
+  const total = items.reduce((s, i) => s + (i.weight ?? 1), 0);
+  if (total <= 0) return null;
+  let r = rng() * total;
+  for (const item of items) {
+    r -= item.weight ?? 1;
+    if (r <= 0) return item;
+  }
+  return items[items.length - 1];
+}
+
+
+// ===== src/model/config.js =========================================
+// ============================================================================
+// Параметры мира онлайн-кинотеатра «КИНОПОТОК».
+// Денежная единица — рубли, шаг времени — 1 месяц.
+//
+// Текстовые поля двуязычны: { ru, en }. Разворачивает их i18n.tx().
+// ============================================================================
+
+const CONFIG = {
+  monthsTotal: 36,          // партия — три года
+  startCash: 4_000_000_000, // деньги инвестора на старте
+
+  // --- Каталог ---
+  // Лицензии дешевле, но истекают и есть у конкурентов. Оригиналы дороже,
+  // остаются навсегда, но выходят с задержкой и могут провалиться.
+  licenseDecay: 0.045,        // доля лицензионных часов, истекающая за месяц
+  licenseCostPerHour: 600_000,  // ₽ за час лицензионного контента
+  // Лицензия есть и у конкурентов, поэтому она хуже удерживает: тот же час
+  // чужого контента создаёт вдвое меньше причин подписаться именно на вас.
+  licenseDepthWeight: 0.5,
+  // Час собственной премьеры удерживает как несколько часов библиотеки:
+  // ради эксклюзива подписываются, ради старого кино — почти нет.
+  originalDepthWeight: 6,
+  exclusiveRetention: 0.40,   // насколько доля собственного контента снижает отток
+  originalCostPerHour: 31_000_000, // ₽ за час собственного производства
+  originalLeadMonths: 6,      // сколько месяцев проект едет до премьеры
+  freshDecay: 0.22,           // как быстро новинка перестаёт быть новинкой
+  licenseFreshShare: 0.10,    // какая доля закупленных часов воспринимается как новинка
+  refCatalogHours: 9_000,     // каталог, при котором множитель выбора равен 1.0
+  refFreshHours: 320,         // «новинок» в месяц для эталонной свежести
+
+  // --- Просмотр и трафик ---
+  baseHoursPerSub: 22,        // часов в месяц на подписчика при эталонном каталоге
+  cdnCostPerHour: 2.6,        // ₽ за час просмотра при базовом качестве
+  refBitrate: 5,              // Мбит/с — базовое качество картинки
+  supportCostPerSub: 9,       // поддержка и биллинг на подписчика, ₽/мес
+
+  // --- Реклама ---
+  cpm: 480,                   // ₽ за 1000 показов
+  adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
+  refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
+
+  // --- Подписчики ---
+  baseChurn: 0.035,           // базовый месячный отток при идеальном сервисе
+  trialConversion: 0.55,      // доля пробников, доходящих до первого платежа
+  refTrialDays: 14,
+  awarenessDecay: 0.06,       // забывание бренда за месяц
+  awarenessMaxGain: 0.30,
+  refMarketingPerViewer: 26,  // ₽ на одного потенциального зрителя в месяц
+
+  // --- Постоянные расходы ---
+  hqMonthly: 26_000_000,      // студия, редакция, разработка, поддержка
+  techSaturation: 900_000_000,
+
+  // --- Данные и алгоритмы ---
+  rndSaturation: 500_000_000,
+  dataSaturation: 600_000_000, // накопленных часов просмотра для «половины» эффекта
+
+  // --- Инвестиции ---
+  minMonthForFunding: 3,
+  fundingOptions: [1_000_000_000, 3_000_000_000, 8_000_000_000],
+};
+
+// ============================================================================
+// Сегменты аудитории. Аналог районов в игре про доставку: у каждого своя
+// экономика, своя чувствительность к цене и свои причины уходить.
+// ============================================================================
+
+const SEGMENTS = [
+  {
+    id: 'mass',
+    name: { ru: 'Массовый зритель', en: 'Mainstream' },
+    potential: 9_000_000,      // потенциальных подписчиков
+    elasticity: 1.9,           // чувствительность к цене
+    baseHours: 1.05,           // множитель часов просмотра
+    freshnessWeight: 1.25,     // насколько важны новинки
+    depthWeight: 0.45,         // насколько важна глубина каталога
+    adTolerance: 1.15,         // насколько спокойно переносит рекламу
+    loyalty: 0.85,             // множитель базового оттока (меньше — лояльнее)
+    hint: {
+      ru: 'Самый большой сегмент. Приходит на громкую премьеру и уходит, когда её досмотрел. Считает каждый рубль.',
+      en: 'The biggest segment. Arrives for a loud premiere and leaves once it is finished. Counts every rouble.',
+    },
+  },
+  {
+    id: 'cinephile',
+    name: { ru: 'Киноманы', en: 'Cinephiles' },
+    potential: 2_400_000,
+    elasticity: 0.75,
+    baseHours: 1.35,
+    freshnessWeight: 0.55,
+    depthWeight: 1.60,
+    adTolerance: 0.45,
+    loyalty: 0.70,
+    hint: {
+      ru: 'Платят охотно и смотрят много, но требуют глубокий каталог и не выносят рекламу. Самый дорогой трафик.',
+      en: 'They pay willingly and watch a lot, but demand a deep catalogue and cannot stand ads. The most expensive traffic.',
+    },
+  },
+  {
+    id: 'family',
+    name: { ru: 'Семьи с детьми', en: 'Families' },
+    potential: 4_200_000,
+    elasticity: 1.35,
+    baseHours: 1.30,
+    freshnessWeight: 0.75,
+    depthWeight: 1.05,
+    adTolerance: 0.80,
+    loyalty: 0.55,
+    hint: {
+      ru: 'Самая лояльная аудитория: подписку держат ради детей и почти не уходят. Но смотрят много — трафик дорогой.',
+      en: 'The most loyal audience: they keep the subscription for the children and rarely leave. But they watch a lot, and traffic costs money.',
+    },
+  },
+  {
+    id: 'youth',
+    name: { ru: 'Молодёжь', en: 'Young viewers' },
+    potential: 3_600_000,
+    elasticity: 2.4,
+    baseHours: 0.85,
+    freshnessWeight: 1.45,
+    depthWeight: 0.40,
+    adTolerance: 1.35,
+    loyalty: 1.30,
+    hint: {
+      ru: 'Готовы терпеть рекламу вместо оплаты, но уходят при первой скуке. Живут на бесплатном тарифе и в хайпе.',
+      en: 'Happy to trade ads for money, but they leave the moment they are bored. They live on the ad tier and on hype.',
+    },
+  },
+];
+
+// ============================================================================
+// Жанры собственного производства. Игрок выбирает, во что вкладывать студию.
+// ============================================================================
+
+const GENRES = [
+  {
+    id: 'drama',
+    hangover: 0.45,   // отток после того, как премьеру досмотрели
+    name: { ru: 'Драма-сериал', en: 'Prestige drama' },
+    costPerHour: 1.25,        // множитель к базовой стоимости часа
+    hours: 8,                 // сколько часов контента даёт один проект
+    buzz: 1.0,                // сила всплеска подписок на премьере
+    appeal: { mass: 0.9, cinephile: 1.6, family: 0.7, youth: 0.6 },
+    hint: {
+      ru: 'Фестивальная драма: киноманы ради неё подписываются и остаются надолго, массовый зритель проходит мимо.',
+      en: 'A festival drama: cinephiles subscribe for it and stay, while the mainstream walks past.',
+    },
+  },
+  {
+    id: 'blockbuster',
+    hangover: 1.0,   // отток после того, как премьеру досмотрели
+    name: { ru: 'Блокбастер', en: 'Blockbuster' },
+    costPerHour: 2.10,
+    hours: 4,
+    buzz: 1.45,
+    appeal: { mass: 1.7, cinephile: 0.7, family: 1.1, youth: 1.4 },
+    hint: {
+      ru: 'Дорогая премьера с максимальным шумом. Подписки взлетают — и осыпаются через месяц, если дальше смотреть нечего.',
+      en: 'An expensive premiere with maximum noise. Sign-ups spike — and fall away a month later if there is nothing to follow it.',
+    },
+  },
+  {
+    id: 'family',
+    hangover: 0.1,   // отток после того, как премьеру досмотрели
+    name: { ru: 'Семейная анимация', en: 'Family animation' },
+    costPerHour: 1.55,
+    hours: 6,
+    buzz: 0.8,
+    appeal: { mass: 1.0, cinephile: 0.5, family: 2.0, youth: 0.7 },
+    hint: {
+      ru: 'Пересматривают десятки раз. Слабый всплеск на премьере, зато самый сильный эффект на удержание.',
+      en: 'Rewatched dozens of times. A weak premiere spike, but the strongest effect on retention there is.',
+    },
+  },
+  {
+    id: 'reality',
+    hangover: 0.2,   // отток после того, как премьеру досмотрели
+    name: { ru: 'Реалити и шоу', en: 'Reality and shows' },
+    costPerHour: 0.45,
+    hours: 12,
+    buzz: 0.7,
+    appeal: { mass: 1.3, cinephile: 0.3, family: 0.8, youth: 1.6 },
+    hint: {
+      ru: 'Дёшево за час и бесконечно по объёму. Держит молодёжь и наполняет каталог, но киноманы такое не считают за контент.',
+      en: 'Cheap per hour and endless in volume. It holds young viewers and fills the catalogue, but cinephiles do not count it as content at all.',
+    },
+  },
+];
+
+// ============================================================================
+// Рычаги управления
+// ============================================================================
+
+const LEVERS = [
+  {
+    key: 'pricePremium',
+    label: { ru: 'Цена без рекламы', en: 'Ad-free price' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 99, max: 999, step: 10, def: 399,
+    tip: {
+      ru: 'Основная выручка. Киноманы почти не замечают цену, молодёжь уходит от каждой сотни — один и тот же рубль работает по-разному в разных сегментах.',
+      en: 'Your core revenue. Cinephiles barely notice the price, young viewers leave over every hundred roubles — the same rouble behaves differently in each segment.',
+    },
+  },
+  {
+    key: 'priceAds',
+    label: { ru: 'Цена с рекламой', en: 'Ad-tier price' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 499, step: 10, def: 149,
+    tip: {
+      ru: 'Дешёвый тариф расширяет рынок, но переманивает и тех, кто платил бы полную цену. Каннибализация — не побочный эффект, а суть решения.',
+      en: 'A cheap tier widens the market but also pulls in people who would have paid full price. Cannibalisation is not a side effect here, it is the decision itself.',
+    },
+  },
+  {
+    key: 'adLoad',
+    label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
+    unit: { ru: 'мин/час', en: 'min/hr' },
+    min: 0, max: 16, step: 1, def: 4,
+    tip: {
+      ru: 'Каждая минута рекламы — прямая выручка и прямой удар по удержанию. Киноманы уходят втрое быстрее молодёжи.',
+      en: 'Every minute of advertising is direct revenue and a direct hit to retention. Cinephiles leave three times faster than young viewers.',
+    },
+  },
+  {
+    key: 'licensing',
+    label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 400_000_000, step: 10_000_000, def: 0,
+    tip: {
+      ru: 'Чужой контент появляется в каталоге сразу, но истекает ~4,5% в месяц и есть у конкурентов. Это аренда, а не покупка.',
+      en: 'Licensed content lands in the catalogue immediately, but it expires at about 4.5% a month and your rivals have it too. This is rent, not ownership.',
+    },
+  },
+  {
+    key: 'originals',
+    label: { ru: 'Производство оригиналов', en: 'Originals budget' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 600_000_000, step: 10_000_000, def: 0,
+    tip: {
+      ru: 'Деньги уходят сейчас, премьера будет через полгода. Зато оригинал остаётся навсегда и работает только на вас.',
+      en: 'The money goes out now and the premiere lands six months later. But an original stays forever and works for you alone.',
+    },
+  },
+  {
+    key: 'marketing',
+    label: { ru: 'Маркетинг', en: 'Marketing' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 300_000_000, step: 10_000_000, def: 0,
+    tip: {
+      ru: 'Растит узнаваемость и приток пробных подписок. Приводить людей в пустой каталог — самый дорогой способ купить отток.',
+      en: 'Builds awareness and the flow of trials. Bringing people into an empty catalogue is the most expensive way to buy churn.',
+    },
+  },
+  {
+    key: 'trialDays',
+    label: { ru: 'Пробный период', en: 'Free trial' },
+    unit: { ru: 'дней', en: 'days' },
+    min: 0, max: 30, step: 1, def: 7,
+    tip: {
+      ru: 'Длинный триал поднимает конверсию из интереса в подписку, но месяц вы платите за трафик и не получаете денег.',
+      en: 'A long trial lifts conversion from interest into subscription, but for a month you pay for the traffic and collect nothing.',
+    },
+  },
+  {
+    key: 'bitrate',
+    label: { ru: 'Качество картинки', en: 'Streaming quality' },
+    unit: { ru: 'Мбит/с', en: 'Mbps' },
+    min: 2, max: 16, step: 1, def: 5,
+    tip: {
+      ru: 'Трафик — переменная себестоимость, которая растёт вместе с любовью зрителя к сервису. Экономия на битрейте видна сразу.',
+      en: 'Bandwidth is a variable cost that grows with how much viewers love you. Cutting the bitrate is noticed immediately.',
+    },
+  },
+  {
+    key: 'tech',
+    label: { ru: 'Технологии и платформа', en: 'Technology' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 150_000_000, step: 5_000_000, def: 0,
+    tip: {
+      ru: 'Накопительная инвестиция: дешевле трафик, лучше приложение, меньше отток по техническим причинам.',
+      en: 'A cumulative investment: cheaper bandwidth, a better app, less churn for purely technical reasons.',
+    },
+  },
+  {
+    key: 'rnd',
+    label: { ru: 'Data Science', en: 'Data science' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 120_000_000, step: 5_000_000, def: 0,
+    tip: {
+      ru: 'Команда, которая строит рекомендации и удержание. Без часов просмотра учиться не на чем, а часы приходят только от подписчиков.',
+      en: 'The team that builds recommendations and retention. Without watch hours there is nothing to learn from, and hours only come from subscribers.',
+    },
+  },
+];
+
+// ============================================================================
+// Алгоритмы — оптимизации второго порядка.
+// unlock — требуемое качество (√(данные × команда)), install — разовое внедрение.
+// ============================================================================
+
+const ALGORITHMS = [
+  {
+    key: 'recommendations',
+    name: { ru: 'Рекомендательная лента', en: 'Recommendation feed' },
+    short: { ru: 'рекомендации', en: 'recommendations' },
+    unlock: 0.10,
+    install: 60_000_000,
+    param: {
+      label: { ru: 'Сила персонализации', en: 'Personalisation strength' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+    },
+    what: {
+      ru: 'Главная страница собирается под каждого зрителя, а не одинаковая для всех.',
+      en: 'The home screen is assembled for each viewer instead of being the same for everyone.',
+    },
+    tradeoff: {
+      ru: 'Часы просмотра и удержание растут. Но чем агрессивнее персонализация при слабой модели, тем уже пузырь: зритель перестаёт видеть каталог и считает, что смотреть нечего.',
+      en: 'Watch hours and retention both rise. But the more aggressive the personalisation with a weak model, the tighter the bubble: viewers stop seeing the catalogue and conclude there is nothing to watch.',
+    },
+    lesson: {
+      ru: 'Рекомендации увеличивают потребление того, что уже есть. Они не заменяют контент — они лишь достают его с полки.',
+      en: 'Recommendations increase consumption of what you already have. They do not replace content, they only take it off the shelf.',
+    },
+  },
+  {
+    key: 'contentForecast',
+    name: { ru: 'Прогноз спроса на контент', en: 'Content demand forecast' },
+    short: { ru: 'прогноз контента', en: 'content forecast' },
+    unlock: 0.18,
+    install: 80_000_000,
+    param: {
+      label: { ru: 'Доверие модели', en: 'Trust in the model' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 100, step: 5, def: 60, scale: 0.01,
+    },
+    what: {
+      ru: 'Закупка лицензий идёт по прогнозу спроса, а не по вкусу редакции.',
+      en: 'Licensing follows a demand forecast rather than the taste of the editorial team.',
+    },
+    tradeoff: {
+      ru: 'Тот же бюджет даёт больше просмотров. Но модель учится на прошлом и тянет каталог к повторению уже известного — глубина растёт медленнее.',
+      en: 'The same budget buys more viewing. But the model learns from the past and pulls the catalogue towards more of the same — depth grows more slowly.',
+    },
+    lesson: {
+      ru: 'Оптимизация закупки под спрос — это оптимизация под вчерашний спрос. Она эффективна и консервативна одновременно.',
+      en: 'Optimising purchases against demand means optimising against yesterday’s demand. It is efficient and conservative at the same time.',
+    },
+  },
+  {
+    key: 'winback',
+    name: { ru: 'Персональное удержание', en: 'Targeted win-back' },
+    short: { ru: 'удержание', en: 'win-back' },
+    unlock: 0.28,
+    install: 90_000_000,
+    param: {
+      label: { ru: 'Размер удерживающей скидки', en: 'Retention discount' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 60, step: 5, def: 25, scale: 0.01,
+    },
+    what: {
+      ru: 'Скидку получают только те, кто уже собрался отписаться.',
+      en: 'The discount goes only to subscribers who are already about to cancel.',
+    },
+    tradeoff: {
+      ru: 'Отток падает за небольшие деньги. Но модель ошибается и дарит скидку тем, кто и так остался бы, а слухи о «скидке для уходящих» учат зрителей уходить.',
+      en: 'Churn falls for modest money. But the model misfires and hands discounts to people who would have stayed, and word of a "leavers’ discount" teaches viewers to leave.',
+    },
+    lesson: {
+      ru: 'Удерживать дешевле, чем привлекать, — правда ровно до тех пор, пока скидка не становится известной всем.',
+      en: 'Retention is cheaper than acquisition — true right up until the discount becomes common knowledge.',
+    },
+  },
+  {
+    key: 'adaptiveAds',
+    name: { ru: 'Адаптивная реклама', en: 'Adaptive ad load' },
+    short: { ru: 'адаптивная реклама', en: 'adaptive ads' },
+    unlock: 0.36,
+    install: 70_000_000,
+    param: {
+      label: { ru: 'Разброс нагрузки', en: 'Load spread' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+    },
+    what: {
+      ru: 'Терпимым зрителям показывается больше рекламы, готовым уйти — меньше.',
+      en: 'Tolerant viewers see more advertising, those close to leaving see less.',
+    },
+    tradeoff: {
+      ru: 'Выручка с рекламы растёт при том же среднем оттоке. Но при слабой модели вы просто злите не тех и теряете самых ценных зрителей.',
+      en: 'Ad revenue rises at the same average churn. With a weak model you simply annoy the wrong people and lose your most valuable viewers.',
+    },
+    lesson: {
+      ru: 'Средняя рекламная нагрузка — бессмысленная величина. Значение имеет распределение по людям.',
+      en: 'Average ad load is a meaningless number. What matters is how it is distributed across people.',
+    },
+  },
+  {
+    key: 'encoding',
+    name: { ru: 'Умное кодирование', en: 'Smart encoding' },
+    short: { ru: 'кодек', en: 'encoding' },
+    unlock: 0.22,
+    install: 100_000_000,
+    param: {
+      label: { ru: 'Агрессивность сжатия', en: 'Compression strength' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+    },
+    what: {
+      ru: 'Битрейт подбирается под конкретную сцену, а не задаётся одинаковым для всего.',
+      en: 'The bitrate is chosen per scene instead of being fixed for everything.',
+    },
+    tradeoff: {
+      ru: 'Трафик — крупнейшая переменная статья, и здесь она режется прямо. Но пережатая картинка заметна, и заметна она в первую очередь киноманам.',
+      en: 'Bandwidth is your largest variable cost and this cuts it directly. But over-compression is visible, and it is visible to cinephiles first.',
+    },
+    lesson: {
+      ru: 'Единственный алгоритм в игре, который экономит расходы, а не добывает выручку. Такие всегда окупаются раньше остальных.',
+      en: 'The only algorithm here that saves cost instead of chasing revenue. Those always pay back sooner than the rest.',
+    },
+  },
+  {
+    key: 'pacing',
+    name: { ru: 'Календарь релизов', en: 'Release pacing' },
+    short: { ru: 'календарь', en: 'pacing' },
+    unlock: 0.44,
+    install: 50_000_000,
+    param: {
+      label: { ru: 'Растягивание премьеры', en: 'Premiere spread' },
+      unit: { ru: '%', en: '%' },
+      min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+    },
+    what: {
+      ru: 'Серии выходят по одной в неделю, а не всё сразу.',
+      en: 'Episodes are released weekly instead of all at once.',
+    },
+    tradeoff: {
+      ru: 'Подписку продлевают ещё месяц, отток после премьеры сглаживается. Но всплеск на премьере ниже, а часть зрителей уходит ждать, пока выйдет всё.',
+      en: 'Subscriptions are renewed for another month and the post-premiere churn smooths out. But the premiere spike is smaller, and some viewers leave to wait for the whole season.',
+    },
+    lesson: {
+      ru: 'Одно и то же содержимое, разная упаковка во времени — и совершенно разная выручка. Расписание тоже продукт.',
+      en: 'The same content, packaged differently in time, produces completely different revenue. The schedule is part of the product.',
+    },
+  },
+];
+
+const DEFAULT_DECISIONS = {
+  ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
+  genre: 'drama',              // во что вкладывается студия сейчас
+  algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),
+  algoParam: Object.fromEntries(ALGORITHMS.map((a) => [a.key, a.param.def * (a.param.scale ?? 1)])),
+};
+
+
+// ===== src/model/market.js =========================================
+// ============================================================================
+// Внешний фон месяца: сезон просмотра и афиша конкурента.
+//
+// В стриминге роль погоды играет чужой релиз. Он бьёт с двух сторон сразу:
+// забирает часть новых подписок и вытягивает часть ваших зрителей — ровно
+// тогда, когда вы могли бы расти. Афиша известна на месяц вперёд: даты чужих
+// премьер публикуются задолго до выхода. Ценность не в информации, а в
+// реакции — успеть выпустить своё, поднять маркетинг или переждать.
+// ============================================================================
+
+
+// pull — сила оттягивания аудитории, 0 = ничего не происходит
+const RIVAL_RELEASES = {
+  none:    { id: 'none',    icon: '·',  pull: 0,    acquisition: 1.00, churnAdd: 0,     hours: 1.00 },
+  small:   { id: 'small',   icon: '▫',  pull: 0.25, acquisition: 0.93, churnAdd: 0.004, hours: 0.98 },
+  notable: { id: 'notable', icon: '◆',  pull: 0.55, acquisition: 0.84, churnAdd: 0.012, hours: 0.95 },
+  major:   { id: 'major',   icon: '★',  pull: 0.80, acquisition: 0.72, churnAdd: 0.024, hours: 0.91 },
+  mega:    { id: 'mega',    icon: '★★', pull: 1.00, acquisition: 0.58, churnAdd: 0.040, hours: 0.86 },
+};
+
+// Месяц 1 — январь
+function seasonOf(month) {
+  const m = ((Math.max(1, month) - 1) % 12) + 1;
+  if (m <= 2 || m === 12) return 'winter';
+  if (m <= 5) return 'spring';
+  if (m <= 8) return 'summer';
+  return 'autumn';
+}
+
+// Зимой смотрят заметно больше, летом — заметно меньше. Это касается и вас,
+// и конкурента: в высокий сезон и премьер больше, и борьба за внимание острее.
+const SEASON = {
+  winter: { hours: 1.18, weights: { none: 28, small: 24, notable: 24, major: 16, mega: 8 } },
+  spring: { hours: 1.00, weights: { none: 42, small: 26, notable: 20, major: 10, mega: 2 } },
+  summer: { hours: 0.84, weights: { none: 52, small: 26, notable: 16, major: 6 } },
+  autumn: { hours: 1.06, weights: { none: 34, small: 26, notable: 22, major: 14, mega: 4 } },
+};
+
+function seasonHours(month) {
+  return SEASON[seasonOf(month)].hours;
+}
+
+function rollRivalRelease(rng, month) {
+  const table = SEASON[seasonOf(month)].weights;
+  const picked = weightedPick(rng, Object.entries(table).map(([id, weight]) => ({ id, weight })));
+  return picked ? picked.id : 'none';
+}
+
+/**
+ * Итоговые множители месяца с учётом контрпрограммирования — вашего решения
+ * ответить на чужую премьеру своей или, наоборот, не мешать ей.
+ *
+ * Собственная громкая премьера в тот же месяц частично гасит чужую: зритель
+ * выбирает, а не уходит совсем.
+ */
+function rivalEffect(type, ownBuzz = 0) {
+  const r = RIVAL_RELEASES[type] ?? RIVAL_RELEASES.none;
+  // Свой релиз перебивает чужой тем сильнее, чем он громче
+  const counter = Math.min(0.65, ownBuzz * 0.45);
+
+  return {
+    ...r,
+    acquisitionMult: r.acquisition + (1 - r.acquisition) * counter,
+    churnAdd: r.churnAdd * (1 - counter),
+    hoursMult: r.hours + (1 - r.hours) * counter,
+  };
+}
+
+
+// ===== src/model/events.js =========================================
+// ============================================================================
+// Случайные события месяца. Часть требует решения игрока.
+//
+// Афиши конкурента здесь нет: она действует каждый месяц и живёт в market.js.
+// Событие — то, что случается редко и требует реакции; чужие премьеры —
+// постоянный фон, к которому нужно уметь готовиться заранее.
+// ============================================================================
+
+
+function neutralModifiers() {
+  return {
+    demandMult: 1,        // множитель притока новых подписчиков
+    hoursMult: 1,         // множитель часов просмотра
+    churnAdd: 0,          // прибавка к оттоку
+    awarenessAdd: 0,      // разовый прирост узнаваемости
+    oneOffCost: 0,        // разовые расходы, ₽
+    notes: [],
+  };
+}
+
+const EVENTS = [
+  {
+    id: 'award', weight: 6, minMonth: 8,
+    title: { ru: 'Ваш сериал взял главный приз фестиваля', en: 'Your series wins the festival’s top prize' },
+    text: {
+      ru: 'Пресса неделю обсуждает вашу драму. Подписки идут сами, без единого рубля маркетинга.',
+      en: 'The press spends a week discussing your drama. Sign-ups arrive on their own, without a rouble of marketing.',
+    },
+    effects: { awarenessAdd: 0.07, demandMult: 1.15 },
+    lesson: {
+      ru: 'Репутационный контент окупается не просмотрами, а стоимостью привлечения: о вас говорят бесплатно.',
+      en: 'Prestige content pays back not in views but in acquisition cost: people talk about you for free.',
+    },
+  },
+  {
+    id: 'leak', weight: 5, minMonth: 6,
+    title: { ru: 'Премьера утекла в сеть', en: 'The premiere leaks online' },
+    text: {
+      ru: 'За сутки до выхода все серии оказались на пиратских сайтах.',
+      en: 'A day before release, every episode turned up on pirate sites.',
+    },
+    effects: { demandMult: 0.82, hoursMult: 0.93 },
+    lesson: {
+      ru: 'Пиратство бьёт не по выручке напрямую, а по всплеску подписок — а всплеск и есть то, ради чего снимали.',
+      en: 'Piracy does not hit revenue directly, it hits the sign-up spike — and the spike is the whole reason the show was made.',
+    },
+  },
+  {
+    id: 'outage', weight: 6, minMonth: 4,
+    title: { ru: 'Сбой в вечер премьеры', en: 'Outage on premiere night' },
+    text: {
+      ru: 'Плеер лёг на три часа ровно тогда, когда все пришли смотреть.',
+      en: 'The player went down for three hours exactly when everyone arrived to watch.',
+    },
+    effects: { churnAdd: 0.02, hoursMult: 0.9, oneOffCost: 25_000_000 },
+    lesson: {
+      ru: 'Надёжность — часть продукта. Зритель прощает слабый каталог, но не прощает чёрный экран в вечер, который он ждал.',
+      en: 'Reliability is part of the product. Viewers forgive a thin catalogue; they do not forgive a black screen on the night they were waiting for.',
+    },
+  },
+  {
+    id: 'cdnPrice', weight: 5, minMonth: 5,
+    title: { ru: 'Трафик подорожал', en: 'Bandwidth gets more expensive' },
+    text: {
+      ru: 'Провайдер пересмотрел тарифы на исходящий трафик.',
+      en: 'Your provider has repriced outbound traffic.',
+    },
+    effects: { cdnMult: 1.25 },
+    lesson: {
+      ru: 'Единственная переменная статья в подписочном бизнесе растёт вместе с лояльностью аудитории.',
+      en: 'The only variable cost line in a subscription business grows in step with audience loyalty.',
+    },
+  },
+  {
+    id: 'password', weight: 5, minMonth: 12,
+    title: { ru: 'Волна общих паролей', en: 'Password sharing spreads' },
+    text: {
+      ru: 'Одной подпиской пользуются в трёх квартирах. Часы растут, деньги — нет.',
+      en: 'One subscription is being used in three flats. Hours grow, money does not.',
+    },
+    effects: { hoursMult: 1.18, demandMult: 0.9 },
+    lesson: {
+      ru: 'Часы просмотра — не выручка. В подписке они чистый расход, пока не превратились в новую подписку.',
+      en: 'Watch hours are not revenue. In a subscription business they are pure cost until they turn into another subscription.',
+    },
+  },
+
+  // --- События с выбором ---
+  {
+    id: 'starDeal', weight: 6, minMonth: 9,
+    title: { ru: 'Звезда просит долю', en: 'A star asks for a cut' },
+    text: {
+      ru: 'Актёр, на котором держится ваш главный проект, требует пересмотреть контракт перед вторым сезоном.',
+      en: 'The actor your flagship project rests on wants the contract reopened before season two.',
+    },
+    lesson: {
+      ru: 'Переговорная сила таланта — причина, по которой себестоимость успешного сериала растёт быстрее его аудитории.',
+      en: 'The bargaining power of talent is why a successful show’s cost grows faster than its audience.',
+    },
+    options: [
+      {
+        label: { ru: 'Заплатить (120 млн ₽)', en: 'Pay up (₽120M)' },
+        detail: { ru: 'Дорого, но проект продолжается и шум сохраняется.', en: 'Expensive, but the project continues and the buzz survives.' },
+        effects: { oneOffCost: 120_000_000, awarenessAdd: 0.03 },
+      },
+      {
+        label: { ru: 'Заменить актёра', en: 'Recast the role' },
+        detail: { ru: 'Экономим деньги, но зрители замечают и уходят.', en: 'Saves the money, but viewers notice and leave.' },
+        effects: { churnAdd: 0.025, demandMult: 0.92 },
+      },
+    ],
+  },
+  {
+    id: 'sportsRights', weight: 5, minMonth: 10,
+    title: { ru: 'На рынок вышли права на спорт', en: 'Sports rights hit the market' },
+    text: {
+      ru: 'Продаются права на трансляции главной лиги страны. Аудитория огромная, цена — тоже.',
+      en: 'Broadcast rights to the country’s main league are for sale. The audience is enormous; so is the price.',
+    },
+    lesson: {
+      ru: 'Спорт приводит аудиторию мгновенно и уходит вместе с правами. Это аренда трафика, а не строительство актива.',
+      en: 'Sport brings an audience instantly and leaves when the rights do. It is renting traffic, not building an asset.',
+    },
+    options: [
+      {
+        label: { ru: 'Купить права (400 млн ₽)', en: 'Buy the rights (₽400M)' },
+        detail: { ru: 'Мощный приток и рост часов, но деньги ушли безвозвратно.', en: 'A strong inflow and more hours, but the money is gone for good.' },
+        effects: { oneOffCost: 400_000_000, demandMult: 1.3, hoursMult: 1.15, awarenessAdd: 0.05 },
+      },
+      {
+        label: { ru: 'Пропустить', en: 'Pass' },
+        detail: { ru: 'Права уходят конкуренту, часть зрителей — за ними.', en: 'The rights go to a rival, and some viewers follow them.' },
+        effects: { churnAdd: 0.015 },
+      },
+    ],
+  },
+  {
+    id: 'boardPressure', weight: 5, minMonth: 14,
+    title: { ru: 'Совет директоров требует роста', en: 'The board demands growth' },
+    text: {
+      ru: 'Инвесторы хотят видеть прибавку подписчиков к следующему кварталу и намекают на снижение цены.',
+      en: 'Investors want subscriber growth by next quarter and are hinting at a price cut.',
+    },
+    lesson: {
+      ru: 'Подписчик, пришедший на скидку, уходит при первом повышении. Рост базы и рост выручки — разные вещи.',
+      en: 'A subscriber who arrived for a discount leaves at the first price rise. Growing the base and growing revenue are different things.',
+    },
+    options: [
+      {
+        label: { ru: 'Устроить распродажу подписки', en: 'Run a subscription sale' },
+        detail: { ru: 'База растёт, выручка на подписчика падает, оценка выше.', en: 'The base grows, revenue per subscriber falls, valuation rises.' },
+        effects: { demandMult: 1.25, churnAdd: 0.01, valuationBonus: 0.12 },
+      },
+      {
+        label: { ru: 'Отстоять цену', en: 'Hold the price' },
+        detail: { ru: 'Инвесторы недовольны, оценка ниже.', en: 'Investors are unhappy and the valuation suffers.' },
+        effects: { valuationBonus: -0.1 },
+      },
+    ],
+  },
+  {
+    id: 'dataLeak', weight: 4, minMonth: 16,
+    title: { ru: 'Утечка данных зрителей', en: 'Viewer data leak' },
+    text: {
+      ru: 'В сеть попала база истории просмотров. Журналисты уже пишут, что именно смотрели ваши подписчики.',
+      en: 'A viewing-history database has surfaced online. Journalists are already writing about what your subscribers actually watched.',
+    },
+    lesson: {
+      ru: 'Данные, на которых учатся ваши алгоритмы, — это ещё и обязательство. Оно не отражается в P&L, пока не случится утечка.',
+      en: 'The data your algorithms learn from is also a liability. It never shows up in the P&L until the day it leaks.',
+    },
+    options: [
+      {
+        label: { ru: 'Признать и компенсировать', en: 'Own it and compensate' },
+        detail: { ru: 'Разовые расходы, но доверие удаётся сохранить.', en: 'A one-off cost, but trust survives.' },
+        effects: { oneOffCost: 90_000_000, churnAdd: 0.008 },
+      },
+      {
+        label: { ru: 'Промолчать', en: 'Say nothing' },
+        detail: { ru: 'Дешевле сейчас, дороже потом.', en: 'Cheaper now, more expensive later.' },
+        effects: { churnAdd: 0.03, awarenessAdd: -0.04, valuationBonus: -0.08 },
+      },
+    ],
+  },
+];
+
+function eventById(id) {
+  return EVENTS.find((e) => e.id === id) ?? null;
+}
+
+// Вероятность события ~30% в месяц
+function rollEvent(rng, month, flags = {}) {
+  if (month < 3) return null;
+  if (rng() > 0.30) return null;
+  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  const picked = weightedPick(rng, pool);
+  return picked ? { ...picked } : null;
+}
+
+function applyEvent(mods, event, optionIndex) {
+  if (!event) return mods;
+  const effects = { ...(event.effects ?? {}) };
+  if (event.options && event.options[optionIndex]) {
+    Object.assign(effects, event.options[optionIndex].effects);
+  }
+  for (const [key, value] of Object.entries(effects)) {
+    if (key === 'demandMult' || key === 'hoursMult' || key === 'cdnMult') {
+      mods[key] = (mods[key] ?? 1) * value;
+    } else if (key === 'notes') {
+      continue;
+    } else if (typeof value === 'number' && key in mods) {
+      mods[key] += value;
+    } else {
+      mods[key] = value;
+    }
+  }
+  mods.notes.push(event.id);
+  return mods;
+}
+
+
+// ===== src/model/engine.js =========================================
+// ============================================================================
+// Ядро симуляции онлайн-кинотеатра. Чистые функции: step(state) -> {state, report}.
+// Никакой работы с DOM — модуль можно гонять в тестах и в скриптах.
+//
+// Смысловая структура модели:
+//
+//   деньги -> лицензии (сразу) ─┐
+//   деньги -> производство ─────┼─► КАТАЛОГ: глубина + свежесть
+//             (лаг 6 месяцев)   ┘         │
+//                                         ▼
+//   маркетинг -> узнаваемость -> пробные подписки -> ПОДПИСЧИКИ (запас)
+//                                         │                   │
+//                    цена, реклама, каталог -> отток           ▼
+//                                                        часы просмотра
+//                                                             │
+//                                        выручка (подписка + реклама)
+//                                        минус трафик (растёт с часами!)
+//                                                             │
+//                                                        P&L -> касса
+//
+// Главная особенность жанра: чем больше зритель смотрит, тем он лояльнее —
+// и тем дороже обходится. Трафик здесь единственная крупная переменная
+// статья, и она растёт вместе с любовью аудитории к сервису.
+// ============================================================================
+
+
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+function segmentById(id) {
+  return SEGMENTS.find((s) => s.id === id);
+}
+
+function genreById(id) {
+  return GENRES.find((g) => g.id === id);
+}
+
+// Во сколько обходится один проект выбранного жанра
+function projectCost(genre) {
+  return genre.hours * CONFIG.originalCostPerHour * genre.costPerHour;
+}
+
+// ----------------------------------------------------------------------------
+// Начальное состояние
+// ----------------------------------------------------------------------------
+function createInitialState(seed = 'kinopotok') {
+  const rng = createRng(seed);
+  const rival = rollRivalRelease(rng, 1);
+  const rivalNext = rollRivalRelease(rng, 2);
+  return {
+    seed,
+    rngState: rng.state(),
+    month: 0,
+    cash: CONFIG.startCash,
+    equity: 1,
+    raisedTotal: 0,
+    techStock: 0,
+    rndStock: 0,
+    dataStock: 0,          // накопленные часы просмотра — обучающая выборка
+    installed: {},
+    catalogLicensed: 900,  // стартовая библиотека, доставшаяся от прежнего владельца
+    catalogOriginal: 0,
+    freshHours: 0,         // «новинки»: стареют каждый месяц
+    studioFund: 0,         // деньги, накопленные на текущий проект
+    pipeline: [],          // проекты в производстве
+    lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
+    hangover: 0,           // сколько зрителей досмотрели премьеру и готовы уйти
+    segments: Object.fromEntries(SEGMENTS.map((s) => [s.id, {
+      id: s.id,
+      awareness: 0.03,
+      premium: 0,
+      ads: 0,
+    }])),
+    rival,
+    rivalNext,
+    decisions: structuredClone(DEFAULT_DECISIONS),
+    flags: { valuationBonus: 0 },
+    pendingEvent: null,
+    pendingChoice: null,
+    history: [],
+    lastSnapshot: null,
+    over: null,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// Производные показатели
+// ----------------------------------------------------------------------------
+function techLevel(state) {
+  return state.techStock / (state.techStock + CONFIG.techSaturation);
+}
+function dataLevel(state) {
+  return (state.dataStock ?? 0) / ((state.dataStock ?? 0) + CONFIG.dataSaturation);
+}
+function rndLevel(state) {
+  return (state.rndStock ?? 0) / ((state.rndStock ?? 0) + CONFIG.rndSaturation);
+}
+// Ни данные, ни команда по отдельности не работают
+function algoQuality(state) {
+  return Math.sqrt(dataLevel(state) * rndLevel(state));
+}
+
+// Глубина каталога: насыщающаяся функция, нормированная так, что эталон даёт 1.0
+function catalogDepth(hours) {
+  const raw = hours / (hours + CONFIG.refCatalogHours);
+  const ref = CONFIG.refCatalogHours / (CONFIG.refCatalogHours + CONFIG.refCatalogHours);
+  return clamp(raw / ref, 0, 1.6);
+}
+
+// Свежесть: сколько новинок вышло относительно эталона
+function catalogFreshness(freshHours) {
+  return clamp(Math.pow(Math.max(0, freshHours) / CONFIG.refFreshHours, 0.5), 0, 1.7);
+}
+
+// ----------------------------------------------------------------------------
+// Главный шаг симуляции
+// ----------------------------------------------------------------------------
+function step(prevState, input = {}) {
+  const state = structuredClone(prevState);
+  if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
+
+  const snapshot = structuredClone({
+    ...prevState,
+    history: prevState.history.slice(-2),
+    lastSnapshot: null,
+  });
+
+  const decisions = { ...state.decisions, ...(input.decisions ?? {}) };
+  state.decisions = decisions;
+
+  const rng = createRng(state.seed);
+  rng.restore(state.rngState);
+
+  const month = state.month + 1;
+
+  // --- 1. Событие месяца ---
+  const mods = neutralModifiers();
+  const event = state.pendingEvent;
+  const choice = input.eventChoice ?? state.pendingChoice ?? 0;
+  applyEvent(mods, event, choice);
+  if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
+
+  // --- 2. Алгоритмы: доступность, внедрение, настройки ---
+  const quality = algoQuality(state);
+  let installCost = 0;
+  const installedNow = [];
+  for (const a of ALGORITHMS) {
+    if (decisions.algoOn?.[a.key] && !state.installed[a.key] && quality >= a.unlock) {
+      state.installed[a.key] = true;
+      installCost += a.install;
+      installedNow.push(a.key);
+    }
+  }
+  const algo = (key) => (decisions.algoOn?.[key] && state.installed[key]
+    ? clamp(decisions.algoParam?.[key] ?? 0, 0, 1) : 0);
+
+  const recoStrength = algo('recommendations');
+  const forecastTrust = algo('contentForecast');
+  const winbackDiscount = algo('winback');
+  const adSpread = algo('adaptiveAds');
+  const compression = algo('encoding');
+  const pacing = algo('pacing');
+
+  // --- 3. Производство: копилка, старт проектов, премьеры ---
+  const genre = genreById(decisions.genre) ?? GENRES[0];
+  state.studioFund += decisions.originals;
+  const started = [];
+  // Копилка может дать сразу несколько проектов, если бюджет большой
+  while (state.studioFund >= projectCost(genre)) {
+    state.studioFund -= projectCost(genre);
+    // Качество зависит от команды, технологий и удачи: кино — рискованный бизнес
+    const luck = rng();
+    const projectQuality = clamp(0.55 + 0.5 * luck + 0.25 * techLevel(state), 0.25, 1.45);
+    state.pipeline.push({
+      genre: genre.id,
+      monthsLeft: CONFIG.originalLeadMonths,
+      hours: genre.hours,
+      quality: projectQuality,
+    });
+    started.push({ genre: genre.id, quality: projectQuality });
+  }
+
+  const premieres = [];
+  for (const project of state.pipeline) project.monthsLeft -= 1;
+  for (const project of state.pipeline.filter((p) => p.monthsLeft <= 0)) {
+    const g = genreById(project.genre);
+    state.catalogOriginal += project.hours;
+    state.freshHours += project.hours;
+    premieres.push({ genre: project.genre, quality: project.quality, hours: project.hours, buzz: g.buzz * project.quality });
+  }
+  state.pipeline = state.pipeline.filter((p) => p.monthsLeft > 0);
+
+  // Календарь релизов растягивает премьеру: часть шума переносится на следующий
+  // месяц, зато пик ниже. Отток после «досмотрел всё» сглаживается.
+  const rawBuzz = premieres.reduce((s, p) => s + p.buzz, 0);
+  const heldBuzz = rawBuzz * pacing * 0.45;
+  const buzz = rawBuzz - heldBuzz + (state.lastBuzz ?? 0);
+  state.lastBuzz = heldBuzz;
+
+  // Волна отписок от тех, кто досмотрел прошлую премьеру и больше не видит
+  // причин платить. Растянутый по неделям релиз её заметно сглаживает.
+  const hangover = state.hangover ?? 0;
+  state.hangover = premieres.reduce(
+    (s, p) => s + p.buzz * (genreById(p.genre)?.hangover ?? 0.4), 0) * (1 - 0.55 * pacing);
+
+  // --- 4. Каталог ---
+  // Прогноз спроса делает тот же бюджет эффективнее, но тянет закупку
+  // к уже известному: глубина растёт медленнее, чем просмотры.
+  const licensingEfficiency = 1 + 0.45 * forecastTrust * quality;
+  const boughtHours = (decisions.licensing / CONFIG.licenseCostPerHour) * licensingEfficiency;
+  state.catalogLicensed = state.catalogLicensed * (1 - CONFIG.licenseDecay) + boughtHours;
+  // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
+  // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
+  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
+
+  const catalogHours = state.catalogLicensed + state.catalogOriginal;
+  // Чужой каталог хуже удерживает: он есть и у конкурентов
+  const weightedLicensed = state.catalogLicensed * CONFIG.licenseDepthWeight;
+  const weightedOriginal = state.catalogOriginal * CONFIG.originalDepthWeight;
+  const effectiveCatalog = weightedLicensed + weightedOriginal;
+  const originalShare = effectiveCatalog > 0 ? weightedOriginal / effectiveCatalog : 0;
+  const depth = catalogDepth(effectiveCatalog) * (1 - 0.10 * forecastTrust * quality);
+  const freshness = catalogFreshness(state.freshHours);
+
+  // Рекомендации достают контент с полки: воспринимаемый каталог больше
+  // реального. Но при слабой модели лента схлопывается в пузырь.
+  //
+  // Польза линейна по силе персонализации, вред — квадратичен. Поэтому у
+  // ползунка всегда есть безопасное положение, и оно тем правее, чем лучше
+  // модель: осторожная лента помогает даже на слабых данных, агрессивная
+  // на них же схлопывает каталог в десяток одинаковых карточек.
+  const recoLift = 1 + 0.35 * recoStrength * quality;
+  const bubble = 1 - 0.30 * recoStrength ** 2 * (1 - quality);
+  const perceivedDepth = depth * recoLift * bubble;
+
+  // --- 5. Внешний фон ---
+  const rivalType = state.rival ?? 'none';
+  const rival = rivalEffect(rivalType, buzz);
+  const season = seasonHours(month);
+
+  // --- 6. Подписчики по сегментам ---
+  const refPrice = 399;
+  let newSubs = 0;
+  let lostSubs = 0;
+  let trialsTotal = 0;
+  let winbackCost = 0;
+  const perSegment = [];
+
+  for (const def of SEGMENTS) {
+    const seg = state.segments[def.id];
+
+    // Выбор тарифа: чем больше экономия и чем терпимее сегмент к рекламе,
+    // тем охотнее он идёт на дешёвый тариф с рекламой.
+    const saving = decisions.pricePremium > 0
+      ? clamp((decisions.pricePremium - decisions.priceAds) / decisions.pricePremium, 0, 1) : 0;
+    const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
+    const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, 0.94);
+
+    // Цена, которую сегмент фактически платит в среднем
+    const blendedPrice = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, blendedPrice), def.elasticity), 0.15, 2.6);
+
+    // Ценность каталога для сегмента: глубина и свежесть весят по-разному
+    const appeal = clamp(
+      Math.pow(Math.max(0.05, perceivedDepth), def.depthWeight * 0.6)
+      * Math.pow(Math.max(0.05, freshness), def.freshnessWeight * 0.5),
+      0, 2.2
+    );
+
+    // Реклама раздражает тем сильнее, чем меньше её терпит сегмент.
+    // Адаптивная реклама перераспределяет нагрузку и снимает часть раздражения.
+    const adRelief = 1 - 0.45 * adSpread * quality;
+    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
+
+    // Премьера тянет к себе именно свой сегмент
+    const premiereAppeal = premieres.reduce(
+      (s, p) => s + p.buzz * (genreById(p.genre)?.appeal[def.id] ?? 1), 0);
+
+    // Узнаваемость — накопительный запас
+    const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
+    const spendPerViewer = (decisions.marketing * shareOfMarket) / def.potential;
+    const gain = clamp(
+      0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55),
+      0, CONFIG.awarenessMaxGain);
+    seg.awareness = clamp(
+      seg.awareness + (1 - seg.awareness) * gain - seg.awareness * CONFIG.awarenessDecay
+      + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02,
+      0, 1);
+
+    // Пробные подписки → платящие
+    const subs = seg.premium + seg.ads;
+    const untapped = Math.max(0, def.potential - subs);
+    const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
+    const trials = untapped * seg.awareness * 0.055 * priceFactor * appeal * adPenalty
+      * rival.acquisitionMult * mods.demandMult * (1 + premiereAppeal * 0.6);
+    const converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Отток: скучный каталог, дорогая подписка, назойливая реклама, чужая премьера
+    const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * 0.055;
+    const priceAnger = Math.max(0, 1 - priceFactor) * 0.045;
+    const adAnger = (1 - adPenalty) * 0.25;
+    const techAnnoyance = Math.max(0, 1 - decisions.bitrate / CONFIG.refBitrate) * 0.03
+      + compression * (1 - quality) * 0.02 / Math.max(0.3, def.adTolerance);
+    // Персональное удержание: скидка тем, кто уже собрался уходить
+    const winbackPower = winbackDiscount > 0
+      ? clamp(0.55 * quality + 0.2, 0, 0.75) * clamp(winbackDiscount / 0.4, 0, 1) : 0;
+
+    // Эксклюзив держит: уйти от того, чего больше нигде нет, труднее.
+    // Зато после того, как громкую премьеру досмотрели, уходят волной —
+    // и чем громче была премьера, тем выше волна.
+    const exclusiveHold = 1 - CONFIG.exclusiveRetention * originalShare;
+    let churnRate = clamp(
+      (CONFIG.baseChurn * def.loyalty + boredom + priceAnger + adAnger + techAnnoyance) * exclusiveHold
+      + rival.churnAdd + (mods.churnAdd ?? 0)
+      + hangover * 0.018 * def.freshnessWeight
+      - buzz * 0.030,
+      0.005, 0.5);
+    const savedShare = winbackPower * 0.45;
+    churnRate = churnRate * (1 - savedShare);
+
+    const leaving = subs * churnRate;
+    // Скидку получают удержанные и часть тех, кто и так остался бы (промахи модели)
+    const discounted = subs * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
+      + subs * (1 - quality) * winbackDiscount * 0.03;
+    winbackCost += discounted * decisions.pricePremium * winbackDiscount;
+
+    // Обновляем запасы по тарифам
+    const survivors = subs - leaving;
+    const survivorAdShare = subs > 0 ? seg.ads / subs : adShare;
+    seg.ads = Math.max(0, survivors * survivorAdShare + converted * adShare);
+    seg.premium = Math.max(0, survivors * (1 - survivorAdShare) + converted * (1 - adShare));
+
+    newSubs += converted;
+    lostSubs += leaving;
+    trialsTotal += trials;
+
+    perSegment.push({
+      def, seg, adShare, blendedPrice, priceFactor, appeal, adPenalty,
+      churnRate, converted, leaving, subs: seg.premium + seg.ads,
+    });
+  }
+
+  // --- 7. Часы просмотра и трафик ---
+  let hours = 0;
+  let adHours = 0;
+  for (const p of perSegment) {
+    const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
+      * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
+      * (1 + 0.22 * recoStrength * quality)
+      * rival.hoursMult * (mods.hoursMult ?? 1);
+    p.hours = segHours;
+    p.adHours = segHours * (p.seg.ads / Math.max(1, p.subs));
+    hours += segHours;
+    adHours += p.adHours;
+  }
+
+  // Трафик — крупнейшая переменная статья, и она растёт вместе с лояльностью
+  const encodingSaving = 0.35 * compression * (0.4 + 0.6 * quality);
+  const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
+    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving) * (mods.cdnMult ?? 1);
+  const cdnCost = hours * cdnPerHour;
+
+  const totalSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  const premiumSubs = perSegment.reduce((s, p) => s + p.seg.premium, 0);
+  const adSubs = perSegment.reduce((s, p) => s + p.seg.ads, 0);
+  const supportCost = totalSubs * CONFIG.supportCostPerSub;
+
+  // --- 8. Выручка ---
+  const subscriptionRevenue = premiumSubs * decisions.pricePremium + adSubs * decisions.priceAds;
+  // Адаптивная реклама даёт больше показов при том же среднем раздражении
+  const adYield = 1 + 0.25 * adSpread * quality;
+  const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд
+  const adRevenue = (impressions / 1000) * CONFIG.cpm;
+  const revenue = subscriptionRevenue + adRevenue;
+
+  const variableCost = cdnCost + supportCost + winbackCost;
+  const contribution = revenue - variableCost;
+
+  const contentSpend = decisions.licensing + decisions.originals;
+  const fixed = CONFIG.hqMonthly + decisions.licensing + decisions.originals
+    + decisions.marketing + decisions.tech + decisions.rnd;
+  const oneOff = installCost + (mods.oneOffCost ?? 0);
+  const profit = contribution - fixed;
+
+  state.cash += profit - oneOff;
+  state.techStock += decisions.tech;
+  state.rndStock += decisions.rnd;
+  state.dataStock += hours;
+
+  // --- 9. Метрики ---
+  const arpu = totalSubs > 0 ? revenue / totalSubs : 0;
+  const cmPerSub = totalSubs > 0 ? contribution / totalSubs : 0;
+  const hoursPerSub = totalSubs > 0 ? hours / totalSubs : 0;
+  const avgChurn = totalSubs > 0
+    ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / totalSubs
+    : CONFIG.baseChurn;
+  const cac = newSubs > 0 ? decisions.marketing / newSubs : 0;
+  const ltv = cmPerSub / Math.max(0.005, avgChurn);
+  const marketShare = totalSubs / SEGMENTS.reduce((s, x) => s + x.potential, 0);
+
+  const wGeo = (key) => {
+    if (!perSegment.length || totalSubs <= 0) return 1;
+    let acc = 0;
+    for (const p of perSegment) acc += Math.log(Math.max(1e-6, p[key])) * (p.subs / totalSubs);
+    return Math.exp(acc);
+  };
+
+  const report = {
+    month,
+    season: seasonOf(month),
+    subs: totalSubs,
+    premiumSubs,
+    adSubs,
+    newSubs,
+    lostSubs,
+    trials: trialsTotal,
+    churnRate: avgChurn,
+
+    hours,
+    adHours,
+    hoursPerSub,
+    catalogHours,
+    catalogLicensed: state.catalogLicensed,
+    catalogOriginal: state.catalogOriginal,
+    freshHours: state.freshHours,
+    depth,
+    perceivedDepth,
+    freshness,
+
+    revenue,
+    subscriptionRevenue,
+    adRevenue,
+    arpu,
+    cdnCost,
+    cdnPerHour,
+    supportCost,
+    winbackCost,
+    variableCost,
+    contribution,
+    cmPerSub,
+    fixed,
+    contentSpend,
+    oneOff,
+    installCost,
+    installedNow,
+    profit,
+    cash: state.cash,
+
+    rival: rivalType,
+    rivalNext: state.rivalNext ?? 'none',
+    rivalAcquisition: rival.acquisitionMult,
+    rivalChurnAdd: rival.churnAdd,
+    seasonHours: season,
+
+    buzz,
+    heldBuzz,
+    hangover,
+    originalShare,
+    effectiveCatalog,
+    premieres,
+    started,
+    pipeline: state.pipeline.map((p) => ({ genre: p.genre, monthsLeft: p.monthsLeft, quality: p.quality })),
+    studioFund: state.studioFund,
+    projectCost: projectCost(genre),
+
+    cac,
+    ltv,
+    ltvCac: cac > 0 ? ltv / cac : null,
+    marketShare,
+    algoQuality: quality,
+    dataLevel: dataLevel(state),
+    rndLevel: rndLevel(state),
+    techLevel: techLevel(state),
+    algoActive: Object.fromEntries(ALGORITHMS.map((a) => [a.key, Boolean(decisions.algoOn?.[a.key] && state.installed[a.key])])),
+
+    avgPriceFactor: wGeo('priceFactor'),
+    avgAppeal: wGeo('appeal'),
+    avgAdPenalty: wGeo('adPenalty'),
+
+    event: event ? { id: event.id, choice } : null,
+    segments: perSegment.map((p) => ({
+      id: p.def.id,
+      subs: p.subs,
+      premium: p.seg.premium,
+      ads: p.seg.ads,
+      adShare: p.adShare,
+      penetration: p.subs / p.def.potential,
+      awareness: p.seg.awareness,
+      churnRate: p.churnRate,
+      hours: p.hours,
+      priceFactor: p.priceFactor,
+      appeal: p.appeal,
+      adPenalty: p.adPenalty,
+      arpu: p.subs > 0
+        ? (p.seg.premium * decisions.pricePremium + p.seg.ads * decisions.priceAds
+           + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
+        : 0,
+    })),
+    decisions: structuredClone(decisions),
+  };
+
+  // --- 10. Завершение месяца ---
+  state.month = month;
+  state.lastSnapshot = snapshot;
+  state.history.push(report);
+  state.pendingChoice = null;
+  state.pendingEvent = rollEvent(rng, month + 1, state.flags);
+  state.rival = state.rivalNext ?? 'none';
+  state.rivalNext = rollRivalRelease(rng, month + 2);
+  state.rngState = rng.state();
+
+  if (state.cash < 0) state.over = 'bankrupt';
+  else if (month >= CONFIG.monthsTotal) state.over = 'finished';
+
+  report.valuation = valuation(state);
+  report.equityValue = report.valuation * state.equity;
+
+  return { state, report };
+}
+
+// ----------------------------------------------------------------------------
+// Экономика одного подписчика — считается мгновенно, до расчёта месяца
+// ----------------------------------------------------------------------------
+function unitEconomics(state, decisions) {
+  const last = state.history[state.history.length - 1];
+  const hoursPerSub = last ? last.hoursPerSub : CONFIG.baseHoursPerSub;
+  const adShare = last && last.subs > 0 ? last.adSubs / last.subs : 0.35;
+
+  const subscription = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+  const impressions = hoursPerSub * adShare * decisions.adLoad * 2;
+  const advertising = (impressions / 1000) * CONFIG.cpm;
+  const revenue = subscription + advertising;
+
+  const compression = decisions.algoOn?.encoding && state.installed?.encoding
+    ? clamp(decisions.algoParam?.encoding ?? 0, 0, 1) : 0;
+  const encodingSaving = 0.35 * compression * (0.4 + 0.6 * algoQuality(state));
+  const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
+    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving);
+  const cdn = hoursPerSub * cdnPerHour;
+  const support = CONFIG.supportCostPerSub;
+
+  return {
+    hoursPerSub, adShare,
+    subscription, advertising, revenue,
+    cdn, support, cdnPerHour,
+    variable: cdn + support,
+    contribution: revenue - cdn - support,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// Контрфактический разбор: сколько на самом деле принёс каждый алгоритм
+// ----------------------------------------------------------------------------
+function algorithmImpact(state) {
+  const snap = state.lastSnapshot;
+  const actual = state.history[state.history.length - 1];
+  if (!snap || !actual) return [];
+
+  const out = [];
+  for (const a of ALGORITHMS) {
+    if (!actual.algoActive?.[a.key]) continue;
+    const decisions = structuredClone(actual.decisions);
+    decisions.algoOn = { ...decisions.algoOn, [a.key]: false };
+    let alt;
+    try {
+      alt = step(snap, { decisions, eventChoice: actual.event?.choice ?? 0 }).report;
+    } catch { continue; }
+    if (!alt) continue;
+    out.push({
+      key: a.key,
+      profit: actual.profit - alt.profit,
+      subs: actual.subs - alt.subs,
+      hours: actual.hours - alt.hours,
+      churnRate: actual.churnRate - alt.churnRate,
+    });
+  }
+  return out.sort((x, y) => y.profit - x.profit);
+}
+
+// ----------------------------------------------------------------------------
+// Оценка компании и раунды
+// ----------------------------------------------------------------------------
+function valuation(state) {
+  const h = state.history;
+  if (!h.length) return 300_000_000;
+  const last = h[h.length - 1];
+  const runRate = last.revenue * 12;
+
+  const tail = h.slice(-3).reduce((s, r) => s + r.subs, 0);
+  const prev = h.slice(-6, -3).reduce((s, r) => s + r.subs, 0);
+  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.4 : 1);
+  const growthScore = clamp(growth - 1, 0, 1);
+
+  const margin = last.revenue > 0 ? last.profit / last.revenue : -0.5;
+  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
+
+  // Собственная библиотека — актив, лицензии — аренда. Рынок это видит.
+  const libraryValue = state.catalogOriginal * CONFIG.originalCostPerHour * 0.35;
+
+  const multiple = clamp(2.2 + 5 * growthScore + 4 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  const base = runRate * multiple + libraryValue;
+  const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
+  return Math.max(300_000_000, base * bonus);
+}
+
+function fundingOffer(state, amount) {
+  const pre = valuation(state);
+  const dilution = amount / (pre + amount);
+  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+}
+
+function raise(state, amount) {
+  const offer = fundingOffer(state, amount);
+  const next = structuredClone(state);
+  next.cash += amount;
+  next.equity = offer.newEquity;
+  next.raisedTotal += amount;
+  return { state: next, offer };
+}
+
+// ----------------------------------------------------------------------------
+// Разбор месяца: раскладываем изменение числа подписчиков на факторы
+// ----------------------------------------------------------------------------
+function explain(prev, cur) {
+  if (!prev || !cur) return [];
+  const parts = [
+    ['driverPrice', prev.avgPriceFactor, cur.avgPriceFactor],
+    ['driverCatalog', prev.avgAppeal, cur.avgAppeal],
+    ['driverAds', prev.avgAdPenalty, cur.avgAdPenalty],
+    ['driverRival', prev.rivalAcquisition, cur.rivalAcquisition],
+    ['driverRetention', 1 - prev.churnRate, 1 - cur.churnRate],
+    ['driverAwareness',
+      Math.max(1e-6, prev.trials / Math.max(1, prev.subs)),
+      Math.max(1e-6, cur.trials / Math.max(1, cur.subs))],
+  ];
+  return parts
+    .map(([key, a, b]) => ({
+      key,
+      effect: a > 0 && b > 0 ? Math.exp(Math.log(b) - Math.log(a)) - 1 : 0,
+    }))
+    .filter((p) => Math.abs(p.effect) > 0.002)
+    .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
+}
+
+function finalScore(state) {
+  const v = valuation(state);
+  return {
+    valuation: v,
+    equity: state.equity,
+    equityValue: v * state.equity,
+    raised: state.raisedTotal,
+    cash: state.cash,
+    months: state.month,
+    bankrupt: state.over === 'bankrupt',
+  };
+}
+
+
+// ===== ../../shared/format.js ======================================
+// Форматирование чисел для интерфейса.
+// Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+
+
+const LOCALE = { ru: 'ru-RU', en: 'en-US' };
+const SUFFIX = {
+  ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
+  en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
+};
+
+const locale = () => LOCALE[getLang()] ?? 'ru-RU';
+const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
+const group = (x) => Math.round(x).toLocaleString(locale());
+
+function num(x, digits = 0) {
+  if (!Number.isFinite(x)) return '—';
+  return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function money(x) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(x);
+  const sign = x < 0 ? '−' : '';
+  const s = suffix();
+  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
+  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
+  return `${sign}${abs.toFixed(0)} ₽`;
+}
+
+function moneyExact(x) {
+  if (!Number.isFinite(x)) return '—';
+  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+}
+
+// Короткие подписи на осях графиков
+function axisNum(v) {
+  const s = suffix();
+  if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}${s.m}`;
+  if (Math.abs(v) >= 1000) return `${Math.round(v / 1000)}${s.k}`;
+  return String(Math.round(v));
+}
+
+function pct(x, digits = 1) {
+  if (!Number.isFinite(x)) return '—';
+  return `${(x * 100).toFixed(digits)}%`;
+}
+
+function signedPct(x, digits = 1) {
+  if (!Number.isFinite(x)) return '—';
+  return `${x > 0 ? '+' : ''}${(x * 100).toFixed(digits)}%`;
+}
+
+function compact(x) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(x);
+  const s = suffix();
+  if (abs >= 1e6) return `${(x / 1e6).toFixed(1)} ${s.million}`;
+  if (abs >= 1e3) return `${(x / 1e3).toFixed(1)} ${s.thousand}`;
+  return group(x);
+}
+
+
+// ===== ../../shared/charts.js ======================================
+// Минималистичные графики на canvas — без внешних библиотек,
+// чтобы игра открывалась одним файлом и работала офлайн.
+
+const PALETTE = ['#4ade80', '#60a5fa', '#f472b6', '#fbbf24', '#a78bfa', '#22d3ee'];
+
+function niceTicks(min, max, count = 4) {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+    return [min || 0, (min || 0) + 1];
+  }
+  const span = max - min;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(raw) || 1)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
+  const start = Math.floor(min / step) * step;
+  const ticks = [];
+  for (let v = start; v <= max + step * 0.5; v += step) ticks.push(v);
+  return ticks;
+}
+
+/**
+ * series: [{ label, color?, data: number[] }]
+ * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string }
+ */
+function drawLineChart(canvas, series, opts = {}) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 320;
+  const cssH = canvas.clientHeight || 180;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const fmt = opts.format ?? ((v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}к` : String(Math.round(v))));
+  const padL = 52, padR = 10, padT = 16, padB = 22;
+  const w = cssW - padL - padR;
+  const h = cssH - padT - padB;
+
+  const visible = series.filter((s) => s.data && s.data.length);
+  if (!visible.length || visible.every((s) => s.data.length < 1)) {
+    ctx.fillStyle = 'rgba(226,232,240,0.35)';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(opts.emptyText ?? '', cssW / 2, cssH / 2);
+    return;
+  }
+
+  const n = Math.max(...visible.map((s) => s.data.length));
+  let min = Infinity, max = -Infinity;
+  for (const s of visible) for (const v of s.data) {
+    if (!Number.isFinite(v)) continue;
+    min = Math.min(min, v); max = Math.max(max, v);
+  }
+  if (!Number.isFinite(min)) { min = 0; max = 1; }
+  if (opts.zeroLine) { min = Math.min(min, 0); max = Math.max(max, 0); }
+  if (min === max) { max = min + Math.abs(min || 1) * 0.2 + 1; }
+  const pad = (max - min) * 0.08;
+  min -= pad; max += pad;
+
+  const x = (i) => padL + (n <= 1 ? w / 2 : (i / (n - 1)) * w);
+  const y = (v) => padT + h - ((v - min) / (max - min)) * h;
+
+  // сетка
+  const ticks = niceTicks(min, max, 4);
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (const t of ticks) {
+    if (t < min || t > max) continue;
+    const py = y(t);
+    ctx.strokeStyle = Math.abs(t) < 1e-9 ? 'rgba(148,163,184,0.35)' : 'rgba(148,163,184,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, py + 0.5);
+    ctx.lineTo(padL + w, py + 0.5);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.fillText(fmt(t), padL - 6, py);
+  }
+
+  // ось X — номера недель
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelEvery = Math.max(1, Math.ceil(n / 8));
+  for (let i = 0; i < n; i += labelEvery) {
+    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.fillText(String(i + 1), x(i), padT + h + 6);
+  }
+
+  // линии
+  visible.forEach((s, si) => {
+    ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let started = false;
+    s.data.forEach((v, i) => {
+      if (!Number.isFinite(v)) return;
+      const px = x(i), py = y(v);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // последняя точка
+    const lastIdx = s.data.length - 1;
+    if (lastIdx >= 0 && Number.isFinite(s.data[lastIdx])) {
+      ctx.fillStyle = s.color ?? PALETTE[si % PALETTE.length];
+      ctx.beginPath();
+      ctx.arc(x(lastIdx), y(s.data[lastIdx]), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+function legendHtml(series) {
+  return series.map((s, i) => `<span class="legend-item"><i style="background:${s.color ?? PALETTE[i % PALETTE.length]}"></i>${s.label}</span>`).join('');
+}
+
+
+
+// ===== src/ui/app.js ===============================================
+// ============================================================================
+// Слой интерфейса «КИНОПОТОКА»: состояние партии, отрисовка, обработка ввода.
+// Вся экономика живёт в src/model — здесь только показ и управление.
+// Текст берётся из src/strings.js через t() и tx().
+// ============================================================================
+
+
+const SAVE_KEY = 'kinopotok-save-v1';
+const el = (id) => document.getElementById(id);
+
+let state = null;
+let chartTab = 'subs';
+let rightTab = 'unit';
+let leversBuilt = false;
+
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    return s && s.segments && Array.isArray(s.history) ? s : null;
+  } catch { return null; }
+}
+
+const last = () => state.history[state.history.length - 1] ?? null;
+const prev = () => state.history[state.history.length - 2] ?? null;
+const algoByKey = (key) => ALGORITHMS.find((a) => a.key === key);
+const rivalName = (type) => t(`rival${type.charAt(0).toUpperCase()}${type.slice(1)}`);
+const seasonName = (season) => t(`season${season.charAt(0).toUpperCase()}${season.slice(1)}`);
+
+// ----------------------------------------------------------------------------
+// KPI
+// ----------------------------------------------------------------------------
+function kpi(label, value, sub, cls = 'neutral') {
+  return `<div class="kpi"><div class="k-label">${label}</div>
+    <div class="k-value">${value}</div><div class="k-delta ${cls}">${sub ?? ''}</div></div>`;
+}
+
+function delta(cur, before) {
+  if (!Number.isFinite(cur) || !Number.isFinite(before) || before === 0) return ['', 'neutral'];
+  const d = cur / before - 1;
+  return [signedPct(d), d > 0.001 ? 'up' : d < -0.001 ? 'down' : 'neutral'];
+}
+
+function renderKpis() {
+  const r = last();
+  const p = prev();
+  const burn = r ? r.fixed + r.oneOff - r.contribution : 0;
+  const runway = burn > 0 ? state.cash / burn : Infinity;
+
+  const parts = [
+    kpi(t('kpiMonth'), `${state.month} / ${CONFIG.monthsTotal}`,
+      state.pendingEvent ? t('kpiMonthEvent') : t('kpiMonthCalm')),
+    kpi(t('kpiCash'), money(state.cash),
+      state.cash < 0 ? t('kpiCashOut')
+        : Number.isFinite(runway) ? t('kpiRunway', { months: runway.toFixed(0) })
+        : t('kpiProfitable'),
+      state.cash < 0 ? 'down' : runway < 5 ? 'down' : runway < 12 ? 'neutral' : 'up'),
+  ];
+
+  if (r) {
+    const [dSubs, cSubs] = delta(r.subs, p?.subs);
+    parts.push(
+      kpi(t('kpiSubs'), compact(r.subs),
+        t('kpiSubsSub', { premium: compact(r.premiumSubs), ads: compact(r.adSubs) }), cSubs || 'neutral'),
+      kpi(t('kpiRevenue'), money(r.revenue), t('kpiRevenueSub', { value: `${num(r.arpu)} ₽` }), 'neutral'),
+      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
+        r.profit >= 0 ? 'up' : 'down'),
+      kpi(t('kpiChurn'), pct(r.churnRate, 1),
+        t('kpiChurnSub', { months: (1 / Math.max(0.005, r.churnRate)).toFixed(0) }),
+        r.churnRate <= 0.05 ? 'up' : r.churnRate <= 0.09 ? 'neutral' : 'down'),
+      kpi(t('kpiHours'), num(r.hoursPerSub, 1),
+        t('kpiHoursSub', { value: money(r.cdnCost) }),
+        'neutral'),
+      kpi(t('kpiEquity'), money(r.equityValue ?? 0),
+        t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
+      kpi('', dSubs, '', cSubs),
+    );
+    parts.pop();
+  } else {
+    parts.push(kpi(t('kpiStart'), money(CONFIG.startCash), t('kpiStartSub'), 'up'));
+  }
+  el('kpis').innerHTML = parts.join('');
+}
+
+// ----------------------------------------------------------------------------
+// Рычаги
+// ----------------------------------------------------------------------------
+function buildLevers() {
+  el('levers').innerHTML = LEVERS.map((l) => `
+    <div class="lever" data-key="${l.key}">
+      <div class="lever-head">
+        <span class="lever-label">${tx(l.label)}</span>
+        <span class="lever-value" id="val-${l.key}"></span>
+      </div>
+      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+      <button class="lever-why" type="button">${t('leverWhy')}</button>
+      <div class="lever-tip">${tx(l.tip)}</div>
+    </div>`).join('');
+
+  for (const l of LEVERS) {
+    el(`in-${l.key}`).addEventListener('input', (e) => {
+      state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
+      syncLevers();
+      renderOpsReadout();
+      renderRightTab();
+      save();
+    });
+  }
+  el('levers').querySelectorAll('.lever-why').forEach((b) => {
+    b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
+  });
+  leversBuilt = true;
+}
+
+function leverDisplay(l, raw) {
+  const unit = tx(l.unit);
+  if (l.key === 'licensing' || l.key === 'originals' || l.key === 'marketing'
+      || l.key === 'tech' || l.key === 'rnd') return money(raw);
+  return `${num(raw)} ${unit}`;
+}
+
+function syncLevers() {
+  for (const l of LEVERS) {
+    const raw = state.decisions[l.key] / (l.scale ?? 1);
+    const input = el(`in-${l.key}`);
+    if (input) input.value = String(raw);
+    el(`val-${l.key}`).textContent = leverDisplay(l, raw);
+  }
+}
+
+// Живая проверка: что происходит с каталогом и с экономикой подписчика
+function renderOpsReadout() {
+  const u = unitEconomics(state, state.decisions);
+  const catalogHours = state.catalogLicensed + state.catalogOriginal;
+  const effective = state.catalogLicensed * CONFIG.licenseDepthWeight
+    + state.catalogOriginal * CONFIG.originalDepthWeight;
+  const boughtHours = state.decisions.licensing / CONFIG.licenseCostPerHour;
+
+  el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
+    <div>${t('opsCatalog', {
+      hours: compact(catalogHours), licensed: compact(state.catalogLicensed),
+      original: compact(state.catalogOriginal),
+      depth: catalogDepth(effective).toFixed(2),
+      fresh: catalogFreshness(state.freshHours).toFixed(2),
+    })}</div>
+    <div>${t('opsLicensing', {
+      hours: num(boughtHours), decay: compact(state.catalogLicensed * CONFIG.licenseDecay),
+    })}</div>
+    <div>${t('opsUnitCheck', {
+      arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
+      cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
+    })}</div>
+    <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Студия: жанр и конвейер
+// ----------------------------------------------------------------------------
+function renderStudio() {
+  const current = state.decisions.genre;
+  const cards = GENRES.map((g) => {
+    const on = g.id === current;
+    return `<div class="district ${on ? 'active' : ''}" data-genre="${g.id}">
+      <div class="district-head">
+        <span class="district-name">${tx(g.name)}</span>
+        <span class="badge ${on ? 'on' : ''}">${money(projectCost(g))}</span>
+      </div>
+      <div class="district-meta">${t('genreHours', { hours: g.hours })} · ${tx(g.hint)}</div>
+    </div>`;
+  }).join('');
+
+  const genre = genreById(current) ?? GENRES[0];
+  const pipeline = state.pipeline ?? [];
+  const pipelineText = pipeline.length
+    ? t('studioPipeline', {
+        list: pipeline
+          .sort((a, b) => a.monthsLeft - b.monthsLeft)
+          .map((p) => t('studioPipelineItem', {
+            genre: tx(genreById(p.genre)?.name), months: p.monthsLeft,
+          })).join(', '),
+      })
+    : `<span class="neg">${t('studioPipelineEmpty')}</span>`;
+
+  el('studio').innerHTML = `
+    <div class="hint-box" style="margin-bottom:10px">
+      <div>${t('studioFund', { fund: money(state.studioFund ?? 0), cost: money(projectCost(genre)) })}</div>
+      <div>${pipelineText}</div>
+      <div class="funding-note" style="margin-top:6px">${t('studioLag')}</div>
+    </div>
+    <div class="districts">${cards}</div>`;
+
+  el('studio').querySelectorAll('[data-genre]').forEach((node) => {
+    node.addEventListener('click', () => {
+      state.decisions.genre = node.dataset.genre;
+      renderStudio();
+      renderOpsReadout();
+      save();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Афиша конкурента
+// ----------------------------------------------------------------------------
+function rivalCard(type, when, cls = '') {
+  const fx = rivalEffect(type, 0);
+  const effects = type === 'none'
+    ? t('rivalNoEffect')
+    : t('rivalEffects', {
+        acq: signedPct(fx.acquisitionMult - 1, 0),
+        churn: (fx.churnAdd * 100).toFixed(1),
+        hours: signedPct(fx.hoursMult - 1, 0),
+      });
+  return `<div class="${cls}">
+    <span class="weather-icon">${RIVAL_RELEASES[type]?.icon ?? '·'}</span>
+    <span class="weather-body">
+      <span class="weather-when">${when}</span>
+      <div class="weather-name">${rivalName(type)}</div>
+      <div class="weather-fx">${effects}</div>
+    </span>
+  </div>`;
+}
+
+function renderRival() {
+  if (state.over) { el('rival-slot').innerHTML = ''; return; }
+  const now = state.rival ?? 'none';
+  const next = state.rivalNext ?? 'none';
+  const alarm = (RIVAL_RELEASES[next]?.pull ?? 0) >= 0.7;
+
+  el('rival-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('rivalPanel', {
+      season: seasonName(seasonOf(state.month + 1)), month: state.month + 1,
+    })}</h2>
+    <div class="weather">
+      ${rivalCard(now, t('rivalNow'), 'weather-now')}
+      ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`)}
+      ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Алгоритмы
+// ----------------------------------------------------------------------------
+function qualityBar(name, value, hint) {
+  return `<div class="quality-row">
+    <span class="q-name" title="${hint}">${name}</span>
+    <span class="q-bar"><span class="q-fill" style="width:${Math.min(100, value * 100).toFixed(0)}%"></span></span>
+    <span class="q-val">${pct(value, 0)}</span>
+  </div>`;
+}
+
+function renderAlgos() {
+  const q = algoQuality(state);
+  const head = `<div class="quality-box">
+    ${qualityBar(t('algoData'), dataLevel(state), t('algoDataHint'))}
+    ${qualityBar(t('algoTeam'), rndLevel(state), t('algoTeamHint'))}
+    ${qualityBar(t('algoQuality'), q, t('algoQualityHint'))}
+    <div class="funding-note">${t('algoIntro')}</div>
+  </div>`;
+
+  const cards = ALGORITHMS.map((a) => {
+    const installed = Boolean(state.installed?.[a.key]);
+    const unlocked = installed || q >= a.unlock;
+    const on = Boolean(state.decisions.algoOn?.[a.key]);
+    const raw = (state.decisions.algoParam?.[a.key] ?? a.param.def * (a.param.scale ?? 1)) / (a.param.scale ?? 1);
+
+    const badge = installed
+      ? `<span class="badge on">${t('algoInstalled')}</span>`
+      : unlocked
+        ? `<span class="badge">${t('algoInstallCost', { cost: money(a.install) })}</span>`
+        : `<span class="badge">${t('algoNeedQuality', { value: pct(a.unlock, 0) })}</span>`;
+
+    const slider = installed && on ? `<div class="algo-param">
+        <div class="algo-param-head"><span>${tx(a.param.label)}</span><b>${raw}${tx(a.param.unit)}</b></div>
+        <input type="range" data-algo-param="${a.key}"
+          min="${a.param.min}" max="${a.param.max}" step="${a.param.step}" value="${raw}" />
+      </div>` : '';
+
+    const pending = on && !installed && unlocked
+      ? `<div class="algo-tradeoff">${t('algoPending', { cost: money(a.install) })}</div>` : '';
+
+    return `<div class="algo ${!unlocked ? 'locked' : ''} ${on && installed ? 'on' : ''}">
+      <div class="algo-head">
+        <label class="algo-title">
+          <input type="checkbox" data-algo="${a.key}" ${on ? 'checked' : ''} ${unlocked ? '' : 'disabled'} />
+          ${tx(a.name)}
+        </label>
+        ${badge}
+      </div>
+      <div class="algo-what">${tx(a.what)}</div>
+      ${slider}
+      ${installed && on ? `<div class="algo-tradeoff">${tx(a.tradeoff)}</div>` : pending}
+    </div>`;
+  }).join('');
+
+  el('algos').innerHTML = head + cards;
+
+  el('algos').querySelectorAll('[data-algo]').forEach((box) => {
+    box.addEventListener('change', () => {
+      state.decisions.algoOn = { ...state.decisions.algoOn, [box.dataset.algo]: box.checked };
+      renderAlgos(); renderOpsReadout(); renderRightTab(); save();
+    });
+  });
+  el('algos').querySelectorAll('[data-algo-param]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const a = algoByKey(input.dataset.algoParam);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [a.key]: Number(input.value) * (a.param.scale ?? 1),
+      };
+      const head = input.parentElement.querySelector('b');
+      if (head) head.textContent = `${input.value}${tx(a.param.unit)}`;
+      renderOpsReadout(); renderRightTab(); save();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Финансирование
+// ----------------------------------------------------------------------------
+function renderFunding() {
+  const canRaise = state.month >= CONFIG.minMonthForFunding && !state.over;
+  const v = valuation(state);
+  const rows = CONFIG.fundingOptions.map((amount) => {
+    const o = fundingOffer(state, amount);
+    return `<div class="funding-row">
+      <div><div><b>${money(amount)}</b></div>
+        <div class="funding-note">${t('fundingDilution', {
+          dilution: pct(o.dilution, 1), equity: pct(o.newEquity, 1) })}</div></div>
+      <button class="btn small" data-raise="${amount}" ${canRaise ? '' : 'disabled'}>${t('fundingTake')}</button>
+    </div>`;
+  }).join('');
+
+  el('funding').innerHTML = `
+    <div class="funding-note">${t('fundingHead', {
+      valuation: money(v), equity: pct(state.equity, 1), raised: money(state.raisedTotal) })}</div>
+    ${rows}
+    <div class="funding-note">${t('fundingNote')}
+      ${state.month < CONFIG.minMonthForFunding
+        ? t('fundingLocked', { month: CONFIG.minMonthForFunding }) : ''}</div>`;
+
+  el('funding').querySelectorAll('[data-raise]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const amount = Number(b.dataset.raise);
+      const { state: next, offer } = raise(state, amount);
+      state = next; save(); renderAll();
+      toast(t('fundingDone', { amount: money(amount), dilution: pct(offer.dilution, 1) }));
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Событие
+// ----------------------------------------------------------------------------
+function renderEvent() {
+  const ev = state.pendingEvent;
+  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+
+  const options = ev.options
+    ? `<div class="event-options">${ev.options.map((o, i) => `
+        <button class="event-option ${state.pendingChoice === i ? 'selected' : ''}" data-choice="${i}">
+          <b>${tx(o.label)}</b><span>${tx(o.detail)}</span></button>`).join('')}</div>`
+    : `<div class="funding-note">${t('eventAuto')}</div>`;
+
+  el('event-slot').innerHTML = `<div class="panel event">
+    <h3>⚡ ${tx(ev.title)}</h3>
+    <p>${tx(ev.text)}</p>
+    ${options}
+    ${ev.lesson ? `<div class="lesson"><b>${t('eventLesson')}</b> ${tx(ev.lesson)}</div>` : ''}
+  </div>`;
+
+  el('event-slot').querySelectorAll('[data-choice]').forEach((b) => {
+    b.addEventListener('click', () => {
+      state.pendingChoice = Number(b.dataset.choice);
+      renderEvent(); save();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Отчёт месяца
+// ----------------------------------------------------------------------------
+function stat(label, value, sub) {
+  return `<div class="stat"><div class="s-label">${label}</div>
+    <div class="s-value">${value}</div><div class="s-sub">${sub ?? ''}</div></div>`;
+}
+
+function buildAlerts(r) {
+  const alerts = [];
+  const burn = r.fixed + r.oneOff - r.contribution;
+  const runway = burn > 0 ? state.cash / burn : Infinity;
+
+  if (r.depth < 0.35) {
+    alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) })]);
+  }
+  if (r.freshness < 0.6 && r.subs > 1000) {
+    alerts.push(['warn', t('alertStale', { fresh: r.freshness.toFixed(2), lost: compact(r.lostSubs) })]);
+  }
+  if (!r.pipeline.length) {
+    alerts.push(['bad', t('alertNoPipeline')]);
+  }
+  if (r.cmPerSub < 0) {
+    alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
+  } else if (r.revenue > 0 && r.cdnCost / r.revenue > 0.30) {
+    alerts.push(['warn', t('alertTrafficHeavy', {
+      share: pct(r.cdnCost / r.revenue, 0), cost: money(r.cdnCost),
+      hours: num(r.hoursPerSub, 1), bitrate: num(r.decisions.bitrate),
+    })]);
+  }
+  if (r.cmPerSub > 0 && r.profit < 0) {
+    alerts.push(['warn', t('alertBreakEven', {
+      cm: `${num(r.cmPerSub)} ₽`, fixed: money(r.fixed), subs: compact(r.fixed / r.cmPerSub),
+    })]);
+  }
+  if (runway < 5 && state.cash >= 0) {
+    alerts.push(['bad', t('alertRunway', { months: runway.toFixed(0), burn: money(burn) })]);
+  }
+  if (r.hangover > 0.4) {
+    alerts.push(['warn', t('alertHangover', { churn: pct(r.churnRate, 1) })]);
+  }
+  if ((RIVAL_RELEASES[r.rivalNext]?.pull ?? 0) >= 0.7) {
+    alerts.push(['warn', t('alertRivalAhead', {
+      release: rivalName(r.rivalNext).toLowerCase(),
+      acq: pct(rivalEffect(r.rivalNext, 0).acquisitionMult, 0),
+    })]);
+  }
+  if (r.decisions.adLoad >= 8) {
+    alerts.push(['warn', t('alertAdHeavy', {
+      load: num(r.decisions.adLoad), revenue: money(r.adRevenue),
+    })]);
+  }
+  if (Number.isFinite(r.ltvCac) && r.ltvCac !== null && r.cac > 0) {
+    if (r.ltvCac < 1) alerts.push(['bad', t('alertLtvCacBad', { value: r.ltvCac.toFixed(2) })]);
+    else if (r.ltvCac > 3) alerts.push(['good', t('alertLtvCacGood', { value: r.ltvCac.toFixed(2) })]);
+  }
+  const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
+  if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
+    alerts.push(['warn', t('alertRndIdle', {
+      cost: money(r.decisions.rnd), quality: pct(r.algoQuality, 0) })]);
+  }
+  const ready = ALGORITHMS.filter((a) => !state.installed?.[a.key] && r.algoQuality >= a.unlock);
+  if (ready.length) {
+    alerts.push(['good', t('alertAlgosReady', {
+      names: ready.map((a) => tx(a.name)).join(', '), quality: pct(r.algoQuality, 0) })]);
+  }
+  if (r.profit > 0) alerts.push(['good', t('alertProfit', { value: money(r.profit) })]);
+  return alerts;
+}
+
+function renderStartHint() {
+  return `<div class="panel">
+    <h3 style="margin:0 0 8px">${t('reportMonth0')}</h3>
+    <div class="hint-box">
+      <b>${t('reportStartTitle')}</b> ${t('reportStartIntro', { cash: money(CONFIG.startCash) })}
+      <ol style="margin:6px 0 0 16px;padding:0">
+        <li>${t('reportStart1')}</li><li>${t('reportStart2')}</li>
+        <li>${t('reportStart3')}</li><li>${t('reportStart4')}</li>
+      </ol>
+      <br>${t('reportStartAlgos')}
+    </div>
+  </div>`;
+}
+
+function renderReport() {
+  const r = last();
+  if (!r) { el('report-slot').innerHTML = renderStartHint(); return; }
+
+  const drivers = explain(prev(), r);
+  const maxAbs = Math.max(0.02, ...drivers.map((d) => Math.abs(d.effect)));
+  const driversHtml = drivers.length ? `
+    <div class="drivers">
+      <div class="panel-title">${t('driversTitle', {
+        delta: signedPct(r.subs / Math.max(1e-9, prev().subs) - 1) })}</div>
+      ${drivers.slice(0, 6).map((d) => {
+        const w = (Math.abs(d.effect) / maxAbs) * 50;
+        const pos = d.effect > 0;
+        return `<div class="driver">
+          <span class="d-name">${t(d.key)}</span>
+          <span class="d-bar"><span class="d-fill" style="${pos ? `left:50%;width:${w}%` : `right:50%;width:${w}%`};background:${pos ? 'var(--good)' : 'var(--bad)'}"></span></span>
+          <span class="d-val ${pos ? 'pos' : 'neg'}">${signedPct(d.effect)}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const alerts = buildAlerts(r);
+  const alertsHtml = alerts.length
+    ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>` : '';
+
+  const ev = r.event ? eventById(r.event.id) : null;
+  const eventNote = ev ? `<div class="lesson"><b>${tx(ev.title)}.</b> ${tx(ev.lesson)}</div>` : '';
+
+  const premiereNote = r.premieres.length
+    ? `<div class="alert good" style="margin-top:8px">${t('premiereNote', {
+        list: r.premieres.map((p) => t('premiereItem', {
+          genre: tx(genreById(p.genre)?.name), quality: p.quality.toFixed(2) })).join(', '),
+      })}</div>` : '';
+  const startedNote = r.started.length
+    ? `<div class="alert warn" style="margin-top:8px">${t('startedNote', {
+        list: r.started.map((p) => tx(genreById(p.genre)?.name)).join(', '),
+        months: CONFIG.originalLeadMonths,
+      })}</div>` : '';
+  const installNote = r.installedNow?.length
+    ? `<div class="alert good" style="margin-top:8px">${t('installNote', {
+        names: r.installedNow.map((k) => tx(algoByKey(k)?.name)).join(', '),
+        cost: money(r.installCost) })}</div>` : '';
+
+  el('report-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h3>${t('reportTitle', { month: r.month })}</h3>
+      <span class="funding-note">${t('reportHeadStats', {
+        revenue: money(r.revenue), subscription: money(r.subscriptionRevenue), ads: money(r.adRevenue) })}</span>
+    </div>
+    <div class="report-grid">
+      ${stat(t('statSubs'), compact(r.subs), t('statSubsSub', {
+        gained: compact(r.newSubs), lost: compact(r.lostSubs) }))}
+      ${stat(t('statHours'), compact(r.hours), t('statHoursSub', { perSub: num(r.hoursPerSub, 1) }))}
+      ${stat(t('statCatalog'), `${compact(r.catalogHours)} ${t('unitHours')}`, t('statCatalogSub', {
+        original: compact(r.catalogOriginal), share: pct(r.originalShare, 0) }))}
+      ${stat(t('statFresh'), `×${r.freshness.toFixed(2)}`, t('statFreshSub', { depth: r.depth.toFixed(2) }))}
+      ${stat(t('statChurn'), pct(r.churnRate, 1), t('statChurnSub', { hangover: r.hangover.toFixed(2) }))}
+      ${stat(t('statArpu'), `${num(r.arpu)} ₽`, t('statArpuSub', { value: `${num(r.cmPerSub)} ₽` }))}
+      ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: num(r.cdnPerHour, 2) }))}
+      ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+        r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
+    </div>
+    ${premiereNote}${startedNote}${installNote}
+    ${driversHtml}${alertsHtml}${eventNote}
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Графики
+// ----------------------------------------------------------------------------
+const CHART_TABS = {
+  subs: {
+    label: 'chartSubs', caption: 'chartSubsCaption',
+    series: (h) => [
+      { label: t('seriesSubs'), data: h.map((r) => r.subs), color: PALETTE[1] },
+      { label: t('seriesPremium'), data: h.map((r) => r.premiumSubs), color: PALETTE[0] },
+      { label: t('seriesAds'), data: h.map((r) => r.adSubs), color: PALETTE[3] },
+    ],
+  },
+  money: {
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    series: (h) => [
+      { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
+      { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
+      { label: t('seriesProfit'), data: h.map((r) => r.profit), color: PALETTE[3] },
+    ],
+  },
+  cash: {
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
+  },
+  catalog: {
+    label: 'chartCatalog', caption: 'chartCatalogCaption',
+    format: (v) => `${Math.round(v)}`,
+    series: (h) => [
+      { label: t('seriesLicensed'), data: h.map((r) => r.catalogLicensed), color: PALETTE[1] },
+      { label: t('seriesOriginal'), data: h.map((r) => r.catalogOriginal), color: PALETTE[0] },
+    ],
+  },
+  engagement: {
+    label: 'chartEngagement', caption: 'chartEngagementCaption',
+    format: (v) => `${Math.round(v)}`,
+    series: (h) => [
+      { label: t('seriesHoursPerSub'), data: h.map((r) => r.hoursPerSub), color: PALETTE[4] },
+      { label: t('seriesChurn'), data: h.map((r) => r.churnRate * 100), color: PALETTE[2] },
+    ],
+  },
+  unit: {
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
+    format: (v) => `${Math.round(v)}`,
+    series: (h) => [
+      { label: t('seriesArpu'), data: h.map((r) => r.arpu), color: PALETTE[1] },
+      { label: t('seriesCmPerSub'), data: h.map((r) => r.cmPerSub), color: PALETTE[0] },
+    ],
+  },
+  algos: {
+    label: 'chartAlgos', caption: 'chartAlgosCaption',
+    format: (v) => `${Math.round(v)}`,
+    series: (h) => [
+      { label: t('seriesQuality'), data: h.map((r) => (r.algoQuality ?? 0) * 100), color: PALETTE[4] },
+      { label: t('seriesData'), data: h.map((r) => (r.dataLevel ?? 0) * 100), color: PALETTE[1] },
+      { label: t('seriesTeam'), data: h.map((r) => (r.rndLevel ?? 0) * 100), color: PALETTE[3] },
+    ],
+  },
+};
+
+function renderChart() {
+  el('chart-tabs').innerHTML = Object.entries(CHART_TABS)
+    .map(([k, v]) => `<button data-chart="${k}" class="${k === chartTab ? 'active' : ''}">${t(v.label)}</button>`).join('');
+  el('chart-tabs').querySelectorAll('[data-chart]').forEach((b) => {
+    b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
+  });
+
+  const conf = CHART_TABS[chartTab];
+  const series = conf.series(state.history);
+  el('chart-legend').innerHTML = legendHtml(series);
+  el('chart-caption').textContent = t(conf.caption);
+  drawLineChart(el('chart'), series, {
+    zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Правая колонка
+// ----------------------------------------------------------------------------
+function renderUnitTab() {
+  const u = unitEconomics(state, state.decisions);
+  const r = last();
+  const row = (name, value, cls = '', sub = false) =>
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+  const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
+
+  return `
+    <p class="funding-note">${t('unitIntro')}</p>
+    <table class="data">
+      <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerSub')}</th></tr></thead>
+      <tbody>
+        ${row(t('unitSubscription'), u.subscription, 'pos', true)}
+        ${row(t('unitAdvertising'), u.advertising, 'pos', true)}
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td></tr>
+        ${row(t('unitCdn', { hours: num(u.hoursPerSub, 1), perHour: num(u.cdnPerHour, 2) }), -u.cdn, 'neg', true)}
+        ${row(t('unitSupport'), -u.support, 'neg', true)}
+        <tr class="total"><td>${t('unitContribution')}</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:10px">${t('unitNote')}</p>
+    ${breakEven ? `<div class="hint-box" style="margin-top:10px">${t('unitBreakEven', {
+      fixed: money(r.fixed), subs: compact(breakEven), current: compact(r.subs) })}</div>`
+      : u.contribution <= 0 ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
+    ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
+    <table class="data"><tbody>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitLifetime')}</td><td>${t('unitLifetimeValue', {
+        value: (1 / Math.max(0.005, r.churnRate)).toFixed(1) })}</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
+    </tbody></table>
+    <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}`;
+}
+
+function renderPnlTab() {
+  const r = last();
+  if (!r) return `<p class="funding-note">${t('pnlEmpty')}</p>`;
+  const line = (name, v, cls = '', sub = false) =>
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${moneyExact(v)}</td></tr>`;
+  return `
+    <table class="data"><tbody>
+      ${line(t('pnlSubscription'), r.subscriptionRevenue, 'pos', true)}
+      ${line(t('pnlAds'), r.adRevenue, 'pos', true)}
+      <tr class="total"><td>${t('pnlRevenue')}</td><td class="pos">${moneyExact(r.revenue)}</td></tr>
+      ${line(t('pnlCdn'), -r.cdnCost, 'neg', true)}
+      ${line(t('pnlSupport'), -r.supportCost, 'neg', true)}
+      ${r.winbackCost > 0 ? line(t('pnlWinback'), -r.winbackCost, 'neg', true) : ''}
+      <tr class="total"><td>${t('pnlContribution')}</td>
+        <td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
+      ${line(t('pnlLicensing'), -r.decisions.licensing, 'neg', true)}
+      ${line(t('pnlOriginals'), -r.decisions.originals, 'neg', true)}
+      ${line(t('pnlMarketing'), -r.decisions.marketing, 'neg', true)}
+      ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
+      ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
+      ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
+      <tr class="total"><td>${t('pnlOperatingProfit')}</td>
+        <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
+      ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
+      <tr class="total"><td>${t('pnlCashChange')}</td>
+        <td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
+    </tbody></table>
+    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
+}
+
+function renderSegmentsTab() {
+  const r = last();
+  if (!r || !r.segments.length) return `<p class="funding-note">${t('segmentsEmpty')}</p>`;
+  const name = (s) => tx(segmentById(s.id)?.name);
+  return `
+    <table class="data">
+      <thead><tr><th>${t('colSegment')}</th><th>${t('colSubs')}</th><th>${t('colAdShare')}</th><th>${t('colChurn')}</th><th>${t('colArpu')}</th></tr></thead>
+      <tbody>${r.segments.map((s) => `<tr>
+        <td>${name(s)}</td><td>${compact(s.subs)}</td><td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
+        <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}</td>
+        <td>${num(s.arpu)} ₽</td></tr>`).join('')}</tbody>
+    </table>
+    <table class="data" style="margin-top:10px">
+      <thead><tr><th>${t('colSegment')}</th><th>${t('colPenetration')}</th><th>${t('colPriceFactor')}</th><th>${t('colAppeal')}</th><th>${t('colAdPenalty')}</th></tr></thead>
+      <tbody>${r.segments.map((s) => `<tr>
+        <td>${name(s)}</td><td>${pct(s.penetration, 1)}</td>
+        <td class="${s.priceFactor >= 1 ? 'pos' : 'neg'}">${s.priceFactor.toFixed(2)}</td>
+        <td class="${s.appeal >= 1 ? 'pos' : 'neg'}">${s.appeal.toFixed(2)}</td>
+        <td class="${s.adPenalty >= 0.95 ? 'pos' : 'neg'}">${s.adPenalty.toFixed(2)}</td></tr>`).join('')}</tbody>
+    </table>
+    <p class="funding-note">${t('segmentsNote')}</p>`;
+}
+
+function renderAlgosTab() {
+  const r = last();
+  const q = algoQuality(state);
+  const impact = r ? algorithmImpact(state) : [];
+  const totalGain = impact.reduce((sum, i) => sum + i.profit, 0);
+  const rndSpend = state.decisions.rnd ?? 0;
+
+  const table = impact.length ? `
+    <table class="data">
+      <thead><tr><th>${t('algosColName')}</th><th>${t('algosColProfit')}</th><th>${t('algosColSubs')}</th><th>${t('algosColHours')}</th></tr></thead>
+      <tbody>
+        ${impact.map((i) => `<tr>
+          <td>${tx(algoByKey(i.key)?.name)}</td>
+          <td class="${i.profit >= 0 ? 'pos' : 'neg'}">${i.profit >= 0 ? '+' : ''}${compact(i.profit)}</td>
+          <td class="${i.subs >= 0 ? 'pos' : 'neg'}">${i.subs >= 0 ? '+' : ''}${compact(i.subs)}</td>
+          <td class="${i.hours >= 0 ? 'pos' : 'neg'}">${i.hours >= 0 ? '+' : ''}${compact(i.hours)}</td>
+        </tr>`).join('')}
+        <tr class="total"><td>${t('algosTotal')}</td>
+          <td class="${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${compact(totalGain)}</td><td colspan="2"></td></tr>
+        <tr class="total"><td>${t('algosTeamCost')}</td><td class="neg">−${compact(rndSpend)}</td><td colspan="2"></td></tr>
+        <tr class="total"><td>${t('algosNet')}</td>
+          <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td><td colspan="2"></td></tr>
+      </tbody>
+    </table>
+    <p class="funding-note" style="margin-top:8px">${t('algosCounterfactual')}</p>`
+    : `<p class="funding-note">${t('algosNone')}</p>`;
+
+  const zero = impact.filter((i) => Math.abs(i.profit) < 1_000_000);
+  const zeroNote = zero.length
+    ? `<div class="hint-box" style="margin-top:10px">${t('algosZeroNote', {
+        names: zero.map((i) => tx(algoByKey(i.key)?.name)).join(', ') })}</div>` : '';
+
+  return `
+    <p class="funding-note">${t('algosTabQuality', {
+      quality: pct(q, 0), data: pct(dataLevel(state), 0), team: pct(rndLevel(state), 0) })}</p>
+    ${table}${zeroNote}
+    <h4 style="margin:14px 0 6px;font-size:13px">${t('algosVsSlider')}</h4>
+    <p class="funding-note">${t('algosVsSliderText')}</p>
+    ${ALGORITHMS.map((a) => `<div style="margin-top:10px">
+      <b style="font-size:12px">${tx(a.name)}</b>
+      <div class="funding-note">${tx(a.lesson)}</div></div>`).join('')}`;
+}
+
+function renderHelpTab() {
+  return `<div class="help">
+    <h4>${t('helpWhatTitle')}</h4><p>${t('helpWhatText')}</p>
+    <h4>${t('helpCatalogTitle')}</h4>
+    <div class="formula">${t('helpCatalogFormula')}</div>
+    <p>${t('helpCatalogText')}</p>
+    <h4>${t('helpMoneyTitle')}</h4><p>${t('helpMoneyText')}</p>
+    <h4>${t('helpChurnTitle')}</h4>
+    <ul>
+      <li>${t('helpSpiralStale')}</li><li>${t('helpSpiralHangover')}</li>
+      <li>${t('helpSpiralAds')}</li><li>${t('helpSpiralTraffic')}</li>
+    </ul>
+    <h4>${t('helpRivalTitle')}</h4><p>${t('helpRivalText')}</p>
+    <h4>${t('helpAlgosTitle')}</h4><p>${t('helpAlgosText')}</p>
+    <ul>${ALGORITHMS.map((a) => `<li><b>${tx(a.name)}.</b> ${tx(a.tradeoff)}</li>`).join('')}</ul>
+    <h4>${t('helpScoreTitle')}</h4>
+    <div class="formula">${t('helpScoreFormula')}</div>
+    <p>${t('helpScoreText')}</p>
+    <h4>${t('helpLimitsTitle')}</h4><p>${t('helpLimitsText')}</p>
+  </div>`;
+}
+
+function renderRightTab() {
+  el('tabs').querySelectorAll('.tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.tab === rightTab);
+  });
+  el('tab-content').innerHTML = {
+    unit: renderUnitTab, pnl: renderPnlTab, algos: renderAlgosTab,
+    segments: renderSegmentsTab, help: renderHelpTab,
+  }[rightTab]();
+}
+
+// ----------------------------------------------------------------------------
+// Модалки
+// ----------------------------------------------------------------------------
+function modal(html, actions = []) {
+  const root = el('modal-root');
+  root.innerHTML = `<div class="modal-bg"><div class="modal">${html}
+    <div class="modal-actions">${actions.map((a, i) => `<button class="btn ${a.primary ? 'primary' : 'ghost'}" data-act="${i}">${a.label}</button>`).join('')}</div>
+  </div></div>`;
+  root.querySelectorAll('[data-act]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const a = actions[Number(b.dataset.act)];
+      root.innerHTML = '';
+      a.onClick?.();
+    });
+  });
+}
+
+function toast(text) {
+  const root = el('modal-root');
+  const node = document.createElement('div');
+  node.className = 'alert good';
+  node.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:60;max-width:340px;background:#0f2018';
+  node.textContent = text;
+  root.appendChild(node);
+  setTimeout(() => node.remove(), 3500);
+}
+
+function showGameOver() {
+  const s = finalScore(state);
+  const r = last();
+  const grade = s.bankrupt ? t('gradeBankrupt')
+    : s.equityValue > 8e10 ? t('gradeExcellent')
+    : s.equityValue > 3e10 ? t('gradeSolid')
+    : s.equityValue > 1e10 ? t('gradeSurvived') : t('gradeModest');
+
+  modal(`
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <p class="funding-note">${s.bankrupt
+      ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+    <div class="score-grid">
+      <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreResult')}</div><div class="s-value">${money(s.equityValue)}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreRaised')}</div><div class="s-value">${money(s.raised)}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
+      <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
+    </div>
+    ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
+      subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
+      churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
+    <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
+    [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
+     { label: t('gameOverCharts'), onClick: () => {} }]);
+}
+
+function showHelp() {
+  modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`, [{ label: t('helpModalOk'), primary: true }]);
+}
+
+// ----------------------------------------------------------------------------
+// Ход игры
+// ----------------------------------------------------------------------------
+function nextMonth() {
+  if (state.over) { showGameOver(); return; }
+  const ev = state.pendingEvent;
+  if (ev && ev.options && state.pendingChoice === null) { toast(t('eventChoiceNeeded')); return; }
+  state = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 }).state;
+  save();
+  renderAll();
+  if (state.over) showGameOver();
+}
+
+function restart() {
+  state = createInitialState(`kinopotok-${Math.floor(Math.random() * 1e6)}`);
+  save();
+  renderAll();
+}
+
+function renderChrome() {
+  el('brand-title').textContent = t('brandTitle');
+  el('brand-sub').textContent = t('brandSub');
+  el('title-levers').textContent = t('panelLevers');
+  el('title-studio').textContent = t('panelStudio');
+  el('title-algos').textContent = t('panelAlgos');
+  el('title-funding').textContent = t('panelFunding');
+  el('title-dynamics').textContent = t('panelDynamics');
+  el('btn-restart').textContent = t('btnRestart');
+  el('btn-help').title = t('btnHelpTitle');
+  el('btn-lang').textContent = t('langToggle');
+  el('btn-lang').title = t('langTitle');
+  el('btn-next').textContent = state.over ? t('btnResults') : t('btnNext', { month: state.month + 1 });
+  for (const [tab, key] of Object.entries({
+    unit: 'tabUnit', pnl: 'tabPnl', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
+  })) {
+    const node = el('tabs').querySelector(`[data-tab="${tab}"]`);
+    if (node) node.textContent = t(key);
+  }
+}
+
+function renderAll() {
+  if (!leversBuilt) buildLevers();
+  renderChrome();
+  syncLevers();
+  renderStudio();
+  renderAlgos();
+  renderOpsReadout();
+  renderKpis();
+  renderFunding();
+  renderRival();
+  renderEvent();
+  renderReport();
+  renderChart();
+  renderRightTab();
+}
+
+function switchLang() {
+  setLang(getLang() === 'ru' ? 'en' : 'ru');
+  leversBuilt = false;
+  renderAll();
+}
+
+function init() {
+  setStrings(STRINGS);
+  setLang(detectLang());
+  state = load() ?? createInitialState('kinopotok');
+
+  el('btn-next').addEventListener('click', nextMonth);
+  el('btn-help').addEventListener('click', showHelp);
+  el('btn-lang').addEventListener('click', switchLang);
+  el('btn-restart').addEventListener('click', () => {
+    modal(`<h2>${t('restartTitle')}</h2><p class="funding-note">${t('restartText')}</p>`,
+      [{ label: t('restartYes'), primary: true, onClick: restart }, { label: t('restartNo') }]);
+  });
+  el('tabs').querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => { rightTab = tab.dataset.tab; renderRightTab(); });
+  });
+  window.addEventListener('resize', () => renderChart());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextMonth();
+  });
+
+  renderAll();
+}
+
+
+init();
+})();
+</script>
+</body>
+</html>

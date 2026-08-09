@@ -160,29 +160,29 @@ science? What does the answer depend on, and how does it change between week 5 a
 **The same city for the whole group.** A game is deterministic in its seed: an identical
 sequence of decisions under the same seed produces an identical result. The default seed is
 `novograd`; the Restart button generates a random one. To hand the whole group the same
-scenario, fix the seed in `src/ui/app.js` (the `createInitialState` call).
+scenario, fix the seed in `games/foodtech/src/ui/app.js` (the `createInitialState` call).
 
-**Tuning difficulty.** All parameters live in `src/model/config.js`:
+**Tuning difficulty.** All parameters live in `games/foodtech/src/model/config.js`:
 * `startCash` — how much room for error students have;
 * `courierMarketWeeklyPay` — how tight the labour market is;
 * `customerBaseChurn` — how expensive bad service turns out to be;
 * `weeksTotal` — the length of a game;
-* `SEASON_WEIGHTS` in `src/model/weather.js` — how harsh the climate is;
+* `SEASON_WEIGHTS` in `games/foodtech/src/model/weather.js` — how harsh the climate is;
 * `rndSaturation` and `dataSaturation` — how quickly algorithms unlock;
 * `unlock` and `install` in the `ALGORITHMS` array — availability thresholds and rollout costs.
 
 To run a class on algorithms alone without spending turns on the ramp-up, hand students a
 game with `dataStock` and `rndStock` already accumulated — that is what the tests in
-`tests/engine.test.mjs` do (the `warmState` helper).
+`games/foodtech/tests/engine.test.mjs` do (the `warmState` helper).
 
 After any edits, run `npm test`: the tests check qualitative properties of the model
 (demand responding to price, restaurants churning at high commission, P&L consistency)
 rather than specific numbers, so they survive rebalancing.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.
-All text in the model is stored as `{ ru, en }` pairs in `src/model/config.js`,
-`src/model/events.js` and `src/i18n.js`, so adding a third language means adding one more
+All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/model/config.js`,
+`games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `node tools/build.js` produces `dist/game.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/game.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.
