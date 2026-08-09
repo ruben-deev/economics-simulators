@@ -1,13 +1,13 @@
-// Минимальный статический сервер для локального запуска игры.
+// Минимальный статический сервер для локального запуска игр.
 // ES-модули не грузятся по file://, поэтому нужен http.
-// Запуск: npm start   →   http://localhost:8080
+// Запуск: npm start → http://localhost:8080 (страница со списком игр)
 
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const port = Number(process.env.PORT ?? 8080);
 
 const TYPES = {
@@ -24,7 +24,8 @@ const TYPES = {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://localhost:${port}`);
-    const rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
+    let rel = decodeURIComponent(url.pathname);
+    if (rel.endsWith('/')) rel += 'index.html';       // каталог → его index.html
     const file = path.join(root, rel);
 
     // не выпускаем за пределы каталога проекта
@@ -45,5 +46,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`НОВОЕДА запущена: http://localhost:${port}`);
+  console.log(`Игры запущены: http://localhost:${port}`);
 });

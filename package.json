@@ -1,13 +1,13 @@
 {
-  "name": "novoeda-delivery-simulator",
-  "version": "0.1.0",
-  "description": "Учебный экономический симулятор сервиса доставки еды в городе",
+  "name": "business-sim-games",
+  "version": "0.2.0",
+  "description": "Учебные экономические симуляторы: доставка еды и онлайн-кинотеатр",
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node tools/serve.js",
-    "test": "node --test tests/*.test.mjs",
-    "build": "node tools/build.js"
+    "start": "node shared/tools/serve.js",
+    "test": "node --test games/*/tests/*.test.mjs",
+    "build": "node shared/tools/build.js"
   },
   "engines": {
     "node": ">=18"

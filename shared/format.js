@@ -1,7 +1,7 @@
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
 
-import { getLang } from '../i18n.js';
+import { getLang } from './i18n.js';
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
 const SUFFIX = {

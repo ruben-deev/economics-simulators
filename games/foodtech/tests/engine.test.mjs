@@ -8,7 +8,7 @@ import {
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../src/model/engine.js';
 import { rollWeather, seasonOf, weatherEffect, WEATHER } from '../src/model/weather.js';
-import { createRng } from '../src/model/rng.js';
+import { createRng } from '../../../shared/rng.js';
 import { EVENTS } from '../src/model/events.js';
 
 const baseDecisions = (over = {}) => ({ ...DEFAULT_DECISIONS, districts: ['center'], ...over });

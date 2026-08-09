@@ -19,7 +19,7 @@
 // ============================================================================
 
 import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
-import { createRng } from './rng.js';
+import { createRng } from '../../../../shared/rng.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, seasonOf } from './weather.js';
 

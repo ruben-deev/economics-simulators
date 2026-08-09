@@ -9,7 +9,7 @@
 // Тексты двуязычны: { ru, en }. Разворачивает их i18n.tx().
 // ============================================================================
 
-import { weightedPick } from './rng.js';
+import { weightedPick } from '../../../../shared/rng.js';
 
 // Нейтральные модификаторы недели
 export function neutralModifiers() {

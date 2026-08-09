@@ -13,11 +13,12 @@ import {
   fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../model/engine.js';
-import { drawLineChart, legendHtml, PALETTE } from './charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from './format.js';
-import { t, tx, getLang, setLang, detectLang } from '../i18n.js';
+import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
+import { STRINGS } from '../strings.js';
 
-const SAVE_KEY = 'novoeda-save-v2';
+const SAVE_KEY = 'novoeda-save-v3';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -1097,6 +1098,7 @@ function switchLang() {
 }
 
 export function init() {
+  setStrings(STRINGS);
   setLang(detectLang());
   state = load() ?? createInitialState('novograd');
 

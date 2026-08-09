@@ -1,59 +1,6 @@
 // ============================================================================
-// Локализация. Два языка: ru (по умолчанию) и en.
-//
-// Строки хранятся парами { ru, en } рядом друг с другом — так переводчик видит
-// оригинал и перевод вместе, и невозможно потерять одну из версий незаметно.
-//
-// t(key, vars) — строка интерфейса с подстановкой {переменных}.
-// tx(obj)      — двуязычное поле из модели (район, рычаг, событие, алгоритм).
-// ============================================================================
-
-const LANGS = ['ru', 'en'];
-const STORAGE_KEY = 'novoeda-lang';
-
-let current = 'ru';
-
-export function getLang() {
-  return current;
-}
-
-export function setLang(lang) {
-  if (!LANGS.includes(lang)) return;
-  current = lang;
-  try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* приватный режим */ }
-  if (typeof document !== 'undefined') document.documentElement.lang = lang;
-}
-
-export function detectLang() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (LANGS.includes(saved)) return saved;
-  } catch { /* приватный режим */ }
-  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
-  return 'ru';
-}
-
-// Двуязычное поле модели: { ru: '…', en: '…' }
-export function tx(field) {
-  if (field == null) return '';
-  if (typeof field === 'string') return field;
-  return field[current] ?? field.ru ?? '';
-}
-
-export function t(key, vars) {
-  const entry = STRINGS[key];
-  if (!entry) return key;
-  let out = entry[current] ?? entry.ru ?? key;
-  if (vars) {
-    for (const [name, value] of Object.entries(vars)) {
-      out = out.replaceAll(`{${name}}`, String(value));
-    }
-  }
-  return out;
-}
-
-// ============================================================================
-// Строки интерфейса
+// Строки интерфейса игры «НОВОЕДА». Пары { ru, en }.
+// Регистрируются в ядре локализации вызовом setStrings() при старте.
 // ============================================================================
 
 export const STRINGS = {

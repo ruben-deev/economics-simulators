@@ -4,7 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STRINGS, t, tx, setLang, getLang } from '../src/i18n.js';
+import { t, tx, setLang, getLang, setStrings } from '../../../shared/i18n.js';
+import { STRINGS } from '../src/strings.js';
+
+setStrings(STRINGS);
 import { DISTRICTS, LEVERS, ALGORITHMS } from '../src/model/config.js';
 import { EVENTS } from '../src/model/events.js';
 
