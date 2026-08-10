@@ -49,8 +49,9 @@ The built files are already in the repository, so the build step is only needed 
 
 **File or link.** The single-file build is meant for a laptop: double-click it and it
 runs with no network. On a phone the link is more reliable. The reason is preview mode —
-both Quick Look on a Mac and the file card on an iPhone (the one with the "Done" button)
-render HTML but **deliberately do not run JavaScript**. The game is a computed model;
+both Quick Look on a Mac and the document viewer in Telegram or another messenger
+render HTML but **deliberately do not run JavaScript**. Telegram's built-in browser does
+run scripts — the difference is between forwarding a file and sending a link. The game is a computed model;
 without scripts only an empty shell is left. The page now explains this itself and says
 how to open it in a real browser.
 
