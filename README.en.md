@@ -1,6 +1,6 @@
 # Economics simulators for the classroom
 
-*[Русская версия](README.md)*
+*[Русская версия](README.md)* · made by **zero900**
 
 **▶ [Open the games index](https://ruben-deev.github.io/Foodtech-delivery-game/)**
 
@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.1.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.1.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.2.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.2.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -48,7 +48,7 @@ npm run build      # rebuild the single-file builds in games/*/dist/
 The built files are already in the repository, so the build step is only needed after edits.
 
 **Releasing a version.** The number lives in one place — `version` in `package.json`. It
-goes into the built file name (`…-simulator-v0.3.1.html`), into the page itself and into
+goes into the built file name (`…-simulator-v0.3.2.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
@@ -284,7 +284,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v0.3.1.html
+  dist/kinopotok-streaming-simulator-v0.3.2.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```
@@ -306,14 +306,24 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — 166 checks across the two games. The tests
+After editing it is worth running `npm test` — 180 checks across the two games. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 
 ## Limits of the models
 
-These are teaching models, not forecasting tools. Competitors do not react to you, customers
-are homogeneous within a segment, and whole pieces of reality (international markets, bidding
+These are teaching models, not forecasting tools. In the delivery game the competitor does not
+react to you (in the streaming game it does), customers are homogeneous within a segment, and whole pieces of reality (international markets, bidding
 for ad inventory, individual contracts) are compressed into one or two coefficients. The
 models exist to show the **structure** of the dependencies, not to predict a real market.
 Detailed lists of assumptions are at the end of each `docs/<game>/economics.md`.
+
+---
+
+## Author
+
+**zero900** — concept, economic models, interface and copy for both games.
+
+The project is meant to be used in class: hand the games out to students, change the
+numbers to fit your course, work through the formulas on the board. A credit link is
+appreciated if you do.

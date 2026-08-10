@@ -2,8 +2,9 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="0.3.1" />
+  <meta name="app-version" content="0.3.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="zero900" />
   <title>КИНОПОТОК · streaming economics simulator</title>
   <style>
 :root {
@@ -1302,6 +1303,7 @@ score = valuation × your stake`,
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpVersion: { ru: 'Сборка {version}. Её же видно в имени скачанного файла — по ней понятно, о какой версии речь.', en: 'Build {version}. The same number is in the downloaded file name, so there is no doubt which version is meant.' },
+  helpAuthor: { ru: 'Игру сделал <b>zero900</b>.', en: 'Made by <b>zero900</b>.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -6327,7 +6329,7 @@ function showGameOver() {
 
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
-    + `<p class="funding-note">${APP_VERSION === 'dev'
+    + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
 }

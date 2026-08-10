@@ -182,3 +182,19 @@ test('на телефоне итоги месяца идут раньше рыч
     'у шапки на телефоне нужно снять backdrop-filter, иначе fixed считается от неё');
   assert.match(narrow, /body\s*\{[^}]*padding-bottom/, 'без отступа снизу полоса накроет последнюю панель');
 });
+
+test('авторство не теряется при сборке', () => {
+  // Файл уезжает от автора вместе с игрой: подпись должна быть внутри него,
+  // а не только в репозитории, откуда его никто не откроет.
+  for (const [game, bundle] of bundles) {
+    const html = readFileSync(bundle, 'utf8');
+    assert.match(html, /<meta name="author" content="zero900"/, `${game}: нет meta author`);
+    for (const lang of ['ru', 'en']) {
+      const line = html.match(new RegExp(`helpAuthor:[^}]*${lang}: '([^']*)'`))?.[1];
+      assert.ok(line && line.includes('zero900'), `${game}: подписи автора нет на ${lang}`);
+    }
+  }
+  const home = readFileSync(join(root, 'index.html'), 'utf8');
+  assert.match(home, /<meta name="author" content="zero900"/, 'витрина: нет meta author');
+  assert.ok((home.match(/zero900/g) ?? []).length >= 3, 'витрина: подписи нет в подвале на обоих языках');
+});

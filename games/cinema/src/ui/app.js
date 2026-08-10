@@ -1551,7 +1551,7 @@ function showGameOver() {
 
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
-    + `<p class="funding-note">${APP_VERSION === 'dev'
+    + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
 }
