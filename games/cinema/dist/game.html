@@ -186,6 +186,16 @@ button { font-family: inherit; }
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
+/* Кнопка выбора: название сверху, пояснение под ним. Без этого они слипаются
+   в одну строку, и решение перестаёт читаться с первого взгляда. */
+.event-option .opt-label {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.event-option .opt-detail { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .lesson {
   margin-top: 10px; font-size: 11px; color: var(--muted);
   border-top: 1px dashed var(--line); padding-top: 8px;
@@ -472,6 +482,31 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   color: var(--muted);
 }
 
+/* ------------------- Партнёрства и разрыв цены (КИНОПОТОК) --------------- */
+.deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.deal { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
+.deal.ending { border-color: rgba(251, 191, 36, 0.45); }
+.deal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.deal-name { font-weight: 700; font-size: 13px; }
+.deal-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
+
+.offer { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 9px; padding: 11px 13px; }
+.offer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.offer-head h3 { margin: 0; font-size: 15px; }
+.offer p { margin: 7px 0; line-height: 1.6; }
+.offer-terms { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-bottom: 9px; }
+.offer-terms .warn { color: var(--warn); }
+
+.gap-box { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+.gap-box.wide { border-color: rgba(251, 191, 36, 0.45); }
+.gap-row { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+.gap-row b { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
+.gap-row b.warn { color: var(--warn); }
+.gap-arrow { opacity: 0.5; }
+.gap-value { margin-left: auto; font-weight: 700; font-size: 12px; }
+.gap-box .q-bar { display: block; margin: 6px 0; }
+.gap-box .btn { width: 100%; }
+
 </style>
 </head>
 <body>
@@ -509,12 +544,15 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     </aside>
 
     <section class="col-center">
+      <!-- Порядок повторяет то, как играют: сначала читают, что вышло,
+           потом решают срочное, потом планируют. -->
+      <div id="report-slot"></div>
+      <div id="event-slot"></div>
+      <div id="crisis-slot"></div>
+      <div id="partner-slot"></div>
       <div id="turn-slot"></div>
       <div id="slate-slot"></div>
       <div id="rival-slot"></div>
-      <div id="crisis-slot"></div>
-      <div id="event-slot"></div>
-      <div id="report-slot"></div>
       <div class="panel charts">
         <div class="charts-head">
           <h2 class="panel-title inline" id="title-dynamics"></h2>
@@ -658,6 +696,37 @@ const STRINGS = {
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelBoard: { ru: 'Совет директоров', en: 'The board' },
   alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
+  panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
+  partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} ₽ против {retail} ₽ в рознице', en: 'wholesale is {share} of the base · ARPU ₽{wholesale} against ₽{retail} retail' },
+  partnerMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
+  partnerDealMeta: { ru: '{subs} подписчиков · {arpu} ₽ с человека ({share} от прайса)', en: '{subs} subscribers · ₽{arpu} each ({share} of list price)' },
+  partnerLockedRate: { ru: 'Ставка зафиксирована при подписании: {signed} ₽ при текущем прайсе {list} ₽. Повышение цены на этот контракт не действует.', en: 'The rate was fixed at signing: ₽{signed} against a current list price of ₽{list}. A price rise does not apply to this contract.' },
+  partnerEnding: { ru: 'Контракт кончается — эти люди уйдут разом, а не по одному.', en: 'The contract is ending — these people will leave all at once, not one by one.' },
+  partnerTerm: { ru: 'контракт {months} мес.', en: '{months}-month contract' },
+  partnerReach: { ru: 'приводит до {reach}/мес', en: 'brings up to {reach}/mo' },
+  partnerShareOf: { ru: 'вам {share} прайса = {arpu} ₽', en: 'you keep {share} of list = ₽{arpu}' },
+  partnerHours: { ru: 'смотрят {value} от обычного', en: 'they watch {value} of normal' },
+  partnerChurnMult: { ru: 'отток {value} от обычного', en: 'churn {value} of normal' },
+  partnerSetup: { ru: 'подключение {fee} разово', en: 'setup {fee} one-off' },
+  partnerMonthly: { ru: '{fee} в месяц', en: '{fee} a month' },
+  partnerExclusive: { ru: 'эксклюзив: другие операторы будут закрыты', en: 'exclusive: other operators will be locked out' },
+  partnerSign: { ru: 'Подписать контракт', en: 'Sign the contract' },
+  partnerSignDetail: { ru: 'До {subs} новых в месяц по {arpu} ₽ вместо {retail} ₽. Быстрый объём вместо выручки с человека.', en: 'Up to {subs} new a month at ₽{arpu} instead of ₽{retail}. Volume fast, revenue per head slow.' },
+  partnerDecline: { ru: 'Отказаться', en: 'Decline' },
+  partnerDeclineDetail: { ru: 'Растём розницей: дороже и медленнее, зато это ваши подписчики и ваша цена.', en: 'Grow retail instead: slower and dearer, but they are your subscribers at your price.' },
+  todoPartnerTitle: { ru: 'Предложение о партнёрстве: {name}', en: 'A partnership offer: {name}' },
+  todoPartnerText: { ru: 'Оптовый канал приводит людей быстрее маркетинга, но каждый из них стоит меньше и смотрит меньше. Ответить нужно в этом месяце.', en: 'The wholesale channel brings people faster than marketing, but each of them is worth less and watches less. Answer this month.' },
+  todoPartnerEndTitle: { ru: 'Контрактов на исходе: {count}', en: '{count} contracts running out' },
+  todoPartnerEndText: { ru: 'Когда контракт кончится, {subs} подписчиков уйдут почти разом. К этому моменту рознице должно быть чем их заменить.', en: 'When the contract ends, {subs} subscribers leave almost at once. By then retail needs something to replace them with.' },
+
+  // --- Разрыв цены (постоянный блок у ползунка) ---
+  gapList: { ru: 'прайс', en: 'list' },
+  gapPaid: { ru: 'платят', en: 'paid' },
+  gapNone: { ru: 'совпадает', en: 'aligned' },
+  gapAligned: { ru: 'База уже платит по прайсу — повышать нечего.', en: 'The base already pays list price — nothing to raise.' },
+  gapAnnual: { ru: 'Из них {subs} на годовом тарифе: их повышение не коснётся.', en: 'Of these {subs} are on annual plans: a rise will not touch them.' },
+  gapNoData: { ru: 'Разрыв появится, когда у сервиса будет база.', en: 'The gap appears once the service has a base.' },
+
   panelSlate: { ru: 'Производство и релизы', en: 'Production and releases' },
   panelTurn: { ru: 'Ход месяца {month}', en: 'Month {month}: your move' },
   unitMonthsShort: { ru: 'мес', en: 'mo' },
@@ -1283,6 +1352,14 @@ const CONFIG = {
   raiseShockBase: 0.035,
   raiseShockCurve: 1.6,
   raiseCooldown: 4,           // сколько месяцев нельзя повышать повторно
+
+  // --- Партнёрства и бандлы ---
+  // Второй канал роста: опт вместо розницы. Предложения приходят редко —
+  // это стратегические развилки, а не ежемесячная рутина.
+  partnerOfferChance: 0.22,
+  // Когда контракт кончается, оптовые подписчики уходят разом, а не по одному.
+  // Часть удаётся удержать, если бренд им запомнился.
+  partnerExitKeep: 0.22,
 };
 
 // ============================================================================
@@ -2084,6 +2161,171 @@ function effectivePrice(pricing, monthlySubs) {
 }
 
 
+// ===== src/model/partners.js =======================================
+// ============================================================================
+// Партнёрства и бандлы: второй канал роста.
+//
+// Подписчиков можно приводить двумя принципиально разными способами.
+// Розница — маркетинг и премьеры: человек сам выбрал вас, платит полную цену
+// и уходит, когда становится скучно. Опт — дистрибуция через чужую подписку:
+// оператора связи, банк, производителя телевизоров. Такие подписчики приходят
+// дёшево и сразу тысячами, но:
+//
+//   • вы получаете не всю цену, а долю от неё;
+//   • они не выбирали вас и смотрят меньше;
+//   • когда контракт кончается, они уходят разом, а не по одному.
+//
+// Отсюда учебная мысль, которой в игре до сих пор не было: рост базы и рост
+// выручки — не одно и то же, и «сколько у нас подписчиков» без вопроса
+// «откуда они» ничего не значит.
+// ============================================================================
+
+
+const PARTNERS = [
+  {
+    id: 'telecom',
+    weight: 8,
+    minMonth: 5,
+    name: { ru: 'Мобильный оператор', en: 'Mobile operator' },
+    text: {
+      ru: 'Крупнейший оператор страны кладёт вашу подписку в свои тарифы. Абонентов миллионы, но платить вам будут по оптовой цене.',
+      en: 'The country’s largest operator is putting your subscription into its plans. Millions of subscribers — but they will pay you a wholesale rate.',
+    },
+    lesson: {
+      ru: 'Оптовый подписчик дешевле розничного и стоит меньше. Считать их вместе — самый быстрый способ обмануть себя графиком роста.',
+      en: 'A wholesale subscriber is cheaper to get and worth less. Counting them together with retail is the fastest way to fool yourself with a growth chart.',
+    },
+    months: 18,
+    reach: 230_000,        // приводит в месяц
+    revenueShare: 0.35,    // какую долю цены вы получаете
+    churnMult: 0.35,       // внутри контракта почти не уходят
+    hoursMult: 0.55,       // но и смотрят вдвое меньше: они вас не выбирали
+    setupFee: 120_000_000,
+    monthlyFee: 0,
+    exclusive: 'telecom',
+  },
+  {
+    id: 'bank',
+    weight: 7,
+    minMonth: 8,
+    name: { ru: 'Банковская подписка', en: 'Bank subscription bundle' },
+    text: {
+      ru: 'Банк добавляет вас в свою программу привилегий. Аудитория меньше, зато платёжеспособная и доля выручки заметно выше.',
+      en: 'A bank is adding you to its perks programme. A smaller audience, but a solvent one — and the revenue share is noticeably better.',
+    },
+    lesson: {
+      ru: 'Условия дистрибуции — это переговоры о доле, а не о числе людей. Меньшая аудитория с лучшей долей часто приносит больше денег.',
+      en: 'Distribution terms are a negotiation about share, not about headcount. A smaller audience on better terms often brings more money.',
+    },
+    months: 12,
+    reach: 95_000,
+    revenueShare: 0.62,
+    churnMult: 0.5,
+    hoursMult: 0.8,
+    setupFee: 40_000_000,
+    monthlyFee: 0,
+  },
+  {
+    id: 'tv',
+    weight: 6,
+    minMonth: 10,
+    name: { ru: 'Предустановка на телевизорах', en: 'Smart-TV preinstall' },
+    text: {
+      ru: 'Производитель ставит ваше приложение кнопкой на пульт. Приходят немногие, но это люди, которые действительно садятся смотреть.',
+      en: 'A manufacturer puts your app on the remote. Few people arrive, but they are people who actually sit down to watch.',
+    },
+    lesson: {
+      ru: 'Дистрибуция бывает не только оптовой. Хорошее место в интерфейсе стоит дорого и приводит именно тех, кто будет смотреть.',
+      en: 'Not all distribution is wholesale. A good slot in someone’s interface is expensive and brings exactly the people who will watch.',
+    },
+    months: 24,
+    reach: 55_000,
+    revenueShare: 0.85,
+    churnMult: 0.7,
+    hoursMult: 1.25,
+    setupFee: 0,
+    monthlyFee: 30_000_000,
+  },
+  {
+    id: 'aggregator',
+    weight: 6,
+    minMonth: 12,
+    name: { ru: 'Подписка-агрегатор', en: 'Subscription aggregator' },
+    text: {
+      ru: 'Агрегатор продаёт вас в пакете с музыкой и доставкой. Объём приличный, но зритель считает подписку не вашей, а их.',
+      en: 'An aggregator sells you in a package with music and delivery. Decent volume, but the viewer thinks the subscription is theirs, not yours.',
+    },
+    lesson: {
+      ru: 'В чужом пакете вы становитесь строчкой, а не брендом. Узнаваемость такие подписчики не строят, и после контракта уходят к тому, чей бренд помнят.',
+      en: 'Inside someone else’s bundle you are a line item, not a brand. These subscribers build no awareness, and when the contract ends they go to the brand they remember.',
+    },
+    months: 12,
+    reach: 160_000,
+    revenueShare: 0.45,
+    churnMult: 0.4,
+    hoursMult: 0.6,
+    setupFee: 60_000_000,
+    monthlyFee: 0,
+    awarenessDrag: 0.35,   // не строит ваш бренд
+    exclusive: 'telecom',
+  },
+];
+
+const partnerById = (id) => PARTNERS.find((p) => p.id === id) ?? null;
+
+/** Предложение приходит редко и не повторяет уже действующие. */
+function rollPartnerOffer(rng, month, active) {
+  if (month < 5) return null;
+  if (rng() > CONFIG.partnerOfferChance) return null;
+  const busy = new Set(active.map((a) => a.id));
+  const lockedGroups = new Set(active.map((a) => partnerById(a.id)?.exclusive).filter(Boolean));
+  const pool = PARTNERS.filter((p) => month >= p.minMonth
+    && !busy.has(p.id)
+    && !(p.exclusive && lockedGroups.has(p.exclusive)));
+  if (!pool.length) return null;
+
+  const total = pool.reduce((s, p) => s + p.weight, 0);
+  let roll = rng() * total;
+  for (const p of pool) {
+    roll -= p.weight;
+    if (roll <= 0) return p.id;
+  }
+  return pool[pool.length - 1].id;
+}
+
+/**
+ * Сколько подписчиков приводит партнёрство в этом месяце.
+ * Охват насыщается: свободных абонентов у партнёра тоже конечное число,
+ * и после первых месяцев поток заметно слабеет.
+ */
+function partnerInflow(deal, def, marketRoom = 1) {
+  const filled = clamp(deal.subs / (def.reach * def.months * 0.45), 0, 1);
+  return def.reach * (1 - filled) * clamp(marketRoom, 0, 1);
+}
+
+/**
+ * Месячная выручка от оптового подписчика.
+ *
+ * Ставка зафиксирована в момент подписания и за прайсом не следует: в этом
+ * и смысл контракта. Поднять цену рознице можно хоть завтра — оптовый партнёр
+ * будет платить ровно столько, о чём договорились, до конца срока.
+ */
+function partnerRevenue(deal, def) {
+  return deal.subs * deal.price * def.revenueShare;
+}
+
+/** Итог всех действующих контрактов — для отчёта и для интерфейса. */
+function partnerTotals(deals) {
+  let subs = 0;
+  let monthlyFee = 0;
+  for (const d of deals) {
+    subs += d.subs;
+    monthlyFee += partnerById(d.id)?.monthlyFee ?? 0;
+  }
+  return { subs, monthlyFee, count: deals.length };
+}
+
+
 // ===== src/model/rival.js ==========================================
 // ============================================================================
 // Живой конкурент.
@@ -2620,8 +2862,11 @@ function crisisById(id) {
  * Кризис приходит тем охотнее, чем крупнее и заметнее сервис.
  * Одновременно висит не больше одного: игра про управление, а не про пожар.
  */
-function rollCrisis(rng, month, { subs, active }) {
+function rollCrisis(rng, month, { subs, active, lastResolved = -99 }) {
   if (active) return null;
+  // Передышка после решённого кризиса. Компания, которая только что потушила
+  // пожар и тут же получила второй, учит игрока не управлению, а невезению.
+  if (month - lastResolved < CRISIS_COOLDOWN) return null;
   const pool = CRISES.filter((c) => month >= c.minMonth);
   if (!pool.length) return null;
 
@@ -2643,6 +2888,7 @@ function rollCrisis(rng, month, { subs, active }) {
 // на полку. Это не милосердие, а честность — дальше он просто дорого стоит
 // каждый месяц, и решение всё равно остаётся за игроком.
 const MAX_ESCALATION = 5;
+const CRISIS_COOLDOWN = 3;
 
 const severityOf = (active) => clamp(Math.max(1, (active?.months ?? 0) + 1), 1, MAX_ESCALATION);
 
@@ -3006,6 +3252,12 @@ function createInitialState(seed = 'kinopotok') {
     // --- Кризисы ---
     crisis: null,          // { id, months }
     crisisHistory: [],
+    lastCrisisResolved: -99,
+
+    // --- Партнёрства ---
+    partners: [],          // действующие контракты: { id, monthsLeft, subs }
+    partnerOffer: null,    // предложение, ждущее ответа
+    partnerHistory: [],
 
     decisions: structuredClone(DEFAULT_DECISIONS),
     flags: { valuationBonus: 0 },
@@ -3133,6 +3385,7 @@ function step(prevState, input = {}) {
         crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
         state.crisisHistory.push(crisisResolved);
         state.crisis = null;
+        state.lastCrisisResolved = month;
       }
     }
   }
@@ -3324,6 +3577,10 @@ function step(prevState, input = {}) {
 
   // --- 9. Подписчики по сегментам ---
   const refPrice = 399;
+  // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
+  // наравне с розничными, иначе рынок начинает считаться дважды.
+  const partnerBefore = partnerTotals(state.partners).subs;
+  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
   // Повторять его каждый месяц нельзя: у людей есть память.
   const wantRaise = Boolean(input.raisePrice);
@@ -3419,7 +3676,8 @@ function step(prevState, input = {}) {
 
     // --- Рынок один на двоих ---
     const rivalSegSubs = riv.segments[def.id] ?? 0;
-    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs);
+    const partnerHere = partnerBefore * (def.potential / marketPotential);
+    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs - partnerHere);
 
     // Оба сервиса описываются одним и тем же набором характеристик, и оба
     // приводят зрителя по одной и той же формуле. Симметрия здесь принципиальна:
@@ -3557,7 +3815,73 @@ function step(prevState, input = {}) {
     * (mods.cdnMult ?? 1) * (crisisMods.cdnMult ?? 1);
   const cdnCost = hours * cdnPerHour;
 
-  const totalSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  // --- 10a. Партнёрства: оптовый канал ---
+  // Эти подписчики живут отдельным пулом: у них своя доля выручки, свой отток
+  // и свои часы просмотра. Складывать их с розничными в одну цифру можно,
+  // но именно так и обманывают себя графиком роста.
+  if (input.partnerAnswer && state.partnerOffer) {
+    if (input.partnerAnswer === 'accept') {
+      const def = partnerById(state.partnerOffer);
+      if (def) {
+        // Ставка фиксируется прайсом на момент подписания
+        state.partners.push({
+          id: def.id, monthsLeft: def.months, subs: 0, signed: month,
+          price: decisions.priceNew,
+        });
+        state.partnerHistory.push({ id: def.id, month, action: 'signed' });
+      }
+    }
+    state.partnerOffer = null;
+  }
+
+  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
+  let partnerInflowTotal = 0;
+  let partnerFees = 0;
+  let partnerLost = 0;
+  const partnerExpired = [];
+  for (const deal of state.partners) {
+    const def = partnerById(deal.id);
+    if (!def) continue;
+    const roomLeft = Math.max(0, marketPotential - retailSubsNow - rivalSubs(riv) - partnerBefore)
+      / marketPotential;
+    const gained = partnerInflow(deal, def, roomLeft * 1.6);
+    // Внутри контракта уходят редко: подписка идёт пакетом и её не отменяют
+    const lost = deal.subs * CONFIG.baseChurn * def.churnMult;
+    deal.subs = Math.max(0, deal.subs + gained - lost);
+    partnerInflowTotal += gained;
+    partnerLost += lost;
+    partnerFees += def.monthlyFee;
+    if (deal.signed === month) partnerFees += def.setupFee;
+    deal.monthsLeft -= 1;
+  }
+  // Контракт кончился — база уходит разом. Часть остаётся, если бренд запомнился.
+  for (const deal of state.partners.filter((d) => d.monthsLeft <= 0)) {
+    const def = partnerById(deal.id);
+    const keepShare = CONFIG.partnerExitKeep * (1 - (def?.awarenessDrag ?? 0));
+    const kept = deal.subs * keepShare;
+    partnerExpired.push({ id: deal.id, lost: deal.subs - kept, kept });
+    partnerLost += deal.subs - kept;
+    // Удержанные переходят в розницу по текущей цене, в самый массовый сегмент
+    const mass = state.segments.mass;
+    mass.premium += kept;
+    state.partnerHistory.push({ id: deal.id, month, action: 'expired' });
+  }
+  state.partners = state.partners.filter((d) => d.monthsLeft > 0);
+
+  const partnerStats = partnerTotals(state.partners);
+  const partnerSubs = partnerStats.subs;
+  let partnerRev = 0;
+  let partnerHours = 0;
+  for (const deal of state.partners) {
+    const def = partnerById(deal.id);
+    if (!def) continue;
+    partnerRev += partnerRevenue(deal, def);
+    partnerHours += deal.subs * CONFIG.baseHoursPerSub * def.hoursMult * season;
+  }
+  hours += partnerHours;
+
+  const retailSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  const totalSubs = retailSubs + partnerSubs;
   const premiumSubs = perSegment.reduce((s, p) => s + p.seg.premium, 0);
   const adSubs = perSegment.reduce((s, p) => s + p.seg.ads, 0);
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
@@ -3571,6 +3895,7 @@ function step(prevState, input = {}) {
     const monthlyPremium = Math.max(0, p.seg.premium - annual);
     subscriptionRevenue += monthlyPremium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds;
   }
+  subscriptionRevenue += partnerRev;
   const listRevenue = premiumSubs * decisions.priceNew + adSubs * decisions.priceAds;
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
@@ -3585,7 +3910,8 @@ function step(prevState, input = {}) {
   const marketingSpend = decisions.brandMarketing + campaignSpend;
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd;
-  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0) + crisisCost;
+  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
+    + crisisCost + partnerFees;
   const profit = contribution - fixed;
 
   // Годовая предоплата — это касса сегодня и выручка, растянутая на год.
@@ -3605,7 +3931,6 @@ function step(prevState, input = {}) {
     : CONFIG.baseChurn;
   const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
-  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   const marketShare = totalSubs / marketPotential;
   const rivalTotal = rivalSubs(riv);
   const duopolyShare = totalSubs + rivalTotal > 0 ? totalSubs / (totalSubs + rivalTotal) : 0;
@@ -3647,8 +3972,15 @@ function step(prevState, input = {}) {
 
   // --- 14. Кризисы ---
   if (state.crisis) state.crisis.months += 1;
-  const newCrisis = rollCrisis(rng, month, { subs: totalSubs, active: Boolean(state.crisis) });
+  const newCrisis = rollCrisis(rng, month, {
+    subs: totalSubs, active: Boolean(state.crisis), lastResolved: state.lastCrisisResolved ?? -99,
+  });
   if (newCrisis) state.crisis = newCrisis;
+
+  // --- 14a. Новое предложение о партнёрстве ---
+  if (!state.partnerOffer) {
+    state.partnerOffer = rollPartnerOffer(rng, month + 1, state.partners);
+  }
 
   const report = {
     month,
@@ -3767,6 +4099,24 @@ function step(prevState, input = {}) {
     annualNew,
     annualExpired,
     annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
+
+    // --- Партнёрства ---
+    retailSubs,
+    partnerSubs,
+    partnerShare: totalSubs > 0 ? partnerSubs / totalSubs : 0,
+    partnerRevenue: partnerRev,
+    partnerInflow: partnerInflowTotal,
+    partnerLost,
+    partnerFees,
+    partnerExpired,
+    partnerDeals: state.partners.map((d) => ({
+      id: d.id, monthsLeft: d.monthsLeft, subs: d.subs,
+    })),
+    partnerOffer: state.partnerOffer,
+    // Средняя выручка с оптового подписчика против розничного: главное число
+    // этой механики. Рост базы и рост выручки — не одно и то же.
+    partnerArpu: partnerSubs > 0 ? partnerRev / partnerSubs : 0,
+    retailArpu: retailSubs > 0 ? (revenue - partnerRev) / retailSubs : 0,
 
     cac,
     ltv,
@@ -4193,12 +4543,14 @@ let pendingRelease = {};          // id готового проекта -> бю�
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
+let pendingPartner = null;        // 'accept' | 'decline'
 
 const clearActions = () => {
   pendingCommission = [];
   pendingRelease = {};
   pendingRaise = false;
   pendingCrisisChoice = null;
+  pendingPartner = null;
 };
 
 function save() {
@@ -4295,6 +4647,7 @@ function buildLevers() {
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
+            ${l.key === 'priceNew' ? '<div id="price-gap"></div>' : ''}
           </div>`).join('')}
       </div>
     </div>`;
@@ -4304,6 +4657,7 @@ function buildLevers() {
     el(`in-${l.key}`).addEventListener('input', (e) => {
       state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
       syncLevers();
+      renderPriceGap();
       renderOpsReadout();
       renderTurn();
       renderSlate();
@@ -4330,6 +4684,45 @@ const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
 function leverDisplay(l, raw) {
   if (MONEY_LEVERS.has(l.key)) return money(raw);
   return `${num(raw)} ${tx(l.unit)}`;
+}
+
+// Разрыв между прайсом и тем, что платит база, — постоянный элемент,
+// а не всплывающая подсказка. Это решение должно быть на виду всегда:
+// иначе игрок узнаёт о нём случайно или не узнаёт вовсе.
+function renderPriceGap() {
+  const box = el('price-gap');
+  if (!box) return;
+  const r = last();
+  if (!r) { box.innerHTML = `<div class="funding-note">${t('gapNoData')}</div>`; return; }
+
+  const listPrice = state.decisions.priceNew;
+  const paid = r.lockedPrice;
+  const gap = clamp(1 - paid / Math.max(1, listPrice), 0, 1);
+  const wait = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
+  const canRaise = wait <= 0 && listPrice > paid + 1;
+
+  box.innerHTML = `<div class="gap-box ${gap > 0.12 ? 'wide' : ''}">
+    <div class="gap-row">
+      <span>${t('gapList')}</span><b>${num(listPrice)} ₽</b>
+      <span class="gap-arrow">→</span>
+      <span>${t('gapPaid')}</span><b class="${gap > 0.12 ? 'warn' : ''}">${num(paid)} ₽</b>
+      <span class="gap-value ${gap > 0.12 ? 'neg' : ''}">${gap > 0.005 ? `−${pct(gap, 0)}` : t('gapNone')}</span>
+    </div>
+    <span class="q-bar"><span class="q-fill ${gap > 0.12 ? '' : 'ok'}" style="width:${((1 - gap) * 100).toFixed(0)}%"></span></span>
+    ${r.annualSubs > 0 ? `<div class="funding-note">${t('gapAnnual', { subs: compact(r.annualSubs) })}</div>` : ''}
+    ${canRaise
+      ? `<button class="btn ${pendingRaise ? 'primary' : 'ghost'} tiny" id="btn-raise">${
+          pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo')}</button>`
+      : `<div class="funding-note">${wait > 0
+          ? t('todoPriceGapCooldown', { months: wait })
+          : t('gapAligned')}</div>`}
+  </div>`;
+
+  el('btn-raise')?.addEventListener('click', () => {
+    pendingRaise = !pendingRaise;
+    renderPriceGap();
+    renderTurn();
+  });
 }
 
 function syncLevers() {
@@ -4373,6 +4766,82 @@ function renderOpsReadout() {
 // Студия: жанр и конвейер
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
+// Партнёрства: оптовый канал роста
+// ----------------------------------------------------------------------------
+function renderPartners() {
+  if (state.over) { el('partner-slot').innerHTML = ''; return; }
+  const deals = state.partners ?? [];
+  const offerId = state.partnerOffer;
+  const offer = offerId ? partnerById(offerId) : null;
+  const r = last();
+
+  if (!offer && !deals.length) { el('partner-slot').innerHTML = ''; return; }
+
+  const price = state.decisions.priceNew;
+  const dealRow = (d) => {
+    const def = partnerById(d.id);
+    if (!def) return '';
+    return `<div class="deal ${d.monthsLeft <= 2 ? 'ending' : ''}">
+      <div class="deal-head">
+        <span class="deal-name">${tx(def.name)}</span>
+        <span class="badge ${d.monthsLeft <= 2 ? 'warn' : ''}">${t('partnerMonthsLeft', { months: d.monthsLeft })}</span>
+      </div>
+      <div class="deal-meta">${t('partnerDealMeta', {
+        subs: compact(d.subs), arpu: num((d.price ?? price) * def.revenueShare),
+        share: pct(def.revenueShare, 0),
+      })}</div>
+      ${(d.price ?? price) < price - 1
+        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: num(d.price), list: num(price) })}</div>` : ''}
+      ${d.monthsLeft <= 2 ? `<div class="deal-meta neg">${t('partnerEnding')}</div>` : ''}
+    </div>`;
+  };
+
+  const offerHtml = offer ? `<div class="offer">
+    <div class="offer-head">
+      <h3>🤝 ${tx(offer.name)}</h3>
+      <span class="badge">${t('partnerTerm', { months: offer.months })}</span>
+    </div>
+    <p>${tx(offer.text)}</p>
+    <div class="offer-terms">
+      <span>${t('partnerReach', { reach: compact(offer.reach) })}</span>
+      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: num(price * offer.revenueShare) })}</span>
+      <span>${t('partnerHours', { value: pct(offer.hoursMult, 0) })}</span>
+      <span>${t('partnerChurnMult', { value: pct(offer.churnMult, 0) })}</span>
+      ${offer.setupFee ? `<span class="neg">${t('partnerSetup', { fee: money(offer.setupFee) })}</span>` : ''}
+      ${offer.monthlyFee ? `<span class="neg">${t('partnerMonthly', { fee: money(offer.monthlyFee) })}</span>` : ''}
+      ${offer.exclusive ? `<span class="warn">${t('partnerExclusive')}</span>` : ''}
+    </div>
+    <div class="event-options">
+      <button class="event-option ${pendingPartner === 'accept' ? 'chosen primary' : ''}" data-partner="accept">
+        <span class="opt-label">${t('partnerSign')}</span>
+        <span class="opt-detail">${t('partnerSignDetail', {
+          subs: compact(offer.reach), arpu: num(price * offer.revenueShare), retail: num(price) })}</span>
+      </button>
+      <button class="event-option ${pendingPartner === 'decline' ? 'chosen' : ''}" data-partner="decline">
+        <span class="opt-label">${t('partnerDecline')}</span>
+        <span class="opt-detail">${t('partnerDeclineDetail')}</span>
+      </button>
+    </div>
+    <div class="lesson">${tx(offer.lesson)}</div>
+  </div>` : '';
+
+  el('partner-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelPartners')}</h2>
+      ${r && r.partnerSubs > 0 ? `<span class="funding-note">${t('partnerSummary', {
+        share: pct(r.partnerShare, 0), wholesale: num(r.partnerArpu), retail: num(r.retailArpu),
+      })}</span>` : ''}
+    </div>
+    ${deals.length ? `<div class="deals">${deals.map(dealRow).join('')}</div>` : ''}
+    ${offerHtml}
+  </div>`;
+
+  el('partner-slot').querySelectorAll('[data-partner]').forEach((b) => {
+    b.addEventListener('click', () => { pendingPartner = b.dataset.partner; renderPartners(); renderTurn(); });
+  });
+}
+
+// ----------------------------------------------------------------------------
 // Ход месяца: что решается прямо сейчас.
 //
 // Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
@@ -4407,29 +4876,45 @@ function turnTodos() {
     todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
   }
 
-  // 3. Разрыв между прайсом и тем, что платит база
-  if (r && r.priceGap > 0.08) {
+  // 3. Разрыв между прайсом и тем, что платит база.
+  // Само решение живёт рядом с ползунком цены; здесь только напоминание,
+  // и только когда разрыв стал по-настоящему большим.
+  if (r && r.priceGap > 0.15 && !pendingRaise) {
     const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
     todos.push({
-      kind: pendingRaise ? 'act' : 'warn',
+      kind: 'warn',
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
         : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
-      action: cooldown > 0 ? null : {
-        id: 'raise',
-        label: pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo'),
-        on: pendingRaise,
-      },
     });
   }
 
-  // 4. Маркетинг без каталога
+  // 4. Партнёрство ждёт ответа
+  if (state.partnerOffer && !pendingPartner) {
+    todos.push({
+      kind: 'act',
+      title: t('todoPartnerTitle', { name: tx(partnerById(state.partnerOffer)?.name ?? '') }),
+      text: t('todoPartnerText'),
+    });
+  }
+
+  // 5. Контракт заканчивается
+  const ending = (state.partners ?? []).filter((d) => d.monthsLeft <= 2);
+  if (ending.length) {
+    todos.push({
+      kind: 'warn',
+      title: t('todoPartnerEndTitle', { count: ending.length }),
+      text: t('todoPartnerEndText', { subs: compact(ending.reduce((a, b) => a + b.subs, 0)) }),
+    });
+  }
+
+  // 6. Маркетинг без каталога
   if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
     todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
   }
 
-  // 5. Кампания без релиза
+  // 7. Кампания без релиза
   if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
     todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
   }
@@ -5455,6 +5940,7 @@ function nextMonth() {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,
     crisisChoice: pendingCrisisChoice,
+    partnerAnswer: pendingPartner,
     commission: pendingCommission,
     release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
     raisePrice: pendingRaise,
@@ -5496,17 +5982,19 @@ function renderAll() {
   if (!leversBuilt) buildLevers();
   renderChrome();
   syncLevers();
+  renderPriceGap();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderFunding();
   renderBoard();
+  renderReport();
+  renderEvent();
+  renderCrisis();
+  renderPartners();
   renderTurn();
   renderSlate();
   renderRival();
-  renderCrisis();
-  renderEvent();
-  renderReport();
   renderChart();
   renderRightTab();
 }

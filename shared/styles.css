@@ -179,6 +179,16 @@ button { font-family: inherit; }
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
+/* Кнопка выбора: название сверху, пояснение под ним. Без этого они слипаются
+   в одну строку, и решение перестаёт читаться с первого взгляда. */
+.event-option .opt-label {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.event-option .opt-detail { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .lesson {
   margin-top: 10px; font-size: 11px; color: var(--muted);
   border-top: 1px dashed var(--line); padding-top: 8px;
@@ -464,3 +474,28 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ------------------- Партнёрства и разрыв цены (КИНОПОТОК) --------------- */
+.deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.deal { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
+.deal.ending { border-color: rgba(251, 191, 36, 0.45); }
+.deal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.deal-name { font-weight: 700; font-size: 13px; }
+.deal-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
+
+.offer { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 9px; padding: 11px 13px; }
+.offer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.offer-head h3 { margin: 0; font-size: 15px; }
+.offer p { margin: 7px 0; line-height: 1.6; }
+.offer-terms { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-bottom: 9px; }
+.offer-terms .warn { color: var(--warn); }
+
+.gap-box { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+.gap-box.wide { border-color: rgba(251, 191, 36, 0.45); }
+.gap-row { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+.gap-row b { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
+.gap-row b.warn { color: var(--warn); }
+.gap-arrow { opacity: 0.5; }
+.gap-value { margin-left: auto; font-weight: 700; font-size: 12px; }
+.gap-box .q-bar { display: block; margin: 6px 0; }
+.gap-box .btn { width: 100%; }

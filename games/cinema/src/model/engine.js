@@ -49,6 +49,9 @@ import {
   createPricing, annualShare, annualSubs, raiseShock, tickAnnual,
   addAnnualCohort, effectivePrice,
 } from './pricing.js';
+import {
+  PARTNERS, partnerById, rollPartnerOffer, partnerInflow, partnerRevenue, partnerTotals,
+} from './partners.js';
 
 // Справочники и clamp живут в config.js; здесь они переэкспортируются,
 // чтобы у интерфейса и тестов была одна точка входа в модель.
@@ -136,6 +139,12 @@ export function createInitialState(seed = 'kinopotok') {
     // --- Кризисы ---
     crisis: null,          // { id, months }
     crisisHistory: [],
+    lastCrisisResolved: -99,
+
+    // --- Партнёрства ---
+    partners: [],          // действующие контракты: { id, monthsLeft, subs }
+    partnerOffer: null,    // предложение, ждущее ответа
+    partnerHistory: [],
 
     decisions: structuredClone(DEFAULT_DECISIONS),
     flags: { valuationBonus: 0 },
@@ -263,6 +272,7 @@ export function step(prevState, input = {}) {
         crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
         state.crisisHistory.push(crisisResolved);
         state.crisis = null;
+        state.lastCrisisResolved = month;
       }
     }
   }
@@ -454,6 +464,10 @@ export function step(prevState, input = {}) {
 
   // --- 9. Подписчики по сегментам ---
   const refPrice = 399;
+  // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
+  // наравне с розничными, иначе рынок начинает считаться дважды.
+  const partnerBefore = partnerTotals(state.partners).subs;
+  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
   // Повторять его каждый месяц нельзя: у людей есть память.
   const wantRaise = Boolean(input.raisePrice);
@@ -549,7 +563,8 @@ export function step(prevState, input = {}) {
 
     // --- Рынок один на двоих ---
     const rivalSegSubs = riv.segments[def.id] ?? 0;
-    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs);
+    const partnerHere = partnerBefore * (def.potential / marketPotential);
+    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs - partnerHere);
 
     // Оба сервиса описываются одним и тем же набором характеристик, и оба
     // приводят зрителя по одной и той же формуле. Симметрия здесь принципиальна:
@@ -687,7 +702,73 @@ export function step(prevState, input = {}) {
     * (mods.cdnMult ?? 1) * (crisisMods.cdnMult ?? 1);
   const cdnCost = hours * cdnPerHour;
 
-  const totalSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  // --- 10a. Партнёрства: оптовый канал ---
+  // Эти подписчики живут отдельным пулом: у них своя доля выручки, свой отток
+  // и свои часы просмотра. Складывать их с розничными в одну цифру можно,
+  // но именно так и обманывают себя графиком роста.
+  if (input.partnerAnswer && state.partnerOffer) {
+    if (input.partnerAnswer === 'accept') {
+      const def = partnerById(state.partnerOffer);
+      if (def) {
+        // Ставка фиксируется прайсом на момент подписания
+        state.partners.push({
+          id: def.id, monthsLeft: def.months, subs: 0, signed: month,
+          price: decisions.priceNew,
+        });
+        state.partnerHistory.push({ id: def.id, month, action: 'signed' });
+      }
+    }
+    state.partnerOffer = null;
+  }
+
+  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
+  let partnerInflowTotal = 0;
+  let partnerFees = 0;
+  let partnerLost = 0;
+  const partnerExpired = [];
+  for (const deal of state.partners) {
+    const def = partnerById(deal.id);
+    if (!def) continue;
+    const roomLeft = Math.max(0, marketPotential - retailSubsNow - rivalSubs(riv) - partnerBefore)
+      / marketPotential;
+    const gained = partnerInflow(deal, def, roomLeft * 1.6);
+    // Внутри контракта уходят редко: подписка идёт пакетом и её не отменяют
+    const lost = deal.subs * CONFIG.baseChurn * def.churnMult;
+    deal.subs = Math.max(0, deal.subs + gained - lost);
+    partnerInflowTotal += gained;
+    partnerLost += lost;
+    partnerFees += def.monthlyFee;
+    if (deal.signed === month) partnerFees += def.setupFee;
+    deal.monthsLeft -= 1;
+  }
+  // Контракт кончился — база уходит разом. Часть остаётся, если бренд запомнился.
+  for (const deal of state.partners.filter((d) => d.monthsLeft <= 0)) {
+    const def = partnerById(deal.id);
+    const keepShare = CONFIG.partnerExitKeep * (1 - (def?.awarenessDrag ?? 0));
+    const kept = deal.subs * keepShare;
+    partnerExpired.push({ id: deal.id, lost: deal.subs - kept, kept });
+    partnerLost += deal.subs - kept;
+    // Удержанные переходят в розницу по текущей цене, в самый массовый сегмент
+    const mass = state.segments.mass;
+    mass.premium += kept;
+    state.partnerHistory.push({ id: deal.id, month, action: 'expired' });
+  }
+  state.partners = state.partners.filter((d) => d.monthsLeft > 0);
+
+  const partnerStats = partnerTotals(state.partners);
+  const partnerSubs = partnerStats.subs;
+  let partnerRev = 0;
+  let partnerHours = 0;
+  for (const deal of state.partners) {
+    const def = partnerById(deal.id);
+    if (!def) continue;
+    partnerRev += partnerRevenue(deal, def);
+    partnerHours += deal.subs * CONFIG.baseHoursPerSub * def.hoursMult * season;
+  }
+  hours += partnerHours;
+
+  const retailSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  const totalSubs = retailSubs + partnerSubs;
   const premiumSubs = perSegment.reduce((s, p) => s + p.seg.premium, 0);
   const adSubs = perSegment.reduce((s, p) => s + p.seg.ads, 0);
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
@@ -701,6 +782,7 @@ export function step(prevState, input = {}) {
     const monthlyPremium = Math.max(0, p.seg.premium - annual);
     subscriptionRevenue += monthlyPremium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds;
   }
+  subscriptionRevenue += partnerRev;
   const listRevenue = premiumSubs * decisions.priceNew + adSubs * decisions.priceAds;
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
@@ -715,7 +797,8 @@ export function step(prevState, input = {}) {
   const marketingSpend = decisions.brandMarketing + campaignSpend;
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd;
-  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0) + crisisCost;
+  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
+    + crisisCost + partnerFees;
   const profit = contribution - fixed;
 
   // Годовая предоплата — это касса сегодня и выручка, растянутая на год.
@@ -735,7 +818,6 @@ export function step(prevState, input = {}) {
     : CONFIG.baseChurn;
   const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
-  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   const marketShare = totalSubs / marketPotential;
   const rivalTotal = rivalSubs(riv);
   const duopolyShare = totalSubs + rivalTotal > 0 ? totalSubs / (totalSubs + rivalTotal) : 0;
@@ -777,8 +859,15 @@ export function step(prevState, input = {}) {
 
   // --- 14. Кризисы ---
   if (state.crisis) state.crisis.months += 1;
-  const newCrisis = rollCrisis(rng, month, { subs: totalSubs, active: Boolean(state.crisis) });
+  const newCrisis = rollCrisis(rng, month, {
+    subs: totalSubs, active: Boolean(state.crisis), lastResolved: state.lastCrisisResolved ?? -99,
+  });
   if (newCrisis) state.crisis = newCrisis;
+
+  // --- 14a. Новое предложение о партнёрстве ---
+  if (!state.partnerOffer) {
+    state.partnerOffer = rollPartnerOffer(rng, month + 1, state.partners);
+  }
 
   const report = {
     month,
@@ -897,6 +986,24 @@ export function step(prevState, input = {}) {
     annualNew,
     annualExpired,
     annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
+
+    // --- Партнёрства ---
+    retailSubs,
+    partnerSubs,
+    partnerShare: totalSubs > 0 ? partnerSubs / totalSubs : 0,
+    partnerRevenue: partnerRev,
+    partnerInflow: partnerInflowTotal,
+    partnerLost,
+    partnerFees,
+    partnerExpired,
+    partnerDeals: state.partners.map((d) => ({
+      id: d.id, monthsLeft: d.monthsLeft, subs: d.subs,
+    })),
+    partnerOffer: state.partnerOffer,
+    // Средняя выручка с оптового подписчика против розничного: главное число
+    // этой механики. Рост базы и рост выручки — не одно и то же.
+    partnerArpu: partnerSubs > 0 ? partnerRev / partnerSubs : 0,
+    retailArpu: retailSubs > 0 ? (revenue - partnerRev) / retailSubs : 0,
 
     cac,
     ltv,

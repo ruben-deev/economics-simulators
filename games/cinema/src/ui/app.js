@@ -11,8 +11,9 @@ import { rivalSubs } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost, severityOf } from '../model/crises.js';
 import { SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz } from '../model/slate.js';
+import { PARTNERS, partnerById, partnerTotals } from '../model/partners.js';
 import {
-  createInitialState, step, explain, unitEconomics, valuation, fundingOffer, raise,
+  createInitialState, step, explain, unitEconomics, valuation, fundingOffer, raise, clamp,
   finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact,
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
@@ -34,12 +35,14 @@ let pendingRelease = {};          // id готового проекта -> бю�
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
+let pendingPartner = null;        // 'accept' | 'decline'
 
 const clearActions = () => {
   pendingCommission = [];
   pendingRelease = {};
   pendingRaise = false;
   pendingCrisisChoice = null;
+  pendingPartner = null;
 };
 
 function save() {
@@ -136,6 +139,7 @@ function buildLevers() {
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
+            ${l.key === 'priceNew' ? '<div id="price-gap"></div>' : ''}
           </div>`).join('')}
       </div>
     </div>`;
@@ -145,6 +149,7 @@ function buildLevers() {
     el(`in-${l.key}`).addEventListener('input', (e) => {
       state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
       syncLevers();
+      renderPriceGap();
       renderOpsReadout();
       renderTurn();
       renderSlate();
@@ -171,6 +176,45 @@ const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
 function leverDisplay(l, raw) {
   if (MONEY_LEVERS.has(l.key)) return money(raw);
   return `${num(raw)} ${tx(l.unit)}`;
+}
+
+// Разрыв между прайсом и тем, что платит база, — постоянный элемент,
+// а не всплывающая подсказка. Это решение должно быть на виду всегда:
+// иначе игрок узнаёт о нём случайно или не узнаёт вовсе.
+function renderPriceGap() {
+  const box = el('price-gap');
+  if (!box) return;
+  const r = last();
+  if (!r) { box.innerHTML = `<div class="funding-note">${t('gapNoData')}</div>`; return; }
+
+  const listPrice = state.decisions.priceNew;
+  const paid = r.lockedPrice;
+  const gap = clamp(1 - paid / Math.max(1, listPrice), 0, 1);
+  const wait = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
+  const canRaise = wait <= 0 && listPrice > paid + 1;
+
+  box.innerHTML = `<div class="gap-box ${gap > 0.12 ? 'wide' : ''}">
+    <div class="gap-row">
+      <span>${t('gapList')}</span><b>${num(listPrice)} ₽</b>
+      <span class="gap-arrow">→</span>
+      <span>${t('gapPaid')}</span><b class="${gap > 0.12 ? 'warn' : ''}">${num(paid)} ₽</b>
+      <span class="gap-value ${gap > 0.12 ? 'neg' : ''}">${gap > 0.005 ? `−${pct(gap, 0)}` : t('gapNone')}</span>
+    </div>
+    <span class="q-bar"><span class="q-fill ${gap > 0.12 ? '' : 'ok'}" style="width:${((1 - gap) * 100).toFixed(0)}%"></span></span>
+    ${r.annualSubs > 0 ? `<div class="funding-note">${t('gapAnnual', { subs: compact(r.annualSubs) })}</div>` : ''}
+    ${canRaise
+      ? `<button class="btn ${pendingRaise ? 'primary' : 'ghost'} tiny" id="btn-raise">${
+          pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo')}</button>`
+      : `<div class="funding-note">${wait > 0
+          ? t('todoPriceGapCooldown', { months: wait })
+          : t('gapAligned')}</div>`}
+  </div>`;
+
+  el('btn-raise')?.addEventListener('click', () => {
+    pendingRaise = !pendingRaise;
+    renderPriceGap();
+    renderTurn();
+  });
 }
 
 function syncLevers() {
@@ -214,6 +258,82 @@ function renderOpsReadout() {
 // Студия: жанр и конвейер
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
+// Партнёрства: оптовый канал роста
+// ----------------------------------------------------------------------------
+function renderPartners() {
+  if (state.over) { el('partner-slot').innerHTML = ''; return; }
+  const deals = state.partners ?? [];
+  const offerId = state.partnerOffer;
+  const offer = offerId ? partnerById(offerId) : null;
+  const r = last();
+
+  if (!offer && !deals.length) { el('partner-slot').innerHTML = ''; return; }
+
+  const price = state.decisions.priceNew;
+  const dealRow = (d) => {
+    const def = partnerById(d.id);
+    if (!def) return '';
+    return `<div class="deal ${d.monthsLeft <= 2 ? 'ending' : ''}">
+      <div class="deal-head">
+        <span class="deal-name">${tx(def.name)}</span>
+        <span class="badge ${d.monthsLeft <= 2 ? 'warn' : ''}">${t('partnerMonthsLeft', { months: d.monthsLeft })}</span>
+      </div>
+      <div class="deal-meta">${t('partnerDealMeta', {
+        subs: compact(d.subs), arpu: num((d.price ?? price) * def.revenueShare),
+        share: pct(def.revenueShare, 0),
+      })}</div>
+      ${(d.price ?? price) < price - 1
+        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: num(d.price), list: num(price) })}</div>` : ''}
+      ${d.monthsLeft <= 2 ? `<div class="deal-meta neg">${t('partnerEnding')}</div>` : ''}
+    </div>`;
+  };
+
+  const offerHtml = offer ? `<div class="offer">
+    <div class="offer-head">
+      <h3>🤝 ${tx(offer.name)}</h3>
+      <span class="badge">${t('partnerTerm', { months: offer.months })}</span>
+    </div>
+    <p>${tx(offer.text)}</p>
+    <div class="offer-terms">
+      <span>${t('partnerReach', { reach: compact(offer.reach) })}</span>
+      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: num(price * offer.revenueShare) })}</span>
+      <span>${t('partnerHours', { value: pct(offer.hoursMult, 0) })}</span>
+      <span>${t('partnerChurnMult', { value: pct(offer.churnMult, 0) })}</span>
+      ${offer.setupFee ? `<span class="neg">${t('partnerSetup', { fee: money(offer.setupFee) })}</span>` : ''}
+      ${offer.monthlyFee ? `<span class="neg">${t('partnerMonthly', { fee: money(offer.monthlyFee) })}</span>` : ''}
+      ${offer.exclusive ? `<span class="warn">${t('partnerExclusive')}</span>` : ''}
+    </div>
+    <div class="event-options">
+      <button class="event-option ${pendingPartner === 'accept' ? 'chosen primary' : ''}" data-partner="accept">
+        <span class="opt-label">${t('partnerSign')}</span>
+        <span class="opt-detail">${t('partnerSignDetail', {
+          subs: compact(offer.reach), arpu: num(price * offer.revenueShare), retail: num(price) })}</span>
+      </button>
+      <button class="event-option ${pendingPartner === 'decline' ? 'chosen' : ''}" data-partner="decline">
+        <span class="opt-label">${t('partnerDecline')}</span>
+        <span class="opt-detail">${t('partnerDeclineDetail')}</span>
+      </button>
+    </div>
+    <div class="lesson">${tx(offer.lesson)}</div>
+  </div>` : '';
+
+  el('partner-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelPartners')}</h2>
+      ${r && r.partnerSubs > 0 ? `<span class="funding-note">${t('partnerSummary', {
+        share: pct(r.partnerShare, 0), wholesale: num(r.partnerArpu), retail: num(r.retailArpu),
+      })}</span>` : ''}
+    </div>
+    ${deals.length ? `<div class="deals">${deals.map(dealRow).join('')}</div>` : ''}
+    ${offerHtml}
+  </div>`;
+
+  el('partner-slot').querySelectorAll('[data-partner]').forEach((b) => {
+    b.addEventListener('click', () => { pendingPartner = b.dataset.partner; renderPartners(); renderTurn(); });
+  });
+}
+
+// ----------------------------------------------------------------------------
 // Ход месяца: что решается прямо сейчас.
 //
 // Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
@@ -248,29 +368,45 @@ function turnTodos() {
     todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
   }
 
-  // 3. Разрыв между прайсом и тем, что платит база
-  if (r && r.priceGap > 0.08) {
+  // 3. Разрыв между прайсом и тем, что платит база.
+  // Само решение живёт рядом с ползунком цены; здесь только напоминание,
+  // и только когда разрыв стал по-настоящему большим.
+  if (r && r.priceGap > 0.15 && !pendingRaise) {
     const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
     todos.push({
-      kind: pendingRaise ? 'act' : 'warn',
+      kind: 'warn',
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
         : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
-      action: cooldown > 0 ? null : {
-        id: 'raise',
-        label: pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo'),
-        on: pendingRaise,
-      },
     });
   }
 
-  // 4. Маркетинг без каталога
+  // 4. Партнёрство ждёт ответа
+  if (state.partnerOffer && !pendingPartner) {
+    todos.push({
+      kind: 'act',
+      title: t('todoPartnerTitle', { name: tx(partnerById(state.partnerOffer)?.name ?? '') }),
+      text: t('todoPartnerText'),
+    });
+  }
+
+  // 5. Контракт заканчивается
+  const ending = (state.partners ?? []).filter((d) => d.monthsLeft <= 2);
+  if (ending.length) {
+    todos.push({
+      kind: 'warn',
+      title: t('todoPartnerEndTitle', { count: ending.length }),
+      text: t('todoPartnerEndText', { subs: compact(ending.reduce((a, b) => a + b.subs, 0)) }),
+    });
+  }
+
+  // 6. Маркетинг без каталога
   if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
     todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
   }
 
-  // 5. Кампания без релиза
+  // 7. Кампания без релиза
   if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
     todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
   }
@@ -1296,6 +1432,7 @@ function nextMonth() {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,
     crisisChoice: pendingCrisisChoice,
+    partnerAnswer: pendingPartner,
     commission: pendingCommission,
     release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
     raisePrice: pendingRaise,
@@ -1337,17 +1474,19 @@ function renderAll() {
   if (!leversBuilt) buildLevers();
   renderChrome();
   syncLevers();
+  renderPriceGap();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderFunding();
   renderBoard();
+  renderReport();
+  renderEvent();
+  renderCrisis();
+  renderPartners();
   renderTurn();
   renderSlate();
   renderRival();
-  renderCrisis();
-  renderEvent();
-  renderReport();
   renderChart();
   renderRightTab();
 }

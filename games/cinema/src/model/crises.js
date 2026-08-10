@@ -153,8 +153,11 @@ export function crisisById(id) {
  * Кризис приходит тем охотнее, чем крупнее и заметнее сервис.
  * Одновременно висит не больше одного: игра про управление, а не про пожар.
  */
-export function rollCrisis(rng, month, { subs, active }) {
+export function rollCrisis(rng, month, { subs, active, lastResolved = -99 }) {
   if (active) return null;
+  // Передышка после решённого кризиса. Компания, которая только что потушила
+  // пожар и тут же получила второй, учит игрока не управлению, а невезению.
+  if (month - lastResolved < CRISIS_COOLDOWN) return null;
   const pool = CRISES.filter((c) => month >= c.minMonth);
   if (!pool.length) return null;
 
@@ -176,6 +179,7 @@ export function rollCrisis(rng, month, { subs, active }) {
 // на полку. Это не милосердие, а честность — дальше он просто дорого стоит
 // каждый месяц, и решение всё равно остаётся за игроком.
 export const MAX_ESCALATION = 5;
+export const CRISIS_COOLDOWN = 3;
 
 export const severityOf = (active) => clamp(Math.max(1, (active?.months ?? 0) + 1), 1, MAX_ESCALATION);
 

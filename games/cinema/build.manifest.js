@@ -14,6 +14,7 @@ export default {
     'src/model/market.js',
     'src/model/slate.js',
     'src/model/pricing.js',
+    'src/model/partners.js',
     'src/model/rival.js',
     'src/model/board.js',
     'src/model/crises.js',

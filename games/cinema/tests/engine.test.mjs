@@ -10,6 +10,7 @@ import {
   SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz, projectAppeal,
 } from '../src/model/slate.js';
 import { annualShare, raiseShock, annualSubs } from '../src/model/pricing.js';
+import { PARTNERS, partnerById, rollPartnerOffer, partnerTotals } from '../src/model/partners.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
   explain, finalScore, algoQuality, dataLevel, rndLevel, techLevel,
@@ -495,11 +496,24 @@ test('смешанная стратегия бьёт обе крайности',
 });
 
 test('эксклюзив удерживает: своя доля каталога снижает отток', () => {
-  const licensed = run(24, decide({ licensing: 400_000_000, studioSlots: 1, brandMarketing: 80_000_000 }), 'hold').last;
-  const owned = run(24, decide({ licensing: 200_000_000, studioSlots: 3, brandMarketing: 80_000_000 }), 'hold', keepBusy()).last;
-  assert.ok(owned.originalShare > licensed.originalShare);
-  assert.ok(owned.churnRate < licensed.churnRate,
-    `отток при своём каталоге ${owned.churnRate} должен быть ниже ${licensed.churnRate}`);
+  // Ceteris paribus: одинаковая взвешенная глубина, разное происхождение часов.
+  // Гонять две разные партии тут нельзя — они отличаются ещё и расходами.
+  const base = warmed();
+  const rented = structuredClone(base);
+  const owned = structuredClone(base);
+
+  const hours = 900;
+  owned.originalsByGenre.drama += hours;
+  rented.catalogLicensed += hours * GENRES.find((g) => g.id === 'drama').depthValue
+    * CONFIG.originalDepthWeight / CONFIG.licenseDepthWeight;
+
+  const d = lastDecisions(base, { licensing: 0 });
+  const a = once(rented, d);
+  const b = once(owned, d);
+
+  assert.ok(b.originalShare > a.originalShare, 'доля своего выше');
+  assert.ok(b.churnRate < a.churnRate,
+    `отток при своём каталоге ${b.churnRate} должен быть ниже ${a.churnRate}`);
 });
 
 test('свежесть стареет: без новинок каталог перестаёт удерживать', () => {
@@ -1140,4 +1154,111 @@ test('талант дорожает вместе с вашим успехом', 
     `${early.talentIndex} → ${late.talentIndex}: успех должен дорожать`);
   assert.ok(late.projectPrices.drama.season > early.projectPrices.drama.season,
     'и тот же проект должен стоить дороже');
+});
+
+// ----------------------------------------------------------------------------
+// Партнёрства и бандлы: оптовый канал
+// ----------------------------------------------------------------------------
+
+test('оптовый подписчик приносит меньше розничного', () => {
+  const state = createInitialState('wholesale');
+  for (const def of PARTNERS) {
+    assert.ok(def.revenueShare > 0 && def.revenueShare <= 1, `${def.id}.revenueShare`);
+    assert.ok(def.months > 0 && def.reach > 0, `${def.id}: пустой контракт`);
+  }
+  // Самый массовый канал должен быть и самым дешёвым по доле выручки
+  const telecom = PARTNERS.find((p) => p.id === 'telecom');
+  const tv = PARTNERS.find((p) => p.id === 'tv');
+  assert.ok(telecom.reach > tv.reach, 'оператор приводит больше');
+  assert.ok(telecom.revenueShare < tv.revenueShare, 'но платит меньшую долю');
+  assert.ok(telecom.hoursMult < tv.hoursMult, 'и его подписчики смотрят меньше');
+  assert.ok(state.partners.length === 0);
+});
+
+test('подписанный контракт приводит людей и приносит выручку по своей доле', () => {
+  const grownState = reinvest(10, 'deal').state;
+  const withDeal = structuredClone(grownState);
+  withDeal.partnerOffer = 'telecom';
+  const d = lastDecisions(grownState);
+
+  const without = step(structuredClone(grownState), { decisions: d }).report;
+  const signed = step(withDeal, { decisions: d, partnerAnswer: 'accept' });
+  assert.equal(signed.state.partners.length, 1);
+
+  // Первый месяц: подключение стоит денег, люди уже пошли
+  const r = signed.report;
+  assert.ok(r.partnerInflow > 0, 'канал начал приводить людей');
+  assert.ok(r.partnerFees >= partnerById('telecom').setupFee, 'подключение оплачено');
+  assert.ok(r.subs > without.subs, 'база выросла быстрее, чем без контракта');
+});
+
+test('оптовая база стоит меньше розничной в пересчёте на человека', () => {
+  let state = createInitialState('arpu');
+  state.partnerOffer = 'telecom';
+  const d = decide({ priceNew: 499, licensing: 200_000_000, brandMarketing: 150_000_000 });
+  state = step(state, { decisions: d, partnerAnswer: 'accept' }).state;
+  for (let i = 0; i < 10 && !state.over; i++) {
+    state = step(state, { decisions: d, ...keepBusy()(state) }).state;
+  }
+  const r = state.history[state.history.length - 1];
+  assert.ok(r.partnerSubs > 0, 'оптовая база набралась');
+  assert.ok(r.partnerArpu < r.retailArpu,
+    `опт ${r.partnerArpu} должен быть дешевле розницы ${r.retailArpu}`);
+  assert.ok(r.partnerArpu > 0);
+});
+
+test('контракт кончается — оптовая база уходит почти разом', () => {
+  const def = partnerById('bank');
+  let state = createInitialState('expire');
+  state.partnerOffer = 'bank';
+  const d = decide({ licensing: 150_000_000, brandMarketing: 100_000_000 });
+  state = step(state, { decisions: d, partnerAnswer: 'accept' }).state;
+
+  let peak = 0;
+  let expiredAt = null;
+  for (let i = 0; i < def.months + 3 && !state.over; i++) {
+    const res = step(state, { decisions: d });
+    state = res.state;
+    peak = Math.max(peak, res.report.partnerSubs);
+    if (res.report.partnerExpired.length) expiredAt = res.report;
+  }
+  assert.ok(peak > 0, 'база успела набраться');
+  assert.ok(expiredAt, 'контракт истёк за отведённый срок');
+  assert.ok(expiredAt.partnerExpired[0].lost > expiredAt.partnerExpired[0].kept,
+    'уходит больше, чем остаётся');
+  assert.equal(state.partners.length, 0);
+});
+
+test('эксклюзивный контракт закрывает конкурирующие предложения', () => {
+  const rng = createRng('excl-offer');
+  const active = [{ id: 'telecom', monthsLeft: 10, subs: 0 }];
+  for (let i = 0; i < 400; i++) {
+    const offer = rollPartnerOffer(rng, 20, active);
+    assert.notEqual(offer, 'aggregator', 'агрегатор закрыт эксклюзивом оператора');
+    assert.notEqual(offer, 'telecom', 'действующий контракт не предлагается повторно');
+  }
+});
+
+test('оптовые подписчики занимают тот же рынок, а не добавляются сверху', () => {
+  let state = createInitialState('room');
+  const d = decide({ priceNew: 399, licensing: 300_000_000, brandMarketing: 300_000_000 });
+  for (let i = 0; i < CONFIG.monthsTotal && !state.over; i++) {
+    const res = step(state, {
+      decisions: d,
+      partnerAnswer: state.partnerOffer ? 'accept' : null,
+      ...keepBusy()(state),
+    });
+    state = res.state;
+    const r = res.report;
+    const potential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
+    assert.ok(r.subs + r.rivalSubs <= potential * 1.001,
+      `месяц ${r.month}: ${Math.round(r.subs + r.rivalSubs)} > ёмкости ${potential}`);
+  }
+});
+
+test('после решённого кризиса даётся передышка', () => {
+  const rng = createRng('cooldown');
+  for (let i = 0; i < 200; i++) {
+    assert.equal(rollCrisis(rng, 20, { subs: 6_000_000, active: false, lastResolved: 19 }), null);
+  }
 });

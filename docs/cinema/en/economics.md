@@ -230,6 +230,53 @@ people who would have stayed anyway.
 
 ---
 
+## 3b. Partnerships: wholesale against retail
+
+There are two fundamentally different ways to bring in subscribers.
+
+**Retail** — marketing and premieres. The person chose you, pays full price, and
+leaves when they get bored.
+
+**Wholesale** — distribution inside someone else's subscription: a mobile operator,
+a bank, a TV manufacturer, an aggregator. These subscribers arrive cheaply and in
+thousands, but:
+
+* you keep a share of the price, not all of it;
+* they did not choose you and watch noticeably less;
+* when the contract ends they leave all at once, not one by one.
+
+| Partner | Term | Reach/mo | Your share | Hours | Churn |
+|---|---|---|---|---|---|
+| Mobile operator | 18 mo | 230K | 35% | 55% | 35% |
+| Subscription aggregator | 12 mo | 160K | 45% | 60% | 40% |
+| Bank bundle | 12 mo | 95K | 62% | 80% | 50% |
+| Smart-TV preinstall | 24 mo | 55K | 85% | 125% | 70% |
+
+**The rate is fixed at signing and does not follow your list price.** That is what a
+contract is for: you can raise retail prices tomorrow, and the wholesale partner will
+keep paying exactly what was agreed until the term ends.
+
+Wholesale subscribers occupy the same segment capacity as retail ones — they are the
+same people. You can add them into a single "how many subscribers do we have" figure,
+but that is exactly how people fool themselves with a growth chart.
+
+Measured on the tuned strategy:
+
+```
+decline everything             ₽232B | 8.96M subscribers
+sign everything                ₽221B | 9.42M subscribers
+only high-share deals (≥60%)   ₽235B | 9.18M subscribers
+```
+
+"Sign everything" produces **more subscribers and less money**. That is the lesson of
+the mechanic in one line: growing the base and growing revenue are not the same thing,
+and "how many subscribers" means nothing without "where did they come from".
+
+Some contracts are exclusive: signing the operator locks you out of the aggregator.
+Distribution is also a choice about who you will **not** be available through.
+
+---
+
 ## 3a. Subscribers: two tiers, four segments
 
 ### Tier choice
