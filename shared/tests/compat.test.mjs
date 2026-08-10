@@ -160,3 +160,25 @@ test('версия видна в имени файла, внутри стран�
   }
   assert.deepEqual(stale, []);
 });
+
+test('на телефоне итоги месяца идут раньше рычагов, а кнопка хода никуда не уезжает', () => {
+  // В одну колонку порядок сверху вниз решает всё, а по разметке первой идёт
+  // колонка с ползунками: на телефоне она отодвигала итоги месяца почти на
+  // три экрана вниз. Проверяем правила, а не пиксели — движка тут нет.
+  const css = readFileSync(join(root, 'shared', 'styles.css'), 'utf8');
+  const phone = css.slice(css.indexOf('@media (max-width: 980px)'));
+
+  assert.match(phone, /\.layout\s*\{[^}]*display:\s*flex/, 'в одну колонку .layout должен стать flex');
+  const order = ['col-center', 'col-left', 'col-right']
+    .map((cls) => Number(phone.match(new RegExp(`\\.${cls}\\s*\\{\\s*order:\\s*(\\d+)`))?.[1]));
+  assert.deepEqual(order, [1, 2, 3], 'порядок колонок на телефоне: итоги -> рычаги -> справочники');
+
+  // Полоса кнопок прилипает к экрану, а не к низу шапки: элемент с
+  // backdrop-filter становится точкой отсчёта для position: fixed внутри себя.
+  const narrow = css.slice(css.indexOf('@media (max-width: 700px)'));
+  assert.match(narrow, /\.topbar-actions\s*\{[^}]*position:\s*fixed/, 'кнопки должны быть закреплены');
+  const topbarRule = narrow.match(/\.topbar\s*\{[^}]*\}/)?.[0] ?? '';
+  assert.match(topbarRule, /backdrop-filter:\s*none/,
+    'у шапки на телефоне нужно снять backdrop-filter, иначе fixed считается от неё');
+  assert.match(narrow, /body\s*\{[^}]*padding-bottom/, 'без отступа снизу полоса накроет последнюю панель');
+});

@@ -33,8 +33,8 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.0.html) ·
-[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.0.html).
+[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.1.html) ·
+[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.1.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 Локально:
@@ -48,7 +48,7 @@ npm run build      # пересобрать одиночные файлы игр
 Собранные файлы уже лежат в репозитории, поэтому шаг сборки нужен только после правок.
 
 **Новая версия.** Номер живёт в одном месте — `version` в `package.json`. Он попадает
-в имя собранного файла (`…-simulator-v0.3.0.html`), внутрь самой страницы и в справку
+в имя собранного файла (`…-simulator-v0.3.1.html`), внутрь самой страницы и в справку
 по кнопке «?». Сборка версии заодно удаляет из `dist/` предыдущую, чтобы не гадать,
 какой файл раздавать. Ссылки в README, на витрине и в методичках содержат версию;
 если забыть их обновить, тест `shared/tests/compat.test.mjs` перечислит все устаревшие.
@@ -286,7 +286,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinopotok-streaming-simulator-v0.3.0.html
+  dist/kinopotok-streaming-simulator-v0.3.1.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```
