@@ -159,6 +159,8 @@ beats the best constant setting of the sliders by **85%**.
 * **The vault** — a finished project does not ship itself. Holding until winter
   beats shipping in July: the season enters premiere buzz to the power of 2.2.
   But holding is not free — 4.5% of the buzz evaporates each month.
+* **Clickable advice** — the key terms in every hint are links: clicking one scrolls
+  to the lever it names, expands its collapsed group and highlights the block.
 * **Wholesale against retail** — partnerships with an operator, a bank, a TV maker.
   People arrive cheaply and in thousands, but pay a share of list price, watch less
   and leave all at once when the term ends. Measured: "sign everything" gives more
@@ -278,7 +280,7 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — 159 checks across the two games. The tests
+After editing it is worth running `npm test` — 166 checks across the two games. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 

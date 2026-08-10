@@ -136,7 +136,7 @@ export function stepRival(rival, ctx, rng) {
   // Бюджет крупного игрока менее эластичен к выручке: согласования, легаси,
   // обязательства. Это и есть шанс маленького — он быстрее переставляет ноги.
   const revenue = rival.lastRevenue ?? 0;
-  const base = 110_000_000 + revenue * 0.42;
+  const base = 110_000_000 + revenue * 0.28;
   rival.spend = {
     licensing: Math.round(base * 0.5 * S.budget),
     originals: Math.round(base * 0.5 * S.budget),
@@ -201,10 +201,10 @@ export function stepRival(rival, ctx, rng) {
   // --- Узнаваемость и деньги ---
   rival.awareness = clamp(
     rival.awareness
-    + (1 - rival.awareness) * clamp(rival.spend.marketing / 1_400_000_000, 0, 0.14)
+    + (1 - rival.awareness) * clamp(rival.spend.marketing / 1_800_000_000, 0, 0.14)
     - rival.awareness * CONFIG.awarenessDecay
     + rival.buzz * 0.015,
-    0.02, 0.9);
+    0.02, 0.78);
 
   const subs = rivalSubs(rival);
   const rivalRevenue = subs * (rival.price * 0.55 + rival.price * 0.37 * 0.45)

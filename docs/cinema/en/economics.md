@@ -222,8 +222,8 @@ annual_share = clamp(0.10 + 1.5 × discount × willingness(segment), 0, 0.75)
 cash         = subscribers × discounted_price × 12   — at once, on sign-up
 ```
 
-An annual subscriber is **excluded from churn** for the term and **exempt from
-price rises**. The value is not the discount but those two properties: it is a loan
+An annual subscriber is **excluded from churn** for the term, **exempt from price
+rises** and **cannot switch to the rival**: they are paid up for a year. The value is not the discount but those two properties: it is a loan
 against your own future revenue — cash today, a locked price tomorrow. The optimal
 discount is interior, around 10%; beyond that you are simply selling cheaper to
 people who would have stayed anyway.
@@ -301,12 +301,14 @@ Inflow splits into two independent questions that must not be confused:
 2. **Which of the two gets them.** That is decided by preference (see section 6).
 
 ```
-blended_price = premium × (1 − ad_share) + ad_price × ad_share
-price_factor  = (399 / blended_price) ^ elasticity(segment)
-appeal        = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
-ad_penalty    = 1 − 0.16 × ad_pain × ad_share × (1 − relief)
+list_price  = premium × (1 − ad_share) + ad_price × ad_share
+paid_price  = lockedPrice × (1 − ad_share) + ad_price × ad_share
+list_factor = (399 / list_price) ^ elasticity(segment)   — for new sign-ups
+paid_factor = (399 / paid_price) ^ elasticity(segment)   — for the existing base
+appeal      = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
+ad_penalty  = 1 − 0.16 × ad_pain × ad_share × (1 − relief)
 
-quality(side)   = price_factor × appeal × ad_penalty
+quality(side)   = list_factor × appeal × ad_penalty
 category_trials = untapped × market_awareness × 0.115
                   × max(quality_you, quality_rival) × line-up × events
 trials          = category_trials × preference × (1 + premiere_pull × 0.6)
@@ -315,6 +317,11 @@ converted       = trials × trialConversion × trial_length_factor
 
 `untapped = potential(segment) − your subscribers − his`: the closer the market is to
 saturation, the more expensive each further subscriber — regardless of who has them now.
+
+**New sign-ups look at the list price; existing subscribers are annoyed by what they
+themselves pay.** Until the base is moved onto the new list price, a rise does not
+irritate them — that is the whole point of the gap: it lets the price grow without
+paying in churn straight away. Churn uses `paid_factor`, inflow uses `list_factor`.
 
 The split matters. In the first version service quality entered both the inflow and the
 choice between services, i.e. it was effectively squared. Any imbalance instantly turned

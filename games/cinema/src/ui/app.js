@@ -334,6 +334,86 @@ function renderPartners() {
 }
 
 // ----------------------------------------------------------------------------
+// Навигация по подсказкам.
+//
+// В советах ключевые вещи выделены цветом. Раз они названы — по ним должно
+// быть можно перейти к тому рычагу или блоку, о котором речь: читать совет
+// и потом искать глазами нужный ползунок — лишняя работа.
+//
+// Разметка: <a class="jump" data-jump="lever:licensing">закупку лицензий</a>
+// ----------------------------------------------------------------------------
+const JUMP_PANELS = {
+  slate: 'slate-slot',
+  partners: 'partner-slot',
+  rival: 'rival-slot',
+  board: 'board',
+  algos: 'algos',
+  funding: 'funding',
+  price: 'price-gap',
+  report: 'report-slot',
+  charts: 'chart',
+  turn: 'turn-slot',
+};
+
+function flash(node) {
+  if (!node) return;
+  node.classList.remove('jump-target');
+  // Перезапуск анимации: без reflow повторный клик по той же ссылке ничего не делает
+  void node.offsetWidth;
+  node.classList.add('jump-target');
+  setTimeout(() => node.classList.remove('jump-target'), 1600);
+}
+
+function jumpTo(target) {
+  const [kind, key] = String(target).split(':');
+
+  if (kind === 'lever') {
+    const lever = document.querySelector(`.lever[data-key="${key}"]`);
+    if (!lever) return;
+    // Свёрнутая группа сама раскрывается: иначе ссылка ведёт в никуда
+    const group = lever.closest('.lever-group');
+    if (group && !group.classList.contains('open')) {
+      openGroups[group.dataset.group] = true;
+      group.classList.add('open');
+    }
+    lever.classList.add('open');   // и подсказка «зачем это» раскрывается
+    lever.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(lever);
+    return;
+  }
+
+  if (kind === 'tab') {
+    rightTab = key;
+    renderRightTab();
+    const box = el('tab-content');
+    box?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(box);
+    return;
+  }
+
+  // Адрес вида «panel:slate»: в таблице лежит вторая часть, не первая
+  const node = el(JUMP_PANELS[key] ?? key ?? kind);
+  if (!node) return;
+  // Слоты вроде #slate-slot — это обёртки: сама панель лежит внутри.
+  // Подсвечивать надо её, иначе рамка обводит пустой контейнер.
+  const box = node.classList.contains('panel') ? node
+    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(box);
+}
+
+// Делегирование: ссылки живут внутри строк перевода и перерисовываются
+// вместе с панелями, поэтому слушатель один и вешается при старте.
+function bindJumps() {
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-jump]');
+    if (!link) return;
+    e.preventDefault();
+    jumpTo(link.dataset.jump);
+  });
+}
+
+// ----------------------------------------------------------------------------
 // Ход месяца: что решается прямо сейчас.
 //
 // Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
@@ -354,6 +434,7 @@ function turnTodos() {
   if (ready.length && !planned) {
     todos.push({
       kind: rivalLoud ? 'warn' : 'act',
+      jump: 'panel:slate',
       title: t('todoReleaseTitle', { count: ready.length }),
       text: rivalLoud
         ? t('todoReleaseVsRival')
@@ -365,7 +446,7 @@ function turnTodos() {
 
   // 2. Пустая студия — премьеры не будет полгода
   if (!producing.length && !pendingCommission.length) {
-    todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
+    todos.push({ kind: 'bad', jump: 'panel:slate', title: t('todoStudioTitle'), text: t('todoStudioText') });
   }
 
   // 3. Разрыв между прайсом и тем, что платит база.
@@ -375,6 +456,7 @@ function turnTodos() {
     const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
     todos.push({
       kind: 'warn',
+      jump: 'panel:price',
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
@@ -386,6 +468,7 @@ function turnTodos() {
   if (state.partnerOffer && !pendingPartner) {
     todos.push({
       kind: 'act',
+      jump: 'panel:partners',
       title: t('todoPartnerTitle', { name: tx(partnerById(state.partnerOffer)?.name ?? '') }),
       text: t('todoPartnerText'),
     });
@@ -396,6 +479,7 @@ function turnTodos() {
   if (ending.length) {
     todos.push({
       kind: 'warn',
+      jump: 'panel:partners',
       title: t('todoPartnerEndTitle', { count: ending.length }),
       text: t('todoPartnerEndText', { subs: compact(ending.reduce((a, b) => a + b.subs, 0)) }),
     });
@@ -403,12 +487,12 @@ function turnTodos() {
 
   // 6. Маркетинг без каталога
   if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
-    todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
+    todos.push({ kind: 'warn', jump: 'lever:licensing', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
   }
 
   // 7. Кампания без релиза
   if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
-    todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
+    todos.push({ kind: 'warn', jump: 'panel:slate', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
   }
 
   return todos;
@@ -443,6 +527,7 @@ function renderTurn() {
           <div class="todo ${td.kind}">
             <div class="todo-title">${td.title}</div>
             <div class="todo-text">${td.text}</div>
+            ${td.jump ? `<a class="jump todo-jump" data-jump="${td.jump}">${t('jumpGo')}</a>` : ''}
             ${td.action ? `<button class="btn ${td.action.on ? 'primary' : 'ghost'} tiny"
               data-todo="${td.action.id}">${td.action.label}</button>` : ''}
           </div>`).join('')}</div>`
@@ -930,25 +1015,25 @@ function buildAlerts(r) {
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
   if (r.depth < 0.35) {
-    alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) })]);
+    alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) }), 'lever:licensing']);
   }
   if (r.freshness < 0.6 && r.subs > 1000) {
     alerts.push(['warn', t('alertStale', { fresh: r.freshness.toFixed(2), lost: compact(r.lostSubs) })]);
   }
   if (!r.producing.length) {
-    alerts.push(['bad', t('alertNoPipeline')]);
+    alerts.push(['bad', t('alertNoPipeline'), 'panel:slate']);
   }
   const idle = r.slots - r.slotsUsed;
   if (idle > 0 && r.slotCost > 0) {
-    alerts.push(['warn', t('alertSlotsIdle', { count: idle })]);
+    alerts.push(['warn', t('alertSlotsIdle', { count: idle }), 'lever:studioSlots']);
   }
   const longHeld = Math.max(0, ...r.vault.map((v) => v.held));
-  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld })]);
+  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld }), 'panel:slate']);
   if (r.raiseApplied) {
-    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) })]);
+    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) }), 'panel:price']);
   }
   if (r.annualCash > 0) {
-    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) })]);
+    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) }), 'lever:annualDiscount']);
   }
   if (r.cmPerSub < 0) {
     alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
@@ -1040,23 +1125,24 @@ function renderReport() {
         ? t('alertGoalPassed', { year: r.goalOutcome.year })
         : t(`alertGoalFailed_${r.goalOutcome.effect}`, { year: r.goalOutcome.year })]);
   }
-  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) })]);
+  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) }), 'panel:board']);
   if (r.crisisResolved) {
     alerts.unshift(['good', t('alertCrisisResolved', {
       name: tx(crisisById(r.crisisResolved.id)?.title ?? ''), cost: money(r.crisisCost) })]);
   }
-  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) })]);
+  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) }), 'panel:rival']);
   else if (r.netSwitch > 1000) alerts.push(['good', t('alertWinningSubs', { count: compact(r.netSwitch) })]);
-  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) })]);
-  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
-  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
+  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) }), 'lever:licensing']);
+  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) }), 'panel:slate']);
+  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised'), 'panel:rival']);
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
   // Порядок уже расставлен по срочности — плохое поднято наверх.
   const shown = alerts.slice(0, 5);
   const hidden = alerts.length - shown.length;
   const alertsHtml = shown.length
-    ? `<div class="alerts">${shown.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}
+    ? `<div class="alerts">${shown.map(([k, text, jump]) => `<div class="alert ${k}">${text}${
+        jump ? ` <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>` : ''}</div>`).join('')}
         ${hidden > 0 ? `<div class="funding-note">${t('alertsMore', { count: hidden })}</div>` : ''}</div>` : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
@@ -1502,6 +1588,7 @@ export function init() {
   setLang(detectLang());
   state = load() ?? createInitialState('kinopotok');
 
+  bindJumps();
   el('btn-next').addEventListener('click', nextMonth);
   el('btn-help').addEventListener('click', showHelp);
   el('btn-lang').addEventListener('click', switchLang);

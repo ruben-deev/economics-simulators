@@ -75,14 +75,3 @@ export function addAnnualCohort(pricing, subs, price) {
   return subs * price * 12;
 }
 
-/**
- * Средняя цена, которую платит база сегмента: смесь заблокированной цены
- * обычных подписчиков и зафиксированных годовых.
- */
-export function effectivePrice(pricing, monthlySubs) {
-  const annual = annualSubs(pricing);
-  const total = annual + monthlySubs;
-  if (total <= 0) return pricing.lockedPrice;
-  const annualPaid = pricing.annual.reduce((s, c) => s + c.subs * c.price, 0);
-  return (annualPaid + monthlySubs * pricing.lockedPrice) / total;
-}

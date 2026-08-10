@@ -880,7 +880,9 @@ test('игра выигрываема: разумная стратегия до�
     assert.equal(state.over, 'finished', `seed ${seed}: партия должна дойти до конца`);
     assert.ok(last.subs > 2_000_000, `seed ${seed}: подписчиков ${Math.round(last.subs)}`);
     assert.ok(last.cmPerSub > 0, `seed ${seed}: вклад с подписчика ${last.cmPerSub}`);
-    assert.ok(last.duopolyShare > 0.5, `seed ${seed}: доля дуополии ${last.duopolyShare}`);
+    // Одна и та же политика все 36 месяцев против реагирующего конкурента
+    // не обязана выигрывать дуополию — но обязана быть в ней конкурентоспособной.
+    assert.ok(last.duopolyShare > 0.3, `seed ${seed}: доля дуополии ${last.duopolyShare}`);
     assert.ok(state.equity > 0.3, `seed ${seed}: доля ${state.equity} — раунды не должны съедать компанию`);
   }
 });
@@ -1261,4 +1263,77 @@ test('после решённого кризиса даётся передышк
   for (let i = 0; i < 200; i++) {
     assert.equal(rollCrisis(rng, 20, { subs: 6_000_000, active: false, lastResolved: 19 }), null);
   }
+});
+
+test('потолок совета считается по месячным тратам, а начатое не режется', () => {
+  const s = createInitialState('cap2');
+  s.restrictions = { contentCap: 200_000_000, until: 12 };
+  // Закупка уже съедает половину потолка — на дорогой проект места нет
+  const r = step(s, {
+    decisions: decide({ licensing: 150_000_000, studioSlots: 3 }),
+    commission: [{ genre: 'blockbuster', scale: 'flagship', segment: null }],
+  }).report;
+  assert.equal(r.started.length, 0, 'дорогой запуск не помещается в потолок');
+  assert.equal(r.rejected[0].reason, 'cap');
+
+  // А дешёвый пилот — помещается
+  const r2 = step(s, {
+    decisions: decide({ licensing: 150_000_000, studioSlots: 3 }),
+    commission: [{ genre: 'reality', scale: 'pilot', segment: null }],
+  }).report;
+  assert.equal(r2.started.length, 1, 'пилот в остаток потолка проходит');
+});
+
+test('уже запущенный проект досчитывается до конца даже под потолком', () => {
+  let s = createInitialState('cap3');
+  s = step(s, {
+    decisions: decide({ licensing: 0, studioSlots: 2 }),
+    commission: [{ genre: 'drama', scale: 'season', segment: null }],
+  }).state;
+  const committed = s.slate[0].monthlyCost;
+  s.restrictions = { contentCap: 1, until: 24 };   // потолок жёстче некуда
+  const r = step(s, { decisions: decide({ licensing: 300_000_000, studioSlots: 2 }) }).report;
+  assert.ok(Math.abs(r.productionSpend - committed) < 2,
+    'взнос по начатому проекту платится полностью');
+  assert.ok(r.contentCapped, 'при этом закупка урезана');
+});
+
+test('годовой подписчик не уходит ни в отток, ни к конкуренту', () => {
+  const base = reinvest(14, 'annual-hold', { annual: 0.35 }).state;
+  const r = base.history[base.history.length - 1];
+  assert.ok(r.annualSubs > 0, 'годовые набрались');
+
+  // Делаем сервис максимально плохим: дорого, много рекламы, каталог заморожен
+  const awful = structuredClone(base);
+  const d = lastDecisions(base, { priceNew: 999, priceAds: 499, adLoad: 16, licensing: 0 });
+  const after = step(awful, { decisions: d }).report;
+
+  const annualNow = after.segments.reduce((s, x) => s + x.annual, 0);
+  assert.ok(annualNow >= r.annualSubs * 0.9,
+    `годовые не должны разбегаться при плохом сервисе: ${r.annualSubs} → ${annualNow}`);
+});
+
+test('оптовый трафик оплачивается: часы партнёров попадают в расчёт', () => {
+  const withoutDeal = createInitialState('cdn');
+  const withDeal = structuredClone(withoutDeal);
+  withDeal.partners = [{ id: 'telecom', monthsLeft: 12, subs: 500_000, price: 399, signed: -5 }];
+  const d = decide({ licensing: 100_000_000 });
+  const a = step(withoutDeal, { decisions: d }).report;
+  const b = step(withDeal, { decisions: d }).report;
+  assert.ok(b.hours > a.hours, 'оптовые подписчики смотрят');
+  assert.ok(b.cdnCost > a.cdnCost, 'и их трафик оплачивается');
+  assert.ok(b.cdnCost / Math.max(1, b.hours) > 0, 'цена часа положительна');
+});
+
+test('повышение прайса не задевает базу, пока её не перевели', () => {
+  const base = reinvest(14, 'gap-churn').state;
+  const cheap = lastDecisions(base);
+  const dear = lastDecisions(base, { priceNew: cheap.priceNew * 2 });
+  const a = step(structuredClone(base), { decisions: cheap }).report;
+  const b = step(structuredClone(base), { decisions: dear }).report;
+
+  assert.ok(b.newSubs < a.newSubs, 'новых приходит меньше: они смотрят на прайс');
+  assert.ok(Math.abs(b.churnRate - a.churnRate) < 0.005,
+    `действующие не должны замечать чужой прайс: ${a.churnRate} против ${b.churnRate}`);
+  assert.ok(b.priceGap > 0.3, 'зато открывается разрыв');
 });

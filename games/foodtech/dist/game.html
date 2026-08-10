@@ -507,6 +507,25 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .gap-box .q-bar { display: block; margin: 6px 0; }
 .gap-box .btn { width: 100%; }
 
+/* --------------- Переходы по подсказкам к блокам управления -------------- */
+.jump {
+  color: var(--accent-2);
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(96, 165, 250, 0.5);
+  text-decoration: none;
+}
+.jump:hover { color: var(--text); border-bottom-color: var(--text); }
+
+/* Подсветка блока, к которому перешли: без неё непонятно, куда попал */
+@keyframes jump-flash {
+  0%   { box-shadow: 0 0 0 2px var(--accent-2), 0 0 18px rgba(96, 165, 250, 0.5); }
+  100% { box-shadow: 0 0 0 2px rgba(96, 165, 250, 0), 0 0 18px rgba(96, 165, 250, 0); }
+}
+.jump-target { animation: jump-flash 1.6s ease-out; border-radius: 10px; }
+.todo-jump { display: inline-block; margin-top: 6px; font-size: 12px; }
+.alert .jump { white-space: nowrap; }
+
 </style>
 </head>
 <body>

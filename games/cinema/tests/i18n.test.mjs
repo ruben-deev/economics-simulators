@@ -162,3 +162,45 @@ test('tx() отдаёт нужный язык и переживает одноя
   assert.equal(tx(undefined), '');
   setLang('ru');
 });
+
+// ----------------------------------------------------------------------------
+// Переходы по подсказкам
+//
+// Ссылка вида <a data-jump="lever:licensing"> должна вести на существующий
+// рычаг или блок. Опечатка в адресе не роняет игру — она просто молча
+// перестаёт работать, поэтому проверяем адреса здесь.
+// ----------------------------------------------------------------------------
+
+const JUMP_PANELS = new Set([
+  'slate', 'partners', 'rival', 'board', 'algos', 'funding',
+  'price', 'report', 'charts', 'turn',
+]);
+const JUMP_TABS = new Set(['unit', 'pnl', 'algos', 'segments', 'help']);
+const LEVER_KEYS = new Set(LEVERS.map((l) => l.key));
+
+test('все переходы в подсказках ведут на существующие рычаги и блоки', () => {
+  const bad = [];
+  for (const [key, entry] of Object.entries(STRINGS)) {
+    for (const lang of LANGS) {
+      for (const m of entry[lang].matchAll(/data-jump="([^"]+)"/g)) {
+        const [kind, target] = m[1].split(':');
+        const known = (kind === 'lever' && LEVER_KEYS.has(target))
+          || (kind === 'panel' && JUMP_PANELS.has(target))
+          || (kind === 'tab' && JUMP_TABS.has(target));
+        if (!known) bad.push(`${key}.${lang}: ${m[1]}`);
+      }
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
+test('ссылки-переходы есть в обеих версиях строки', () => {
+  const jumps = (s) => [...s.matchAll(/data-jump="([^"]+)"/g)].map((m) => m[1]).sort();
+  const mismatched = [];
+  for (const [key, entry] of Object.entries(STRINGS)) {
+    const ru = jumps(entry.ru);
+    const en = jumps(entry.en);
+    if (JSON.stringify(ru) !== JSON.stringify(en)) mismatched.push(`${key}: ru=${ru} en=${en}`);
+  }
+  assert.deepEqual(mismatched, []);
+});

@@ -507,6 +507,25 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .gap-box .q-bar { display: block; margin: 6px 0; }
 .gap-box .btn { width: 100%; }
 
+/* --------------- Переходы по подсказкам к блокам управления -------------- */
+.jump {
+  color: var(--accent-2);
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(96, 165, 250, 0.5);
+  text-decoration: none;
+}
+.jump:hover { color: var(--text); border-bottom-color: var(--text); }
+
+/* Подсветка блока, к которому перешли: без неё непонятно, куда попал */
+@keyframes jump-flash {
+  0%   { box-shadow: 0 0 0 2px var(--accent-2), 0 0 18px rgba(96, 165, 250, 0.5); }
+  100% { box-shadow: 0 0 0 2px rgba(96, 165, 250, 0), 0 0 18px rgba(96, 165, 250, 0); }
+}
+.jump-target { animation: jump-flash 1.6s ease-out; border-radius: 10px; }
+.todo-jump { display: inline-block; margin-top: 6px; font-size: 12px; }
+.alert .jump { white-space: nowrap; }
+
 </style>
 </head>
 <body>
@@ -695,6 +714,7 @@ const STRINGS = {
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelBoard: { ru: 'Совет директоров', en: 'The board' },
+  jumpGo: { ru: 'перейти →', en: 'go there →' },
   alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
   panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
   partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} ₽ против {retail} ₽ в рознице', en: 'wholesale is {share} of the base · ARPU ₽{wholesale} against ₽{retail} retail' },
@@ -877,10 +897,10 @@ const STRINGS = {
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- сводка под ползунками ---
-  opsCatalog: { ru: 'Каталог: <b>{hours}</b> часов ({licensed} лицензий + {original} своих). Глубина <b>{depth}</b>, свежесть <b>{fresh}</b>.', en: 'Catalogue: <b>{hours}</b> hours ({licensed} licensed + {original} original). Depth <b>{depth}</b>, freshness <b>{fresh}</b>.' },
-  opsLicensing: { ru: 'Бюджет лицензий купит <b>{hours}</b> часов в месяц, из них истечёт {decay} за месяц.', en: 'The licensing budget buys <b>{hours}</b> hours a month; {decay} of the library expires each month.' },
-  opsUnitCheck: { ru: 'Подписчик приносит <b>{arpu}</b> и стоит <b>{cost}</b> трафика и поддержки → вклад <b class="{cls}">{cm}</b>.', en: 'A subscriber brings <b>{arpu}</b> and costs <b>{cost}</b> in bandwidth and support → contribution <b class="{cls}">{cm}</b>.' },
-  opsAdShare: { ru: 'На дешёвый тариф уходит примерно <b>{share}</b> подписчиков — они платят меньше, но приносят рекламу.', en: 'Roughly <b>{share}</b> of subscribers pick the cheap tier — they pay less but bring advertising.' },
+  opsCatalog: { ru: 'Каталог: <a class="jump" data-jump="panel:slate">{hours}</a> часов ({licensed} лицензий + {original} своих). Глубина <b>{depth}</b>, свежесть <b>{fresh}</b>.', en: 'Catalogue: <a class="jump" data-jump="panel:slate">{hours}</a> hours ({licensed} licensed + {original} original). Depth <b>{depth}</b>, freshness <b>{fresh}</b>.' },
+  opsLicensing: { ru: 'Бюджет лицензий купит <a class="jump" data-jump="lever:licensing">{hours}</a> часов в месяц, из них истечёт {decay} за месяц.', en: 'The licensing budget buys <a class="jump" data-jump="lever:licensing">{hours}</a> hours a month; {decay} of the library expires each month.' },
+  opsUnitCheck: { ru: 'Подписчик приносит <a class="jump" data-jump="tab:unit">{arpu}</a> и стоит <b>{cost}</b> трафика и поддержки → вклад <b class="{cls}">{cm}</b>.', en: 'A subscriber brings <a class="jump" data-jump="tab:unit">{arpu}</a> and costs <b>{cost}</b> in bandwidth and support → contribution <b class="{cls}">{cm}</b>.' },
+  opsAdShare: { ru: 'На дешёвый тариф уходит примерно <a class="jump" data-jump="lever:priceAds">{share}</a> подписчиков — они платят меньше, но приносят рекламу.', en: 'Roughly <a class="jump" data-jump="lever:priceAds">{share}</a> of subscribers pick the cheap tier — they pay less but bring advertising.' },
 
   // --- студия ---
   studioGenre: { ru: 'Во что вкладывается студия', en: 'What the studio is making' },
@@ -939,11 +959,11 @@ const STRINGS = {
   reportMonth0: { ru: 'Месяц 0. Сервис ещё не запущен.', en: 'Month 0. The service has not launched yet.' },
   reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
   reportStartIntro: { ru: 'У вас {cash} и библиотека из нескольких сотен часов старого кино. Порядок почти всегда такой:', en: 'You have {cash} and a library of a few hundred hours of old films. The sequence is almost always this:' },
-  reportStart1: { ru: 'Включите <b>закупку лицензий</b>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <b>licensing</b>: you need a catalogue right now, and your own project will not premiere for six months.' },
-  reportStart2: { ru: 'Одновременно запустите <b>производство</b>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <b>production</b>. An original is the only thing your rival does not have, and it stays yours forever.' },
+  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your own project will not premiere for six months.' },
+  reportStart2: { ru: 'Одновременно запустите <a class="jump" data-jump="panel:slate">производство</a>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <a class="jump" data-jump="panel:slate">production</a>. An original is the only thing your rival does not have, and it stays yours forever.' },
   reportStart3: { ru: 'Проверьте вклад с подписчика: трафик растёт вместе с просмотром, и слишком щедрый битрейт съедает подписку целиком.', en: 'Check contribution per subscriber: bandwidth grows with viewing, and an over-generous bitrate can swallow the whole subscription fee.' },
-  reportStart4: { ru: 'Только потом включайте <b>маркетинг</b>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <b>marketing</b>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
-  reportStartAlgos: { ru: '<b>Алгоритмы</b> откроются позже: им нужны часы просмотра, а часы приходят только от подписчиков.', en: '<b>Algorithms</b> unlock later: they need watch hours, and hours only come from subscribers.' },
+  reportStart4: { ru: 'Только потом включайте <a class="jump" data-jump="lever:brandMarketing">маркетинг</a>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <a class="jump" data-jump="lever:brandMarketing">marketing</a>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
+  reportStartAlgos: { ru: '<a class="jump" data-jump="panel:algos">Алгоритмы</a> откроются позже: им нужны часы просмотра, а часы приходят только от подписчиков.', en: '<a class="jump" data-jump="panel:algos">Algorithms</a> unlock later: they need watch hours, and hours only come from subscribers.' },
   reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
   reportHeadStats: { ru: 'выручка {revenue} · подписка {subscription} · реклама {ads}', en: 'revenue {revenue} · subscriptions {subscription} · advertising {ads}' },
 
@@ -2148,17 +2168,6 @@ function addAnnualCohort(pricing, subs, price) {
   return subs * price * 12;
 }
 
-/**
- * Средняя цена, которую платит база сегмента: смесь заблокированной цены
- * обычных подписчиков и зафиксированных годовых.
- */
-function effectivePrice(pricing, monthlySubs) {
-  const annual = annualSubs(pricing);
-  const total = annual + monthlySubs;
-  if (total <= 0) return pricing.lockedPrice;
-  const annualPaid = pricing.annual.reduce((s, c) => s + c.subs * c.price, 0);
-  return (annualPaid + monthlySubs * pricing.lockedPrice) / total;
-}
 
 
 // ===== src/model/partners.js =======================================
@@ -2464,7 +2473,7 @@ function stepRival(rival, ctx, rng) {
   // Бюджет крупного игрока менее эластичен к выручке: согласования, легаси,
   // обязательства. Это и есть шанс маленького — он быстрее переставляет ноги.
   const revenue = rival.lastRevenue ?? 0;
-  const base = 110_000_000 + revenue * 0.42;
+  const base = 110_000_000 + revenue * 0.28;
   rival.spend = {
     licensing: Math.round(base * 0.5 * S.budget),
     originals: Math.round(base * 0.5 * S.budget),
@@ -2529,10 +2538,10 @@ function stepRival(rival, ctx, rng) {
   // --- Узнаваемость и деньги ---
   rival.awareness = clamp(
     rival.awareness
-    + (1 - rival.awareness) * clamp(rival.spend.marketing / 1_400_000_000, 0, 0.14)
+    + (1 - rival.awareness) * clamp(rival.spend.marketing / 1_800_000_000, 0, 0.14)
     - rival.awareness * CONFIG.awarenessDecay
     + rival.buzz * 0.015,
-    0.02, 0.9);
+    0.02, 0.78);
 
   const subs = rivalSubs(rival);
   const rivalRevenue = subs * (rival.price * 0.55 + rival.price * 0.37 * 0.45)
@@ -3195,10 +3204,14 @@ function talentIndexOf(state) {
   return 1 + CONFIG.talentInflation * fromSuccess + (state.talentPenalty ?? 0);
 }
 
+// Общая база: розница плюс опт. Обе ветки считают одинаково — иначе
+// в первый месяц «размер компании» означал бы одно, а дальше другое.
 function lastSubs(state) {
   const last = state.history[state.history.length - 1];
   if (last) return last.subs;
-  return SEGMENTS.reduce((s, def) => s + state.segments[def.id].premium + state.segments[def.id].ads, 0);
+  const retail = SEGMENTS.reduce(
+    (s, def) => s + state.segments[def.id].premium + state.segments[def.id].ads, 0);
+  return retail + partnerTotals(state.partners ?? []).subs;
 }
 
 // ----------------------------------------------------------------------------
@@ -3448,10 +3461,19 @@ function step(prevState, input = {}) {
   const slots = Math.round(decisions.studioSlots);
   const started = [];
   const rejected = [];
+  // Потолок совета считается по месячным тратам на контент: закупка лицензий
+  // плюс взносы по уже идущим проектам. Новый проект отклоняется, если его
+  // взнос в этот потолок не помещается — резать уже начатое нельзя.
+  let committed = inProduction(state.slate).reduce((sum, p) => sum + p.monthlyCost, 0);
   for (const order of (input.commission ?? [])) {
     if (slotsUsed(state.slate) >= slots) { rejected.push({ ...order, reason: 'slots' }); continue; }
     const price = projectPrice(order.genre, order.scale, talentIndex);
-    if (cap !== null && price > cap * 6) { rejected.push({ ...order, reason: 'cap' }); continue; }
+    const instalment = price / projectMonths(order.scale);
+    if (cap !== null && contentBudget.licensing + committed + instalment > cap) {
+      rejected.push({ ...order, reason: 'cap' });
+      continue;
+    }
+    committed += instalment;
     // Чем больше проектов идёт параллельно, тем меньше внимания каждому.
     // Мощность покупается не только деньгами за слот, но и качеством.
     const load = slotsUsed(state.slate) / Math.max(1, slots);
@@ -3633,7 +3655,12 @@ function step(prevState, input = {}) {
     const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
     const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
     const blendedPrice = listPrice;
-    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, blendedPrice), def.elasticity), 0.15, 2.6);
+    // Новый смотрит на прайс — он решает, подписываться ли вообще
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, listPrice), def.elasticity), 0.15, 2.6);
+    // Действующий подписчик злится на ту цену, которую платит сам. Пока база
+    // не переведена на новый прайс, повышение её не раздражает — и в этом
+    // весь смысл разрыва: он даёт расти цене, не платя оттоком сразу.
+    const paidFactor = clamp(Math.pow(refPrice / Math.max(30, paidPrice), def.elasticity), 0.15, 2.6);
 
     // Ценность каталога для сегмента: глубина и свежесть весят по-разному
     const appeal = clamp(
@@ -3697,28 +3724,36 @@ function step(prevState, input = {}) {
       exclusive: exclusivePullOf(riv.catalogOriginal * CONFIG.originalDepthWeight, def, null),
     };
     const preference = segmentPreference(def, youSide, rivalSide);
-    // Свободный рынок делится по привлекательности: при паритете каждому
-    // достаётся половина новых подписок, а не всё, как было раньше.
+
+    // Приток делится на два независимых вопроса, и путать их нельзя:
+    //   1. сколько людей вообще решат завести подписку в этом месяце —
+    //      это зависит от лучшего предложения на рынке, а не только вашего;
+    //   2. кому из двоих они достанутся — это уже preference.
+    // Если качество сервиса входит в оба множителя сразу, оно фактически
+    // возводится в квадрат: любой перекос превращается в разгром, а ландшафт
+    // решений становится не крутым, а хаотичным — из эксперимента нельзя
+    // вынести урок.
+    const offerQuality = (side) => side.priceFactor * side.appeal * side.adPenalty;
+    const categoryPull = Math.max(offerQuality(youSide), riv.alive ? offerQuality(rivalSide) : 0);
+    const categoryAwareness = clamp(
+      1 - (1 - seg.awareness) * (1 - (riv.alive ? riv.awareness : 0)), 0, 1);
+    const categoryTrials = untapped * categoryAwareness * CONFIG.trialRate * categoryPull
+      * rival.acquisitionMult * mods.demandMult * (crisisMods.demandMult ?? 1);
+
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
-    const trials = untapped * seg.awareness * CONFIG.trialRate * priceFactor * appeal * adPenalty
-      * rival.acquisitionMult * mods.demandMult * (crisisMods.demandMult ?? 1)
-      * preference * (1 + premiereAppeal * 0.6);
+    const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
     const converted = trials * CONFIG.trialConversion * trialFactor;
 
-    // Конкурент забирает свою половину той же поляны по той же формуле.
-    // Если вы его переигрываете, ему достаётся меньше — свободный рынок
-    // это тоже поле боя, а не общий котёл.
+    // Конкурент забирает вторую половину той же поляны
     const rivalConverted = riv.alive
-      ? untapped * rivalSide.awareness * CONFIG.trialRate
-        * rivalSide.priceFactor * rivalSide.appeal * rivalSide.adPenalty
-        * (1 - preference) * CONFIG.trialConversion * (1 + riv.buzz * 0.6)
+      ? categoryTrials * (1 - preference) * CONFIG.trialConversion * (1 + riv.buzz * 0.6)
       : 0;
     const rivalAfterOwn = Math.max(0, rivalSegSubs + rivalConverted
       - rivalSegSubs * clamp(CONFIG.baseChurn * def.loyalty * 1.15, 0.005, 0.5));
 
     // Отток: скучный каталог, дорогая подписка, назойливая реклама, чужая премьера
     const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * 0.055;
-    const priceAnger = Math.max(0, 1 - priceFactor) * 0.045;
+    const priceAnger = Math.max(0, 1 - paidFactor) * 0.045;
     const adAnger = (1 - adPenalty) * 0.11;
     const techAnnoyance = Math.max(0, 1 - decisions.bitrate / CONFIG.refBitrate) * 0.03
       + compression * (1 - quality) * 0.02 / Math.max(0.3, def.adTolerance);
@@ -3753,11 +3788,19 @@ function step(prevState, input = {}) {
     // --- Переток между сервисами ---
     // Отдельный поток от общего оттока: эти люди не ушли из категории,
     // они ушли к соседу. Или пришли от него.
+    // Годовой подписчик не может уйти и к конкуренту: он оплачен на год вперёд.
+    // Переманивать можно только тех, кто платит помесячно.
     const survivorsBeforeSwitch = subsBefore - leaving;
-    let flow = switchFlow(def, preference, survivorsBeforeSwitch, rivalAfterOwn);
-    flow = clamp(flow, -survivorsBeforeSwitch * 0.5, rivalAfterOwn * 0.5);
+    const switchable = Math.max(0, survivorsBeforeSwitch - lockedIn);
+    let flow = switchFlow(def, preference, switchable, rivalAfterOwn);
+    flow = clamp(flow, -switchable * 0.5, rivalAfterOwn * 0.5);
     if (flow >= 0) switchedIn += flow; else switchedOut += -flow;
     riv.segments[def.id] = Math.max(0, rivalAfterOwn - flow);
+
+    // Доля рекламного тарифа среди помесячных — нужна и для дрейфа цены,
+    // и ниже для распределения выживших по тарифам
+    const survivorAdShareGuess = Math.max(0, subsBefore - lockedIn) > 0
+      ? clamp(seg.ads / Math.max(1, subsBefore - lockedIn), 0, 1) : adShare;
 
     // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
     // месяцев, но цена фиксируется и повышения их не касаются.
@@ -3769,19 +3812,24 @@ function step(prevState, input = {}) {
       annualNew += annualTakers;
     }
 
-    // Средняя цена базы дрейфует к прайсу по мере обновления
-    const monthlyNew = converted * (1 - adShare) - annualTakers;
-    const monthlyBase = Math.max(0, seg.premium - annualSubs(pricing) + monthlyNew);
-    if (monthlyBase > 0 && monthlyNew > 0) {
-      pricing.lockedPrice = (pricing.lockedPrice * (monthlyBase - monthlyNew)
-        + decisions.priceNew * monthlyNew) / monthlyBase;
+    // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
+    // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
+    // закрывается сам — но медленно, за время оборота базы.
+    const monthlyNew = Math.max(0, converted * (1 - adShare) - annualTakers);
+    const monthlyStaying = Math.max(0, survivorsBeforeSwitch + flow - lockedIn) * (1 - survivorAdShareGuess);
+    const monthlyTotal = monthlyStaying + monthlyNew;
+    if (monthlyTotal > 0 && monthlyNew > 0) {
+      pricing.lockedPrice = (pricing.lockedPrice * monthlyStaying
+        + decisions.priceNew * monthlyNew) / monthlyTotal;
     }
 
-    // Обновляем запасы по тарифам
+    // Обновляем запасы по тарифам. Годовые подписчики целиком остаются
+    // на платном тарифе: годовой продукт — это подписка без рекламы.
     const survivors = survivorsBeforeSwitch + flow;
-    const survivorAdShare = subsBefore > 0 ? seg.ads / subsBefore : adShare;
-    seg.ads = Math.max(0, survivors * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, survivors * (1 - survivorAdShare) + converted * (1 - adShare));
+    const movable = Math.max(0, survivors - lockedIn);
+    const survivorAdShare = survivorAdShareGuess;
+    seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
+    seg.premium = Math.max(0, lockedIn + movable * (1 - survivorAdShare) + converted * (1 - adShare));
 
     newSubs += converted;
     lostSubs += leaving;
@@ -3794,31 +3842,11 @@ function step(prevState, input = {}) {
     });
   }
 
-  // --- 10. Часы просмотра и трафик ---
-  let hours = 0;
-  let adHours = 0;
-  for (const p of perSegment) {
-    const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
-      * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
-      * (1 + 0.22 * recoStrength * quality)
-      * rival.hoursMult * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
-    p.hours = segHours;
-    p.adHours = segHours * (p.seg.ads / Math.max(1, p.subs));
-    hours += segHours;
-    adHours += p.adHours;
-  }
-
-  // Трафик — крупнейшая переменная статья, и она растёт вместе с лояльностью
-  const encodingSaving = 0.35 * compression * (0.4 + 0.6 * quality);
-  const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
-    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving)
-    * (mods.cdnMult ?? 1) * (crisisMods.cdnMult ?? 1);
-  const cdnCost = hours * cdnPerHour;
-
-  // --- 10a. Партнёрства: оптовый канал ---
+  // --- 10. Партнёрства: оптовый канал ---
   // Эти подписчики живут отдельным пулом: у них своя доля выручки, свой отток
   // и свои часы просмотра. Складывать их с розничными в одну цифру можно,
   // но именно так и обманывают себя графиком роста.
+  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
   if (input.partnerAnswer && state.partnerOffer) {
     if (input.partnerAnswer === 'accept') {
       const def = partnerById(state.partnerOffer);
@@ -3834,7 +3862,6 @@ function step(prevState, input = {}) {
     state.partnerOffer = null;
   }
 
-  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
   let partnerInflowTotal = 0;
   let partnerFees = 0;
   let partnerLost = 0;
@@ -3871,22 +3898,51 @@ function step(prevState, input = {}) {
   const partnerStats = partnerTotals(state.partners);
   const partnerSubs = partnerStats.subs;
   let partnerRev = 0;
-  let partnerHours = 0;
   for (const deal of state.partners) {
     const def = partnerById(deal.id);
     if (!def) continue;
     partnerRev += partnerRevenue(deal, def);
-    partnerHours += deal.subs * CONFIG.baseHoursPerSub * def.hoursMult * season;
+  }
+
+  // --- 11. Часы просмотра и трафик ---
+  let hours = 0;
+  let adHours = 0;
+  for (const p of perSegment) {
+    const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
+      * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
+      * (1 + 0.22 * recoStrength * quality)
+      * rival.hoursMult * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
+    p.hours = segHours;
+    p.adHours = segHours * (p.seg.ads / Math.max(1, p.subs));
+    hours += segHours;
+    adHours += p.adHours;
+  }
+
+  // Оптовые подписчики тоже смотрят — и их трафик тоже оплачиваете вы.
+  // Раньше эти часы добавлялись после расчёта трафика, и опт выходил бесплатным.
+  let partnerHours = 0;
+  for (const deal of state.partners) {
+    const def = partnerById(deal.id);
+    if (!def) continue;
+    partnerHours += deal.subs * CONFIG.baseHoursPerSub * def.hoursMult * season
+      * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
   }
   hours += partnerHours;
 
-  const retailSubs = perSegment.reduce((s, p) => s + p.subs, 0);
+  // Трафик — крупнейшая переменная статья, и она растёт вместе с лояльностью
+  const encodingSaving = 0.35 * compression * (0.4 + 0.6 * quality);
+  const cdnPerHour = CONFIG.cdnCostPerHour * (decisions.bitrate / CONFIG.refBitrate)
+    * (1 - 0.30 * techLevel(state)) * (1 - encodingSaving)
+    * (mods.cdnMult ?? 1) * (crisisMods.cdnMult ?? 1);
+  const cdnCost = hours * cdnPerHour;
+
+  const retailSubs = retailSubsNow;
   const totalSubs = retailSubs + partnerSubs;
   const premiumSubs = perSegment.reduce((s, p) => s + p.seg.premium, 0);
   const adSubs = perSegment.reduce((s, p) => s + p.seg.ads, 0);
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
 
-  // --- 11. Выручка ---
+  // --- 12. Выручка ---
   // Выручка считается по тому, что база реально платит, а не по прайсу.
   // Годовые деньги пришли в кассу разом при подписке и здесь не повторяются.
   let subscriptionRevenue = 0;
@@ -3922,7 +3978,7 @@ function step(prevState, input = {}) {
   state.rndStock += decisions.rnd;
   state.dataStock += hours;
 
-  // --- 12. Метрики ---
+  // --- 13. Метрики ---
   const arpu = totalSubs > 0 ? revenue / totalSubs : 0;
   const cmPerSub = totalSubs > 0 ? contribution / totalSubs : 0;
   const hoursPerSub = totalSubs > 0 ? hours / totalSubs : 0;
@@ -3942,7 +3998,7 @@ function step(prevState, input = {}) {
     return Math.exp(acc);
   };
 
-  // --- 13. Совет директоров ---
+  // --- 14. Совет директоров ---
   if (profit > 0) state.board.profitableMonths += 1;
   const boardCtx = { subs: totalSubs, rivalSubs: rivalTotal, profitableMonths: state.board.profitableMonths };
   let goalOutcome = null;
@@ -3970,14 +4026,14 @@ function step(prevState, input = {}) {
     state.pendingDilution = 0;
   }
 
-  // --- 14. Кризисы ---
+  // --- 15. Кризисы ---
   if (state.crisis) state.crisis.months += 1;
   const newCrisis = rollCrisis(rng, month, {
     subs: totalSubs, active: Boolean(state.crisis), lastResolved: state.lastCrisisResolved ?? -99,
   });
   if (newCrisis) state.crisis = newCrisis;
 
-  // --- 14a. Новое предложение о партнёрстве ---
+  // --- 15a. Новое предложение о партнёрстве ---
   if (!state.partnerOffer) {
     state.partnerOffer = rollPartnerOffer(rng, month + 1, state.partners);
   }
@@ -4171,7 +4227,7 @@ function step(prevState, input = {}) {
     decisions: structuredClone(decisions),
   };
 
-  // --- 15. Завершение месяца ---
+  // --- 16. Завершение месяца ---
   state.month = month;
   state.lastSnapshot = snapshot;
   state.history.push(report);
@@ -4842,6 +4898,86 @@ function renderPartners() {
 }
 
 // ----------------------------------------------------------------------------
+// Навигация по подсказкам.
+//
+// В советах ключевые вещи выделены цветом. Раз они названы — по ним должно
+// быть можно перейти к тому рычагу или блоку, о котором речь: читать совет
+// и потом искать глазами нужный ползунок — лишняя работа.
+//
+// Разметка: <a class="jump" data-jump="lever:licensing">закупку лицензий</a>
+// ----------------------------------------------------------------------------
+const JUMP_PANELS = {
+  slate: 'slate-slot',
+  partners: 'partner-slot',
+  rival: 'rival-slot',
+  board: 'board',
+  algos: 'algos',
+  funding: 'funding',
+  price: 'price-gap',
+  report: 'report-slot',
+  charts: 'chart',
+  turn: 'turn-slot',
+};
+
+function flash(node) {
+  if (!node) return;
+  node.classList.remove('jump-target');
+  // Перезапуск анимации: без reflow повторный клик по той же ссылке ничего не делает
+  void node.offsetWidth;
+  node.classList.add('jump-target');
+  setTimeout(() => node.classList.remove('jump-target'), 1600);
+}
+
+function jumpTo(target) {
+  const [kind, key] = String(target).split(':');
+
+  if (kind === 'lever') {
+    const lever = document.querySelector(`.lever[data-key="${key}"]`);
+    if (!lever) return;
+    // Свёрнутая группа сама раскрывается: иначе ссылка ведёт в никуда
+    const group = lever.closest('.lever-group');
+    if (group && !group.classList.contains('open')) {
+      openGroups[group.dataset.group] = true;
+      group.classList.add('open');
+    }
+    lever.classList.add('open');   // и подсказка «зачем это» раскрывается
+    lever.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(lever);
+    return;
+  }
+
+  if (kind === 'tab') {
+    rightTab = key;
+    renderRightTab();
+    const box = el('tab-content');
+    box?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(box);
+    return;
+  }
+
+  // Адрес вида «panel:slate»: в таблице лежит вторая часть, не первая
+  const node = el(JUMP_PANELS[key] ?? key ?? kind);
+  if (!node) return;
+  // Слоты вроде #slate-slot — это обёртки: сама панель лежит внутри.
+  // Подсвечивать надо её, иначе рамка обводит пустой контейнер.
+  const box = node.classList.contains('panel') ? node
+    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(box);
+}
+
+// Делегирование: ссылки живут внутри строк перевода и перерисовываются
+// вместе с панелями, поэтому слушатель один и вешается при старте.
+function bindJumps() {
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-jump]');
+    if (!link) return;
+    e.preventDefault();
+    jumpTo(link.dataset.jump);
+  });
+}
+
+// ----------------------------------------------------------------------------
 // Ход месяца: что решается прямо сейчас.
 //
 // Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
@@ -4862,6 +4998,7 @@ function turnTodos() {
   if (ready.length && !planned) {
     todos.push({
       kind: rivalLoud ? 'warn' : 'act',
+      jump: 'panel:slate',
       title: t('todoReleaseTitle', { count: ready.length }),
       text: rivalLoud
         ? t('todoReleaseVsRival')
@@ -4873,7 +5010,7 @@ function turnTodos() {
 
   // 2. Пустая студия — премьеры не будет полгода
   if (!producing.length && !pendingCommission.length) {
-    todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
+    todos.push({ kind: 'bad', jump: 'panel:slate', title: t('todoStudioTitle'), text: t('todoStudioText') });
   }
 
   // 3. Разрыв между прайсом и тем, что платит база.
@@ -4883,6 +5020,7 @@ function turnTodos() {
     const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
     todos.push({
       kind: 'warn',
+      jump: 'panel:price',
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
@@ -4894,6 +5032,7 @@ function turnTodos() {
   if (state.partnerOffer && !pendingPartner) {
     todos.push({
       kind: 'act',
+      jump: 'panel:partners',
       title: t('todoPartnerTitle', { name: tx(partnerById(state.partnerOffer)?.name ?? '') }),
       text: t('todoPartnerText'),
     });
@@ -4904,6 +5043,7 @@ function turnTodos() {
   if (ending.length) {
     todos.push({
       kind: 'warn',
+      jump: 'panel:partners',
       title: t('todoPartnerEndTitle', { count: ending.length }),
       text: t('todoPartnerEndText', { subs: compact(ending.reduce((a, b) => a + b.subs, 0)) }),
     });
@@ -4911,12 +5051,12 @@ function turnTodos() {
 
   // 6. Маркетинг без каталога
   if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
-    todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
+    todos.push({ kind: 'warn', jump: 'lever:licensing', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
   }
 
   // 7. Кампания без релиза
   if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
-    todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
+    todos.push({ kind: 'warn', jump: 'panel:slate', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
   }
 
   return todos;
@@ -4951,6 +5091,7 @@ function renderTurn() {
           <div class="todo ${td.kind}">
             <div class="todo-title">${td.title}</div>
             <div class="todo-text">${td.text}</div>
+            ${td.jump ? `<a class="jump todo-jump" data-jump="${td.jump}">${t('jumpGo')}</a>` : ''}
             ${td.action ? `<button class="btn ${td.action.on ? 'primary' : 'ghost'} tiny"
               data-todo="${td.action.id}">${td.action.label}</button>` : ''}
           </div>`).join('')}</div>`
@@ -5438,25 +5579,25 @@ function buildAlerts(r) {
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
   if (r.depth < 0.35) {
-    alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) })]);
+    alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) }), 'lever:licensing']);
   }
   if (r.freshness < 0.6 && r.subs > 1000) {
     alerts.push(['warn', t('alertStale', { fresh: r.freshness.toFixed(2), lost: compact(r.lostSubs) })]);
   }
   if (!r.producing.length) {
-    alerts.push(['bad', t('alertNoPipeline')]);
+    alerts.push(['bad', t('alertNoPipeline'), 'panel:slate']);
   }
   const idle = r.slots - r.slotsUsed;
   if (idle > 0 && r.slotCost > 0) {
-    alerts.push(['warn', t('alertSlotsIdle', { count: idle })]);
+    alerts.push(['warn', t('alertSlotsIdle', { count: idle }), 'lever:studioSlots']);
   }
   const longHeld = Math.max(0, ...r.vault.map((v) => v.held));
-  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld })]);
+  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld }), 'panel:slate']);
   if (r.raiseApplied) {
-    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) })]);
+    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) }), 'panel:price']);
   }
   if (r.annualCash > 0) {
-    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) })]);
+    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) }), 'lever:annualDiscount']);
   }
   if (r.cmPerSub < 0) {
     alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
@@ -5548,23 +5689,24 @@ function renderReport() {
         ? t('alertGoalPassed', { year: r.goalOutcome.year })
         : t(`alertGoalFailed_${r.goalOutcome.effect}`, { year: r.goalOutcome.year })]);
   }
-  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) })]);
+  if (r.contentCapped) alerts.unshift(['bad', t('alertCapped', { cap: money(r.contentCapped) }), 'panel:board']);
   if (r.crisisResolved) {
     alerts.unshift(['good', t('alertCrisisResolved', {
       name: tx(crisisById(r.crisisResolved.id)?.title ?? ''), cost: money(r.crisisCost) })]);
   }
-  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) })]);
+  if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) }), 'panel:rival']);
   else if (r.netSwitch > 1000) alerts.push(['good', t('alertWinningSubs', { count: compact(r.netSwitch) })]);
-  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) })]);
-  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
-  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
+  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) }), 'lever:licensing']);
+  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) }), 'panel:slate']);
+  if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised'), 'panel:rival']);
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
   // Порядок уже расставлен по срочности — плохое поднято наверх.
   const shown = alerts.slice(0, 5);
   const hidden = alerts.length - shown.length;
   const alertsHtml = shown.length
-    ? `<div class="alerts">${shown.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}
+    ? `<div class="alerts">${shown.map(([k, text, jump]) => `<div class="alert ${k}">${text}${
+        jump ? ` <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>` : ''}</div>`).join('')}
         ${hidden > 0 ? `<div class="funding-note">${t('alertsMore', { count: hidden })}</div>` : ''}</div>` : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
@@ -6010,6 +6152,7 @@ function init() {
   setLang(detectLang());
   state = load() ?? createInitialState('kinopotok');
 
+  bindJumps();
   el('btn-next').addEventListener('click', nextMonth);
   el('btn-help').addEventListener('click', showHelp);
   el('btn-lang').addEventListener('click', switchLang);

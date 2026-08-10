@@ -43,6 +43,7 @@ export const STRINGS = {
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelBoard: { ru: 'Совет директоров', en: 'The board' },
+  jumpGo: { ru: 'перейти →', en: 'go there →' },
   alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
   panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
   partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} ₽ против {retail} ₽ в рознице', en: 'wholesale is {share} of the base · ARPU ₽{wholesale} against ₽{retail} retail' },
@@ -225,10 +226,10 @@ export const STRINGS = {
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- сводка под ползунками ---
-  opsCatalog: { ru: 'Каталог: <b>{hours}</b> часов ({licensed} лицензий + {original} своих). Глубина <b>{depth}</b>, свежесть <b>{fresh}</b>.', en: 'Catalogue: <b>{hours}</b> hours ({licensed} licensed + {original} original). Depth <b>{depth}</b>, freshness <b>{fresh}</b>.' },
-  opsLicensing: { ru: 'Бюджет лицензий купит <b>{hours}</b> часов в месяц, из них истечёт {decay} за месяц.', en: 'The licensing budget buys <b>{hours}</b> hours a month; {decay} of the library expires each month.' },
-  opsUnitCheck: { ru: 'Подписчик приносит <b>{arpu}</b> и стоит <b>{cost}</b> трафика и поддержки → вклад <b class="{cls}">{cm}</b>.', en: 'A subscriber brings <b>{arpu}</b> and costs <b>{cost}</b> in bandwidth and support → contribution <b class="{cls}">{cm}</b>.' },
-  opsAdShare: { ru: 'На дешёвый тариф уходит примерно <b>{share}</b> подписчиков — они платят меньше, но приносят рекламу.', en: 'Roughly <b>{share}</b> of subscribers pick the cheap tier — they pay less but bring advertising.' },
+  opsCatalog: { ru: 'Каталог: <a class="jump" data-jump="panel:slate">{hours}</a> часов ({licensed} лицензий + {original} своих). Глубина <b>{depth}</b>, свежесть <b>{fresh}</b>.', en: 'Catalogue: <a class="jump" data-jump="panel:slate">{hours}</a> hours ({licensed} licensed + {original} original). Depth <b>{depth}</b>, freshness <b>{fresh}</b>.' },
+  opsLicensing: { ru: 'Бюджет лицензий купит <a class="jump" data-jump="lever:licensing">{hours}</a> часов в месяц, из них истечёт {decay} за месяц.', en: 'The licensing budget buys <a class="jump" data-jump="lever:licensing">{hours}</a> hours a month; {decay} of the library expires each month.' },
+  opsUnitCheck: { ru: 'Подписчик приносит <a class="jump" data-jump="tab:unit">{arpu}</a> и стоит <b>{cost}</b> трафика и поддержки → вклад <b class="{cls}">{cm}</b>.', en: 'A subscriber brings <a class="jump" data-jump="tab:unit">{arpu}</a> and costs <b>{cost}</b> in bandwidth and support → contribution <b class="{cls}">{cm}</b>.' },
+  opsAdShare: { ru: 'На дешёвый тариф уходит примерно <a class="jump" data-jump="lever:priceAds">{share}</a> подписчиков — они платят меньше, но приносят рекламу.', en: 'Roughly <a class="jump" data-jump="lever:priceAds">{share}</a> of subscribers pick the cheap tier — they pay less but bring advertising.' },
 
   // --- студия ---
   studioGenre: { ru: 'Во что вкладывается студия', en: 'What the studio is making' },
@@ -287,11 +288,11 @@ export const STRINGS = {
   reportMonth0: { ru: 'Месяц 0. Сервис ещё не запущен.', en: 'Month 0. The service has not launched yet.' },
   reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
   reportStartIntro: { ru: 'У вас {cash} и библиотека из нескольких сотен часов старого кино. Порядок почти всегда такой:', en: 'You have {cash} and a library of a few hundred hours of old films. The sequence is almost always this:' },
-  reportStart1: { ru: 'Включите <b>закупку лицензий</b>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <b>licensing</b>: you need a catalogue right now, and your own project will not premiere for six months.' },
-  reportStart2: { ru: 'Одновременно запустите <b>производство</b>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <b>production</b>. An original is the only thing your rival does not have, and it stays yours forever.' },
+  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your own project will not premiere for six months.' },
+  reportStart2: { ru: 'Одновременно запустите <a class="jump" data-jump="panel:slate">производство</a>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <a class="jump" data-jump="panel:slate">production</a>. An original is the only thing your rival does not have, and it stays yours forever.' },
   reportStart3: { ru: 'Проверьте вклад с подписчика: трафик растёт вместе с просмотром, и слишком щедрый битрейт съедает подписку целиком.', en: 'Check contribution per subscriber: bandwidth grows with viewing, and an over-generous bitrate can swallow the whole subscription fee.' },
-  reportStart4: { ru: 'Только потом включайте <b>маркетинг</b>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <b>marketing</b>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
-  reportStartAlgos: { ru: '<b>Алгоритмы</b> откроются позже: им нужны часы просмотра, а часы приходят только от подписчиков.', en: '<b>Algorithms</b> unlock later: they need watch hours, and hours only come from subscribers.' },
+  reportStart4: { ru: 'Только потом включайте <a class="jump" data-jump="lever:brandMarketing">маркетинг</a>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <a class="jump" data-jump="lever:brandMarketing">marketing</a>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
+  reportStartAlgos: { ru: '<a class="jump" data-jump="panel:algos">Алгоритмы</a> откроются позже: им нужны часы просмотра, а часы приходят только от подписчиков.', en: '<a class="jump" data-jump="panel:algos">Algorithms</a> unlock later: they need watch hours, and hours only come from subscribers.' },
   reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
   reportHeadStats: { ru: 'выручка {revenue} · подписка {subscription} · реклама {ads}', en: 'revenue {revenue} · subscriptions {subscription} · advertising {ads}' },
 
