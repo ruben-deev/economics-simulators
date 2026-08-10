@@ -41,6 +41,8 @@ button { font-family: inherit; }
   padding: 10px 18px;
   border-bottom: 1px solid var(--line);
   background: rgba(11, 17, 32, 0.9);
+  /* Safari до сих пор понимает только префиксную форму */
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -530,6 +532,15 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .jump-target { animation: jump-flash 1.6s ease-out; border-radius: 10px; }
 .todo-jump { display: inline-block; margin-top: 6px; font-size: 12px; }
 .alert .jump { white-space: nowrap; }
+
+/* Экран отказа: показывается только когда игра не смогла запуститься */
+.crash { padding: 24px; max-width: 720px; margin: 0 auto; }
+.crash-panel .panel { border-color: var(--bad); }
+.crash .crash-message {
+  white-space: pre-wrap; word-break: break-word; font-size: 12px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px; margin: 10px 0; color: var(--muted); font-family: ui-monospace, monospace;
+}
 
 </style>
 </head>
@@ -1075,11 +1086,40 @@ score = valuation × your stake`,
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
+  crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
+  crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
+  crashReset: { ru: 'Перезапустить', en: 'Restart' },
+  crashBrowser: { ru: 'Если не помогло — пришлите текст выше: по нему видно, чего не хватает браузеру.', en: 'If that did not help, send the text above: it shows what the browser is missing.' },
   restartTitle: { ru: 'Начать заново?', en: 'Start over?' },
   restartText: { ru: 'Текущая партия будет потеряна, город сгенерируется с новым случайным набором событий.', en: 'The current game will be lost and the city will be regenerated with a new random run of events.' },
   restartYes: { ru: 'Да, заново', en: 'Yes, restart' },
   restartNo: { ru: 'Отмена', en: 'Cancel' },
 };
+
+
+// ===== ../../shared/clone.js =======================================
+// Глубокий клон состояния — своими руками, а не structuredClone.
+//
+// structuredClone появился в Safari только в 15.4 (март 2022). На сборках
+// постарше его просто нет, и игра падала на первой же строке createInitialState:
+// пользователь видел пустую страницу и «не стартует». Никакой другой API в коде
+// не требует браузера новее 2021 года, так что одна эта функция стоила игре
+// целого класса машин.
+//
+// Состояние игры — только простые данные: объекты, массивы, числа, строки,
+// булевы и null. Ни Map, ни Set, ни Date в нём нет и быть не должно: состояние
+// уезжает в localStorage через JSON и обратно, а JSON их всё равно не переживёт.
+function deepClone(value) {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    const out = new Array(value.length);
+    for (let i = 0; i < value.length; i += 1) out[i] = deepClone(value[i]);
+    return out;
+  }
+  const out = {};
+  for (const key of Object.keys(value)) out[key] = deepClone(value[key]);
+  return out;
+}
 
 
 // ===== ../../shared/rng.js =========================================
@@ -2049,12 +2089,12 @@ function effectiveCommission(state, decisions) {
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
 function step(prevState, input = {}) {
-  const state = structuredClone(prevState);
+  const state = deepClone(prevState);
   if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
 
   // Компактный снимок «как было до хода» — по нему интерфейс считает контрфактические
   // сценарии «сколько бы мы заработали без этого алгоритма».
-  const snapshot = structuredClone({
+  const snapshot = deepClone({
     ...prevState,
     history: prevState.history.slice(-2),
     lastSnapshot: null,
@@ -2576,7 +2616,7 @@ function step(prevState, input = {}) {
       contribution: p.served * cmOf(p),
       cmPerOrder: cmOf(p),
     })),
-    decisions: structuredClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
+    decisions: deepClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
   };
 
   // --- 11. Завершение недели ---
@@ -2615,7 +2655,7 @@ function algorithmImpact(state) {
   const out = [];
   for (const a of ALGORITHMS) {
     if (!actual.algoActive?.[a.key]) continue;
-    const decisions = structuredClone(actual.decisions);
+    const decisions = deepClone(actual.decisions);
     decisions.algoOn = { ...decisions.algoOn, [a.key]: false };
     let alt;
     try {
@@ -2667,7 +2707,7 @@ function fundingOffer(state, amount) {
 
 function raise(state, amount) {
   const offer = fundingOffer(state, amount);
-  const next = structuredClone(state);
+  const next = deepClone(state);
   next.cash += amount;
   next.equity = offer.newEquity;
   next.raisedTotal += amount;
@@ -2957,26 +2997,40 @@ function legendHtml(series) {
 
 
 const SAVE_KEY = 'novoeda-save-v3';
+// Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
+// не читается — см. load().
+const BUILD = 'foodtech-2';
 const el = (id) => document.getElementById(id);
 
 let state = null;
 let chartTab = 'orders';
 let rightTab = 'unit';
 let leversBuilt = false;
+let bound = false;                // обработчики уже навешаны
 
 // ----------------------------------------------------------------------------
 // Сохранение
 // ----------------------------------------------------------------------------
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ build: BUILD, state }));
+  } catch { /* приватный режим */ }
 }
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const s = JSON.parse(raw);
+    const saved = JSON.parse(raw);
+    // Сохранение от другой сборки не читаем: поля модели меняются между
+    // версиями, и старое состояние роняет отрисовку — на экране пусто,
+    // а причина невидима. Лучше начать неделю заново, чем не начать вовсе.
+    if (!saved || saved.build !== BUILD) return null;
+    const s = saved.state;
     return s && s.districts && Array.isArray(s.history) ? s : null;
   } catch { return null; }
+}
+function dropSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch { /* приватный режим */ }
 }
 
 const last = () => state.history[state.history.length - 1] ?? null;
@@ -4035,25 +4089,69 @@ function switchLang() {
   renderAll();
 }
 
+// Экран отказа вместо пустой страницы. Игра открывается одним файлом на чужой
+// машине, где не посмотришь консоль: если что-то падает, человек должен увидеть
+// текст ошибки и кнопку «начать заново», а не белое поле и слово «не стартует».
+function renderCrash(error) {
+  const message = error && error.message ? error.message : String(error);
+  const box = document.createElement('div');
+  box.className = 'crash crash-panel';
+  box.innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('crashTitle')}</h2>
+    <p class="funding-note">${t('crashText')}</p>
+    <pre class="crash-message"></pre>
+    <button class="btn primary" id="btn-crash-reset">${t('crashReset')}</button>
+    <p class="funding-note">${t('crashBrowser')}</p>
+  </div>`;
+  box.querySelector('.crash-message').textContent = `${message}\n${navigator.userAgent}`;
+  document.body.prepend(box);
+  box.querySelector('#btn-crash-reset').addEventListener('click', () => {
+    dropSave();
+    location.reload();
+  });
+}
+
 function init() {
+  try {
+    boot();
+  } catch (error) {
+    // Испорченное сохранение — самая частая причина. Пробуем ещё раз с нуля,
+    // и только если и это не помогло, показываем экран отказа.
+    dropSave();
+    try {
+      document.querySelector('.crash-panel')?.remove();
+      boot();
+    } catch (again) {
+      renderCrash(again);
+      throw again;
+    }
+  }
+}
+
+function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   state = load() ?? createInitialState('novograd');
 
-  el('btn-next').addEventListener('click', nextWeek);
-  el('btn-help').addEventListener('click', showHelp);
-  el('btn-lang').addEventListener('click', switchLang);
-  el('btn-restart').addEventListener('click', () => {
-    modal(`<h2>${t('restartTitle')}</h2><p class="funding-note">${t('restartText')}</p>`,
-      [{ label: t('restartYes'), primary: true, onClick: restart }, { label: t('restartNo') }]);
-  });
-  el('tabs').querySelectorAll('.tab').forEach((tab) => {
-    tab.addEventListener('click', () => { rightTab = tab.dataset.tab; renderRightTab(); });
-  });
-  window.addEventListener('resize', () => renderChart());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextWeek();
-  });
+  // Обработчики вешаются один раз: init() может позвать boot() повторно после
+  // сброса сохранения, и двойная подписка гоняла бы неделю по два раза за клик.
+  if (!bound) {
+    bound = true;
+    el('btn-next').addEventListener('click', nextWeek);
+    el('btn-help').addEventListener('click', showHelp);
+    el('btn-lang').addEventListener('click', switchLang);
+    el('btn-restart').addEventListener('click', () => {
+      modal(`<h2>${t('restartTitle')}</h2><p class="funding-note">${t('restartText')}</p>`,
+        [{ label: t('restartYes'), primary: true, onClick: restart }, { label: t('restartNo') }]);
+    });
+    el('tabs').querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => { rightTab = tab.dataset.tab; renderRightTab(); });
+    });
+    window.addEventListener('resize', () => renderChart());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextWeek();
+    });
+  }
 
   renderAll();
 }

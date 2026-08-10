@@ -23,6 +23,9 @@ import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../sha
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinopotok-save-v1';
+// Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
+// не читается — см. load().
+const BUILD = 'cinema-2';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -36,6 +39,7 @@ let pendingRaise = false;         // перевести действующую �
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
 let pendingPartner = null;        // 'accept' | 'decline'
+let bound = false;                // обработчики уже навешаны
 
 const clearActions = () => {
   pendingCommission = [];
@@ -46,15 +50,25 @@ const clearActions = () => {
 };
 
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ build: BUILD, state }));
+  } catch { /* приватный режим */ }
 }
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const s = JSON.parse(raw);
+    const saved = JSON.parse(raw);
+    // Сохранение от другой сборки не читаем: поля модели меняются между
+    // версиями, и старое состояние роняет отрисовку — на экране пусто,
+    // а причина невидима. Лучше начать месяц заново, чем не начать вовсе.
+    if (!saved || saved.build !== BUILD) return null;
+    const s = saved.state;
     return s && s.segments && Array.isArray(s.history) ? s : null;
   } catch { return null; }
+}
+function dropSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch { /* приватный режим */ }
 }
 
 const last = () => state.history[state.history.length - 1] ?? null;
@@ -1611,26 +1625,70 @@ function switchLang() {
   renderAll();
 }
 
+// Экран отказа вместо пустой страницы. Игра открывается одним файлом на чужой
+// машине, где не посмотришь консоль: если что-то падает, человек должен увидеть
+// текст ошибки и кнопку «начать заново», а не белое поле и слово «не стартует».
+function renderCrash(error) {
+  const message = error && error.message ? error.message : String(error);
+  const box = document.createElement('div');
+  box.className = 'crash crash-panel';
+  box.innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('crashTitle')}</h2>
+    <p class="funding-note">${t('crashText')}</p>
+    <pre class="crash-message"></pre>
+    <button class="btn primary" id="btn-crash-reset">${t('crashReset')}</button>
+    <p class="funding-note">${t('crashBrowser')}</p>
+  </div>`;
+  box.querySelector('.crash-message').textContent = `${message}\n${navigator.userAgent}`;
+  document.body.prepend(box);
+  box.querySelector('#btn-crash-reset').addEventListener('click', () => {
+    dropSave();
+    location.reload();
+  });
+}
+
 export function init() {
+  try {
+    boot();
+  } catch (error) {
+    // Испорченное сохранение — самая частая причина. Пробуем ещё раз с нуля,
+    // и только если и это не помогло, показываем экран отказа.
+    dropSave();
+    try {
+      document.querySelector('.crash-panel')?.remove();
+      boot();
+    } catch (again) {
+      renderCrash(again);
+      throw again;
+    }
+  }
+}
+
+function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   state = load() ?? createInitialState('kinopotok');
 
-  bindJumps();
-  el('btn-next').addEventListener('click', nextMonth);
-  el('btn-help').addEventListener('click', showHelp);
-  el('btn-lang').addEventListener('click', switchLang);
-  el('btn-restart').addEventListener('click', () => {
-    modal(`<h2>${t('restartTitle')}</h2><p class="funding-note">${t('restartText')}</p>`,
-      [{ label: t('restartYes'), primary: true, onClick: restart }, { label: t('restartNo') }]);
-  });
-  el('tabs').querySelectorAll('.tab').forEach((tab) => {
-    tab.addEventListener('click', () => { rightTab = tab.dataset.tab; renderRightTab(); });
-  });
-  window.addEventListener('resize', () => renderChart());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextMonth();
-  });
+  // Обработчики вешаются один раз: init() может позвать boot() повторно после
+  // сброса сохранения, и двойная подписка гоняла бы месяц по два раза за клик.
+  if (!bound) {
+    bound = true;
+    bindJumps();
+    el('btn-next').addEventListener('click', nextMonth);
+    el('btn-help').addEventListener('click', showHelp);
+    el('btn-lang').addEventListener('click', switchLang);
+    el('btn-restart').addEventListener('click', () => {
+      modal(`<h2>${t('restartTitle')}</h2><p class="funding-note">${t('restartText')}</p>`,
+        [{ label: t('restartYes'), primary: true, onClick: restart }, { label: t('restartNo') }]);
+    });
+    el('tabs').querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => { rightTab = tab.dataset.tab; renderRightTab(); });
+    });
+    window.addEventListener('resize', () => renderChart());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.repeat && document.activeElement?.tagName !== 'BUTTON') nextMonth();
+    });
+  }
 
   renderAll();
 }

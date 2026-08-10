@@ -9,6 +9,7 @@ export default {
   modules: [
     '../../shared/i18n.js',
     'src/strings.js',
+    '../../shared/clone.js',
     '../../shared/rng.js',
     'src/model/config.js',
     'src/model/weather.js',

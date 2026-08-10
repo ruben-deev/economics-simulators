@@ -106,7 +106,19 @@ async function buildGame(name) {
   const manifestPath = path.join(dir, 'build.manifest.js');
   const { default: manifest } = await import(pathToFileURL(manifestPath).href);
 
-  const html = await fs.readFile(path.join(dir, manifest.html), 'utf8');
+  const rawHtml = await fs.readFile(path.join(dir, manifest.html), 'utf8');
+
+  // Блок only-modular нужен только модульной версии: он объясняет, почему
+  // страница не открывается двойным щелчком из папки. В сборке одним файлом
+  // модулей нет, и эта подсказка была бы неверной — вырезаем её.
+  const onlyModular = /[ \t]*<!-- only-modular:start -->[\s\S]*?<!-- only-modular:end -->\n?/g;
+  const html = rawHtml.replace(onlyModular, '');
+  if (html === rawHtml) {
+    throw new Error(`В ${name}/index.html нет блока only-modular: разметка изменилась`);
+  }
+  if (/<script(?![^>]*type="module")/.test(html)) {
+    throw new Error(`В ${name}/index.html остался обычный <script> вне блока only-modular`);
+  }
 
   const styles = [];
   for (const rel of manifest.css) {

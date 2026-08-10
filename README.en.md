@@ -47,6 +47,16 @@ npm run build      # rebuild games/*/dist/game.html
 
 The built files are already in the repository, so the build step is only needed after edits.
 
+**Important:** `games/<game>/index.html` will not open by double-clicking from a folder —
+browsers do not load ES modules over `file://`, neither Safari nor Chrome. To run from
+disk use `dist/game.html`; for development use `npm start`. If you do open the modular
+version from a folder, the page explains what to do.
+
+**Compatibility.** The baseline is spring-2021 browsers (Safari 14.1, Chrome 90).
+Newer APIs that must not reach the code are listed in `shared/tests/compat.test.mjs`
+and checked against the built files: one such function turns the game into a blank
+page on someone else's machine, with no hint as to why.
+
 ---
 
 # 🛵 NOVOEDA — food delivery

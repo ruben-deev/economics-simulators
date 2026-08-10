@@ -32,6 +32,7 @@ import {
   CONFIG, SEGMENTS, GENRES, ALGORITHMS, DEFAULT_DECISIONS, clamp, segmentById, genreById,
 } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
+import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
@@ -149,7 +150,7 @@ export function createInitialState(seed = 'kinopotok') {
     partnerOffer: null,    // предложение, ждущее ответа
     partnerHistory: [],
 
-    decisions: structuredClone(DEFAULT_DECISIONS),
+    decisions: deepClone(DEFAULT_DECISIONS),
     flags: { valuationBonus: 0 },
     pendingEvent: null,
     pendingChoice: null,
@@ -226,10 +227,10 @@ export function contentCap(state) {
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
 export function step(prevState, input = {}) {
-  const state = structuredClone(prevState);
+  const state = deepClone(prevState);
   if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
 
-  const snapshot = structuredClone({
+  const snapshot = deepClone({
     ...prevState,
     history: prevState.history.slice(-2),
     lastSnapshot: null,
@@ -1137,7 +1138,7 @@ export function step(prevState, input = {}) {
            + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
         : 0,
     })),
-    decisions: structuredClone(decisions),
+    decisions: deepClone(decisions),
   };
 
   // --- 16. Завершение месяца ---
@@ -1199,7 +1200,7 @@ export function algorithmImpact(state) {
   const out = [];
   for (const a of ALGORITHMS) {
     if (!actual.algoActive?.[a.key]) continue;
-    const decisions = structuredClone(actual.decisions);
+    const decisions = deepClone(actual.decisions);
     decisions.algoOn = { ...decisions.algoOn, [a.key]: false };
     let alt;
     try {
@@ -1260,7 +1261,7 @@ export function fundingOffer(state, amount) {
 
 export function raise(state, amount) {
   const offer = fundingOffer(state, amount);
-  const next = structuredClone(state);
+  const next = deepClone(state);
   next.cash += amount;
   next.equity = offer.newEquity;
   next.raisedTotal += amount;

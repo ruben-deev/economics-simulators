@@ -20,6 +20,7 @@
 
 import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
+import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, seasonOf } from './weather.js';
 
@@ -139,12 +140,12 @@ function effectiveCommission(state, decisions) {
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
 export function step(prevState, input = {}) {
-  const state = structuredClone(prevState);
+  const state = deepClone(prevState);
   if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
 
   // Компактный снимок «как было до хода» — по нему интерфейс считает контрфактические
   // сценарии «сколько бы мы заработали без этого алгоритма».
-  const snapshot = structuredClone({
+  const snapshot = deepClone({
     ...prevState,
     history: prevState.history.slice(-2),
     lastSnapshot: null,
@@ -666,7 +667,7 @@ export function step(prevState, input = {}) {
       contribution: p.served * cmOf(p),
       cmPerOrder: cmOf(p),
     })),
-    decisions: structuredClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
+    decisions: deepClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
   };
 
   // --- 11. Завершение недели ---
@@ -705,7 +706,7 @@ export function algorithmImpact(state) {
   const out = [];
   for (const a of ALGORITHMS) {
     if (!actual.algoActive?.[a.key]) continue;
-    const decisions = structuredClone(actual.decisions);
+    const decisions = deepClone(actual.decisions);
     decisions.algoOn = { ...decisions.algoOn, [a.key]: false };
     let alt;
     try {
@@ -757,7 +758,7 @@ export function fundingOffer(state, amount) {
 
 export function raise(state, amount) {
   const offer = fundingOffer(state, amount);
-  const next = structuredClone(state);
+  const next = deepClone(state);
   next.cash += amount;
   next.equity = offer.newEquity;
   next.raisedTotal += amount;

@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node shared/tools/serve.js",
-    "test": "node --test games/*/tests/*.test.mjs",
+    "test": "npm run build && node --test games/*/tests/*.test.mjs shared/tests/*.test.mjs",
     "build": "node shared/tools/build.js"
   },
   "engines": {

@@ -34,6 +34,8 @@ button { font-family: inherit; }
   padding: 10px 18px;
   border-bottom: 1px solid var(--line);
   background: rgba(11, 17, 32, 0.9);
+  /* Safari до сих пор понимает только префиксную форму */
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -523,3 +525,12 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .jump-target { animation: jump-flash 1.6s ease-out; border-radius: 10px; }
 .todo-jump { display: inline-block; margin-top: 6px; font-size: 12px; }
 .alert .jump { white-space: nowrap; }
+
+/* Экран отказа: показывается только когда игра не смогла запуститься */
+.crash { padding: 24px; max-width: 720px; margin: 0 auto; }
+.crash-panel .panel { border-color: var(--bad); }
+.crash .crash-message {
+  white-space: pre-wrap; word-break: break-word; font-size: 12px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px; margin: 10px 0; color: var(--muted); font-family: ui-monospace, monospace;
+}
