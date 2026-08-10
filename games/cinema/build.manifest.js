@@ -5,6 +5,9 @@ export default {
   name: 'cinema',
   title: 'КИНОПОТОК · streaming economics simulator',
   html: 'index.html',
+  // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
+  // и не говорит ни о содержимом, ни о том, какая это из двух игр.
+  output: 'dist/kinopotok-streaming-simulator.html',
   css: ['../../shared/styles.css'],
   modules: [
     '../../shared/i18n.js',

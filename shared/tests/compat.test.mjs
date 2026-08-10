@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -49,8 +49,11 @@ const TOO_NEW_CSS = [
   ['100lvh', 'единицы lvh', 'Safari 15.4'],
 ];
 
-const bundles = readdirSync(join(root, 'games'))
-  .map((game) => [game, join(root, 'games', game, 'dist', 'game.html')]);
+const bundles = await Promise.all(readdirSync(join(root, 'games')).map(async (game) => {
+  const dir = join(root, 'games', game);
+  const { default: manifest } = await import(pathToFileURL(join(dir, 'build.manifest.js')).href);
+  return [game, join(dir, manifest.output)];
+}));
 
 test('в собранных файлах нет API новее нашей планки', () => {
   assert.ok(bundles.length >= 2, 'сборки не найдены — сначала npm run build');

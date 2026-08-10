@@ -1,4 +1,4 @@
-// Сборка одной самодостаточной страницы games/<игра>/dist/game.html.
+// Сборка одной самодостаточной страницы games/<игра>/dist/<имя из манифеста>.html.
 // Нужна, чтобы игру можно было просто открыть двойным кликом или раздать
 // студентам одним файлом — без сервера, сборщиков и интернета.
 //
@@ -148,10 +148,10 @@ async function buildGame(name) {
     throw new Error(`Не удалось встроить ресурсы в ${name}: разметка index.html изменилась`);
   }
 
-  const target = path.join(dir, 'dist/game.html');
+  const target = path.join(dir, manifest.output);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, page);
-  console.log(`${name}: games/${name}/dist/game.html (${(page.length / 1024).toFixed(0)} КБ)`);
+  console.log(`${name}: games/${name}/${manifest.output} (${(page.length / 1024).toFixed(0)} КБ)`);
 }
 
 const requested = process.argv.slice(2);

@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/game.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/game.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -42,14 +42,14 @@ Locally:
 ```
 npm start          # http://localhost:8080 — the games index
 npm test           # model and translation tests for both games
-npm run build      # rebuild games/*/dist/game.html
+npm run build      # rebuild the single-file builds in games/*/dist/
 ```
 
 The built files are already in the repository, so the build step is only needed after edits.
 
 **Important:** `games/<game>/index.html` will not open by double-clicking from a folder —
 browsers do not load ES modules over `file://`, neither Safari nor Chrome. To run from
-disk use `dist/game.html`; for development use `npm start`. If you do open the modular
+disk use the file in `dist/`; for development use `npm start`. If you do open the modular
 version from a folder, the page explains what to do.
 
 **Compatibility.** The baseline is spring-2021 browsers (Safari 14.1, Chrome 90).
@@ -255,7 +255,7 @@ shared/
   charts.js                     canvas chart rendering
   format.js                     number and money formatting
   styles.css                    shared dark theme and grid
-  tools/build.js                bundles games/*/dist/game.html from manifests
+  tools/build.js                bundles the single-file builds from manifests
   tools/serve.js                local static server
 games/<game>/
   index.html                    markup
@@ -269,7 +269,8 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/game.html                the built offline version
+  dist/kinopotok-streaming-simulator.html
+                                the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```
 

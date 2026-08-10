@@ -33,8 +33,8 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/game.html) ·
-[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/game.html).
+[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator.html) ·
+[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 Локально:
@@ -42,14 +42,14 @@
 ```
 npm start          # http://localhost:8080 — витрина со списком игр
 npm test           # тесты моделей и переводов обеих игр
-npm run build      # пересобрать games/*/dist/game.html
+npm run build      # пересобрать одиночные файлы игр в games/*/dist/
 ```
 
 Собранные файлы уже лежат в репозитории, поэтому шаг сборки нужен только после правок.
 
 **Важно:** `games/<игра>/index.html` из папки двойным щелчком не откроется — браузер
 не грузит ES-модули с `file://`, и в Safari, и в Chrome. Для запуска с диска
-используйте `dist/game.html`, для разработки — `npm start`. Если открыть модульную
+используйте файл из `dist/`, для разработки — `npm start`. Если открыть модульную
 версию из папки, страница сама объяснит, что делать.
 
 **Совместимость.** Планка — браузеры весны 2021 года (Safari 14.1, Chrome 90).
@@ -257,7 +257,7 @@ shared/
   charts.js                     отрисовка графиков на canvas
   format.js                     форматирование чисел и денег
   styles.css                    общая тёмная тема и сетка
-  tools/build.js                сборка games/*/dist/game.html по манифестам
+  tools/build.js                сборка одиночных файлов игр по манифестам
   tools/serve.js                локальный статический сервер
 games/<игра>/
   index.html                    разметка
@@ -271,7 +271,8 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/game.html                собранная офлайн-версия
+  dist/kinopotok-streaming-simulator.html
+                                собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```
 
