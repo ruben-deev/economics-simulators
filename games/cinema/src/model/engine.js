@@ -715,6 +715,7 @@ export function step(prevState, input = {}) {
     perSegment.push({
       def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
       churnRate, converted, leaving, flow, preference,
+      awareness: Math.max(1e-4, seg.awareness),
       subs: seg.premium + seg.ads, rivalSubs: riv.segments[def.id],
     });
   }
@@ -723,7 +724,10 @@ export function step(prevState, input = {}) {
   // Эти подписчики живут отдельным пулом: у них своя доля выручки, свой отток
   // и свои часы просмотра. Складывать их с розничными в одну цифру можно,
   // но именно так и обманывают себя графиком роста.
-  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
+  // Розница до партнёрского блока: по ней считается, сколько места на рынке
+  // ещё осталось. Итоговая розница пересчитывается ниже — после того как
+  // остатки закрытых контрактов перейдут в собственную базу.
+  const retailBeforePartners = perSegment.reduce((s, p) => s + p.subs, 0);
   if (input.partnerAnswer && state.partnerOffer) {
     if (input.partnerAnswer === 'accept') {
       const def = partnerById(state.partnerOffer);
@@ -746,7 +750,7 @@ export function step(prevState, input = {}) {
   for (const deal of state.partners) {
     const def = partnerById(deal.id);
     if (!def) continue;
-    const roomLeft = Math.max(0, marketPotential - retailSubsNow - rivalSubs(riv) - partnerBefore)
+    const roomLeft = Math.max(0, marketPotential - retailBeforePartners - rivalSubs(riv) - partnerBefore)
       / marketPotential;
     const gained = partnerInflow(deal, def, roomLeft * 1.6);
     // Внутри контракта уходят редко: подписка идёт пакетом и её не отменяют
@@ -759,18 +763,33 @@ export function step(prevState, input = {}) {
     deal.monthsLeft -= 1;
   }
   // Контракт кончился — база уходит разом. Часть остаётся, если бренд запомнился.
+  let partnerKept = 0;
   for (const deal of state.partners.filter((d) => d.monthsLeft <= 0)) {
     const def = partnerById(deal.id);
     const keepShare = CONFIG.partnerExitKeep * (1 - (def?.awarenessDrag ?? 0));
     const kept = deal.subs * keepShare;
     partnerExpired.push({ id: deal.id, lost: deal.subs - kept, kept });
     partnerLost += deal.subs - kept;
-    // Удержанные переходят в розницу по текущей цене, в самый массовый сегмент
-    const mass = state.segments.mass;
-    mass.premium += kept;
+    partnerKept += kept;
     state.partnerHistory.push({ id: deal.id, month, action: 'expired' });
   }
+  // Удержанные переходят в розницу по текущей цене, в самый массовый сегмент.
+  // Их нужно провести и через perSegment, иначе они выпадут из итога месяца:
+  // база просела бы на величину «удержанных», а в следующем месяце подскочила
+  // обратно — ровно тот разрыв, из-за которого график базы врал.
+  if (partnerKept > 0) {
+    const massEntry = perSegment.find((p) => p.def.id === 'mass') ?? perSegment[0];
+    if (massEntry) {
+      // Пришедшие из опта платят текущий прайс — и тянут среднюю цену базы вверх
+      const before = Math.max(0, massEntry.seg.premium + massEntry.seg.ads);
+      massEntry.pricing.lockedPrice = (massEntry.pricing.lockedPrice * before
+        + decisions.priceNew * partnerKept) / Math.max(1e-6, before + partnerKept);
+      massEntry.seg.premium += partnerKept;
+      massEntry.subs += partnerKept;
+    }
+  }
   state.partners = state.partners.filter((d) => d.monthsLeft > 0);
+  const retailSubsNow = perSegment.reduce((s, p) => s + p.subs, 0);
 
   const partnerStats = partnerTotals(state.partners);
   const partnerSubs = partnerStats.subs;
@@ -794,6 +813,8 @@ export function step(prevState, input = {}) {
     hours += segHours;
     adHours += p.adHours;
   }
+
+  const retailHours = hours;
 
   // Оптовые подписчики тоже смотрят — и их трафик тоже оплачиваете вы.
   // Раньше эти часы добавлялись после расчёта трафика, и опт выходил бесплатным.
@@ -859,8 +880,11 @@ export function step(prevState, input = {}) {
   const arpu = totalSubs > 0 ? revenue / totalSubs : 0;
   const cmPerSub = totalSubs > 0 ? contribution / totalSubs : 0;
   const hoursPerSub = totalSubs > 0 ? hours / totalSubs : 0;
-  const avgChurn = totalSubs > 0
-    ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / totalSubs
+  // Отток считается по собственной базе. Оптовые подписчики живут по условиям
+  // контракта, и подмешивать их сюда — значит рисовать удержание лучше, чем оно
+  // есть: чем больше партнёрская база, тем сильнее занижался бы отток розницы.
+  const avgChurn = retailSubs > 0
+    ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / retailSubs
     : CONFIG.baseChurn;
   const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
@@ -868,10 +892,13 @@ export function step(prevState, input = {}) {
   const rivalTotal = rivalSubs(riv);
   const duopolyShare = totalSubs + rivalTotal > 0 ? totalSubs / (totalSubs + rivalTotal) : 0;
 
+  // Средние по сегментам взвешиваются по розничной базе: веса должны давать
+  // единицу. С весами по общей базе (вместе с оптом) любое среднее ползло бы
+  // к 1.0 просто оттого, что подписан крупный контракт.
   const wGeo = (key) => {
-    if (!perSegment.length || totalSubs <= 0) return 1;
+    if (!perSegment.length || retailSubs <= 0) return 1;
     let acc = 0;
-    for (const p of perSegment) acc += Math.log(Math.max(1e-6, p[key])) * (p.subs / totalSubs);
+    for (const p of perSegment) acc += Math.log(Math.max(1e-6, p[key])) * (p.subs / retailSubs);
     return Math.exp(acc);
   };
 
@@ -931,7 +958,12 @@ export function step(prevState, input = {}) {
 
     hours,
     adHours,
+    retailHours,
+    partnerHours,
     hoursPerSub,
+    // Часы на одного розничного подписчика: по ним считается юнит-экономика.
+    // Общий hoursPerSub смешивает розницу с оптом, у которого своя норма просмотра.
+    retailHoursPerSub: retailSubs > 0 ? retailHours / retailSubs : CONFIG.baseHoursPerSub,
     catalogHours,
     catalogLicensed: state.catalogLicensed,
     catalogOriginal: state.catalogOriginal,
@@ -1022,9 +1054,12 @@ export function step(prevState, input = {}) {
     lockedPrice: premiumSubs > 0
       ? perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0) / premiumSubs
       : decisions.priceNew,
+    // Разрыв бывает и отрицательным: после снижения прайса база какое-то время
+    // платит больше нового ценника. Обрезать его нулём — значит скрывать
+    // ровно тот случай, когда деньги теряются на ровном месте.
     priceGap: premiumSubs > 0
       ? clamp(1 - (perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0)
-        / premiumSubs) / Math.max(1, decisions.priceNew), 0, 1)
+        / premiumSubs) / Math.max(1, decisions.priceNew), -1, 1)
       : 0,
     raiseApplied,
     raiseLost,
@@ -1065,6 +1100,7 @@ export function step(prevState, input = {}) {
     avgAppeal: wGeo('appeal'),
     avgAdPenalty: wGeo('adPenalty'),
     avgPreference: wGeo('preference'),
+    avgAwareness: wGeo('awareness'),
 
     // --- Совет и кризисы ---
     goal: state.board.goal ? { ...state.board.goal } : null,
@@ -1125,9 +1161,13 @@ export function step(prevState, input = {}) {
 // Экономика одного подписчика — считается мгновенно, до расчёта месяца
 // ----------------------------------------------------------------------------
 export function unitEconomics(state, decisions) {
+  // Считается по рознице: у оптового подписчика своя цена, своя норма просмотра
+  // и своя доля рекламы. Со счётом по общей базе крупный контракт «улучшал»
+  // юнит-экономику розницы, ничего в ней не меняя.
   const last = state.history[state.history.length - 1];
-  const hoursPerSub = last ? last.hoursPerSub : CONFIG.baseHoursPerSub;
-  const adShare = last && last.subs > 0 ? last.adSubs / last.subs : 0.35;
+  const hoursPerSub = last ? (last.retailHoursPerSub ?? last.hoursPerSub) : CONFIG.baseHoursPerSub;
+  const retail = last ? (last.retailSubs ?? last.subs) : 0;
+  const adShare = last && retail > 0 ? clamp(last.adSubs / retail, 0, 1) : 0.35;
 
   const subscription = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
   const impressions = hoursPerSub * adShare * decisions.adLoad * 2;
@@ -1230,24 +1270,46 @@ export function raise(state, amount) {
 // ----------------------------------------------------------------------------
 // Разбор месяца: раскладываем изменение числа подписчиков на факторы
 // ----------------------------------------------------------------------------
+// Разложение — это баланс запаса, а не набор «влияний». База меняется ровно
+// на пять потоков, и они обязаны сложиться в ту же цифру, что стоит в заголовке.
+// Раньше здесь сравнивались множители спроса: знаки не совпадали с движением
+// базы, а суммы не совпадали ни с чем — растущий месяц выглядел красным.
 export function explain(prev, cur) {
+  if (!cur) return [];
+  const base = prev ? prev.subs : 0;
+  if (base <= 0) return [];
+  const partnerNet = (cur.partnerInflow ?? 0) - (cur.partnerLost ?? 0);
+  const parts = [
+    ['flowNew', cur.newSubs],
+    ['flowChurn', -cur.lostSubs],
+    ['flowSwitch', cur.netSwitch],
+    ['flowPartners', partnerNet],
+    ['flowRaise', -(cur.raiseLost ?? 0)],
+  ];
+  return parts
+    .map(([key, people]) => ({ key, people, effect: people / base }))
+    .filter((p) => Math.abs(p.effect) > 0.0005)
+    .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
+}
+
+// Почему приток и отток оказались такими: изменение условий месяц к месяцу.
+// Здесь знак читается одинаково у всех строк — вверх значит «в вашу пользу».
+export function explainFactors(prev, cur) {
   if (!prev || !cur) return [];
   const parts = [
-    ['driverPrice', prev.avgPriceFactor, cur.avgPriceFactor],
-    ['driverCatalog', prev.avgAppeal, cur.avgAppeal],
-    ['driverAds', prev.avgAdPenalty, cur.avgAdPenalty],
-    ['driverRival', prev.avgPreference, cur.avgPreference],
-    ['driverRetention', 1 - prev.churnRate, 1 - cur.churnRate],
-    ['driverAwareness',
-      Math.max(1e-6, prev.trials / Math.max(1, prev.subs)),
-      Math.max(1e-6, cur.trials / Math.max(1, cur.subs))],
+    ['factorPrice', prev.avgPriceFactor, cur.avgPriceFactor],
+    ['factorCatalog', prev.avgAppeal, cur.avgAppeal],
+    ['factorAds', prev.avgAdPenalty, cur.avgAdPenalty],
+    ['factorStanding', prev.avgPreference, cur.avgPreference],
+    ['factorAwareness', prev.avgAwareness, cur.avgAwareness],
+    ['factorRetention', 1 - prev.churnRate, 1 - cur.churnRate],
   ];
   return parts
     .map(([key, a, b]) => ({
       key,
-      effect: a > 0 && b > 0 ? Math.exp(Math.log(b) - Math.log(a)) - 1 : 0,
+      effect: a > 0 && b > 0 ? b / a - 1 : 0,
     }))
-    .filter((p) => Math.abs(p.effect) > 0.002)
+    .filter((p) => Math.abs(p.effect) > 0.005)
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
 }
 

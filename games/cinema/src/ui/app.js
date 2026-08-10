@@ -13,7 +13,7 @@ import { crisisById, resolutionCost, severityOf } from '../model/crises.js';
 import { SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz } from '../model/slate.js';
 import { PARTNERS, partnerById, partnerTotals } from '../model/partners.js';
 import {
-  createInitialState, step, explain, unitEconomics, valuation, fundingOffer, raise, clamp,
+  createInitialState, step, explain, explainFactors, unitEconomics, valuation, fundingOffer, raise, clamp,
   finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact,
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
@@ -189,18 +189,23 @@ function renderPriceGap() {
 
   const listPrice = state.decisions.priceNew;
   const paid = r.lockedPrice;
-  const gap = clamp(1 - paid / Math.max(1, listPrice), 0, 1);
+  // Разрыв может уйти и в минус: после снижения прайса действующая база
+  // какое-то время платит больше нового ценника. Прятать этот случай за нулём
+  // значило бы показывать «совпадает» там, где база переплачивает.
+  const gap = clamp(1 - paid / Math.max(1, listPrice), -1, 1);
+  const wide = Math.abs(gap) > 0.12;
   const wait = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
   const canRaise = wait <= 0 && listPrice > paid + 1;
 
-  box.innerHTML = `<div class="gap-box ${gap > 0.12 ? 'wide' : ''}">
+  box.innerHTML = `<div class="gap-box ${wide ? 'wide' : ''}">
     <div class="gap-row">
       <span>${t('gapList')}</span><b>${num(listPrice)} ₽</b>
       <span class="gap-arrow">→</span>
-      <span>${t('gapPaid')}</span><b class="${gap > 0.12 ? 'warn' : ''}">${num(paid)} ₽</b>
-      <span class="gap-value ${gap > 0.12 ? 'neg' : ''}">${gap > 0.005 ? `−${pct(gap, 0)}` : t('gapNone')}</span>
+      <span>${t('gapPaid')}</span><b class="${wide ? 'warn' : ''}">${num(paid)} ₽</b>
+      <span class="gap-value ${wide ? (gap > 0 ? 'neg' : 'pos') : ''}">${
+        Math.abs(gap) > 0.005 ? `${gap > 0 ? '−' : '+'}${pct(Math.abs(gap), 0)}` : t('gapNone')}</span>
     </div>
-    <span class="q-bar"><span class="q-fill ${gap > 0.12 ? '' : 'ok'}" style="width:${((1 - gap) * 100).toFixed(0)}%"></span></span>
+    <span class="q-bar"><span class="q-fill ${wide && gap > 0 ? '' : 'ok'}" style="width:${(clamp(1 - gap, 0, 1) * 100).toFixed(0)}%"></span></span>
     ${r.annualSubs > 0 ? `<div class="funding-note">${t('gapAnnual', { subs: compact(r.annualSubs) })}</div>` : ''}
     ${canRaise
       ? `<button class="btn ${pendingRaise ? 'primary' : 'ghost'} tiny" id="btn-raise">${
@@ -1101,22 +1106,41 @@ function renderReport() {
   const r = last();
   if (!r) { el('report-slot').innerHTML = renderStartHint(); return; }
 
-  const drivers = explain(prev(), r);
-  const maxAbs = Math.max(0.02, ...drivers.map((d) => Math.abs(d.effect)));
+  // Разбор месяца — это баланс запаса: строки складываются в изменение базы.
+  // Зелёное — то, что базу прибавило, красное — то, что её убавило, и цвет
+  // строки всегда совпадает со знаком её вклада.
+  const p0 = prev();
+  const drivers = explain(p0, r);
+  const netEffect = drivers.reduce((s, d) => s + d.effect, 0);
+  const maxAbs = Math.max(0.005, ...drivers.map((d) => Math.abs(d.effect)));
+  const bar = (effect, scale) => {
+    const w = (Math.abs(effect) / scale) * 50;
+    const pos = effect > 0;
+    return `<span class="d-bar"><span class="d-fill" style="${
+      pos ? `left:50%;width:${w}%` : `right:50%;width:${w}%`};background:${
+      pos ? 'var(--good)' : 'var(--bad)'}"></span></span>`;
+  };
+  const factors = explainFactors(p0, r);
+  const factorsHtml = factors.length ? `<div class="funding-note" style="margin-top:6px">${
+    t('factorsIntro')} ${factors.slice(0, 4).map((f) =>
+      `${t(f.key)} <b class="${f.effect > 0 ? 'pos' : 'neg'}">${signedPct(f.effect)}</b>`).join(', ')}.</div>` : '';
   const driversHtml = drivers.length ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
-        delta: signedPct(r.subs / Math.max(1e-9, prev().subs) - 1) })}</div>
-      ${drivers.slice(0, 6).map((d) => {
-        const w = (Math.abs(d.effect) / maxAbs) * 50;
-        const pos = d.effect > 0;
-        return `<div class="driver">
+        delta: signedPct(r.subs / Math.max(1e-9, p0.subs) - 1) })}</div>
+      ${drivers.map((d) => `<div class="driver">
           <span class="d-name">${t(d.key)}</span>
-          <span class="d-bar"><span class="d-fill" style="${pos ? `left:50%;width:${w}%` : `right:50%;width:${w}%`};background:${pos ? 'var(--good)' : 'var(--bad)'}"></span></span>
-          <span class="d-val ${pos ? 'pos' : 'neg'}">${signedPct(d.effect)}</span>
-        </div>`;
-      }).join('')}
-    </div>` : '';
+          <span class="d-people">${d.people >= 0 ? '+' : '−'}${compact(Math.abs(d.people))}</span>
+          ${bar(d.effect, maxAbs)}
+          <span class="d-val ${d.effect > 0 ? 'pos' : 'neg'}">${signedPct(d.effect)}</span>
+        </div>`).join('')}
+      <div class="d-sum">
+        <span class="d-name">${t('driversNet')}</span>
+        <span class="d-people">${netEffect >= 0 ? '+' : '−'}${compact(Math.abs(r.subs - p0.subs))}</span>
+        ${bar(netEffect, maxAbs)}
+        <span class="d-val ${netEffect > 0 ? 'pos' : 'neg'}">${signedPct(netEffect)}</span>
+      </div>
+    </div>${factorsHtml}` : '';
 
   const alerts = buildAlerts(r);
   if (r.goalOutcome) {
@@ -1207,12 +1231,16 @@ const CHART_TABS = {
       { label: t('seriesThem'), data: h.map((r) => r.rivalSubs ?? 0), color: PALETTE[3] },
     ],
   },
+  // Три нижние линии складываются в верхнюю: если они не сходятся — врёт модель,
+  // а не глаз. Оптовая база вынесена отдельно именно потому, что её легко
+  // перепутать с собственным ростом.
   subs: {
     label: 'chartSubs', caption: 'chartSubsCaption',
     series: (h) => [
       { label: t('seriesSubs'), data: h.map((r) => r.subs), color: PALETTE[1] },
       { label: t('seriesPremium'), data: h.map((r) => r.premiumSubs), color: PALETTE[0] },
       { label: t('seriesAds'), data: h.map((r) => r.adSubs), color: PALETTE[3] },
+      { label: t('seriesPartner'), data: h.map((r) => r.partnerSubs ?? 0), color: PALETTE[4] },
     ],
   },
   money: {

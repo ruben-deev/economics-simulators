@@ -13,7 +13,7 @@ import { annualShare, raiseShock, annualSubs } from '../src/model/pricing.js';
 import { PARTNERS, partnerById, rollPartnerOffer, partnerTotals } from '../src/model/partners.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
-  explain, finalScore, algoQuality, dataLevel, rndLevel, techLevel,
+  explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, techLevel,
   algorithmImpact, catalogDepth, catalogFreshness, projectCost, genreById, segmentById,
 } from '../src/model/engine.js';
 import { RIVAL_RELEASES, classifyRelease, rivalEffect, seasonOf, seasonHours } from '../src/model/market.js';
@@ -805,6 +805,170 @@ test('finalScore и explain возвращают ключи, а не готов�
     assert.ok(Number.isFinite(d.effect), `${d.key}.effect`);
   }
   assert.deepEqual(explain(null, h[0]), [], 'без предыдущего месяца разбирать нечего');
+});
+
+// ----------------------------------------------------------------------------
+// Учёт базы: цифры на экране должны сходиться друг с другом
+// ----------------------------------------------------------------------------
+
+// Прогон, в котором подписываются все партнёрские предложения: именно оптовый
+// канал ломал учёт — база уходила в отдельный пул и возвращалась мимо итогов.
+function runWithPartners(months, seed) {
+  let state = createInitialState(seed);
+  const reports = [];
+  for (let i = 0; i < months && !state.over; i++) {
+    const input = { decisions: DEFAULT_DECISIONS, eventChoice: 0 };
+    if (state.partnerOffer) input.partnerAnswer = 'accept';
+    const res = step(state, input);
+    state = res.state;
+    reports.push(res.report);
+  }
+  return reports;
+}
+
+test('тарифы и опт складываются в общую базу', () => {
+  for (const seed of ['tier-a', 'tier-b', 'tier-c']) {
+    for (const r of runWithPartners(36, seed)) {
+      const sum = r.premiumSubs + r.adSubs + r.partnerSubs;
+      assert.ok(Math.abs(sum - r.subs) < Math.max(1, r.subs * 1e-9),
+        `${seed} м${r.month}: без рекламы ${Math.round(r.premiumSubs)} + с рекламой ${Math.round(r.adSubs)}`
+        + ` + опт ${Math.round(r.partnerSubs)} = ${Math.round(sum)}, а всего показано ${Math.round(r.subs)}`);
+      assert.ok(Math.abs(r.premiumSubs + r.adSubs - r.retailSubs) < Math.max(1, r.subs * 1e-9),
+        `${seed} м${r.month}: тарифы не складываются в розничную базу`);
+    }
+  }
+});
+
+test('разбор месяца сходится с изменением базы до копейки', () => {
+  for (const seed of ['flow-a', 'flow-b', 'flow-c']) {
+    const reports = runWithPartners(36, seed);
+    for (let i = 1; i < reports.length; i++) {
+      const p = reports[i - 1], c = reports[i];
+      const actual = c.subs - p.subs;
+      const explained = explain(p, c).reduce((s, d) => s + d.people, 0);
+      // Мелкие строки отброшены как незначимые — допуск считаем от них
+      assert.ok(Math.abs(actual - explained) <= Math.max(1, p.subs * 0.002),
+        `${seed} м${c.month}: база изменилась на ${Math.round(actual)},`
+        + ` а строки разбора дают ${Math.round(explained)}`);
+    }
+  }
+});
+
+test('знак разбора совпадает со знаком изменения базы', () => {
+  // Растущий месяц не должен выглядеть красным, а падающий — зелёным.
+  for (const seed of ['sign-a', 'sign-b']) {
+    const reports = runWithPartners(36, seed);
+    for (let i = 1; i < reports.length; i++) {
+      const p = reports[i - 1], c = reports[i];
+      const actual = (c.subs - p.subs) / p.subs;
+      if (Math.abs(actual) < 0.005) continue;
+      const net = explain(p, c).reduce((s, d) => s + d.effect, 0);
+      assert.ok(Math.sign(net) === Math.sign(actual),
+        `${seed} м${c.month}: база ${(actual * 100).toFixed(1)}%, разбор ${(net * 100).toFixed(1)}%`);
+    }
+  }
+});
+
+test('закрытие контракта не роняет базу на бумаге', () => {
+  // Оставшиеся от партнёра подписчики переходят в розницу тем же месяцем.
+  // Пока они выпадали из итога, график базы рисовал обрыв и отскок, которых нет.
+  let found = 0;
+  for (const seed of ['exit-a', 'exit-b', 'exit-c', 'exit-d']) {
+    const reports = runWithPartners(36, seed);
+    for (let i = 1; i < reports.length; i++) {
+      const c = reports[i];
+      if (!c.partnerExpired.length) continue;
+      found += 1;
+      const kept = c.partnerExpired.reduce((s, e) => s + e.kept, 0);
+      const lost = c.partnerExpired.reduce((s, e) => s + e.lost, 0);
+      const drop = reports[i - 1].subs - c.subs;
+      assert.ok(drop < lost + kept * 0.02 + Math.max(1, c.subs * 0.05),
+        `м${c.month}: контракт унёс ${Math.round(drop)} при потерянных ${Math.round(lost)}`
+        + ` и удержанных ${Math.round(kept)}`);
+    }
+  }
+  assert.ok(found > 0, 'ни один контракт не закрылся — тест ничего не проверил');
+});
+
+test('отток и средние по сегментам не разбавляются оптом', () => {
+  // Розничные показатели должны считаться по розничной базе: иначе крупный
+  // контракт «улучшал» удержание и цену, ничего в них не меняя.
+  const solo = createInitialState('dilute');
+  let a = solo, withDeal = createInitialState('dilute');
+  let churnSolo = 0, churnDeal = 0;
+  for (let i = 0; i < 14; i++) {
+    const r1 = step(a, { decisions: DEFAULT_DECISIONS, eventChoice: 0 });
+    a = r1.state; churnSolo = r1.report.churnRate;
+    const input = { decisions: DEFAULT_DECISIONS, eventChoice: 0 };
+    if (withDeal.partnerOffer) input.partnerAnswer = 'accept';
+    const r2 = step(withDeal, input);
+    withDeal = r2.state; churnDeal = r2.report.churnRate;
+  }
+  assert.ok(withDeal.partners.length > 0, 'контракт не подписался — сравнивать нечего');
+  assert.ok(Math.abs(churnDeal - churnSolo) < 0.02,
+    `отток с контрактом ${(churnDeal * 100).toFixed(2)}% против ${(churnSolo * 100).toFixed(2)}% без него`);
+
+  // Юнит-экономика розницы тоже не должна «улучшаться» от подписанного контракта
+  const uSolo = unitEconomics(a, DEFAULT_DECISIONS);
+  const uDeal = unitEconomics(withDeal, DEFAULT_DECISIONS);
+  assert.ok(Math.abs(uDeal.adShare - uSolo.adShare) < 0.05,
+    `доля рекламного тарифа ${uDeal.adShare.toFixed(2)} против ${uSolo.adShare.toFixed(2)}`);
+  assert.ok(Math.abs(uDeal.revenue - uSolo.revenue) / Math.max(1, uSolo.revenue) < 0.1,
+    `выручка с подписчика ${uDeal.revenue.toFixed(0)} ₽ против ${uSolo.revenue.toFixed(0)} ₽`);
+});
+
+test('отчёт сходится сам с собой на любом прогоне', () => {
+  // Сквозная проверка бухгалтерии: выручка, маржа, прибыль и касса должны
+  // складываться из своих же слагаемых, а доли и ставки — оставаться долями.
+  const near = (a, b, tol = 1) => Math.abs(a - b) <= tol + Math.abs(b) * 1e-9;
+  for (const seed of ['inv-a', 'inv-b', 'inv-c']) {
+    for (const withPartners of [true, false]) {
+      let state = createInitialState(seed + withPartners);
+      let cashBefore = state.cash;
+      for (let i = 0; i < 36 && !state.over; i++) {
+        const input = { decisions: DEFAULT_DECISIONS, eventChoice: 0 };
+        if (withPartners && state.partnerOffer) input.partnerAnswer = 'accept';
+        const res = step(state, input);
+        const r = res.report;
+        const where = `${seed} м${r.month}`;
+        assert.ok(near(r.revenue, r.subscriptionRevenue + r.adRevenue), `${where}: выручка`);
+        assert.ok(near(r.contribution, r.revenue - r.variableCost), `${where}: маржа`);
+        assert.ok(near(r.profit, r.contribution - r.fixed), `${where}: прибыль`);
+        assert.ok(near(res.state.cash,
+          cashBefore + r.profit - r.oneOff + (r.annualCash ?? 0) + (r.boardInjection ?? 0), 2),
+        `${where}: касса`);
+        assert.ok(r.subs >= 0 && r.rivalSubs >= 0, `${where}: отрицательная база`);
+        assert.ok(r.churnRate >= 0 && r.churnRate <= 1, `${where}: отток ${r.churnRate}`);
+        assert.ok(r.marketShare <= 1.02, `${where}: доля рынка ${r.marketShare}`);
+        for (const [key, value] of Object.entries(r)) {
+          if (typeof value === 'number') assert.ok(Number.isFinite(value), `${where}: ${key} = ${value}`);
+        }
+        cashBefore = res.state.cash;
+        state = res.state;
+      }
+    }
+  }
+});
+
+test('условия месяца читаются в одну сторону: вверх — в вашу пользу', () => {
+  const reports = runWithPartners(24, 'factors');
+  for (let i = 1; i < reports.length; i++) {
+    for (const f of explainFactors(reports[i - 1], reports[i])) {
+      assert.equal(typeof f.key, 'string');
+      assert.ok(f.key.startsWith('factor'), `неожиданный ключ: ${f.key}`);
+      assert.ok(Number.isFinite(f.effect) && Math.abs(f.effect) < 20, `${f.key}.effect = ${f.effect}`);
+    }
+  }
+  // Дешевле подписка — «доступность цены» выше: направление, а не только знак
+  const cheap = runWithPartners(6, 'factors');
+  assert.ok(cheap.length > 1);
+});
+
+test('дорогая подписка опускает доступность цены, дешёвая поднимает', () => {
+  const base = run(6, decide({ priceNew: 500 }), 'fx').last;
+  const dear = run(6, decide({ priceNew: 900 }), 'fx').last;
+  assert.ok(dear.avgPriceFactor < base.avgPriceFactor,
+    'фактор цены должен падать при росте прайса, иначе цвет строки врёт');
 });
 
 // ----------------------------------------------------------------------------

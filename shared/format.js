@@ -47,9 +47,13 @@ export function pct(x, digits = 1) {
   return `${(x * 100).toFixed(digits)}%`;
 }
 
+// Минус — типографский, как и во всех остальных числах интерфейса:
+// дефис рядом с «+» читается как другой по величине знак.
 export function signedPct(x, digits = 1) {
   if (!Number.isFinite(x)) return '—';
-  return `${x > 0 ? '+' : ''}${(x * 100).toFixed(digits)}%`;
+  const v = (Math.abs(x) * 100).toFixed(digits);
+  if (Number(v) === 0) return `0${'%'}`;
+  return `${x > 0 ? '+' : '−'}${v}%`;
 }
 
 export function compact(x) {

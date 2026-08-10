@@ -210,6 +210,11 @@ button { font-family: inherit; }
 .driver .d-bar { flex: 1; height: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 4px; position: relative; }
 .driver .d-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
 .driver .d-val { width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+.driver .d-people { width: 62px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.drivers .d-sum { display: flex; align-items: center; gap: 8px; font-size: 12px;
+  padding: 4px 0 0; border-top: 1px solid var(--line); margin-top: 4px; }
+.drivers .d-sum .d-name { width: 150px; flex-shrink: 0; color: var(--text); }
+.drivers .d-sum .d-bar { flex: 1; }
 
 .alerts { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .alert { font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); line-height: 1.45; }
