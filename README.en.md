@@ -47,6 +47,13 @@ npm run build      # rebuild the single-file builds in games/*/dist/
 
 The built files are already in the repository, so the build step is only needed after edits.
 
+**File or link.** The single-file build is meant for a laptop: double-click it and it
+runs with no network. On a phone the link is more reliable. The reason is preview mode —
+both Quick Look on a Mac and the file card on an iPhone (the one with the "Done" button)
+render HTML but **deliberately do not run JavaScript**. The game is a computed model;
+without scripts only an empty shell is left. The page now explains this itself and says
+how to open it in a real browser.
+
 **Important:** `games/<game>/index.html` will not open by double-clicking from a folder —
 browsers do not load ES modules over `file://`, neither Safari nor Chrome. To run from
 disk use the file in `dist/`; for development use `npm start`. If you do open the modular

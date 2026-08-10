@@ -94,3 +94,25 @@ test('игра переживает отсутствие localStorage', async ()
     else Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: original });
   }
 });
+
+test('пустой каркас всегда объяснён: и когда скрипты выключены, и когда упали', () => {
+  // Игру открывают в предпросмотре файла — на маке «Быстрый просмотр», на
+  // айфоне карточка с кнопкой «Готово». WebKit там рисует HTML, но не
+  // выполняет JavaScript, и от игры остаётся пустой каркас без единого слова.
+  // Экран отказа тут не поможет: он тоже рисуется скриптом.
+  for (const [game, bundle] of bundles) {
+    const html = readFileSync(bundle, 'utf8');
+    assert.match(html, /<html[^>]*class="no-js"/, `${game}: нет класса no-js на <html>`);
+    assert.match(html, /<script id="js-flag">[\s\S]*?className = 'js'/,
+      `${game}: нет метки js-flag, снимающей no-js`);
+    assert.match(html, /\.no-js \.nojs-hint\s*\{\s*display:\s*block/,
+      `${game}: объяснение не показывается при выключенных скриптах`);
+    assert.match(html, /\.no-js \.layout[^{]*\{[^}]*display:\s*none/,
+      `${game}: пустой каркас не скрывается при выключенных скриптах`);
+    assert.match(html, /Предпросмотр намеренно не запускает скрипты/,
+      `${game}: в объяснении нет самой частой причины`);
+    // Метка должна стоять до разметки игры, иначе каркас успеет мигнуть
+    assert.ok(html.indexOf('js-flag') < html.indexOf('class="topbar"'),
+      `${game}: метка js-flag стоит после разметки`);
+  }
+});

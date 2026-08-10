@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -542,9 +542,54 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   padding: 10px; margin: 10px 0; color: var(--muted); font-family: ui-monospace, monospace;
 }
 
+/* Скрипты выключены — например, при предпросмотре файла в Быстром просмотре
+   или в «Файлах» на айфоне. WebKit там рисует HTML, но не выполняет JS, и от
+   игры остаётся пустой каркас. Прячем каркас и объясняем, что произошло:
+   пустые панели без объяснения читаются как сломанная программа. */
+.nojs-hint { display: none; padding: 20px; max-width: 640px; margin: 0 auto; }
+.nojs-hint .panel { border-color: var(--warn); }
+.nojs-hint p { margin: 0 0 8px; }
+.no-js .nojs-hint { display: block; }
+.no-js .topbar, .no-js .layout, .no-js #modal-root, .no-js #file-hint { display: none; }
+
+/* Телефон: шапка из шести показателей занимает по высоте пол-экрана, и если
+   оставить её липкой, на игру места не остаётся. Отпускаем — прокрутка вверх
+   стоит одного движения, а экран нужен весь. */
+@media (max-width: 700px) {
+  .topbar { position: static; gap: 10px; padding: 10px 12px; }
+  .kpi { min-width: 84px; padding: 4px 8px; }
+  .kpi .k-value { font-size: 14px; }
+  .layout { padding: 10px; gap: 10px; }
+  .col-left, .col-right { position: static; max-height: none; }
+}
+
 </style>
+  <script id="js-flag">
+    // Метка «скрипты работают». Ставится до всего остального: если страницу
+    // открыли в режиме предпросмотра (Быстрый просмотр на маке, «Готово» на
+    // айфоне), WebKit рисует HTML, но JavaScript не выполняет — и человек
+    // видит пустой каркас игры вместо игры. Без этой метки отличить такой
+    // случай от поломки невозможно: экран отказа тоже рисуется скриптом.
+    document.documentElement.className = 'js';
+  </script>
 </head>
 <body>
+  <div class="nojs-hint">
+    <div class="panel">
+      <h2 class="panel-title">Скрипты не выполняются</h2>
+      <p class="funding-note">Игра — это расчётная модель, она целиком живёт в JavaScript.
+        Сейчас он выключен, поэтому виден только пустой каркас.</p>
+      <p class="funding-note">Чаще всего так бывает при <b>предпросмотре файла</b>:
+        на айфоне — когда файл открыт из «Файлов», почты или мессенджера с кнопкой «Готово»,
+        на маке — в «Быстром просмотре» с кнопкой «Открыть в приложении Safari».
+        Предпросмотр намеренно не запускает скрипты.</p>
+      <p class="funding-note"><b>Что делать:</b> открыть файл в самом браузере.
+        На маке — «Открыть в приложении Safari» вверху окна, либо перетащить файл
+        на иконку браузера. На айфоне — «Поделиться» → «Открыть в Safari»;
+        если такого пункта нет, откройте игру по ссылке в браузере — на телефоне
+        это надёжнее, чем файл.</p>
+    </div>
+  </div>
   <header class="topbar">
     <div class="brand">
       <span class="logo">🛵</span>

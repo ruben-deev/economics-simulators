@@ -534,3 +534,24 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
   padding: 10px; margin: 10px 0; color: var(--muted); font-family: ui-monospace, monospace;
 }
+
+/* Скрипты выключены — например, при предпросмотре файла в Быстром просмотре
+   или в «Файлах» на айфоне. WebKit там рисует HTML, но не выполняет JS, и от
+   игры остаётся пустой каркас. Прячем каркас и объясняем, что произошло:
+   пустые панели без объяснения читаются как сломанная программа. */
+.nojs-hint { display: none; padding: 20px; max-width: 640px; margin: 0 auto; }
+.nojs-hint .panel { border-color: var(--warn); }
+.nojs-hint p { margin: 0 0 8px; }
+.no-js .nojs-hint { display: block; }
+.no-js .topbar, .no-js .layout, .no-js #modal-root, .no-js #file-hint { display: none; }
+
+/* Телефон: шапка из шести показателей занимает по высоте пол-экрана, и если
+   оставить её липкой, на игру места не остаётся. Отпускаем — прокрутка вверх
+   стоит одного движения, а экран нужен весь. */
+@media (max-width: 700px) {
+  .topbar { position: static; gap: 10px; padding: 10px 12px; }
+  .kpi { min-width: 84px; padding: 4px 8px; }
+  .kpi .k-value { font-size: 14px; }
+  .layout { padding: 10px; gap: 10px; }
+  .col-left, .col-right { position: static; max-height: none; }
+}

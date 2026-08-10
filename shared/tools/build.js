@@ -116,8 +116,20 @@ async function buildGame(name) {
   if (html === rawHtml) {
     throw new Error(`В ${name}/index.html нет блока only-modular: разметка изменилась`);
   }
-  if (/<script(?![^>]*type="module")/.test(html)) {
+  // Вне блока only-modular обычных скриптов быть не должно — кроме метки
+  // js-flag: она нужна обеим версиям, чтобы отличить «скрипты выключены»
+  // от «скрипт упал».
+  const strayScript = html
+    .replace(/<script id="js-flag">[\s\S]*?<\/script>/, '')
+    .match(/<script(?![^>]*type="module")/);
+  if (strayScript) {
     throw new Error(`В ${name}/index.html остался обычный <script> вне блока only-modular`);
+  }
+  if (!/<script id="js-flag">/.test(html)) {
+    throw new Error(`В ${name}/index.html нет метки js-flag: без неё пустой каркас ничем не объяснить`);
+  }
+  if (!/class="no-js"/.test(html) || !/nojs-hint/.test(html)) {
+    throw new Error(`В ${name}/index.html нет объяснения для выключенных скриптов`);
   }
 
   const styles = [];

@@ -1,12 +1,36 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>КИНОПОТОК · streaming economics simulator</title>
   <link rel="stylesheet" href="../../shared/styles.css" />
+  <script id="js-flag">
+    // Метка «скрипты работают». Ставится до всего остального: если страницу
+    // открыли в режиме предпросмотра (Быстрый просмотр на маке, «Готово» на
+    // айфоне), WebKit рисует HTML, но JavaScript не выполняет — и человек
+    // видит пустой каркас игры вместо игры. Без этой метки отличить такой
+    // случай от поломки невозможно: экран отказа тоже рисуется скриптом.
+    document.documentElement.className = 'js';
+  </script>
 </head>
 <body>
+  <div class="nojs-hint">
+    <div class="panel">
+      <h2 class="panel-title">Скрипты не выполняются</h2>
+      <p class="funding-note">Игра — это расчётная модель, она целиком живёт в JavaScript.
+        Сейчас он выключен, поэтому виден только пустой каркас.</p>
+      <p class="funding-note">Чаще всего так бывает при <b>предпросмотре файла</b>:
+        на айфоне — когда файл открыт из «Файлов», почты или мессенджера с кнопкой «Готово»,
+        на маке — в «Быстром просмотре» с кнопкой «Открыть в приложении Safari».
+        Предпросмотр намеренно не запускает скрипты.</p>
+      <p class="funding-note"><b>Что делать:</b> открыть файл в самом браузере.
+        На маке — «Открыть в приложении Safari» вверху окна, либо перетащить файл
+        на иконку браузера. На айфоне — «Поделиться» → «Открыть в Safari»;
+        если такого пункта нет, откройте игру по ссылке в браузере — на телефоне
+        это надёжнее, чем файл.</p>
+    </div>
+  </div>
   <header class="topbar">
     <div class="brand">
       <span class="logo">🎬</span>
