@@ -22,6 +22,10 @@ const SAVE_KEY = 'novoeda-save-v3';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'foodtech-2';
+// Версию проставляет сборщик. У модульной версии метки нет — значит это
+// исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
+// сборка» был ответ, а не догадки.
+const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -1039,7 +1043,10 @@ function showGameOver() {
 }
 
 function showHelp() {
-  modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`, [{ label: t('helpModalOk'), primary: true }]);
+  modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
+    + `<p class="funding-note">${APP_VERSION === 'dev'
+        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
+    [{ label: t('helpModalOk'), primary: true }]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1125,7 +1132,7 @@ function renderCrash(error) {
     <button class="btn primary" id="btn-crash-reset">${t('crashReset')}</button>
     <p class="funding-note">${t('crashBrowser')}</p>
   </div>`;
-  box.querySelector('.crash-message').textContent = `${message}\n${navigator.userAgent}`;
+  box.querySelector('.crash-message').textContent = `v${APP_VERSION}\n${message}\n${navigator.userAgent}`;
   document.body.prepend(box);
   box.querySelector('#btn-crash-reset').addEventListener('click', () => {
     dropSave();

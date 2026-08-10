@@ -7,7 +7,9 @@ export default {
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
   // и не говорит ни о содержимом, ни о том, какая это из двух игр.
-  output: 'dist/novoeda-delivery-simulator.html',
+  // {version} подставляется из package.json: по имени файла должно быть
+  // видно, какая это сборка — иначе две присланные версии не различить.
+  output: 'dist/novoeda-delivery-simulator-v{version}.html',
   css: ['../../shared/styles.css'],
   modules: [
     '../../shared/i18n.js',

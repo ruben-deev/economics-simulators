@@ -1,6 +1,6 @@
 {
   "name": "business-sim-games",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Учебные экономические симуляторы: доставка еды и онлайн-кинотеатр",
   "type": "module",
   "private": true,

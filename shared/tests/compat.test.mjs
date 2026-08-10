@@ -49,10 +49,12 @@ const TOO_NEW_CSS = [
   ['100lvh', 'единицы lvh', 'Safari 15.4'],
 ];
 
+const VERSION = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+
 const bundles = await Promise.all(readdirSync(join(root, 'games')).map(async (game) => {
   const dir = join(root, 'games', game);
   const { default: manifest } = await import(pathToFileURL(join(dir, 'build.manifest.js')).href);
-  return [game, join(dir, manifest.output)];
+  return [game, join(dir, manifest.output.replace('{version}', VERSION)), manifest.output];
 }));
 
 test('в собранных файлах нет API новее нашей планки', () => {
@@ -118,4 +120,43 @@ test('пустой каркас всегда объяснён: и когда с�
     assert.ok(html.indexOf('js-flag') < html.indexOf('class="topbar"'),
       `${game}: метка js-flag стоит после разметки`);
   }
+});
+
+test('версия видна в имени файла, внутри страницы и во всех ссылках', () => {
+  // Две присланные сборки должны различаться в списке загрузок, иначе
+  // «а это точно новый файл?» — вопрос без ответа. Проверяем всю цепочку:
+  // имя файла, метка внутри страницы и каждая ссылка в документации.
+  const referenced = new Set();
+  for (const [game, bundle, template] of bundles) {
+    assert.ok(template.includes('{version}'), `${game}: в манифесте нет подстановки {version}`);
+    assert.ok(bundle.includes(`-v${VERSION}.html`), `${game}: версии нет в имени файла`);
+    const html = readFileSync(bundle, 'utf8');
+    assert.match(html, new RegExp(`<meta name="app-version" content="${VERSION}"`),
+      `${game}: версии нет внутри страницы`);
+    referenced.add(bundle.split('/').pop());
+
+    // В dist не должно остаться сборок других версий
+    const dir = join(root, 'games', game, 'dist');
+    const base = template.split('/').pop().replace('{version}', '');
+    for (const file of readdirSync(dir)) {
+      if (!file.startsWith(base.split('-v')[0])) continue;
+      assert.ok(file.includes(`-v${VERSION}.`), `${game}: в dist осталась старая сборка ${file}`);
+    }
+  }
+
+  const docs = ['README.md', 'README.en.md', 'index.html',
+    'docs/cinema/teacher-guide.md', 'docs/cinema/en/teacher-guide.md',
+    'docs/foodtech/teacher-guide.md', 'docs/foodtech/en/teacher-guide.md'];
+  const stale = [];
+  for (const doc of docs) {
+    const text = readFileSync(join(root, doc), 'utf8');
+    for (const m of text.matchAll(/[\w-]+-simulator-v[\d.]+\.html/g)) {
+      if (!referenced.has(m[0])) stale.push(`${doc}: ${m[0]}`);
+    }
+    // Ссылка без версии — тоже ошибка: такого файла больше нет
+    for (const m of text.matchAll(/dist\/([\w-]+-simulator)(?!-v)/g)) {
+      stale.push(`${doc}: ${m[1]} без версии`);
+    }
+  }
+  assert.deepEqual(stale, []);
 });

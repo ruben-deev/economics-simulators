@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.0.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -46,6 +46,13 @@ npm run build      # rebuild the single-file builds in games/*/dist/
 ```
 
 The built files are already in the repository, so the build step is only needed after edits.
+
+**Releasing a version.** The number lives in one place — `version` in `package.json`. It
+goes into the built file name (`…-simulator-v0.3.0.html`), into the page itself and into
+the help behind the "?" button. Building a version also deletes the previous one from
+`dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
+the index page and in the teacher guides carry the version; if you forget to update them,
+`shared/tests/compat.test.mjs` lists every stale one.
 
 **File or link.** The single-file build is meant for a laptop: double-click it and it
 runs with no network. On a phone the link is more reliable. The reason is preview mode —
@@ -277,7 +284,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator.html
+  dist/kinopotok-streaming-simulator-v0.3.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

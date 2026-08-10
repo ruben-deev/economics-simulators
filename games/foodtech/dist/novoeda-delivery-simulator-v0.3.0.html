@@ -2,6 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
+  <meta name="app-version" content="0.3.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>НОВОЕДА · food delivery economics simulator</title>
   <style>
@@ -1132,6 +1133,8 @@ score = valuation × your stake`,
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
+  helpVersion: { ru: 'Сборка {version}. Её же видно в имени скачанного файла — по ней понятно, о какой версии речь.', en: 'Build {version}. The same number is in the downloaded file name, so there is no doubt which version is meant.' },
+  helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
   crashReset: { ru: 'Перезапустить', en: 'Restart' },
@@ -3046,6 +3049,10 @@ const SAVE_KEY = 'novoeda-save-v3';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'foodtech-2';
+// Версию проставляет сборщик. У модульной версии метки нет — значит это
+// исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
+// сборка» был ответ, а не догадки.
+const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -4063,7 +4070,10 @@ function showGameOver() {
 }
 
 function showHelp() {
-  modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`, [{ label: t('helpModalOk'), primary: true }]);
+  modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
+    + `<p class="funding-note">${APP_VERSION === 'dev'
+        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
+    [{ label: t('helpModalOk'), primary: true }]);
 }
 
 // ----------------------------------------------------------------------------
@@ -4149,7 +4159,7 @@ function renderCrash(error) {
     <button class="btn primary" id="btn-crash-reset">${t('crashReset')}</button>
     <p class="funding-note">${t('crashBrowser')}</p>
   </div>`;
-  box.querySelector('.crash-message').textContent = `${message}\n${navigator.userAgent}`;
+  box.querySelector('.crash-message').textContent = `v${APP_VERSION}\n${message}\n${navigator.userAgent}`;
   document.body.prepend(box);
   box.querySelector('#btn-crash-reset').addEventListener('click', () => {
     dropSave();

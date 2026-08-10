@@ -17,6 +17,11 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const gamesDir = path.join(root, 'games');
 
+// Версия проекта — единственный источник правды. Она попадает и в имя
+// собранного файла, и в саму страницу: две присланные сборки должны
+// различаться в списке загрузок, а не только внутри.
+const VERSION = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version;
+
 // Вырезает import-объявления (в том числе многострочные) и снимает export
 function stripModuleSyntax(source) {
   const lines = source.split('\n');
@@ -151,7 +156,11 @@ async function buildGame(name) {
     .join('\n\n');
   const bundle = `(function () {\n'use strict';\n${body}\n\n${manifest.entry}\n})();`;
 
-  let page = html.replace(/<script type="module"[^>]*><\/script>/, `<script>\n${bundle}\n</script>`);
+  // Версия внутри страницы: по ней видно, какую сборку человек открыл.
+  // Модульная версия этой метки не имеет и показывает себя как dev.
+  let page = html.replace('<meta charset="utf-8" />',
+    `<meta charset="utf-8" />\n  <meta name="app-version" content="${VERSION}" />`);
+  page = page.replace(/<script type="module"[^>]*><\/script>/, `<script>\n${bundle}\n</script>`);
   // Все <link rel="stylesheet"> заменяем встроенными стилями в том же порядке
   let styleIndex = 0;
   page = page.replace(/<link rel="stylesheet"[^>]*>/g, () => `<style>\n${styles[styleIndex++] ?? ''}\n</style>`);
@@ -160,10 +169,24 @@ async function buildGame(name) {
     throw new Error(`Не удалось встроить ресурсы в ${name}: разметка index.html изменилась`);
   }
 
-  const target = path.join(dir, manifest.output);
+  const relTarget = manifest.output.replace('{version}', VERSION);
+  const target = path.join(dir, relTarget);
   await fs.mkdir(path.dirname(target), { recursive: true });
+
+  // Сборки прошлых версий убираем: иначе dist копит файлы, и непонятно,
+  // какой из них раздавать. История версий живёт в git, а не в папке.
+  const stalePattern = new RegExp(`^${path.basename(manifest.output)
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace('\\{version\\}', '.+')}$`);
+  for (const file of await fs.readdir(path.dirname(target)).catch(() => [])) {
+    if (file !== path.basename(target) && stalePattern.test(file)) {
+      await fs.rm(path.join(path.dirname(target), file));
+      console.log(`${name}: убрана старая сборка ${file}`);
+    }
+  }
+
   await fs.writeFile(target, page);
-  console.log(`${name}: games/${name}/${manifest.output} (${(page.length / 1024).toFixed(0)} КБ)`);
+  console.log(`${name}: games/${name}/${relTarget} (${(page.length / 1024).toFixed(0)} КБ)`);
 }
 
 const requested = process.argv.slice(2);
