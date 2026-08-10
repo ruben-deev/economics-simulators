@@ -372,6 +372,106 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
 
+/* ------------- Слейт, ход месяца, группы рычагов (КИНОПОТОК) ------------- */
+.lever-group { border-bottom: 1px solid var(--line); }
+.lever-group:last-child { border-bottom: none; }
+.lever-group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 9px 0;
+  cursor: pointer;
+}
+.lever-group-head:hover { color: var(--text); }
+.lg-caret { transition: transform 0.15s ease; display: inline-block; }
+.lever-group:not(.open) .lg-caret { transform: rotate(-90deg); }
+.lg-count { margin-left: auto; opacity: 0.6; }
+.lever-group-body { display: none; padding-bottom: 6px; }
+.lever-group.open .lever-group-body { display: block; }
+
+/* --- Панель хода --- */
+.panel.turn { border-left: 3px solid var(--accent-2); }
+.todos { display: flex; flex-direction: column; gap: 8px; }
+.todo {
+  border-radius: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-left-width: 3px;
+}
+.todo.act { border-left-color: var(--accent); }
+.todo.warn { border-left-color: var(--warn); }
+.todo.bad { border-left-color: var(--bad); }
+.todo.ok { border-left-color: var(--line); }
+.todo-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.todo-text { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.todo .btn { margin-top: 7px; }
+
+/* --- Карточки проектов --- */
+.slate-section { margin-top: 12px; }
+.slate-section:first-of-type { margin-top: 4px; }
+.slate-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.proj {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+}
+.proj.ready { border-color: rgba(74, 222, 128, 0.35); }
+.proj.ready.planned { border-color: var(--accent); background: rgba(74, 222, 128, 0.08); }
+.proj.queued { border-style: dashed; opacity: 0.85; }
+.proj-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.proj-name { font-weight: 700; font-size: 13px; }
+.proj-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
+.proj .q-bar { display: block; margin: 6px 0 3px; }
+.proj .btn.tiny { margin-top: 7px; width: 100%; }
+.btn.tiny { padding: 5px 9px; font-size: 12px; }
+.release-row { display: flex; align-items: center; gap: 7px; margin-top: 7px; flex-wrap: wrap; }
+.release-row label { color: var(--muted); font-size: 11px; flex-basis: 100%; }
+.release-row input[type=range] { flex: 1; min-width: 90px; }
+.release-budget { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- Форма запуска --- */
+.commission.blocked { opacity: 0.55; }
+.commission-row { margin-bottom: 6px; }
+.pick { display: flex; flex-wrap: wrap; gap: 5px; }
+.pick button {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pick button:hover { color: var(--text); }
+.pick button.active { background: var(--accent-2); border-color: transparent; color: #06210f; font-weight: 700; }
+.commission-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 </style>
 </head>
 <body>
@@ -398,9 +498,6 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div id="levers"></div>
       <div id="ops-readout"></div>
 
-      <h2 class="panel-title" id="title-studio"></h2>
-      <div id="studio"></div>
-
       <h2 class="panel-title" id="title-algos"></h2>
       <div id="algos"></div>
 
@@ -412,6 +509,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     </aside>
 
     <section class="col-center">
+      <div id="turn-slot"></div>
+      <div id="slate-slot"></div>
       <div id="rival-slot"></div>
       <div id="crisis-slot"></div>
       <div id="event-slot"></div>
@@ -558,6 +657,76 @@ const STRINGS = {
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelBoard: { ru: 'Совет директоров', en: 'The board' },
+  alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
+  panelSlate: { ru: 'Производство и релизы', en: 'Production and releases' },
+  panelTurn: { ru: 'Ход месяца {month}', en: 'Month {month}: your move' },
+  unitMonthsShort: { ru: 'мес', en: 'mo' },
+
+  // --- Слейт ---
+  slateSlots: { ru: 'Слотов занято {used} из {total} · содержание {cost}/мес', en: '{used} of {total} slots busy · upkeep {cost}/mo' },
+  slateReadyTitle: { ru: 'Готово к выпуску: {count}', en: 'Ready to release: {count}' },
+  slateReadyHint: { ru: 'Готовый проект можно придержать: выпустить в тихий месяц, ответить им на чужую премьеру или дождаться зимы. Но лежать не бесплатно — актуальность выветривается.', en: 'A finished project can be held back: released into a quiet month, used to answer a rival premiere, or saved for winter. But sitting on the shelf is not free — it goes stale.' },
+  slateProductionTitle: { ru: 'В производстве: {count}', en: 'In production: {count}' },
+  slateEmpty: { ru: 'В производстве пусто. Даже самый быстрый проект выйдет только через {months} месяца — премьер не будет всё это время.', en: 'Nothing in production. Even the fastest project lands only in {months} months — there will be no premieres until then.' },
+  slateCommission: { ru: 'Запустить проект', en: 'Commission a project' },
+  slateStart: { ru: 'Запустить', en: 'Commission' },
+  slateNoSlots: { ru: 'Нет свободных слотов', en: 'No free slots' },
+  slateNoCash: { ru: 'Не хватает кассы', en: 'Not enough cash' },
+  slatePrice: { ru: 'Стоимость {price}, платится равными долями {months} месяцев', en: 'Costs {price}, paid in equal instalments over {months} months' },
+  slateFocusHint: { ru: 'Проект под конкретный сегмент попадает в него точнее, но остальным интересен меньше: фокус — это всегда и отказ. «Для всех» — компромисс без перекоса.', en: 'A project aimed at one segment lands harder there and interests everyone else less: focus is always also a refusal. "Broad" is a compromise with no bias.' },
+  slateBroad: { ru: 'Для всех', en: 'Broad' },
+  slateFor: { ru: 'под {segment}', en: 'for {segment}' },
+  slateHours: { ru: '{hours} ч контента', en: '{hours} h of content' },
+  slateMonthsLeft: { ru: 'через {months} мес.', en: '{months} mo. out' },
+  slateEstimate: { ru: 'Оценка качества: {low}–{high}. Точное значение будет известно на премьере.', en: 'Quality estimate: {low}–{high}. The exact figure is known only at release.' },
+  slateQuality: { ru: 'качество {value}', en: 'quality {value}' },
+  slateBuzz: { ru: 'шум {value}', en: 'buzz {value}' },
+  slateFresh: { ru: 'свежий', en: 'fresh' },
+  slateHeld: { ru: 'лежит {months} мес.', en: 'held {months} mo.' },
+  slateStale: { ru: 'Пока лежит, потеряно {pct} шума премьеры.', en: 'While on the shelf it has lost {pct} of its premiere buzz.' },
+  slateRelease: { ru: 'Выпустить в этом месяце', en: 'Release this month' },
+  slateCancel: { ru: 'Отменить', en: 'Cancel' },
+  slateCampaign: { ru: 'Кампания под релиз', en: 'Release campaign' },
+  slateStartsNow: { ru: 'запустится в этом ходу, {months} мес. производства', en: 'starts this turn, {months} months of production' },
+
+  // --- Ход месяца ---
+  planNothing: { ru: 'На этот месяц ничего не запланировано', en: 'Nothing planned for this month' },
+  planReleases: { ru: 'релизов: {count} на {budget}', en: 'releases: {count} for {budget}' },
+  planCommission: { ru: 'запусков: {count} по {monthly}/мес', en: 'commissions: {count} at {monthly}/mo' },
+  planRaise: { ru: 'повышение цены действующим', en: 'price rise for the existing base' },
+  todoReleaseTitle: { ru: 'Готово к выпуску: {count}. Выпускать сейчас?', en: '{count} ready to release. Release now?' },
+  todoReleaseVsRival: { ru: 'В следующем месяце у конкурента громкая премьера. Своя гасит чужую максимум на 65% — иногда выгоднее переждать и выйти в тихий месяц целиком.', en: 'The rival has a loud premiere next month. Yours cancels at most 65% of it — sometimes it pays more to wait and take a quiet month whole.' },
+  todoReleaseGoodSeason: { ru: 'Сейчас {season} — смотрят больше обычного. Хороший месяц для премьеры.', en: 'It is {season} — people watch more than usual. A good month for a premiere.' },
+  todoReleaseQuiet: { ru: 'Месяц спокойный: чужих премьер нет. Ваш шум никто не перебьёт.', en: 'A quiet month with no rival premieres. Nothing will drown out your noise.' },
+  todoStudioTitle: { ru: 'В производстве пусто', en: 'Nothing in production' },
+  todoStudioText: { ru: 'Запустите проект сейчас, иначе следующие месяцы пройдут без единой премьеры — а отток идёт всё это время.', en: 'Commission something now, or the coming months will pass without a single premiere — while churn runs the whole time.' },
+  todoPriceGapTitle: { ru: 'База платит на {gap} меньше прайса', en: 'The base pays {gap} below list price' },
+  todoPriceGapText: { ru: 'Новые подписываются по {list} ₽, действующие платят {paid} ₽. Перевести базу на прайс можно одним решением — но часть людей уйдёт именно из-за него.', en: 'New sign-ups pay ₽{list}, the existing base pays ₽{paid}. One decision moves them all onto list price — and some will leave precisely because of it.' },
+  todoPriceGapCooldown: { ru: 'Повышать снова нельзя ещё {months} мес.: у людей есть память, и второе повышение подряд стоит гораздо дороже.', en: 'You cannot raise again for {months} months: people remember, and a second rise in a row costs far more.' },
+  todoPriceGapDo: { ru: 'Перевести базу на прайс', en: 'Move the base to list price' },
+  todoPriceGapOn: { ru: '✓ Переведём в этом месяце', en: '✓ Will move them this month' },
+  todoMarketingTitle: { ru: 'Маркетинг при пустом каталоге', en: 'Marketing against an empty catalogue' },
+  todoMarketingText: { ru: 'Приводить зрителя некуда: глубина каталога мала, и деньги сгорают. Сначала каталог, потом реклама.', en: 'There is nowhere to bring the viewer: catalogue depth is low and the money burns. Catalogue first, advertising after.' },
+  todoCampaignTitle: { ru: 'Большой маркетинг без релиза', en: 'A big marketing budget with nothing to promote' },
+  todoCampaignText: { ru: 'Бренд-маркетинг работает медленно. Кампания под конкретную премьеру даёт кратно больше — но премьеру для неё нужно иметь.', en: 'Brand marketing works slowly. A campaign behind a specific premiere does far more — but you need a premiere to put behind it.' },
+  todoCalmTitle: { ru: 'Срочных решений нет', en: 'Nothing urgent' },
+  todoCalmText: { ru: 'Можно двигать ползунки, запускать проекты или просто прожить месяц.', en: 'Adjust the sliders, commission something, or simply run the month.' },
+
+  // --- Годовая подписка и цена ---
+  kpiSubsFlat: { ru: 'без изменений', en: 'flat' },
+  statPriceGap: { ru: 'Прайс / платят', en: 'List / paid' },
+  statPriceGapSub: { ru: 'разрыв {gap} · годовых {annual}', en: 'gap {gap} · {annual} annual' },
+  alertRaiseDone: { ru: 'Базу перевели на прайс. Из-за повышения ушло {lost} подписчиков — это и есть цена закрытия разрыва.', en: 'The base has been moved to list price. {lost} subscribers left over the rise — that is what closing the gap costs.' },
+  alertAnnualCash: { ru: 'Годовые подписки принесли {cash} сразу. Это касса сегодня и зафиксированная цена на год вперёд.', en: 'Annual plans brought in {cash} at once. That is cash today and a locked price for a year.' },
+  alertHeldTooLong: { ru: 'Готовые проекты лежат в запасе уже {months} мес. и теряют шум. Придерживать имеет смысл под конкретный месяц, а не «пока не понадобится».', en: 'Finished projects have been on the shelf for {months} months and are losing their buzz. Holding back works for a specific month, not for "until we need it".' },
+  alertSlotsIdle: { ru: 'Свободных слотов: {count}. Слот стоит денег, даже когда пустует.', en: '{count} slots are idle. A slot costs money even when nothing is in it.' },
+
+  // --- P&L ---
+  pnlProduction: { ru: 'Производство (по проектам)', en: 'Production (by project)' },
+  pnlSlots: { ru: 'Содержание студии', en: 'Studio upkeep' },
+  pnlCampaigns: { ru: 'Кампании под релизы', en: 'Release campaigns' },
+
+
 
   // --- Живой конкурент ---
   stanceBuild: { ru: 'Ровный рост', en: 'Steady growth' },
@@ -1084,6 +1253,36 @@ const CONFIG = {
   // --- Совет директоров ---
   boardYearMonths: 12,        // цели ставятся на год и проверяются в конце года
   boardCapMonths: 6,          // на сколько месяцев режется бюджет при провале
+
+  // --- Производство: слейт и релизы ---
+  // Содержание слотов растёт быстрее их числа: пять параллельных производств —
+  // это не пять раз по одному, а ещё и координация между ними.
+  studioSlotMonthly: 42_000_000,
+  studioSlotExponent: 1.45,
+  // Студия, ведущая пять проектов сразу, ведёт каждый хуже: мощность
+  // покупается не только деньгами, но и вниманием.
+  slotQualityDrag: 0.55,
+  vaultDecay: 0.045,          // насколько готовый проект выветривается за месяц в запасе
+  // Зимняя премьера слышнее летней: зритель дома и ищет, что посмотреть.
+  // Это и делает придерживание готового проекта осмысленным решением.
+  seasonBuzzPower: 2.2,
+  // Прицельно снятый под сегмент проект попадает в него точнее, но остальным
+  // интересен меньше: фокус — это всегда и отказ.
+  targetedAppealBonus: 2.0,
+  targetedAppealPenalty: 0.78,
+
+  // --- Маркетинг релиза ---
+  // Кампания работает только вместе с релизом: рекламировать нечего, если
+  // в этом месяце ничего не выходит.
+  campaignPower: 1.5,         // насколько кампания усиливает шум премьеры
+  refCampaign: 120_000_000,   // бюджет кампании, дающий половину эффекта
+
+  // --- Цена для действующей базы ---
+  // Реакция на повышение нелинейна: +10% почти незаметны, +40% выносят
+  // заметный кусок базы. Годовых подписчиков повышение не задевает.
+  raiseShockBase: 0.035,
+  raiseShockCurve: 1.6,
+  raiseCooldown: 4,           // сколько месяцев нельзя повышать повторно
 };
 
 // ============================================================================
@@ -1225,107 +1424,149 @@ const GENRES = [
 // Рычаги управления
 // ============================================================================
 
+// ============================================================================
+// Рычаги управления.
+//
+// Их намеренно немного, и они разложены по группам. Ползунок хорош там, где
+// решение — это действительно число («сколько тратить на бренд»). Там, где
+// решение — это выбор объекта («какой проект запустить», «когда его выпустить»,
+// «повышать ли цену действующим»), ползунка нет: есть карточки и кнопки.
+//
+// group: 'money'  — деньги и цена, смотреть каждый месяц
+//        'growth' — маркетинг и каталог, смотреть при смене стратегии
+//        'infra'  — инфраструктура: выставил один раз и почти не трогаешь
+// ============================================================================
+
 const LEVERS = [
   {
-    key: 'pricePremium',
-    label: { ru: 'Цена без рекламы', en: 'Ad-free price' },
+    key: 'priceNew',
+    group: 'money',
+    label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 99, max: 999, step: 10, def: 399,
     tip: {
-      ru: 'Основная выручка. Киноманы почти не замечают цену, молодёжь уходит от каждой сотни — один и тот же рубль работает по-разному в разных сегментах.',
-      en: 'Your core revenue. Cinephiles barely notice the price, young viewers leave over every hundred roubles — the same rouble behaves differently in each segment.',
+      ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',
+      en: 'The price new subscribers sign up at. Your existing base keeps paying what it signed at — moving them to the new price is a separate decision, and some of them will leave over it.',
     },
   },
   {
     key: 'priceAds',
+    group: 'money',
     label: { ru: 'Цена с рекламой', en: 'Ad-tier price' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 499, step: 10, def: 149,
     tip: {
-      ru: 'Дешёвый тариф расширяет рынок, но переманивает и тех, кто платил бы полную цену. Каннибализация — не побочный эффект, а суть решения.',
-      en: 'A cheap tier widens the market but also pulls in people who would have paid full price. Cannibalisation is not a side effect here, it is the decision itself.',
+      ru: 'Дешёвый тариф приводит тех, кто иначе не заплатил бы вообще, и переманивает часть тех, кто заплатил бы полную цену. Это управление каннибализацией, а не «широкая линейка».',
+      en: 'The cheap tier brings in people who would not have paid at all and poaches some who would have paid full price. This is cannibalisation management, not a "broad line-up".',
+    },
+  },
+  {
+    key: 'annualDiscount',
+    group: 'money',
+    label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
+    unit: { ru: '%', en: '%' },
+    min: 0, max: 40, step: 5, def: 0, scale: 0.01,
+    tip: {
+      ru: 'Годовая подписка приносит деньги сразу за двенадцать месяцев и защищает от оттока — но фиксирует цену и не попадает под повышения. Это заём у собственной будущей выручки.',
+      en: 'An annual plan brings twelve months of cash at once and shields you from churn — but it locks the price and is exempt from any rise. It is a loan against your own future revenue.',
     },
   },
   {
     key: 'adLoad',
+    group: 'money',
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
     tip: {
-      ru: 'Каждая минута рекламы — прямая выручка и прямой удар по удержанию. Киноманы уходят втрое быстрее молодёжи.',
-      en: 'Every minute of advertising is direct revenue and a direct hit to retention. Cinephiles leave three times faster than young viewers.',
+      ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
+      en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
     },
   },
+
   {
     key: 'licensing',
+    group: 'growth',
     label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
+    min: 0, max: 500_000_000, step: 10_000_000, def: 0,
+    tip: {
+      ru: 'Каталог появляется сразу, но истекает 4.5% в месяц, лежит и у конкурента и почти не считается новинкой. Когда за права торгуетесь вы оба, они дорожают для обоих.',
+      en: 'The catalogue appears at once, but 4.5% expires monthly, the rival has the same titles, and it barely counts as new. When you both bid for rights, they get more expensive for both.',
+    },
+  },
+  {
+    key: 'brandMarketing',
+    group: 'growth',
+    label: { ru: 'Маркетинг бренда', en: 'Brand marketing' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 400_000_000, step: 10_000_000, def: 0,
     tip: {
-      ru: 'Чужой контент появляется в каталоге сразу, но истекает ~4,5% в месяц и есть у конкурентов. Это аренда, а не покупка.',
-      en: 'Licensed content lands in the catalogue immediately, but it expires at about 4.5% a month and your rivals have it too. This is rent, not ownership.',
+      ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
+      en: 'The steady background of awareness. It works slowly, decays quickly, and against an empty catalogue it burns for nothing: there is nowhere to bring the viewer.',
     },
   },
+
   {
-    key: 'originals',
-    label: { ru: 'Производство оригиналов', en: 'Originals budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 600_000_000, step: 10_000_000, def: 0,
+    key: 'studioSlots',
+    group: 'infra',
+    label: { ru: 'Слотов в студии', en: 'Studio slots' },
+    unit: { ru: 'проектов', en: 'projects' },
+    min: 1, max: 5, step: 1, def: 2,
     tip: {
-      ru: 'Деньги уходят сейчас, премьера будет через полгода. Зато оригинал остаётся навсегда и работает только на вас.',
-      en: 'The money goes out now and the premiere lands six months later. But an original stays forever and works for you alone.',
-    },
-  },
-  {
-    key: 'marketing',
-    label: { ru: 'Маркетинг', en: 'Marketing' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 300_000_000, step: 10_000_000, def: 0,
-    tip: {
-      ru: 'Растит узнаваемость и приток пробных подписок. Приводить людей в пустой каталог — самый дорогой способ купить отток.',
-      en: 'Builds awareness and the flow of trials. Bringing people into an empty catalogue is the most expensive way to buy churn.',
+      ru: 'Сколько проектов может идти одновременно. Слот стоит денег каждый месяц, занят он или пуст, — это и есть настоящая себестоимость производственной мощности.',
+      en: 'How many projects can run at once. A slot costs money every month whether it is busy or idle — that is what production capacity actually costs.',
     },
   },
   {
     key: 'trialDays',
+    group: 'infra',
     label: { ru: 'Пробный период', en: 'Free trial' },
     unit: { ru: 'дней', en: 'days' },
     min: 0, max: 30, step: 1, def: 7,
     tip: {
-      ru: 'Длинный триал поднимает конверсию из интереса в подписку, но месяц вы платите за трафик и не получаете денег.',
-      en: 'A long trial lifts conversion from interest into subscription, but for a month you pay for the traffic and collect nothing.',
+      ru: 'Длинный триал повышает конверсию и дарит месяцы. Короткий экономит деньги и теряет тех, кто не успел распробовать.',
+      en: 'A long trial lifts conversion and gives months away. A short one saves money and loses the people who never got a taste.',
     },
   },
   {
     key: 'bitrate',
+    group: 'infra',
     label: { ru: 'Качество картинки', en: 'Streaming quality' },
     unit: { ru: 'Мбит/с', en: 'Mbps' },
     min: 2, max: 16, step: 1, def: 5,
     tip: {
-      ru: 'Трафик — переменная себестоимость, которая растёт вместе с любовью зрителя к сервису. Экономия на битрейте видна сразу.',
-      en: 'Bandwidth is a variable cost that grows with how much viewers love you. Cutting the bitrate is noticed immediately.',
+      ru: 'Плохая картинка раздражает, хорошая стоит трафика — а трафик здесь единственная крупная переменная статья.',
+      en: 'A poor picture annoys people, a good one costs bandwidth — and bandwidth is the only large variable cost line here.',
     },
   },
   {
     key: 'tech',
+    group: 'infra',
     label: { ru: 'Технологии и платформа', en: 'Technology' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 150_000_000, step: 5_000_000, def: 0,
     tip: {
-      ru: 'Накопительная инвестиция: дешевле трафик, лучше приложение, меньше отток по техническим причинам.',
-      en: 'A cumulative investment: cheaper bandwidth, a better app, less churn for purely technical reasons.',
+      ru: 'Накопительная инвестиция: дешевле час трафика и выше качество производимых проектов. Окупается не сразу и не сама.',
+      en: 'A cumulative investment: cheaper bandwidth per hour and better quality in what you produce. It does not pay back quickly or by itself.',
     },
   },
   {
     key: 'rnd',
+    group: 'infra',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 120_000_000, step: 5_000_000, def: 0,
     tip: {
-      ru: 'Команда, которая строит рекомендации и удержание. Без часов просмотра учиться не на чем, а часы приходят только от подписчиков.',
-      en: 'The team that builds recommendations and retention. Without watch hours there is nothing to learn from, and hours only come from subscribers.',
+      ru: 'Команда без данных бесполезна ровно так же, как данные без команды: качество алгоритмов — среднее геометрическое того и другого.',
+      en: 'A team without data is exactly as useless as data without a team: algorithm quality is the geometric mean of the two.',
     },
   },
+];
+
+const LEVER_GROUPS = [
+  { id: 'money', label: { ru: 'Деньги и цена', en: 'Money and price' }, open: true },
+  { id: 'growth', label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' }, open: true },
+  { id: 'infra', label: { ru: 'Инфраструктура', en: 'Infrastructure' }, open: false },
 ];
 
 // ============================================================================
@@ -1482,10 +1723,14 @@ const ALGORITHMS = [
 
 const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  genre: 'drama',              // во что вкладывается студия сейчас
   algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),
   algoParam: Object.fromEntries(ALGORITHMS.map((a) => [a.key, a.param.def * (a.param.scale ?? 1)])),
 };
+
+// Что игрок делает помимо ползунков: запускает проекты, выпускает готовые,
+// повышает цену действующей базе. Это действия, а не числа, — и передаются
+// они в step() отдельно от decisions.
+const NO_ACTIONS = { commission: [], release: [], raisePrice: false };
 
 function segmentById(id) {
   return SEGMENTS.find((s) => s.id === id);
@@ -1569,6 +1814,273 @@ function rivalEffect(type, ownBuzz = 0) {
     churnAdd: r.churnAdd * (1 - counter),
     hoursMult: r.hours + (1 - r.hours) * counter,
   };
+}
+
+
+// ===== src/model/slate.js ==========================================
+// ============================================================================
+// Слейт: конкретные проекты вместо «бюджета на оригиналы».
+//
+// Раньше производство было ползунком: вы задавали сумму, и движок сам решал,
+// сколько проектов запустить и когда их выпустить. Управлять там было нечем,
+// и понять происходящее — тоже.
+//
+// Теперь проект — это объект. У него есть жанр, масштаб, сегмент, под который
+// он снят, срок производства и качество. Он проходит три состояния:
+//
+//   в производстве ──► готов (лежит в запасе) ──► вышел
+//
+// Второй переход делает игрок. Готовый проект можно придержать: выпустить
+// в тихий месяц, ответить им на чужую премьеру или дождаться высокого сезона.
+// Держать не бесплатно — актуальность выветривается, и у реалити быстрее всех.
+//
+// Параллельно идёт столько проектов, сколько у студии слотов. Слот стоит денег
+// каждый месяц независимо от того, занят он или пуст: это и есть настоящая
+// себестоимость производственной мощности.
+// ============================================================================
+
+
+// Масштаб проекта. Пилот — дешёвая проба, флагман — долгая дорогая ставка.
+const SCALES = [
+  {
+    id: 'pilot',
+    name: { ru: 'Пилот', en: 'Pilot' },
+    months: 4,
+    cost: 0.40,      // множитель к стоимости проекта
+    hours: 0.5,      // множитель к часам
+    buzz: 0.45,      // множитель к шуму премьеры
+    hint: {
+      ru: 'Быстро и дёшево. Мало часов и слабый всплеск, зато выходит через четыре месяца и почти ничем не рискует.',
+      en: 'Fast and cheap. Few hours and a weak spike, but it lands in four months and risks almost nothing.',
+    },
+  },
+  {
+    id: 'season',
+    name: { ru: 'Сезон', en: 'Season' },
+    months: 6,
+    cost: 1,
+    hours: 1,
+    buzz: 1,
+    hint: {
+      ru: 'Обычный сезон: полгода производства, предсказуемый результат. Рабочая лошадь конвейера.',
+      en: 'A normal season: six months of production and a predictable result. The workhorse of the pipeline.',
+    },
+  },
+  {
+    id: 'flagship',
+    name: { ru: 'Флагман', en: 'Flagship' },
+    months: 9,
+    cost: 2.6,
+    hours: 1.8,
+    buzz: 2.3,
+    hint: {
+      ru: 'Девять месяцев и втрое дороже сезона. Шум огромный — но и провал будет виден всем, а деньги уже потрачены.',
+      en: 'Nine months and nearly three times the cost of a season. The noise is enormous — but so is a flop, and the money is already spent.',
+    },
+  },
+];
+
+const scaleById = (id) => SCALES.find((s) => s.id === id) ?? SCALES[1];
+
+/** Полная стоимость проекта при текущей цене таланта. */
+function projectPrice(genreId, scaleId, talentIndex = 1) {
+  const g = genreById(genreId) ?? GENRES[0];
+  const sc = scaleById(scaleId);
+  return Math.round(g.hours * CONFIG.originalCostPerHour * g.costPerHour * sc.cost * talentIndex);
+}
+
+/** Сколько месяцев проект едет до готовности. */
+const projectMonths = (scaleId) => scaleById(scaleId).months;
+
+let nextId = 1;
+function resetProjectIds(value = 1) { nextId = value; }
+
+/**
+ * Запуск проекта в производство. Деньги списываются равными долями по месяцам —
+ * так студия и работает: не одним платежом, а зарплатой съёмочной группы.
+ */
+function commission(genreId, scaleId, segmentId, talentIndex, rng, techLevel = 0) {
+  const sc = scaleById(scaleId);
+  const g = genreById(genreId) ?? GENRES[0];
+  const total = projectPrice(genreId, scaleId, talentIndex);
+  // Качество определяется в момент запуска, но игроку до премьеры показывается
+  // только оценка: продюсер знает бюджет и команду, а не результат.
+  const luck = rng();
+  const quality = clamp(0.55 + 0.5 * luck + 0.25 * techLevel, 0.25, 1.45);
+  return {
+    id: nextId++,
+    genre: genreId,
+    scale: scaleId,
+    segment: segmentId ?? null,     // под какой сегмент снят
+    monthsLeft: sc.months,
+    monthsTotal: sc.months,
+    monthsHeld: 0,
+    hours: g.hours * sc.hours,
+    quality,
+    totalCost: total,
+    monthlyCost: Math.round(total / sc.months),
+    paid: 0,
+    status: 'production',
+  };
+}
+
+/**
+ * Оценка качества, которую видит игрок до премьеры. Точное значение известно
+ * только после выхода: до этого есть бюджет, команда и надежда.
+ */
+function qualityEstimate(project) {
+  if (project.status !== 'production') return { low: project.quality, high: project.quality, exact: true };
+  // Чем ближе к премьере, тем уже вилка: материал уже виден
+  const progress = 1 - project.monthsLeft / Math.max(1, project.monthsTotal);
+  const spread = 0.45 * (1 - progress);
+  return {
+    low: clamp(project.quality - spread, 0.2, 1.5),
+    high: clamp(project.quality + spread, 0.2, 1.5),
+    exact: false,
+  };
+}
+
+/** Шум премьеры с учётом масштаба, качества и того, сколько проект пролежал. */
+function releaseBuzz(project) {
+  const g = genreById(project.genre) ?? GENRES[0];
+  const sc = scaleById(project.scale);
+  const staleness = Math.pow(1 - CONFIG.vaultDecay, project.monthsHeld);
+  return g.buzz * sc.buzz * project.quality * staleness;
+}
+
+/** Насколько проект бьёт в конкретный сегмент. */
+function projectAppeal(project, segmentId) {
+  const g = genreById(project.genre) ?? GENRES[0];
+  const base = g.appeal[segmentId] ?? 1;
+  // Прицельно снятый под сегмент проект попадает в него точнее,
+  // но остальным он интересен меньше: фокус — это всегда и отказ.
+  if (!project.segment) return base;
+  return project.segment === segmentId
+    ? base * CONFIG.targetedAppealBonus
+    : base * CONFIG.targetedAppealPenalty;
+}
+
+const inProduction = (slate) => slate.filter((p) => p.status === 'production');
+const readyToRelease = (slate) => slate.filter((p) => p.status === 'ready');
+
+/**
+ * Месячный ход производства. Возвращает списанные деньги и проекты,
+ * которые доехали до готовности.
+ */
+function advanceProduction(slate, { stallMonths = 0, qualityMult = 1 } = {}) {
+  let spent = 0;
+  const finished = [];
+  for (const p of slate) {
+    if (p.status === 'production') {
+      spent += p.monthlyCost;
+      p.paid += p.monthlyCost;
+      if (qualityMult !== 1) p.quality = clamp(p.quality * qualityMult, 0.2, 1.5);
+      if (stallMonths <= 0) p.monthsLeft -= 1;
+      if (p.monthsLeft <= 0) {
+        p.status = 'ready';
+        p.monthsLeft = 0;
+        finished.push(p);
+      }
+    } else if (p.status === 'ready') {
+      p.monthsHeld += 1;
+    }
+  }
+  return { spent, finished };
+}
+
+/** Сколько слотов занято прямо сейчас. */
+const slotsUsed = (slate) => inProduction(slate).length;
+
+const segmentName = (id) => SEGMENTS.find((s) => s.id === id)?.name ?? null;
+
+
+// ===== src/model/pricing.js ========================================
+// ============================================================================
+// Цена: новые платят одно, старая база — другое.
+//
+// В первой версии цена была одним числом: подняли — и вся база мгновенно
+// платит больше. В подписочном бизнесе так не бывает. Действующий подписчик
+// платит ту цену, на которой подписался, и перевести его на новую — отдельное
+// решение с отдельной ценой: часть базы уходит именно в этот момент.
+//
+// Отсюда главный показатель, которого раньше в игре не было: разрыв между
+// прайсом и фактическим ARPU. Он копится незаметно и закрывается больно.
+//
+// Годовая подписка — второй слой. Деньги приходят сразу за двенадцать месяцев,
+// подписчик не может уйти и не попадает под повышение. Это заём у собственной
+// будущей выручки: касса сегодня, зафиксированная цена завтра.
+// ============================================================================
+
+
+/** Стартовое состояние цен для одного сегмента. */
+function createPricing(startPrice) {
+  return {
+    lockedPrice: startPrice,   // средняя цена, которую платит действующая база
+    annual: [],                // [{ subs, monthsLeft, price }]
+  };
+}
+
+/**
+ * Какая доля новых берёт годовую подписку. Чем больше скидка, тем охотнее —
+ * но и тем дешевле обходится вам каждый из них.
+ */
+function annualShare(discount, segDef) {
+  if (discount <= 0) return 0;
+  // Лояльные сегменты охотнее платят вперёд: они и так собирались остаться
+  const willingness = clamp(1.35 - segDef.loyalty, 0.2, 1.1);
+  return clamp(0.10 + 1.5 * discount * willingness, 0, 0.75);
+}
+
+/** Сколько всего подписчиков на годовом тарифе в сегменте. */
+const annualSubs = (pricing) => pricing.annual.reduce((s, c) => s + c.subs, 0);
+
+/**
+ * Повышение цены действующей базе. Возвращает долю, которая уйдёт именно
+ * из-за повышения, — сверх обычного оттока.
+ *
+ * Реакция нелинейна: +10% почти незаметны, +40% выносят заметный кусок базы.
+ * Годовые подписчики не задеты — их цена зафиксирована до конца срока.
+ */
+function raiseShock(oldPrice, newPrice, segDef) {
+  if (newPrice <= oldPrice || oldPrice <= 0) return 0;
+  const jump = (newPrice - oldPrice) / oldPrice;
+  return clamp(
+    CONFIG.raiseShockBase * Math.pow(jump / 0.1, CONFIG.raiseShockCurve) * segDef.elasticity,
+    0, 0.35);
+}
+
+/**
+ * Месячный ход по годовым когортам: у всех тикает срок, истёкшие
+ * возвращаются в обычную базу по текущей цене.
+ */
+function tickAnnual(pricing) {
+  let expired = 0;
+  for (const cohort of pricing.annual) cohort.monthsLeft -= 1;
+  for (const cohort of pricing.annual) if (cohort.monthsLeft <= 0) expired += cohort.subs;
+  pricing.annual = pricing.annual.filter((c) => c.monthsLeft > 0);
+  return expired;
+}
+
+/**
+ * Годовая когорта: деньги приходят сразу за двенадцать месяцев.
+ * `price` — уже со скидкой; именно её подписчик и зафиксировал на год.
+ */
+function addAnnualCohort(pricing, subs, price) {
+  if (subs <= 0) return 0;
+  pricing.annual.push({ subs, monthsLeft: 12, price });
+  return subs * price * 12;
+}
+
+/**
+ * Средняя цена, которую платит база сегмента: смесь заблокированной цены
+ * обычных подписчиков и зафиксированных годовых.
+ */
+function effectivePrice(pricing, monthlySubs) {
+  const annual = annualSubs(pricing);
+  const total = annual + monthlySubs;
+  if (total <= 0) return pricing.lockedPrice;
+  const annualPaid = pricing.annual.reduce((s, c) => s + c.subs * c.price, 0);
+  return (annualPaid + monthlySubs * pricing.lockedPrice) / total;
 }
 
 
@@ -2448,6 +2960,7 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 function createInitialState(seed = 'kinopotok') {
   const rng = createRng(seed);
+  resetProjectIds(1);
   const rival = createRival(rng);
   const state = {
     seed,
@@ -2464,8 +2977,8 @@ function createInitialState(seed = 'kinopotok') {
     catalogOriginal: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
-    studioFund: 0,         // деньги, накопленные на текущий проект
-    pipeline: [],          // проекты в производстве
+    slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
+    lastRaiseMonth: -99,   // когда последний раз поднимали цену действующим
     lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
     hangover: 0,           // сколько зрителей досмотрели премьеру и готовы уйти
     segments: Object.fromEntries(SEGMENTS.map((s) => [s.id, {
@@ -2473,6 +2986,7 @@ function createInitialState(seed = 'kinopotok') {
       awareness: 0.03,
       premium: 0,
       ads: 0,
+      pricing: createPricing(DEFAULT_DECISIONS.priceNew),
     }])),
 
     // --- Живой конкурент ---
@@ -2590,12 +3104,11 @@ function step(prevState, input = {}) {
 
   // --- 1. Ограничения совета директоров ---
   // Порезанный бюджет — это не совет, а потолок: лишние деньги просто не тратятся.
+  // Уже запущенные проекты порезать нельзя: съёмочной группе платят до конца.
+  // Потолок бьёт по закупке лицензий и запрещает запускать новое дорогое.
   const cap = contentCap(state);
-  const contentBudget = cap === null
-    ? { licensing: decisions.licensing, originals: decisions.originals }
-    : capContent(decisions, cap);
-  const capApplied = cap !== null
-    && (contentBudget.licensing + contentBudget.originals) < (decisions.licensing + decisions.originals) - 1;
+  const contentBudget = { licensing: cap === null ? decisions.licensing : Math.min(decisions.licensing, cap) };
+  const capApplied = cap !== null && contentBudget.licensing < decisions.licensing - 1;
 
   // --- 2. Событие месяца и кризис ---
   const mods = neutralModifiers();
@@ -2614,8 +3127,8 @@ function step(prevState, input = {}) {
       crisisCost = resolutionCost(state.crisis, crisisChoice);
       if (res.talentPenalty) state.talentPenalty = (state.talentPenalty ?? 0) + res.talentPenalty;
       if (res.techGain) state.techStock += crisisCost * res.techGain;
-      if (res.pipelineDelay) for (const p of state.pipeline) p.monthsLeft += res.pipelineDelay;
-      if (res.qualityHit) for (const p of state.pipeline) p.quality *= (1 - res.qualityHit);
+      if (res.pipelineDelay) for (const p of state.slate) if (p.status === 'production') p.monthsLeft += res.pipelineDelay;
+      if (res.qualityHit) for (const p of state.slate) if (p.status === 'production') p.quality *= (1 - res.qualityHit);
       if (res.resolves) {
         crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
         state.crisisHistory.push(crisisResolved);
@@ -2661,7 +3174,7 @@ function step(prevState, input = {}) {
   const yourSubsBefore = lastSubs(state);
   const rivalBefore = rivalSubs(state.rivalState);
   stepRival(state.rivalState, {
-    yourPrice: decisions.pricePremium,
+    yourPrice: decisions.priceNew,
     yourSubs: yourSubsBefore,
     yourOriginalsByGenre: state.originalsByGenre,
     month,
@@ -2670,39 +3183,76 @@ function step(prevState, input = {}) {
   }, rng);
   const riv = state.rivalState;
 
-  // --- 6. Производство: копилка, старт проектов, премьеры ---
-  const genre = genreById(decisions.genre) ?? GENRES[0];
-  const cost = projectCost(genre, talentIndex);
-  state.studioFund += contentBudget.originals;
+  // --- 6. Производство: слейт, готовые проекты, релизы ---
+  //
+  // Три разных решения, которые раньше были одним ползунком:
+  //   что запустить (жанр × масштаб × сегмент),
+  //   когда выпустить готовое,
+  //   сколько дать кампании под конкретный релиз.
+
+  // Запуск новых проектов. Слотов ограниченное число, и слот стоит денег
+  // независимо от того, занят он или пуст.
+  const slots = Math.round(decisions.studioSlots);
   const started = [];
-  // Копилка может дать сразу несколько проектов, если бюджет большой
-  while (state.studioFund >= cost && started.length < 4) {
-    state.studioFund -= cost;
-    // Качество зависит от команды, технологий и удачи: кино — рискованный бизнес
-    const luck = rng();
-    const projectQuality = clamp(
-      (0.55 + 0.5 * luck + 0.25 * techLevel(state)) * (crisisMods.qualityMult ?? 1), 0.25, 1.45);
-    state.pipeline.push({
-      genre: genre.id,
-      monthsLeft: CONFIG.originalLeadMonths,
-      hours: genre.hours,
-      quality: projectQuality,
-    });
-    started.push({ genre: genre.id, quality: projectQuality });
+  const rejected = [];
+  for (const order of (input.commission ?? [])) {
+    if (slotsUsed(state.slate) >= slots) { rejected.push({ ...order, reason: 'slots' }); continue; }
+    const price = projectPrice(order.genre, order.scale, talentIndex);
+    if (cap !== null && price > cap * 6) { rejected.push({ ...order, reason: 'cap' }); continue; }
+    // Чем больше проектов идёт параллельно, тем меньше внимания каждому.
+    // Мощность покупается не только деньгами за слот, но и качеством.
+    const load = slotsUsed(state.slate) / Math.max(1, slots);
+    const project = commission(order.genre, order.scale, order.segment, talentIndex, rng,
+      techLevel(state) - CONFIG.slotQualityDrag * load);
+    state.slate.push(project);
+    started.push({ id: project.id, genre: project.genre, scale: project.scale, segment: project.segment });
   }
 
-  // Кризис с уходом команды тормозит конвейер, пока не решён
+  // Ход производства. Кризис с уходом команды останавливает конвейер.
   const stall = crisisMods.pipelineStall ?? 0;
+  const { spent: productionSpend, finished } = advanceProduction(state.slate, {
+    stallMonths: stall,
+    qualityMult: crisisMods.qualityMult ?? 1,
+  });
+
+  // Релизы: выпускает игрок, а не движок. Готовый проект может лежать в запасе —
+  // выйти в тихий месяц, ответить на чужую премьеру или дождаться высокого сезона.
+  const releaseOrders = input.release ?? [];
   const premieres = [];
-  for (const project of state.pipeline) project.monthsLeft -= (stall > 0 ? 0 : 1);
-  if (stall > 1) for (const project of state.pipeline) project.monthsLeft += 1;
-  for (const project of state.pipeline.filter((p) => p.monthsLeft <= 0)) {
-    const g = genreById(project.genre);
+  let campaignSpend = 0;
+  for (const order of releaseOrders) {
+    const project = state.slate.find((p) => p.id === order.id && p.status === 'ready');
+    if (!project) continue;
+    const campaign = Math.max(0, order.campaign ?? 0);
+    campaignSpend += campaign;
+    // Кампания работает только вместе с релизом: рекламировать нечего,
+    // если в этом месяце ничего не выходит.
+    const lift = 1 + CONFIG.campaignPower * (campaign / (campaign + CONFIG.refCampaign));
+    project.status = 'released';
+    project.releasedMonth = month;
+    project.campaign = campaign;
     state.originalsByGenre[project.genre] = (state.originalsByGenre[project.genre] ?? 0) + project.hours;
     state.freshHours += project.hours;
-    premieres.push({ genre: project.genre, quality: project.quality, hours: project.hours, buzz: g.buzz * project.quality });
+    // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
+    // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
+    // а не формальность: ради высокого сезона имеет смысл придержать готовое.
+    premieres.push({
+      id: project.id,
+      genre: project.genre,
+      scale: project.scale,
+      segment: project.segment,
+      quality: project.quality,
+      hours: project.hours,
+      held: project.monthsHeld,
+      campaign,
+      season,
+      buzz: releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower),
+    });
   }
-  state.pipeline = state.pipeline.filter((p) => p.monthsLeft > 0);
+
+  const vault = readyToRelease(state.slate);
+  const producing = inProduction(state.slate);
+  const slotCost = Math.round(CONFIG.studioSlotMonthly * Math.pow(slots, CONFIG.studioSlotExponent));
 
   // Час реалити стареет быстро, час драмы почти не стареет: дешёвая полка
   // наполняется быстро и так же быстро пустеет.
@@ -2774,6 +3324,15 @@ function step(prevState, input = {}) {
 
   // --- 9. Подписчики по сегментам ---
   const refPrice = 399;
+  // Повышение цены действующей базе — отдельное решение с отдельной ценой.
+  // Повторять его каждый месяц нельзя: у людей есть память.
+  const wantRaise = Boolean(input.raisePrice);
+  const raiseAllowed = wantRaise && (month - (state.lastRaiseMonth ?? -99)) >= CONFIG.raiseCooldown;
+  let raiseApplied = false;
+  let raiseLost = 0;
+  let annualCash = 0;
+  let annualNew = 0;
+  let annualExpired = 0;
   let newSubs = 0;
   let lostSubs = 0;
   let trialsTotal = 0;
@@ -2785,15 +3344,38 @@ function step(prevState, input = {}) {
   for (const def of SEGMENTS) {
     const seg = state.segments[def.id];
 
+    const pricing = seg.pricing;
+
+    // Годовые когорты: у всех тикает срок, истёкшие возвращаются в обычную базу
+    annualExpired += tickAnnual(pricing);
+
+    // Повышение цены действующей базе. Годовых оно не задевает: их цена
+    // зафиксирована до конца срока — именно за это они и платили вперёд.
+    const lockedBefore = pricing.lockedPrice;
+    if (raiseAllowed && decisions.priceNew > lockedBefore + 1) {
+      const shock = raiseShock(lockedBefore, decisions.priceNew, def);
+      const monthly = Math.max(0, seg.premium + seg.ads - annualSubs(pricing));
+      const lost = monthly * shock;
+      raiseLost += lost;
+      const keep = monthly > 0 ? 1 - lost / monthly : 1;
+      seg.premium *= keep;
+      seg.ads *= keep;
+      pricing.lockedPrice = decisions.priceNew;
+      raiseApplied = true;
+    }
+
     // Выбор тарифа: чем больше экономия и чем терпимее сегмент к рекламе,
     // тем охотнее он идёт на дешёвый тариф с рекламой.
-    const saving = decisions.pricePremium > 0
-      ? clamp((decisions.pricePremium - decisions.priceAds) / decisions.pricePremium, 0, 1) : 0;
+    const saving = decisions.priceNew > 0
+      ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
     const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
     const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, 0.94);
 
-    // Цена, которую сегмент фактически платит в среднем
-    const blendedPrice = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+    // Новые смотрят на прайс, а платит база свою заблокированную цену.
+    // Разрыв между этими двумя числами — главный скрытый показатель игры.
+    const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
+    const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
+    const blendedPrice = listPrice;
     const priceFactor = clamp(Math.pow(refPrice / Math.max(30, blendedPrice), def.elasticity), 0.15, 2.6);
 
     // Ценность каталога для сегмента: глубина и свежесть весят по-разному
@@ -2808,9 +3390,11 @@ function step(prevState, input = {}) {
     const adRelief = 1 - 0.45 * adSpread * quality;
     const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
 
-    // Премьера тянет к себе именно свой сегмент
+    // Премьера тянет к себе именно свой сегмент — и тем точнее, чем прицельнее
+    // она снята. Проект «под киноманов» соберёт их и оставит равнодушными всех
+    // остальных: фокус — это всегда и отказ.
     const premiereAppeal = premieres.reduce(
-      (s, p) => s + p.buzz * (genreById(p.genre)?.appeal[def.id] ?? 1), 0);
+      (s, p) => s + p.buzz * projectAppeal(p, def.id), 0);
 
     // Узнаваемость — накопительный запас. Маркетинг насыщается: чем глубже
     // проникновение, тем дороже обходится следующий зритель.
@@ -2818,7 +3402,12 @@ function step(prevState, input = {}) {
     const penetration = clamp(subsBefore / def.potential, 0, 1);
     const saturation = 1 / (1 + CONFIG.marketingSaturation * penetration * penetration);
     const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
-    const spendPerViewer = (decisions.marketing * shareOfMarket) / def.potential;
+    // Кампания под релиз считается маркетингом именно того сегмента,
+    // под который снят проект: реклама сериала — это не реклама бренда.
+    const targetedCampaign = premieres.reduce(
+      (s, p) => s + (p.campaign ?? 0) * (p.segment === def.id ? 0.75 : p.segment ? 0.08 : 0.25), 0);
+    const segMarketing = decisions.brandMarketing * shareOfMarket + targetedCampaign;
+    const spendPerViewer = segMarketing / def.potential;
     const gain = clamp(
       0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55) * saturation,
       0, CONFIG.awarenessMaxGain);
@@ -2892,11 +3481,16 @@ function step(prevState, input = {}) {
     const savedShare = winbackPower * 0.45;
     churnRate = churnRate * (1 - savedShare);
 
-    const leaving = subsBefore * churnRate;
+    // Годовой подписчик физически не может уйти: он уже заплатил за год.
+    // В этом и ценность годового тарифа — не в скидке, а в том, что эти
+    // люди выключены из оттока до конца срока.
+    const lockedIn = annualSubs(pricing);
+    const churnable = Math.max(0, subsBefore - lockedIn);
+    const leaving = churnable * churnRate;
     // Скидку получают удержанные и часть тех, кто и так остался бы (промахи модели)
-    const discounted = subsBefore * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
-      + subsBefore * (1 - quality) * winbackDiscount * 0.03;
-    winbackCost += discounted * decisions.pricePremium * winbackDiscount;
+    const discounted = churnable * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
+      + churnable * (1 - quality) * winbackDiscount * 0.03;
+    winbackCost += discounted * pricing.lockedPrice * winbackDiscount;
 
     // --- Переток между сервисами ---
     // Отдельный поток от общего оттока: эти люди не ушли из категории,
@@ -2906,6 +3500,24 @@ function step(prevState, input = {}) {
     flow = clamp(flow, -survivorsBeforeSwitch * 0.5, rivalAfterOwn * 0.5);
     if (flow >= 0) switchedIn += flow; else switchedOut += -flow;
     riv.segments[def.id] = Math.max(0, rivalAfterOwn - flow);
+
+    // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
+    // месяцев, но цена фиксируется и повышения их не касаются.
+    const annualPortion = annualShare(decisions.annualDiscount, def);
+    const annualTakers = converted * (1 - adShare) * annualPortion;
+    if (annualTakers > 0) {
+      const annualPrice = decisions.priceNew * (1 - decisions.annualDiscount);
+      annualCash += addAnnualCohort(pricing, annualTakers, annualPrice);
+      annualNew += annualTakers;
+    }
+
+    // Средняя цена базы дрейфует к прайсу по мере обновления
+    const monthlyNew = converted * (1 - adShare) - annualTakers;
+    const monthlyBase = Math.max(0, seg.premium - annualSubs(pricing) + monthlyNew);
+    if (monthlyBase > 0 && monthlyNew > 0) {
+      pricing.lockedPrice = (pricing.lockedPrice * (monthlyBase - monthlyNew)
+        + decisions.priceNew * monthlyNew) / monthlyBase;
+    }
 
     // Обновляем запасы по тарифам
     const survivors = survivorsBeforeSwitch + flow;
@@ -2918,7 +3530,7 @@ function step(prevState, input = {}) {
     trialsTotal += trials;
 
     perSegment.push({
-      def, seg, adShare, blendedPrice, priceFactor, appeal, adPenalty,
+      def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
       churnRate, converted, leaving, flow, preference,
       subs: seg.premium + seg.ads, rivalSubs: riv.segments[def.id],
     });
@@ -2951,7 +3563,15 @@ function step(prevState, input = {}) {
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
 
   // --- 11. Выручка ---
-  const subscriptionRevenue = premiumSubs * decisions.pricePremium + adSubs * decisions.priceAds;
+  // Выручка считается по тому, что база реально платит, а не по прайсу.
+  // Годовые деньги пришли в кассу разом при подписке и здесь не повторяются.
+  let subscriptionRevenue = 0;
+  for (const p of perSegment) {
+    const annual = annualSubs(p.pricing);
+    const monthlyPremium = Math.max(0, p.seg.premium - annual);
+    subscriptionRevenue += monthlyPremium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds;
+  }
+  const listRevenue = premiumSubs * decisions.priceNew + adSubs * decisions.priceAds;
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
   const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд
@@ -2961,13 +3581,17 @@ function step(prevState, input = {}) {
   const variableCost = cdnCost + supportCost + winbackCost;
   const contribution = revenue - variableCost;
 
-  const contentSpend = contentBudget.licensing + contentBudget.originals;
-  const fixed = CONFIG.hqMonthly + contentSpend
-    + decisions.marketing + decisions.tech + decisions.rnd;
+  const contentSpend = contentBudget.licensing + productionSpend;
+  const marketingSpend = decisions.brandMarketing + campaignSpend;
+  const fixed = CONFIG.hqMonthly + contentSpend + slotCost
+    + marketingSpend + decisions.tech + decisions.rnd;
   const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0) + crisisCost;
   const profit = contribution - fixed;
 
-  state.cash += profit - oneOff;
+  // Годовая предоплата — это касса сегодня и выручка, растянутая на год.
+  // В P&L она не попадает: иначе один и тот же рубль был бы учтён дважды.
+  state.cash += profit - oneOff + annualCash;
+  if (raiseApplied) state.lastRaiseMonth = month;
   state.techStock += decisions.tech;
   state.rndStock += decisions.rnd;
   state.dataStock += hours;
@@ -2979,7 +3603,7 @@ function step(prevState, input = {}) {
   const avgChurn = totalSubs > 0
     ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / totalSubs
     : CONFIG.baseChurn;
-  const cac = newSubs > 0 ? decisions.marketing / newSubs : 0;
+  const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
   const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   const marketShare = totalSubs / marketPotential;
@@ -3097,7 +3721,10 @@ function step(prevState, input = {}) {
     // --- Дорожающие ресурсы ---
     licenseIndex,
     talentIndex,
-    projectCost: cost,
+    // Прайс-лист производства при текущей цене таланта: игрок должен видеть,
+    // во сколько ему обойдётся каждый вариант, до того как нажмёт кнопку.
+    projectPrices: Object.fromEntries(GENRES.map((g) => [g.id,
+      Object.fromEntries(SCALES.map((sc) => [sc.id, projectPrice(g.id, sc.id, talentIndex)]))])),
 
     buzz,
     heldBuzz,
@@ -3106,8 +3733,40 @@ function step(prevState, input = {}) {
     effectiveCatalog,
     premieres,
     started,
-    pipeline: state.pipeline.map((p) => ({ genre: p.genre, monthsLeft: p.monthsLeft, quality: p.quality })),
-    studioFund: state.studioFund,
+    slots,
+    slotsUsed: producing.length,
+    slotCost,
+    productionSpend,
+    campaignSpend,
+    marketingSpend,
+    rejected,
+    finished: finished.map((p) => ({ id: p.id, genre: p.genre, scale: p.scale })),
+    vault: vault.map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      quality: p.quality, held: p.monthsHeld, hours: p.hours,
+    })),
+    producing: producing.map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      monthsLeft: p.monthsLeft, monthsTotal: p.monthsTotal,
+    })),
+
+    // --- Цена ---
+    listRevenue,
+    // Разрыв между прайсом и тем, что реально платит база без рекламы.
+    // Он копится незаметно с каждым повышением прайса и закрывается больно.
+    lockedPrice: premiumSubs > 0
+      ? perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0) / premiumSubs
+      : decisions.priceNew,
+    priceGap: premiumSubs > 0
+      ? clamp(1 - (perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0)
+        / premiumSubs) / Math.max(1, decisions.priceNew), 0, 1)
+      : 0,
+    raiseApplied,
+    raiseLost,
+    annualCash,
+    annualNew,
+    annualExpired,
+    annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
 
     cac,
     ltv,
@@ -3152,8 +3811,10 @@ function step(prevState, input = {}) {
       preference: p.preference,
       flow: p.flow,
       rivalSubs: p.rivalSubs,
+      lockedPrice: p.pricing.lockedPrice,
+      annual: annualSubs(p.pricing),
       arpu: p.subs > 0
-        ? (p.seg.premium * decisions.pricePremium + p.seg.ads * decisions.priceAds
+        ? (p.seg.premium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds
            + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
         : 0,
     })),
@@ -3177,18 +3838,6 @@ function step(prevState, input = {}) {
   return { state, report };
 }
 
-/** Режет контентный бюджет под потолок совета, сохраняя пропорцию игрока. */
-function capContent(decisions, cap) {
-  const total = decisions.licensing + decisions.originals;
-  if (total <= cap) return { licensing: decisions.licensing, originals: decisions.originals };
-  if (total <= 0) return { licensing: 0, originals: 0 };
-  const k = cap / total;
-  return {
-    licensing: Math.round(decisions.licensing * k),
-    originals: Math.round(decisions.originals * k),
-  };
-}
-
 // ----------------------------------------------------------------------------
 // Экономика одного подписчика — считается мгновенно, до расчёта месяца
 // ----------------------------------------------------------------------------
@@ -3197,7 +3846,7 @@ function unitEconomics(state, decisions) {
   const hoursPerSub = last ? last.hoursPerSub : CONFIG.baseHoursPerSub;
   const adShare = last && last.subs > 0 ? last.adSubs / last.subs : 0.35;
 
-  const subscription = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+  const subscription = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
   const impressions = hoursPerSub * adShare * decisions.adLoad * 2;
   const advertising = (impressions / 1000) * CONFIG.cpm;
   const revenue = subscription + advertising;
@@ -3539,6 +4188,18 @@ let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
+let pendingCommission = [];       // проекты, запускаемые в этом ходу
+let pendingRelease = {};          // id готового проекта -> бюджет кампании
+let pendingRaise = false;         // перевести действующую базу на текущий прайс
+let openGroups = { money: true, growth: true, infra: false };
+let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
+
+const clearActions = () => {
+  pendingCommission = [];
+  pendingRelease = {};
+  pendingRaise = false;
+  pendingCrisisChoice = null;
+};
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
@@ -3579,9 +4240,11 @@ function renderKpis() {
   const burn = r ? r.fixed + r.oneOff - r.contribution : 0;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Пять показателей в одну строку. Всё остальное — в итогах месяца и вкладках:
+  // шапка нужна, чтобы понять положение за секунду, а не чтобы изучать её.
   const parts = [
     kpi(t('kpiMonth'), `${state.month} / ${CONFIG.monthsTotal}`,
-      state.pendingEvent ? t('kpiMonthEvent') : t('kpiMonthCalm')),
+      seasonName(seasonOf(state.month + 1))),
     kpi(t('kpiCash'), money(state.cash),
       state.cash < 0 ? t('kpiCashOut')
         : Number.isFinite(runway) ? t('kpiRunway', { months: runway.toFixed(0) })
@@ -3592,27 +4255,17 @@ function renderKpis() {
   if (r) {
     const [dSubs, cSubs] = delta(r.subs, p?.subs);
     parts.push(
-      kpi(t('kpiSubs'), compact(r.subs),
-        t('kpiSubsSub', { premium: compact(r.premiumSubs), ads: compact(r.adSubs) }), cSubs || 'neutral'),
-      kpi(t('kpiRevenue'), money(r.revenue), t('kpiRevenueSub', { value: `${num(r.arpu)} ₽` }), 'neutral'),
-      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
-        r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiChurn'), pct(r.churnRate, 1),
-        t('kpiChurnSub', { months: (1 / Math.max(0.005, r.churnRate)).toFixed(0) }),
-        r.churnRate <= 0.05 ? 'up' : r.churnRate <= 0.09 ? 'neutral' : 'down'),
-      kpi(t('kpiHours'), num(r.hoursPerSub, 1),
-        t('kpiHoursSub', { value: money(r.cdnCost) }),
-        'neutral'),
+      kpi(t('kpiSubs'), compact(r.subs), dSubs || t('kpiSubsFlat'), cSubs || 'neutral'),
       kpi(t('kpiShare'), pct(r.duopolyShare ?? 0, 0),
         t('kpiShareSub', { them: compact(r.rivalSubs ?? 0) }),
         (r.duopolyShare ?? 0) >= 0.5 ? 'up' : (r.duopolyShare ?? 0) >= 0.35 ? 'neutral' : 'down'),
+      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
+        r.profit >= 0 ? 'up' : 'down'),
       kpi(t('kpiEquity'), money(r.equityValue ?? 0),
         t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
-      kpi('', dSubs, '', cSubs),
     );
-    parts.pop();
   } else {
-    parts.push(kpi(t('kpiStart'), money(CONFIG.startCash), t('kpiStartSub'), 'up'));
+    parts.push(kpi(t('kpiStart'), money(CONFIG.startCash), t('kpiStartSub')));
   }
   el('kpis').innerHTML = parts.join('');
 }
@@ -3621,22 +4274,39 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 function buildLevers() {
-  el('levers').innerHTML = LEVERS.map((l) => `
-    <div class="lever" data-key="${l.key}">
-      <div class="lever-head">
-        <span class="lever-label">${tx(l.label)}</span>
-        <span class="lever-value" id="val-${l.key}"></span>
+  // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
+  // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
+  // их всё время на экране значит тратить внимание там, где решения нет.
+  el('levers').innerHTML = LEVER_GROUPS.map((g) => {
+    const items = LEVERS.filter((l) => l.group === g.id);
+    if (!items.length) return '';
+    return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
+      <button class="lever-group-head" type="button">
+        <span class="lg-caret">▾</span><span>${tx(g.label)}</span>
+        <span class="lg-count">${items.length}</span>
+      </button>
+      <div class="lever-group-body">
+        ${items.map((l) => `
+          <div class="lever" data-key="${l.key}">
+            <div class="lever-head">
+              <span class="lever-label">${tx(l.label)}</span>
+              <span class="lever-value" id="val-${l.key}"></span>
+            </div>
+            <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+            <button class="lever-why" type="button">${t('leverWhy')}</button>
+            <div class="lever-tip">${tx(l.tip)}</div>
+          </div>`).join('')}
       </div>
-      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
-      <button class="lever-why" type="button">${t('leverWhy')}</button>
-      <div class="lever-tip">${tx(l.tip)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   for (const l of LEVERS) {
     el(`in-${l.key}`).addEventListener('input', (e) => {
       state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
       syncLevers();
       renderOpsReadout();
+      renderTurn();
+      renderSlate();
       renderRightTab();
       save();
     });
@@ -3644,14 +4314,22 @@ function buildLevers() {
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
+  el('levers').querySelectorAll('.lever-group-head').forEach((b) => {
+    b.addEventListener('click', () => {
+      const box = b.closest('.lever-group');
+      const id = box.dataset.group;
+      openGroups[id] = !openGroups[id];
+      box.classList.toggle('open', openGroups[id]);
+    });
+  });
   leversBuilt = true;
 }
 
+const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
+
 function leverDisplay(l, raw) {
-  const unit = tx(l.unit);
-  if (l.key === 'licensing' || l.key === 'originals' || l.key === 'marketing'
-      || l.key === 'tech' || l.key === 'rnd') return money(raw);
-  return `${num(raw)} ${unit}`;
+  if (MONEY_LEVERS.has(l.key)) return money(raw);
+  return `${num(raw)} ${tx(l.unit)}`;
 }
 
 function syncLevers() {
@@ -3659,7 +4337,8 @@ function syncLevers() {
     const raw = state.decisions[l.key] / (l.scale ?? 1);
     const input = el(`in-${l.key}`);
     if (input) input.value = String(raw);
-    el(`val-${l.key}`).textContent = leverDisplay(l, raw);
+    const out = el(`val-${l.key}`);
+    if (out) out.textContent = leverDisplay(l, raw);
   }
 }
 
@@ -3669,7 +4348,8 @@ function renderOpsReadout() {
   const catalogHours = state.catalogLicensed + state.catalogOriginal;
   const effective = state.catalogLicensed * CONFIG.licenseDepthWeight
     + state.catalogOriginal * CONFIG.originalDepthWeight;
-  const boughtHours = state.decisions.licensing / CONFIG.licenseCostPerHour;
+  const idx = last()?.licenseIndex ?? 1;
+  const boughtHours = state.decisions.licensing / (CONFIG.licenseCostPerHour * idx);
 
   el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>${t('opsCatalog', {
@@ -3692,47 +4372,261 @@ function renderOpsReadout() {
 // ----------------------------------------------------------------------------
 // Студия: жанр и конвейер
 // ----------------------------------------------------------------------------
-function renderStudio() {
-  const current = state.decisions.genre;
-  const cards = GENRES.map((g) => {
-    const on = g.id === current;
-    return `<div class="district ${on ? 'active' : ''}" data-genre="${g.id}">
-      <div class="district-head">
-        <span class="district-name">${tx(g.name)}</span>
-        <span class="badge ${on ? 'on' : ''}">${money(projectCost(g))}</span>
-      </div>
-      <div class="district-meta">${t('genreHours', { hours: g.hours })} · ${tx(g.hint)}</div>
-    </div>`;
-  }).join('');
+// ----------------------------------------------------------------------------
+// Ход месяца: что решается прямо сейчас.
+//
+// Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
+// Теперь совет стоит там же, где кнопка: рядом с решением, к которому он
+// относится, и только когда он уместен.
+// ----------------------------------------------------------------------------
+function turnTodos() {
+  const r = last();
+  const todos = [];
+  const slate = state.slate ?? [];
+  const ready = slate.filter((p) => p.status === 'ready');
+  const producing = slate.filter((p) => p.status === 'production');
+  const planned = Object.keys(pendingRelease).length;
+  const rivalLoud = ['major', 'mega'].includes(state.rivalNext ?? 'none');
+  const season = seasonOf(state.month + 1);
 
-  const genre = genreById(current) ?? GENRES[0];
-  const pipeline = state.pipeline ?? [];
-  const pipelineText = pipeline.length
-    ? t('studioPipeline', {
-        list: pipeline
-          .sort((a, b) => a.monthsLeft - b.monthsLeft)
-          .map((p) => t('studioPipelineItem', {
-            genre: tx(genreById(p.genre)?.name), months: p.monthsLeft,
-          })).join(', '),
-      })
-    : `<span class="neg">${t('studioPipelineEmpty')}</span>`;
-
-  el('studio').innerHTML = `
-    <div class="hint-box" style="margin-bottom:10px">
-      <div>${t('studioFund', { fund: money(state.studioFund ?? 0), cost: money(projectCost(genre)) })}</div>
-      <div>${pipelineText}</div>
-      <div class="funding-note" style="margin-top:6px">${t('studioLag')}</div>
-    </div>
-    <div class="districts">${cards}</div>`;
-
-  el('studio').querySelectorAll('[data-genre]').forEach((node) => {
-    node.addEventListener('click', () => {
-      state.decisions.genre = node.dataset.genre;
-      renderStudio();
-      renderOpsReadout();
-      save();
+  // 1. Готовые проекты — главное решение месяца
+  if (ready.length && !planned) {
+    todos.push({
+      kind: rivalLoud ? 'warn' : 'act',
+      title: t('todoReleaseTitle', { count: ready.length }),
+      text: rivalLoud
+        ? t('todoReleaseVsRival')
+        : season === 'winter' || season === 'autumn'
+          ? t('todoReleaseGoodSeason', { season: seasonName(season) })
+          : t('todoReleaseQuiet'),
     });
+  }
+
+  // 2. Пустая студия — премьеры не будет полгода
+  if (!producing.length && !pendingCommission.length) {
+    todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
+  }
+
+  // 3. Разрыв между прайсом и тем, что платит база
+  if (r && r.priceGap > 0.08) {
+    const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
+    todos.push({
+      kind: pendingRaise ? 'act' : 'warn',
+      title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
+      text: cooldown > 0
+        ? t('todoPriceGapCooldown', { months: cooldown })
+        : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
+      action: cooldown > 0 ? null : {
+        id: 'raise',
+        label: pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo'),
+        on: pendingRaise,
+      },
+    });
+  }
+
+  // 4. Маркетинг без каталога
+  if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
+    todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
+  }
+
+  // 5. Кампания без релиза
+  if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
+    todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
+  }
+
+  return todos;
+}
+
+function plannedSpend() {
+  const talent = talentIndexNow();
+  const commissions = pendingCommission.reduce(
+    (sum, c) => sum + projectPrice(c.genre, c.scale, talent) / scaleById(c.scale).months, 0);
+  const campaigns = Object.values(pendingRelease).reduce((a, b) => a + b, 0);
+  return { commissions, campaigns };
+}
+
+function renderTurn() {
+  if (state.over) { el('turn-slot').innerHTML = ''; return; }
+  const todos = turnTodos();
+  const { commissions, campaigns } = plannedSpend();
+  const releases = Object.keys(pendingRelease).length;
+
+  const plan = [];
+  if (releases) plan.push(t('planReleases', { count: releases, budget: money(campaigns) }));
+  if (pendingCommission.length) plan.push(t('planCommission', { count: pendingCommission.length, monthly: money(commissions) }));
+  if (pendingRaise) plan.push(t('planRaise'));
+
+  el('turn-slot').innerHTML = `<div class="panel turn">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelTurn', { month: state.month + 1 })}</h2>
+      <span class="funding-note">${plan.length ? plan.join(' · ') : t('planNothing')}</span>
+    </div>
+    ${todos.length
+      ? `<div class="todos">${todos.map((td) => `
+          <div class="todo ${td.kind}">
+            <div class="todo-title">${td.title}</div>
+            <div class="todo-text">${td.text}</div>
+            ${td.action ? `<button class="btn ${td.action.on ? 'primary' : 'ghost'} tiny"
+              data-todo="${td.action.id}">${td.action.label}</button>` : ''}
+          </div>`).join('')}</div>`
+      : `<div class="todo ok"><div class="todo-title">${t('todoCalmTitle')}</div>
+          <div class="todo-text">${t('todoCalmText')}</div></div>`}
+  </div>`;
+
+  el('turn-slot').querySelectorAll('[data-todo="raise"]').forEach((b) => {
+    b.addEventListener('click', () => { pendingRaise = !pendingRaise; renderTurn(); });
   });
+}
+
+// ----------------------------------------------------------------------------
+// Слейт: конкретные проекты вместо ползунка «бюджет на оригиналы»
+// ----------------------------------------------------------------------------
+const scaleName = (id) => tx(scaleById(id).name);
+const genreName = (id) => tx(genreById(id)?.name ?? '');
+const segName = (id) => (id ? tx(SEGMENTS.find((x) => x.id === id)?.name ?? '') : t('slateBroad'));
+
+function talentIndexNow() {
+  return last()?.talentIndex ?? 1;
+}
+
+function projectCard(p, kind) {
+  const est = qualityEstimate(p);
+  if (kind === 'production') {
+    const done = 1 - p.monthsLeft / Math.max(1, p.monthsTotal);
+    return `<div class="proj production">
+      <div class="proj-head">
+        <span class="proj-name">${genreName(p.genre)} · ${scaleName(p.scale)}</span>
+        <span class="badge">${t('slateMonthsLeft', { months: p.monthsLeft })}</span>
+      </div>
+      <div class="proj-meta">${t('slateFor', { segment: segName(p.segment) })} · ${t('slateHours', { hours: num(p.hours, 1) })}</div>
+      <span class="q-bar"><span class="q-fill" style="width:${(done * 100).toFixed(0)}%"></span></span>
+      <div class="proj-meta">${t('slateEstimate', { low: est.low.toFixed(2), high: est.high.toFixed(2) })}</div>
+    </div>`;
+  }
+  // Готовый проект: тут и принимается решение о релизе
+  const campaign = pendingRelease[p.id];
+  const planned = campaign !== undefined;
+  const buzz = releaseBuzz(p);
+  return `<div class="proj ready ${planned ? 'planned' : ''}" data-ready="${p.id}">
+    <div class="proj-head">
+      <span class="proj-name">${genreName(p.genre)} · ${scaleName(p.scale)}</span>
+      <span class="badge ${p.monthsHeld > 2 ? 'warn' : 'on'}">${
+        p.monthsHeld > 0 ? t('slateHeld', { months: p.monthsHeld }) : t('slateFresh')}</span>
+    </div>
+    <div class="proj-meta">${t('slateFor', { segment: segName(p.segment) })} ·
+      ${t('slateQuality', { value: p.quality.toFixed(2) })} · ${t('slateBuzz', { value: buzz.toFixed(2) })}</div>
+    ${p.monthsHeld > 0 ? `<div class="proj-meta neg">${t('slateStale', { pct: pct(1 - Math.pow(1 - CONFIG.vaultDecay, p.monthsHeld), 0) })}</div>` : ''}
+    ${planned
+      ? `<div class="release-row">
+          <label>${t('slateCampaign')}</label>
+          <input type="range" data-campaign="${p.id}" min="0" max="400000000" step="10000000" value="${campaign}" />
+          <span class="release-budget">${money(campaign)}</span>
+          <button class="btn ghost tiny" data-cancel="${p.id}">${t('slateCancel')}</button>
+        </div>`
+      : `<button class="btn primary tiny" data-release="${p.id}">${t('slateRelease')}</button>`}
+  </div>`;
+}
+
+function renderSlate() {
+  const slate = state.slate ?? [];
+  const producing = slate.filter((p) => p.status === 'production');
+  const ready = slate.filter((p) => p.status === 'ready');
+  const slots = Math.round(state.decisions.studioSlots);
+  const free = slots - producing.length - pendingCommission.length;
+  const talent = talentIndexNow();
+  const price = projectPrice(commissionDraft.genre, commissionDraft.scale, talent);
+  const affordable = price <= state.cash;
+
+  const queued = pendingCommission.map((c, i) => `<div class="proj queued">
+    <div class="proj-head">
+      <span class="proj-name">${genreName(c.genre)} · ${scaleName(c.scale)}</span>
+      <button class="btn ghost tiny" data-unqueue="${i}">✕</button>
+    </div>
+    <div class="proj-meta">${t('slateFor', { segment: segName(c.segment) })} ·
+      ${t('slateStartsNow', { months: scaleById(c.scale).months })}</div>
+  </div>`).join('');
+
+  el('slate-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelSlate')}</h2>
+      <span class="funding-note">${t('slateSlots', {
+        used: producing.length + pendingCommission.length, total: slots,
+        cost: money(CONFIG.studioSlotMonthly * Math.pow(slots, CONFIG.studioSlotExponent)) })}</span>
+    </div>
+
+    ${ready.length ? `<div class="slate-section">
+      <div class="slate-label">${t('slateReadyTitle', { count: ready.length })}</div>
+      <div class="proj-grid">${ready.map((p) => projectCard(p, 'ready')).join('')}</div>
+      <div class="funding-note">${t('slateReadyHint')}</div>
+    </div>` : ''}
+
+    <div class="slate-section">
+      <div class="slate-label">${t('slateProductionTitle', { count: producing.length })}</div>
+      ${producing.length
+        ? `<div class="proj-grid">${producing.map((p) => projectCard(p, 'production')).join('')}</div>`
+        : `<div class="alert bad">${t('slateEmpty', { months: 4 })}</div>`}
+      ${queued ? `<div class="proj-grid">${queued}</div>` : ''}
+    </div>
+
+    <div class="slate-section commission ${free > 0 ? '' : 'blocked'}">
+      <div class="slate-label">${t('slateCommission')}</div>
+      <div class="commission-row">
+        <div class="pick" data-pick="genre">${GENRES.map((g) => `
+          <button class="${g.id === commissionDraft.genre ? 'active' : ''}" data-genre="${g.id}"
+            title="${tx(g.hint)}">${tx(g.name)}</button>`).join('')}</div>
+      </div>
+      <div class="commission-row">
+        <div class="pick" data-pick="scale">${SCALES.map((sc) => `
+          <button class="${sc.id === commissionDraft.scale ? 'active' : ''}" data-scale="${sc.id}"
+            title="${tx(sc.hint)}">${tx(sc.name)} · ${sc.months} ${t('unitMonthsShort')}</button>`).join('')}</div>
+      </div>
+      <div class="commission-row">
+        <div class="pick" data-pick="segment">
+          <button class="${commissionDraft.segment === null ? 'active' : ''}" data-segment="">${t('slateBroad')}</button>
+          ${SEGMENTS.map((sg) => `<button class="${sg.id === commissionDraft.segment ? 'active' : ''}"
+            data-segment="${sg.id}" title="${tx(sg.hint)}">${tx(sg.name)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="commission-foot">
+        <span>${t('slatePrice', { price: money(price), months: scaleById(commissionDraft.scale).months })}</span>
+        <button class="btn primary" id="btn-commission" ${free > 0 && affordable ? '' : 'disabled'}>
+          ${free > 0 ? (affordable ? t('slateStart') : t('slateNoCash')) : t('slateNoSlots')}</button>
+      </div>
+      <div class="funding-note">${t('slateFocusHint')}</div>
+    </div>
+  </div>`;
+
+  const root = el('slate-slot');
+  root.querySelectorAll('[data-genre]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.genre = b.dataset.genre; renderSlate();
+  }));
+  root.querySelectorAll('[data-scale]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.scale = b.dataset.scale; renderSlate();
+  }));
+  root.querySelectorAll('[data-segment]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.segment = b.dataset.segment || null; renderSlate();
+  }));
+  el('btn-commission')?.addEventListener('click', () => {
+    pendingCommission.push({ ...commissionDraft });
+    renderSlate(); renderTurn();
+  });
+  root.querySelectorAll('[data-unqueue]').forEach((b) => b.addEventListener('click', () => {
+    pendingCommission.splice(Number(b.dataset.unqueue), 1);
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-release]').forEach((b) => b.addEventListener('click', () => {
+    pendingRelease[Number(b.dataset.release)] = 60_000_000;
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', () => {
+    delete pendingRelease[Number(b.dataset.cancel)];
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-campaign]').forEach((inp) => inp.addEventListener('input', () => {
+    pendingRelease[Number(inp.dataset.campaign)] = Number(inp.value);
+    inp.parentElement.querySelector('.release-budget').textContent = money(Number(inp.value));
+    renderTurn();
+  }));
 }
 
 // ----------------------------------------------------------------------------
@@ -3767,7 +4661,7 @@ function renderRival() {
   const you = r ? r.subs : 0;
   const them = rivalSubs(riv);
   const share = you + them > 0 ? you / (you + them) : 0;
-  const myPrice = state.decisions.pricePremium;
+  const myPrice = state.decisions.priceNew;
   const priceGap = riv.price - myPrice;
 
   const dead = !riv.alive;
@@ -4064,8 +4958,20 @@ function buildAlerts(r) {
   if (r.freshness < 0.6 && r.subs > 1000) {
     alerts.push(['warn', t('alertStale', { fresh: r.freshness.toFixed(2), lost: compact(r.lostSubs) })]);
   }
-  if (!r.pipeline.length) {
+  if (!r.producing.length) {
     alerts.push(['bad', t('alertNoPipeline')]);
+  }
+  const idle = r.slots - r.slotsUsed;
+  if (idle > 0 && r.slotCost > 0) {
+    alerts.push(['warn', t('alertSlotsIdle', { count: idle })]);
+  }
+  const longHeld = Math.max(0, ...r.vault.map((v) => v.held));
+  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld })]);
+  if (r.raiseApplied) {
+    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) })]);
+  }
+  if (r.annualCash > 0) {
+    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) })]);
   }
   if (r.cmPerSub < 0) {
     alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
@@ -4168,8 +5074,13 @@ function renderReport() {
   if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
   if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
-  const alertsHtml = alerts.length
-    ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>` : '';
+  // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
+  // Порядок уже расставлен по срочности — плохое поднято наверх.
+  const shown = alerts.slice(0, 5);
+  const hidden = alerts.length - shown.length;
+  const alertsHtml = shown.length
+    ? `<div class="alerts">${shown.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}
+        ${hidden > 0 ? `<div class="funding-note">${t('alertsMore', { count: hidden })}</div>` : ''}</div>` : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
   const eventNote = ev ? `<div class="lesson"><b>${tx(ev.title)}.</b> ${tx(ev.lesson)}</div>` : '';
@@ -4177,12 +5088,13 @@ function renderReport() {
   const premiereNote = r.premieres.length
     ? `<div class="alert good" style="margin-top:8px">${t('premiereNote', {
         list: r.premieres.map((p) => t('premiereItem', {
-          genre: tx(genreById(p.genre)?.name), quality: p.quality.toFixed(2) })).join(', '),
+          genre: `${genreName(p.genre)} · ${scaleName(p.scale)}`,
+          quality: p.quality.toFixed(2) })).join(', '),
       })}</div>` : '';
   const startedNote = r.started.length
     ? `<div class="alert warn" style="margin-top:8px">${t('startedNote', {
-        list: r.started.map((p) => tx(genreById(p.genre)?.name)).join(', '),
-        months: CONFIG.originalLeadMonths,
+        list: r.started.map((p) => `${genreName(p.genre)} · ${scaleName(p.scale)}`).join(', '),
+        months: r.started.length ? scaleById(r.started[0].scale).months : 6,
       })}</div>` : '';
   const installNote = r.installedNow?.length
     ? `<div class="alert good" style="margin-top:8px">${t('installNote', {
@@ -4210,8 +5122,10 @@ function renderReport() {
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
       ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
         t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
+      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${num(r.lockedPrice)} ₽`,
+        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
-        t('statPricesSub', { project: money(r.projectCost) }))}
+        t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
     </div>
     ${premiereNote}${startedNote}${installNote}
     ${driversHtml}${alertsHtml}${eventNote}
@@ -4356,8 +5270,10 @@ function renderPnlTab() {
       <tr class="total"><td>${t('pnlContribution')}</td>
         <td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
       ${line(t('pnlLicensing'), -r.decisions.licensing, 'neg', true)}
-      ${line(t('pnlOriginals'), -r.decisions.originals, 'neg', true)}
-      ${line(t('pnlMarketing'), -r.decisions.marketing, 'neg', true)}
+      ${line(t('pnlProduction'), -r.productionSpend, 'neg', true)}
+      ${line(t('pnlSlots'), -r.slotCost, 'neg', true)}
+      ${line(t('pnlMarketing'), -r.decisions.brandMarketing, 'neg', true)}
+      ${line(t('pnlCampaigns'), -r.campaignSpend, 'neg', true)}
       ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
       ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
       ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
@@ -4539,8 +5455,11 @@ function nextMonth() {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,
     crisisChoice: pendingCrisisChoice,
+    commission: pendingCommission,
+    release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
+    raisePrice: pendingRaise,
   }).state;
-  pendingCrisisChoice = null;
+  clearActions();
   save();
   renderAll();
   if (state.over) showGameOver();
@@ -4556,7 +5475,6 @@ function renderChrome() {
   el('brand-title').textContent = t('brandTitle');
   el('brand-sub').textContent = t('brandSub');
   el('title-levers').textContent = t('panelLevers');
-  el('title-studio').textContent = t('panelStudio');
   el('title-algos').textContent = t('panelAlgos');
   el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
@@ -4578,12 +5496,13 @@ function renderAll() {
   if (!leversBuilt) buildLevers();
   renderChrome();
   syncLevers();
-  renderStudio();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderFunding();
   renderBoard();
+  renderTurn();
+  renderSlate();
   renderRival();
   renderCrisis();
   renderEvent();

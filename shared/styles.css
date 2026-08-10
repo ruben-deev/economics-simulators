@@ -364,3 +364,103 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .event-card.crisis { border-left: 3px solid var(--bad); }
 .event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
+
+/* ------------- Слейт, ход месяца, группы рычагов (КИНОПОТОК) ------------- */
+.lever-group { border-bottom: 1px solid var(--line); }
+.lever-group:last-child { border-bottom: none; }
+.lever-group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 9px 0;
+  cursor: pointer;
+}
+.lever-group-head:hover { color: var(--text); }
+.lg-caret { transition: transform 0.15s ease; display: inline-block; }
+.lever-group:not(.open) .lg-caret { transform: rotate(-90deg); }
+.lg-count { margin-left: auto; opacity: 0.6; }
+.lever-group-body { display: none; padding-bottom: 6px; }
+.lever-group.open .lever-group-body { display: block; }
+
+/* --- Панель хода --- */
+.panel.turn { border-left: 3px solid var(--accent-2); }
+.todos { display: flex; flex-direction: column; gap: 8px; }
+.todo {
+  border-radius: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-left-width: 3px;
+}
+.todo.act { border-left-color: var(--accent); }
+.todo.warn { border-left-color: var(--warn); }
+.todo.bad { border-left-color: var(--bad); }
+.todo.ok { border-left-color: var(--line); }
+.todo-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.todo-text { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.todo .btn { margin-top: 7px; }
+
+/* --- Карточки проектов --- */
+.slate-section { margin-top: 12px; }
+.slate-section:first-of-type { margin-top: 4px; }
+.slate-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.proj {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+}
+.proj.ready { border-color: rgba(74, 222, 128, 0.35); }
+.proj.ready.planned { border-color: var(--accent); background: rgba(74, 222, 128, 0.08); }
+.proj.queued { border-style: dashed; opacity: 0.85; }
+.proj-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.proj-name { font-weight: 700; font-size: 13px; }
+.proj-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
+.proj .q-bar { display: block; margin: 6px 0 3px; }
+.proj .btn.tiny { margin-top: 7px; width: 100%; }
+.btn.tiny { padding: 5px 9px; font-size: 12px; }
+.release-row { display: flex; align-items: center; gap: 7px; margin-top: 7px; flex-wrap: wrap; }
+.release-row label { color: var(--muted); font-size: 11px; flex-basis: 100%; }
+.release-row input[type=range] { flex: 1; min-width: 90px; }
+.release-budget { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- Форма запуска --- */
+.commission.blocked { opacity: 0.55; }
+.commission-row { margin-bottom: 6px; }
+.pick { display: flex; flex-wrap: wrap; gap: 5px; }
+.pick button {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pick button:hover { color: var(--text); }
+.pick button.active { background: var(--accent-2); border-color: transparent; color: #06210f; font-weight: 700; }
+.commission-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}

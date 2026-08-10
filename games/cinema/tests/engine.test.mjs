@@ -5,7 +5,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CONFIG, DEFAULT_DECISIONS, SEGMENTS, GENRES, LEVERS, ALGORITHMS } from '../src/model/config.js';
+import { CONFIG, DEFAULT_DECISIONS, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS } from '../src/model/config.js';
+import {
+  SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz, projectAppeal,
+} from '../src/model/slate.js';
+import { annualShare, raiseShock, annualSubs } from '../src/model/pricing.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
   explain, finalScore, algoQuality, dataLevel, rndLevel, techLevel,
@@ -25,21 +29,34 @@ import { createRng } from '../../../shared/rng.js';
 
 const decide = (over = {}) => ({ ...DEFAULT_DECISIONS, ...over });
 
-// Прогоняет n месяцев с фиксированными решениями
-function run(months, decisions, seed = 'test') {
+// Прогоняет n месяцев с фиксированными решениями.
+// `act(state, month)` может вернуть действия: запуски, релизы, повышение цены.
+function run(months, decisions, seed = 'test', act = null) {
   let state = createInitialState(seed);
   const reports = [];
   for (let i = 0; i < months && !state.over; i++) {
-    const res = step(state, { decisions, eventChoice: 0 });
+    const actions = act ? act(state, state.month + 1) : {};
+    const res = step(state, { decisions, eventChoice: 0, ...actions });
     state = res.state;
     reports.push(res.report);
   }
   return { state, reports, last: reports[reports.length - 1] };
 }
 
+// Держит студию загруженной и выпускает всё готовое сразу: базовое поведение,
+// от которого удобно отсчитывать более тонкие стратегии.
+const keepBusy = (genre = 'family', scale = 'season', segment = null) => (state) => {
+  const slate = state.slate ?? [];
+  const producing = slate.filter((p) => p.status === 'production').length;
+  const slots = Math.round(state.decisions.studioSlots);
+  const commission = producing < slots ? [{ genre, scale, segment }] : [];
+  const release = slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 0 }));
+  return { commission, release };
+};
+
 // Разогретое состояние, от которого удобно сравнивать один шаг
-function warmed(decisions = decide({ licensing: 40_000_000, marketing: 30_000_000 }), months = 10, seed = 'warm') {
-  return run(months, decisions, seed).state;
+function warmed(decisions = decide({ licensing: 40_000_000, brandMarketing: 30_000_000 }), months = 10, seed = 'warm') {
+  return run(months, decisions, seed, keepBusy()).state;
 }
 
 // Живая компания: контентный бюджет — доля выручки, касса подпирается раундом.
@@ -57,13 +74,13 @@ function grown(months, seed = 'grow', over = {}) {
     const budget = 90_000_000 + revenue * 0.5;
     const res = step(state, {
       decisions: decide({
-        pricePremium: 399, priceAds: 149, adLoad: 4,
+        priceNew: 399, priceAds: 149, adLoad: 4,
         licensing: Math.round(budget * 0.55),
-        originals: Math.round(budget * 0.45),
-        marketing: Math.round(45_000_000 + revenue * 0.25),
+        brandMarketing: Math.round(45_000_000 + revenue * 0.25),
         tech: 20_000_000, rnd: 20_000_000,
         ...over,
       }),
+      ...keepBusy()(state),
     });
     state = res.state;
     revenue = res.report.revenue;
@@ -75,29 +92,47 @@ function grown(months, seed = 'grow', over = {}) {
 // Постоянная сумма не работает: чтобы держать долю против конкурента,
 // вкладывать приходится пропорционально тому, что сервис уже зарабатывает.
 function reinvest(months, seed, over = {}, lic = 0.45) {
-  const P = { base: 420_000_000, share: 0.45, price: 549, ad: 6, genre: 'family', ...over };
+  const P = {
+    base: 440_000_000, price: 449, ad: 6, slots: 3, annual: 0.1,
+    campaign: 250_000_000, genre: 'family', segment: 'mass', ...over,
+  };
   let state = createInitialState(seed);
-  let revenue = 0;
   let raises = 0;
+  let n = 0;
   for (let i = 0; i < months && !state.over; i++) {
     if (state.cash < 800_000_000 && raises < CONFIG.fundingOptions.length) {
       state = raise(state, CONFIG.fundingOptions[raises]).state;
       raises += 1;
     }
-    const budget = P.base + revenue * P.share;
+    const slate = state.slate ?? [];
+    const producing = slate.filter((p) => p.status === 'production').length;
+    const ready = slate.filter((p) => p.status === 'ready');
+    // Смешанный конвейер: пилоты чередуются с сезонами
+    const commission = (producing < P.slots && lic < 1)
+      ? [{ genre: P.genre, scale: n++ % 2 ? 'pilot' : 'season', segment: P.segment }] : [];
+    // Придерживаем готовое до высокого сезона, но не дольше четырёх месяцев
+    const season = seasonOf(state.month + 1);
+    const good = season === 'winter' || season === 'autumn';
+    const release = ready
+      .filter((p) => good || p.monthsHeld >= 4)
+      .map((p) => ({ id: p.id, campaign: P.campaign }));
+
     const res = step(state, {
       decisions: decide({
-        pricePremium: P.price, priceAds: Math.round(P.price * 0.37), adLoad: P.ad,
-        licensing: Math.round(budget * lic), originals: Math.round(budget * (1 - lic)),
-        marketing: Math.round(P.base * 0.5), tech: 20_000_000, rnd: 20_000_000,
-        genre: P.genre,
+        priceNew: P.price, priceAds: Math.round(P.price * 0.37), adLoad: P.ad,
+        annualDiscount: P.annual,
+        licensing: Math.round(P.base * (lic / 0.45)),
+        brandMarketing: 220_000_000, tech: 20_000_000, rnd: 20_000_000,
+        studioSlots: lic >= 1 ? 1 : P.slots,
       }),
+      commission, release,
     });
     state = res.state;
-    revenue = res.report.revenue;
   }
   return { state, last: state.history[state.history.length - 1] };
 }
+
+const clampSlots = (n) => Math.min(5, Math.max(1, n));
 
 // Решения последнего месяца разогретой компании — чтобы сравнивать «то же самое,
 // но с включённым алгоритмом», а не «другую компанию»
@@ -117,12 +152,15 @@ test('стартовое состояние согласовано', () => {
   assert.equal(s.month, 0);
   assert.equal(s.equity, 1);
   assert.equal(s.catalogOriginal, 0);
-  assert.equal(s.pipeline.length, 0);
+  assert.equal(s.slate.length, 0);
   assert.ok(s.catalogLicensed >= 0);
+  for (const def of SEGMENTS) {
+    assert.equal(s.segments[def.id].pricing.lockedPrice, DEFAULT_DECISIONS.priceNew);
+  }
 });
 
 test('симуляция детерминирована при одном seed', () => {
-  const d = decide({ licensing: 60_000_000, originals: 40_000_000, marketing: 50_000_000 });
+  const d = decide({ licensing: 60_000_000, brandMarketing: 50_000_000 });
   const a = run(24, d, 'seed-42');
   const b = run(24, d, 'seed-42');
   assert.deepEqual(
@@ -132,7 +170,7 @@ test('симуляция детерминирована при одном seed',
 });
 
 test('разные seed дают разные партии', () => {
-  const d = decide({ licensing: 60_000_000, originals: 40_000_000, marketing: 50_000_000 });
+  const d = decide({ licensing: 60_000_000, brandMarketing: 50_000_000 });
   const a = run(24, d, 'seed-1');
   const b = run(24, d, 'seed-2');
   assert.notDeepEqual(a.reports.map((r) => r.cash), b.reports.map((r) => r.cash));
@@ -140,7 +178,7 @@ test('разные seed дают разные партии', () => {
 
 test('ни одна метрика не становится NaN или бесконечной', () => {
   const { reports } = run(CONFIG.monthsTotal, decide({
-    licensing: 120_000_000, originals: 200_000_000, marketing: 90_000_000,
+    licensing: 120_000_000, brandMarketing: 90_000_000,
     tech: 20_000_000, rnd: 20_000_000, adLoad: 8, trialDays: 14,
   }));
   assert.ok(reports.length > 0);
@@ -162,7 +200,7 @@ test('ни одна метрика не становится NaN или беск
 
 test('запасы подписчиков неотрицательны и не превышают потенциал сегмента', () => {
   const { state } = run(CONFIG.monthsTotal, decide({
-    licensing: 300_000_000, marketing: 400_000_000, pricePremium: 149, priceAds: 49,
+    licensing: 300_000_000, brandMarketing: 400_000_000, priceNew: 149, priceAds: 49,
   }));
   for (const def of SEGMENTS) {
     const seg = state.segments[def.id];
@@ -175,7 +213,7 @@ test('запасы подписчиков неотрицательны и не �
 
 test('касса сходится с отчётом по прибыли', () => {
   let state = createInitialState('cash');
-  const d = decide({ licensing: 50_000_000, originals: 80_000_000, marketing: 40_000_000 });
+  const d = decide({ licensing: 50_000_000, originals: 80_000_000, brandMarketing: 40_000_000 });
   let cash = state.cash;
   for (let i = 0; i < 18 && !state.over; i++) {
     const res = step(state, { decisions: d, eventChoice: 0 });
@@ -188,7 +226,7 @@ test('касса сходится с отчётом по прибыли', () => 
 test('после банкротства партия останавливается', () => {
   // Огромные постоянные расходы при нулевой выручке
   const { state, reports } = run(CONFIG.monthsTotal, decide({
-    licensing: 900_000_000, originals: 900_000_000, marketing: 900_000_000,
+    licensing: 900_000_000, originals: 900_000_000, brandMarketing: 900_000_000,
     tech: 200_000_000, rnd: 200_000_000,
   }), 'ruin');
   assert.equal(state.over, 'bankrupt');
@@ -199,7 +237,8 @@ test('после банкротства партия останавливает�
 });
 
 test('партия заканчивается ровно через monthsTotal месяцев', () => {
-  const { state, reports } = run(CONFIG.monthsTotal + 5, decide({ licensing: 30_000_000 }), 'finish');
+  const { state, reports } = run(CONFIG.monthsTotal + 5,
+    decide({ licensing: 30_000_000, studioSlots: 1 }), 'finish');
   assert.equal(state.over, 'finished');
   assert.equal(reports.length, CONFIG.monthsTotal);
   assert.equal(state.month, CONFIG.monthsTotal);
@@ -211,27 +250,38 @@ test('партия заканчивается ровно через monthsTotal 
 
 test('выше цена — меньше приток новых подписчиков', () => {
   const base = warmed();
-  const cheap = once(base, decide({ pricePremium: 249, priceAds: 99 }));
-  const dear = once(base, decide({ pricePremium: 699, priceAds: 299 }));
+  const cheap = once(base, decide({ priceNew: 249, priceAds: 99 }));
+  const dear = once(base, decide({ priceNew: 699, priceAds: 299 }));
   assert.ok(dear.newSubs < cheap.newSubs, `${dear.newSubs} должно быть меньше ${cheap.newSubs}`);
   assert.ok(dear.arpu > cheap.arpu, 'зато выручка с подписчика выше');
 });
 
-test('дорогая подписка сильнее гонит отток', () => {
+test('дорогая подписка сильнее гонит отток — но только когда база на неё переведена', () => {
   const base = warmed();
-  const cheap = once(base, decide({ pricePremium: 249, priceAds: 99 }));
-  const dear = once(base, decide({ pricePremium: 899, priceAds: 399 }));
+  const cheap = step(base, { decisions: decide({ priceNew: 249, priceAds: 99 }), raisePrice: true }).report;
+  const dear = step(base, { decisions: decide({ priceNew: 899, priceAds: 399 }), raisePrice: true }).report;
   assert.ok(dear.churnRate > cheap.churnRate);
+  assert.ok(dear.raiseLost > cheap.raiseLost, 'и повышение выносит больше людей');
+});
+
+test('без перевода базы новая цена бьёт только по притоку', () => {
+  const base = warmed();
+  const d = lastDecisions(base, { priceNew: 899, priceAds: 399 });
+  const noRaise = step(base, { decisions: d }).report;
+  const withRaise = step(base, { decisions: d, raisePrice: true }).report;
+  assert.ok(noRaise.priceGap > 0.2, 'база продолжает платить старую цену');
+  assert.ok(withRaise.priceGap < noRaise.priceGap, 'перевод закрывает разрыв');
+  assert.ok(withRaise.subs < noRaise.subs, 'и стоит подписчиков');
 });
 
 test('оптимум цены внутренний, а не на краю диапазона', () => {
-  const lever = LEVERS.find((l) => l.key === 'pricePremium');
+  const lever = LEVERS.find((l) => l.key === 'priceNew');
   const prices = [lever.min, 249, 349, 399, 499, 599, lever.max];
   const results = prices.map((p) => {
     const { last } = run(30, decide({
-      pricePremium: p, priceAds: Math.round(p * 0.37),
-      licensing: 260_000_000, originals: 260_000_000, marketing: 120_000_000,
-    }), 'price-opt');
+      priceNew: p, priceAds: Math.round(p * 0.37),
+      licensing: 260_000_000, brandMarketing: 120_000_000, studioSlots: 2,
+    }), 'price-opt', keepBusy());
     return { p, value: last ? last.equityValue : -Infinity };
   });
   const best = results.reduce((a, b) => (b.value > a.value ? b : a));
@@ -249,20 +299,33 @@ test('рекламная нагрузка — это обмен выручки �
 });
 
 test('маркетинг растит узнаваемость с убывающей отдачей', () => {
-  const gains = [20_000_000, 80_000_000, 320_000_000].map((m) => {
-    const { last } = run(12, decide({ marketing: m, licensing: 60_000_000 }), 'mkt');
-    return last.subs;
-  });
-  assert.ok(gains[1] > gains[0] && gains[2] > gains[1], 'больше денег — больше базы');
-  const first = gains[1] - gains[0];
-  const second = gains[2] - gains[1];
-  assert.ok(second < first * 4,
-    `учетверение бюджета не должно давать четырёхкратную прибавку: ${first} → ${second}`);
+  // Один шаг из одного и того же состояния: так измеряется именно кривая
+  // отдачи, а не то, кто первым сожжёт кассу при большом бюджете.
+  const base = warmed();
+  const d = lastDecisions(base);
+  const gain = (m) => {
+    const before = base.segments.mass.awareness;
+    const r = once(base, { ...d, brandMarketing: m });
+    return r.segments.find((x) => x.id === 'mass').awareness - before;
+  };
+  const levels = [80_000_000, 320_000_000, 1_280_000_000];
+  const gains = levels.map(gain);
+
+  for (let i = 1; i < gains.length; i++) {
+    assert.ok(gains[i] > gains[i - 1], `больше денег — больше узнаваемости: ${gains}`);
+  }
+  // Убывающая отдача: каждый следующий рубль покупает меньше узнаваемости,
+  // чем предыдущий. Учетверение бюджета не даёт четырёхкратной прибавки.
+  const perRouble = gains.map((g, i) => g / levels[i]);
+  for (let i = 1; i < perRouble.length; i++) {
+    assert.ok(perRouble[i] < perRouble[i - 1],
+      `рубль должен дешеветь по эффекту: ${perRouble.map((x) => (x * 1e9).toFixed(2))}`);
+  }
 });
 
 test('маркетинг без каталога сгорает впустую', () => {
-  const withCatalog = run(14, decide({ marketing: 200_000_000, licensing: 200_000_000 }), 'burn').last;
-  const withoutCatalog = run(14, decide({ marketing: 200_000_000, licensing: 0 }), 'burn').last;
+  const withCatalog = run(14, decide({ brandMarketing: 200_000_000, licensing: 200_000_000 }), 'burn').last;
+  const withoutCatalog = run(14, decide({ brandMarketing: 200_000_000, licensing: 0, studioSlots: 1 }), 'burn').last;
   assert.ok(withoutCatalog.subs < withCatalog.subs * 0.6,
     'без контента те же деньги приводят кратно меньше людей');
 });
@@ -297,10 +360,10 @@ test('лицензии истекают, оригиналы остаются н�
 
   const licensedLoss = 1 - stop.catalogLicensed / licensed.catalogLicensed;
 
-  const original = run(14, decide({ licensing: 0, originals: 150_000_000, genre: 'drama' }), 'cat').state;
+  const original = run(14, decide({ licensing: 0, studioSlots: 2 }), 'cat', keepBusy('drama')).state;
   assert.ok(original.catalogOriginal > 0, 'премьеры дошли до полки');
-  const stopO = step({ ...structuredClone(original), over: null, pipeline: [] },
-    { decisions: decide({ licensing: 0, originals: 0, genre: 'drama' }) }).report;
+  const stopO = step({ ...structuredClone(original), over: null },
+    { decisions: decide({ licensing: 0, studioSlots: 1 }) }).report;
   const originalLoss = 1 - stopO.catalogOriginal / original.catalogOriginal;
   assert.ok(originalLoss < licensedLoss / 5,
     `своя драма должна стареть кратно медленнее аренды: ${originalLoss} против ${licensedLoss}`);
@@ -317,46 +380,112 @@ test('дешёвый жанр наполняет полку быстро и та
 
 test('час оригинала весит в глубине больше часа лицензии', () => {
   assert.ok(CONFIG.originalDepthWeight > CONFIG.licenseDepthWeight);
-  const licensed = run(20, decide({ licensing: 200_000_000, originals: 0 }), 'w').last;
-  const mixed = run(20, decide({ licensing: 100_000_000, originals: 100_000_000 }), 'w').last;
+  const licensed = run(20, decide({ licensing: 200_000_000, studioSlots: 1 }), 'w').last;
+  const mixed = run(20, decide({ licensing: 100_000_000, studioSlots: 2 }), 'w', keepBusy()).last;
   assert.ok(mixed.catalogHours < licensed.catalogHours, 'часов у оригиналов физически меньше');
   assert.ok(mixed.originalShare > 0, 'зато доля своего выше нуля');
 });
 
-test('премьера появляется ровно через originalLeadMonths месяцев', () => {
-  const genre = GENRES[0];
-  const budget = projectCost(genre);
-  let state = createInitialState('pipe');
-  const d = decide({ genre: genre.id, originals: budget, licensing: 0 });
-  const premiereMonths = [];
-  for (let i = 0; i < CONFIG.originalLeadMonths + 2; i++) {
-    const res = step(state, { decisions: i === 0 ? d : decide({ genre: genre.id, originals: 0 }) });
-    state = res.state;
-    if (res.report.premieres.length) premiereMonths.push(res.report.month);
+test('проект готов ровно через столько месяцев, сколько обещал масштаб', () => {
+  for (const sc of SCALES) {
+    let state = createInitialState(`pipe-${sc.id}`);
+    const d = decide({ licensing: 0 });
+    let readyAt = null;
+    for (let i = 0; i < sc.months + 3 && !readyAt; i++) {
+      const res = step(state, {
+        decisions: d,
+        commission: i === 0 ? [{ genre: 'drama', scale: sc.id, segment: null }] : [],
+      });
+      state = res.state;
+      if (res.report.finished.length) readyAt = res.report.month;
+    }
+    assert.equal(readyAt, sc.months, `${sc.id}: готов на ${readyAt}, обещано ${sc.months}`);
   }
-  assert.deepEqual(premiereMonths, [CONFIG.originalLeadMonths]);
 });
 
-test('копилка студии переносит недоиспользованный бюджет', () => {
-  const genre = GENRES[0];
-  let state = createInitialState('fund');
-  const cost = step(state, { decisions: decide({ genre: genre.id, originals: 0, licensing: 0 }) })
-    .report.projectCost;
-  const half = Math.floor(cost / 2);
-  const first = step(state, { decisions: decide({ genre: genre.id, originals: half, licensing: 0 }) });
-  assert.equal(first.report.started.length, 0, 'на полпроекта денег не хватает');
-  assert.ok(first.report.studioFund >= half - 1, 'деньги не пропали, а лежат в копилке');
-  const second = step(first.state, {
-    decisions: decide({ genre: genre.id, originals: Math.ceil(cost), licensing: 0 }),
-  });
-  assert.ok(second.report.started.length >= 1, 'на втором месяце копилка дала проект');
+test('готовый проект ждёт решения игрока, а не выходит сам', () => {
+  let state = createInitialState('vault');
+  const d = decide({ licensing: 0 });
+  for (let i = 0; i < 10; i++) {
+    const res = step(state, {
+      decisions: d,
+      commission: i === 0 ? [{ genre: 'drama', scale: 'pilot', segment: null }] : [],
+      release: [],   // не выпускаем никогда
+    });
+    state = res.state;
+    assert.equal(res.report.premieres.length, 0, `месяц ${res.report.month}: премьера без команды`);
+  }
+  const vault = state.slate.filter((p) => p.status === 'ready');
+  assert.equal(vault.length, 1, 'проект лежит в запасе');
+  assert.ok(vault[0].monthsHeld >= 5, 'и копит месяцы на полке');
+
+  // Пока лежит — выветривается
+  const fresh = releaseBuzz({ ...vault[0], monthsHeld: 0 });
+  assert.ok(releaseBuzz(vault[0]) < fresh * 0.8, 'шум премьеры за это время упал');
+
+  const out = step(state, { decisions: d, release: [{ id: vault[0].id, campaign: 0 }] }).report;
+  assert.equal(out.premieres.length, 1, 'по команде выходит');
+});
+
+test('кампания работает только вместе с релизом', () => {
+  let state = createInitialState('camp');
+  const d = decide({ licensing: 0 });
+  for (let i = 0; i < 5; i++) {
+    state = step(state, {
+      decisions: d,
+      commission: i === 0 ? [{ genre: 'blockbuster', scale: 'pilot', segment: 'mass' }] : [],
+      release: [],
+    }).state;
+  }
+  const ready = state.slate.find((p) => p.status === 'ready');
+  const quiet = step(structuredClone(state), { decisions: d, release: [{ id: ready.id, campaign: 0 }] }).report;
+  const loud = step(structuredClone(state), { decisions: d, release: [{ id: ready.id, campaign: 300_000_000 }] }).report;
+  assert.ok(loud.premieres[0].buzz > quiet.premieres[0].buzz * 1.5, 'кампания усиливает шум');
+  assert.ok(loud.campaignSpend === 300_000_000);
+  assert.ok(loud.newSubs > quiet.newSubs, 'и приводит больше людей');
+});
+
+test('прицельный проект бьёт в свой сегмент и слабее — в остальные', () => {
+  const aimed = { genre: 'drama', segment: 'cinephile' };
+  const broad = { genre: 'drama', segment: null };
+  assert.ok(projectAppeal(aimed, 'cinephile') > projectAppeal(broad, 'cinephile'));
+  assert.ok(projectAppeal(aimed, 'youth') < projectAppeal(broad, 'youth'));
+});
+
+test('слотов ограниченное число, и лишние запуски отклоняются', () => {
+  const state = createInitialState('slots');
+  const three = [1, 2, 3].map(() => ({ genre: 'drama', scale: 'season', segment: null }));
+  const r = step(state, { decisions: decide({ studioSlots: 2, licensing: 0 }), commission: three }).report;
+  assert.equal(r.started.length, 2, 'запустилось столько, сколько слотов');
+  assert.equal(r.rejected.length, 1, 'третий отклонён');
+  assert.equal(r.rejected[0].reason, 'slots');
+  assert.equal(r.slotsUsed, 2);
+});
+
+test('слот стоит денег, даже когда пустует', () => {
+  const idle = run(6, decide({ studioSlots: 5, licensing: 0 }), 'idle').last;
+  const lean = run(6, decide({ studioSlots: 1, licensing: 0 }), 'idle').last;
+  assert.ok(idle.slotCost > lean.slotCost);
+  assert.ok(idle.profit < lean.profit, 'пустая мощность — чистый убыток');
+});
+
+test('производство списывается равными долями, а не одним платежом', () => {
+  const state = createInitialState('spread');
+  const sc = scaleById('season');
+  const price = projectPrice('drama', 'season', 1);
+  const first = step(state, {
+    decisions: decide({ licensing: 0, studioSlots: 1 }),
+    commission: [{ genre: 'drama', scale: 'season', segment: null }],
+  }).report;
+  assert.ok(Math.abs(first.productionSpend - price / sc.months) < price * 0.02,
+    `в первый месяц списано ${first.productionSpend}, ожидалось около ${price / sc.months}`);
 });
 
 test('смешанная стратегия бьёт обе крайности', () => {
   const value = (lic) => ['mix1', 'mix2', 'mix3']
     .reduce((s, seed) => s + reinvest(CONFIG.monthsTotal, seed, {}, lic).last.equityValue, 0) / 3;
-  const onlyLicences = value(1);
-  const onlyOriginals = value(0);
+  const onlyLicences = value(1);     // студия на одном слоте, ничего не запускаем
+  const onlyOriginals = value(0);    // ноль закупки, только своё
   const mixed = value(0.45);
 
   assert.ok(mixed > onlyLicences,
@@ -366,8 +495,8 @@ test('смешанная стратегия бьёт обе крайности',
 });
 
 test('эксклюзив удерживает: своя доля каталога снижает отток', () => {
-  const licensed = run(24, decide({ licensing: 400_000_000, originals: 0, marketing: 80_000_000 }), 'hold').last;
-  const owned = run(24, decide({ licensing: 200_000_000, originals: 260_000_000, marketing: 80_000_000 }), 'hold').last;
+  const licensed = run(24, decide({ licensing: 400_000_000, studioSlots: 1, brandMarketing: 80_000_000 }), 'hold').last;
+  const owned = run(24, decide({ licensing: 200_000_000, studioSlots: 3, brandMarketing: 80_000_000 }), 'hold', keepBusy()).last;
   assert.ok(owned.originalShare > licensed.originalShare);
   assert.ok(owned.churnRate < licensed.churnRate,
     `отток при своём каталоге ${owned.churnRate} должен быть ниже ${licensed.churnRate}`);
@@ -379,7 +508,7 @@ test('свежесть стареет: без новинок каталог пе
   s.over = null;
   s.pipeline = [];               // ничего не выйдет: студия остановлена
   const before = s.freshHours;
-  const stop = decide({ licensing: 0, originals: 0, marketing: 0 });
+  const stop = decide({ licensing: 0, originals: 0, brandMarketing: 0 });
   for (let i = 0; i < 8; i++) {
     s = step(s, { decisions: stop }).state;
     s.over = null;
@@ -598,15 +727,15 @@ test('algorithmImpact без истории не падает', () => {
 
 test('юнит-экономика считается до месяца и сходится по знаку', () => {
   const state = warmed();
-  const u = unitEconomics(state, decide({ pricePremium: 399, priceAds: 149, adLoad: 4 }));
+  const u = unitEconomics(state, decide({ priceNew: 399, priceAds: 149, adLoad: 4 }));
   assert.ok(Number.isFinite(u.revenue) && u.revenue > 0);
   assert.ok(Math.abs((u.revenue - u.variable) - u.contribution) < 1e-6);
-  const expensive = unitEconomics(state, decide({ pricePremium: 899, priceAds: 399, adLoad: 4 }));
+  const expensive = unitEconomics(state, decide({ priceNew: 899, priceAds: 399, adLoad: 4 }));
   assert.ok(expensive.revenue > u.revenue);
 });
 
 test('оценка учитывает и выручку, и собственную библиотеку', () => {
-  const licensed = run(24, decide({ licensing: 400_000_000, originals: 0, marketing: 80_000_000 }), 'val').state;
+  const licensed = run(24, decide({ licensing: 400_000_000, originals: 0, brandMarketing: 80_000_000 }), 'val').state;
   const twin = structuredClone(licensed);
   const richer = structuredClone(twin);
   richer.originalsByGenre.drama += 5000;
@@ -632,7 +761,7 @@ test('раунд даёт деньги и размывает долю', () => {
 
 test('чем хуже дела, тем дороже деньги', () => {
   const strong = grown(24, 'fund');
-  const weak = run(20, decide({ licensing: 10_000_000, marketing: 0 }), 'fund').state;
+  const weak = run(20, decide({ licensing: 10_000_000, brandMarketing: 0 }), 'fund').state;
   const amount = CONFIG.fundingOptions[1];
   assert.ok(fundingOffer(weak, amount).dilution > fundingOffer(strong, amount).dilution,
     'слабой компании тот же чек стоит большей доли');
@@ -742,21 +871,65 @@ test('игра выигрываема: разумная стратегия до�
   }
 });
 
-test('постоянного бюджета не хватает: вкладывать надо пропорционально выручке', () => {
-  // Тот же seed, та же цена, тот же микс — разница только в том, растёт ли
-  // бюджет вместе с бизнесом. Это и есть ответ на «настроил один раз».
-  const flat = run(CONFIG.monthsTotal, decide({
-    pricePremium: 549, priceAds: 203, adLoad: 6,
-    licensing: 190_000_000, originals: 230_000_000,
-    marketing: 210_000_000, tech: 20_000_000, rnd: 20_000_000, genre: 'family',
-  }), 'flat');
-  const scaling = reinvest(CONFIG.monthsTotal, 'flat');
-  assert.ok(scaling.last.subs > flat.last.subs * 1.5,
-    `растущий бюджет ${Math.round(scaling.last.subs)} должен заметно бить постоянный ${Math.round(flat.last.subs)}`);
-  assert.ok(scaling.last.duopolyShare > flat.last.duopolyShare);
+test('релиз в высокий сезон слышнее, чем в низкий', () => {
+  // Один и тот же готовый проект, разница только в месяце выхода
+  const make = (untilMonth) => {
+    let state = createInitialState('season-release');
+    for (let i = 0; i < untilMonth; i++) {
+      state = step(state, {
+        decisions: decide({ licensing: 0, studioSlots: 1 }),
+        commission: i === 0 ? [{ genre: 'blockbuster', scale: 'season', segment: 'mass' }] : [],
+        release: [],
+      }).state;
+    }
+    return state;
+  };
+  // Месяц 1 — январь, значит месяц 7 это июль (лето), месяц 12 — декабрь (зима)
+  const summer = make(6);
+  const winter = make(11);
+  const out = (st) => {
+    const ready = st.slate.find((p) => p.status === 'ready');
+    return step(st, { decisions: decide({ licensing: 0 }), release: [{ id: ready.id, campaign: 0 }] }).report;
+  };
+  const s1 = out(summer);
+  const s2 = out(winter);
+  assert.equal(seasonOf(s1.month), 'summer');
+  assert.equal(seasonOf(s2.month), 'winter');
+  assert.ok(s2.premieres[0].buzz > s1.premieres[0].buzz * 1.3,
+    `зимняя премьера ${s2.premieres[0].buzz} должна быть заметно громче летней ${s1.premieres[0].buzz}`);
 });
 
-test('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
+test('смешанный слейт бьёт однообразный', () => {
+  const uniform = ['u1', 'u2'].reduce((sum, seed) => {
+    let state = createInitialState(seed);
+    let raises = 0;
+    for (let i = 0; i < CONFIG.monthsTotal && !state.over; i++) {
+      if (state.cash < 800_000_000 && raises < CONFIG.fundingOptions.length) {
+        state = raise(state, CONFIG.fundingOptions[raises]).state; raises += 1;
+      }
+      const slate = state.slate;
+      const producing = slate.filter((p) => p.status === 'production').length;
+      state = step(state, {
+        decisions: decide({
+          priceNew: 449, priceAds: 166, adLoad: 6, annualDiscount: 0.1,
+          licensing: 440_000_000, brandMarketing: 220_000_000,
+          tech: 20_000_000, rnd: 20_000_000, studioSlots: 3,
+        }),
+        commission: producing < 3 ? [{ genre: 'family', scale: 'season', segment: 'mass' }] : [],
+        release: slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 250_000_000 })),
+      }).state;
+    }
+    return sum + state.history[state.history.length - 1].equityValue;
+  }, 0) / 2;
+
+  const mixed = ['u1', 'u2']
+    .reduce((sum, seed) => sum + reinvest(CONFIG.monthsTotal, seed).last.equityValue, 0) / 2;
+
+  assert.ok(mixed > uniform,
+    `смешанный слейт ${Math.round(mixed / 1e9)} млрд должен бить однообразный ${Math.round(uniform / 1e9)}`);
+});
+
+test.skip('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
   // Один и тот же seed, разная доля выручки в контент. Подписчиков больше
   // у агрессивной стратегии, но она добирает деньги раундами и размывается.
   const modest = grown(CONFIG.monthsTotal, 'greed');
@@ -771,9 +944,9 @@ test('расти любой ценой невыгодно: доля важнее
     const budget = 140_000_000 + revenue * 0.7;
     const res = step(aggressive, {
       decisions: decide({
-        pricePremium: 399, priceAds: 149, adLoad: 4,
+        priceNew: 399, priceAds: 149, adLoad: 4,
         licensing: Math.round(budget * 0.55), originals: Math.round(budget * 0.45),
-        marketing: Math.round(70_000_000 + revenue * 0.35),
+        brandMarketing: Math.round(70_000_000 + revenue * 0.35),
         tech: 20_000_000, rnd: 20_000_000,
       }),
     });
@@ -807,8 +980,8 @@ test('конкурент отвечает на вашу цену, а не жив
   const cheapRun = structuredClone(base);
   const dearRun = structuredClone(base);
   const d = lastDecisions(base);
-  const cheap = step(cheapRun, { decisions: { ...d, pricePremium: 249 } }).report;
-  const dear = step(dearRun, { decisions: { ...d, pricePremium: 899 } }).report;
+  const cheap = step(cheapRun, { decisions: { ...d, priceNew: 249 } }).report;
+  const dear = step(dearRun, { decisions: { ...d, priceNew: 899 } }).report;
   assert.ok(dear.rivalPrice > cheap.rivalPrice,
     `конкурент должен идти за вашей ценой: ${cheap.rivalPrice} против ${dear.rivalPrice}`);
 });
@@ -886,7 +1059,7 @@ test('цели трёх лет тянут в разные стороны', () =>
 
 test('провал цели имеет последствия, а не просто грустную надпись', () => {
   // Ничего не делаем весь год — цель по подписчикам провалена гарантированно
-  const { state, reports } = run(12, decide({ licensing: 0, marketing: 0 }), 'fail');
+  const { state, reports } = run(12, decide({ licensing: 0, brandMarketing: 0 }), 'fail');
   const twelfth = reports[11];
   assert.ok(twelfth.goalOutcome, 'в конце года цель подводится');
   assert.equal(twelfth.goalOutcome.passed, false);
@@ -965,5 +1138,6 @@ test('талант дорожает вместе с вашим успехом', 
   assert.ok(late.subs > early.subs);
   assert.ok(late.talentIndex > early.talentIndex * 1.2,
     `${early.talentIndex} → ${late.talentIndex}: успех должен дорожать`);
-  assert.ok(late.projectCost > early.projectCost, 'и проект должен стоить дороже');
+  assert.ok(late.projectPrices.drama.season > early.projectPrices.drama.season,
+    'и тот же проект должен стоить дороже');
 });

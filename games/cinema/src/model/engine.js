@@ -41,6 +41,14 @@ import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
 import {
   rollCrisis, crisisEffects, crisisById, resolutionById, resolutionCost,
 } from './crises.js';
+import {
+  SCALES, scaleById, projectPrice, commission, advanceProduction, releaseBuzz,
+  projectAppeal, inProduction, readyToRelease, slotsUsed, resetProjectIds,
+} from './slate.js';
+import {
+  createPricing, annualShare, annualSubs, raiseShock, tickAnnual,
+  addAnnualCohort, effectivePrice,
+} from './pricing.js';
 
 // Справочники и clamp живут в config.js; здесь они переэкспортируются,
 // чтобы у интерфейса и тестов была одна точка входа в модель.
@@ -82,6 +90,7 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 export function createInitialState(seed = 'kinopotok') {
   const rng = createRng(seed);
+  resetProjectIds(1);
   const rival = createRival(rng);
   const state = {
     seed,
@@ -98,8 +107,8 @@ export function createInitialState(seed = 'kinopotok') {
     catalogOriginal: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
-    studioFund: 0,         // деньги, накопленные на текущий проект
-    pipeline: [],          // проекты в производстве
+    slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
+    lastRaiseMonth: -99,   // когда последний раз поднимали цену действующим
     lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
     hangover: 0,           // сколько зрителей досмотрели премьеру и готовы уйти
     segments: Object.fromEntries(SEGMENTS.map((s) => [s.id, {
@@ -107,6 +116,7 @@ export function createInitialState(seed = 'kinopotok') {
       awareness: 0.03,
       premium: 0,
       ads: 0,
+      pricing: createPricing(DEFAULT_DECISIONS.priceNew),
     }])),
 
     // --- Живой конкурент ---
@@ -224,12 +234,11 @@ export function step(prevState, input = {}) {
 
   // --- 1. Ограничения совета директоров ---
   // Порезанный бюджет — это не совет, а потолок: лишние деньги просто не тратятся.
+  // Уже запущенные проекты порезать нельзя: съёмочной группе платят до конца.
+  // Потолок бьёт по закупке лицензий и запрещает запускать новое дорогое.
   const cap = contentCap(state);
-  const contentBudget = cap === null
-    ? { licensing: decisions.licensing, originals: decisions.originals }
-    : capContent(decisions, cap);
-  const capApplied = cap !== null
-    && (contentBudget.licensing + contentBudget.originals) < (decisions.licensing + decisions.originals) - 1;
+  const contentBudget = { licensing: cap === null ? decisions.licensing : Math.min(decisions.licensing, cap) };
+  const capApplied = cap !== null && contentBudget.licensing < decisions.licensing - 1;
 
   // --- 2. Событие месяца и кризис ---
   const mods = neutralModifiers();
@@ -248,8 +257,8 @@ export function step(prevState, input = {}) {
       crisisCost = resolutionCost(state.crisis, crisisChoice);
       if (res.talentPenalty) state.talentPenalty = (state.talentPenalty ?? 0) + res.talentPenalty;
       if (res.techGain) state.techStock += crisisCost * res.techGain;
-      if (res.pipelineDelay) for (const p of state.pipeline) p.monthsLeft += res.pipelineDelay;
-      if (res.qualityHit) for (const p of state.pipeline) p.quality *= (1 - res.qualityHit);
+      if (res.pipelineDelay) for (const p of state.slate) if (p.status === 'production') p.monthsLeft += res.pipelineDelay;
+      if (res.qualityHit) for (const p of state.slate) if (p.status === 'production') p.quality *= (1 - res.qualityHit);
       if (res.resolves) {
         crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
         state.crisisHistory.push(crisisResolved);
@@ -295,7 +304,7 @@ export function step(prevState, input = {}) {
   const yourSubsBefore = lastSubs(state);
   const rivalBefore = rivalSubs(state.rivalState);
   stepRival(state.rivalState, {
-    yourPrice: decisions.pricePremium,
+    yourPrice: decisions.priceNew,
     yourSubs: yourSubsBefore,
     yourOriginalsByGenre: state.originalsByGenre,
     month,
@@ -304,39 +313,76 @@ export function step(prevState, input = {}) {
   }, rng);
   const riv = state.rivalState;
 
-  // --- 6. Производство: копилка, старт проектов, премьеры ---
-  const genre = genreById(decisions.genre) ?? GENRES[0];
-  const cost = projectCost(genre, talentIndex);
-  state.studioFund += contentBudget.originals;
+  // --- 6. Производство: слейт, готовые проекты, релизы ---
+  //
+  // Три разных решения, которые раньше были одним ползунком:
+  //   что запустить (жанр × масштаб × сегмент),
+  //   когда выпустить готовое,
+  //   сколько дать кампании под конкретный релиз.
+
+  // Запуск новых проектов. Слотов ограниченное число, и слот стоит денег
+  // независимо от того, занят он или пуст.
+  const slots = Math.round(decisions.studioSlots);
   const started = [];
-  // Копилка может дать сразу несколько проектов, если бюджет большой
-  while (state.studioFund >= cost && started.length < 4) {
-    state.studioFund -= cost;
-    // Качество зависит от команды, технологий и удачи: кино — рискованный бизнес
-    const luck = rng();
-    const projectQuality = clamp(
-      (0.55 + 0.5 * luck + 0.25 * techLevel(state)) * (crisisMods.qualityMult ?? 1), 0.25, 1.45);
-    state.pipeline.push({
-      genre: genre.id,
-      monthsLeft: CONFIG.originalLeadMonths,
-      hours: genre.hours,
-      quality: projectQuality,
-    });
-    started.push({ genre: genre.id, quality: projectQuality });
+  const rejected = [];
+  for (const order of (input.commission ?? [])) {
+    if (slotsUsed(state.slate) >= slots) { rejected.push({ ...order, reason: 'slots' }); continue; }
+    const price = projectPrice(order.genre, order.scale, talentIndex);
+    if (cap !== null && price > cap * 6) { rejected.push({ ...order, reason: 'cap' }); continue; }
+    // Чем больше проектов идёт параллельно, тем меньше внимания каждому.
+    // Мощность покупается не только деньгами за слот, но и качеством.
+    const load = slotsUsed(state.slate) / Math.max(1, slots);
+    const project = commission(order.genre, order.scale, order.segment, talentIndex, rng,
+      techLevel(state) - CONFIG.slotQualityDrag * load);
+    state.slate.push(project);
+    started.push({ id: project.id, genre: project.genre, scale: project.scale, segment: project.segment });
   }
 
-  // Кризис с уходом команды тормозит конвейер, пока не решён
+  // Ход производства. Кризис с уходом команды останавливает конвейер.
   const stall = crisisMods.pipelineStall ?? 0;
+  const { spent: productionSpend, finished } = advanceProduction(state.slate, {
+    stallMonths: stall,
+    qualityMult: crisisMods.qualityMult ?? 1,
+  });
+
+  // Релизы: выпускает игрок, а не движок. Готовый проект может лежать в запасе —
+  // выйти в тихий месяц, ответить на чужую премьеру или дождаться высокого сезона.
+  const releaseOrders = input.release ?? [];
   const premieres = [];
-  for (const project of state.pipeline) project.monthsLeft -= (stall > 0 ? 0 : 1);
-  if (stall > 1) for (const project of state.pipeline) project.monthsLeft += 1;
-  for (const project of state.pipeline.filter((p) => p.monthsLeft <= 0)) {
-    const g = genreById(project.genre);
+  let campaignSpend = 0;
+  for (const order of releaseOrders) {
+    const project = state.slate.find((p) => p.id === order.id && p.status === 'ready');
+    if (!project) continue;
+    const campaign = Math.max(0, order.campaign ?? 0);
+    campaignSpend += campaign;
+    // Кампания работает только вместе с релизом: рекламировать нечего,
+    // если в этом месяце ничего не выходит.
+    const lift = 1 + CONFIG.campaignPower * (campaign / (campaign + CONFIG.refCampaign));
+    project.status = 'released';
+    project.releasedMonth = month;
+    project.campaign = campaign;
     state.originalsByGenre[project.genre] = (state.originalsByGenre[project.genre] ?? 0) + project.hours;
     state.freshHours += project.hours;
-    premieres.push({ genre: project.genre, quality: project.quality, hours: project.hours, buzz: g.buzz * project.quality });
+    // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
+    // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
+    // а не формальность: ради высокого сезона имеет смысл придержать готовое.
+    premieres.push({
+      id: project.id,
+      genre: project.genre,
+      scale: project.scale,
+      segment: project.segment,
+      quality: project.quality,
+      hours: project.hours,
+      held: project.monthsHeld,
+      campaign,
+      season,
+      buzz: releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower),
+    });
   }
-  state.pipeline = state.pipeline.filter((p) => p.monthsLeft > 0);
+
+  const vault = readyToRelease(state.slate);
+  const producing = inProduction(state.slate);
+  const slotCost = Math.round(CONFIG.studioSlotMonthly * Math.pow(slots, CONFIG.studioSlotExponent));
 
   // Час реалити стареет быстро, час драмы почти не стареет: дешёвая полка
   // наполняется быстро и так же быстро пустеет.
@@ -408,6 +454,15 @@ export function step(prevState, input = {}) {
 
   // --- 9. Подписчики по сегментам ---
   const refPrice = 399;
+  // Повышение цены действующей базе — отдельное решение с отдельной ценой.
+  // Повторять его каждый месяц нельзя: у людей есть память.
+  const wantRaise = Boolean(input.raisePrice);
+  const raiseAllowed = wantRaise && (month - (state.lastRaiseMonth ?? -99)) >= CONFIG.raiseCooldown;
+  let raiseApplied = false;
+  let raiseLost = 0;
+  let annualCash = 0;
+  let annualNew = 0;
+  let annualExpired = 0;
   let newSubs = 0;
   let lostSubs = 0;
   let trialsTotal = 0;
@@ -419,15 +474,38 @@ export function step(prevState, input = {}) {
   for (const def of SEGMENTS) {
     const seg = state.segments[def.id];
 
+    const pricing = seg.pricing;
+
+    // Годовые когорты: у всех тикает срок, истёкшие возвращаются в обычную базу
+    annualExpired += tickAnnual(pricing);
+
+    // Повышение цены действующей базе. Годовых оно не задевает: их цена
+    // зафиксирована до конца срока — именно за это они и платили вперёд.
+    const lockedBefore = pricing.lockedPrice;
+    if (raiseAllowed && decisions.priceNew > lockedBefore + 1) {
+      const shock = raiseShock(lockedBefore, decisions.priceNew, def);
+      const monthly = Math.max(0, seg.premium + seg.ads - annualSubs(pricing));
+      const lost = monthly * shock;
+      raiseLost += lost;
+      const keep = monthly > 0 ? 1 - lost / monthly : 1;
+      seg.premium *= keep;
+      seg.ads *= keep;
+      pricing.lockedPrice = decisions.priceNew;
+      raiseApplied = true;
+    }
+
     // Выбор тарифа: чем больше экономия и чем терпимее сегмент к рекламе,
     // тем охотнее он идёт на дешёвый тариф с рекламой.
-    const saving = decisions.pricePremium > 0
-      ? clamp((decisions.pricePremium - decisions.priceAds) / decisions.pricePremium, 0, 1) : 0;
+    const saving = decisions.priceNew > 0
+      ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
     const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
     const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, 0.94);
 
-    // Цена, которую сегмент фактически платит в среднем
-    const blendedPrice = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+    // Новые смотрят на прайс, а платит база свою заблокированную цену.
+    // Разрыв между этими двумя числами — главный скрытый показатель игры.
+    const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
+    const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
+    const blendedPrice = listPrice;
     const priceFactor = clamp(Math.pow(refPrice / Math.max(30, blendedPrice), def.elasticity), 0.15, 2.6);
 
     // Ценность каталога для сегмента: глубина и свежесть весят по-разному
@@ -442,9 +520,11 @@ export function step(prevState, input = {}) {
     const adRelief = 1 - 0.45 * adSpread * quality;
     const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
 
-    // Премьера тянет к себе именно свой сегмент
+    // Премьера тянет к себе именно свой сегмент — и тем точнее, чем прицельнее
+    // она снята. Проект «под киноманов» соберёт их и оставит равнодушными всех
+    // остальных: фокус — это всегда и отказ.
     const premiereAppeal = premieres.reduce(
-      (s, p) => s + p.buzz * (genreById(p.genre)?.appeal[def.id] ?? 1), 0);
+      (s, p) => s + p.buzz * projectAppeal(p, def.id), 0);
 
     // Узнаваемость — накопительный запас. Маркетинг насыщается: чем глубже
     // проникновение, тем дороже обходится следующий зритель.
@@ -452,7 +532,12 @@ export function step(prevState, input = {}) {
     const penetration = clamp(subsBefore / def.potential, 0, 1);
     const saturation = 1 / (1 + CONFIG.marketingSaturation * penetration * penetration);
     const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
-    const spendPerViewer = (decisions.marketing * shareOfMarket) / def.potential;
+    // Кампания под релиз считается маркетингом именно того сегмента,
+    // под который снят проект: реклама сериала — это не реклама бренда.
+    const targetedCampaign = premieres.reduce(
+      (s, p) => s + (p.campaign ?? 0) * (p.segment === def.id ? 0.75 : p.segment ? 0.08 : 0.25), 0);
+    const segMarketing = decisions.brandMarketing * shareOfMarket + targetedCampaign;
+    const spendPerViewer = segMarketing / def.potential;
     const gain = clamp(
       0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55) * saturation,
       0, CONFIG.awarenessMaxGain);
@@ -526,11 +611,16 @@ export function step(prevState, input = {}) {
     const savedShare = winbackPower * 0.45;
     churnRate = churnRate * (1 - savedShare);
 
-    const leaving = subsBefore * churnRate;
+    // Годовой подписчик физически не может уйти: он уже заплатил за год.
+    // В этом и ценность годового тарифа — не в скидке, а в том, что эти
+    // люди выключены из оттока до конца срока.
+    const lockedIn = annualSubs(pricing);
+    const churnable = Math.max(0, subsBefore - lockedIn);
+    const leaving = churnable * churnRate;
     // Скидку получают удержанные и часть тех, кто и так остался бы (промахи модели)
-    const discounted = subsBefore * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
-      + subsBefore * (1 - quality) * winbackDiscount * 0.03;
-    winbackCost += discounted * decisions.pricePremium * winbackDiscount;
+    const discounted = churnable * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
+      + churnable * (1 - quality) * winbackDiscount * 0.03;
+    winbackCost += discounted * pricing.lockedPrice * winbackDiscount;
 
     // --- Переток между сервисами ---
     // Отдельный поток от общего оттока: эти люди не ушли из категории,
@@ -540,6 +630,24 @@ export function step(prevState, input = {}) {
     flow = clamp(flow, -survivorsBeforeSwitch * 0.5, rivalAfterOwn * 0.5);
     if (flow >= 0) switchedIn += flow; else switchedOut += -flow;
     riv.segments[def.id] = Math.max(0, rivalAfterOwn - flow);
+
+    // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
+    // месяцев, но цена фиксируется и повышения их не касаются.
+    const annualPortion = annualShare(decisions.annualDiscount, def);
+    const annualTakers = converted * (1 - adShare) * annualPortion;
+    if (annualTakers > 0) {
+      const annualPrice = decisions.priceNew * (1 - decisions.annualDiscount);
+      annualCash += addAnnualCohort(pricing, annualTakers, annualPrice);
+      annualNew += annualTakers;
+    }
+
+    // Средняя цена базы дрейфует к прайсу по мере обновления
+    const monthlyNew = converted * (1 - adShare) - annualTakers;
+    const monthlyBase = Math.max(0, seg.premium - annualSubs(pricing) + monthlyNew);
+    if (monthlyBase > 0 && monthlyNew > 0) {
+      pricing.lockedPrice = (pricing.lockedPrice * (monthlyBase - monthlyNew)
+        + decisions.priceNew * monthlyNew) / monthlyBase;
+    }
 
     // Обновляем запасы по тарифам
     const survivors = survivorsBeforeSwitch + flow;
@@ -552,7 +660,7 @@ export function step(prevState, input = {}) {
     trialsTotal += trials;
 
     perSegment.push({
-      def, seg, adShare, blendedPrice, priceFactor, appeal, adPenalty,
+      def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
       churnRate, converted, leaving, flow, preference,
       subs: seg.premium + seg.ads, rivalSubs: riv.segments[def.id],
     });
@@ -585,7 +693,15 @@ export function step(prevState, input = {}) {
   const supportCost = totalSubs * CONFIG.supportCostPerSub;
 
   // --- 11. Выручка ---
-  const subscriptionRevenue = premiumSubs * decisions.pricePremium + adSubs * decisions.priceAds;
+  // Выручка считается по тому, что база реально платит, а не по прайсу.
+  // Годовые деньги пришли в кассу разом при подписке и здесь не повторяются.
+  let subscriptionRevenue = 0;
+  for (const p of perSegment) {
+    const annual = annualSubs(p.pricing);
+    const monthlyPremium = Math.max(0, p.seg.premium - annual);
+    subscriptionRevenue += monthlyPremium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds;
+  }
+  const listRevenue = premiumSubs * decisions.priceNew + adSubs * decisions.priceAds;
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
   const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд
@@ -595,13 +711,17 @@ export function step(prevState, input = {}) {
   const variableCost = cdnCost + supportCost + winbackCost;
   const contribution = revenue - variableCost;
 
-  const contentSpend = contentBudget.licensing + contentBudget.originals;
-  const fixed = CONFIG.hqMonthly + contentSpend
-    + decisions.marketing + decisions.tech + decisions.rnd;
+  const contentSpend = contentBudget.licensing + productionSpend;
+  const marketingSpend = decisions.brandMarketing + campaignSpend;
+  const fixed = CONFIG.hqMonthly + contentSpend + slotCost
+    + marketingSpend + decisions.tech + decisions.rnd;
   const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0) + crisisCost;
   const profit = contribution - fixed;
 
-  state.cash += profit - oneOff;
+  // Годовая предоплата — это касса сегодня и выручка, растянутая на год.
+  // В P&L она не попадает: иначе один и тот же рубль был бы учтён дважды.
+  state.cash += profit - oneOff + annualCash;
+  if (raiseApplied) state.lastRaiseMonth = month;
   state.techStock += decisions.tech;
   state.rndStock += decisions.rnd;
   state.dataStock += hours;
@@ -613,7 +733,7 @@ export function step(prevState, input = {}) {
   const avgChurn = totalSubs > 0
     ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / totalSubs
     : CONFIG.baseChurn;
-  const cac = newSubs > 0 ? decisions.marketing / newSubs : 0;
+  const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
   const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
   const marketShare = totalSubs / marketPotential;
@@ -731,7 +851,10 @@ export function step(prevState, input = {}) {
     // --- Дорожающие ресурсы ---
     licenseIndex,
     talentIndex,
-    projectCost: cost,
+    // Прайс-лист производства при текущей цене таланта: игрок должен видеть,
+    // во сколько ему обойдётся каждый вариант, до того как нажмёт кнопку.
+    projectPrices: Object.fromEntries(GENRES.map((g) => [g.id,
+      Object.fromEntries(SCALES.map((sc) => [sc.id, projectPrice(g.id, sc.id, talentIndex)]))])),
 
     buzz,
     heldBuzz,
@@ -740,8 +863,40 @@ export function step(prevState, input = {}) {
     effectiveCatalog,
     premieres,
     started,
-    pipeline: state.pipeline.map((p) => ({ genre: p.genre, monthsLeft: p.monthsLeft, quality: p.quality })),
-    studioFund: state.studioFund,
+    slots,
+    slotsUsed: producing.length,
+    slotCost,
+    productionSpend,
+    campaignSpend,
+    marketingSpend,
+    rejected,
+    finished: finished.map((p) => ({ id: p.id, genre: p.genre, scale: p.scale })),
+    vault: vault.map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      quality: p.quality, held: p.monthsHeld, hours: p.hours,
+    })),
+    producing: producing.map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      monthsLeft: p.monthsLeft, monthsTotal: p.monthsTotal,
+    })),
+
+    // --- Цена ---
+    listRevenue,
+    // Разрыв между прайсом и тем, что реально платит база без рекламы.
+    // Он копится незаметно с каждым повышением прайса и закрывается больно.
+    lockedPrice: premiumSubs > 0
+      ? perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0) / premiumSubs
+      : decisions.priceNew,
+    priceGap: premiumSubs > 0
+      ? clamp(1 - (perSegment.reduce((s, p) => s + p.pricing.lockedPrice * p.seg.premium, 0)
+        / premiumSubs) / Math.max(1, decisions.priceNew), 0, 1)
+      : 0,
+    raiseApplied,
+    raiseLost,
+    annualCash,
+    annualNew,
+    annualExpired,
+    annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
 
     cac,
     ltv,
@@ -786,8 +941,10 @@ export function step(prevState, input = {}) {
       preference: p.preference,
       flow: p.flow,
       rivalSubs: p.rivalSubs,
+      lockedPrice: p.pricing.lockedPrice,
+      annual: annualSubs(p.pricing),
       arpu: p.subs > 0
-        ? (p.seg.premium * decisions.pricePremium + p.seg.ads * decisions.priceAds
+        ? (p.seg.premium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds
            + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
         : 0,
     })),
@@ -811,18 +968,6 @@ export function step(prevState, input = {}) {
   return { state, report };
 }
 
-/** Режет контентный бюджет под потолок совета, сохраняя пропорцию игрока. */
-function capContent(decisions, cap) {
-  const total = decisions.licensing + decisions.originals;
-  if (total <= cap) return { licensing: decisions.licensing, originals: decisions.originals };
-  if (total <= 0) return { licensing: 0, originals: 0 };
-  const k = cap / total;
-  return {
-    licensing: Math.round(decisions.licensing * k),
-    originals: Math.round(decisions.originals * k),
-  };
-}
-
 // ----------------------------------------------------------------------------
 // Экономика одного подписчика — считается мгновенно, до расчёта месяца
 // ----------------------------------------------------------------------------
@@ -831,7 +976,7 @@ export function unitEconomics(state, decisions) {
   const hoursPerSub = last ? last.hoursPerSub : CONFIG.baseHoursPerSub;
   const adShare = last && last.subs > 0 ? last.adSubs / last.subs : 0.35;
 
-  const subscription = decisions.pricePremium * (1 - adShare) + decisions.priceAds * adShare;
+  const subscription = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
   const impressions = hoursPerSub * adShare * decisions.adLoad * 2;
   const advertising = (impressions / 1000) * CONFIG.cpm;
   const revenue = subscription + advertising;

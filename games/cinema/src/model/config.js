@@ -99,6 +99,36 @@ export const CONFIG = {
   // --- Совет директоров ---
   boardYearMonths: 12,        // цели ставятся на год и проверяются в конце года
   boardCapMonths: 6,          // на сколько месяцев режется бюджет при провале
+
+  // --- Производство: слейт и релизы ---
+  // Содержание слотов растёт быстрее их числа: пять параллельных производств —
+  // это не пять раз по одному, а ещё и координация между ними.
+  studioSlotMonthly: 42_000_000,
+  studioSlotExponent: 1.45,
+  // Студия, ведущая пять проектов сразу, ведёт каждый хуже: мощность
+  // покупается не только деньгами, но и вниманием.
+  slotQualityDrag: 0.55,
+  vaultDecay: 0.045,          // насколько готовый проект выветривается за месяц в запасе
+  // Зимняя премьера слышнее летней: зритель дома и ищет, что посмотреть.
+  // Это и делает придерживание готового проекта осмысленным решением.
+  seasonBuzzPower: 2.2,
+  // Прицельно снятый под сегмент проект попадает в него точнее, но остальным
+  // интересен меньше: фокус — это всегда и отказ.
+  targetedAppealBonus: 2.0,
+  targetedAppealPenalty: 0.78,
+
+  // --- Маркетинг релиза ---
+  // Кампания работает только вместе с релизом: рекламировать нечего, если
+  // в этом месяце ничего не выходит.
+  campaignPower: 1.5,         // насколько кампания усиливает шум премьеры
+  refCampaign: 120_000_000,   // бюджет кампании, дающий половину эффекта
+
+  // --- Цена для действующей базы ---
+  // Реакция на повышение нелинейна: +10% почти незаметны, +40% выносят
+  // заметный кусок базы. Годовых подписчиков повышение не задевает.
+  raiseShockBase: 0.035,
+  raiseShockCurve: 1.6,
+  raiseCooldown: 4,           // сколько месяцев нельзя повышать повторно
 };
 
 // ============================================================================
@@ -240,107 +270,149 @@ export const GENRES = [
 // Рычаги управления
 // ============================================================================
 
+// ============================================================================
+// Рычаги управления.
+//
+// Их намеренно немного, и они разложены по группам. Ползунок хорош там, где
+// решение — это действительно число («сколько тратить на бренд»). Там, где
+// решение — это выбор объекта («какой проект запустить», «когда его выпустить»,
+// «повышать ли цену действующим»), ползунка нет: есть карточки и кнопки.
+//
+// group: 'money'  — деньги и цена, смотреть каждый месяц
+//        'growth' — маркетинг и каталог, смотреть при смене стратегии
+//        'infra'  — инфраструктура: выставил один раз и почти не трогаешь
+// ============================================================================
+
 export const LEVERS = [
   {
-    key: 'pricePremium',
-    label: { ru: 'Цена без рекламы', en: 'Ad-free price' },
+    key: 'priceNew',
+    group: 'money',
+    label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 99, max: 999, step: 10, def: 399,
     tip: {
-      ru: 'Основная выручка. Киноманы почти не замечают цену, молодёжь уходит от каждой сотни — один и тот же рубль работает по-разному в разных сегментах.',
-      en: 'Your core revenue. Cinephiles barely notice the price, young viewers leave over every hundred roubles — the same rouble behaves differently in each segment.',
+      ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',
+      en: 'The price new subscribers sign up at. Your existing base keeps paying what it signed at — moving them to the new price is a separate decision, and some of them will leave over it.',
     },
   },
   {
     key: 'priceAds',
+    group: 'money',
     label: { ru: 'Цена с рекламой', en: 'Ad-tier price' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 499, step: 10, def: 149,
     tip: {
-      ru: 'Дешёвый тариф расширяет рынок, но переманивает и тех, кто платил бы полную цену. Каннибализация — не побочный эффект, а суть решения.',
-      en: 'A cheap tier widens the market but also pulls in people who would have paid full price. Cannibalisation is not a side effect here, it is the decision itself.',
+      ru: 'Дешёвый тариф приводит тех, кто иначе не заплатил бы вообще, и переманивает часть тех, кто заплатил бы полную цену. Это управление каннибализацией, а не «широкая линейка».',
+      en: 'The cheap tier brings in people who would not have paid at all and poaches some who would have paid full price. This is cannibalisation management, not a "broad line-up".',
+    },
+  },
+  {
+    key: 'annualDiscount',
+    group: 'money',
+    label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
+    unit: { ru: '%', en: '%' },
+    min: 0, max: 40, step: 5, def: 0, scale: 0.01,
+    tip: {
+      ru: 'Годовая подписка приносит деньги сразу за двенадцать месяцев и защищает от оттока — но фиксирует цену и не попадает под повышения. Это заём у собственной будущей выручки.',
+      en: 'An annual plan brings twelve months of cash at once and shields you from churn — but it locks the price and is exempt from any rise. It is a loan against your own future revenue.',
     },
   },
   {
     key: 'adLoad',
+    group: 'money',
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
     tip: {
-      ru: 'Каждая минута рекламы — прямая выручка и прямой удар по удержанию. Киноманы уходят втрое быстрее молодёжи.',
-      en: 'Every minute of advertising is direct revenue and a direct hit to retention. Cinephiles leave three times faster than young viewers.',
+      ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
+      en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
     },
   },
+
   {
     key: 'licensing',
+    group: 'growth',
     label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
+    min: 0, max: 500_000_000, step: 10_000_000, def: 0,
+    tip: {
+      ru: 'Каталог появляется сразу, но истекает 4.5% в месяц, лежит и у конкурента и почти не считается новинкой. Когда за права торгуетесь вы оба, они дорожают для обоих.',
+      en: 'The catalogue appears at once, but 4.5% expires monthly, the rival has the same titles, and it barely counts as new. When you both bid for rights, they get more expensive for both.',
+    },
+  },
+  {
+    key: 'brandMarketing',
+    group: 'growth',
+    label: { ru: 'Маркетинг бренда', en: 'Brand marketing' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 400_000_000, step: 10_000_000, def: 0,
     tip: {
-      ru: 'Чужой контент появляется в каталоге сразу, но истекает ~4,5% в месяц и есть у конкурентов. Это аренда, а не покупка.',
-      en: 'Licensed content lands in the catalogue immediately, but it expires at about 4.5% a month and your rivals have it too. This is rent, not ownership.',
+      ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
+      en: 'The steady background of awareness. It works slowly, decays quickly, and against an empty catalogue it burns for nothing: there is nowhere to bring the viewer.',
     },
   },
+
   {
-    key: 'originals',
-    label: { ru: 'Производство оригиналов', en: 'Originals budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 600_000_000, step: 10_000_000, def: 0,
+    key: 'studioSlots',
+    group: 'infra',
+    label: { ru: 'Слотов в студии', en: 'Studio slots' },
+    unit: { ru: 'проектов', en: 'projects' },
+    min: 1, max: 5, step: 1, def: 2,
     tip: {
-      ru: 'Деньги уходят сейчас, премьера будет через полгода. Зато оригинал остаётся навсегда и работает только на вас.',
-      en: 'The money goes out now and the premiere lands six months later. But an original stays forever and works for you alone.',
-    },
-  },
-  {
-    key: 'marketing',
-    label: { ru: 'Маркетинг', en: 'Marketing' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 300_000_000, step: 10_000_000, def: 0,
-    tip: {
-      ru: 'Растит узнаваемость и приток пробных подписок. Приводить людей в пустой каталог — самый дорогой способ купить отток.',
-      en: 'Builds awareness and the flow of trials. Bringing people into an empty catalogue is the most expensive way to buy churn.',
+      ru: 'Сколько проектов может идти одновременно. Слот стоит денег каждый месяц, занят он или пуст, — это и есть настоящая себестоимость производственной мощности.',
+      en: 'How many projects can run at once. A slot costs money every month whether it is busy or idle — that is what production capacity actually costs.',
     },
   },
   {
     key: 'trialDays',
+    group: 'infra',
     label: { ru: 'Пробный период', en: 'Free trial' },
     unit: { ru: 'дней', en: 'days' },
     min: 0, max: 30, step: 1, def: 7,
     tip: {
-      ru: 'Длинный триал поднимает конверсию из интереса в подписку, но месяц вы платите за трафик и не получаете денег.',
-      en: 'A long trial lifts conversion from interest into subscription, but for a month you pay for the traffic and collect nothing.',
+      ru: 'Длинный триал повышает конверсию и дарит месяцы. Короткий экономит деньги и теряет тех, кто не успел распробовать.',
+      en: 'A long trial lifts conversion and gives months away. A short one saves money and loses the people who never got a taste.',
     },
   },
   {
     key: 'bitrate',
+    group: 'infra',
     label: { ru: 'Качество картинки', en: 'Streaming quality' },
     unit: { ru: 'Мбит/с', en: 'Mbps' },
     min: 2, max: 16, step: 1, def: 5,
     tip: {
-      ru: 'Трафик — переменная себестоимость, которая растёт вместе с любовью зрителя к сервису. Экономия на битрейте видна сразу.',
-      en: 'Bandwidth is a variable cost that grows with how much viewers love you. Cutting the bitrate is noticed immediately.',
+      ru: 'Плохая картинка раздражает, хорошая стоит трафика — а трафик здесь единственная крупная переменная статья.',
+      en: 'A poor picture annoys people, a good one costs bandwidth — and bandwidth is the only large variable cost line here.',
     },
   },
   {
     key: 'tech',
+    group: 'infra',
     label: { ru: 'Технологии и платформа', en: 'Technology' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 150_000_000, step: 5_000_000, def: 0,
     tip: {
-      ru: 'Накопительная инвестиция: дешевле трафик, лучше приложение, меньше отток по техническим причинам.',
-      en: 'A cumulative investment: cheaper bandwidth, a better app, less churn for purely technical reasons.',
+      ru: 'Накопительная инвестиция: дешевле час трафика и выше качество производимых проектов. Окупается не сразу и не сама.',
+      en: 'A cumulative investment: cheaper bandwidth per hour and better quality in what you produce. It does not pay back quickly or by itself.',
     },
   },
   {
     key: 'rnd',
+    group: 'infra',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽', en: '₽' },
     min: 0, max: 120_000_000, step: 5_000_000, def: 0,
     tip: {
-      ru: 'Команда, которая строит рекомендации и удержание. Без часов просмотра учиться не на чем, а часы приходят только от подписчиков.',
-      en: 'The team that builds recommendations and retention. Without watch hours there is nothing to learn from, and hours only come from subscribers.',
+      ru: 'Команда без данных бесполезна ровно так же, как данные без команды: качество алгоритмов — среднее геометрическое того и другого.',
+      en: 'A team without data is exactly as useless as data without a team: algorithm quality is the geometric mean of the two.',
     },
   },
+];
+
+export const LEVER_GROUPS = [
+  { id: 'money', label: { ru: 'Деньги и цена', en: 'Money and price' }, open: true },
+  { id: 'growth', label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' }, open: true },
+  { id: 'infra', label: { ru: 'Инфраструктура', en: 'Infrastructure' }, open: false },
 ];
 
 // ============================================================================
@@ -497,10 +569,14 @@ export const ALGORITHMS = [
 
 export const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  genre: 'drama',              // во что вкладывается студия сейчас
   algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),
   algoParam: Object.fromEntries(ALGORITHMS.map((a) => [a.key, a.param.def * (a.param.scale ?? 1)])),
 };
+
+// Что игрок делает помимо ползунков: запускает проекты, выпускает готовые,
+// повышает цену действующей базе. Это действия, а не числа, — и передаются
+// они в step() отдельно от decisions.
+export const NO_ACTIONS = { commission: [], release: [], raisePrice: false };
 
 export function segmentById(id) {
   return SEGMENTS.find((s) => s.id === id);

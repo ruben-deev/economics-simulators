@@ -4,12 +4,13 @@
 // Текст берётся из src/strings.js через t() и tx().
 // ============================================================================
 
-import { CONFIG, SEGMENTS, GENRES, LEVERS, ALGORITHMS } from '../model/config.js';
+import { CONFIG, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS } from '../model/config.js';
 import { RIVAL_RELEASES, rivalEffect, seasonOf } from '../model/market.js';
 import { eventById } from '../model/events.js';
 import { rivalSubs } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost, severityOf } from '../model/crises.js';
+import { SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz } from '../model/slate.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation, fundingOffer, raise,
   finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact,
@@ -28,6 +29,18 @@ let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
+let pendingCommission = [];       // проекты, запускаемые в этом ходу
+let pendingRelease = {};          // id готового проекта -> бюджет кампании
+let pendingRaise = false;         // перевести действующую базу на текущий прайс
+let openGroups = { money: true, growth: true, infra: false };
+let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
+
+const clearActions = () => {
+  pendingCommission = [];
+  pendingRelease = {};
+  pendingRaise = false;
+  pendingCrisisChoice = null;
+};
 
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим */ }
@@ -68,9 +81,11 @@ function renderKpis() {
   const burn = r ? r.fixed + r.oneOff - r.contribution : 0;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Пять показателей в одну строку. Всё остальное — в итогах месяца и вкладках:
+  // шапка нужна, чтобы понять положение за секунду, а не чтобы изучать её.
   const parts = [
     kpi(t('kpiMonth'), `${state.month} / ${CONFIG.monthsTotal}`,
-      state.pendingEvent ? t('kpiMonthEvent') : t('kpiMonthCalm')),
+      seasonName(seasonOf(state.month + 1))),
     kpi(t('kpiCash'), money(state.cash),
       state.cash < 0 ? t('kpiCashOut')
         : Number.isFinite(runway) ? t('kpiRunway', { months: runway.toFixed(0) })
@@ -81,27 +96,17 @@ function renderKpis() {
   if (r) {
     const [dSubs, cSubs] = delta(r.subs, p?.subs);
     parts.push(
-      kpi(t('kpiSubs'), compact(r.subs),
-        t('kpiSubsSub', { premium: compact(r.premiumSubs), ads: compact(r.adSubs) }), cSubs || 'neutral'),
-      kpi(t('kpiRevenue'), money(r.revenue), t('kpiRevenueSub', { value: `${num(r.arpu)} ₽` }), 'neutral'),
-      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
-        r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiChurn'), pct(r.churnRate, 1),
-        t('kpiChurnSub', { months: (1 / Math.max(0.005, r.churnRate)).toFixed(0) }),
-        r.churnRate <= 0.05 ? 'up' : r.churnRate <= 0.09 ? 'neutral' : 'down'),
-      kpi(t('kpiHours'), num(r.hoursPerSub, 1),
-        t('kpiHoursSub', { value: money(r.cdnCost) }),
-        'neutral'),
+      kpi(t('kpiSubs'), compact(r.subs), dSubs || t('kpiSubsFlat'), cSubs || 'neutral'),
       kpi(t('kpiShare'), pct(r.duopolyShare ?? 0, 0),
         t('kpiShareSub', { them: compact(r.rivalSubs ?? 0) }),
         (r.duopolyShare ?? 0) >= 0.5 ? 'up' : (r.duopolyShare ?? 0) >= 0.35 ? 'neutral' : 'down'),
+      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
+        r.profit >= 0 ? 'up' : 'down'),
       kpi(t('kpiEquity'), money(r.equityValue ?? 0),
         t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
-      kpi('', dSubs, '', cSubs),
     );
-    parts.pop();
   } else {
-    parts.push(kpi(t('kpiStart'), money(CONFIG.startCash), t('kpiStartSub'), 'up'));
+    parts.push(kpi(t('kpiStart'), money(CONFIG.startCash), t('kpiStartSub')));
   }
   el('kpis').innerHTML = parts.join('');
 }
@@ -110,22 +115,39 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 function buildLevers() {
-  el('levers').innerHTML = LEVERS.map((l) => `
-    <div class="lever" data-key="${l.key}">
-      <div class="lever-head">
-        <span class="lever-label">${tx(l.label)}</span>
-        <span class="lever-value" id="val-${l.key}"></span>
+  // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
+  // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
+  // их всё время на экране значит тратить внимание там, где решения нет.
+  el('levers').innerHTML = LEVER_GROUPS.map((g) => {
+    const items = LEVERS.filter((l) => l.group === g.id);
+    if (!items.length) return '';
+    return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
+      <button class="lever-group-head" type="button">
+        <span class="lg-caret">▾</span><span>${tx(g.label)}</span>
+        <span class="lg-count">${items.length}</span>
+      </button>
+      <div class="lever-group-body">
+        ${items.map((l) => `
+          <div class="lever" data-key="${l.key}">
+            <div class="lever-head">
+              <span class="lever-label">${tx(l.label)}</span>
+              <span class="lever-value" id="val-${l.key}"></span>
+            </div>
+            <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+            <button class="lever-why" type="button">${t('leverWhy')}</button>
+            <div class="lever-tip">${tx(l.tip)}</div>
+          </div>`).join('')}
       </div>
-      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
-      <button class="lever-why" type="button">${t('leverWhy')}</button>
-      <div class="lever-tip">${tx(l.tip)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   for (const l of LEVERS) {
     el(`in-${l.key}`).addEventListener('input', (e) => {
       state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
       syncLevers();
       renderOpsReadout();
+      renderTurn();
+      renderSlate();
       renderRightTab();
       save();
     });
@@ -133,14 +155,22 @@ function buildLevers() {
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
+  el('levers').querySelectorAll('.lever-group-head').forEach((b) => {
+    b.addEventListener('click', () => {
+      const box = b.closest('.lever-group');
+      const id = box.dataset.group;
+      openGroups[id] = !openGroups[id];
+      box.classList.toggle('open', openGroups[id]);
+    });
+  });
   leversBuilt = true;
 }
 
+const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
+
 function leverDisplay(l, raw) {
-  const unit = tx(l.unit);
-  if (l.key === 'licensing' || l.key === 'originals' || l.key === 'marketing'
-      || l.key === 'tech' || l.key === 'rnd') return money(raw);
-  return `${num(raw)} ${unit}`;
+  if (MONEY_LEVERS.has(l.key)) return money(raw);
+  return `${num(raw)} ${tx(l.unit)}`;
 }
 
 function syncLevers() {
@@ -148,7 +178,8 @@ function syncLevers() {
     const raw = state.decisions[l.key] / (l.scale ?? 1);
     const input = el(`in-${l.key}`);
     if (input) input.value = String(raw);
-    el(`val-${l.key}`).textContent = leverDisplay(l, raw);
+    const out = el(`val-${l.key}`);
+    if (out) out.textContent = leverDisplay(l, raw);
   }
 }
 
@@ -158,7 +189,8 @@ function renderOpsReadout() {
   const catalogHours = state.catalogLicensed + state.catalogOriginal;
   const effective = state.catalogLicensed * CONFIG.licenseDepthWeight
     + state.catalogOriginal * CONFIG.originalDepthWeight;
-  const boughtHours = state.decisions.licensing / CONFIG.licenseCostPerHour;
+  const idx = last()?.licenseIndex ?? 1;
+  const boughtHours = state.decisions.licensing / (CONFIG.licenseCostPerHour * idx);
 
   el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>${t('opsCatalog', {
@@ -181,47 +213,261 @@ function renderOpsReadout() {
 // ----------------------------------------------------------------------------
 // Студия: жанр и конвейер
 // ----------------------------------------------------------------------------
-function renderStudio() {
-  const current = state.decisions.genre;
-  const cards = GENRES.map((g) => {
-    const on = g.id === current;
-    return `<div class="district ${on ? 'active' : ''}" data-genre="${g.id}">
-      <div class="district-head">
-        <span class="district-name">${tx(g.name)}</span>
-        <span class="badge ${on ? 'on' : ''}">${money(projectCost(g))}</span>
-      </div>
-      <div class="district-meta">${t('genreHours', { hours: g.hours })} · ${tx(g.hint)}</div>
-    </div>`;
-  }).join('');
+// ----------------------------------------------------------------------------
+// Ход месяца: что решается прямо сейчас.
+//
+// Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
+// Теперь совет стоит там же, где кнопка: рядом с решением, к которому он
+// относится, и только когда он уместен.
+// ----------------------------------------------------------------------------
+function turnTodos() {
+  const r = last();
+  const todos = [];
+  const slate = state.slate ?? [];
+  const ready = slate.filter((p) => p.status === 'ready');
+  const producing = slate.filter((p) => p.status === 'production');
+  const planned = Object.keys(pendingRelease).length;
+  const rivalLoud = ['major', 'mega'].includes(state.rivalNext ?? 'none');
+  const season = seasonOf(state.month + 1);
 
-  const genre = genreById(current) ?? GENRES[0];
-  const pipeline = state.pipeline ?? [];
-  const pipelineText = pipeline.length
-    ? t('studioPipeline', {
-        list: pipeline
-          .sort((a, b) => a.monthsLeft - b.monthsLeft)
-          .map((p) => t('studioPipelineItem', {
-            genre: tx(genreById(p.genre)?.name), months: p.monthsLeft,
-          })).join(', '),
-      })
-    : `<span class="neg">${t('studioPipelineEmpty')}</span>`;
-
-  el('studio').innerHTML = `
-    <div class="hint-box" style="margin-bottom:10px">
-      <div>${t('studioFund', { fund: money(state.studioFund ?? 0), cost: money(projectCost(genre)) })}</div>
-      <div>${pipelineText}</div>
-      <div class="funding-note" style="margin-top:6px">${t('studioLag')}</div>
-    </div>
-    <div class="districts">${cards}</div>`;
-
-  el('studio').querySelectorAll('[data-genre]').forEach((node) => {
-    node.addEventListener('click', () => {
-      state.decisions.genre = node.dataset.genre;
-      renderStudio();
-      renderOpsReadout();
-      save();
+  // 1. Готовые проекты — главное решение месяца
+  if (ready.length && !planned) {
+    todos.push({
+      kind: rivalLoud ? 'warn' : 'act',
+      title: t('todoReleaseTitle', { count: ready.length }),
+      text: rivalLoud
+        ? t('todoReleaseVsRival')
+        : season === 'winter' || season === 'autumn'
+          ? t('todoReleaseGoodSeason', { season: seasonName(season) })
+          : t('todoReleaseQuiet'),
     });
+  }
+
+  // 2. Пустая студия — премьеры не будет полгода
+  if (!producing.length && !pendingCommission.length) {
+    todos.push({ kind: 'bad', title: t('todoStudioTitle'), text: t('todoStudioText') });
+  }
+
+  // 3. Разрыв между прайсом и тем, что платит база
+  if (r && r.priceGap > 0.08) {
+    const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
+    todos.push({
+      kind: pendingRaise ? 'act' : 'warn',
+      title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
+      text: cooldown > 0
+        ? t('todoPriceGapCooldown', { months: cooldown })
+        : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
+      action: cooldown > 0 ? null : {
+        id: 'raise',
+        label: pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo'),
+        on: pendingRaise,
+      },
+    });
+  }
+
+  // 4. Маркетинг без каталога
+  if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
+    todos.push({ kind: 'warn', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
+  }
+
+  // 5. Кампания без релиза
+  if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
+    todos.push({ kind: 'warn', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
+  }
+
+  return todos;
+}
+
+function plannedSpend() {
+  const talent = talentIndexNow();
+  const commissions = pendingCommission.reduce(
+    (sum, c) => sum + projectPrice(c.genre, c.scale, talent) / scaleById(c.scale).months, 0);
+  const campaigns = Object.values(pendingRelease).reduce((a, b) => a + b, 0);
+  return { commissions, campaigns };
+}
+
+function renderTurn() {
+  if (state.over) { el('turn-slot').innerHTML = ''; return; }
+  const todos = turnTodos();
+  const { commissions, campaigns } = plannedSpend();
+  const releases = Object.keys(pendingRelease).length;
+
+  const plan = [];
+  if (releases) plan.push(t('planReleases', { count: releases, budget: money(campaigns) }));
+  if (pendingCommission.length) plan.push(t('planCommission', { count: pendingCommission.length, monthly: money(commissions) }));
+  if (pendingRaise) plan.push(t('planRaise'));
+
+  el('turn-slot').innerHTML = `<div class="panel turn">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelTurn', { month: state.month + 1 })}</h2>
+      <span class="funding-note">${plan.length ? plan.join(' · ') : t('planNothing')}</span>
+    </div>
+    ${todos.length
+      ? `<div class="todos">${todos.map((td) => `
+          <div class="todo ${td.kind}">
+            <div class="todo-title">${td.title}</div>
+            <div class="todo-text">${td.text}</div>
+            ${td.action ? `<button class="btn ${td.action.on ? 'primary' : 'ghost'} tiny"
+              data-todo="${td.action.id}">${td.action.label}</button>` : ''}
+          </div>`).join('')}</div>`
+      : `<div class="todo ok"><div class="todo-title">${t('todoCalmTitle')}</div>
+          <div class="todo-text">${t('todoCalmText')}</div></div>`}
+  </div>`;
+
+  el('turn-slot').querySelectorAll('[data-todo="raise"]').forEach((b) => {
+    b.addEventListener('click', () => { pendingRaise = !pendingRaise; renderTurn(); });
   });
+}
+
+// ----------------------------------------------------------------------------
+// Слейт: конкретные проекты вместо ползунка «бюджет на оригиналы»
+// ----------------------------------------------------------------------------
+const scaleName = (id) => tx(scaleById(id).name);
+const genreName = (id) => tx(genreById(id)?.name ?? '');
+const segName = (id) => (id ? tx(SEGMENTS.find((x) => x.id === id)?.name ?? '') : t('slateBroad'));
+
+function talentIndexNow() {
+  return last()?.talentIndex ?? 1;
+}
+
+function projectCard(p, kind) {
+  const est = qualityEstimate(p);
+  if (kind === 'production') {
+    const done = 1 - p.monthsLeft / Math.max(1, p.monthsTotal);
+    return `<div class="proj production">
+      <div class="proj-head">
+        <span class="proj-name">${genreName(p.genre)} · ${scaleName(p.scale)}</span>
+        <span class="badge">${t('slateMonthsLeft', { months: p.monthsLeft })}</span>
+      </div>
+      <div class="proj-meta">${t('slateFor', { segment: segName(p.segment) })} · ${t('slateHours', { hours: num(p.hours, 1) })}</div>
+      <span class="q-bar"><span class="q-fill" style="width:${(done * 100).toFixed(0)}%"></span></span>
+      <div class="proj-meta">${t('slateEstimate', { low: est.low.toFixed(2), high: est.high.toFixed(2) })}</div>
+    </div>`;
+  }
+  // Готовый проект: тут и принимается решение о релизе
+  const campaign = pendingRelease[p.id];
+  const planned = campaign !== undefined;
+  const buzz = releaseBuzz(p);
+  return `<div class="proj ready ${planned ? 'planned' : ''}" data-ready="${p.id}">
+    <div class="proj-head">
+      <span class="proj-name">${genreName(p.genre)} · ${scaleName(p.scale)}</span>
+      <span class="badge ${p.monthsHeld > 2 ? 'warn' : 'on'}">${
+        p.monthsHeld > 0 ? t('slateHeld', { months: p.monthsHeld }) : t('slateFresh')}</span>
+    </div>
+    <div class="proj-meta">${t('slateFor', { segment: segName(p.segment) })} ·
+      ${t('slateQuality', { value: p.quality.toFixed(2) })} · ${t('slateBuzz', { value: buzz.toFixed(2) })}</div>
+    ${p.monthsHeld > 0 ? `<div class="proj-meta neg">${t('slateStale', { pct: pct(1 - Math.pow(1 - CONFIG.vaultDecay, p.monthsHeld), 0) })}</div>` : ''}
+    ${planned
+      ? `<div class="release-row">
+          <label>${t('slateCampaign')}</label>
+          <input type="range" data-campaign="${p.id}" min="0" max="400000000" step="10000000" value="${campaign}" />
+          <span class="release-budget">${money(campaign)}</span>
+          <button class="btn ghost tiny" data-cancel="${p.id}">${t('slateCancel')}</button>
+        </div>`
+      : `<button class="btn primary tiny" data-release="${p.id}">${t('slateRelease')}</button>`}
+  </div>`;
+}
+
+function renderSlate() {
+  const slate = state.slate ?? [];
+  const producing = slate.filter((p) => p.status === 'production');
+  const ready = slate.filter((p) => p.status === 'ready');
+  const slots = Math.round(state.decisions.studioSlots);
+  const free = slots - producing.length - pendingCommission.length;
+  const talent = talentIndexNow();
+  const price = projectPrice(commissionDraft.genre, commissionDraft.scale, talent);
+  const affordable = price <= state.cash;
+
+  const queued = pendingCommission.map((c, i) => `<div class="proj queued">
+    <div class="proj-head">
+      <span class="proj-name">${genreName(c.genre)} · ${scaleName(c.scale)}</span>
+      <button class="btn ghost tiny" data-unqueue="${i}">✕</button>
+    </div>
+    <div class="proj-meta">${t('slateFor', { segment: segName(c.segment) })} ·
+      ${t('slateStartsNow', { months: scaleById(c.scale).months })}</div>
+  </div>`).join('');
+
+  el('slate-slot').innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelSlate')}</h2>
+      <span class="funding-note">${t('slateSlots', {
+        used: producing.length + pendingCommission.length, total: slots,
+        cost: money(CONFIG.studioSlotMonthly * Math.pow(slots, CONFIG.studioSlotExponent)) })}</span>
+    </div>
+
+    ${ready.length ? `<div class="slate-section">
+      <div class="slate-label">${t('slateReadyTitle', { count: ready.length })}</div>
+      <div class="proj-grid">${ready.map((p) => projectCard(p, 'ready')).join('')}</div>
+      <div class="funding-note">${t('slateReadyHint')}</div>
+    </div>` : ''}
+
+    <div class="slate-section">
+      <div class="slate-label">${t('slateProductionTitle', { count: producing.length })}</div>
+      ${producing.length
+        ? `<div class="proj-grid">${producing.map((p) => projectCard(p, 'production')).join('')}</div>`
+        : `<div class="alert bad">${t('slateEmpty', { months: 4 })}</div>`}
+      ${queued ? `<div class="proj-grid">${queued}</div>` : ''}
+    </div>
+
+    <div class="slate-section commission ${free > 0 ? '' : 'blocked'}">
+      <div class="slate-label">${t('slateCommission')}</div>
+      <div class="commission-row">
+        <div class="pick" data-pick="genre">${GENRES.map((g) => `
+          <button class="${g.id === commissionDraft.genre ? 'active' : ''}" data-genre="${g.id}"
+            title="${tx(g.hint)}">${tx(g.name)}</button>`).join('')}</div>
+      </div>
+      <div class="commission-row">
+        <div class="pick" data-pick="scale">${SCALES.map((sc) => `
+          <button class="${sc.id === commissionDraft.scale ? 'active' : ''}" data-scale="${sc.id}"
+            title="${tx(sc.hint)}">${tx(sc.name)} · ${sc.months} ${t('unitMonthsShort')}</button>`).join('')}</div>
+      </div>
+      <div class="commission-row">
+        <div class="pick" data-pick="segment">
+          <button class="${commissionDraft.segment === null ? 'active' : ''}" data-segment="">${t('slateBroad')}</button>
+          ${SEGMENTS.map((sg) => `<button class="${sg.id === commissionDraft.segment ? 'active' : ''}"
+            data-segment="${sg.id}" title="${tx(sg.hint)}">${tx(sg.name)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="commission-foot">
+        <span>${t('slatePrice', { price: money(price), months: scaleById(commissionDraft.scale).months })}</span>
+        <button class="btn primary" id="btn-commission" ${free > 0 && affordable ? '' : 'disabled'}>
+          ${free > 0 ? (affordable ? t('slateStart') : t('slateNoCash')) : t('slateNoSlots')}</button>
+      </div>
+      <div class="funding-note">${t('slateFocusHint')}</div>
+    </div>
+  </div>`;
+
+  const root = el('slate-slot');
+  root.querySelectorAll('[data-genre]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.genre = b.dataset.genre; renderSlate();
+  }));
+  root.querySelectorAll('[data-scale]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.scale = b.dataset.scale; renderSlate();
+  }));
+  root.querySelectorAll('[data-segment]').forEach((b) => b.addEventListener('click', () => {
+    commissionDraft.segment = b.dataset.segment || null; renderSlate();
+  }));
+  el('btn-commission')?.addEventListener('click', () => {
+    pendingCommission.push({ ...commissionDraft });
+    renderSlate(); renderTurn();
+  });
+  root.querySelectorAll('[data-unqueue]').forEach((b) => b.addEventListener('click', () => {
+    pendingCommission.splice(Number(b.dataset.unqueue), 1);
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-release]').forEach((b) => b.addEventListener('click', () => {
+    pendingRelease[Number(b.dataset.release)] = 60_000_000;
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', () => {
+    delete pendingRelease[Number(b.dataset.cancel)];
+    renderSlate(); renderTurn();
+  }));
+  root.querySelectorAll('[data-campaign]').forEach((inp) => inp.addEventListener('input', () => {
+    pendingRelease[Number(inp.dataset.campaign)] = Number(inp.value);
+    inp.parentElement.querySelector('.release-budget').textContent = money(Number(inp.value));
+    renderTurn();
+  }));
 }
 
 // ----------------------------------------------------------------------------
@@ -256,7 +502,7 @@ function renderRival() {
   const you = r ? r.subs : 0;
   const them = rivalSubs(riv);
   const share = you + them > 0 ? you / (you + them) : 0;
-  const myPrice = state.decisions.pricePremium;
+  const myPrice = state.decisions.priceNew;
   const priceGap = riv.price - myPrice;
 
   const dead = !riv.alive;
@@ -553,8 +799,20 @@ function buildAlerts(r) {
   if (r.freshness < 0.6 && r.subs > 1000) {
     alerts.push(['warn', t('alertStale', { fresh: r.freshness.toFixed(2), lost: compact(r.lostSubs) })]);
   }
-  if (!r.pipeline.length) {
+  if (!r.producing.length) {
     alerts.push(['bad', t('alertNoPipeline')]);
+  }
+  const idle = r.slots - r.slotsUsed;
+  if (idle > 0 && r.slotCost > 0) {
+    alerts.push(['warn', t('alertSlotsIdle', { count: idle })]);
+  }
+  const longHeld = Math.max(0, ...r.vault.map((v) => v.held));
+  if (longHeld >= 3) alerts.push(['warn', t('alertHeldTooLong', { months: longHeld })]);
+  if (r.raiseApplied) {
+    alerts.unshift(['warn', t('alertRaiseDone', { lost: compact(r.raiseLost) })]);
+  }
+  if (r.annualCash > 0) {
+    alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) })]);
   }
   if (r.cmPerSub < 0) {
     alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
@@ -657,8 +915,13 @@ function renderReport() {
   if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) })]);
   if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised')]);
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
-  const alertsHtml = alerts.length
-    ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>` : '';
+  // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
+  // Порядок уже расставлен по срочности — плохое поднято наверх.
+  const shown = alerts.slice(0, 5);
+  const hidden = alerts.length - shown.length;
+  const alertsHtml = shown.length
+    ? `<div class="alerts">${shown.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}
+        ${hidden > 0 ? `<div class="funding-note">${t('alertsMore', { count: hidden })}</div>` : ''}</div>` : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
   const eventNote = ev ? `<div class="lesson"><b>${tx(ev.title)}.</b> ${tx(ev.lesson)}</div>` : '';
@@ -666,12 +929,13 @@ function renderReport() {
   const premiereNote = r.premieres.length
     ? `<div class="alert good" style="margin-top:8px">${t('premiereNote', {
         list: r.premieres.map((p) => t('premiereItem', {
-          genre: tx(genreById(p.genre)?.name), quality: p.quality.toFixed(2) })).join(', '),
+          genre: `${genreName(p.genre)} · ${scaleName(p.scale)}`,
+          quality: p.quality.toFixed(2) })).join(', '),
       })}</div>` : '';
   const startedNote = r.started.length
     ? `<div class="alert warn" style="margin-top:8px">${t('startedNote', {
-        list: r.started.map((p) => tx(genreById(p.genre)?.name)).join(', '),
-        months: CONFIG.originalLeadMonths,
+        list: r.started.map((p) => `${genreName(p.genre)} · ${scaleName(p.scale)}`).join(', '),
+        months: r.started.length ? scaleById(r.started[0].scale).months : 6,
       })}</div>` : '';
   const installNote = r.installedNow?.length
     ? `<div class="alert good" style="margin-top:8px">${t('installNote', {
@@ -699,8 +963,10 @@ function renderReport() {
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
       ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
         t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
+      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${num(r.lockedPrice)} ₽`,
+        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
-        t('statPricesSub', { project: money(r.projectCost) }))}
+        t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
     </div>
     ${premiereNote}${startedNote}${installNote}
     ${driversHtml}${alertsHtml}${eventNote}
@@ -845,8 +1111,10 @@ function renderPnlTab() {
       <tr class="total"><td>${t('pnlContribution')}</td>
         <td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
       ${line(t('pnlLicensing'), -r.decisions.licensing, 'neg', true)}
-      ${line(t('pnlOriginals'), -r.decisions.originals, 'neg', true)}
-      ${line(t('pnlMarketing'), -r.decisions.marketing, 'neg', true)}
+      ${line(t('pnlProduction'), -r.productionSpend, 'neg', true)}
+      ${line(t('pnlSlots'), -r.slotCost, 'neg', true)}
+      ${line(t('pnlMarketing'), -r.decisions.brandMarketing, 'neg', true)}
+      ${line(t('pnlCampaigns'), -r.campaignSpend, 'neg', true)}
       ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
       ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
       ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
@@ -1028,8 +1296,11 @@ function nextMonth() {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,
     crisisChoice: pendingCrisisChoice,
+    commission: pendingCommission,
+    release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
+    raisePrice: pendingRaise,
   }).state;
-  pendingCrisisChoice = null;
+  clearActions();
   save();
   renderAll();
   if (state.over) showGameOver();
@@ -1045,7 +1316,6 @@ function renderChrome() {
   el('brand-title').textContent = t('brandTitle');
   el('brand-sub').textContent = t('brandSub');
   el('title-levers').textContent = t('panelLevers');
-  el('title-studio').textContent = t('panelStudio');
   el('title-algos').textContent = t('panelAlgos');
   el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
@@ -1067,12 +1337,13 @@ function renderAll() {
   if (!leversBuilt) buildLevers();
   renderChrome();
   syncLevers();
-  renderStudio();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderFunding();
   renderBoard();
+  renderTurn();
+  renderSlate();
   renderRival();
   renderCrisis();
   renderEvent();

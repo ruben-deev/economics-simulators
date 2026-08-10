@@ -62,25 +62,78 @@ licensed(t)   = licensed(t−1) × (1 − licenseDecay) + hours_bought
 every month. Licences arrive **immediately**: pay this month, it is on the shelf this
 month.
 
-### Originals
+### Originals: a slate, not a budget
+
+Production used to be a slider: the player set an amount and the engine decided
+how many projects to start and when to release them. There was nothing to manage
+there — and nothing to understand either.
+
+Now a project is an object, and it carries three decisions:
+
+1. **What to commission** — genre × scale × the segment you are aiming at.
+2. **When to release it** — a finished project sits in the vault until you say so.
+3. **How much campaign to put behind it** — marketing tied to a specific premiere.
 
 ```
-studio_fund(t) = studio_fund(t−1) + originals_budget
-while studio_fund ≥ project_cost:
-    studio_fund −= project_cost
-    into the pipeline: { hours, quality, monthsLeft = originalLeadMonths }
-
-project_cost    = originalCostPerHour × costPerHour(genre) × hours(genre)
-project_quality = clamp(0.55 + 0.5 × luck + 0.25 × tech_level, 0.25, 1.45)
+cost    = originalCostPerHour × costPerHour(genre) × hours(genre)
+          × cost(scale) × talent_index
+          charged in equal instalments over the production months
+quality = clamp(0.55 + 0.5 × luck + 0.25 × (tech − studio_load), 0.25, 1.45)
 ```
 
-`originalCostPerHour = ₽31,000,000` — **fifty times** a licensed hour.
-`originalLeadMonths = 6`: half a year between the decision and the premiere. It is the
-only lever in the game with that kind of lag, and it produces the classic beginner
-mistake — seeing churn rise and starting a show that will land long after it mattered.
+| Scale | Months | Cost | Hours | Buzz |
+|---|---|---|---|---|
+| Pilot | 4 | ×0.40 | ×0.5 | ×0.45 |
+| Season | 6 | ×1.0 | ×1.0 | ×1.0 |
+| Flagship | 9 | ×2.6 | ×1.8 | ×2.3 |
 
-An unused budget is **not lost**: the studio fund carries over. "Half a project a month"
-is a working strategy, just a slow one.
+Quality is fixed at commissioning, but until the premiere the player sees only a
+**range**, narrowing as the project nears completion: a producer knows the budget
+and the team, not the result.
+
+### Studio slots
+
+As many projects run in parallel as the studio has slots. A slot costs money every
+month whether it is busy or idle, and upkeep grows faster than the count:
+
+```
+upkeep          = studioSlotMonthly × slots^1.45
+project_quality −= slotQualityDrag × (busy / total)
+```
+
+Five parallel productions are not five times one: they also need coordinating, and
+each gets less attention. Hence an interior optimum — three slots beats both one
+and five.
+
+### The vault: when to release
+
+A finished project does not go out by itself. You can hold it — release into a
+quiet month, answer a rival premiere with it, or wait for the high season:
+
+```
+buzz = buzz(genre) × buzz(scale) × quality
+       × (1 − vaultDecay)^months_held
+       × (1 + campaignPower × campaign/(campaign + refCampaign))
+       × season^2.2
+```
+
+Holding is not free: 4.5% of the buzz evaporates each month. But the seasonal
+multiplier raised to 2.2 means a winter premiere is nearly twice as loud as a
+summer one — so holding until December usually beats shipping in July. Measured:
+season-timed releases return about 6% more than "ship it as soon as it is ready".
+
+### Aiming at a segment
+
+A project can be aimed at one segment or made broad:
+
+```
+pull = appeal(genre, segment) × 2.0    if aimed at this segment
+       appeal(genre, segment) × 0.78   if aimed at another
+```
+
+Focus is always also a refusal. A mountain of reality TV will not hold cinephiles
+however large it gets, while a drama aimed at them collects them and leaves
+everyone else cold.
 
 ### Catalogue depth
 
@@ -136,7 +189,48 @@ the same shelf. This is the most common way to lose the game.
 
 ---
 
-## 3. Subscribers: two tiers, four segments
+## 3. Price: new sign-ups pay one thing, the existing base another
+
+In a subscription business the price is not one number. An existing subscriber
+pays what they signed up at, and moving them to a new price is a separate decision
+with a separate cost.
+
+```
+list price  = what new sign-ups pay; only they see it
+lockedPrice = what the segment's base actually pays on average
+gap         = 1 − lockedPrice / list price
+```
+
+The gap opens every time you raise the list price and closes on its own — slowly,
+as the base turns over. Closing it at once takes one decision, and it costs
+subscribers:
+
+```
+shock = raiseShockBase × (jump / 0.1)^1.6 × elasticity(segment)
+```
+
+The reaction is non-linear: +10% is barely noticed, +40% takes out a visible chunk
+of the base. You cannot repeat a rise within four months — people remember, and a
+second one in a row costs far more.
+
+### Annual plans
+
+Some new sign-ups can be moved onto an annual plan with a discount:
+
+```
+annual_share = clamp(0.10 + 1.5 × discount × willingness(segment), 0, 0.75)
+cash         = subscribers × discounted_price × 12   — at once, on sign-up
+```
+
+An annual subscriber is **excluded from churn** for the term and **exempt from
+price rises**. The value is not the discount but those two properties: it is a loan
+against your own future revenue — cash today, a locked price tomorrow. The optimal
+discount is interior, around 10%; beyond that you are simply selling cheaper to
+people who would have stayed anyway.
+
+---
+
+## 3a. Subscribers: two tiers, four segments
 
 ### Tier choice
 

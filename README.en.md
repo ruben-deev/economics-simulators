@@ -132,17 +132,18 @@ beats the best constant setting of the sliders by **85%**.
 
 | Lever | What it does | The other side |
 |---|---|---|
-| Ad-free price | your main revenue | demand is elastic, especially among young viewers |
+| Price for new sign-ups | your main revenue | the base keeps paying what it signed at; moving them is a separate decision |
 | Ad-tier price | brings in people who would not pay otherwise | cannibalises the expensive tier |
 | Ad load | a second revenue line | churn rises directly; cinephiles leave first |
 | Licensing budget | catalogue immediately | 4.5% expires monthly, rivals have it, and it barely counts as new |
-| Originals budget | exclusives, an asset on the balance sheet | the premiere is six months out and quality depends on luck |
-| Marketing | awareness → free trials | burns for nothing against an empty catalogue |
+| Studio slots | how many projects run in parallel | a slot costs money even when idle, and upkeep grows faster than the count |
+| Annual plan discount | twelve months of cash at once, immune to churn | the price is locked and rises do not apply |
+| Brand marketing | the steady background of awareness | works slowly and burns for nothing against an empty catalogue |
+| Release campaign | multiplies one specific premiere | only works together with a release |
 | Free trial | conversion into paying subscribers | a long trial is a gift of free months |
 | Streaming quality | less annoyance | bandwidth is the largest variable cost line |
 | Technology | cheaper bandwidth, better project quality | a cumulative investment |
 | Data science | algorithm quality | useless without viewing |
-| Production genre | which segment you shoot for | the louder the genre, the worse the post-premiere hangover |
 | Funding rounds | money for growth | dilution of your stake |
 
 ### What is modelled
@@ -151,8 +152,16 @@ beats the best constant setting of the sliders by **85%**.
   stays. An hour of exclusive content retains like a dozen hours of someone else's library.
 * **Freshness** — a stock separate from depth. The catalogue can lose not a single hour and
   still lose subscribers, because viewers see the same shelf.
-* **Production** — a studio fund, a pipeline with a six-month lag, project quality driven by
-  technology and luck.
+* **The slate** — concrete projects, not a budget. Three decisions each: what to
+  commission (genre × scale × segment), when to release it, and how much campaign
+  to put behind it. Until the premiere quality is only a range.
+* **The vault** — a finished project does not ship itself. Holding until winter
+  beats shipping in July: the season enters premiere buzz to the power of 2.2.
+  But holding is not free — 4.5% of the buzz evaporates each month.
+* **Two layers of price** — the list price for new sign-ups and what the existing
+  base actually pays. The gap builds up quietly and closes painfully: moving the
+  base to list price costs subscribers. An annual plan takes a person out of both
+  churn and price rises.
 * **Four audience segments** — mainstream, cinephiles, families, young viewers. Different
   elasticity, ad tolerance, loyalty and viewing volume.
 * **Two tiers** — viewers distribute themselves between them; cutting the cheap tier's price
@@ -264,7 +273,7 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — 145 checks across the two games. The tests
+After editing it is worth running `npm test` — 152 checks across the two games. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 

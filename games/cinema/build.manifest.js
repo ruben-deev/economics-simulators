@@ -12,6 +12,8 @@ export default {
     '../../shared/rng.js',
     'src/model/config.js',
     'src/model/market.js',
+    'src/model/slate.js',
+    'src/model/pricing.js',
     'src/model/rival.js',
     'src/model/board.js',
     'src/model/crises.js',
