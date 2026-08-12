@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.1.0" />
+  <meta name="app-version" content="1.2.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -836,10 +836,19 @@ const STRINGS = {
   restartText: { ru: 'Текущая партия будет потеряна.', en: 'The current game will be lost.' },
   restartYes: { ru: 'Да, заново', en: 'Yes, restart' },
   restartNo: { ru: 'Отмена', en: 'Cancel' },
+  // --- Приветственный экран ---
+  welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
+  welcomeRole: { ru: 'Оператор «БИЛЕТОН». С одной стороны организаторы — театры, промоутеры, клубы, спортивные клубы. С другой зрители. Вы решаете, сколько брать с каждой стороны и кому открыть собственную кассу.', en: 'An operator called BILETON. On one side the organisers — theatres, promoters, clubs, sports clubs. On the other, buyers. You decide what to take from each side and who gets their own checkout.' },
+  welcomeTurn: { ru: '<b>Ход — месяц.</b> Партия идёт три года: 36 ходов, и год начинается в сентябре — с открытия сезона.', en: '<b>One turn is a month.</b> A game runs three years: 36 turns, and the year starts in September with the opening of the season.' },
+  welcomeGoal: { ru: '<b>Задача — не выжить, а понять.</b> Игра учебная: важнее увидеть, <i>почему</i> решения ведут к таким последствиям, чем набрать высокую оценку компании.', en: '<b>The point is not to survive but to understand.</b> This is a teaching model: seeing <i>why</i> decisions lead where they do matters more than a high valuation.' },
+  welcomeTension: { ru: '<b>Главная трудность.</b> Это двусторонний рынок: организаторы приходят за зрителями, зрители — за афишей, и ни одна сторона не приходит первой сама. Плюс оборот и выручка тут разные числа: через вас проходят миллиарды, ваши из них — проценты.', en: '<b>The hard part.</b> This is a two-sided market: organisers come for the buyers, buyers come for the listings, and neither side arrives first on its own. And turnover is not revenue: billions pass through you, percentages of it are yours.' },
+  welcomeStart: { ru: 'Начать', en: 'Start' },
+  welcomeMore: { ru: 'Как всё устроено', en: 'How it works' },
+  welcomeHint: { ru: 'Всё в игре объяснено на месте: у каждого рычага есть «зачем это?», а после каждого хода — разбор, из чего сложился результат. Подробности — по кнопке «?» в шапке.', en: 'Everything is explained in place: every lever has a "why does this matter?", and every turn ends with a breakdown of what the result is made of. More behind the "?" button in the header.' },
   helpModalTitle: { ru: 'Как устроена игра', en: 'How the game works' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpAuthor: { ru: 'Игру сделал <b>zero900</b>.', en: 'Made by <b>zero900</b>.' },
-  helpVersion: { ru: 'Сборка {version}. Её же видно в имени скачанного файла — по ней понятно, о какой версии речь.', en: 'Build {version}. The same number is in the downloaded file name, so there is no doubt which version is meant.' },
+  helpVersion: { ru: 'Сборка {version}.', en: 'Build {version}.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -5363,6 +5372,27 @@ function restart() {
   clearActions();
   leversBuilt = false;
   renderAll();
+  showWelcome();
+}
+
+
+// Приветственный экран: куда человек попал и что от него хотят.
+// Показывается один раз — при первом запуске и после «начать заново».
+// Игру часто открывают по присланной ссылке, без единого слова контекста,
+// и без этого экрана первое, что видит человек, — двенадцать ползунков.
+function showWelcome() {
+  modal(`<h2>${t('welcomeTitle')}</h2>
+    <p>${t('welcomeRole')}</p>
+    <p class="funding-note">${t('welcomeTurn')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
+    <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeHint')}</p>`,
+  [{ label: t('welcomeStart'), primary: true },
+   { label: t('welcomeMore'), onClick: showHelp },
+   // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
+   // человек читает первый экран не на своём языке и переключить не может.
+   { label: getLang() === 'ru' ? 'English' : 'Русский',
+     onClick: () => { switchLang(); showWelcome(); } }]);
 }
 
 function showHelp() {
@@ -5452,7 +5482,8 @@ function init() {
 function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
-  state = load() ?? createInitialState('bileton');
+  const saved = load();
+  state = saved ?? createInitialState('bileton');
   state.pendingInstall = state.pendingInstall ?? [];
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после
@@ -5477,6 +5508,8 @@ function boot() {
   }
 
   renderAll();
+  // Первый запуск: сохранения нет — человек здесь впервые
+  if (!saved) showWelcome();
 }
 
 

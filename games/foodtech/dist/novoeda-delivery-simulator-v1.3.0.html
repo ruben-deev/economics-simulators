@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.2.0" />
+  <meta name="app-version" content="1.3.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -1207,9 +1207,18 @@ score = valuation × your stake`,
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
+  // --- Приветственный экран ---
+  welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
+  welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА». Вы принимаете решения за всю компанию: сколько брать с клиента и с ресторана, сколько платить курьерам, в какие районы идти и на что тратить деньги.', en: 'The city of Novograd, a service called NOVOEDA. You decide for the whole company: what to charge the customer and the restaurant, what to pay couriers, which districts to enter and where the money goes.' },
+  welcomeTurn: { ru: '<b>Ход — неделя.</b> Партия идёт год: 52 хода. Вы выставляете рычаги, нажимаете «Сыграть неделю» и читаете, что из этого вышло.', en: '<b>One turn is a week.</b> A game runs a year: 52 turns. You set the levers, press "Run week" and read what came of it.' },
+  welcomeGoal: { ru: '<b>Задача — не выжить, а понять.</b> Игра учебная: важнее увидеть, <i>почему</i> решения ведут к таким последствиям, чем набрать высокую оценку компании.', en: '<b>The point is not to survive but to understand.</b> This is a teaching model: seeing <i>why</i> decisions lead where they do matters more than a high valuation.' },
+  welcomeTension: { ru: '<b>Главная трудность.</b> Доставка — бизнес с отрицательной экономикой по умолчанию. Курьеры стоят денег, пока едут и пока стоят; скорость покупается людьми, а люди — маржой. Разориться здесь легко и понятно.', en: '<b>The hard part.</b> Delivery is a business with negative economics by default. Couriers cost money while riding and while idle; speed is bought with people, and people are bought with margin. Going broke here is easy and instructive.' },
+  welcomeStart: { ru: 'Начать', en: 'Start' },
+  welcomeMore: { ru: 'Как всё устроено', en: 'How it works' },
+  welcomeHint: { ru: 'Всё в игре объяснено на месте: у каждого рычага есть «зачем это?», а после каждого хода — разбор, из чего сложился результат. Подробности — по кнопке «?» в шапке.', en: 'Everything is explained in place: every lever has a "why does this matter?", and every turn ends with a breakdown of what the result is made of. More behind the "?" button in the header.' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
-  helpVersion: { ru: 'Сборка {version}. Её же видно в имени скачанного файла — по ней понятно, о какой версии речь.', en: 'Build {version}. The same number is in the downloaded file name, so there is no doubt which version is meant.' },
+  helpVersion: { ru: 'Сборка {version}.', en: 'Build {version}.' },
   helpAuthor: { ru: 'Игру сделал <b>zero900</b>.', en: 'Made by <b>zero900</b>.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
@@ -4249,6 +4258,26 @@ function showGameOver() {
   ]);
 }
 
+
+// Приветственный экран: куда человек попал и что от него хотят.
+// Показывается один раз — при первом запуске и после «начать заново».
+// Игру часто открывают по присланной ссылке, без единого слова контекста,
+// и без этого экрана первое, что видит человек, — двенадцать ползунков.
+function showWelcome() {
+  modal(`<h2>${t('welcomeTitle')}</h2>
+    <p>${t('welcomeRole')}</p>
+    <p class="funding-note">${t('welcomeTurn')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
+    <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeHint')}</p>`,
+  [{ label: t('welcomeStart'), primary: true },
+   { label: t('welcomeMore'), onClick: showHelp },
+   // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
+   // человек читает первый экран не на своём языке и переключить не может.
+   { label: getLang() === 'ru' ? 'English' : 'Русский',
+     onClick: () => { switchLang(); showWelcome(); } }]);
+}
+
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
@@ -4278,6 +4307,7 @@ function restart() {
   state = createInitialState(seed);
   save();
   renderAll();
+  showWelcome();
 }
 
 // Статические подписи разметки
@@ -4367,7 +4397,8 @@ function init() {
 function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
-  state = load() ?? createInitialState('novograd');
+  const saved = load();
+  state = saved ?? createInitialState('novograd');
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после
   // сброса сохранения, и двойная подписка гоняла бы неделю по два раза за клик.
@@ -4390,6 +4421,8 @@ function boot() {
   }
 
   renderAll();
+  // Первый запуск: сохранения нет — человек здесь впервые
+  if (!saved) showWelcome();
 }
 
 

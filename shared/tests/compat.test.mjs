@@ -203,3 +203,25 @@ test('авторство не теряется при сборке', () => {
   assert.match(home, /<meta name="author" content="zero900"/, 'витрина: нет meta author');
   assert.ok((home.match(/zero900/g) ?? []).length >= 3, 'витрина: подписи нет в подвале на обоих языках');
 });
+
+test('первый экран объясняет, куда попал человек', () => {
+  // Игру открывают по присланной ссылке, без единого слова контекста.
+  // Без приветственного экрана первое, что видит человек, — десяток ползунков.
+  for (const [game, bundle] of bundles) {
+    const html = readFileSync(bundle, 'utf8');
+    for (const key of ['welcomeTitle', 'welcomeRole', 'welcomeTurn', 'welcomeGoal',
+      'welcomeTension', 'welcomeStart', 'welcomeMore', 'welcomeHint']) {
+      for (const lang of ['ru', 'en']) {
+        const line = html.match(new RegExp(`${key}:[^}]*${lang}: '([^']*)'`))?.[1];
+        assert.ok(line && line.trim().length > 1, `${game}: нет ${key} на ${lang}`);
+      }
+    }
+    // Показывается один раз — только когда сохранения нет
+    assert.match(html, /if \(!saved\) showWelcome\(\);/, `${game}: экран показывается не по первому запуску`);
+    // Язык переключается прямо здесь: шапка накрыта модалкой
+    assert.match(html, /getLang\(\) === 'ru' \? 'English' : 'Русский'/,
+      `${game}: из приветственного экрана нельзя переключить язык`);
+    // Фраза про имя скачанного файла убрана
+    assert.ok(!html.includes('о какой версии речь'), `${game}: осталась старая подпись версии`);
+  }
+});

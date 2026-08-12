@@ -312,7 +312,7 @@ seed в `games/cinema/src/ui/app.js` (вызов `createInitialState`).
 контентной стратегии над крайностями), а не конкретные числа, поэтому переживают
 перебалансировку.
 
-**Раздача студентам.** `npm run build` собирает `games/cinema/dist/kinopotok-streaming-simulator-v1.1.0.html` — один файл,
+**Раздача студентам.** `npm run build` собирает `games/cinema/dist/kinopotok-streaming-simulator-v1.2.0.html` — один файл,
 работающий офлайн. Прогресс сохраняется в localStorage браузера.
 
 **Язык.** Интерфейс переключается кнопкой **RU / EN** в шапке. Весь текст модели хранится

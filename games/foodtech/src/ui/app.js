@@ -1060,6 +1060,26 @@ function showGameOver() {
   ]);
 }
 
+
+// Приветственный экран: куда человек попал и что от него хотят.
+// Показывается один раз — при первом запуске и после «начать заново».
+// Игру часто открывают по присланной ссылке, без единого слова контекста,
+// и без этого экрана первое, что видит человек, — двенадцать ползунков.
+function showWelcome() {
+  modal(`<h2>${t('welcomeTitle')}</h2>
+    <p>${t('welcomeRole')}</p>
+    <p class="funding-note">${t('welcomeTurn')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
+    <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeHint')}</p>`,
+  [{ label: t('welcomeStart'), primary: true },
+   { label: t('welcomeMore'), onClick: showHelp },
+   // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
+   // человек читает первый экран не на своём языке и переключить не может.
+   { label: getLang() === 'ru' ? 'English' : 'Русский',
+     onClick: () => { switchLang(); showWelcome(); } }]);
+}
+
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
@@ -1089,6 +1109,7 @@ function restart() {
   state = createInitialState(seed);
   save();
   renderAll();
+  showWelcome();
 }
 
 // Статические подписи разметки
@@ -1178,7 +1199,8 @@ export function init() {
 function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
-  state = load() ?? createInitialState('novograd');
+  const saved = load();
+  state = saved ?? createInitialState('novograd');
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после
   // сброса сохранения, и двойная подписка гоняла бы неделю по два раза за клик.
@@ -1201,4 +1223,6 @@ function boot() {
   }
 
   renderAll();
+  // Первый запуск: сохранения нет — человек здесь впервые
+  if (!saved) showWelcome();
 }
