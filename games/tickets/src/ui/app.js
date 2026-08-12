@@ -344,6 +344,12 @@ function buildAlerts(r) {
   if (r.outageLoss > 0.04) {
     alerts.push(['bad', t('alertOutage', { share: pct(r.outageLoss, 0) }), 'lever:capacityTech']);
   }
+  // Отдельно: тип выбран, но переезд не оплачен — деньги не идут, и виджет
+  // стоит на месте. Это самая частая ловушка новой механики.
+  if (r.targetedTypes.length && r.migratedNow < 0.2 && r.onboardingSpend < 1e6
+    && r.targetedTypes.some((id) => (r.platformShare[id] ?? 0) < 0.9)) {
+    alerts.push(['bad', t('alertNoOnboarding'), 'lever:onboarding']);
+  }
   if (!r.connectedTypes.includes('club')) {
     alerts.push(['warn', t('alertNoPlatform'), 'panel:channel']);
   }
@@ -618,8 +624,9 @@ function renderChannels() {
   const d = state.decisions;
   const level = platformLevel(state);
   const rows = ORGANIZERS.map((def) => {
-    const connected = Boolean(d.platformFor?.[def.id]);
-    const split = channelSplit(def, connected && level > 0.02, level);
+    const targeted = Boolean(d.platformFor?.[def.id]);
+    const share = clamp(state.platformShare?.[def.id] ?? 0, 0, 1);
+    const split = channelSplit(def, share, level);
     // Показываем то, что доходит до вас, а не то, что списывается с покупателя:
     // эквайринг банк берёт с полной суммы билета одинаково в обоих каналах,
     // и на ставке платформы он съедает почти всё. Без этого вычета колонка
@@ -633,9 +640,13 @@ function renderChannels() {
       <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
       <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
       <td class="mono">${num(perMarket)} / <span class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)}</span> ₽</td>
-      <td class="mono">${connected ? t('channelOn') : t('channelOff')}</td>
+      <td class="mono">${share > 0.005
+        ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
+            moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
+            total: compact(state.orgs[def.id] ?? 0) })}</div>`
+        : (targeted ? t('channelQueued') : t('channelOff'))}</td>
       <td><button class="btn small ghost" data-platform="${def.id}">${
-        t(connected ? 'channelDisconnect' : 'channelConnect', { count: compact(state.orgs[def.id] ?? 0) })}</button></td>
+        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
     </tr>`;
   }).join('');
 

@@ -190,13 +190,16 @@ test('своя касса возвращает потерянный оборот
 });
 
 test('подключение всех подряд подрезает вашу афишу и долю оборота', () => {
-  const clubsOnly = run(20, decide({ platformFor: { club: true }, platformDev: 30_000_000 }), 'ch').last;
+  // Бюджет на подключения обязателен: без него виджет никуда не переезжает,
+  // сколько типов ни отметь. Это и есть смысл механики.
+  const paid = { platformDev: 30_000_000, onboarding: 30_000_000 };
+  const clubsOnly = run(20, decide({ platformFor: { club: true }, ...paid }), 'ch').last;
   const everyone = run(20, decide({
     platformFor: { theatre: true, concert: true, club: true, sport: true },
-    platformDev: 30_000_000,
+    ...paid,
   }), 'ch').last;
   assert.ok(everyone.marketplaceShareOfGmv < clubsOnly.marketplaceShareOfGmv,
-    'чем больше касс, тем меньше оборота через афишу');
+    'чем больше виджетов, тем меньше оборота через афишу');
   assert.ok(everyone.takeRate < clubsOnly.takeRate,
     `доля оборота ${(everyone.takeRate * 100).toFixed(1)}% против ${(clubsOnly.takeRate * 100).toFixed(1)}%`);
 });
@@ -426,11 +429,68 @@ test('ставку платформы организатор замечает т
   // Организатор считает, сколько у него забирают со всего оборота. Пока
   // ставка платформы в привлекательность не входила, её можно было поднять
   // до потолка, и никто бы не ушёл — рычаг был односторонне выгодным.
-  const base = { platformFor: { club: true, sport: true }, managers: 25, platformDev: 15_000_000 };
+  const base = { platformFor: { club: true, sport: true }, managers: 25,
+    platformDev: 15_000_000, onboarding: 25_000_000 };
   const cheap = run(24, decide({ ...base, platformRate: 0 }), 'prate').last;
   const dear = run(24, decide({ ...base, platformRate: 0.07 }), 'prate').last;
   assert.ok(dear.orgs < cheap.orgs,
     `организаторов при ставке 7%: ${Math.round(dear.orgs)} против ${Math.round(cheap.orgs)} при нуле`);
   assert.ok(dear.gmv < cheap.gmv, 'оборот при высокой ставке ниже');
   assert.ok(dear.revenue > cheap.revenue, 'но выручка выше — в этом и решение');
+});
+
+// ---------------------------------------------------------------------------
+// Переезд на виджет — проект, а не галочка.
+//
+// Раньше отметка типа мгновенно и бесплатно ставила виджет всем сорока пяти
+// клубам сразу. В жизни так не бывает: у каждого организатора уже что-то
+// стоит — своё самописное или платформа конкурента, — и переезд стоит денег
+// и месяцев. Ниже проверяется всё, что из этого следует.
+// ---------------------------------------------------------------------------
+
+test('без бюджета на подключения виджет никуда не переезжает', () => {
+  const free = run(18, decide({ platformFor: { club: true }, platformDev: 30_000_000,
+    onboarding: 0 }), 'adopt').last;
+  assert.ok((free.platformShare.club ?? 0) < 0.01,
+    `переехало ${((free.platformShare.club ?? 0) * 100).toFixed(0)}% без единого рубля на интеграцию`);
+  const paid = run(18, decide({ platformFor: { club: true }, platformDev: 30_000_000,
+    onboarding: 30_000_000 }), 'adopt').last;
+  assert.ok(paid.platformShare.club > 0.3, 'за деньги переезд должен идти');
+});
+
+test('переезд занимает месяцы, а не один ход', () => {
+  const d = decide({ platformFor: { club: true }, platformDev: 30_000_000, onboarding: 30_000_000 });
+  const { reports } = run(12, d, 'pace');
+  const first = reports[0].platformShare.club;
+  const last = reports[reports.length - 1].platformShare.club;
+  assert.ok(first < 0.5, `за первый же месяц переехало ${(first * 100).toFixed(0)}% — так не бывает`);
+  assert.ok(last > first, 'дальше доля обязана расти');
+  // Монотонно: никто не переезжает обратно сам по себе
+  for (let i = 1; i < reports.length; i++) {
+    assert.ok(reports[i].platformShare.club >= reports[i - 1].platformShare.club - 1e-9,
+      `месяц ${reports[i].month}: доля упала сама по себе`);
+  }
+});
+
+test('кому виджет нужнее, тот переезжает дешевле', () => {
+  // Клубу без своей билетной системы виджет нужен как воздух, у стадиона
+  // всё уже работает — его переезд стоит дороже при том же бюджете.
+  // Смотреть надо по дороге, а не в конце: при щедром бюджете и долгой партии
+  // оба типа упираются в один и тот же потолок — сколько держит конкурент.
+  const d = decide({ platformFor: { club: true, sport: true },
+    platformDev: 30_000_000, onboarding: 6_000_000 });
+  const { reports } = run(14, d, 'need');
+  const mid = reports[3];
+  assert.ok(mid.platformShare.club > mid.platformShare.sport,
+    `на четвёртый месяц клубы ${(mid.platformShare.club * 100).toFixed(0)}%, спорт ${(mid.platformShare.sport * 100).toFixed(0)}%`);
+});
+
+test('доля оборота через виджет растёт вместе с числом переехавших', () => {
+  const d = decide({ platformFor: { club: true }, platformDev: 30_000_000, onboarding: 30_000_000 });
+  const { reports } = run(16, d, 'split');
+  const early = reports[1];
+  const late = reports[reports.length - 1];
+  assert.ok(late.platformShare.club > early.platformShare.club, 'предпосылка теста');
+  assert.ok(late.gmvPlatform / late.gmv > early.gmvPlatform / early.gmv,
+    'больше переехавших — больше оборота идёт мимо афиши');
 });

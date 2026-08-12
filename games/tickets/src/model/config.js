@@ -57,6 +57,14 @@ export const CONFIG = {
   fillAngerPower: 1.8,
 
   // --- Платформа (white label) ---
+  // Переезд на чужую билетную систему — проект, а не галочка. Интеграция,
+  // перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс
+  // под мероприятия. Столько стоит подключить одного среднего организатора,
+  // которому виджет и так нужен; тому, у кого всё работает и без вас, дороже.
+  integrationCost: 260_000,
+  adoptionPace: 0.42,          // как быстро переезжает тип при оплаченной интеграции
+  rivalLockStrength: 0.8,      // насколько прочно конкурент держит своих
+
   // Билетный виджет на сайте организатора: он продаёт сам, вы берёте меньше,
   // но не теряете его целиком. Уровень платформы копится вложениями.
   platformSaturation: 620_000_000,
@@ -339,6 +347,17 @@ export const LEVERS = [
     tip: {
       ru: 'Кто подключает организаторов и разбирает их проблемы. Перегруженная команда теряет их быстрее, чем приводит новых.',
       en: 'The people who sign organisers up and sort out their problems. An overloaded team loses them faster than it brings new ones in.',
+    },
+  },
+  {
+    key: 'onboarding',
+    group: 'growth',
+    label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 120_000_000, step: 2_000_000, def: 0,
+    tip: {
+      ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
+      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
     },
   },
   {

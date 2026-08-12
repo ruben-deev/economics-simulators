@@ -81,6 +81,31 @@ one side — and which one depends on how your channels are set up.
 
 ## 3. Channel conflict
 
+### A migration, not a checkbox
+
+Ticking a type does not mean the widget is installed. Every organiser already
+runs something: their own build or the rival's platform. Moving is a project:
+integration, porting seat maps and season tickets, training the box office, and
+an advance against events for the big ones. So a type does not have a yes/no but
+a **share that has moved over**, and it grows exactly as far as it is paid for:
+
+```
+ceiling   = 1 − how much of the type the rival holds
+moved this month = (ceiling − share) × 0.42 × payment^0.6 × platform maturity
+payment   = onboarding budget per organiser / (₽260K / their need for the widget)
+maturity  = platform level / (platform level + 0.18)
+```
+
+Three consequences. **Need works as a discount:** a club with no ticketing of its
+own needs the widget badly and moves almost for free; a stadium with its own
+system costs the most. **A raw product moves nobody:** while there is no platform,
+onboarding money burns for nothing. **The rival holds their own:** whoever already
+moved to them will not move again within the year — hence a ceiling below one.
+
+Going back is instant and it stings: switching off someone else's site takes a
+day, and the more organisers had moved over, the greater the resentment and the
+more of them leave.
+
 An organiser has two ways to sell: through your listings and through the
 **ticketing widget** — your ticket sales embedded in their own site: their
 domain, their branding, your engine underneath.
@@ -242,7 +267,7 @@ team without data.
 
 | Year | Goal | Failure |
 |---|---|---|
-| 1 | monthly turnover of ₽520M or more | shareholders inject money themselves, your stake is cut by 18% |
+| 1 | monthly turnover of ₽380M or more | shareholders inject money themselves, your stake is cut by 18% |
 | 2 | at least 3 profitable months with turnover above ₽700M | marketing capped for six months |
 | 3 | 30% market share with 420+ organisers | valuation drops by 15% |
 

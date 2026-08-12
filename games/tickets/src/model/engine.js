@@ -41,6 +41,7 @@ import {
 } from './demand.js';
 import {
   platformLevelOf, channelSplit, platformCost, subscriptionDrag,
+  widgetAdoption, rivalHoldOf,
 } from './channel.js';
 import {
   createRival, stepRival, rivalOrgTotal, rivalAppealFor, rivalPlatformLevel,
@@ -71,6 +72,9 @@ export function createInitialState(seed = 'bileton') {
     orgs: { theatre: 16, concert: 3, club: 45, sport: 2 },
     // Кому уже поставлен билетный виджет. В начале — никому: платформы ещё нет.
     prevPlatformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
+    // Какая доля организаторов каждого типа уже переехала на ваш виджет.
+    // Не да/нет: тип из сорока пяти клубов переезжает месяцами и по частям.
+    platformShare: Object.fromEntries(ORGANIZERS.map((o) => [o.id, 0])),
 
     // Охват по сегментам зрителей — доля потенциала, который вас помнит
     audiences: {
@@ -251,10 +255,41 @@ export function step(prevState, input = {}) {
   let disconnectAnger = 0;
   for (const def of ORGANIZERS) {
     if (prevState.prevPlatformFor?.[def.id] && !connectedFor[def.id]) {
-      disconnectAnger += 0.09 * def.platformNeed;
+      // Злость пропорциональна тому, скольких вы успели переселить: снять
+      // виджет у типа, где он стоял у двух организаторов из тридцати, —
+      // не то же самое, что выключить его у всех.
+      disconnectAnger += 0.09 * def.platformNeed * (prevState.platformShare?.[def.id] ?? 0);
     }
   }
   state.prevPlatformFor = { ...connectedFor };
+
+  // --- Переезд на виджет: не галочка, а проект ---
+  // У каждого организатора уже что-то стоит — своё или конкурента. Поэтому
+  // «поставить виджет типу» это не переключатель, а доля переехавших, которая
+  // растёт ровно настолько, насколько оплачен переезд. Отключение мгновенно:
+  // выключить чужой сайт можно сразу, а вот включить — нет.
+  const wanted = ORGANIZERS.filter((d) => connectedFor[d.id]);
+  const wantedOrgs = wanted.reduce((sum, d) => sum + (prevState.orgs[d.id] ?? 0), 0);
+  const onboarding = Math.max(0, decisions.onboarding ?? 0);
+  const spendPerOrg = wantedOrgs > 0 ? onboarding / wantedOrgs : 0;
+  const rivalPLevel = rivalPlatformLevel(riv);
+  state.platformShare = { ...(prevState.platformShare ?? {}) };
+  const adoptionByType = {};
+  for (const def of ORGANIZERS) {
+    const was = clamp(state.platformShare[def.id] ?? 0, 0, 1);
+    if (!connectedFor[def.id]) { state.platformShare[def.id] = 0; adoptionByType[def.id] = 0; continue; }
+    const hold = rivalHoldOf(def, rivalPLevel, riv.orgs[def.id] ?? 0, prevState.orgs[def.id] ?? 0);
+    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold);
+    adoptionByType[def.id] = gain;
+    state.platformShare[def.id] = clamp(was + gain, 0, 1);
+  }
+  // Бюджет тратится целиком, как и любой другой: интеграторы и менеджеры по
+  // подключению получают зарплату независимо от того, остался ли кто-то
+  // непереехавший. Поэтому держать его на максимуме, когда тип уже весь
+  // ваш, — это просто выбрасывать деньги.
+  const migratedNow = ORGANIZERS.reduce(
+    (sum, d) => sum + adoptionByType[d.id] * (prevState.orgs[d.id] ?? 0), 0);
+  const onboardingSpend = onboarding;
 
   const service = serviceQuality(decisions.managers, weightedOrgs(prevState));
   const reachBefore = totalReach(prevState);
@@ -268,7 +303,8 @@ export function step(prevState, input = {}) {
   for (const def of ORGANIZERS) {
     const mine = prevState.orgs[def.id] ?? 0;
     const theirs = riv.orgs[def.id] ?? 0;
-    const connected = Boolean(connectedFor[def.id]) && pLevel > 0.02;
+    const widgetShare = clamp(state.platformShare[def.id] ?? 0, 0, 1);
+    const connected = widgetShare > 0.02;
     const fillSeen = prevState.lastFillByType?.[def.id] ?? CONFIG.refFill;
 
     // Организатор считает, сколько у него забирают со всего оборота, а не
@@ -276,7 +312,7 @@ export function step(prevState, input = {}) {
     // комиссию с одних билетов и ставку платформы с других — и в переговорах
     // называет одно число. Без этого ставку платформы можно было поднять до
     // потолка, и ни один организатор бы не заметил.
-    const splitNow = channelSplit(def, connected, pLevel);
+    const splitNow = channelSplit(def, widgetShare, pLevel);
     const feltTake = splitNow.market + splitNow.platform > 0
       ? (decisions.orgCommission * splitNow.market + decisions.platformRate * splitNow.platform)
         / (splitNow.market + splitNow.platform)
@@ -336,7 +372,7 @@ export function step(prevState, input = {}) {
     left += leaving;
 
     perOrg.push({
-      def, count: next, connected, appeal, rivalAppeal, preference,
+      def, count: next, connected, widgetShare, appeal, rivalAppeal, preference,
       gained, leaving, flow, fillSeen,
     });
   }
@@ -357,7 +393,7 @@ export function step(prevState, input = {}) {
     p.events = l.events;
     p.seats = l.seats;
     p.season = l.season;
-    p.split = channelSplit(p.def, p.connected, pLevel);
+    p.split = channelSplit(p.def, p.widgetShare, pLevel);
     p.marketSeats = l.seats * p.split.market;
     seatsByType[p.def.id] = l.seats;
     marketSeatsByType[p.def.id] = p.marketSeats;
@@ -502,7 +538,7 @@ export function step(prevState, input = {}) {
 
   for (const p of perOrg) {
     const split = p.split;
-    if (p.connected) connectedCount += p.count;
+    connectedCount += p.count * p.widgetShare;
 
     const addressable = p.marketSeats;
     const demand = demandByType[p.def.id] ?? 0;
@@ -561,7 +597,7 @@ export function step(prevState, input = {}) {
   const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
-    + techUpkeep + serverCost;
+    + onboardingSpend + techUpkeep + serverCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -688,7 +724,11 @@ export function step(prevState, input = {}) {
     orgShare,
     service,
     connectedCount,
-    connectedTypes: ORGANIZERS.filter((d) => connectedFor[d.id]).map((d) => d.id),
+    connectedTypes: ORGANIZERS.filter((d) => (state.platformShare[d.id] ?? 0) > 0.02).map((d) => d.id),
+    targetedTypes: ORGANIZERS.filter((d) => connectedFor[d.id]).map((d) => d.id),
+    platformShare: { ...state.platformShare },
+    onboardingSpend,
+    migratedNow,
 
     // --- Афиша ---
     events: totalEvents,
@@ -801,6 +841,7 @@ export function step(prevState, input = {}) {
       id: p.def.id,
       count: p.count,
       connected: p.connected,
+      widgetShare: p.widgetShare,
       appeal: p.appeal,
       rivalAppeal: p.rivalAppeal,
       preference: p.preference,

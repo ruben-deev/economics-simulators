@@ -32,16 +32,62 @@ export function platformLevelOf(stock) {
  *   lost     — продано мимо вас: свой сайт без виджета, касса у входа в зал,
  *              другой оператор
  */
-export function channelSplit(def, connected, platformLevel) {
-  if (connected) {
-    // Виджет не просто забирает то, что и так уходило: организатор
-    // начинает его продвигать. Чем сильнее платформа, тем активнее он гонит
-    // покупателя к себе — и тем меньше остаётся вашей афише.
-    const platform = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
-    return { market: 1 - platform, platform, lost: 0 };
-  }
-  const lost = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
-  return { market: 1 - lost, platform: 0, lost };
+export function channelSplit(def, share, platformLevel) {
+  // share — доля организаторов типа, у которых ваш виджет уже стоит.
+  // Раньше здесь был да/нет, и это была неправда: тип из тридцати трёх клубов
+  // не переезжает на новую билетную систему в один месяц и весь сразу.
+  const withWidget = clamp(Number(share) || 0, 0, 1);
+
+  // Виджет не просто забирает то, что и так уходило: организатор начинает его
+  // продвигать. Чем сильнее платформа, тем активнее он гонит покупателя
+  // к себе — и тем меньше остаётся вашей афише.
+  const platformIn = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  const lostOut = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
+
+  return {
+    market: withWidget * (1 - platformIn) + (1 - withWidget) * (1 - lostOut),
+    platform: withWidget * platformIn,
+    lost: (1 - withWidget) * lostOut,
+  };
+}
+
+/**
+ * Сколько организаторов типа переезжает на ваш виджет за месяц.
+ *
+ * Никто не сидит без билетной системы: у каждого уже что-то стоит — своё
+ * самописное или конкурента. Переезд стоит денег и времени: интеграция,
+ * перенос схем залов и абонементов, обучение кассиров, а с крупными ещё
+ * и аванс под мероприятия. Поэтому виджет не включается кнопкой, а покупается
+ * бюджетом на подключения — месяц за месяцем.
+ *
+ * @param def         тип организатора
+ * @param share       какая доля типа уже переехала
+ * @param spendPerOrg бюджет подключений, приходящийся на одного организатора
+ * @param platformLevel зрелость платформы: сырой продукт не переносит
+ * @param rivalHold   какую долю типа конкурент держит намертво
+ */
+export function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold = 0) {
+  const ceiling = clamp(1 - rivalHold, 0, 1);
+  const room = ceiling - clamp(share, 0, 1);
+  if (room <= 0 || platformLevel <= 0.02) return 0;
+  // Чем нужнее виджет самому организатору, тем дешевле он соглашается.
+  // Клуб без кассы переедет почти даром, стадиону со своей системой
+  // придётся платить за интеграцию и уговаривать.
+  const need = clamp(def.platformNeed / 1.5, 0.15, 1.2);
+  const paid = Math.pow(clamp(spendPerOrg / (CONFIG.integrationCost / need), 0, 4), 0.6);
+  const ready = clamp(platformLevel / (platformLevel + 0.18), 0, 1);
+  return room * clamp(CONFIG.adoptionPace * paid * ready, 0, 0.45);
+}
+
+/**
+ * Сколько типа держит конкурент. Тот, кто уже переехал на его платформу,
+ * второй раз за год переезжать не станет.
+ */
+export function rivalHoldOf(def, rivalPlatformLevel, rivalOrgs, yourOrgs) {
+  const total = rivalOrgs + yourOrgs;
+  if (total <= 0) return 0;
+  const theirs = rivalOrgs / total;
+  return clamp(theirs * rivalPlatformLevel * CONFIG.rivalLockStrength, 0, 0.75);
 }
 
 /**

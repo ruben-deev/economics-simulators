@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.4.0" />
+  <meta name="app-version" content="1.5.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -947,6 +947,7 @@ const STRINGS = {
   alertBots: { ru: 'Перекупщики забрали {share} билетов на хитах. Оборот это даже поднимает, доверие — нет.', en: 'Resellers took {share} of tickets on the hits. It even lifts turnover; it does not lift trust.' },
   alertOutage: { ru: 'На старте продаж потеряно {share} спроса: мощности не хватило.', en: '{share} of demand lost at on-sale: not enough capacity.' },
   alertPlatformThin: { ru: 'Через афишу идёт только {share} оборота. Виджеты удержали организаторов, но с билета, проданного на их сайте, вы получаете в разы меньше.', en: 'Only {share} of turnover goes through your listings. The widgets kept the organisers, but a ticket sold on their own site earns you several times less.' },
+  alertNoOnboarding: { ru: 'Тип выбран, а бюджет на подключения нулевой — переезд не идёт. Виджет не включается кнопкой: у каждого организатора уже что-то стоит, и за интеграцию, перенос залов и обучение кассиров надо платить. Пока не платите, всё остаётся как было.', en: 'You picked the type but the onboarding budget is zero, so nobody is moving. The widget does not switch on with a button: every organiser already runs something, and integration, porting the halls and training the box office all have to be paid for. Until you pay, nothing changes.' },
   alertNoPlatform: { ru: 'Клубам и стендапу нужен билетный виджет: их тысячи, и вручную их не обслужить. Сейчас они идут к конкуренту.', en: 'Clubs and stand-up need a ticketing widget: there are thousands of them and no way to serve them by hand. Right now they go to the rival.' },
   alertTakeThin: { ru: 'Ваша доля оборота {take} при эквайринге {acq}. На вас остаётся почти ничего.', en: 'Your take rate is {take} against {acq} of acquiring. Almost nothing is left for you.' },
   alertProfit: { ru: 'Месяц закрыт в плюс: {value}.', en: 'The month closed in the black: {value}.' },
@@ -979,8 +980,8 @@ const STRINGS = {
   // --- Каналы и платформа ---
   channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {
-    ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. На своей афише цену для покупателя назначаете вы и берёте с неё и сбор, и комиссию. На чужом сайте цену назначает хозяин сайта: сервисного сбора там нет, вам достаётся только ставка платформы — в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.<br><br><b>Решение принимается по типам, а не по отдельным организаторам:</b> виджет — это продукт, а не сделка. Нельзя договориться с каждым из тридцати трёх клубов по отдельности — можно выкатить им виджет всем сразу или не выкатывать никому.',
-    en: 'A <b>ticketing widget</b> is your ticket sales embedded in the organiser\'s own site: their domain, their branding, your engine underneath. On your own listings you set the price the buyer sees and take both the fee and the commission from it. On someone else\'s site the owner sets the price: there is no service fee there, and all you get is the platform rate — several times less. But without the widget the organiser sells from their site on their own, and all of that turnover goes past you entirely.<br><br><b>The decision is made by type, not by individual organiser:</b> a widget is a product, not a deal. You cannot negotiate with each of thirty-three clubs separately — you either ship them all the widget or ship it to none of them.',
+    ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. На своей афише цену для покупателя назначаете вы и берёте с неё и сбор, и комиссию. На чужом сайте цену назначает хозяин сайта: сервисного сбора там нет, вам достаётся только ставка платформы — в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.<br><br><b>Кнопка не ставит виджет, а запускает переезд.</b> У каждого организатора уже что-то стоит — своё самописное или платформа конкурента, — и переезд стоит денег и месяцев: интеграция, перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс под мероприятия. Скорость покупается <a class="jump" data-jump="lever:onboarding">бюджетом на подключения</a>, а тех, кто уже сидит у конкурента, переманить не выйдет вовсе.',
+    en: 'A <b>ticketing widget</b> is your ticket sales embedded in the organiser\'s own site: their domain, their branding, your engine underneath. On your own listings you set the price the buyer sees and take both the fee and the commission from it. On someone else\'s site the owner sets the price: there is no service fee there, and all you get is the platform rate — several times less. But without the widget the organiser sells from their site on their own, and all of that turnover goes past you entirely.<br><br><b>The button does not install the widget, it starts the migration.</b> Every organiser already runs something — their own build or the rival\'s platform — and moving costs money and months: integration, porting seat maps and season tickets, training the box office, and an advance against events for the big ones. Speed is bought with the <a class="jump" data-jump="lever:onboarding">onboarding budget</a>, and those already sitting on the rival\'s platform cannot be won over at all.',
   },
   channelColType: { ru: 'Тип', en: 'Type' },
   channelColNeed: { ru: 'Нужен виджет', en: 'Needs widget' },
@@ -990,12 +991,14 @@ const STRINGS = {
     ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свои 2.2% с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
     en: 'After acquiring. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
   },
-  channelColState: { ru: 'Сейчас', en: 'Now' },
+  channelColState: { ru: 'Переехали', en: 'Moved over' },
   channelOn: { ru: 'виджет стоит', en: 'widget installed' },
   channelOff: { ru: 'виджета нет', en: 'no widget' },
-  channelConnect: { ru: 'Поставить всем ({count})', en: 'Install for all ({count})' },
-  channelDisconnect: { ru: 'Убрать у всех ({count})', en: 'Remove from all ({count})' },
-  channelDisconnectWarn: { ru: 'Снятый виджет организаторы запоминают: часть уйдёт. Убирается он сразу у всех организаторов этого типа.', en: 'Organisers remember a widget being taken away: some will leave. It is removed from every organiser of that type at once.' },
+  channelConnect: { ru: 'Подключать этот тип', en: 'Roll out to this type' },
+  channelDisconnect: { ru: 'Перестать подключать', en: 'Stop rolling out' },
+  channelQueued: { ru: 'подключаем', en: 'rolling out' },
+  channelMoved: { ru: '{moved} из {total} переехали', en: '{moved} of {total} moved' },
+  channelDisconnectWarn: { ru: 'Снятый виджет организаторы запоминают: часть уйдёт — и тем больше, чем больше их успело переехать. Обратный переезд мгновенный: выключить чужой сайт можно сразу, а вот включить — нет.', en: 'Organisers remember a widget being taken away: some will leave — the more of them had moved over, the worse. Going back is instant: switching off someone else\'s site takes a moment, switching it on does not.' },
   channelNoPlatform: { ru: 'Платформы пока нет — вложитесь в разработку, иначе виджет будет пустым обещанием.', en: 'There is no platform yet — invest in development, otherwise the widget is an empty promise.' },
   channelLevel: { ru: 'Уровень платформы {level}', en: 'Platform level {level}' },
 
@@ -1404,6 +1407,14 @@ const CONFIG = {
   fillAngerPower: 1.8,
 
   // --- Платформа (white label) ---
+  // Переезд на чужую билетную систему — проект, а не галочка. Интеграция,
+  // перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс
+  // под мероприятия. Столько стоит подключить одного среднего организатора,
+  // которому виджет и так нужен; тому, у кого всё работает и без вас, дороже.
+  integrationCost: 260_000,
+  adoptionPace: 0.42,          // как быстро переезжает тип при оплаченной интеграции
+  rivalLockStrength: 0.8,      // насколько прочно конкурент держит своих
+
   // Билетный виджет на сайте организатора: он продаёт сам, вы берёте меньше,
   // но не теряете его целиком. Уровень платформы копится вложениями.
   platformSaturation: 620_000_000,
@@ -1686,6 +1697,17 @@ const LEVERS = [
     tip: {
       ru: 'Кто подключает организаторов и разбирает их проблемы. Перегруженная команда теряет их быстрее, чем приводит новых.',
       en: 'The people who sign organisers up and sort out their problems. An overloaded team loses them faster than it brings new ones in.',
+    },
+  },
+  {
+    key: 'onboarding',
+    group: 'growth',
+    label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 120_000_000, step: 2_000_000, def: 0,
+    tip: {
+      ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
+      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
     },
   },
   {
@@ -2257,16 +2279,62 @@ function platformLevelOf(stock) {
  *   lost     — продано мимо вас: свой сайт без виджета, касса у входа в зал,
  *              другой оператор
  */
-function channelSplit(def, connected, platformLevel) {
-  if (connected) {
-    // Виджет не просто забирает то, что и так уходило: организатор
-    // начинает его продвигать. Чем сильнее платформа, тем активнее он гонит
-    // покупателя к себе — и тем меньше остаётся вашей афише.
-    const platform = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
-    return { market: 1 - platform, platform, lost: 0 };
-  }
-  const lost = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
-  return { market: 1 - lost, platform: 0, lost };
+function channelSplit(def, share, platformLevel) {
+  // share — доля организаторов типа, у которых ваш виджет уже стоит.
+  // Раньше здесь был да/нет, и это была неправда: тип из тридцати трёх клубов
+  // не переезжает на новую билетную систему в один месяц и весь сразу.
+  const withWidget = clamp(Number(share) || 0, 0, 1);
+
+  // Виджет не просто забирает то, что и так уходило: организатор начинает его
+  // продвигать. Чем сильнее платформа, тем активнее он гонит покупателя
+  // к себе — и тем меньше остаётся вашей афише.
+  const platformIn = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  const lostOut = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
+
+  return {
+    market: withWidget * (1 - platformIn) + (1 - withWidget) * (1 - lostOut),
+    platform: withWidget * platformIn,
+    lost: (1 - withWidget) * lostOut,
+  };
+}
+
+/**
+ * Сколько организаторов типа переезжает на ваш виджет за месяц.
+ *
+ * Никто не сидит без билетной системы: у каждого уже что-то стоит — своё
+ * самописное или конкурента. Переезд стоит денег и времени: интеграция,
+ * перенос схем залов и абонементов, обучение кассиров, а с крупными ещё
+ * и аванс под мероприятия. Поэтому виджет не включается кнопкой, а покупается
+ * бюджетом на подключения — месяц за месяцем.
+ *
+ * @param def         тип организатора
+ * @param share       какая доля типа уже переехала
+ * @param spendPerOrg бюджет подключений, приходящийся на одного организатора
+ * @param platformLevel зрелость платформы: сырой продукт не переносит
+ * @param rivalHold   какую долю типа конкурент держит намертво
+ */
+function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold = 0) {
+  const ceiling = clamp(1 - rivalHold, 0, 1);
+  const room = ceiling - clamp(share, 0, 1);
+  if (room <= 0 || platformLevel <= 0.02) return 0;
+  // Чем нужнее виджет самому организатору, тем дешевле он соглашается.
+  // Клуб без кассы переедет почти даром, стадиону со своей системой
+  // придётся платить за интеграцию и уговаривать.
+  const need = clamp(def.platformNeed / 1.5, 0.15, 1.2);
+  const paid = Math.pow(clamp(spendPerOrg / (CONFIG.integrationCost / need), 0, 4), 0.6);
+  const ready = clamp(platformLevel / (platformLevel + 0.18), 0, 1);
+  return room * clamp(CONFIG.adoptionPace * paid * ready, 0, 0.45);
+}
+
+/**
+ * Сколько типа держит конкурент. Тот, кто уже переехал на его платформу,
+ * второй раз за год переезжать не станет.
+ */
+function rivalHoldOf(def, rivalPlatformLevel, rivalOrgs, yourOrgs) {
+  const total = rivalOrgs + yourOrgs;
+  if (total <= 0) return 0;
+  const theirs = rivalOrgs / total;
+  return clamp(theirs * rivalPlatformLevel * CONFIG.rivalLockStrength, 0, 0.75);
 }
 
 /**
@@ -2533,7 +2601,11 @@ function makeGoal(year, state, yourOrgs, rivalOrgs) {
     return {
       year,
       type: GOAL_TYPES.gmv,
-      target: 520_000_000,     // оборот за месяц к концу первого года
+      // Оборот за месяц к концу первого года. Планка опущена с 520 млн после
+      // того, как переезд организаторов на виджет перестал быть мгновенным
+      // и бесплатным: замер по девяти десяткам стратегий даёт медиану 326 млн
+      // и 75-й процентиль 421 млн, так что прежние 520 млн брали единицы.
+      target: 380_000_000,
       reward: 0.10,
       penalty: 'dilution',
     };
@@ -3151,6 +3223,9 @@ function createInitialState(seed = 'bileton') {
     orgs: { theatre: 16, concert: 3, club: 45, sport: 2 },
     // Кому уже поставлен билетный виджет. В начале — никому: платформы ещё нет.
     prevPlatformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
+    // Какая доля организаторов каждого типа уже переехала на ваш виджет.
+    // Не да/нет: тип из сорока пяти клубов переезжает месяцами и по частям.
+    platformShare: Object.fromEntries(ORGANIZERS.map((o) => [o.id, 0])),
 
     // Охват по сегментам зрителей — доля потенциала, который вас помнит
     audiences: {
@@ -3331,10 +3406,41 @@ function step(prevState, input = {}) {
   let disconnectAnger = 0;
   for (const def of ORGANIZERS) {
     if (prevState.prevPlatformFor?.[def.id] && !connectedFor[def.id]) {
-      disconnectAnger += 0.09 * def.platformNeed;
+      // Злость пропорциональна тому, скольких вы успели переселить: снять
+      // виджет у типа, где он стоял у двух организаторов из тридцати, —
+      // не то же самое, что выключить его у всех.
+      disconnectAnger += 0.09 * def.platformNeed * (prevState.platformShare?.[def.id] ?? 0);
     }
   }
   state.prevPlatformFor = { ...connectedFor };
+
+  // --- Переезд на виджет: не галочка, а проект ---
+  // У каждого организатора уже что-то стоит — своё или конкурента. Поэтому
+  // «поставить виджет типу» это не переключатель, а доля переехавших, которая
+  // растёт ровно настолько, насколько оплачен переезд. Отключение мгновенно:
+  // выключить чужой сайт можно сразу, а вот включить — нет.
+  const wanted = ORGANIZERS.filter((d) => connectedFor[d.id]);
+  const wantedOrgs = wanted.reduce((sum, d) => sum + (prevState.orgs[d.id] ?? 0), 0);
+  const onboarding = Math.max(0, decisions.onboarding ?? 0);
+  const spendPerOrg = wantedOrgs > 0 ? onboarding / wantedOrgs : 0;
+  const rivalPLevel = rivalPlatformLevel(riv);
+  state.platformShare = { ...(prevState.platformShare ?? {}) };
+  const adoptionByType = {};
+  for (const def of ORGANIZERS) {
+    const was = clamp(state.platformShare[def.id] ?? 0, 0, 1);
+    if (!connectedFor[def.id]) { state.platformShare[def.id] = 0; adoptionByType[def.id] = 0; continue; }
+    const hold = rivalHoldOf(def, rivalPLevel, riv.orgs[def.id] ?? 0, prevState.orgs[def.id] ?? 0);
+    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold);
+    adoptionByType[def.id] = gain;
+    state.platformShare[def.id] = clamp(was + gain, 0, 1);
+  }
+  // Бюджет тратится целиком, как и любой другой: интеграторы и менеджеры по
+  // подключению получают зарплату независимо от того, остался ли кто-то
+  // непереехавший. Поэтому держать его на максимуме, когда тип уже весь
+  // ваш, — это просто выбрасывать деньги.
+  const migratedNow = ORGANIZERS.reduce(
+    (sum, d) => sum + adoptionByType[d.id] * (prevState.orgs[d.id] ?? 0), 0);
+  const onboardingSpend = onboarding;
 
   const service = serviceQuality(decisions.managers, weightedOrgs(prevState));
   const reachBefore = totalReach(prevState);
@@ -3348,7 +3454,8 @@ function step(prevState, input = {}) {
   for (const def of ORGANIZERS) {
     const mine = prevState.orgs[def.id] ?? 0;
     const theirs = riv.orgs[def.id] ?? 0;
-    const connected = Boolean(connectedFor[def.id]) && pLevel > 0.02;
+    const widgetShare = clamp(state.platformShare[def.id] ?? 0, 0, 1);
+    const connected = widgetShare > 0.02;
     const fillSeen = prevState.lastFillByType?.[def.id] ?? CONFIG.refFill;
 
     // Организатор считает, сколько у него забирают со всего оборота, а не
@@ -3356,7 +3463,7 @@ function step(prevState, input = {}) {
     // комиссию с одних билетов и ставку платформы с других — и в переговорах
     // называет одно число. Без этого ставку платформы можно было поднять до
     // потолка, и ни один организатор бы не заметил.
-    const splitNow = channelSplit(def, connected, pLevel);
+    const splitNow = channelSplit(def, widgetShare, pLevel);
     const feltTake = splitNow.market + splitNow.platform > 0
       ? (decisions.orgCommission * splitNow.market + decisions.platformRate * splitNow.platform)
         / (splitNow.market + splitNow.platform)
@@ -3416,7 +3523,7 @@ function step(prevState, input = {}) {
     left += leaving;
 
     perOrg.push({
-      def, count: next, connected, appeal, rivalAppeal, preference,
+      def, count: next, connected, widgetShare, appeal, rivalAppeal, preference,
       gained, leaving, flow, fillSeen,
     });
   }
@@ -3437,7 +3544,7 @@ function step(prevState, input = {}) {
     p.events = l.events;
     p.seats = l.seats;
     p.season = l.season;
-    p.split = channelSplit(p.def, p.connected, pLevel);
+    p.split = channelSplit(p.def, p.widgetShare, pLevel);
     p.marketSeats = l.seats * p.split.market;
     seatsByType[p.def.id] = l.seats;
     marketSeatsByType[p.def.id] = p.marketSeats;
@@ -3582,7 +3689,7 @@ function step(prevState, input = {}) {
 
   for (const p of perOrg) {
     const split = p.split;
-    if (p.connected) connectedCount += p.count;
+    connectedCount += p.count * p.widgetShare;
 
     const addressable = p.marketSeats;
     const demand = demandByType[p.def.id] ?? 0;
@@ -3641,7 +3748,7 @@ function step(prevState, input = {}) {
   const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
-    + techUpkeep + serverCost;
+    + onboardingSpend + techUpkeep + serverCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -3768,7 +3875,11 @@ function step(prevState, input = {}) {
     orgShare,
     service,
     connectedCount,
-    connectedTypes: ORGANIZERS.filter((d) => connectedFor[d.id]).map((d) => d.id),
+    connectedTypes: ORGANIZERS.filter((d) => (state.platformShare[d.id] ?? 0) > 0.02).map((d) => d.id),
+    targetedTypes: ORGANIZERS.filter((d) => connectedFor[d.id]).map((d) => d.id),
+    platformShare: { ...state.platformShare },
+    onboardingSpend,
+    migratedNow,
 
     // --- Афиша ---
     events: totalEvents,
@@ -3881,6 +3992,7 @@ function step(prevState, input = {}) {
       id: p.def.id,
       count: p.count,
       connected: p.connected,
+      widgetShare: p.widgetShare,
       appeal: p.appeal,
       rivalAppeal: p.rivalAppeal,
       preference: p.preference,
@@ -4603,6 +4715,12 @@ function buildAlerts(r) {
   if (r.outageLoss > 0.04) {
     alerts.push(['bad', t('alertOutage', { share: pct(r.outageLoss, 0) }), 'lever:capacityTech']);
   }
+  // Отдельно: тип выбран, но переезд не оплачен — деньги не идут, и виджет
+  // стоит на месте. Это самая частая ловушка новой механики.
+  if (r.targetedTypes.length && r.migratedNow < 0.2 && r.onboardingSpend < 1e6
+    && r.targetedTypes.some((id) => (r.platformShare[id] ?? 0) < 0.9)) {
+    alerts.push(['bad', t('alertNoOnboarding'), 'lever:onboarding']);
+  }
   if (!r.connectedTypes.includes('club')) {
     alerts.push(['warn', t('alertNoPlatform'), 'panel:channel']);
   }
@@ -4877,8 +4995,9 @@ function renderChannels() {
   const d = state.decisions;
   const level = platformLevel(state);
   const rows = ORGANIZERS.map((def) => {
-    const connected = Boolean(d.platformFor?.[def.id]);
-    const split = channelSplit(def, connected && level > 0.02, level);
+    const targeted = Boolean(d.platformFor?.[def.id]);
+    const share = clamp(state.platformShare?.[def.id] ?? 0, 0, 1);
+    const split = channelSplit(def, share, level);
     // Показываем то, что доходит до вас, а не то, что списывается с покупателя:
     // эквайринг банк берёт с полной суммы билета одинаково в обоих каналах,
     // и на ставке платформы он съедает почти всё. Без этого вычета колонка
@@ -4892,9 +5011,13 @@ function renderChannels() {
       <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
       <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
       <td class="mono">${num(perMarket)} / <span class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)}</span> ₽</td>
-      <td class="mono">${connected ? t('channelOn') : t('channelOff')}</td>
+      <td class="mono">${share > 0.005
+        ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
+            moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
+            total: compact(state.orgs[def.id] ?? 0) })}</div>`
+        : (targeted ? t('channelQueued') : t('channelOff'))}</td>
       <td><button class="btn small ghost" data-platform="${def.id}">${
-        t(connected ? 'channelDisconnect' : 'channelConnect', { count: compact(state.orgs[def.id] ?? 0) })}</button></td>
+        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
     </tr>`;
   }).join('');
 
