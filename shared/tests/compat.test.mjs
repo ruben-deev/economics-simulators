@@ -271,3 +271,53 @@ test('синим покрашено только то, на что можно н
     assert.deepEqual(bad, [], `${game}: переходы ведут в никуда`);
   }
 });
+
+test('на телефоне таблица становится списком карточек с подписями', () => {
+  // Таблица на пять-шесть колонок в экран шириной 390 не влезает никак:
+  // либо уезжает вбок и последних колонок не видно, либо шапка ломается
+  // по слогам в столбик. И то и другое человек читает одинаково —
+  // «непонятные цифры». Поэтому на узком экране строка становится карточкой,
+  // а имя колонки — подписью над числом.
+  const css = readFileSync(join(root, 'shared', 'styles.css'), 'utf8');
+  const phone = css.slice(css.indexOf('@media (max-width: 700px)'));
+  assert.match(phone, /table\.data thead\s*\{[^}]*display:\s*none/,
+    'шапка таблицы на телефоне должна убираться — вместо неё подписи в ячейках');
+  assert.match(phone, /table\.data td\[data-label\]::before\s*\{[^}]*content:\s*attr\(data-label\)/,
+    'подпись ячейки берётся из data-label');
+  assert.match(phone, /table\.data td\[data-label\]::before\s*\{[^}]*display:\s*block/,
+    'подпись стоит над числом: бок о бок они дерутся за ширину');
+
+  for (const [game, bundle] of bundles) {
+    const html = readFileSync(bundle, 'utf8');
+    // Подписи проставляются наблюдателем, а не вызовом из каждой панели:
+    // панелей много, и однажды забыть одну — значит потерять подписи молча.
+    assert.ok(html.includes('function watchTables'), `${game}: нет наблюдателя за таблицами`);
+    assert.match(html, /watchTables\(\);/, `${game}: наблюдатель не запускается`);
+    assert.match(html, /observer\.observe\(root, \{ childList: true, subtree: true \}\)/,
+      `${game}: наблюдатель должен слушать только появление узлов, иначе зациклится на своих же атрибутах`);
+  }
+});
+
+test('в шапках таблиц нет сокращений, которые нечем расшифровать', () => {
+  // «Мин», «Узнав.», «Цена ×» — это имена величин из модели, а не из жизни.
+  // Человек видит число без единиц и не знает, много это или мало.
+  // Смотрим только на подписи колонок: в тексте справки «Цена ×» — это
+  // умножение в формуле, и трогать его не надо.
+  const bad = ['Узнав.', 'Цена ×', 'Скорость ×', 'Выбор ×', 'Каталог ×', 'Реклама ×',
+    'Мин', 'Афиша ему'];
+  for (const [game] of bundles) {
+    const src = readFileSync(join(root, 'games', game, 'src', 'strings.js'), 'utf8');
+    for (const line of src.split('\n')) {
+      const m = line.match(/^\s*(col\w+|\w*Col\w+):\s*\{\s*ru: '([^']*)'/);
+      if (!m) continue;
+      for (const abbr of bad) {
+        assert.notEqual(m[2], abbr, `${game}: подпись колонки ${m[1]} осталась «${abbr}»`);
+      }
+    }
+  }
+  // А у таблиц с множителями есть пояснение шкалы: без него 1.06 — просто число
+  for (const game of ['foodtech', 'cinema']) {
+    const src = readFileSync(join(root, 'games', game, 'src', 'strings.js'), 'utf8');
+    assert.match(src, /factorsNote:/, `${game}: нет пояснения, что 1.00 — это норма`);
+  }
+});

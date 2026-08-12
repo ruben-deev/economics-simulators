@@ -247,10 +247,17 @@ button { font-family: inherit; }
 .tab-content { font-size: 12px; line-height: 1.5; }
 
 table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-table.data th, table.data td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+/* Отступы по бокам узкие: таблицы на пять колонок стоят в правой колонке
+   шириной 358 пикселей, и лишние два пикселя с каждой стороны — это те самые
+   шестнадцать, из-за которых заголовок не помещается и колонка уезжает. */
+table.data th, table.data td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--line); }
 table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
 table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+/* Ячейки, где не одно число, а фраза из нескольких: выравниваем по левому
+   краю, иначе перенос рвёт её в неожиданных местах и читать приходится
+   справа налево. */
+table.data td.wide { text-align: left; }
 table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .pos { color: var(--good); }
 .neg { color: var(--bad); }
@@ -624,6 +631,63 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .col-center, .col-center > *, .col-center .panel,
   .col-left, .col-right { max-width: 100%; }
   .col-center .panel, .col-right, .col-left { overflow-x: auto; }
-  .data { font-size: 11.5px; }
-  .data td, .data th { padding: 4px 6px; }
+  /* Таблица перестаёт быть таблицей.
+     Пять-шесть колонок в 390 пикселей не помещаются ни при каком размере
+     шрифта: либо уезжают вбок и последних не видно, либо шапка ломается
+     по слогам в столбик из отдельных слов. Поэтому строка становится
+     карточкой, а имя колонки — подписью слева от числа. Подписи ставит
+     shared/tables.js, забирая их из шапки той же таблицы. */
+  table.data thead { display: none; }
+  table.data, table.data tbody, table.data tr, table.data td { display: block; }
+  /* Короткие значения идут по два в ряд: столбик из «31», «54%», «40%»
+     растягивает карточку на пол-экрана впустую. Название строки и последняя
+     ячейка (обычно кнопка) занимают всю ширину. */
+  table.data tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 12px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.015);
+  }
+  table.data td:first-child,
+  table.data td.wide { grid-column: 1 / -1; }
+  /* Подпись стоит над числом, а не слева от него. Бок о бок они дерутся
+     за ширину: длинная подпись съедает место, и число переносится по слогам
+     столбиком. Сверху вниз места хватает всегда. */
+  table.data td {
+    display: block;
+    border-bottom: 0;
+    padding: 5px 0 0;
+    text-align: left;
+    font-size: 14px;
+  }
+  table.data td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1px;
+  }
+  /* Первая ячейка — это название строки, ему подпись не нужна: оно и есть
+     заголовок карточки. */
+  table.data td:first-child {
+    display: block;
+    text-align: left;
+    font-size: 15px;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.data td:first-child::before { content: none; }
+  table.data td:empty { display: none; }
+  table.data tr.sub td:first-child { padding-left: 0; }
+  table.data tr.total { border-color: var(--accent-2); }
+  /* Кнопка в карточке занимает всю ширину: попасть пальцем в узкую ячейку
+     на краю экрана невозможно. */
+  table.data td .btn { width: 100%; margin-top: 4px; }
 }

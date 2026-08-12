@@ -20,6 +20,7 @@ import {
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
+import { watchTables } from '../../../../shared/tables.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinopotok-save-v1';
@@ -1424,6 +1425,7 @@ function renderSegmentsTab() {
         <td class="${s.appeal >= 1 ? 'pos' : 'neg'}">${s.appeal.toFixed(2)}</td>
         <td class="${s.adPenalty >= 0.95 ? 'pos' : 'neg'}">${s.adPenalty.toFixed(2)}</td></tr>`).join('')}</tbody>
     </table>
+    <p class="funding-note">${t('factorsNote')}</p>
     <p class="funding-note">${t('segmentsNote')}</p>`;
 }
 
@@ -1712,6 +1714,9 @@ function boot() {
   if (!bound) {
     bound = true;
     bindJumps();
+    // На телефоне таблицы показываются карточками; подписи ячейкам берутся
+    // из шапки и обновляются сами при любой перерисовке.
+    watchTables();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);

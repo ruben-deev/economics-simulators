@@ -439,13 +439,17 @@ export const STRINGS = {
   segmentsEmpty: { ru: 'Данные появятся после первого месяца.', en: 'Data appears after the first month.' },
   colSegment: { ru: 'Сегмент', en: 'Segment' },
   colSubs: { ru: 'Подписчики', en: 'Subscribers' },
-  colAdShare: { ru: 'С рекламой', en: 'On ads' },
+  colAdShare: { ru: 'Тариф с рекламой', en: 'Ad tier' },
   colChurn: { ru: 'Отток', en: 'Churn' },
-  colArpu: { ru: 'ARPU', en: 'ARPU' },
+  colArpu: { ru: 'Платит / мес', en: 'Pays / mo' },
   colPenetration: { ru: 'Охват', en: 'Reach' },
-  colPriceFactor: { ru: 'Цена ×', en: 'Price ×' },
-  colAppeal: { ru: 'Каталог ×', en: 'Catalogue ×' },
-  colAdPenalty: { ru: 'Реклама ×', en: 'Ads ×' },
+  colPriceFactor: { ru: 'Цена', en: 'Price' },
+  colAppeal: { ru: 'Каталог', en: 'Catalogue' },
+  colAdPenalty: { ru: 'Реклама', en: 'Ads' },
+  factorsNote: {
+    ru: 'Три причины, по которым сегмент подписывается охотнее или неохотнее. <b>1.00 — норма.</b> Больше единицы — фактор работает на вас в этом сегменте, меньше — против. Охват — доля сегмента, которая о вас вообще слышала.',
+    en: 'The three reasons a segment signs up more or less readily. <b>1.00 is normal.</b> Above one the factor works for you in that segment, below one against. Reach is the share of the segment that has heard of you at all.',
+  },
   segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь.', en: 'The same lever behaves differently by segment: a rouble of price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched.' },
 
   // --- алгоритмы (вкладка) ---

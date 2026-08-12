@@ -26,6 +26,7 @@ import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
+import { watchTables } from '../../../../shared/tables.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { STRINGS } from '../strings.js';
@@ -634,18 +635,25 @@ function renderChannels() {
     const acquiring = def.avgPrice * CONFIG.acquiringRate;
     const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission) - acquiring;
     const perPlatform = def.avgPrice * d.platformRate - acquiring;
+    // «Нужен виджет 28%» — процент непонятно чего. Человеку нужна не шкала
+    // модели, а вывод: без виджета этот тип до вас не дойдёт или дойдёт.
     const need = def.platformNeed >= 1.3 ? 'bad' : def.platformNeed >= 0.5 ? 'warn' : '';
+    const needWord = def.platformNeed >= 1.3 ? t('needHigh')
+      : def.platformNeed >= 0.5 ? t('needMid') : t('needLow');
     return `<tr>
-      <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}</div></td>
-      <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
-      <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
-      <td class="mono">${num(perMarket)} / <span class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)}</span> ₽</td>
+      <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
+        · <span class="${need}">${needWord}</span></div></td>
+      <td class="mono wide">${t('channelSplitValue', {
+        market: pct(split.market, 0), widget: pct(split.platform, 0),
+      })} · <span class="neg">${t('channelSplitLost', { lost: pct(split.lost, 0) })}</span></td>
+      <td class="mono wide">${t('channelMoneyValue', { market: num(perMarket) })} · <span
+        class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${t('channelMoneyWidget', { widget: num(perPlatform) })}</span></td>
       <td class="mono">${share > 0.005
         ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
             moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
             total: compact(state.orgs[def.id] ?? 0) })}</div>`
         : (targeted ? t('channelQueued') : t('channelOff'))}</td>
-      <td><button class="btn small ghost" data-platform="${def.id}">${
+      <td class="wide"><button class="btn small ghost" data-platform="${def.id}">${
         t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
     </tr>`;
   }).join('');
@@ -657,7 +665,7 @@ function renderChannels() {
       <a class="jump" data-jump="lever:platformDev">${t('jumpGo')}</a></div>` : ''}
     <table class="data">
       <thead><tr>
-        <th>${t('channelColType')}</th><th>${t('channelColNeed')}</th>
+        <th>${t('channelColType')}</th>
         <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
         <th>${t('channelColState')}</th><th></th>
       </tr></thead>
@@ -693,7 +701,8 @@ function renderSupply() {
       <td><b>${tx(def.name)}</b><div class="funding-note">${tx(def.short)}</div></td>
       <td class="mono">${num(o.count, 0)}</td>
       <td class="mono ${o.fill >= CONFIG.refFill ? 'pos' : 'neg'}">${pct(o.fill, 0)}</td>
-      <td class="mono ${o.preference >= 0.5 ? 'pos' : 'neg'}">${o.appeal.toFixed(2)} / ${o.rivalAppeal.toFixed(2)}</td>
+      <td class="mono ${o.preference >= 0.5 ? 'pos' : 'neg'}">${t('supplyPickYou', {
+        share: pct(o.preference, 0) })}</td>
       <td class="mono">${money(gmv)}</td>
     </tr>`;
   }).join('');
@@ -1267,6 +1276,9 @@ function boot() {
   if (!bound) {
     bound = true;
     bindJumps();
+    // На телефоне таблицы показываются карточками; подписи ячейкам берутся
+    // из шапки и обновляются сами при любой перерисовке.
+    watchTables();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);

@@ -16,6 +16,7 @@ import {
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
+import { watchTables } from '../../../../shared/tables.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'novoeda-save-v3';
@@ -950,6 +951,7 @@ function renderDistrictsTab() {
         </tr>`).join('')}
       </tbody>
     </table>
+    <p class="funding-note" style="margin-top:8px">${t('factorsNote')}</p>
     <p class="funding-note">${t('districtsFactorsNote')}</p>`;
 }
 
@@ -1273,6 +1275,9 @@ function boot() {
   if (!bound) {
     bound = true;
     bindJumps();
+    // На телефоне таблицы показываются карточками; подписи ячейкам берутся
+    // из шапки и обновляются сами при любой перерисовке.
+    watchTables();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);
