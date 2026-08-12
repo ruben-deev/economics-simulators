@@ -285,6 +285,7 @@ crises (resellers, a site that goes down at on-sale, the regulator, a
 cancelled tour) and four second-order algorithms — including the one that
 lifts conversion at the cost of trust.
 
+🎓 [Class sessions](docs/tickets/en/teacher-guide.md) ·
 📘 [Formula write-up](docs/tickets/en/economics.md)
 
 ---
