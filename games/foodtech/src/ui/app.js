@@ -13,6 +13,7 @@ import {
   fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../model/engine.js';
+import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
@@ -93,7 +94,7 @@ function delta(cur, before) {
 const JUMP_PANELS = {
   districts: 'districts', levers: 'levers', algos: 'algos',
   funding: 'funding', report: 'report-slot', ops: 'ops-readout',
-  weather: 'weather-slot', charts: 'chart', news: 'news-slot',
+  weather: 'weather-slot', charts: 'chart', news: 'news-slot', board: 'board',
 };
 function flash(node) {
   if (!node) return;
@@ -347,6 +348,51 @@ function renderWeather() {
       ${advice}
     </div>
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Совет директоров: цель квартала.
+//
+// Цель объявлена заранее и видна каждую неделю, а не только в тринадцатую.
+// Смысл именно в этом: игрок должен пересобирать план, зная, к чему идёт.
+// ----------------------------------------------------------------------------
+function renderBoard() {
+  const goal = state.board?.goal;
+  const r = last();
+  if (!goal) { el('board').innerHTML = `<div class="hint-box">${t('boardDone')}</div>`; return; }
+  const p = goalProgress(goal, {
+    orders: r?.orders ?? 0,
+    cmPerOrder: r?.cmPerOrder ?? 0,
+    profitableWeeks: state.board.profitableWeeks,
+    customers: r?.customers ?? 0,
+    marketShare: r?.marketShare ?? 0,
+  });
+  let text = '';
+  let now = '';
+  if (goal.type === 'orders') {
+    text = t('goalOrders', { target: num(goal.target, 0) });
+    now = num(p.value, 0);
+  } else if (goal.type === 'unit') {
+    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
+    now = `${num(p.value, 0)} ₽`;
+  } else if (goal.type === 'profit') {
+    text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
+    now = `${p.value} / ${goal.target}`;
+  } else {
+    text = t('goalShare', { target: pct(goal.target, 0), floor: num(goal.customersFloor, 0) });
+    now = pct(p.value, 0);
+  }
+  const past = (state.board.history ?? []).map((h) =>
+    `<div class="goal-past ${h.passed ? 'pos' : 'neg'}">${t('goalQuarter', { quarter: h.quarter })}: ${
+      h.passed ? t('goalPassed') : t('goalFailed')}</div>`).join('');
+  const capped = state.restrictions?.marketingCap
+    ? `<div class="funding-note neg">${t('goalCapped', {
+        cap: money(state.restrictions.marketingCap),
+        until: state.restrictions.until })}</div>` : '';
+  el('board').innerHTML = `
+    <div class="hint-box"><b>${t('goalQuarter', { quarter: goal.quarter })}.</b> ${text}<br>
+      <span class="${p.done ? 'pos' : 'neg'}">${t('goalNow', { value: now })}</span></div>
+    ${capped}${past}`;
 }
 
 // ----------------------------------------------------------------------------
@@ -1293,6 +1339,7 @@ function renderChrome() {
   el('title-levers').textContent = t('panelLevers');
   el('title-algos').textContent = t('panelAlgos');
   el('title-coverage').textContent = t('panelCoverage');
+  el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
@@ -1317,6 +1364,7 @@ function renderAll() {
   renderOpsReadout();
   renderKpis();
   renderDistricts();
+  renderBoard();
   renderFunding();
   renderWeather();
   renderEvent();

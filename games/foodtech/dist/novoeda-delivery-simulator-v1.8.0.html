@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.7.0" />
+  <meta name="app-version" content="1.8.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -583,6 +583,50 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .col-center > * { min-width: 0; }
 }
 
+/* --------------------- Пальцы, а не курсор ------------------------------
+   На телефоне попасть в ползунок высотой 16 px и во вкладку высотой 21 px
+   нечем: общепринятый минимум для пальца — 44 px. Увеличивается только
+   область нажатия, внешний вид остаётся прежним — иначе интерфейс, собранный
+   под плотную сетку показателей, расползётся. Приём один и тот же:
+   вертикальные отступы плюс подложка-псевдоэлемент.
+   ------------------------------------------------------------------------ */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .lever input[type="range"],
+  .algo-param input[type="range"],
+  .release-row input[type=range] {
+    /* Дорожка остаётся тонкой, а хвататься можно за всю высоту */
+    height: 40px;
+    padding: 0;
+    background: transparent;
+  }
+  .tab, .chart-tabs button {
+    position: relative;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tab::after, .chart-tabs button::after, .lever-why::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+  }
+  .lever-why {
+    position: relative;
+    display: inline-block;
+    padding: 9px 0;
+  }
+  /* Плитки выбора (жанр, масштаб, сегмент) и мелкие кнопки в таблицах */
+  .pick button, .btn.small {
+    position: relative;
+    min-height: 32px;
+  }
+  .pick button::after, .btn.small::after {
+    content: "";
+    position: absolute;
+    inset: -7px -4px;
+  }
+}
+
 @media (max-width: 700px) {
   /* Кнопки уходят вниз отдельной полосой, поэтому шапка складывается в две
      строки: название и плитка показателей. Без этого показатели вытягивались
@@ -758,6 +802,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 
       <h2 class="panel-title" id="title-coverage"></h2>
       <div id="districts" class="districts"></div>
+
+      <h2 class="panel-title" id="title-board"></h2>
+      <div id="board"></div>
 
       <h2 class="panel-title" id="title-funding"></h2>
       <div id="funding" class="funding"></div>
@@ -964,6 +1011,19 @@ const STRINGS = {
   seasonSpring: { ru: 'весна', en: 'spring' },
   seasonSummer: { ru: 'лето', en: 'summer' },
   seasonAutumn: { ru: 'осень', en: 'autumn' },
+
+  // --- совет директоров ---
+  panelBoard: { ru: 'Совет директоров', en: 'The board' },
+  boardDone: { ru: 'Цели закончились — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
+  goalQuarter: { ru: 'Квартал {quarter}', en: 'Quarter {quarter}' },
+  goalOrders: { ru: 'Не меньше {target} заказов в неделю к концу квартала. Это про рост: покажите, что через вас вообще заказывают.', en: 'At least {target} orders a week by the end of the quarter. This one is about growth: show that people order through you at all.' },
+  goalUnit: { ru: 'Вклад с заказа не ниже {target} ₽ при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least ₽{target} per order at {floor} orders a week. The turnover is someone else’s, the contribution is yours — and growth alone will not get you there.' },
+  goalProfit: { ru: 'Не меньше {target} прибыльных недель из тринадцати, и база не ниже {floor} клиентов. Срезать расходы, растеряв город, не считается.', en: 'At least {target} profitable weeks out of thirteen, with a base of no less than {floor} customers. Cutting costs and losing the city does not count.' },
+  goalShare: { ru: 'Доля города {target} при {floor} клиентах. Рынок делится не заказами, а людьми, которые к вам вернутся.', en: 'A city share of {target} with {floor} customers. The market is divided not by orders but by the people who come back.' },
+  goalNow: { ru: 'сейчас {value}', en: 'now {value}' },
+  goalPassed: { ru: 'выполнена', en: 'met' },
+  goalFailed: { ru: 'провалена', en: 'missed' },
+  goalCapped: { ru: 'Совет урезал маркетинг до {cap} в неделю — до {until}-й недели. Расти придётся тем, что уже построено.', en: 'The board has capped marketing at {cap} a week until week {until}. You will have to grow on what is already built.' },
 
   // --- что в городе ---
   newsPanel: { ru: 'Что в городе', en: 'What is going on in town' },
@@ -1401,6 +1461,110 @@ function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
 }
 
 
+// ===== ../../shared/valuation.js ===================================
+// ============================================================================
+// Как считается оценка компании — общая часть для всех трёх игр.
+//
+// Раньше каждая игра брала выручку и маржу из последнего хода. Это открывало
+// стратегию, не имеющую отношения к экономике: задрать все ставки, обнулить
+// все вложения — и сделать это за ход до конца партии. Бизнес разваливался,
+// а итоговый счёт рос. Измерено: в кинотеатре такой рывок давал +92%,
+// в билетном сервисе +58%.
+//
+// Лечится не запретом, а окном: инвестор смотрит не на последний месяц, а на
+// то, как компания шла последние полгода. Рывок в один ход в такое окно почти
+// не попадает, а рывок на полгода — это уже не рывок, а стратегия, и она
+// честно проигрывает по росту.
+//
+// Второе правило здесь же: сжатие должно стоить денег. Если множитель за
+// падение выручки не наказывает, «снять сливки и растерять базу» ничего
+// не стоит и снова становится выигрышной стратегией.
+// ============================================================================
+
+/**
+ * Среднее значение за последние n ходов.
+ *
+ * Последний ход весит столько же, сколько любой другой в окне, — поэтому
+ * его нельзя купить одним решением.
+ *
+ * @param history массив отчётов (как в state.history)
+ * @param n       длина окна в ходах
+ * @param pick    что берём из отчёта
+ */
+function windowAvg(history, n, pick) {
+  const window = history.slice(-Math.max(1, n));
+  if (!window.length) return 0;
+  return window.reduce((sum, r) => sum + (pick(r) ?? 0), 0) / window.length;
+}
+
+/**
+ * Темп роста: сумма за последние n ходов против суммы за предыдущие n.
+ * Возвращает прирост (0.2 = плюс двадцать процентов), а не отношение.
+ *
+ * Пока истории на два окна не хватает, роста ещё не видно — возвращается
+ * fallback, а не выдуманное число.
+ */
+function windowGrowth(history, n, pick, fallback = 0.25) {
+  const size = Math.max(1, n);
+  const recent = history.slice(-size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  const older = history.slice(-2 * size, -size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  if (older <= 0) return recent > 0 ? fallback : 0;
+  return recent / older - 1;
+}
+
+/**
+ * Множитель к выручке.
+ *
+ * @param growth       прирост за окно (может быть отрицательным)
+ * @param margin       маржа за то же окно
+ * @param k            коэффициенты игры
+ *
+ * Ключевое: `growthFloor` строго меньше нуля. Сжимающийся бизнес стоит
+ * дешевле стоящего на месте — иначе жадность бесплатна.
+ */
+function revenueMultiple(growth, margin, k) {
+  const {
+    base, growthWeight, marginWeight, marginPenalty,
+    growthFloor = -0.5, growthCap = 1,
+    marginFloor = -0.4, marginCap = 0.25,
+    min = 0.5, max = 12,
+  } = k;
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const growthScore = clamp(growth, growthFloor, growthCap);
+  const marginScore = clamp(margin, marginFloor, marginCap) / marginCap;
+  return clamp(
+    base + growthWeight * growthScore
+      + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
+    min, max,
+  );
+}
+
+/**
+ * Условия раунда: сколько доли уходит за деньги.
+ *
+ * Две защиты, без которых один раунд решает всю партию.
+ *
+ * ПОЛ ПОД ОЦЕНКОЙ. На третьей неделе компания по формуле стоит копейки, и
+ * раунд в её половину капитала забирает почти всё. В жизни так не бывает:
+ * посевной раунд оценивают по рынку и команде, а не по выручке, которой
+ * ещё нет.
+ *
+ * ПОТОЛОК НА ДОЛЮ. Никто не продаёт три четверти компании за один раунд —
+ * инвестор первым и откажется: основатель без доли перестаёт работать.
+ *
+ * Без этих двух строк вложить лишний миллион в маркетинг означало не
+ * «выросли заказы», а «раунд случился на шесть недель раньше и стоил
+ * шестьдесят пунктов доли». Измерено: та же компания с той же оценкой
+ * оставляла основателю 84% или 20% в зависимости от одной недели.
+ */
+function roundTerms(valuation, amount, { floor, maxShare = 0.75, minShare = 0.02 }) {
+  const pre = Math.max(floor, valuation);
+  const raw = amount / (pre + amount);
+  const dilution = Math.min(maxShare, Math.max(minShare, raw));
+  return { pre, post: pre + amount, amount, dilution };
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1494,11 +1658,18 @@ const CONFIG = {
   // при любом объёме заказов, и никакой поток это не компенсирует.
   restaurantMaxCommission: 0.30,
   restaurantCommissionSpan: 0.12,
+  // Насколько быстро ресторан уходит за планкой рентабельности. Без этого
+  // наказание кончалось на планке, а ползунок шёл дальше — и последняя
+  // четверть диапазона доставалась бесплатно.
+  restaurantExodus: 0.30,
   // Ресторан не работает себе в убыток: комиссию выше привычной он закладывает
   // в цену блюда. Платит в итоге клиент — и видит это в чеке, а не в договоре.
   // При комиссии 20% надбавки нет вовсе, так что опорный расчёт это не двигает.
   commissionPassThrough: 0.6,
   salesRefBudget: 150_000,     // эталонный недельный бюджет отдела подключения, ₽
+  // Во сколько раз прицельный рубль скидки работает лучше обычного.
+  // Больше — но не бесконечно: иначе прицеливание делает скидку бесплатной.
+  targetingLeverage: 2.0,
 
   maxMarketShare: 0.90,       // потолок доли: часть города к нам не придёт никогда
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
@@ -1518,7 +1689,7 @@ const CONFIG = {
   // --- Операционные издержки ---
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
-  supportTechDiscount: 8,      // на сколько ₽ снижает поддержку максимальный уровень техно
+  supportTechDiscount: 9,      // на сколько ₽ снижает поддержку максимальный уровень техно
   // Офис и менеджмент. Разработка и серверы вынесены отдельными статьями:
   // раньше они прятались здесь и не росли ни с продуктом, ни с нагрузкой.
   hqWeeklyBase: 560_000,       // офис и менеджмент, ₽/нед
@@ -1532,12 +1703,38 @@ const CONFIG = {
   // экипировка, страховка, диспетчеризация. Поэтому запас мощности не бесплатен.
   hqPerCourier: 2_200,         // содержание одного курьера, ₽/нед
   techSaturation: 40_000_000,  // сколько нужно вложить в технологии для «половины» эффекта
+  // Насколько развитая диспетчеризация сокращает время доставки. Поднято
+  // с 0.12 после замера: технологии окупались только экономией на поддержке
+  // и серверах, а это копейки против их цены — правильным ответом был ноль,
+  // то есть рычага не было. Маршрутизация и подсказки курьеру бьют не по
+  // издержкам, а по скорости — а скорость здесь решает всё.
+  techTimeRelief: 0.30,
 
   // --- Данные и алгоритмы ---
   // Качество алгоритмов = √(данные × команда). Нужно и то и другое: модель без
   // данных не обучишь, а данные без команды никто не превратит в решения.
   rndSaturation: 25_000_000,   // вложения в data science для «половины» эффекта
   dataSaturation: 400_000,     // накопленных заказов для «половины» эффекта
+
+  // --- Совет директоров ---
+  boardQuarterWeeks: 13,       // цель ставится на квартал, партия — четыре квартала
+  boardCapWeeks: 13,           // на сколько недель режут маркетинг за провал
+  boardMarketingCap: 2_000_000,
+  boardInjection: 60_000_000,  // сколько вводят акционеры, размывая вас
+
+  // --- Оценка компании ---
+  // Считается по окну, а не по последней неделе: последняя неделя покупается
+  // одним решением — задрать плату и обнулить вложения перед самым концом, —
+  // восемь недель уже нет.
+  valuationWindow: 8,
+  // Темп роста считается своим, более коротким окном: четыре недели против
+  // предыдущих четырёх. Рывком на один ход его всё равно не купить, а окно
+  // в восемь требовало бы истории, которой в первой трети партии ещё нет.
+  growthWindow: 4,
+  // Пол под оценкой в раунде. Посевную компанию оценивают по рынку и команде,
+  // а не по выручке, которой ещё нет: без пола раунд на четвёртой неделе
+  // забирал три четверти компании, и партию решал он, а не экономика.
+  valuationFloor: 250_000_000,
 
   // --- Инвестиции ---
   // Раунд открыт со второй недели. На максимальном маркетинге стартовых денег
@@ -1660,7 +1857,7 @@ const LEVERS = [
     key: 'targetCouriers',
     label: { ru: 'Целевой штат курьеров', en: 'Target courier headcount' },
     unit: { ru: 'чел', en: 'people' },
-    min: 0, max: 4000, step: 50, def: 0,
+    min: 0, max: 1_600, step: 25, def: 0,
     tip: {
       ru: 'Сколько курьеров вы хотите иметь. Нанять получится столько, сколько придёт откликов — а они зависят от заработка курьера.',
       en: 'How many couriers you want. How many you get depends on applications — and those depend on what a courier actually earns.',
@@ -1670,7 +1867,7 @@ const LEVERS = [
     key: 'marketing',
     label: { ru: 'Маркетинг', en: 'Marketing' },
     unit: { ru: '₽/нед', en: '₽/wk' },
-    min: 0, max: 20_000_000, step: 250_000, def: 0,
+    min: 0, max: 5_000_000, step: 100_000, def: 0,
     tip: {
       ru: 'Растит узнаваемость → приток новых клиентов. Работает с убывающей отдачей и «забывается» ~5% в неделю.',
       en: 'Builds awareness, which brings new customers. Diminishing returns, and awareness decays about 5% every week.',
@@ -1700,7 +1897,7 @@ const LEVERS = [
     key: 'sales',
     label: { ru: 'Подключение ресторанов', en: 'Restaurant acquisition' },
     unit: { ru: '₽/нед', en: '₽/wk' },
-    min: 0, max: 5_000_000, step: 100_000, def: 0,
+    min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
       en: 'Your sales team budget. No restaurants means no selection, and with no selection customers simply never arrive.',
@@ -1710,7 +1907,7 @@ const LEVERS = [
     key: 'tech',
     label: { ru: 'Технологии и логистика', en: 'Technology and logistics' },
     unit: { ru: '₽/нед', en: '₽/wk' },
-    min: 0, max: 8_000_000, step: 100_000, def: 0,
+    min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
       en: 'A cumulative investment: better routing (more orders per courier), faster delivery and cheaper support.',
@@ -1720,7 +1917,7 @@ const LEVERS = [
     key: 'rnd',
     label: { ru: 'Data Science', en: 'Data science' },
     unit: { ru: '₽/нед', en: '₽/wk' },
-    min: 0, max: 6_000_000, step: 100_000, def: 0,
+    min: 0, max: 1_500_000, step: 50_000, def: 0,
     tip: {
       ru: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
       en: 'The team that builds your algorithms: surge pricing, targeted discounts, demand forecasting. Useless without data — and data only accumulates from completed orders.',
@@ -1966,6 +2163,162 @@ function weatherEffect(type, weatherBonus = 0) {
     churnAdd: w.churn * (1 - 0.85 * coverage),
     demandMult: w.demand,
   };
+}
+
+
+// ===== src/model/board.js ==========================================
+// ============================================================================
+// Совет директоров: цель на квартал и последствия её провала.
+//
+// Зачем это здесь. Партия в НОВОЕДЕ — пятьдесят две недели, и до сих пор она
+// ничем не размечалась: год делился только на сезоны погоды. Пятьдесят два
+// одинаковых хода — это не длинная партия, а ровная. В двух других играх ту же
+// работу делает совет: цель объявлена заранее, известна с первого хода и
+// заставляет пересобирать план, потому что цели тянут в разные стороны.
+//
+//   первый квартал  — заказы: покажите, что через вас вообще заказывают;
+//   второй          — вклад с заказа: оборот чужой, вклад ваш;
+//   третий          — прибыльные недели, и не ценой растерянной базы;
+//   четвёртый       — доля города: рынок делится не заказами, а клиентами.
+//
+// Стратегия, выигрывающая первый квартал (рост любой ценой), проваливает
+// второй. Это и есть смысл: цена доставки и комиссия — решение на квартал,
+// а не настройка, которую один раз выставили и забыли.
+//
+// Планки выставлены замером: сто двадцать случайных стратегий прогнаны на всю
+// партию, и планка стоит там, где её берёт заметно лучшая половина, а середина
+// не берёт. Цель, которую берут все, учит ровно тому же, что цель, которую
+// не берёт никто, — то есть ничему.
+// ============================================================================
+
+
+const GOAL_TYPES = {
+  orders: 'orders',           // заказов за неделю к концу квартала
+  unit: 'unit',               // вклад с заказа
+  profit: 'profit',           // прибыльные недели, база не сжимается
+  share: 'share',             // доля города
+};
+
+/**
+ * Цель квартала. Считается от фактического состояния на его начало, поэтому
+ * остаётся вызовом и для отстающих, и для ушедших вперёд.
+ */
+function makeGoal(quarter, state, orders, customers) {
+  if (quarter === 1) {
+    return {
+      quarter,
+      type: GOAL_TYPES.orders,
+      // 68-й процентиль по замеру: половина стратегий не доходит, лучшая треть берёт
+      target: 45_000,
+      reward: 0.08,
+      penalty: 'dilution',
+    };
+  }
+  if (quarter === 2) {
+    return {
+      quarter,
+      type: GOAL_TYPES.unit,
+      // Вклад с заказа, а не прибыль: на этом сроке прибыли ещё нет ни у кого,
+      // а вот довезти заказ дороже, чем взять за него денег, — уже стыдно.
+      target: 60,
+      ordersFloor: Math.round(Math.max(9_000, orders * 0.85)),
+      reward: 0.10,
+      penalty: 'marketingCap',
+    };
+  }
+  if (quarter === 3) {
+    return {
+      quarter,
+      type: GOAL_TYPES.profit,
+      // Прибыльных недель из тринадцати. Замер: у случайной стратегии их ноль
+      // даже на 85-м процентиле — к третьему кварталу в плюс выходят единицы.
+      // Доведённая стратегия закрывает в плюс все тринадцать, так что планка
+      // в шесть недель отделяет работающий бизнес от почти работающего,
+      // а не наказывает за неудачный месяц.
+      target: 6,
+      // И не ценой базы: срезать расходы, растеряв клиентов, — не то,
+      // за что хвалят.
+      customersFloor: Math.round(Math.max(20_000, customers * 0.9)),
+      reward: 0.12,
+      penalty: 'marketingCap',
+    };
+  }
+  return {
+    quarter,
+    type: GOAL_TYPES.share,
+    target: 0.45,
+    customersFloor: Math.round(Math.max(30_000, customers * 0.95)),
+    reward: 0.15,
+    penalty: 'valuation',
+  };
+}
+
+/** Текущий прогресс — показывается каждую неделю, а не только в конце квартала. */
+function goalProgress(goal, ctx) {
+  if (!goal) return null;
+  const { orders, cmPerOrder, profitableWeeks, customers, marketShare } = ctx;
+  if (goal.type === GOAL_TYPES.orders) {
+    return { value: orders, target: goal.target, done: orders >= goal.target };
+  }
+  if (goal.type === GOAL_TYPES.unit) {
+    return {
+      value: cmPerOrder,
+      target: goal.target,
+      orders,
+      ordersFloor: goal.ordersFloor,
+      done: cmPerOrder >= goal.target && orders >= goal.ordersFloor,
+    };
+  }
+  if (goal.type === GOAL_TYPES.profit) {
+    return {
+      value: profitableWeeks,
+      target: goal.target,
+      customers,
+      customersFloor: goal.customersFloor,
+      done: profitableWeeks >= goal.target && customers >= goal.customersFloor,
+    };
+  }
+  return {
+    value: marketShare,
+    target: goal.target,
+    customers,
+    customersFloor: goal.customersFloor,
+    done: marketShare >= goal.target && customers >= goal.customersFloor,
+  };
+}
+
+/**
+ * Провал не заканчивает партию — он делает следующий квартал труднее.
+ * Именно поэтому план приходится пересобирать, а не начинать заново.
+ */
+function applyGoalOutcome(state, goal, progress, week) {
+  const passed = Boolean(progress?.done);
+  const outcome = { quarter: goal.quarter, type: goal.type, passed, effect: null };
+
+  if (passed) {
+    state.flags.valuationBonus += goal.reward;
+    outcome.effect = 'reward';
+    return outcome;
+  }
+
+  if (goal.penalty === 'dilution') {
+    // Акционеры вводят деньги сами и на своих условиях
+    state.pendingDilution = 0.15;
+    outcome.effect = 'dilution';
+  } else if (goal.penalty === 'marketingCap') {
+    // Маркетинг режут на квартал: совет больше не верит в «купим рост».
+    // Это ломает ровно ту стратегию, которая работала до сих пор.
+    state.restrictions = {
+      marketingCap: CONFIG.boardMarketingCap,
+      until: week + CONFIG.boardCapWeeks,
+    };
+    state.flags.valuationBonus -= 0.08;
+    outcome.effect = 'marketingCap';
+  } else {
+    state.flags.valuationBonus -= 0.12;
+    outcome.effect = 'valuation';
+  }
+  return outcome;
 }
 
 
@@ -2304,7 +2657,7 @@ function createInitialState(seed = 'novograd') {
   // Погода первой недели и публичный прогноз на вторую
   const weather = rollWeather(rng, 1);
   const weatherNext = rollWeather(rng, 2);
-  return {
+  const state = {
     seed,
     rngState: rng.state(),
     weather,
@@ -2333,13 +2686,22 @@ function createInitialState(seed = 'novograd') {
       }])
     ),
     flags: { commissionDelta: 0, valuationBonus: 0, regulationRisk: false },
+    // Совет директоров: цель на квартал. Известна с первого хода — это
+    // планирование, а не рулетка.
+    board: { goal: null, history: [], profitableWeeks: 0 },
+    restrictions: null,
     pendingEvent: null,
     pendingChoice: null,
     history: [],
     lastSnapshot: null,      // состояние до последнего хода — для «что было бы, если»
     over: null,   // 'bankrupt' | 'finished'
   };
+  // Цель первого квартала объявляется сразу: игрок должен знать, к чему идёт,
+  // с первого хода, а не узнавать об этом на тринадцатой неделе.
+  state.board.goal = makeGoal(1, state, 0, 0);
+  return state;
 }
+
 
 // ----------------------------------------------------------------------------
 // Производные показатели
@@ -2412,6 +2774,18 @@ function step(prevState, input = {}) {
   rng.restore(state.rngState);
 
   const week = state.week + 1;
+
+  // --- 0. Ограничения совета ---
+  // Порезанный маркетинг режется до того, как из него что-то посчитано:
+  // иначе ограничение было бы грустной надписью, а не ограничением.
+  const restrictions = state.restrictions && week < state.restrictions.until
+    ? state.restrictions : null;
+  if (!restrictions) state.restrictions = null;
+  let marketingCapped = null;
+  if (restrictions?.marketingCap && decisions.marketing > restrictions.marketingCap) {
+    marketingCapped = restrictions.marketingCap;
+    decisions.marketing = restrictions.marketingCap;
+  }
 
   // --- 1. Событие недели (было объявлено в конце прошлой недели) ---
   const mods = neutralModifiers();
@@ -2493,16 +2867,23 @@ function step(prevState, input = {}) {
   // Персональные скидки: платим за долю заказов, а эффект близок к скидке всем.
   // Точность = качество алгоритмов; при плохой модели скидка уходит не туда.
   const precision = quality;
-  const promoLift = targetingOn
-    ? 1 + precision * (1 / targetShare - 1) * 0.75
-    : 1;
   const promoCostPerOrder = targetingOn ? decisions.promo * targetShare : decisions.promo;
-  // Потолок: даже идеальная модель не создаст больше спроса, чем скидка всем подряд,
-  // а неточная упирается заметно раньше.
+  // Два потолка. Первый: даже идеальная модель не создаст больше спроса, чем
+  // скидка всем подряд, а неточная упирается заметно раньше.
   const promoCeiling = decisions.promo * (0.4 + 0.6 * precision);
+  // Второй, без которого прицельная скидка становится бесплатной: эффект не
+  // может превышать заплаченное больше чем в targetingLeverage раз, и рычаг
+  // точности сам решает, где остановиться. Раньше можно было платить за
+  // двадцатую часть заказов и получать эффект скидки всем — и ползунок скидки
+  // уходил в упор при любых прочих настройках. Прицельный рубль работает как
+  // несколько обычных, но не как двадцать.
+  const leverage = CONFIG.targetingLeverage * (0.4 + 0.6 * precision);
   const effPromo = targetingOn
-    ? Math.min(promoCeiling, decisions.promo * targetShare * promoLift)
+    ? Math.min(promoCeiling, promoCostPerOrder * leverage)
     : decisions.promo;
+  // В отчёт идёт то, что получилось на самом деле: во сколько раз рубль скидки
+  // сработал против рубля, розданного всем.
+  const promoLift = promoCostPerOrder > 0 ? effPromo / promoCostPerOrder : 1;
   // Чем уже охват и хуже модель, тем больше клиентов замечают, что скидка досталась
   // не им. Штраф пропорционален размеру скидки: без скидок обижаться не на что.
   const targetingPenalty = targetingOn
@@ -2616,7 +2997,7 @@ function step(prevState, input = {}) {
     const congestion = 1 + 0.85 * Math.pow(Math.min(p.util, 2.2), 3);
     p.newTime = state.couriers > 0
       ? clamp(p.def.baseTime * congestion * batchTimeMult * surgeTimeMult
-          * (1 - 0.12 * techLevel(state)), 10, 120)
+          * (1 - CONFIG.techTimeRelief * techLevel(state)), 10, 120)
       : 120;
     orders += p.served;
     gmv += p.served * p.aov;
@@ -2733,8 +3114,15 @@ function step(prevState, input = {}) {
     const localSales = salesPower * (activeDefs.length > 1 ? share * activeDefs.length : 1);
     const newRest = remaining * clamp(localSales * attractR * 0.5, 0, 0.4);
 
+    // За планкой рентабельности ресторан не «чуть менее доволен» — он уходит,
+    // и тем быстрее, чем глубже за планку. Раньше наказание кончалось ровно
+    // на планке в 30%, а ползунок шёл до 40: последняя четверть диапазона
+    // была бесплатной, и правильный ответ упирался в потолок.
+    const exodus = Math.max(0, commissionPerceived - CONFIG.restaurantMaxCommission)
+      / CONFIG.restaurantCommissionSpan;
     const restChurn = clamp(CONFIG.restaurantBaseChurn
-      + Math.max(0, 1 - attractR) * 0.12 + mods.restaurantChurnAdd, 0, 0.5);
+      + Math.max(0, 1 - attractR) * 0.12
+      + exodus * CONFIG.restaurantExodus + mods.restaurantChurnAdd, 0, 0.6);
 
     ds.restaurants = clamp(ds.restaurants * (1 - restChurn) + newRest, 0, def.restaurantPool);
     ds.attractR = attractR;
@@ -2837,6 +3225,35 @@ function step(prevState, input = {}) {
 
   const cac = newCustomers > 0 ? (decisions.marketing) / newCustomers : 0;
   const cmPerOrder = orders > 0 ? contribution / orders : 0;
+
+  // --- 10а. Совет директоров ---
+  // Цель квартала известна с первого хода; счётчик прибыльных недель копится
+  // внутри квартала и обнуляется вместе с целью.
+  if (profit > 0) state.board.profitableWeeks += 1;
+  const progress = goalProgress(state.board.goal, {
+    orders, cmPerOrder, profitableWeeks: state.board.profitableWeeks,
+    customers: totalCustomers, marketShare,
+  });
+  let goalOutcome = null;
+  if (state.board.goal && week % CONFIG.boardQuarterWeeks === 0) {
+    goalOutcome = applyGoalOutcome(state, state.board.goal, progress, week);
+    state.board.history.push(goalOutcome);
+    state.board.profitableWeeks = 0;
+    const next = state.board.goal.quarter + 1;
+    state.board.goal = week < CONFIG.weeksTotal
+      ? makeGoal(next, state, orders, totalCustomers) : null;
+  }
+  // Провал первого квартала: акционеры вводят деньги сами и на своих условиях
+  let forcedDilution = 0;
+  let boardInjection = 0;
+  if (state.pendingDilution) {
+    forcedDilution = state.pendingDilution;
+    boardInjection = CONFIG.boardInjection;
+    state.equity *= (1 - forcedDilution);
+    state.cash += boardInjection;
+    state.raisedTotal += boardInjection;
+    state.pendingDilution = 0;
+  }
   // LTV = вклад с заказа x частота x ожидаемое число недель жизни клиента
   const avgFreq = totalCustomers > 0 ? orders / totalCustomers : 0;
   const avgChurn = clamp(CONFIG.customerBaseChurn
@@ -2960,6 +3377,15 @@ function step(prevState, input = {}) {
       contribution: p.served * cmOf(p),
       cmPerOrder: cmOf(p),
     })),
+    // --- совет директоров ---
+    goal: state.board.goal ? { ...state.board.goal } : null,
+    goalProgress: progress,
+    goalOutcome,
+    forcedDilution,
+    boardInjection,
+    marketingCapped,
+    restrictions: restrictions ? { ...restrictions } : null,
+
     decisions: deepClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
   };
 
@@ -3026,31 +3452,28 @@ function algorithmImpact(state) {
 function valuation(state) {
   const h = state.history;
   if (!h.length) return 40_000_000;
-  const last = h[h.length - 1];
-  const netRevenueRunRate = last.netRevenue * 52;
+  // Выручка и маржа берутся окном, а не последней неделей: иначе оценку можно
+  // купить рывком на один ход — задрать плату и обнулить вложения перед самым
+  // концом партии. См. shared/valuation.js.
+  const netRevenueRunRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue) * 52;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
 
-  const tail = h.slice(-4).reduce((s, r) => s + r.orders, 0);
-  const prev = h.slice(-8, -4).reduce((s, r) => s + r.orders, 0);
-  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.5 : 1);
-  // Сжатие тоже считается. Раньше нижняя граница стояла на нуле: компанию,
-  // теряющую клиентов каждую неделю, оценивали как ровно стоящую, и выходило,
-  // что задрать цену и растерять половину рынка ничего не стоит. За падающий
-  // бизнес платят меньший множитель — это и есть цена жадности.
-  const growthScore = clamp(growth - 1, -0.5, 1);
-
-  const margin = last.netRevenue > 0 ? last.profit / last.netRevenue : -0.5;
-  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
-
-  const multiple = clamp(2.0 + 5 * growthScore + 4 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  // Сжатие тоже считается: за падающий бизнес платят меньший множитель —
+  // это и есть цена жадности.
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.0, growthWeight: 5, marginWeight: 4, marginPenalty: 1.5,
+  });
   const base = netRevenueRunRate * multiple;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   return Math.max(40_000_000, base * bonus);
 }
 
 function fundingOffer(state, amount) {
-  const pre = valuation(state);
-  const dilution = amount / (pre + amount);
-  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 function raise(state, amount) {
@@ -3502,7 +3925,7 @@ function delta(cur, before) {
 const JUMP_PANELS = {
   districts: 'districts', levers: 'levers', algos: 'algos',
   funding: 'funding', report: 'report-slot', ops: 'ops-readout',
-  weather: 'weather-slot', charts: 'chart', news: 'news-slot',
+  weather: 'weather-slot', charts: 'chart', news: 'news-slot', board: 'board',
 };
 function flash(node) {
   if (!node) return;
@@ -3756,6 +4179,51 @@ function renderWeather() {
       ${advice}
     </div>
   </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Совет директоров: цель квартала.
+//
+// Цель объявлена заранее и видна каждую неделю, а не только в тринадцатую.
+// Смысл именно в этом: игрок должен пересобирать план, зная, к чему идёт.
+// ----------------------------------------------------------------------------
+function renderBoard() {
+  const goal = state.board?.goal;
+  const r = last();
+  if (!goal) { el('board').innerHTML = `<div class="hint-box">${t('boardDone')}</div>`; return; }
+  const p = goalProgress(goal, {
+    orders: r?.orders ?? 0,
+    cmPerOrder: r?.cmPerOrder ?? 0,
+    profitableWeeks: state.board.profitableWeeks,
+    customers: r?.customers ?? 0,
+    marketShare: r?.marketShare ?? 0,
+  });
+  let text = '';
+  let now = '';
+  if (goal.type === 'orders') {
+    text = t('goalOrders', { target: num(goal.target, 0) });
+    now = num(p.value, 0);
+  } else if (goal.type === 'unit') {
+    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
+    now = `${num(p.value, 0)} ₽`;
+  } else if (goal.type === 'profit') {
+    text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
+    now = `${p.value} / ${goal.target}`;
+  } else {
+    text = t('goalShare', { target: pct(goal.target, 0), floor: num(goal.customersFloor, 0) });
+    now = pct(p.value, 0);
+  }
+  const past = (state.board.history ?? []).map((h) =>
+    `<div class="goal-past ${h.passed ? 'pos' : 'neg'}">${t('goalQuarter', { quarter: h.quarter })}: ${
+      h.passed ? t('goalPassed') : t('goalFailed')}</div>`).join('');
+  const capped = state.restrictions?.marketingCap
+    ? `<div class="funding-note neg">${t('goalCapped', {
+        cap: money(state.restrictions.marketingCap),
+        until: state.restrictions.until })}</div>` : '';
+  el('board').innerHTML = `
+    <div class="hint-box"><b>${t('goalQuarter', { quarter: goal.quarter })}.</b> ${text}<br>
+      <span class="${p.done ? 'pos' : 'neg'}">${t('goalNow', { value: now })}</span></div>
+    ${capped}${past}`;
 }
 
 // ----------------------------------------------------------------------------
@@ -4702,6 +5170,7 @@ function renderChrome() {
   el('title-levers').textContent = t('panelLevers');
   el('title-algos').textContent = t('panelAlgos');
   el('title-coverage').textContent = t('panelCoverage');
+  el('title-board').textContent = t('panelBoard');
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
@@ -4726,6 +5195,7 @@ function renderAll() {
   renderOpsReadout();
   renderKpis();
   renderDistricts();
+  renderBoard();
   renderFunding();
   renderWeather();
   renderEvent();

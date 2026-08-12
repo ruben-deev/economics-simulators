@@ -21,9 +21,11 @@
 import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
+import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, seasonOf } from './weather.js';
+import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
@@ -51,7 +53,7 @@ export function createInitialState(seed = 'novograd') {
   // Погода первой недели и публичный прогноз на вторую
   const weather = rollWeather(rng, 1);
   const weatherNext = rollWeather(rng, 2);
-  return {
+  const state = {
     seed,
     rngState: rng.state(),
     weather,
@@ -80,13 +82,22 @@ export function createInitialState(seed = 'novograd') {
       }])
     ),
     flags: { commissionDelta: 0, valuationBonus: 0, regulationRisk: false },
+    // Совет директоров: цель на квартал. Известна с первого хода — это
+    // планирование, а не рулетка.
+    board: { goal: null, history: [], profitableWeeks: 0 },
+    restrictions: null,
     pendingEvent: null,
     pendingChoice: null,
     history: [],
     lastSnapshot: null,      // состояние до последнего хода — для «что было бы, если»
     over: null,   // 'bankrupt' | 'finished'
   };
+  // Цель первого квартала объявляется сразу: игрок должен знать, к чему идёт,
+  // с первого хода, а не узнавать об этом на тринадцатой неделе.
+  state.board.goal = makeGoal(1, state, 0, 0);
+  return state;
 }
+
 
 // ----------------------------------------------------------------------------
 // Производные показатели
@@ -159,6 +170,18 @@ export function step(prevState, input = {}) {
   rng.restore(state.rngState);
 
   const week = state.week + 1;
+
+  // --- 0. Ограничения совета ---
+  // Порезанный маркетинг режется до того, как из него что-то посчитано:
+  // иначе ограничение было бы грустной надписью, а не ограничением.
+  const restrictions = state.restrictions && week < state.restrictions.until
+    ? state.restrictions : null;
+  if (!restrictions) state.restrictions = null;
+  let marketingCapped = null;
+  if (restrictions?.marketingCap && decisions.marketing > restrictions.marketingCap) {
+    marketingCapped = restrictions.marketingCap;
+    decisions.marketing = restrictions.marketingCap;
+  }
 
   // --- 1. Событие недели (было объявлено в конце прошлой недели) ---
   const mods = neutralModifiers();
@@ -240,16 +263,23 @@ export function step(prevState, input = {}) {
   // Персональные скидки: платим за долю заказов, а эффект близок к скидке всем.
   // Точность = качество алгоритмов; при плохой модели скидка уходит не туда.
   const precision = quality;
-  const promoLift = targetingOn
-    ? 1 + precision * (1 / targetShare - 1) * 0.75
-    : 1;
   const promoCostPerOrder = targetingOn ? decisions.promo * targetShare : decisions.promo;
-  // Потолок: даже идеальная модель не создаст больше спроса, чем скидка всем подряд,
-  // а неточная упирается заметно раньше.
+  // Два потолка. Первый: даже идеальная модель не создаст больше спроса, чем
+  // скидка всем подряд, а неточная упирается заметно раньше.
   const promoCeiling = decisions.promo * (0.4 + 0.6 * precision);
+  // Второй, без которого прицельная скидка становится бесплатной: эффект не
+  // может превышать заплаченное больше чем в targetingLeverage раз, и рычаг
+  // точности сам решает, где остановиться. Раньше можно было платить за
+  // двадцатую часть заказов и получать эффект скидки всем — и ползунок скидки
+  // уходил в упор при любых прочих настройках. Прицельный рубль работает как
+  // несколько обычных, но не как двадцать.
+  const leverage = CONFIG.targetingLeverage * (0.4 + 0.6 * precision);
   const effPromo = targetingOn
-    ? Math.min(promoCeiling, decisions.promo * targetShare * promoLift)
+    ? Math.min(promoCeiling, promoCostPerOrder * leverage)
     : decisions.promo;
+  // В отчёт идёт то, что получилось на самом деле: во сколько раз рубль скидки
+  // сработал против рубля, розданного всем.
+  const promoLift = promoCostPerOrder > 0 ? effPromo / promoCostPerOrder : 1;
   // Чем уже охват и хуже модель, тем больше клиентов замечают, что скидка досталась
   // не им. Штраф пропорционален размеру скидки: без скидок обижаться не на что.
   const targetingPenalty = targetingOn
@@ -363,7 +393,7 @@ export function step(prevState, input = {}) {
     const congestion = 1 + 0.85 * Math.pow(Math.min(p.util, 2.2), 3);
     p.newTime = state.couriers > 0
       ? clamp(p.def.baseTime * congestion * batchTimeMult * surgeTimeMult
-          * (1 - 0.12 * techLevel(state)), 10, 120)
+          * (1 - CONFIG.techTimeRelief * techLevel(state)), 10, 120)
       : 120;
     orders += p.served;
     gmv += p.served * p.aov;
@@ -480,8 +510,15 @@ export function step(prevState, input = {}) {
     const localSales = salesPower * (activeDefs.length > 1 ? share * activeDefs.length : 1);
     const newRest = remaining * clamp(localSales * attractR * 0.5, 0, 0.4);
 
+    // За планкой рентабельности ресторан не «чуть менее доволен» — он уходит,
+    // и тем быстрее, чем глубже за планку. Раньше наказание кончалось ровно
+    // на планке в 30%, а ползунок шёл до 40: последняя четверть диапазона
+    // была бесплатной, и правильный ответ упирался в потолок.
+    const exodus = Math.max(0, commissionPerceived - CONFIG.restaurantMaxCommission)
+      / CONFIG.restaurantCommissionSpan;
     const restChurn = clamp(CONFIG.restaurantBaseChurn
-      + Math.max(0, 1 - attractR) * 0.12 + mods.restaurantChurnAdd, 0, 0.5);
+      + Math.max(0, 1 - attractR) * 0.12
+      + exodus * CONFIG.restaurantExodus + mods.restaurantChurnAdd, 0, 0.6);
 
     ds.restaurants = clamp(ds.restaurants * (1 - restChurn) + newRest, 0, def.restaurantPool);
     ds.attractR = attractR;
@@ -584,6 +621,35 @@ export function step(prevState, input = {}) {
 
   const cac = newCustomers > 0 ? (decisions.marketing) / newCustomers : 0;
   const cmPerOrder = orders > 0 ? contribution / orders : 0;
+
+  // --- 10а. Совет директоров ---
+  // Цель квартала известна с первого хода; счётчик прибыльных недель копится
+  // внутри квартала и обнуляется вместе с целью.
+  if (profit > 0) state.board.profitableWeeks += 1;
+  const progress = goalProgress(state.board.goal, {
+    orders, cmPerOrder, profitableWeeks: state.board.profitableWeeks,
+    customers: totalCustomers, marketShare,
+  });
+  let goalOutcome = null;
+  if (state.board.goal && week % CONFIG.boardQuarterWeeks === 0) {
+    goalOutcome = applyGoalOutcome(state, state.board.goal, progress, week);
+    state.board.history.push(goalOutcome);
+    state.board.profitableWeeks = 0;
+    const next = state.board.goal.quarter + 1;
+    state.board.goal = week < CONFIG.weeksTotal
+      ? makeGoal(next, state, orders, totalCustomers) : null;
+  }
+  // Провал первого квартала: акционеры вводят деньги сами и на своих условиях
+  let forcedDilution = 0;
+  let boardInjection = 0;
+  if (state.pendingDilution) {
+    forcedDilution = state.pendingDilution;
+    boardInjection = CONFIG.boardInjection;
+    state.equity *= (1 - forcedDilution);
+    state.cash += boardInjection;
+    state.raisedTotal += boardInjection;
+    state.pendingDilution = 0;
+  }
   // LTV = вклад с заказа x частота x ожидаемое число недель жизни клиента
   const avgFreq = totalCustomers > 0 ? orders / totalCustomers : 0;
   const avgChurn = clamp(CONFIG.customerBaseChurn
@@ -707,6 +773,15 @@ export function step(prevState, input = {}) {
       contribution: p.served * cmOf(p),
       cmPerOrder: cmOf(p),
     })),
+    // --- совет директоров ---
+    goal: state.board.goal ? { ...state.board.goal } : null,
+    goalProgress: progress,
+    goalOutcome,
+    forcedDilution,
+    boardInjection,
+    marketingCapped,
+    restrictions: restrictions ? { ...restrictions } : null,
+
     decisions: deepClone({ ...decisions, districts: [...(decisions.districts ?? [])] }),
   };
 
@@ -773,31 +848,28 @@ export function algorithmImpact(state) {
 export function valuation(state) {
   const h = state.history;
   if (!h.length) return 40_000_000;
-  const last = h[h.length - 1];
-  const netRevenueRunRate = last.netRevenue * 52;
+  // Выручка и маржа берутся окном, а не последней неделей: иначе оценку можно
+  // купить рывком на один ход — задрать плату и обнулить вложения перед самым
+  // концом партии. См. shared/valuation.js.
+  const netRevenueRunRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue) * 52;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
 
-  const tail = h.slice(-4).reduce((s, r) => s + r.orders, 0);
-  const prev = h.slice(-8, -4).reduce((s, r) => s + r.orders, 0);
-  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.5 : 1);
-  // Сжатие тоже считается. Раньше нижняя граница стояла на нуле: компанию,
-  // теряющую клиентов каждую неделю, оценивали как ровно стоящую, и выходило,
-  // что задрать цену и растерять половину рынка ничего не стоит. За падающий
-  // бизнес платят меньший множитель — это и есть цена жадности.
-  const growthScore = clamp(growth - 1, -0.5, 1);
-
-  const margin = last.netRevenue > 0 ? last.profit / last.netRevenue : -0.5;
-  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
-
-  const multiple = clamp(2.0 + 5 * growthScore + 4 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  // Сжатие тоже считается: за падающий бизнес платят меньший множитель —
+  // это и есть цена жадности.
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.0, growthWeight: 5, marginWeight: 4, marginPenalty: 1.5,
+  });
   const base = netRevenueRunRate * multiple;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   return Math.max(40_000_000, base * bonus);
 }
 
 export function fundingOffer(state, amount) {
-  const pre = valuation(state);
-  const dilution = amount / (pre + amount);
-  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 export function raise(state, amount) {

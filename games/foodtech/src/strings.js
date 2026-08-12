@@ -96,6 +96,19 @@ export const STRINGS = {
   seasonSummer: { ru: 'лето', en: 'summer' },
   seasonAutumn: { ru: 'осень', en: 'autumn' },
 
+  // --- совет директоров ---
+  panelBoard: { ru: 'Совет директоров', en: 'The board' },
+  boardDone: { ru: 'Цели закончились — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
+  goalQuarter: { ru: 'Квартал {quarter}', en: 'Quarter {quarter}' },
+  goalOrders: { ru: 'Не меньше {target} заказов в неделю к концу квартала. Это про рост: покажите, что через вас вообще заказывают.', en: 'At least {target} orders a week by the end of the quarter. This one is about growth: show that people order through you at all.' },
+  goalUnit: { ru: 'Вклад с заказа не ниже {target} ₽ при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least ₽{target} per order at {floor} orders a week. The turnover is someone else’s, the contribution is yours — and growth alone will not get you there.' },
+  goalProfit: { ru: 'Не меньше {target} прибыльных недель из тринадцати, и база не ниже {floor} клиентов. Срезать расходы, растеряв город, не считается.', en: 'At least {target} profitable weeks out of thirteen, with a base of no less than {floor} customers. Cutting costs and losing the city does not count.' },
+  goalShare: { ru: 'Доля города {target} при {floor} клиентах. Рынок делится не заказами, а людьми, которые к вам вернутся.', en: 'A city share of {target} with {floor} customers. The market is divided not by orders but by the people who come back.' },
+  goalNow: { ru: 'сейчас {value}', en: 'now {value}' },
+  goalPassed: { ru: 'выполнена', en: 'met' },
+  goalFailed: { ru: 'провалена', en: 'missed' },
+  goalCapped: { ru: 'Совет урезал маркетинг до {cap} в неделю — до {until}-й недели. Расти придётся тем, что уже построено.', en: 'The board has capped marketing at {cap} a week until week {until}. You will have to grow on what is already built.' },
+
   // --- что в городе ---
   newsPanel: { ru: 'Что в городе', en: 'What is going on in town' },
   newsEmpty: { ru: 'Неделя без происшествий: обычная погода, обычные заказы. Такие недели и кормят — на них видно настоящую экономику доставки, без всплесков.', en: 'A week with nothing in it: ordinary weather, ordinary orders. These are the weeks that feed you — they show the real economics of delivery, without the spikes.' },

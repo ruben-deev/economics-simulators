@@ -233,7 +233,8 @@ attractiveness = (0.35 + 0.65 × √(orders per restaurant / 45))
                  × (0.25 + 0.75 × viability)
 sales power    = 0.35 × (sales budget / 150,000) ^ 0.6          (capped at 0.8)
 signed up      = remaining pool × min(0.4, sales power × attractiveness × 0.5)
-churn          = 0.015 + max(0, 1 − attractiveness) × 0.12
+exodus         = max(0, commission − 0.30) / 0.12
+churn          = 0.015 + max(0, 1 − attractiveness) × 0.12 + exodus × 0.30
 ```
 
 The 0.35 term represents pioneers: some restaurants join even at zero order flow, otherwise
@@ -241,9 +242,14 @@ a marketplace could never be started at all (the classic chicken-and-egg problem
 
 The viability multiplier is a hard ceiling on commission. A restaurant has its own
 economics: above roughly 30% delivery is loss-making for them at any volume, and no amount
-of order flow compensates. Without this constraint, "raise the commission" would be a
-dominant strategy. The commission restaurants perceive is lowered by the flexible-rate
-algorithm.
+of order flow compensates. The commission restaurants perceive is lowered by the
+flexible-rate algorithm.
+
+The exodus term was added after measurement. Viability hits zero exactly at the 30% mark
+while the slider runs to 40 — so the last quarter of the range came free: the punishment
+had already ended and the take kept growing linearly. The right answer was pinned to the
+top of the slider, which means there was no lever. Now, past the mark a restaurant does
+not merely grow less happy — it leaves, and the deeper past the mark, the faster.
 
 ---
 
@@ -371,19 +377,25 @@ a chain. The worse the batching algorithm, the more time suffers for the same ga
 ### Targeted discounts
 
 ```
-lift             = 1 + precision × (1/reach − 1) × 0.75
 cost per order   = promo × reach
-effect on demand = min(promo × (0.4 + 0.6 × precision), promo × reach × lift)
+leverage         = 2.5 × (0.4 + 0.6 × precision)
+effect on demand = min(promo × (0.4 + 0.6 × precision), cost per order × leverage)
 satisfaction penalty = (1 − reach)² × (1 − precision) × 0.35 × min(1, promo/50)
 ```
 
-At 30% reach and 0.8 precision you get the effect of a ₽53 discount while paying ₽28 — the
+At 40% reach and 0.8 precision you pay 0.4 of the promo and get an effect of 0.88 — the
 same lift in demand for half the money. This is price discrimination in its purest form.
 
-Three constraints stop you from shrinking reach to nothing: a ceiling on the effect (even a
-perfect model cannot create more demand than discounting everyone), the falling absolute
-effect as reach narrows, and a quadratic penalty for perceived unfairness. The optimum sits
-inside the range.
+**The leverage term was added after measurement.** The effect used to be bounded only by
+"no more than discounting everyone", so at a narrow reach a targeted discount became almost
+free: you pay for a twentieth of the orders and it works on all of them. Because of that the
+discount slider went to its stop under every other setting — there was no lever. Now the
+effect cannot exceed what you paid by more than 2.5× (and only with a perfect model), and
+the discount has an interior optimum again.
+
+Three constraints stop you from shrinking reach to nothing: a ceiling on the effect, the tie
+between effect and money actually spent, and a quadratic penalty for perceived unfairness.
+The optimum sits inside the range.
 
 ### Surge pricing
 
@@ -451,22 +463,65 @@ out to be zero.
 ## 8. Valuation and funding rounds
 
 ```
+revenue  = average of the last 8 weeks × 52
 growth   = orders over the last 4 weeks / orders over the previous 4
-margin   = profit / revenue
-multiple = 2.0 + 5 × min(growth − 1, 1) + 4 × max(0, margin/0.25) + 1.5 × min(0, margin/0.25)
+margin   = profit over 8 weeks / revenue over the same 8 weeks
+multiple = 2.0 + 5 × clamp(growth − 1, −0.5, 1)
+               + 4 × max(0, margin/0.25) + 1.5 × min(0, margin/0.25)
 valuation = annual revenue × multiple     (never below ₽40M)
 ```
+
+**Why a window and not the last week.** Revenue and margin taken from a single last turn
+can be bought with one decision: raise the fee and zero out every investment one turn
+before the end. The business falls apart and the score goes up. Measured on the sibling
+games, that dash was worth +92% and +58%. An eight-week window closes it — the last week
+weighs no more than any other in it. Growth uses its own, shorter window: a one-turn dash
+cannot buy it anyway, and eight-against-eight would need history that does not exist in
+the first third of the game.
 
 A funding round:
 
 ```
-dilution   = round size / (valuation + round size)
-your stake ×= (1 − dilution)
+round valuation = max(₽250M, valuation)
+dilution        = clamp(round size / (round valuation + round size), 0.02, 0.75)
+your stake     ×= (1 − dilution)
 ```
+
+**The floor under the valuation and the cap on dilution** are not decoration. Without them
+a round in week four — when the company is worth pennies by the formula — took three
+quarters of it, and the game was decided by the week the money ran out rather than by the
+economics. Measured: the same company at the same valuation left the founder with 84%
+or 20% depending on which week they had to go for money.
 
 The final score is **valuation × your stake**. Raising as much money as possible is
 therefore not a strategy: every round at a low valuation costs you a piece of the company.
 Early money is the most expensive money there is.
+
+---
+
+## 8b. The board
+
+A game runs fifty-two weeks, and until now nothing marked them out: the year was divided
+only by weather seasons. Fifty-two identical turns is not a long game, it is a flat one.
+The board sets a goal for the quarter, announces it in advance and changes it every
+thirteen weeks:
+
+| Quarter | Goal | On failure |
+|---|---|---|
+| 1 | 45,000 orders a week by the end of the quarter | shareholders inject ₽60M themselves, your stake is cut by 15% |
+| 2 | contribution of ₽60 per order at an order flow that has not fallen | marketing capped for a quarter |
+| 3 | 6 profitable weeks out of 13 with a base that has not shrunk | marketing capped for a quarter |
+| 4 | a 45% city share with a base that has not shrunk | valuation drops by 12% |
+
+The point is the same as in the other two games: the strategy that wins the first quarter
+(growth at any cost) fails the second. The delivery fee and the commission are decisions
+for the quarter, not settings you dial in once and forget.
+
+The bars were set by measuring 120 random strategies: 33% clear the first quarter, 27%
+the second, 29% the fourth. No random strategy clears the third — by week forty only a
+handful are in the black — while a well-tuned one closes all thirteen weeks in profit.
+That is exactly what the third goal is for: it separates a working business from an
+almost-working one.
 
 ---
 

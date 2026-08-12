@@ -108,7 +108,30 @@ comes not from the information but from the speed of the reaction to it.
 
 ---
 
-## Scenario 6. "Smart algorithms" (50 minutes)
+## Scenario 6. "The quarter's goal" (40 minutes)
+
+The task: show that a strategy built for one quarter's goal does not carry to the next.
+
+1. Quarter one: 45,000 orders a week. Almost everyone gets there by growth at any cost —
+   a low fee, a heavy promo, plenty of couriers.
+2. Quarter two announces something else: contribution of ₽60 per order **and** an order
+   flow no lower than before. Pause and ask them to say out loud what has to change.
+   It usually turns out that what has to change is exactly what won them quarter one.
+3. Quarter three — six profitable weeks out of thirteen with a base that has not shrunk.
+   Quarter four — a 45% city share.
+4. Debrief: the delivery fee and the commission are decisions for the quarter, not
+   settings. Missing quarter one costs 15% of the stake (shareholders inject the money
+   themselves); missing two or three caps marketing for a quarter ahead — which breaks
+   exactly the move the team has been using so far.
+
+The bars were set by measuring 120 random strategies: 33% clear the first quarter, 27%
+the second, 29% the fourth. No random strategy clears the third, while a well-tuned one
+closes all thirteen weeks in profit — that goal separates a working business from an
+almost-working one.
+
+---
+
+## Scenario 7. "Smart algorithms" (50 minutes)
 
 The task: run the service to week 25 with ordinary levers, then switch on data science and
 roll out algorithms, justifying each decision.
@@ -184,5 +207,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.7.0.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.8.0.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.

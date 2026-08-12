@@ -10,6 +10,7 @@ import {
 import { rollWeather, seasonOf, weatherEffect, WEATHER } from '../src/model/weather.js';
 import { createRng } from '../../../shared/rng.js';
 import { EVENTS } from '../src/model/events.js';
+import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
 
 const baseDecisions = (over = {}) => ({ ...DEFAULT_DECISIONS, districts: ['center'], ...over });
 
@@ -681,5 +682,76 @@ test('доля рынка не бывает больше ста проценто
     targetCouriers: 4000, districts: DISTRICTS.map((d) => d.id) }), 'share');
   for (const r of huge.reports) {
     assert.ok(r.marketShare <= 1.0001, `доля ${(r.marketShare * 100).toFixed(0)}% на неделе ${r.week}`);
+  }
+});
+
+
+// ----------------------------------------------------------------------------
+// Совет директоров
+// ----------------------------------------------------------------------------
+test('цель квартала объявляется заранее и известна с первого хода', () => {
+  const state = createInitialState('board');
+  assert.ok(state.board.goal, 'цель есть до первого хода, а не появляется на тринадцатой неделе');
+  assert.equal(state.board.goal.quarter, 1);
+  const r = run(1, baseDecisions({ sales: 300_000, marketing: 1_000_000, targetCouriers: 200 }), 'board')
+    .reports.at(-1);
+  assert.equal(r.goal.quarter, 1, 'и она же стоит в отчёте первой недели');
+  assert.ok(r.goalProgress, 'прогресс виден каждую неделю, а не только в конце квартала');
+});
+
+test('цели квартала тянут в разные стороны', () => {
+  const s = createInitialState('goals');
+  const types = [1, 2, 3, 4].map((q) => makeGoal(q, s, 20_000, 50_000).type);
+  assert.equal(new Set(types).size, 4, `все четыре цели должны быть разными: ${types}`);
+});
+
+test('совет подводит итог ровно на границе квартала', () => {
+  const d = baseDecisions({ sales: 400_000, marketing: 2_000_000, targetCouriers: 400, deliveryFee: 199 });
+  const { reports } = run(CONFIG.boardQuarterWeeks + 1, d, 'edge');
+  const atBorder = reports[CONFIG.boardQuarterWeeks - 1];
+  assert.ok(atBorder.goalOutcome, 'на тринадцатой неделе итог подводится');
+  assert.equal(atBorder.goalOutcome.quarter, 1);
+  assert.equal(reports[CONFIG.boardQuarterWeeks - 2].goalOutcome, null, 'а на двенадцатой ещё нет');
+  assert.equal(reports.at(-1).goal.quarter, 2, 'и сразу объявляется следующая');
+});
+
+test('провал цели имеет последствия, а не грустную надпись', () => {
+  const state = createInitialState('fail');
+  state.flags = { commissionDelta: 0, valuationBonus: 0, regulationRisk: false };
+  const goal = makeGoal(2, state, 20_000, 50_000);
+  applyGoalOutcome(state, goal, { done: false }, 20);
+  assert.ok(state.restrictions?.marketingCap > 0, 'маркетинг режется');
+  assert.ok(state.flags.valuationBonus < 0, 'и оценка страдает');
+
+  const ok = createInitialState('pass');
+  ok.flags = { commissionDelta: 0, valuationBonus: 0, regulationRisk: false };
+  applyGoalOutcome(ok, goal, { done: true }, 20);
+  assert.ok(ok.flags.valuationBonus > 0, 'а выполненная цель вознаграждается');
+  assert.equal(ok.restrictions, null, 'и ничего не режет');
+});
+
+test('порезанный маркетинг реально режет расходы, а не только настроение', () => {
+  const d = baseDecisions({ sales: 400_000, marketing: 8_000_000, targetCouriers: 400 });
+  let state = createInitialState('cap');
+  state.restrictions = { marketingCap: 1_000_000, until: 10 };
+  const r = step(state, { decisions: d }).report;
+  assert.equal(r.marketingCapped, 1_000_000);
+  assert.ok(r.decisions.marketing === 1_000_000, 'решение действительно урезано');
+  assert.ok(r.opex < 8_000_000 + r.districtFixed + r.hqCost, 'и в расходы попало урезанное');
+});
+
+test('прогресс по цели читается в ту же сторону, что и сама цель', () => {
+  const s = createInitialState('prog');
+  const ctx = { orders: 50_000, cmPerOrder: 80, profitableWeeks: 7, customers: 60_000, marketShare: 0.5 };
+  for (const q of [1, 2, 3, 4]) {
+    const g = makeGoal(q, s, 20_000, 40_000);
+    const p = goalProgress(g, ctx);
+    assert.equal(typeof p.done, 'boolean');
+    assert.ok(Number.isFinite(p.value) && Number.isFinite(p.target));
+  }
+  // Хуже по любому счёту — значит не выполнено
+  const weak = { orders: 100, cmPerOrder: -50, profitableWeeks: 0, customers: 100, marketShare: 0.01 };
+  for (const q of [1, 2, 3, 4]) {
+    assert.equal(goalProgress(makeGoal(q, s, 20_000, 40_000), weak).done, false);
   }
 });
