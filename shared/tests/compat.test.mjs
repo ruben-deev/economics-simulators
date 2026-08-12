@@ -194,15 +194,19 @@ test('авторство не теряется при сборке', () => {
   // а не только в репозитории, откуда его никто не откроет.
   for (const [game, bundle] of bundles) {
     const html = readFileSync(bundle, 'utf8');
-    assert.match(html, /<meta name="author" content="zero900"/, `${game}: нет meta author`);
+    assert.match(html, /<meta name="author" content="Ruben Deev"/, `${game}: нет meta author`);
     for (const lang of ['ru', 'en']) {
       const line = html.match(new RegExp(`helpAuthor:[^}]*${lang}: '([^']*)'`))?.[1];
-      assert.ok(line && line.includes('zero900'), `${game}: подписи автора нет на ${lang}`);
+      assert.ok(line && line.includes('Ruben Deev'), `${game}: подписи автора нет на ${lang}`);
+      assert.ok(line.includes('linkedin.com/in/ruben-deev'), `${game}: в подписи нет ссылки (${lang})`);
     }
+    // Дата сборки — рядом с версией: по ней видно, насколько сборка свежая
+    assert.match(html, /<meta name="app-build-date" content="\d{4}-\d{2}-\d{2}"/,
+      `${game}: нет даты сборки`);
   }
   const home = readFileSync(join(root, 'index.html'), 'utf8');
-  assert.match(home, /<meta name="author" content="zero900"/, 'витрина: нет meta author');
-  assert.ok((home.match(/zero900/g) ?? []).length >= 3, 'витрина: подписи нет в подвале на обоих языках');
+  assert.match(home, /<meta name="author" content="Ruben Deev"/, 'витрина: нет meta author');
+  assert.ok((home.match(/Ruben Deev/g) ?? []).length >= 3, 'витрина: подписи нет в подвале на обоих языках');
 });
 
 test('первый экран объясняет, куда попал человек', () => {

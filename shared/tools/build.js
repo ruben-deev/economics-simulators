@@ -156,11 +156,13 @@ async function buildGame(name) {
     .join('\n\n');
   const bundle = `(function () {\n'use strict';\n${body}\n\n${manifest.entry}\n})();`;
 
-  // Версия внутри страницы: по ней видно, какую сборку человек открыл.
-  // Модульная версия этой метки не имеет и показывает себя как dev.
+  // Версия и дата сборки внутри страницы: по ним видно, какую сборку человек
+  // открыл и насколько она свежая. Модульная версия этих меток не имеет
+  // и показывает себя как dev.
   const version = manifest.version ?? REPO_VERSION;
+  const buildDate = new Date().toISOString().slice(0, 10);
   let page = html.replace('<meta charset="utf-8" />',
-    `<meta charset="utf-8" />\n  <meta name="app-version" content="${version}" />`);
+    `<meta charset="utf-8" />\n  <meta name="app-version" content="${version}" />\n  <meta name="app-build-date" content="${buildDate}" />`);
   page = page.replace(/<script type="module"[^>]*><\/script>/, `<script>\n${bundle}\n</script>`);
   // Все <link rel="stylesheet"> заменяем встроенными стилями в том же порядке
   let styleIndex = 0;

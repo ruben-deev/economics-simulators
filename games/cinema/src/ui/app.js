@@ -34,6 +34,7 @@ const BUILD = 'cinema-2';
 // исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
 // сборка» был ответ, а не догадки.
 const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
+const APP_BUILD_DATE = document.querySelector('meta[name="app-build-date"]')?.content ?? '';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -1864,7 +1865,7 @@ function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
     + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
-        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
+        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION, date: APP_BUILD_DATE })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
 }
 

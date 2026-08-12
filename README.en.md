@@ -1,6 +1,6 @@
 # Economics simulators for the classroom
 
-*[Русская версия](README.md)* · made by **zero900**
+*[Русская версия](README.md)* · made by **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)**
 
 **▶ [Open the games index](https://ruben-deev.github.io/Foodtech-delivery-game/)**
 
@@ -368,7 +368,7 @@ Detailed lists of assumptions are at the end of each `docs/<game>/economics.md`.
 
 ## Author
 
-**zero900** — concept, economic models, interface and copy for both games.
+**[Ruben Deev](https://www.linkedin.com/in/ruben-deev)** — concept, economic models, interface and copy for both games.
 
 The project is meant to be used in class: hand the games out to students, change the
 numbers to fit your course, work through the formulas on the board. A credit link is

@@ -41,6 +41,7 @@ const BUILD = 'tickets-1';
 // Версию проставляет сборщик. У модульной версии метки нет — значит это
 // исходники, а не раздаваемый файл.
 const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
+const APP_BUILD_DATE = document.querySelector('meta[name="app-build-date"]')?.content ?? '';
 
 const el = (id) => document.getElementById(id);
 
@@ -1186,19 +1187,27 @@ function renderSidesTab() {
 
 function renderAlgosTab() {
   const quality = algoQuality(state);
+  // Купленный, но ещё не внедрённый алгоритм обязан выглядеть купленным:
+  // внедрение происходит при расчёте месяца, и без явного «будет внедрён»
+  // кнопка после нажатия перерисовывалась в исходном виде — непонятно,
+  // купил ты или нет (и можно было щёлкать ещё).
+  const pendingSet = new Set(state.pendingInstall ?? []);
   const rows = ALGORITHMS.map((a) => {
     const installed = state.installed[a.key];
+    const pending = !installed && pendingSet.has(a.key);
     const on = Boolean(state.decisions.algoOn?.[a.key]);
     const param = state.decisions.algoParam?.[a.key] ?? 0;
-    const locked = !installed && quality < a.unlock;
-    return `<div class="algo ${installed && on ? 'on' : ''}">
+    const locked = !installed && !pending && quality < a.unlock;
+    return `<div class="algo ${(installed && on) || pending ? 'on' : ''}">
       <div class="algo-head">
         <b>${tx(a.name)}</b>
         ${installed
           ? `<button class="btn small ${on ? 'primary' : 'ghost'}" data-algo="${a.key}">${on ? t('algosOn') : t('algosOff')}</button>`
-          : locked
-            ? `<span class="badge">${t('algosLocked', { unlock: pct(a.unlock, 0) })}</span>`
-            : `<button class="btn small" data-install="${a.key}">${t('algosInstall', { cost: money(a.install) })}</button>`}
+          : pending
+            ? `<button class="btn small primary" data-cancel-install="${a.key}" title="${t('algosPendingHint')}">${t('algosPending')}</button>`
+            : locked
+              ? `<span class="badge">${t('algosLocked', { unlock: pct(a.unlock, 0) })}</span>`
+              : `<button class="btn small" data-install="${a.key}">${t('algosInstall', { cost: money(a.install) })}</button>`}
       </div>
       <div class="funding-note">${tx(a.what)}</div>
       ${installed && on ? `
@@ -1248,14 +1257,30 @@ function renderRightTab() {
     b.addEventListener('click', () => {
       const key = b.dataset.algo;
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: !state.decisions.algoOn?.[key] };
+      save();
       renderRightTab();
     });
   });
   el('tab-content').querySelectorAll('[data-install]').forEach((b) => {
     b.addEventListener('click', () => {
       const key = b.dataset.install;
-      state.pendingInstall = [...(state.pendingInstall ?? []), key];
+      if (!(state.pendingInstall ?? []).includes(key)) {
+        state.pendingInstall = [...(state.pendingInstall ?? []), key];
+      }
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: true };
+      save();
+      renderRightTab();
+      renderTurn();
+      toast(t('algosPendingToast', { name: tx(algorithmByKey(key).name) }));
+    });
+  });
+  // Пока месяц не сыгран, покупку можно передумать: деньги ещё не списаны
+  el('tab-content').querySelectorAll('[data-cancel-install]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.dataset.cancelInstall;
+      state.pendingInstall = (state.pendingInstall ?? []).filter((k) => k !== key);
+      state.decisions.algoOn = { ...state.decisions.algoOn, [key]: false };
+      save();
       renderRightTab();
       renderTurn();
     });
@@ -1462,7 +1487,7 @@ function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
     + `<p class="funding-note">${t('helpSeedCode', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
-        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
+        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION, date: APP_BUILD_DATE })}</p>`,
   [{ label: t('helpModalOk'), primary: true }]);
 }
 

@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="app-version" content="1.9.0" />
+  <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="author" content="zero900" />
+  <meta name="author" content="Ruben Deev" />
   <title>НОВОЕДА · food delivery economics simulator</title>
   <style>
 :root {
@@ -1414,8 +1415,8 @@ score = valuation × your stake`,
   welcomeHint: { ru: '<b>Первый ход.</b> Можно ничего не трогать и просто нажать «Сыграть неделю» — посмотреть, как всё работает. У каждого ползунка есть «зачем это?», а после хода игра сама разбирает результат по частям. Кнопка «?» в шапке — если захочется подробностей.', en: '<b>Your first turn.</b> You can change nothing and just press "Run week" to see how it all moves. Every slider has a "why does this matter?", and after each turn the game takes the result apart for you. The "?" button in the header has the rest.' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
-  helpVersion: { ru: 'Сборка {version}.', en: 'Build {version}.' },
-  helpAuthor: { ru: 'Игру сделал <b>zero900</b>.', en: 'Made by <b>zero900</b>.' },
+  helpVersion: { ru: 'Сборка {version} от {date}.', en: 'Build {version}, {date}.' },
+  helpAuthor: { ru: 'Игру сделал <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>.', en: 'Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -4048,6 +4049,7 @@ const BUILD = 'foodtech-2';
 // исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
 // сборка» был ответ, а не догадки.
 const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
+const APP_BUILD_DATE = document.querySelector('meta[name="app-build-date"]')?.content ?? '';
 const el = (id) => document.getElementById(id);
 
 let state = null;
@@ -5495,7 +5497,7 @@ function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
     + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
-        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
+        ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION, date: APP_BUILD_DATE })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
 }
 
