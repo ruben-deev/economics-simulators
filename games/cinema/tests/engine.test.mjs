@@ -1501,3 +1501,14 @@ test('повышение прайса не задевает базу, пока �
     `действующие не должны замечать чужой прайс: ${a.churnRate} против ${b.churnRate}`);
   assert.ok(b.priceGap > 0.3, 'зато открывается разрыв');
 });
+
+test('содержание технологий растёт от вложенного и не исчезает', () => {
+  const lean = run(24, decide({ tech: 2_000_000, rnd: 0 }), 'upkeep').last;
+  const heavy = run(24, decide({ tech: 90_000_000, rnd: 40_000_000 }), 'upkeep').last;
+  assert.ok(heavy.techUpkeep > lean.techUpkeep * 3,
+    `содержание ${Math.round(heavy.techUpkeep / 1e6)} млн против ${Math.round(lean.techUpkeep / 1e6)} млн`);
+  const grown = run(24, decide({ tech: 90_000_000, rnd: 40_000_000 }), 'upkeep');
+  const after = step(grown.state, { decisions: decide({ tech: 0, rnd: 0 }), eventChoice: 0 }).report;
+  assert.ok(after.techUpkeep > 0, 'построенное продолжает стоить и без новых вложений');
+  assert.ok(after.fixed > CONFIG.hqMonthly, 'содержание попадает в постоянные расходы');
+});

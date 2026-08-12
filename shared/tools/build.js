@@ -17,10 +17,10 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const gamesDir = path.join(root, 'games');
 
-// Версия проекта — единственный источник правды. Она попадает и в имя
-// собранного файла, и в саму страницу: две присланные сборки должны
-// различаться в списке загрузок, а не только внутри.
-const VERSION = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version;
+// Версия у каждой игры своя и объявляется в её манифесте: правка в одной
+// игре не должна переименовывать файлы остальных и делать вид, что они тоже
+// обновились. package.json остаётся версией монорепозитория целиком.
+const REPO_VERSION = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version;
 
 // Вырезает import-объявления (в том числе многострочные) и снимает export
 function stripModuleSyntax(source) {
@@ -158,8 +158,9 @@ async function buildGame(name) {
 
   // Версия внутри страницы: по ней видно, какую сборку человек открыл.
   // Модульная версия этой метки не имеет и показывает себя как dev.
+  const version = manifest.version ?? REPO_VERSION;
   let page = html.replace('<meta charset="utf-8" />',
-    `<meta charset="utf-8" />\n  <meta name="app-version" content="${VERSION}" />`);
+    `<meta charset="utf-8" />\n  <meta name="app-version" content="${version}" />`);
   page = page.replace(/<script type="module"[^>]*><\/script>/, `<script>\n${bundle}\n</script>`);
   // Все <link rel="stylesheet"> заменяем встроенными стилями в том же порядке
   let styleIndex = 0;
@@ -169,7 +170,7 @@ async function buildGame(name) {
     throw new Error(`Не удалось встроить ресурсы в ${name}: разметка index.html изменилась`);
   }
 
-  const relTarget = manifest.output.replace('{version}', VERSION);
+  const relTarget = manifest.output.replace('{version}', version);
   const target = path.join(dir, relTarget);
   await fs.mkdir(path.dirname(target), { recursive: true });
 

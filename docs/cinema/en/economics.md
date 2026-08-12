@@ -719,3 +719,30 @@ This is a teaching model, not a forecasting tool.
 The model shows the **structure** of a subscription business: why content is a capital
 investment with a lag, why engagement costs money, and why growing the base and growing
 the value of your stake are not the same thing.
+
+---
+
+## The cost of what is already built
+
+The "invest in technology" lever used to be dishonest: the spend was written off
+once, the accumulated level stayed forever and cost nothing. That is not how it
+works. Two lines were missing from the model.
+
+**Upkeep.** Every feature built has to be maintained: libraries updated, breakage
+from other changes fixed, new people taught. The bill arrives every month and
+does not depend on whether anyone uses the feature:
+
+```
+upkeep = cumulative investment × 1.35% в месяц
+```
+
+It is computed from the amount invested, not from the level. The level
+saturates; the maintenance bill does not. So "invest a large sum at once" is not
+a one-off cost but a permanent obligation.
+
+**Infrastructure.** Load-driven infrastructure already exists here and is called traffic: `cdn = watch hours × cost per hour`. It grows with audience loyalty and gets cheaper with technology and encoding — see the watch-hours section.
+
+Both lines used to hide inside "office and administration" and grew with neither
+the product nor the load. The base fixed line was reduced by exactly what these
+two add under the reference strategy, so the balance did not shift — but the
+behaviour did: costs now grow together with the business.

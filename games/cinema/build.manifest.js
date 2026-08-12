@@ -3,18 +3,21 @@
 
 export default {
   name: 'cinema',
+  version: '1.1.0',
   title: 'КИНОПОТОК · streaming economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
   // и не говорит ни о содержимом, ни о том, какая это из двух игр.
-  // {version} подставляется из package.json: по имени файла должно быть
-  // видно, какая это сборка — иначе две присланные версии не различить.
+  // {version} подставляется из поля version ниже. Версии игр независимы:
+  // правка в кинотеатре не должна переименовывать файл доставки и делать вид,
+  // что он тоже обновился.
   output: 'dist/kinopotok-streaming-simulator-v{version}.html',
   css: ['../../shared/styles.css'],
   modules: [
     '../../shared/i18n.js',
     'src/strings.js',
     '../../shared/clone.js',
+    '../../shared/upkeep.js',
     '../../shared/rng.js',
     'src/model/config.js',
     'src/model/market.js',

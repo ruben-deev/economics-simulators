@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="0.4.0" />
+  <meta name="app-version" content="1.1.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -1078,6 +1078,9 @@ const STRINGS = {
   pnlSupport: { ru: 'Поддержка', en: 'Support' },
   pnlContribution: { ru: 'Вклад (contribution)', en: 'Contribution' },
   pnlDistricts: { ru: 'Содержание районов', en: 'District running costs' },
+  pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
+  pnlServers: { ru: 'Серверы и трафик', en: 'Servers and traffic' },
+  pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Офис, разработка, содержание курьеров', en: 'Office, engineering, courier upkeep' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlSales: { ru: 'Подключение ресторанов', en: 'Restaurant acquisition' },
@@ -1242,6 +1245,53 @@ function deepClone(value) {
 }
 
 
+// ===== ../../shared/upkeep.js ======================================
+// ============================================================================
+// Стоимость того, что уже построено.
+//
+// Во всех трёх играх есть рычаг «вложиться в технологии». Долгое время он был
+// устроен нечестно: вложение разово списывалось, накопленный уровень оставался
+// навсегда и не стоил ничего. Так не бывает.
+//
+// Здесь две статьи, которых в модели не хватало.
+//
+// 1. СОДЕРЖАНИЕ. Каждая построенная функция требует, чтобы её поддерживали:
+//    обновляли библиотеки, чинили после чужих изменений, объясняли новым
+//    людям. Счёт приходит каждый месяц и не зависит от того, пользуются ли
+//    функцией. Поэтому «вложить разом полмиллиарда» — это не разовая трата,
+//    а постоянное обязательство, и решение о вложении надо принимать не по
+//    цене, а по цене вместе с содержанием.
+//
+// 2. ИНФРАСТРУКТУРА. Серверы растут не от вашего решения, а от нагрузки:
+//    от заказов, часов просмотра, проданных билетов. Это единственная статья,
+//    которая дорожает ровно тогда, когда дела идут хорошо. Технологии её
+//    удешевляют — в этом и есть их окупаемость, помимо качества продукта.
+// ============================================================================
+
+/**
+ * Ежемесячное (в доставке — еженедельное) содержание накопленного продукта.
+ * Считается от суммы вложений, а не от уровня: уровень насыщается, а счёт за
+ * поддержку — нет. Именно поэтому чрезмерные ранние вложения давят потом.
+ */
+function platformUpkeep(stock, rate) {
+  return Math.max(0, stock) * rate;
+}
+
+/**
+ * Инфраструктура под нагрузкой. Технологический уровень её удешевляет,
+ * но не отменяет: чем больше вы продаёте, тем больше платите.
+ *
+ * @param load      единицы нагрузки (заказы, часы, билеты)
+ * @param perUnit   базовая стоимость единицы
+ * @param techLevel 0..1 — уровень технологий
+ * @param relief    какую долю стоимости снимает полный технологический уровень
+ */
+function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
+  const discount = 1 - relief * Math.min(1, Math.max(0, techLevel));
+  return Math.max(0, load) * perUnit * discount;
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1345,7 +1395,15 @@ const CONFIG = {
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
   supportTechDiscount: 8,      // на сколько ₽ снижает поддержку максимальный уровень техно
-  hqWeeklyBase: 900_000,       // офис, разработка, менеджмент, ₽/нед
+  // Офис и менеджмент. Разработка и серверы вынесены отдельными статьями:
+  // раньше они прятались здесь и не росли ни с продуктом, ни с нагрузкой.
+  hqWeeklyBase: 560_000,       // офис и менеджмент, ₽/нед
+  // Содержание построенного: каждая вложенная в технологии сумма приходит
+  // счётом каждую неделю, сколько бы времени ни прошло.
+  techUpkeepRate: 0.0034,
+  // Серверы под нагрузкой — единственная статья, дорожающая от успеха
+  serverPerOrder: 1.9,
+  serverTechRelief: 0.35,
   // Курьер стоит денег, даже когда не везёт заказ: выходы на слот, гарантии,
   // экипировка, страховка, диспетчеризация. Поэтому запас мощности не бесплатен.
   hqPerCourier: 2_200,         // содержание одного курьера, ₽/нед
@@ -2443,7 +2501,13 @@ function step(prevState, input = {}) {
   const contribution = netRevenue - variableCost;
 
   const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0);
-  const hqCost = CONFIG.hqWeeklyBase + CONFIG.hqPerCourier * state.couriers;
+  // Построенное стоит денег каждую неделю, а серверы дорожают вместе с
+  // заказами: обе статьи раньше прятались внутри «офиса и менеджмента».
+  const techUpkeep = platformUpkeep(
+    (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
+  const serverCost = infraCost(orders, CONFIG.serverPerOrder, techLevel(state), CONFIG.serverTechRelief);
+  const hqCost = CONFIG.hqWeeklyBase + CONFIG.hqPerCourier * state.couriers
+    + techUpkeep + serverCost;
 
   // --- 6. Курьеры: наём и отток ---
   // Курьер оценивает не фактический, а ожидаемый заработок: он видит ставку и
@@ -2654,6 +2718,8 @@ function step(prevState, input = {}) {
     opex,
     districtFixed,
     hqCost,
+    techUpkeep,
+    serverCost,
     oneOff,
     launchCost,
     hiringCost,
@@ -3921,7 +3987,9 @@ function renderPnlTab() {
         ${line(t('pnlSupport'), -r.supportCost, 'neg', true)}
         <tr class="total"><td>${t('pnlContribution')}</td><td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlDistricts'), -r.districtFixed, 'neg', true)}
-        ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
+        ${line(t('pnlHq'), -(r.hqCost - (r.techUpkeep ?? 0) - (r.serverCost ?? 0)), 'neg', true)}
+        ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+        ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlMarketing'), -r.decisions.marketing, 'neg', true)}
         ${line(t('pnlSales'), -r.decisions.sales, 'neg', true)}
         ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}

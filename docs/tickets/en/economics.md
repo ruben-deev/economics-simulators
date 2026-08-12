@@ -252,3 +252,30 @@ is the point: the take rate is a decision for the year, not a setting.
 
 The model shows the **structure** of a two-sided market, not a forecast of any
 particular ticketing business.
+
+---
+
+## The cost of what is already built
+
+The "invest in technology" lever used to be dishonest: the spend was written off
+once, the accumulated level stayed forever and cost nothing. That is not how it
+works. Two lines were missing from the model.
+
+**Upkeep.** Every feature built has to be maintained: libraries updated, breakage
+from other changes fixed, new people taught. The bill arrives every month and
+does not depend on whether anyone uses the feature:
+
+```
+upkeep = cumulative investment × 1.25% в месяц
+```
+
+It is computed from the amount invested, not from the level. The level
+saturates; the maintenance bill does not. So "invest a large sum at once" is not
+a one-off cost but a permanent obligation.
+
+**Infrastructure.** Servers grow with tickets sold: `servers = tickets × ₽1.4 × (1 − 0.30 × product level)`. Capacity headroom (a separate lever) covers the peak on the on-sale day; this line covers the steady traffic every month.
+
+Both lines used to hide inside "office and administration" and grew with neither
+the product nor the load. The base fixed line was reduced by exactly what these
+two add under the reference strategy, so the balance did not shift — but the
+behaviour did: costs now grow together with the business.

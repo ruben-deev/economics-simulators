@@ -20,6 +20,7 @@
 
 import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
+import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, seasonOf } from './weather.js';
@@ -374,7 +375,13 @@ export function step(prevState, input = {}) {
   const contribution = netRevenue - variableCost;
 
   const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0);
-  const hqCost = CONFIG.hqWeeklyBase + CONFIG.hqPerCourier * state.couriers;
+  // Построенное стоит денег каждую неделю, а серверы дорожают вместе с
+  // заказами: обе статьи раньше прятались внутри «офиса и менеджмента».
+  const techUpkeep = platformUpkeep(
+    (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
+  const serverCost = infraCost(orders, CONFIG.serverPerOrder, techLevel(state), CONFIG.serverTechRelief);
+  const hqCost = CONFIG.hqWeeklyBase + CONFIG.hqPerCourier * state.couriers
+    + techUpkeep + serverCost;
 
   // --- 6. Курьеры: наём и отток ---
   // Курьер оценивает не фактический, а ожидаемый заработок: он видит ставку и
@@ -585,6 +592,8 @@ export function step(prevState, input = {}) {
     opex,
     districtFixed,
     hqCost,
+    techUpkeep,
+    serverCost,
     oneOff,
     launchCost,
     hiringCost,

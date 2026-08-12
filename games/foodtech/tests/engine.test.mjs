@@ -560,3 +560,24 @@ test('погодных событий больше нет — погода вы�
   assert.ok(!ids.includes('rain') && !ids.includes('heat'));
   assert.ok(ids.length >= 10);
 });
+
+// ----------------------------------------------------------------------------
+// Стоимость построенного
+// ----------------------------------------------------------------------------
+const WORKING = { sales: 300_000, marketing: 1_000_000, targetCouriers: 200 };
+
+test('содержание технологий растёт от вложенного и не исчезает', () => {
+  const lean = run(24, baseDecisions({ ...WORKING, tech: 100_000 }), 'upkeep').reports.at(-1);
+  const heavy = run(24, baseDecisions({ ...WORKING, tech: 6_000_000 }), 'upkeep').reports.at(-1);
+  assert.ok(heavy.techUpkeep > lean.techUpkeep * 3,
+    `содержание ${Math.round(heavy.techUpkeep / 1000)} тыс против ${Math.round(lean.techUpkeep / 1000)} тыс`);
+});
+
+test('серверы растут вместе с заказами и дешевеют от технологий', () => {
+  const perOrder = (r) => r.serverCost / Math.max(1, r.orders);
+  const cheap = run(20, baseDecisions({ ...WORKING, tech: 0 }), 'srv').reports.at(-1);
+  const rich = run(20, baseDecisions({ ...WORKING, tech: 6_000_000 }), 'srv').reports.at(-1);
+  assert.ok(cheap.serverCost > 0, 'серверы должны стоить денег');
+  assert.ok(perOrder(rich) < perOrder(cheap),
+    `с заказа ${perOrder(rich).toFixed(2)} ₽ против ${perOrder(cheap).toFixed(2)} ₽`);
+});

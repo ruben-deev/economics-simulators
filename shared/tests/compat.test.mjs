@@ -49,12 +49,15 @@ const TOO_NEW_CSS = [
   ['100lvh', 'единицы lvh', 'Safari 15.4'],
 ];
 
-const VERSION = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+// Версии игр независимы: у каждой своя в её манифесте. package.json остаётся
+// версией монорепозитория и в имена файлов больше не попадает.
+const REPO_VERSION = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
 
 const bundles = await Promise.all(readdirSync(join(root, 'games')).map(async (game) => {
   const dir = join(root, 'games', game);
   const { default: manifest } = await import(pathToFileURL(join(dir, 'build.manifest.js')).href);
-  return [game, join(dir, manifest.output.replace('{version}', VERSION)), manifest.output];
+  const version = manifest.version ?? REPO_VERSION;
+  return [game, join(dir, manifest.output.replace('{version}', version)), manifest.output, version];
 }));
 
 test('в собранных файлах нет API новее нашей планки', () => {
@@ -127,11 +130,12 @@ test('версия видна в имени файла, внутри стран�
   // «а это точно новый файл?» — вопрос без ответа. Проверяем всю цепочку:
   // имя файла, метка внутри страницы и каждая ссылка в документации.
   const referenced = new Set();
-  for (const [game, bundle, template] of bundles) {
+  for (const [game, bundle, template, version] of bundles) {
     assert.ok(template.includes('{version}'), `${game}: в манифесте нет подстановки {version}`);
-    assert.ok(bundle.includes(`-v${VERSION}.html`), `${game}: версии нет в имени файла`);
+    assert.match(version, /^\d+\.\d+\.\d+$/, `${game}: версия «${version}» не похожа на версию`);
+    assert.ok(bundle.includes(`-v${version}.html`), `${game}: версии нет в имени файла`);
     const html = readFileSync(bundle, 'utf8');
-    assert.match(html, new RegExp(`<meta name="app-version" content="${VERSION}"`),
+    assert.match(html, new RegExp(`<meta name="app-version" content="${version}"`),
       `${game}: версии нет внутри страницы`);
     referenced.add(bundle.split('/').pop());
 
@@ -140,7 +144,7 @@ test('версия видна в имени файла, внутри стран�
     const base = template.split('/').pop().replace('{version}', '');
     for (const file of readdirSync(dir)) {
       if (!file.startsWith(base.split('-v')[0])) continue;
-      assert.ok(file.includes(`-v${VERSION}.`), `${game}: в dist осталась старая сборка ${file}`);
+      assert.ok(file.includes(`-v${version}.`), `${game}: в dist осталась старая сборка ${file}`);
     }
   }
 

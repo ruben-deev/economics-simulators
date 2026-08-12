@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="0.4.0" />
+  <meta name="app-version" content="1.0.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -1133,6 +1133,9 @@ const STRINGS = {
   pnlProduct: { ru: 'Продукт', en: 'Product' },
   pnlCapacity: { ru: 'Запас мощности', en: 'Capacity headroom' },
   pnlRnd: { ru: 'Команда данных', en: 'Data team' },
+  pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
+  pnlServers: { ru: 'Серверы и трафик', en: 'Servers and traffic' },
+  pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Офис и администрация', en: 'Office and admin' },
   pnlProfit: { ru: 'Прибыль', en: 'Profit' },
   pnlOneOff: { ru: 'Разовые', en: 'One-offs' },
@@ -1227,6 +1230,53 @@ function deepClone(value) {
   const out = {};
   for (const key of Object.keys(value)) out[key] = deepClone(value[key]);
   return out;
+}
+
+
+// ===== ../../shared/upkeep.js ======================================
+// ============================================================================
+// Стоимость того, что уже построено.
+//
+// Во всех трёх играх есть рычаг «вложиться в технологии». Долгое время он был
+// устроен нечестно: вложение разово списывалось, накопленный уровень оставался
+// навсегда и не стоил ничего. Так не бывает.
+//
+// Здесь две статьи, которых в модели не хватало.
+//
+// 1. СОДЕРЖАНИЕ. Каждая построенная функция требует, чтобы её поддерживали:
+//    обновляли библиотеки, чинили после чужих изменений, объясняли новым
+//    людям. Счёт приходит каждый месяц и не зависит от того, пользуются ли
+//    функцией. Поэтому «вложить разом полмиллиарда» — это не разовая трата,
+//    а постоянное обязательство, и решение о вложении надо принимать не по
+//    цене, а по цене вместе с содержанием.
+//
+// 2. ИНФРАСТРУКТУРА. Серверы растут не от вашего решения, а от нагрузки:
+//    от заказов, часов просмотра, проданных билетов. Это единственная статья,
+//    которая дорожает ровно тогда, когда дела идут хорошо. Технологии её
+//    удешевляют — в этом и есть их окупаемость, помимо качества продукта.
+// ============================================================================
+
+/**
+ * Ежемесячное (в доставке — еженедельное) содержание накопленного продукта.
+ * Считается от суммы вложений, а не от уровня: уровень насыщается, а счёт за
+ * поддержку — нет. Именно поэтому чрезмерные ранние вложения давят потом.
+ */
+function platformUpkeep(stock, rate) {
+  return Math.max(0, stock) * rate;
+}
+
+/**
+ * Инфраструктура под нагрузкой. Технологический уровень её удешевляет,
+ * но не отменяет: чем больше вы продаёте, тем больше платите.
+ *
+ * @param load      единицы нагрузки (заказы, часы, билеты)
+ * @param perUnit   базовая стоимость единицы
+ * @param techLevel 0..1 — уровень технологий
+ * @param relief    какую долю стоимости снимает полный технологический уровень
+ */
+function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
+  const discount = 1 - relief * Math.min(1, Math.max(0, techLevel));
+  return Math.max(0, load) * perUnit * discount;
 }
 
 
@@ -1358,7 +1408,15 @@ const CONFIG = {
   trustFloor: 0.25,
 
   // --- Постоянные расходы ---
-  hqMonthly: 20_000_000,
+  // Офис и администрация. Разработка и серверы — отдельные статьи ниже.
+  hqMonthly: 13_000_000,
+  // Содержание построенного: платформа, приложение и алгоритмы требуют
+  // поддержки каждый месяц, сколько бы времени ни прошло с их запуска.
+  techUpkeepRate: 0.0125,
+  // Серверы под нагрузкой: старт продаж хита — это не только запас мощности,
+  // но и счёт за трафик, который приходит каждый месяц.
+  serverPerTicket: 1.4,
+  serverTechRelief: 0.30,
   supportPerTicket: 2.8,        // ₽ поддержки на проданный билет при базовом бюджете
   refSupport: 9_000_000,
 
@@ -3546,9 +3604,15 @@ function step(prevState, input = {}) {
 
   const managerCost = decisions.managers * CONFIG.managerCost;
   const platformSeats = platformCost(connectedCount);
+  // Построенное надо содержать, а серверы растут вместе с билетами: обе
+  // статьи дорожают ровно тогда, когда дела идут хорошо.
+  const techUpkeep = platformUpkeep(
+    state.platformStock + state.productStock + state.rndStock, CONFIG.techUpkeepRate);
+  const serverCost = infraCost(ticketsTotal, CONFIG.serverPerTicket, prodLevel, CONFIG.serverTechRelief);
   const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
-    + decisions.capacityTech + decisions.rnd + platformSeats;
+    + decisions.capacityTech + decisions.rnd + platformSeats
+    + techUpkeep + serverCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -3720,6 +3784,8 @@ function step(prevState, input = {}) {
     contribution,
     managerCost,
     platformSeats,
+    techUpkeep,
+    serverCost,
     fixed,
     oneOff,
     installCost,
@@ -5099,6 +5165,8 @@ function renderPnlTab() {
         ${line(t('pnlSupport'), -d.support, 'neg', true)}
         ${line(t('pnlCapacity'), -d.capacityTech, 'neg', true)}
         ${line(t('pnlRnd'), -d.rnd, 'neg', true)}
+        ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+        ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
         <tr class="total"><td>${t('pnlProfit')}</td>
           <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>

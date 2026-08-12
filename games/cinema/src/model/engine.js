@@ -33,6 +33,7 @@ import {
 } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
+import { platformUpkeep } from '../../../../shared/upkeep.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
@@ -863,8 +864,13 @@ export function step(prevState, input = {}) {
 
   const contentSpend = contentBudget.licensing + productionSpend;
   const marketingSpend = decisions.brandMarketing + campaignSpend;
+  // Содержание построенного: вложенное в технологии и данные приходит счётом
+  // каждый месяц. Трафик уже считается отдельно и растёт с просмотром —
+  // это и есть инфраструктура под нагрузкой.
+  const techUpkeep = platformUpkeep(
+    (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
-    + marketingSpend + decisions.tech + decisions.rnd;
+    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
   const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
     + crisisCost + partnerFees;
   const profit = contribution - fixed;
@@ -987,6 +993,7 @@ export function step(prevState, input = {}) {
     contribution,
     cmPerSub,
     fixed,
+    techUpkeep,
     contentSpend,
     contentCapped: capApplied ? cap : null,
     oneOff,

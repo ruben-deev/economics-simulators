@@ -427,6 +427,8 @@ export const STRINGS = {
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlTech: { ru: 'Технологии', en: 'Technology' },
   pnlRnd: { ru: 'Data Science', en: 'Data science' },
+  pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
+  pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Студия, редакция, офис', en: 'Studio, editorial, overheads' },
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы (внедрения, события)', en: 'One-off costs (rollouts, events)' },

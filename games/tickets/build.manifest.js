@@ -3,18 +3,21 @@
 
 export default {
   name: 'tickets',
+  version: '1.0.0',
   title: 'БИЛЕТОН · ticketing marketplace simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
   // и не говорит ни о содержимом, ни о том, какая это из игр.
-  // {version} подставляется из package.json: по имени файла должно быть
-  // видно, какая это сборка — иначе две присланные версии не различить.
+  // {version} подставляется из поля version ниже. Версии игр независимы:
+  // правка в кинотеатре не должна переименовывать файл доставки и делать вид,
+  // что он тоже обновился.
   output: 'dist/bileton-ticketing-simulator-v{version}.html',
   css: ['../../shared/styles.css'],
   modules: [
     '../../shared/i18n.js',
     'src/strings.js',
     '../../shared/clone.js',
+    '../../shared/upkeep.js',
     '../../shared/rng.js',
     'src/model/config.js',
     'src/model/market.js',

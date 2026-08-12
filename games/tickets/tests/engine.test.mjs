@@ -393,3 +393,31 @@ test('юнит-экономика считается по вашей афише'
   const dearer = unitEconomics(state, { ...state.decisions, buyerFee: 0.2 });
   assert.ok(dearer.blended > u.blended, 'выше сбор — больше выручки с билета');
 });
+
+// ----------------------------------------------------------------------------
+// Стоимость построенного
+// ----------------------------------------------------------------------------
+test('содержание технологий растёт от вложенного и не исчезает', () => {
+  const lean = run(24, decide({ platformDev: 2_000_000, product: 2_000_000 }), 'up').last;
+  const heavy = run(24, decide({ platformDev: 60_000_000, product: 60_000_000 }), 'up').last;
+  assert.ok(heavy.techUpkeep > lean.techUpkeep * 3,
+    `содержание ${Math.round(heavy.techUpkeep / 1e6)} млн против ${Math.round(lean.techUpkeep / 1e6)} млн`);
+  // Счёт приходит и в тот месяц, когда вложений не было
+  const stopped = run(24, decide({ platformDev: 60_000_000, product: 60_000_000 }), 'up');
+  const after = step(stopped.state, {
+    decisions: decide({ platformDev: 0, product: 0 }), eventChoice: 0,
+  }).report;
+  assert.ok(after.techUpkeep > 0, 'построенное продолжает стоить и без новых вложений');
+});
+
+test('серверы растут вместе с билетами и дешевеют от продукта', () => {
+  const { reports } = run(20, decide({ platformFor: { club: true } }), 'srv');
+  const early = reports[2], late = reports.at(-1);
+  assert.ok(late.tickets > early.tickets, 'билетов должно стать больше');
+  assert.ok(late.serverCost > early.serverCost, 'серверы дорожают вместе с нагрузкой');
+  const perTicket = (r) => r.serverCost / Math.max(1, r.tickets);
+  const cheap = run(20, decide({ product: 0 }), 'srv2').last;
+  const rich = run(20, decide({ product: 90_000_000 }), 'srv2').last;
+  assert.ok(perTicket(rich) < perTicket(cheap),
+    `с билета ${perTicket(rich).toFixed(2)} ₽ против ${perTicket(cheap).toFixed(2)} ₽`);
+});

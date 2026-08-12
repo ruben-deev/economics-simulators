@@ -935,6 +935,8 @@ function renderPnlTab() {
         ${line(t('pnlSupport'), -d.support, 'neg', true)}
         ${line(t('pnlCapacity'), -d.capacityTech, 'neg', true)}
         ${line(t('pnlRnd'), -d.rnd, 'neg', true)}
+        ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+        ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
         <tr class="total"><td>${t('pnlProfit')}</td>
           <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>

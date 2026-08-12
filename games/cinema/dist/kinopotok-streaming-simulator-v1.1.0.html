@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="0.4.0" />
+  <meta name="app-version" content="1.1.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>КИНОПОТОК · streaming economics simulator</title>
@@ -1231,6 +1231,8 @@ const STRINGS = {
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlTech: { ru: 'Технологии', en: 'Technology' },
   pnlRnd: { ru: 'Data Science', en: 'Data science' },
+  pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
+  pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Студия, редакция, офис', en: 'Studio, editorial, overheads' },
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы (внедрения, события)', en: 'One-off costs (rollouts, events)' },
@@ -1366,6 +1368,53 @@ function deepClone(value) {
 }
 
 
+// ===== ../../shared/upkeep.js ======================================
+// ============================================================================
+// Стоимость того, что уже построено.
+//
+// Во всех трёх играх есть рычаг «вложиться в технологии». Долгое время он был
+// устроен нечестно: вложение разово списывалось, накопленный уровень оставался
+// навсегда и не стоил ничего. Так не бывает.
+//
+// Здесь две статьи, которых в модели не хватало.
+//
+// 1. СОДЕРЖАНИЕ. Каждая построенная функция требует, чтобы её поддерживали:
+//    обновляли библиотеки, чинили после чужих изменений, объясняли новым
+//    людям. Счёт приходит каждый месяц и не зависит от того, пользуются ли
+//    функцией. Поэтому «вложить разом полмиллиарда» — это не разовая трата,
+//    а постоянное обязательство, и решение о вложении надо принимать не по
+//    цене, а по цене вместе с содержанием.
+//
+// 2. ИНФРАСТРУКТУРА. Серверы растут не от вашего решения, а от нагрузки:
+//    от заказов, часов просмотра, проданных билетов. Это единственная статья,
+//    которая дорожает ровно тогда, когда дела идут хорошо. Технологии её
+//    удешевляют — в этом и есть их окупаемость, помимо качества продукта.
+// ============================================================================
+
+/**
+ * Ежемесячное (в доставке — еженедельное) содержание накопленного продукта.
+ * Считается от суммы вложений, а не от уровня: уровень насыщается, а счёт за
+ * поддержку — нет. Именно поэтому чрезмерные ранние вложения давят потом.
+ */
+function platformUpkeep(stock, rate) {
+  return Math.max(0, stock) * rate;
+}
+
+/**
+ * Инфраструктура под нагрузкой. Технологический уровень её удешевляет,
+ * но не отменяет: чем больше вы продаёте, тем больше платите.
+ *
+ * @param load      единицы нагрузки (заказы, часы, билеты)
+ * @param perUnit   базовая стоимость единицы
+ * @param techLevel 0..1 — уровень технологий
+ * @param relief    какую долю стоимости снимает полный технологический уровень
+ */
+function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
+  const discount = 1 - relief * Math.min(1, Math.max(0, techLevel));
+  return Math.max(0, load) * perUnit * discount;
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1468,7 +1517,11 @@ const CONFIG = {
   refMarketingPerViewer: 26,  // ₽ на одного потенциального зрителя в месяц
 
   // --- Постоянные расходы ---
-  hqMonthly: 26_000_000,      // студия, редакция, разработка, поддержка
+  // Студия, редакция и поддержка. Разработка вынесена отдельной статьёй:
+  // построенный плеер и рекомендательный стек нужно содержать, а раньше
+  // накопленный уровень технологий не стоил ничего.
+  hqMonthly: 20_000_000,      // студия, редакция, администрация
+  techUpkeepRate: 0.0135,     // содержание накопленных технологий, доля в месяц
   techSaturation: 900_000_000,
 
   // --- Данные и алгоритмы ---
@@ -4158,8 +4211,13 @@ function step(prevState, input = {}) {
 
   const contentSpend = contentBudget.licensing + productionSpend;
   const marketingSpend = decisions.brandMarketing + campaignSpend;
+  // Содержание построенного: вложенное в технологии и данные приходит счётом
+  // каждый месяц. Трафик уже считается отдельно и растёт с просмотром —
+  // это и есть инфраструктура под нагрузкой.
+  const techUpkeep = platformUpkeep(
+    (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
-    + marketingSpend + decisions.tech + decisions.rnd;
+    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
   const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
     + crisisCost + partnerFees;
   const profit = contribution - fixed;
@@ -4282,6 +4340,7 @@ function step(prevState, input = {}) {
     contribution,
     cmPerSub,
     fixed,
+    techUpkeep,
     contentSpend,
     contentCapped: capApplied ? cap : null,
     oneOff,
@@ -6188,6 +6247,7 @@ function renderPnlTab() {
       ${line(t('pnlCampaigns'), -r.campaignSpend, 'neg', true)}
       ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
       ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
+      ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
       ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
       <tr class="total"><td>${t('pnlOperatingProfit')}</td>
         <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>

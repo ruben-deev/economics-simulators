@@ -488,3 +488,30 @@ Early money is the most expensive money there is.
 
 All of this keeps the model transparent: any number on screen can be traced back to a
 formula in a couple of steps. For a teaching tool, that matters more than realism.
+
+---
+
+## The cost of what is already built
+
+The "invest in technology" lever used to be dishonest: the spend was written off
+once, the accumulated level stayed forever and cost nothing. That is not how it
+works. Two lines were missing from the model.
+
+**Upkeep.** Every feature built has to be maintained: libraries updated, breakage
+from other changes fixed, new people taught. The bill arrives every week and
+does not depend on whether anyone uses the feature:
+
+```
+upkeep = cumulative investment × 0.34% в неделю
+```
+
+It is computed from the amount invested, not from the level. The level
+saturates; the maintenance bill does not. So "invest a large sum at once" is not
+a one-off cost but a permanent obligation.
+
+**Infrastructure.** Servers grow not from your decision but from orders: `servers = orders × ₽1.9 × (1 − 0.35 × tech level)`. It is the one line that gets more expensive exactly when things go well — and the one technology pays back directly.
+
+Both lines used to hide inside "office and administration" and grew with neither
+the product nor the load. The base fixed line was reduced by exactly what these
+two add under the reference strategy, so the balance did not shift — but the
+behaviour did: costs now grow together with the business.

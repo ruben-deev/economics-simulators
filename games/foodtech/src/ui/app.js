@@ -823,7 +823,9 @@ function renderPnlTab() {
         ${line(t('pnlSupport'), -r.supportCost, 'neg', true)}
         <tr class="total"><td>${t('pnlContribution')}</td><td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlDistricts'), -r.districtFixed, 'neg', true)}
-        ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
+        ${line(t('pnlHq'), -(r.hqCost - (r.techUpkeep ?? 0) - (r.serverCost ?? 0)), 'neg', true)}
+        ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+        ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlMarketing'), -r.decisions.marketing, 'neg', true)}
         ${line(t('pnlSales'), -r.decisions.sales, 'neg', true)}
         ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}

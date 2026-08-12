@@ -27,6 +27,7 @@ import {
 } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
+import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
 import {
   seasonOf, eventSeason, demandSeason, rollHit, hitById,
 } from './market.js';
@@ -541,9 +542,15 @@ export function step(prevState, input = {}) {
 
   const managerCost = decisions.managers * CONFIG.managerCost;
   const platformSeats = platformCost(connectedCount);
+  // Построенное надо содержать, а серверы растут вместе с билетами: обе
+  // статьи дорожают ровно тогда, когда дела идут хорошо.
+  const techUpkeep = platformUpkeep(
+    state.platformStock + state.productStock + state.rndStock, CONFIG.techUpkeepRate);
+  const serverCost = infraCost(ticketsTotal, CONFIG.serverPerTicket, prodLevel, CONFIG.serverTechRelief);
   const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
-    + decisions.capacityTech + decisions.rnd + platformSeats;
+    + decisions.capacityTech + decisions.rnd + platformSeats
+    + techUpkeep + serverCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -715,6 +722,8 @@ export function step(prevState, input = {}) {
     contribution,
     managerCost,
     platformSeats,
+    techUpkeep,
+    serverCost,
     fixed,
     oneOff,
     installCost,
