@@ -16,6 +16,10 @@ export function neutralModifiers() {
     awarenessAdd: 0,     // разовый прирост охвата, доля потенциала
     oneOffCost: 0,       // разовые расходы, ₽
     oneOffGain: 0,       // разовые поступления, ₽
+    // Уступка как доля месячного оборота: цена решения растёт вместе с вами.
+    // Скидка крупному промоутеру почти бесплатна маленькому сервису и очень
+    // дорога большому — это и делает выбор состояние-зависимым.
+    gmvShareCost: 0,
     notes: [],
   };
 }
@@ -74,13 +78,13 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Подключиться', en: 'Join the programme' },
-        detail: { ru: 'Разово 60 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off ₽60M of work. Demand grows noticeably.' },
-        effects: { oneOffCost: 60_000_000, demandMult: 1.20, awarenessAdd: 0.02 },
+        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off ₽80M of work. Demand grows noticeably.' },
+        effects: { oneOffCost: 80_000_000, demandMult: 1.11, awarenessAdd: 0.015 },
       },
       {
         label: { ru: 'Пропустить', en: 'Skip it' },
         detail: { ru: 'Ничего не тратим. Зритель уйдёт туда, где программа есть.', en: 'Costs nothing. The buyer goes where the programme works.' },
-        effects: { demandMult: 0.95, orgJoinMult: 0.92 },
+        effects: { demandMult: 0.97, orgJoinMult: 0.95 },
       },
     ],
   },
@@ -97,14 +101,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Согласиться', en: 'Agree' },
-        detail: { ru: 'Оборот остаётся, маржа падает.', en: 'The turnover stays, the margin falls.' },
-        effects: { oneOffCost: 90_000_000, orgJoinMult: 1.1 },
+        label: { ru: 'Согласиться (уступка ~5% месячного оборота)', en: 'Agree (a concession of ~5% of monthly turnover)' },
+        detail: { ru: 'Цена уступки растёт вместе с вашим оборотом: маленькому сервису она почти ничего не стоит, большому — очень дорога.', en: 'The concession grows with your turnover: nearly free for a small service, very expensive for a big one.' },
+        effects: { gmvShareCost: 0.05, orgJoinMult: 1.1 },
       },
       {
         label: { ru: 'Отказать', en: 'Refuse' },
-        detail: { ru: 'Он уходит и уводит часть коллег.', en: 'He leaves and takes some colleagues with him.' },
-        effects: { orgAngerAdd: 0.05, demandMult: 0.94 },
+        detail: { ru: 'Он уходит и уводит часть коллег. Терпимо, пока организаторов мало; больно, когда их сотни.', en: 'He leaves and takes colleagues with him. Bearable while you have few organisers; painful once you have hundreds.' },
+        effects: { orgAngerAdd: 0.035, demandMult: 0.96 },
       },
     ],
   },
@@ -123,7 +127,7 @@ export const EVENTS = [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
         detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '₽75M one-off, and the venue and its events are yours.' },
-        effects: { oneOffCost: 75_000_000, orgJoinMult: 1.3 },
+        effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {
         label: { ru: 'Предложить билетный виджет', en: 'Offer a ticketing widget' },
@@ -147,12 +151,12 @@ export const EVENTS = [
       {
         label: { ru: 'Показать сбор в афише', en: 'Show the fee in the listings' },
         detail: { ru: 'Конверсия просядет, доверие вырастет.', en: 'Conversion drops, trust rises.' },
-        effects: { conversionMult: 0.9, trustAdd: 0.07 },
+        effects: { conversionMult: 0.80, trustAdd: 0.03 },
       },
       {
         label: { ru: 'Ответить, что так у всех', en: 'Reply that everyone does it' },
         detail: { ru: 'Бесплатно и почти правда. Доверие всё равно просядет.', en: 'Free and almost true. Trust falls anyway.' },
-        effects: { trustAdd: -0.06 },
+        effects: { trustAdd: -0.01 },
       },
     ],
   },
@@ -170,8 +174,8 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Согласиться', en: 'Accept' },
-        detail: { ru: 'Разово 120 млн ₽ и рост спроса. Сбор частично отдан банку.', en: '₽120M up front and more demand. Part of the fee now belongs to the bank.' },
-        effects: { oneOffGain: 120_000_000, demandMult: 1.08, trustAdd: -0.02 },
+        detail: { ru: 'Разово 200 млн ₽ и рост спроса. Но брендированные скидки раздражают зрителя и организаторов: доверие и афиша страдают. Дешёвая сделка при высоком доверии, дорогая — при низком.', en: '₽200M up front and more demand. But branded discounts irritate buyers and organisers: trust and the listings both suffer. Cheap when trust is high, costly when it is low.' },
+        effects: { oneOffGain: 200_000_000, demandMult: 1.08, trustAdd: -0.02, orgAngerAdd: 0.005 },
       },
       {
         label: { ru: 'Отказаться', en: 'Decline' },

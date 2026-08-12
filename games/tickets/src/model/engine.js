@@ -622,7 +622,7 @@ export function step(prevState, input = {}) {
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
-    + (mods.oneOffCost ?? 0) - (mods.oneOffGain ?? 0);
+    + (mods.oneOffCost ?? 0) + gmv * (mods.gmvShareCost ?? 0) - (mods.oneOffGain ?? 0);
   const profit = contribution - fixed;
 
   state.cash += profit - oneOff;
@@ -1087,10 +1087,14 @@ export function explainFactors(prev, cur) {
 export function finalScore(state) {
   const v = valuation(state);
   const last = state.history[state.history.length - 1];
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
+  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
+  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
+  // в конце партии были бы бесплатными.
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: v * state.equity,
+    equityValue: (v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
