@@ -24,7 +24,7 @@ import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
 import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
-import { rollWeather, weatherEffect, seasonOf } from './weather.js';
+import { rollWeather, weatherEffect, bonusHabitStep, seasonOf } from './weather.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -68,6 +68,7 @@ export function createInitialState(seed = 'novograd') {
     installed: {},           // внедрённые алгоритмы
     couriers: 0,
     courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
+    bonusHabit: 0,           // привычка курьеров к надбавке за погоду: 0 — свежая, 1 — часть зарплаты
     decisions: { ...DEFAULT_DECISIONS, districts: [] },
     districts: Object.fromEntries(
       DISTRICTS.map((d) => [d.id, {
@@ -183,6 +184,11 @@ export function step(prevState, input = {}) {
     decisions.marketing = restrictions.marketingCap;
   }
 
+  // Размеры на начало недели: поштучные цены событий считаются от того, что
+  // игрок видит на экране в момент выбора, а не от состояния после хода.
+  const couriersAtStart = state.couriers;
+  const customersAtStart = DISTRICTS.reduce((acc, d) => acc + (state.districts[d.id]?.customers ?? 0), 0);
+
   // --- 1. Событие недели (было объявлено в конце прошлой недели) ---
   const mods = neutralModifiers();
   const event = state.pendingEvent;
@@ -224,7 +230,7 @@ export function step(prevState, input = {}) {
   // Игрок знал её заранее: она была объявлена в конце прошлого хода.
   // Бьёт с двух сторон сразу — поднимает спрос и режет пропускную способность.
   const weatherType = state.weather ?? 'clear';
-  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0);
+  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
 
   // --- 2б. Алгоритмы: доступность, внедрение, настройки ---
   const quality = algoQuality(state);
@@ -451,7 +457,7 @@ export function step(prevState, input = {}) {
   // Ошибка прогноза детерминирована (не трогает ГПСЧ) и падает с ростом качества.
   // Наём этой недели выходит на линию на следующей, поэтому и прогноз, и ручное
   // решение игрока должны смотреть на погоду СЛЕДУЮЩЕЙ недели. Она объявлена публично.
-  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0);
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
   let forecastDemand = null;
   let targetCouriers = Math.max(0, Math.round(decisions.targetCouriers));
   if (forecastOn) {
@@ -597,7 +603,12 @@ export function step(prevState, input = {}) {
   // --- 9. Деньги ---
   const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
     + decisions.tech + (decisions.rnd ?? 0);
-  const oneOff = launchCost + hiringCost + installCost + (mods.oneOffCost ?? 0);
+  // Поштучные разовые расходы событий: «доплата всем курьерам» стоит по штату
+  // на начало недели, «раздача по базе» — по числу клиентов. Цена решения
+  // растёт вместе с компанией — это и делает выбор состояние-зависимым.
+  const perUnitCost = (mods.oneOffCostPerCourier ?? 0) * couriersAtStart
+    + (mods.oneOffCostPerCustomer ?? 0) * customersAtStart;
+  const oneOff = launchCost + hiringCost + installCost + (mods.oneOffCost ?? 0) + perUnitCost;
   const profit = contribution - opex;
   state.cash += profit - oneOff;
   state.techStock += decisions.tech;
@@ -728,6 +739,7 @@ export function step(prevState, input = {}) {
     weatherBonusPerOrder: wx.payPerOrder,
     weatherBonusCost: orders * wx.payPerOrder,
     weatherChurnAdd: wx.churnAdd,
+    bonusHabit: state.bonusHabit,
     seasonName: seasonOf(week),
 
     // --- алгоритмы ---
@@ -794,6 +806,8 @@ export function step(prevState, input = {}) {
   state.pendingEvent = rollEvent(rng, week + 1, state.flags);
   state.weather = state.weatherNext ?? 'clear';
   state.weatherNext = rollWeather(rng, week + 2);
+  // Привычка к надбавке: копится, пока надбавка включена, рассеивается без неё
+  state.bonusHabit = bonusHabitStep(state.bonusHabit, decisions.weatherBonus ?? 0);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';
@@ -969,10 +983,14 @@ export function unitEconomics(state, decisions) {
 // Итоговый счёт партии
 export function finalScore(state) {
   const v = valuation(state);
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
+  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
+  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
+  // в конце партии были бы бесплатными.
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: v * state.equity,
+    equityValue: (v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     weeks: state.week,

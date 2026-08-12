@@ -7,7 +7,8 @@ import {
   ordersPerCourier, techLevel, reachableOf, aovOf,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../src/model/engine.js';
-import { rollWeather, seasonOf, weatherEffect, WEATHER } from '../src/model/weather.js';
+import { rollWeather, seasonOf, weatherEffect, bonusHabitStep, WEATHER } from '../src/model/weather.js';
+const weatherApi = { bonusHabitStep, weatherEffect };
 import { createRng } from '../../../shared/rng.js';
 import { EVENTS } from '../src/model/events.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
@@ -201,8 +202,11 @@ test('раунд инвестиций даёт деньги и размывае�
 });
 
 test('оценка компании не отрицательна и растёт вместе с выручкой', () => {
+  // Сильная стратегия должна укладываться в стартовую кассу: тест сравнивает
+  // оценки живых компаний, а не решает, кто быстрее разорится без раундов.
   const weak = run(30, baseDecisions({ sales: 200_000, marketing: 300_000, targetCouriers: 100 }));
-  const strong = run(30, baseDecisions({ sales: 600_000, marketing: 4_000_000, targetCouriers: 900, tech: 800_000 }));
+  const strong = run(30, baseDecisions({ sales: 500_000, marketing: 1_800_000, targetCouriers: 500, tech: 400_000 }));
+  assert.equal(strong.state.over, null, 'сильная стратегия не должна разоряться');
   assert.ok(valuation(weak.state) > 0);
   assert.ok(valuation(strong.state) >= valuation(weak.state));
 });
@@ -504,16 +508,34 @@ test('плохая погода поднимает спрос и режет пр
   assert.ok(storm.avgDeliveryTime > clear.avgDeliveryTime);
 });
 
-test('надбавка за погоду не стоит ничего в ясный день', () => {
+test('обещание доплаты платное и в ясный день — гарантия входит в ставку', () => {
+  // Раньше надбавка была бесплатной в хорошую погоду, и «выставил и забыл»
+  // было оптимально: замер показал, что реагировать на прогноз и играть
+  // наоборот одинаково. Теперь у гарантии есть безусловная часть.
   const warm = warmState('wx4');
   const without = step({ ...warm, weather: 'clear' },
     { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: 0 }), eventChoice: 0 }).report;
   const with100 = step({ ...warm, weather: 'clear' },
     { decisions: baseDecisions({ sales: 400_000, marketing: 1_500_000, targetCouriers: 600, weatherBonus: 100 }), eventChoice: 0 }).report;
 
-  assert.equal(with100.weatherBonusCost, 0);
-  assert.equal(with100.courierPayEff, without.courierPayEff);
-  assert.equal(with100.profit, without.profit);
+  assert.ok(with100.weatherBonusCost > 0, 'база гарантии платится и в ясную неделю');
+  assert.ok(with100.weatherBonusCost < with100.orders * 100 * 0.4,
+    'но заметно дешевле, чем в шторм');
+  assert.ok(with100.profit < without.profit, 'бесплатных обещаний не бывает');
+});
+
+test('привычка съедает эффект вечной надбавки', () => {
+  const { bonusHabitStep, weatherEffect: wxOf } = weatherApi;
+  let habit = 0;
+  for (let i = 0; i < 20; i += 1) habit = bonusHabitStep(habit, 80);
+  assert.ok(habit > 0.85, `за двадцать недель надбавка становится частью зарплаты: ${habit.toFixed(2)}`);
+  const fresh = wxOf('storm', 80, 0);
+  const stale = wxOf('storm', 80, habit);
+  assert.ok(stale.churnAdd > fresh.churnAdd, 'привычная надбавка удерживает хуже свежей');
+  assert.ok(stale.capacityMult < fresh.capacityMult, 'и мощности возвращает меньше');
+  let decay = habit;
+  for (let i = 0; i < 12; i += 1) decay = bonusHabitStep(decay, 0);
+  assert.ok(decay < 0.25, 'выключенная надбавка снова становится стимулом');
 });
 
 test('надбавка удерживает курьеров и возвращает часть мощности в шторм', () => {

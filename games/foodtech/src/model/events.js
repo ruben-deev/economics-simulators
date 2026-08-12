@@ -22,6 +22,12 @@ export function neutralModifiers() {
     satisfactionAdd: 0,     // прибавка к удовлетворённости клиентов
     awarenessAdd: 0,        // разовый прирост узнаваемости
     oneOffCost: 0,          // разовые расходы, ₽
+    // Поштучные разовые расходы: цена решения зависит от вашего размера.
+    // Доплата «всем курьерам» стоит по числу курьеров, раздача «всей базе» —
+    // по числу клиентов. Именно это делает выбор выбором: маленькой компании
+    // дёшево то, что большой не по карману, и наоборот.
+    oneOffCostPerCourier: 0,
+    oneOffCostPerCustomer: 0,
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -123,20 +129,20 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить бонус (1,5 млн ₽)', en: 'Pay the bonus (₽1.5M)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
         detail: {
-          ru: 'Разовые расходы, но отток курьеров резко падает.',
-          en: 'A one-off cost, but courier churn drops sharply.',
+          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
+          en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
         },
-        effects: { oneOffCost: 1_500_000, courierChurnAdd: -0.02, courierSupplyMult: 1.25 },
+        effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },
       {
         label: { ru: 'Проигнорировать', en: 'Ignore it' },
         detail: {
-          ru: 'Экономим деньги, но теряем людей и скорость.',
-          en: 'Saves money, costs you people and speed.',
+          ru: 'Дёшево, пока курьеры простаивают и очередь заявок полна. Дорого, когда каждый на счету.',
+          en: 'Cheap while couriers sit idle and the applications queue is full. Expensive when every one of them counts.',
         },
-        effects: { courierChurnAdd: 0.10, capacityMult: 0.9 },
+        effects: { courierChurnAdd: 0.07, capacityMult: 0.93 },
       },
     ],
   },
@@ -155,10 +161,10 @@ export const EVENTS = [
       {
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет.',
-          en: '+40 restaurants at once, but the citywide commission sags.',
+          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
+          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.02, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },
@@ -183,12 +189,12 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо', en: 'Flood the market with promos' },
+        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
         detail: {
-          ru: 'Спрос вверх, маржа вниз, зато оценка компании выше.',
-          en: 'Demand up, margin down, valuation up.',
+          ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
+          en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
         },
-        effects: { demandMult: 1.18, variableCostAdd: 35, valuationBonus: 0.15 },
+        effects: { oneOffCostPerCustomer: 350, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -196,7 +202,7 @@ export const EVENTS = [
           ru: 'Инвесторы недовольны, оценка ниже.',
           en: 'Investors are unhappy and the valuation suffers.',
         },
-        effects: { valuationBonus: -0.1 },
+        effects: { valuationBonus: -0.003 },
       },
     ],
   },
@@ -213,18 +219,18 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Ввести страховку добровольно', en: 'Introduce insurance voluntarily' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
         detail: {
-          ru: '+8 ₽ к себестоимости заказа, но курьеры довольны и репутация растёт.',
-          en: '+₽8 per order, but couriers are happy and your reputation grows.',
+          ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
+          en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',
         },
-        effects: { variableCostAdd: 8, courierChurnAdd: -0.02, awarenessAdd: 0.03 },
+        effects: { oneOffCostPerCourier: 3_000, courierChurnAdd: -0.02, awarenessAdd: 0.02 },
       },
       {
         label: { ru: 'Ждать закона', en: 'Wait for the law' },
         detail: {
-          ru: 'Экономим сейчас, рискуем штрафом позже.',
-          en: 'Save now, risk a fine later.',
+          ru: 'Экономим сейчас. Если штраф придёт — платить будете по штату на день штрафа, по двойной ставке.',
+          en: 'Save now. If the fine lands, you will pay for the fleet you have on that day — at double the rate.',
         },
         effects: { regulationRisk: true },
       },
@@ -240,7 +246,7 @@ const REGULATION_FINE = {
     ru: 'Вы решили дождаться закона — закон дождался вас. Городская инспекция выписала штраф.',
     en: 'You decided to wait for the law. The law waited for you: the city inspectorate has issued a fine.',
   },
-  effects: { oneOffCost: 4_000_000, awarenessAdd: -0.03 },
+  effects: { oneOffCostPerCourier: 8_000, awarenessAdd: -0.03 },
   lesson: {
     ru: 'Отложенный риск не исчезает, он лишь накапливает проценты.',
     en: 'Deferred risk does not disappear, it only accrues interest.',

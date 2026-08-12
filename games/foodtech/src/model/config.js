@@ -274,8 +274,8 @@ export const LEVERS = [
     unit: { ru: '₽', en: '₽' },
     min: 0, max: 150, step: 10, def: 0,
     tip: {
-      ru: 'Доплата курьеру за заказ в дождь, снег и гололёд. В ясную погоду не стоит ничего: расход появляется ровно тогда, когда без него срываются смены.',
-      en: 'Extra pay per order in rain, snow and ice. Costs nothing when the weather is clear — the expense appears exactly when shifts would otherwise be abandoned.',
+      ru: 'Гарантированная доплата за заказ в плохую погоду. Треть платится и в ясные недели — обещание входит в ставку. Главное: включённая навсегда надбавка становится привычной и в настоящий шторм уже никого не выводит. Включайте её по прогнозу и выключайте в ясные недели.',
+      en: 'A guaranteed extra payment per order in bad weather. A third of it is paid even in clear weeks — a promise becomes part of the rate. Crucially, a bonus left on forever becomes the norm and stops bringing anyone out in a real storm. Switch it on with the forecast and off in clear weeks.',
     },
   },
   {
