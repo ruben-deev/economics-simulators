@@ -142,10 +142,23 @@ And your own hours are not equal to each other either: every genre has its own v
 for depth and its own rate of ageing.
 
 ```
-weighted  = licensed × 0.5 + Σ(genre_hours × genre_value) × 6
+weighted  = licensed × 0.5 + Σ(genre_hours × genre_value) × 9
 depth     = saturation(weighted / refCatalogHours)
 own_share = weighted_own / weighted
 ```
+
+**The weight of an own hour was raised from 6 to 9 and `refCatalogHours` lowered from
+9,000 to 7,500 — both by measurement, and here is why.** An hour of licence costs ₽600k
+and weighs 0.5, so ₽1.2M per effective hour. An hour of your own at weight 6 cost
+₽31M / 6 = ₽5.2M for the same effective hour — four times more. And the old catalogue
+reference of 9,000 hours stood above anything you can build in a game with your own
+production, so depth never saturated and the next licensed hour always paid off.
+
+The result was unambiguous: buying won outright on every reference strategy, the optimum
+sat at the stop of the slider, and the share of own content there fell to 11–14%. That
+is, the central lesson of the game — licences buy a base quickly, your own stays an asset
+— was not confirmed by measurement, while the teacher's guide promised the opposite.
+After the fix the optimum sits inside the range and the own share at it is around 20%.
 
 | Genre | Value per hour | Monthly ageing | Cost per hour | Hangover |
 |---|---|---|---|---|
@@ -286,8 +299,16 @@ Each segment splits itself between the paid and the ad-supported tier:
 ```
 saving      = (ad_free_price − ad_tier_price) / ad_free_price
 ad_pain     = (ad_load / refAdLoad) / tolerance(segment)
-ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, 0.94)
+ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)
+ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)
 ```
+
+**The ceiling on the ad tier came out of measurement.** Without it the list price stopped
+being a price and became a switch: crank it to a thousand and you simply herded almost
+everyone onto the cheap tier, and demand barely noticed — the price optimum sat in the top
+third of the slider and that whole third was flat. Some viewers will not watch with ads at
+any price, and every segment has its own limit: cinephiles 32%, families 58%, the mass
+audience 83%, the young 90%.
 
 Hence a non-obvious consequence: **cutting the cheap tier's price poaches people from
 your own expensive one**. Cannibalisation is not a side effect, it is the main mechanism.
@@ -390,11 +411,18 @@ bandwidth bill.
 ```
 subscriptions = ad_free_subs × premium_price + ad_subs × ad_price
 impressions   = ad_hours × ad_load × 2 × adaptive_ads_yield
+glut          = impressions / (impressions + adInventorySaturation)
+cpm           = base cpm × (1 − 0.45 × glut)
 advertising   = impressions / 1000 × cpm
 revenue       = subscriptions + advertising
 ```
 
 `cpm = ₽480`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
+
+There is a finite number of advertisers: the more impressions you dump, the cheaper each
+one gets. Without this, "crank the price and herd everyone onto the ad tier" was a free
+strategy — together with the ceiling on the ad tier this is what gave the price back its
+meaning as a price.
 
 ```
 variable costs = bandwidth + support + retention discounts
@@ -550,16 +578,21 @@ directions.
 | Year | Goal | What it tests |
 |---|---|---|
 | 1 | reach 3.4M subscribers | can you grow at all |
-| 2 | 4 profitable months of 12 **and** base no lower than ×1.05 | can you grow and earn at the same time |
-| 3 | market share ≥ 35% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
+| 2 | 3 profitable months of 12 **and** base no lower than ×1.05 | can you grow and earn at the same time |
+| 3 | market share ≥ 60% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
 
-These numbers were measured, not guessed: over two hundred different strategies
-were run across three years, and each bar sits where the clearly better half
-clears it and the middle does not. Before, year one was passed by anyone (900K
-against a median of 3.6M) while years two and three were passed by nobody: they
-asked for base growth of 1.5× and 1.35× when the median second-year growth is
-1.04 and in the third year the base shrinks to 0.61. Year three is a defensive
-year: rights expire, partner contracts end, the rival has grown.
+These numbers were measured, not guessed: a hundred random strategies are run across
+three years, and each bar sits where the clearly better half clears it and the middle
+does not. Latest measurement: 41% of strategies clear year one, 23% clear year three.
+The year-three bar was raised from 35% to 60% after the catalogue rebalance: the median
+end-of-game share became 0.43, so two thirds of strategies were clearing the old goal —
+which means it had stopped being a goal.
+
+Year two is cleared by only 4%, and that is deliberate: a random strategy has no
+profitable months at all even at the ninetieth percentile, while a well-tuned one closes
+most of the year in the black. This goal separates a working business from an
+almost-working one rather than punishing one bad month. Year three is a defensive year:
+rights expire, partner contracts end, the rival has grown.
 
 The goal is announced in the first month of the year and is on screen every turn with
 its progress — this is planning, not a lottery.
@@ -673,10 +706,11 @@ four require a decision:
 ## 9. Valuation and funding
 
 ```
-run-rate    = revenue × 12
+run-rate    = average revenue over 6 months × 12
 growth      = subscribers over 3 months / subscribers over the previous 3 months
-multiple    = clamp(2.2 + 6 × growth + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
-library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.28
+margin      = profit over 6 months / revenue over the same 6 months
+multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
+library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45
 position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
 valuation   = (run-rate × multiple + library) × position
 final score = valuation × your stake
@@ -691,12 +725,26 @@ revenue as such but for who will be setting prices in three years. The loser is 
 even with a good margin — which is precisely why "harvest the margin, do not invest in
 content" does not work in this game: it produces profit and loses the market.
 
+**Revenue and margin are taken over a six-month window, not the last month.** The last
+month can be bought with one decision: crank the price and zero out content and marketing
+one turn before the end. The business falls apart and the score goes up — measured, that
+dash was worth +92%. The window closes it.
+
+**The lower bound on growth is below zero.** It used to be zero: a shrinking subscription
+was valued as one standing still, so "harvest and lose the base" cost nothing. The same
+fix was made long ago in the delivery game next door — it never travelled here.
+
 A funding round:
 
 ```
-dilution  = amount / (valuation + amount)
-new stake = old stake × (1 − dilution)
+round valuation = max(₽1.5B, valuation)
+dilution        = clamp(amount / (round valuation + amount), 0.02, 0.75)
+new stake       = old stake × (1 − dilution)
 ```
+
+The floor under the valuation and the cap on dilution came from measurement too: without
+them an early round took almost the whole company, and the game was decided by the month
+the money ran out rather than by the economics.
 
 The worse things are, the lower the valuation and the more the same money costs. The
 valuation floor is ₽300M, so a ₽3B cheque at a weak company takes almost everything.

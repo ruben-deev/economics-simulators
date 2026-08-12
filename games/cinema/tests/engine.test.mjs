@@ -1080,34 +1080,40 @@ test('релиз в высокий сезон слышнее, чем в низк
 });
 
 test('смешанный слейт бьёт однообразный', () => {
-  const uniform = ['u1', 'u2'].reduce((sum, seed) => {
+  // Сравниваем ровно одно: чередование масштабов. Всё остальное — цены,
+  // бюджеты, слоты, момент выхода — одинаковое. Раньше в этой проверке
+  // «смешанный» вариант заодно придерживал готовое до высокого сезона,
+  // и с какого-то момента она мерила не смесь масштабов, а придержание.
+  const play = (mixScales) => ['u1', 'u2', 'u3'].reduce((sum, seed) => {
     let state = createInitialState(seed);
     let raises = 0;
+    let n = 0;
     for (let i = 0; i < CONFIG.monthsTotal && !state.over; i++) {
       if (state.cash < 800_000_000 && raises < CONFIG.fundingOptions.length) {
         state = raise(state, CONFIG.fundingOptions[raises]).state; raises += 1;
       }
-      const slate = state.slate;
-      const producing = slate.filter((p) => p.status === 'production').length;
+      const producing = state.slate.filter((p) => p.status === 'production').length;
+      const scale = mixScales ? (n++ % 2 ? 'pilot' : 'season') : 'season';
       state = step(state, {
         decisions: decide({
           priceNew: 449, priceAds: 166, adLoad: 6, annualDiscount: 0.1,
           licensing: 440_000_000, brandMarketing: 220_000_000,
           tech: 20_000_000, rnd: 20_000_000, studioSlots: 3,
         }),
-        commission: producing < 3 ? [{ genre: 'family', scale: 'season', segment: 'mass' }] : [],
-        release: slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 250_000_000 })),
+        commission: producing < 3 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
+        release: state.slate.filter((p) => p.status === 'ready')
+          .map((p) => ({ id: p.id, campaign: 250_000_000 })),
       }).state;
     }
     return sum + state.history[state.history.length - 1].equityValue;
-  }, 0) / 2;
+  }, 0) / 3;
 
-  const mixed = ['u1', 'u2']
-    .reduce((sum, seed) => sum + reinvest(CONFIG.monthsTotal, seed).last.equityValue, 0) / 2;
-
+  const mixed = play(true);
+  const uniform = play(false);
   assert.ok(mixed > uniform,
     `смешанный слейт ${Math.round(mixed / 1e9)} млрд должен бить однообразный ${Math.round(uniform / 1e9)}`);
 });
+
 
 test.skip('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
   // Один и тот же seed, разная доля выручки в контент. Подписчиков больше
@@ -1562,5 +1568,9 @@ test('цели совета берутся не всеми и не никем', 
   const y3 = makeGoal(3, null, 4_000_000, 3_000_000);
   assert.ok(y3.subsFloor < 4_000_000,
     'третий год — год обороны: требовать роста базы в нём нельзя');
-  assert.ok(y3.target < 0.5, 'доля рынка в 50% лежит выше девяностого процентиля');
+  // Замер после перебалансировки каталога: медиана доли на конец партии 0.43,
+  // 75-й процентиль 0.59, 90-й — 0.70. Планка обязана лежать между медианой
+  // и девяностым процентилем: ниже — её берут все, выше — не берёт никто.
+  assert.ok(y3.target > 0.43 && y3.target <= 0.70,
+    `планка ${y3.target} должна лежать между медианой и 90-м процентилем`);
 });

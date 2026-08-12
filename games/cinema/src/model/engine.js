@@ -34,6 +34,7 @@ import {
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep } from '../../../../shared/upkeep.js';
+import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
@@ -531,7 +532,13 @@ export function step(prevState, input = {}) {
     const saving = decisions.priceNew > 0
       ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
     const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
-    const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, 0.94);
+    // Потолок на долю рекламного тарифа. Без него прайс переставал быть ценой
+    // и становился переключателем: задрав его до тысячи, вы просто перегоняли
+    // почти всех на дешёвый тариф с рекламой, а спрос этого не замечал.
+    // Часть зрителей не смотрит с рекламой ни за какие деньги — у каждого
+    // сегмента своя терпимость, она и задаёт предел.
+    const adCeiling = clamp(CONFIG.adTierCeiling * def.adTolerance, 0.15, 0.9);
+    const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, adCeiling);
 
     // Новые смотрят на прайс, а платит база свою заблокированную цену.
     // Разрыв между этими двумя числами — главный скрытый показатель игры.
@@ -706,6 +713,19 @@ export function step(prevState, input = {}) {
       annualNew += annualTakers;
     }
 
+    // Годовой тариф предлагают не только новым. Раньше на него мог перейти
+    // только что подписавшийся, а новые — малая доля базы, поэтому скидка
+    // двигала итог на считаные проценты и рычага фактически не было.
+    // Действующий подписчик соглашается неохотнее новичка — он уже платит
+    // и не спешит платить за год вперёд, — но соглашается.
+    const stayingMonthly = Math.max(0, survivorsBeforeSwitch + flow - lockedIn);
+    const upgrading = stayingMonthly * annualPortion * CONFIG.annualUpgradeRate;
+    if (upgrading > 0) {
+      const annualPrice = pricing.lockedPrice * (1 - decisions.annualDiscount);
+      annualCash += addAnnualCohort(pricing, upgrading, annualPrice);
+      annualNew += upgrading;
+    }
+
     // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
     // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
     // закрывается сам — но медленно, за время оборота базы.
@@ -720,10 +740,11 @@ export function step(prevState, input = {}) {
     // Обновляем запасы по тарифам. Годовые подписчики целиком остаются
     // на платном тарифе: годовой продукт — это подписка без рекламы.
     const survivors = survivorsBeforeSwitch + flow;
-    const movable = Math.max(0, survivors - lockedIn);
+    const lockedNow = annualSubs(pricing);
+    const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
     seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, lockedIn + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + converted * (1 - adShare));
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
@@ -887,7 +908,13 @@ export function step(prevState, input = {}) {
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
   const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд
-  const adRevenue = (impressions / 1000) * CONFIG.cpm;
+  // Рекламодателей на рынке конечное число: чем больше показов вы выбрасываете,
+  // тем дешевле каждый. Без этого «задрать прайс и перегнать всех на рекламный
+  // тариф» было бесплатной стратегией — прайс работал не как цена, а как
+  // переключатель, и его верхняя половина ничего не меняла.
+  const glut = impressions / (impressions + CONFIG.adInventorySaturation);
+  const cpm = CONFIG.cpm * (1 - CONFIG.adGlutDiscount * glut);
+  const adRevenue = (impressions / 1000) * cpm;
   const revenue = subscriptionRevenue + adRevenue;
 
   const variableCost = cdnCost + supportCost + winbackCost;
@@ -1175,7 +1202,7 @@ export function step(prevState, input = {}) {
       annual: annualSubs(p.pricing),
       arpu: p.subs > 0
         ? (p.seg.premium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds
-           + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
+           + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * cpm) / p.subs
         : 0,
     })),
     decisions: deepClone(decisions),
@@ -1265,21 +1292,20 @@ export function valuation(state) {
   const h = state.history;
   if (!h.length) return 300_000_000;
   const last = h[h.length - 1];
-  const runRate = last.revenue * 12;
-
-  const tail = h.slice(-3).reduce((s, r) => s + r.subs, 0);
-  const prev = h.slice(-6, -3).reduce((s, r) => s + r.subs, 0);
-  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.4 : 1);
-  const growthScore = clamp(growth - 1, 0, 1);
-
-  const margin = last.revenue > 0 ? last.profit / last.revenue : -0.5;
-  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
+  // Выручка, рост и маржа берутся окном, а не последним месяцем: иначе оценку
+  // можно купить рывком на один ход — задрать прайс и обнулить контент перед
+  // самым концом партии. См. shared/valuation.js.
+  const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
 
   // Собственная библиотека — актив, лицензии — аренда. Рынок это видит.
   // Час реалити при этом стоит заметно меньше часа драмы: библиотека —
   // это то, что ещё будут смотреть через два года.
   const libraryValue = weightedOriginals(state.originalsByGenre ?? {})
-    * CONFIG.originalCostPerHour * 0.28;
+    * CONFIG.originalCostPerHour * CONFIG.libraryValueShare;
 
   // Позиция против конкурента. В дуополии рынок платит не за выручку саму
   // по себе, а за то, кто из двоих будет диктовать цену через три года.
@@ -1287,16 +1313,20 @@ export function valuation(state) {
   // «снимать сливки, не вкладываясь» здесь не работает.
   const positionBonus = clamp(0.70 + 0.60 * (last.duopolyShare ?? 0.5), 0.70, 1.30);
 
-  const multiple = clamp(2.2 + 6 * growthScore + 2.5 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  // Нижняя граница роста строго меньше нуля: сжимающаяся подписка стоит
+  // дешевле стоящей на месте. Раньше здесь был ноль, и «снять сливки, растеряв
+  // базу» ничего не стоило.
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.2, growthWeight: 6, marginWeight: 2.5, marginPenalty: 1.5,
+  });
   const base = (runRate * multiple + libraryValue) * positionBonus;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   return Math.max(300_000_000, base * bonus);
 }
 
 export function fundingOffer(state, amount) {
-  const pre = valuation(state);
-  const dilution = amount / (pre + amount);
-  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 export function raise(state, amount) {

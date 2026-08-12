@@ -47,10 +47,10 @@ export function makeGoal(year, state, yourSubs, rivalSubs) {
     return {
       year,
       type: GOAL_TYPES.profit,
-      // Не разово, а устойчиво: минимум 4 прибыльных месяца из 12.
+      // Не разово, а устойчиво: минимум 3 прибыльных месяца из 12.
       // И при этом не ценой базы: сокращать расходы, теряя подписчиков,
       // — не то, за что хвалят. Отсюда «хотя бы не сжаться».
-      target: 4,
+      target: 3,
       subsFloor: Math.round(Math.max(2_000_000, yourSubs * 1.05)),
       reward: 0.12,
       penalty: 'contentCap',
@@ -63,7 +63,9 @@ export function makeGoal(year, state, yourSubs, rivalSubs) {
     // заканчиваются, конкурент вырос. Удержать базу здесь уже достижение,
     // поэтому нижняя граница ниже единицы, а не выше.
     type: GOAL_TYPES.share,
-    target: 0.35,
+    // Планка поднята с 0.35 по замеру: медианная доля на конец партии 0.45,
+    // и прежнюю цель брали две трети стратегий — то есть это была не цель.
+    target: 0.60,
     subsFloor: Math.round(Math.max(2_500_000, yourSubs * 0.75)),
     reward: 0.18,
     penalty: 'valuation',

@@ -140,23 +140,35 @@ for you? (The seasonal hours multiplier is 0.84 — everyone watches less.)
 
 ## Scenario 5. "Licences versus originals" (50 minutes)
 
-Split the group into three teams with the same budget and different rules:
-* team A spends the whole content budget on licences;
-* team B spends it only on in-house production;
-* team C splits it evenly.
+Split the group into four teams. Everyone gets three studio slots and the same price —
+only the rights budget differs:
 
-Everyone plays 24 turns on the same seed. Expected outcome: A builds the base fastest and
-has the highest churn; B almost certainly goes bust; C wins on final valuation.
+| Team | Rights budget | Equity | Subscribers | Churn | Own share |
+|---|---|---|---|---|---|
+| A | 0 | ₽1B | 2.6M | 6.8% | 89% |
+| B | ₽150M/mo | ₽108B | 7.7M | 6.4% | 30% |
+| C | ₽320M/mo | **₽148B** | 9.5M | 6.0% | 22% |
+| D | ₽500M/mo | ₽131B | 10.2M | 5.3% | 20% |
+
+Measured across four seeds, full game. Three things are visible at once:
+
+1. **You cannot do it without buying.** Team A builds a library out of its own work alone
+   and ends the game worth a hundred and fifty times less than the others. In-house
+   production is far too slow to assemble a catalogue by itself.
+2. **You cannot do it on buying alone either.** D has the most subscribers and the lowest
+   churn — and a worse result than C. That is the central question for the debrief.
+3. **The optimum is inside.** It is neither "split evenly" nor "put it all there": about
+   two thirds of the budget into rights, one third into your own.
 
 Debrief on three numbers on screen:
 * **own share of the catalogue** — it drives exclusive retention;
-* **freshness** — for A it only holds up while buying continues and drops at the first
-  economy;
+* **freshness** — for the buyers it only holds up while buying continues and drops at the
+  first economy;
 * **company valuation** — C's is higher on lower revenue, because the library enters
-  the valuation as a separate term.
+  the valuation as a separate term while licences do not enter it at all: they are rent.
 
-Debrief question: team A has more subscribers and more revenue. Why does the investor
-value it lower?
+Debrief question: team D has more subscribers, lower churn and more revenue. Why does the
+investor value it lower than C?
 
 ---
 
@@ -317,7 +329,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.6.0.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.7.0.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

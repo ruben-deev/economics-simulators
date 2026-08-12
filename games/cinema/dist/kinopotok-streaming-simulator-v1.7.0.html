@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.6.0" />
+  <meta name="app-version" content="1.7.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>КИНОПОТОК · streaming economics simulator</title>
@@ -581,6 +581,50 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
      чтобы прокручиваться внутри панели. */
   .col-center, .col-left, .col-right { min-width: 0; }
   .col-center > * { min-width: 0; }
+}
+
+/* --------------------- Пальцы, а не курсор ------------------------------
+   На телефоне попасть в ползунок высотой 16 px и во вкладку высотой 21 px
+   нечем: общепринятый минимум для пальца — 44 px. Увеличивается только
+   область нажатия, внешний вид остаётся прежним — иначе интерфейс, собранный
+   под плотную сетку показателей, расползётся. Приём один и тот же:
+   вертикальные отступы плюс подложка-псевдоэлемент.
+   ------------------------------------------------------------------------ */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .lever input[type="range"],
+  .algo-param input[type="range"],
+  .release-row input[type=range] {
+    /* Дорожка остаётся тонкой, а хвататься можно за всю высоту */
+    height: 40px;
+    padding: 0;
+    background: transparent;
+  }
+  .tab, .chart-tabs button {
+    position: relative;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tab::after, .chart-tabs button::after, .lever-why::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+  }
+  .lever-why {
+    position: relative;
+    display: inline-block;
+    padding: 9px 0;
+  }
+  /* Плитки выбора (жанр, масштаб, сегмент) и мелкие кнопки в таблицах */
+  .pick button, .btn.small {
+    position: relative;
+    min-height: 32px;
+  }
+  .pick button::after, .btn.small::after {
+    content: "";
+    position: absolute;
+    inset: -7px -4px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1518,6 +1562,110 @@ function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
 }
 
 
+// ===== ../../shared/valuation.js ===================================
+// ============================================================================
+// Как считается оценка компании — общая часть для всех трёх игр.
+//
+// Раньше каждая игра брала выручку и маржу из последнего хода. Это открывало
+// стратегию, не имеющую отношения к экономике: задрать все ставки, обнулить
+// все вложения — и сделать это за ход до конца партии. Бизнес разваливался,
+// а итоговый счёт рос. Измерено: в кинотеатре такой рывок давал +92%,
+// в билетном сервисе +58%.
+//
+// Лечится не запретом, а окном: инвестор смотрит не на последний месяц, а на
+// то, как компания шла последние полгода. Рывок в один ход в такое окно почти
+// не попадает, а рывок на полгода — это уже не рывок, а стратегия, и она
+// честно проигрывает по росту.
+//
+// Второе правило здесь же: сжатие должно стоить денег. Если множитель за
+// падение выручки не наказывает, «снять сливки и растерять базу» ничего
+// не стоит и снова становится выигрышной стратегией.
+// ============================================================================
+
+/**
+ * Среднее значение за последние n ходов.
+ *
+ * Последний ход весит столько же, сколько любой другой в окне, — поэтому
+ * его нельзя купить одним решением.
+ *
+ * @param history массив отчётов (как в state.history)
+ * @param n       длина окна в ходах
+ * @param pick    что берём из отчёта
+ */
+function windowAvg(history, n, pick) {
+  const window = history.slice(-Math.max(1, n));
+  if (!window.length) return 0;
+  return window.reduce((sum, r) => sum + (pick(r) ?? 0), 0) / window.length;
+}
+
+/**
+ * Темп роста: сумма за последние n ходов против суммы за предыдущие n.
+ * Возвращает прирост (0.2 = плюс двадцать процентов), а не отношение.
+ *
+ * Пока истории на два окна не хватает, роста ещё не видно — возвращается
+ * fallback, а не выдуманное число.
+ */
+function windowGrowth(history, n, pick, fallback = 0.25) {
+  const size = Math.max(1, n);
+  const recent = history.slice(-size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  const older = history.slice(-2 * size, -size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  if (older <= 0) return recent > 0 ? fallback : 0;
+  return recent / older - 1;
+}
+
+/**
+ * Множитель к выручке.
+ *
+ * @param growth       прирост за окно (может быть отрицательным)
+ * @param margin       маржа за то же окно
+ * @param k            коэффициенты игры
+ *
+ * Ключевое: `growthFloor` строго меньше нуля. Сжимающийся бизнес стоит
+ * дешевле стоящего на месте — иначе жадность бесплатна.
+ */
+function revenueMultiple(growth, margin, k) {
+  const {
+    base, growthWeight, marginWeight, marginPenalty,
+    growthFloor = -0.5, growthCap = 1,
+    marginFloor = -0.4, marginCap = 0.25,
+    min = 0.5, max = 12,
+  } = k;
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const growthScore = clamp(growth, growthFloor, growthCap);
+  const marginScore = clamp(margin, marginFloor, marginCap) / marginCap;
+  return clamp(
+    base + growthWeight * growthScore
+      + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
+    min, max,
+  );
+}
+
+/**
+ * Условия раунда: сколько доли уходит за деньги.
+ *
+ * Две защиты, без которых один раунд решает всю партию.
+ *
+ * ПОЛ ПОД ОЦЕНКОЙ. На третьей неделе компания по формуле стоит копейки, и
+ * раунд в её половину капитала забирает почти всё. В жизни так не бывает:
+ * посевной раунд оценивают по рынку и команде, а не по выручке, которой
+ * ещё нет.
+ *
+ * ПОТОЛОК НА ДОЛЮ. Никто не продаёт три четверти компании за один раунд —
+ * инвестор первым и откажется: основатель без доли перестаёт работать.
+ *
+ * Без этих двух строк вложить лишний миллион в маркетинг означало не
+ * «выросли заказы», а «раунд случился на шесть недель раньше и стоил
+ * шестьдесят пунктов доли». Измерено: та же компания с той же оценкой
+ * оставляла основателю 84% или 20% в зависимости от одной недели.
+ */
+function roundTerms(valuation, amount, { floor, maxShare = 0.75, minShare = 0.02 }) {
+  const pre = Math.max(floor, valuation);
+  const raw = amount / (pre + amount);
+  const dilution = Math.min(maxShare, Math.max(minShare, raw));
+  return { pre, post: pre + amount, amount, dilution };
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1590,15 +1738,31 @@ const CONFIG = {
   // чужого контента создаёт вдвое меньше причин подписаться именно на вас.
   licenseDepthWeight: 0.5,
   // Час собственной премьеры удерживает как несколько часов библиотеки:
-  // ради эксклюзива подписываются, ради старого кино — почти нет.
-  originalDepthWeight: 6,
+  // ради эксклюзива подписываются, ради старого кино — почти нет. Вес поднят
+  // с 6 после замера: при шести лицензии выходили вчетверо дешевле за один
+  // и тот же эффективный час, и закупка выигрывала всухую на всех стратегиях —
+  // то есть главный урок игры измерением не подтверждался.
+  originalDepthWeight: 9,
   exclusiveRetention: 0.40,   // насколько доля собственного контента снижает отток
   originalCostPerHour: 31_000_000, // ₽ за час собственного производства
   originalLeadMonths: 6,      // сколько месяцев проект едет до премьеры
   freshDecay: 0.22,           // как быстро новинка перестаёт быть новинкой
   licenseFreshShare: 0.10,    // какая доля закупленных часов воспринимается как новинка
-  refCatalogHours: 9_000,     // каталог, при котором множитель выбора равен 1.0
+  // Каталог, при котором множитель выбора равен 1.0. Опущен с 9 000: прежняя
+  // планка стояла выше всего, что можно построить за партию собственными
+  // силами, поэтому глубина ни разу не насыщалась и следующий закупленный час
+  // всегда окупался. Теперь у закупки есть вершина.
+  refCatalogHours: 7_500,
   refFreshHours: 320,         // «новинок» в месяц для эталонной свежести
+
+  // Какая доля сегмента вообще готова смотреть с рекламой — при бесконечной
+  // разнице в цене. Умножается на терпимость сегмента. Без этого потолка
+  // прайс работал не как цена, а как переключатель тарифа.
+  adTierCeiling: 0.72,
+
+  // Какая доля действующих подписчиков, готовых к годовому тарифу, реально
+  // переходит на него за месяц. Новичку решать проще: он и так выбирает.
+  annualUpgradeRate: 0.28,
 
   // --- Просмотр и трафик ---
   baseHoursPerSub: 22,        // часов в месяц на подписчика при эталонном каталоге
@@ -1610,6 +1774,10 @@ const CONFIG = {
   cpm: 640,                   // ₽ за 1000 показов
   adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
   refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
+  // Рекламодателей конечное число. Столько показов в месяц — половина скидки
+  // за переполнение: дальше каждый следующий показ стоит заметно дешевле.
+  adInventorySaturation: 900_000_000,
+  adGlutDiscount: 0.45,       // насколько дешевеет показ при полном переполнении
 
   // --- Подписчики ---
   baseChurn: 0.035,           // базовый месячный отток при идеальном сервисе
@@ -1636,6 +1804,22 @@ const CONFIG = {
   rndSaturation: 500_000_000,
   dataSaturation: 600_000_000, // накопленных часов просмотра для «половины» эффекта
 
+  // --- Оценка компании ---
+  // Считается по окну, а не по последнему месяцу: последний месяц покупается
+  // одним решением — задрать прайс и обнулить контент перед самым концом, —
+  // шесть месяцев уже нет.
+  valuationWindow: 6,
+  // Во сколько рынок оценивает построенную библиотеку — долю от того, что она
+  // стоила. Поднято с 0.28: собственный каталог это актив, который остаётся,
+  // а лицензия — аренда, которая кончается вместе с договором.
+  libraryValueShare: 0.45,
+  // Темп роста считается своим, более коротким окном: три месяца против
+  // предыдущих трёх — иначе в первой трети партии истории на него не хватает.
+  growthWindow: 3,
+  // Пол под оценкой в раунде: без него ранний раунд забирал почти всю компанию,
+  // и партию решал он, а не экономика.
+  valuationFloor: 1_500_000_000,
+
   // --- Инвестиции ---
   minMonthForFunding: 3,
   fundingOptions: [1_000_000_000, 3_000_000_000, 8_000_000_000],
@@ -1661,7 +1845,9 @@ const CONFIG = {
   // Индекс начинается с 1.0 при спокойном рынке и растёт, только когда
   // совокупная закупка выходит за привычный объём. Разогреть его можно вдвоём,
   // остудить — только перестав торговаться.
-  licenseInflation: 1.15,
+  // Как сильно дорожают права от совокупных торгов. Поднято с 1.15: библиотеки
+  // конечны, и скупающий рынок целиком платит за это заметно больше.
+  licenseInflation: 1.75,
   licenseCalmSpend: 260_000_000, // совокупная закупка, при которой индекс ещё 1.0
   refLicenseSpend: 420_000_000,  // масштаб, на котором индекс успевает вырасти
   licenseIndexInertia: 0.72,     // сглаживание: рынок прав реагирует не мгновенно
@@ -1930,7 +2116,7 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Маркетинг бренда', en: 'Brand marketing' },
     unit: { ru: '₽', en: '₽' },
-    min: 0, max: 400_000_000, step: 10_000_000, def: 0,
+    min: 0, max: 300_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
       en: 'The steady background of awareness. It works slowly, decays quickly, and against an empty catalogue it burns for nothing: there is nowhere to bring the viewer.',
@@ -1975,7 +2161,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Технологии и платформа', en: 'Technology' },
     unit: { ru: '₽', en: '₽' },
-    min: 0, max: 150_000_000, step: 5_000_000, def: 0,
+    min: 0, max: 120_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: дешевле час трафика и выше качество производимых проектов. Окупается не сразу и не сама.',
       en: 'A cumulative investment: cheaper bandwidth per hour and better quality in what you produce. It does not pay back quickly or by itself.',
@@ -1986,7 +2172,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Data Science', en: 'Data science' },
     unit: { ru: '₽', en: '₽' },
-    min: 0, max: 120_000_000, step: 5_000_000, def: 0,
+    min: 0, max: 90_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Команда без данных бесполезна ровно так же, как данные без команды: качество алгоритмов — среднее геометрическое того и другого.',
       en: 'A team without data is exactly as useless as data without a team: algorithm quality is the geometric mean of the two.',
@@ -2978,10 +3164,10 @@ function makeGoal(year, state, yourSubs, rivalSubs) {
     return {
       year,
       type: GOAL_TYPES.profit,
-      // Не разово, а устойчиво: минимум 4 прибыльных месяца из 12.
+      // Не разово, а устойчиво: минимум 3 прибыльных месяца из 12.
       // И при этом не ценой базы: сокращать расходы, теряя подписчиков,
       // — не то, за что хвалят. Отсюда «хотя бы не сжаться».
-      target: 4,
+      target: 3,
       subsFloor: Math.round(Math.max(2_000_000, yourSubs * 1.05)),
       reward: 0.12,
       penalty: 'contentCap',
@@ -2994,7 +3180,9 @@ function makeGoal(year, state, yourSubs, rivalSubs) {
     // заканчиваются, конкурент вырос. Удержать базу здесь уже достижение,
     // поэтому нижняя граница ниже единицы, а не выше.
     type: GOAL_TYPES.share,
-    target: 0.35,
+    // Планка поднята с 0.35 по замеру: медианная доля на конец партии 0.45,
+    // и прежнюю цель брали две трети стратегий — то есть это была не цель.
+    target: 0.60,
     subsFloor: Math.round(Math.max(2_500_000, yourSubs * 0.75)),
     reward: 0.18,
     penalty: 'valuation',
@@ -4000,7 +4188,13 @@ function step(prevState, input = {}) {
     const saving = decisions.priceNew > 0
       ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
     const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
-    const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, 0.94);
+    // Потолок на долю рекламного тарифа. Без него прайс переставал быть ценой
+    // и становился переключателем: задрав его до тысячи, вы просто перегоняли
+    // почти всех на дешёвый тариф с рекламой, а спрос этого не замечал.
+    // Часть зрителей не смотрит с рекламой ни за какие деньги — у каждого
+    // сегмента своя терпимость, она и задаёт предел.
+    const adCeiling = clamp(CONFIG.adTierCeiling * def.adTolerance, 0.15, 0.9);
+    const adShare = clamp(0.12 + 0.85 * saving * def.adTolerance - 0.12 * adLoadPain, 0.02, adCeiling);
 
     // Новые смотрят на прайс, а платит база свою заблокированную цену.
     // Разрыв между этими двумя числами — главный скрытый показатель игры.
@@ -4175,6 +4369,19 @@ function step(prevState, input = {}) {
       annualNew += annualTakers;
     }
 
+    // Годовой тариф предлагают не только новым. Раньше на него мог перейти
+    // только что подписавшийся, а новые — малая доля базы, поэтому скидка
+    // двигала итог на считаные проценты и рычага фактически не было.
+    // Действующий подписчик соглашается неохотнее новичка — он уже платит
+    // и не спешит платить за год вперёд, — но соглашается.
+    const stayingMonthly = Math.max(0, survivorsBeforeSwitch + flow - lockedIn);
+    const upgrading = stayingMonthly * annualPortion * CONFIG.annualUpgradeRate;
+    if (upgrading > 0) {
+      const annualPrice = pricing.lockedPrice * (1 - decisions.annualDiscount);
+      annualCash += addAnnualCohort(pricing, upgrading, annualPrice);
+      annualNew += upgrading;
+    }
+
     // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
     // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
     // закрывается сам — но медленно, за время оборота базы.
@@ -4189,10 +4396,11 @@ function step(prevState, input = {}) {
     // Обновляем запасы по тарифам. Годовые подписчики целиком остаются
     // на платном тарифе: годовой продукт — это подписка без рекламы.
     const survivors = survivorsBeforeSwitch + flow;
-    const movable = Math.max(0, survivors - lockedIn);
+    const lockedNow = annualSubs(pricing);
+    const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
     seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, lockedIn + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + converted * (1 - adShare));
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
@@ -4356,7 +4564,13 @@ function step(prevState, input = {}) {
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
   const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд
-  const adRevenue = (impressions / 1000) * CONFIG.cpm;
+  // Рекламодателей на рынке конечное число: чем больше показов вы выбрасываете,
+  // тем дешевле каждый. Без этого «задрать прайс и перегнать всех на рекламный
+  // тариф» было бесплатной стратегией — прайс работал не как цена, а как
+  // переключатель, и его верхняя половина ничего не меняла.
+  const glut = impressions / (impressions + CONFIG.adInventorySaturation);
+  const cpm = CONFIG.cpm * (1 - CONFIG.adGlutDiscount * glut);
+  const adRevenue = (impressions / 1000) * cpm;
   const revenue = subscriptionRevenue + adRevenue;
 
   const variableCost = cdnCost + supportCost + winbackCost;
@@ -4644,7 +4858,7 @@ function step(prevState, input = {}) {
       annual: annualSubs(p.pricing),
       arpu: p.subs > 0
         ? (p.seg.premium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds
-           + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * CONFIG.cpm) / p.subs
+           + (p.adHours * decisions.adLoad * 2 * adYield / 1000) * cpm) / p.subs
         : 0,
     })),
     decisions: deepClone(decisions),
@@ -4734,21 +4948,20 @@ function valuation(state) {
   const h = state.history;
   if (!h.length) return 300_000_000;
   const last = h[h.length - 1];
-  const runRate = last.revenue * 12;
-
-  const tail = h.slice(-3).reduce((s, r) => s + r.subs, 0);
-  const prev = h.slice(-6, -3).reduce((s, r) => s + r.subs, 0);
-  const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.4 : 1);
-  const growthScore = clamp(growth - 1, 0, 1);
-
-  const margin = last.revenue > 0 ? last.profit / last.revenue : -0.5;
-  const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
+  // Выручка, рост и маржа берутся окном, а не последним месяцем: иначе оценку
+  // можно купить рывком на один ход — задрать прайс и обнулить контент перед
+  // самым концом партии. См. shared/valuation.js.
+  const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
 
   // Собственная библиотека — актив, лицензии — аренда. Рынок это видит.
   // Час реалити при этом стоит заметно меньше часа драмы: библиотека —
   // это то, что ещё будут смотреть через два года.
   const libraryValue = weightedOriginals(state.originalsByGenre ?? {})
-    * CONFIG.originalCostPerHour * 0.28;
+    * CONFIG.originalCostPerHour * CONFIG.libraryValueShare;
 
   // Позиция против конкурента. В дуополии рынок платит не за выручку саму
   // по себе, а за то, кто из двоих будет диктовать цену через три года.
@@ -4756,16 +4969,20 @@ function valuation(state) {
   // «снимать сливки, не вкладываясь» здесь не работает.
   const positionBonus = clamp(0.70 + 0.60 * (last.duopolyShare ?? 0.5), 0.70, 1.30);
 
-  const multiple = clamp(2.2 + 6 * growthScore + 2.5 * Math.max(0, marginScore) + 1.5 * Math.min(0, marginScore), 0.5, 12);
+  // Нижняя граница роста строго меньше нуля: сжимающаяся подписка стоит
+  // дешевле стоящей на месте. Раньше здесь был ноль, и «снять сливки, растеряв
+  // базу» ничего не стоило.
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.2, growthWeight: 6, marginWeight: 2.5, marginPenalty: 1.5,
+  });
   const base = (runRate * multiple + libraryValue) * positionBonus;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   return Math.max(300_000_000, base * bonus);
 }
 
 function fundingOffer(state, amount) {
-  const pre = valuation(state);
-  const dilution = amount / (pre + amount);
-  return { pre, post: pre + amount, amount, dilution, newEquity: state.equity * (1 - dilution) };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 function raise(state, amount) {
