@@ -120,7 +120,12 @@ export function stepRival(rival, ctx, rng) {
     return rival;
   }
 
-  const stance = chooseStance(rival, yourSubs, month);
+  let stance = chooseStance(rival, yourSubs, month);
+  // Последний рывок третьего акта: после внепланового раунда конкурент
+  // воюет ценой до объявленного месяца — если только не бежит с рынка.
+  if (rival.forcedStance && month <= (rival.forcedUntil ?? 0) && stance !== 'retreat') {
+    stance = rival.forcedStance;
+  }
   rival.stanceMonths = stance === rival.stance ? rival.stanceMonths + 1 : 0;
   rival.stance = stance;
   rival.stanceChangedIn = rival.stanceMonths === 0;
@@ -142,6 +147,20 @@ export function stepRival(rival, ctx, rng) {
     originals: Math.round(base * 0.5 * S.budget),
     marketing: Math.round((55_000_000 + revenue * 0.26) * S.marketing),
   };
+
+  // Финальный рывок: внеплановый раунд не лежит в кассе, а сжигается.
+  // Пока идёт объявленная война, бюджеты масштабируются от денег, а не от
+  // выручки — маленький конкурент с большим чеком становится большим на время.
+  // Когда чек кончается, runway-логика сама уводит его в retreat: это и есть
+  // конец третьего акта.
+  const surgeActive = rival.forcedStance === 'war' && month <= (rival.forcedUntil ?? 0)
+    && stance === 'war' && rival.cash > 0;
+  if (surgeActive) {
+    const chest = rival.cash * 0.07;
+    rival.spend.licensing += Math.round(chest * 0.35);
+    rival.spend.originals += Math.round(chest * 0.35);
+    rival.spend.marketing += Math.round(chest * 0.30);
+  }
 
   // --- Раунд, если касса на исходе ---
   if (rival.cash < monthlyBurn(rival) * 4 && rival.raises < rival.maxRaises) {

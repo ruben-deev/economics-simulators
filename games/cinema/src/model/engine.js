@@ -317,7 +317,17 @@ export function step(prevState, input = {}) {
   const talentIndex = talentIndexOf(state);
 
   // --- 5. Ход конкурента ---
+  // Третий акт: конкурент закрывает раунд сверх обычного лимита и включает
+  // ценовую войну почти до конца партии. Анонсируется новостями за месяц.
+  const rivalSurge = month === CONFIG.rivalSurgeMonth && state.rivalState.alive;
+  if (rivalSurge) {
+    state.rivalState.cash += CONFIG.rivalSurgeCash;
+    state.rivalState.forcedStance = 'war';
+    state.rivalState.forcedUntil = CONFIG.rivalSurgeWarUntil;
+    state.rivalState.surgeRaised = true;
+  }
   const yourSubsBefore = lastSubs(state);
+  const subsAtStart = yourSubsBefore;
   const rivalBefore = rivalSubs(state.rivalState);
   stepRival(state.rivalState, {
     yourPrice: decisions.priceNew,
@@ -443,6 +453,16 @@ export function step(prevState, input = {}) {
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
   state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
+
+  // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
+  // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог
+  // не трогают: своё отобрать нельзя.
+  const rightsCliffHit = month === CONFIG.rightsCliffMonth;
+  const rightsCliffLost = rightsCliffHit ? state.catalogLicensed * CONFIG.rightsCliffShare : 0;
+  if (rightsCliffHit) {
+    state.catalogLicensed -= rightsCliffLost;
+    state.rivalState.catalogLicensed *= (1 - CONFIG.rightsCliffShare);
+  }
 
   // Иск замораживает часть арендованной библиотеки — своё отобрать нельзя
   const freeze = crisisMods.licensedFreeze ?? 0;
@@ -929,7 +949,11 @@ export function step(prevState, input = {}) {
     (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
-  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
+  // Поштучные расходы событий: компенсации «каждому подписчику» считаются
+  // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
+  const perUnitCost = (mods.oneOffCostPerSub ?? 0) * subsAtStart
+    + (mods.oneOffCostTalent ?? 0) * talentIndex;
+  const oneOff = installCost + perUnitCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
     + crisisCost + partnerFees;
   const profit = contribution - fixed;
 
@@ -1079,9 +1103,16 @@ export function step(prevState, input = {}) {
     rivalRaised: riv.raises,
     rivalCatalog: riv.catalogLicensed + riv.catalogOriginal,
     rivalOriginals: riv.catalogOriginal,
-    rivalJustRaised: Boolean(riv.justRaised),
+    rivalJustRaised: Boolean(riv.justRaised) || Boolean(rivalSurge),
     duopolyShare,
     seasonHours: season,
+
+    // --- Третий акт ---
+    rightsCliffSoon: month === CONFIG.rightsCliffAnnounceMonth,
+    rightsCliffIn: Math.max(0, CONFIG.rightsCliffMonth - month),
+    rightsCliffHit,
+    rightsCliffLost,
+    rivalSurge: Boolean(rivalSurge),
 
     // --- Дорожающие ресурсы ---
     licenseIndex,
@@ -1387,10 +1418,14 @@ export function explainFactors(prev, cur) {
 export function finalScore(state) {
   const v = valuation(state);
   const last = state.history[state.history.length - 1];
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
+  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
+  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
+  // в конце партии были бы бесплатными.
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: v * state.equity,
+    equityValue: (v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,

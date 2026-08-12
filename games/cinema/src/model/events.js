@@ -15,6 +15,12 @@ export function neutralModifiers() {
     churnAdd: 0,          // прибавка к оттоку
     awarenessAdd: 0,      // разовый прирост узнаваемости
     oneOffCost: 0,        // разовые расходы, ₽
+    // Поштучные разовые расходы: «компенсация каждому подписчику» стоит
+    // по размеру базы. Большой базе дорого то, что маленькой почти бесплатно —
+    // это и делает выбор состояние-зависимым.
+    oneOffCostPerSub: 0,
+    // Расходы, индексируемые ценой таланта: запросы звёзд растут вместе с рынком
+    oneOffCostTalent: 0,
     notes: [],
   };
 }
@@ -100,14 +106,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Заплатить (120 млн ₽)', en: 'Pay up (₽120M)' },
-        detail: { ru: 'Дорого, но проект продолжается и шум сохраняется.', en: 'Expensive, but the project continues and the buzz survives.' },
-        effects: { oneOffCost: 120_000_000, awarenessAdd: 0.03 },
+        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up (₽260M × talent index)' },
+        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: ₽260M early in the game, two or three times that by the end.' },
+        effects: { oneOffCostTalent: 260_000_000, awarenessAdd: 0.03 },
       },
       {
         label: { ru: 'Заменить актёра', en: 'Recast the role' },
-        detail: { ru: 'Экономим деньги, но зрители замечают и уходят.', en: 'Saves the money, but viewers notice and leave.' },
-        effects: { churnAdd: 0.025, demandMult: 0.92 },
+        detail: { ru: 'Экономим деньги, но зрители замечают и уходят. Чем дороже рынок таланта, тем чаще замена — правильный ответ.', en: 'Saves the money, but viewers notice and leave. The pricier the talent market, the more often recasting is the right call.' },
+        effects: { churnAdd: 0.010, demandMult: 0.98 },
       },
     ],
   },
@@ -124,14 +130,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Купить права (400 млн ₽)', en: 'Buy the rights (₽400M)' },
+        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights (₽500M)' },
         detail: { ru: 'Мощный приток и рост часов, но деньги ушли безвозвратно.', en: 'A strong inflow and more hours, but the money is gone for good.' },
-        effects: { oneOffCost: 400_000_000, demandMult: 1.3, hoursMult: 1.15, awarenessAdd: 0.05 },
+        effects: { oneOffCost: 500_000_000, demandMult: 1.16, hoursMult: 1.08, awarenessAdd: 0.05 },
       },
       {
         label: { ru: 'Пропустить', en: 'Pass' },
         detail: { ru: 'Права уходят конкуренту, часть зрителей — за ними.', en: 'The rights go to a rival, and some viewers follow them.' },
-        effects: { churnAdd: 0.015 },
+        effects: { churnAdd: 0.010 },
       },
     ],
   },
@@ -148,14 +154,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Устроить распродажу подписки', en: 'Run a subscription sale' },
-        detail: { ru: 'База растёт, выручка на подписчика падает, оценка выше.', en: 'The base grows, revenue per subscriber falls, valuation rises.' },
-        effects: { demandMult: 1.25, churnAdd: 0.01, valuationBonus: 0.12 },
+        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale (₽80 off per subscriber)' },
+        detail: { ru: 'Скидка достаётся и действующей базе: маленькой базе распродажа почти бесплатна, большой — очень дорога.', en: 'The discount reaches the existing base too: nearly free with a small base, very expensive with a large one.' },
+        effects: { oneOffCostPerSub: 80, demandMult: 1.12, churnAdd: 0.01, valuationBonus: 0.005 },
       },
       {
         label: { ru: 'Отстоять цену', en: 'Hold the price' },
         detail: { ru: 'Инвесторы недовольны, оценка ниже.', en: 'Investors are unhappy and the valuation suffers.' },
-        effects: { valuationBonus: -0.1 },
+        effects: { valuationBonus: -0.005 },
       },
     ],
   },
@@ -172,14 +178,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать', en: 'Own it and compensate' },
-        detail: { ru: 'Разовые расходы, но доверие удаётся сохранить.', en: 'A one-off cost, but trust survives.' },
-        effects: { oneOffCost: 90_000_000, churnAdd: 0.008 },
+        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate (₽60 per subscriber)' },
+        detail: { ru: 'Компенсация каждому: цена растёт вместе с базой. Маленькому сервису честность почти ничего не стоит.', en: 'Compensation for everyone: the price grows with the base. For a small service honesty costs almost nothing.' },
+        effects: { oneOffCostPerSub: 60, churnAdd: 0.006 },
       },
       {
         label: { ru: 'Промолчать', en: 'Say nothing' },
-        detail: { ru: 'Дешевле сейчас, дороже потом.', en: 'Cheaper now, more expensive later.' },
-        effects: { churnAdd: 0.03, awarenessAdd: -0.04, valuationBonus: -0.08 },
+        detail: { ru: 'Дешевле сейчас, дороже потом — и тем дороже, чем заметнее вы стали.', en: 'Cheaper now, more expensive later — and the more visible you are, the more expensive it gets.' },
+        effects: { churnAdd: 0.008, awarenessAdd: -0.01, valuationBonus: -0.005 },
       },
     ],
   },

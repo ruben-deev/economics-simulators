@@ -1046,7 +1046,9 @@ test('игра выигрываема: разумная стратегия до�
     assert.ok(last.cmPerSub > 0, `seed ${seed}: вклад с подписчика ${last.cmPerSub}`);
     // Одна и та же политика все 36 месяцев против реагирующего конкурента
     // не обязана выигрывать дуополию — но обязана быть в ней конкурентоспособной.
-    assert.ok(last.duopolyShare > 0.3, `seed ${seed}: доля дуополии ${last.duopolyShare}`);
+    // Планка ниже трети: третий акт (рывок конкурента) нарочно наказывает
+    // автопилот, и константная стратегия отдаёт ему часть рынка в финале.
+    assert.ok(last.duopolyShare > 0.22, `seed ${seed}: доля дуополии ${last.duopolyShare}`);
     assert.ok(state.equity > 0.3, `seed ${seed}: доля ${state.equity} — раунды не должны съедать компанию`);
   }
 });
@@ -1573,4 +1575,50 @@ test('цели совета берутся не всеми и не никем', 
   // и девяностым процентилем: ниже — её берут все, выше — не берёт никто.
   assert.ok(y3.target > 0.43 && y3.target <= 0.70,
     `планка ${y3.target} должна лежать между медианой и 90-м процентилем`);
+});
+
+// ----------------------------------------------------------------------------
+// Третий акт: обвал прав и последний рывок конкурента
+// ----------------------------------------------------------------------------
+
+test('обвал прав отзывает долю лицензионного каталога у обоих', () => {
+  // Одно и то же состояние шагаем дважды: в месяц обвала и в соседний.
+  // Разница в каталоге обязана быть ровно долей обвала — и у вас, и у него.
+  const s = warmed(undefined, 8, 'cliff');
+  s.month = CONFIG.rightsCliffMonth - 1;
+  const hit = step(structuredClone(s), { decisions: decide(), eventChoice: 0 });
+  const s2 = structuredClone(s);
+  s2.month = CONFIG.rightsCliffMonth;
+  const calm = step(s2, { decisions: decide(), eventChoice: 0 });
+
+  assert.ok(hit.report.rightsCliffHit, 'месяц обвала помечен в отчёте');
+  assert.ok(hit.report.rightsCliffLost > 0, 'потери каталога видны игроку');
+  const yourRatio = hit.state.catalogLicensed / calm.state.catalogLicensed;
+  assert.ok(Math.abs(yourRatio - (1 - CONFIG.rightsCliffShare)) < 0.02,
+    `ваш каталог должен просесть на долю обвала, а не на ${yourRatio.toFixed(2)}`);
+  const rivalRatio = hit.state.rivalState.catalogLicensed / calm.state.rivalState.catalogLicensed;
+  assert.ok(Math.abs(rivalRatio - (1 - CONFIG.rightsCliffShare)) < 0.02,
+    'полка конкурента худеет так же: обвал общий, а не персональный');
+});
+
+test('обвал прав анонсируется заранее', () => {
+  const s = warmed(undefined, 8, 'cliff-ann');
+  s.month = CONFIG.rightsCliffAnnounceMonth - 1;
+  const r = step(s, { decisions: decide(), eventChoice: 0 }).report;
+  assert.ok(r.rightsCliffSoon, 'предупреждение выходит в месяц анонса');
+  assert.equal(r.rightsCliffIn, CONFIG.rightsCliffMonth - CONFIG.rightsCliffAnnounceMonth,
+    'и говорит, сколько месяцев осталось на подготовку');
+});
+
+test('финальный рывок: конкурент получает кассу и воюет до объявленного месяца', () => {
+  const s = warmed(undefined, 8, 'surge');
+  s.month = CONFIG.rivalSurgeMonth - 1;
+  const cashBefore = s.rivalState.cash;
+  const o = step(structuredClone(s), { decisions: decide(), eventChoice: 0 });
+  assert.ok(o.report.rivalSurge, 'рывок виден в отчёте');
+  assert.equal(o.state.rivalState.stance, 'war', 'после раунда конкурент идёт в войну');
+  assert.ok(o.state.rivalState.cash > cashBefore, 'внеплановый раунд пополнил его кассу');
+  // Война держится и на следующий месяц, вопреки гистерезису позиций
+  const o2 = step(o.state, { decisions: decide(), eventChoice: 0 });
+  assert.equal(o2.state.rivalState.stance, 'war', 'война не заканчивается через месяц');
 });
