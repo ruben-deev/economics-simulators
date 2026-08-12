@@ -33,8 +33,8 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.1.html) ·
-[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.0.html).
+[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
+[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 Локально:
@@ -328,7 +328,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinopotok-streaming-simulator-v1.10.0.html
+  dist/kinopotok-streaming-simulator-v1.10.1.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```
@@ -368,6 +368,9 @@ docs/<игра>/                    разбор формул и сценари�
 
 **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)** — идея, экономические модели, интерфейс и тексты всех трёх игр.
 
-Проект открыт для использования на занятиях: игры можно раздавать студентам,
-менять числа под свой курс и разбирать формулы на доске. Если возьмёте в работу —
-ссылка на автора будет уместна.
+## Лицензия
+
+[CC BY-NC-SA 4.0](LICENSE.md): игры и материалы можно свободно использовать
+на занятиях, раздавать студентам, менять числа под свой курс и разбирать формулы
+на доске — с указанием автора. Коммерческое использование — только с отдельного
+разрешения; производные работы — под той же лицензией.

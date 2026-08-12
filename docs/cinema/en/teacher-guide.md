@@ -6,10 +6,11 @@ The game suits courses on subscription economics, media business, unit economics
 corporate finance. One game is 36 turns, which at a calm pace is 40–60 minutes.
 A class session usually needs only 12–18 turns.
 
-The food delivery game (`docs/foodtech/`) and this one model different kinds of business,
-and that is the main reason to play both. In delivery, revenue per customer grows with
-their activity; in subscription it is fixed while cost grows. The same words —
-"engagement", "retention", "growth" — mean opposite things in the two.
+The three games in the set model different kinds of business, which is the point of
+playing more than one. In delivery (`docs/foodtech/`) revenue per customer grows with
+their activity; in subscription it is fixed while cost grows; in ticketing
+(`docs/tickets/`) billions pass through you and yours are the percentages. The same
+words — "engagement", "retention", "growth" — mean different things in each.
 
 ---
 
@@ -335,7 +336,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.10.0.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.1.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.0.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -330,7 +330,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v1.10.0.html
+  dist/kinopotok-streaming-simulator-v1.10.1.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```
@@ -370,6 +370,9 @@ Detailed lists of assumptions are at the end of each `docs/<game>/economics.md`.
 
 **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)** — concept, economic models, interface and copy for all three games.
 
-The project is meant to be used in class: hand the games out to students, change the
-numbers to fit your course, work through the formulas on the board. A credit link is
-appreciated if you do.
+## License
+
+[CC BY-NC-SA 4.0](LICENSE.md): use the games and materials freely in class, hand them
+out to students, change the numbers to fit your course and work through the formulas
+on the board — with attribution. Commercial use requires the author's separate
+permission; derivatives carry the same license.

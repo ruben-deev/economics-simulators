@@ -27,13 +27,15 @@
     .card .sub { color: var(--muted); font-size: 12px; margin: -6px 0 0; }
     .card p { margin: 0; line-height: 1.6; color: var(--text); }
     .card ul { margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.7; font-size: 13px; }
-    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
+    .card-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
     .card-actions a {
+      flex: 1;
+      text-align: center;
       text-decoration: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-weight: 600;
-      font-size: 13px;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 15px;
       border: 1px solid var(--line);
       color: var(--text);
       background: var(--panel-2);
@@ -53,7 +55,8 @@
           Ссылки на игры работают и без него:</p>
         <p class="funding-note">
           <a href="games/foodtech/index.html">НОВОЕДА — доставка еды</a> ·
-          <a href="games/cinema/index.html">КИНОПОТОК — онлайн-кинотеатр</a></p>
+          <a href="games/cinema/index.html">КИНОПОТОК — онлайн-кинотеатр</a> ·
+          <a href="games/tickets/index.html">БИЛЕТОН — билетный сервис</a></p>
       </div>
     </div>
   </noscript>
@@ -116,8 +119,8 @@
         en: 'Economics simulators for the classroom',
       },
       homeLead: {
-        ru: 'Две игры про управление бизнесом. Каждая — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
-        en: 'Two games about running a business. Each is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
+        ru: 'Три игры про управление бизнесом. Каждая — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
+        en: 'Three games about running a business. Each is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
       },
       foodTitle: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
       foodSub: { ru: 'доставка еды в городе · ход = неделя · 52 недели', en: 'food delivery in a city · turn = week · 52 weeks' },
@@ -151,8 +154,8 @@
       },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
-        ru: 'Игры работают в браузере, без установки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a> · <a href="docs/tickets/economics.md">билеты</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>.',
-        en: 'The games run in a browser, nothing to install. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.md">delivery</a> · <a href="docs/cinema/en/economics.md">streaming</a> · <a href="docs/tickets/en/economics.md">ticketing</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>.',
+        ru: 'Игры работают в браузере, без установки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a> · <a href="docs/tickets/economics.md">билеты</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.',
+        en: 'The games run in a browser, nothing to install. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.md">delivery</a> · <a href="docs/cinema/en/economics.md">streaming</a> · <a href="docs/tickets/en/economics.md">ticketing</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.',
       },
       langBtn: { ru: 'EN', en: 'RU' },
     };

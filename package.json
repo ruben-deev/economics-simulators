@@ -12,5 +12,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "license": "CC-BY-NC-SA-4.0"
 }
