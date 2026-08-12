@@ -455,6 +455,7 @@ export const STRINGS = {
   pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
   pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Студия, редакция, офис', en: 'Studio, editorial, overheads' },
+  pnlStaff: { ru: 'Штат: продукт, биллинг, юристы', en: 'Staff: product, billing, legal' },
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы (внедрения, события)', en: 'One-off costs (rollouts, events)' },
   pnlCashChange: { ru: 'Изменение кассы', en: 'Change in cash' },

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.12.0" />
+  <meta name="app-version" content="1.13.0" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1271,6 +1271,7 @@ const STRINGS = {
   pnlContribution: { ru: 'Маржа', en: 'Contribution' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlManagers: { ru: 'Аккаунт-менеджеры', en: 'Account managers' },
+  pnlStaff: { ru: 'Штат: интеграции, финансы, юристы', en: 'Staff: integrations, finance, legal' },
   pnlPlatformDev: { ru: 'Разработка платформы', en: 'Platform development' },
   pnlPlatformSeats: { ru: 'Содержание подключённых', en: 'Running connected accounts' },
   pnlProduct: { ru: 'Продукт', en: 'Product' },
@@ -1818,6 +1819,10 @@ const CONFIG = {
   // кассе. Офис, юристы и бухгалтерия оператора с миллиардным оборотом
   // стоят дороже.
   hqMonthly: 22_000_000,
+  // Штат, растущий с числом организаторов на обслуживании: интеграции,
+  // финансы, юристы, вторая линия поддержки — ₽/мес на организатора.
+  // Аккаунт-менеджеры — отдельный ползунок; этот штат в ноль не уведёшь.
+  staffPerOrg: 6_000,
   // Содержание построенного: платформа, приложение и алгоритмы требуют
   // поддержки каждый месяц, сколько бы времени ни прошло с их запуска.
   techUpkeepRate: 0.0125,
@@ -4239,7 +4244,11 @@ function step(prevState, input = {}) {
   const techUpkeep = platformUpkeep(
     state.platformStock + state.productStock + state.rndStock, CONFIG.techUpkeepRate);
   const serverCost = infraCost(ticketsTotal, CONFIG.serverPerTicket, prodLevel, CONFIG.serverTechRelief);
-  const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
+  // Штат растёт вместе с числом организаторов: интеграции, финансы, юристы,
+  // вторая линия поддержки. Аккаунт-менеджеры — отдельный ползунок и другая
+  // работа; этот штат в ноль не уведёшь — фикс-кост масштаба.
+  const staffCost = orgTotal(state) * CONFIG.staffPerOrg;
+  const fixed = CONFIG.hqMonthly + staffCost + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
     + onboardingSpend + techUpkeep + serverCost;
@@ -4457,6 +4466,7 @@ function step(prevState, input = {}) {
     variableCost,
     contribution,
     managerCost,
+    staffCost,
     platformSeats,
     techUpkeep,
     serverCost,
@@ -6123,6 +6133,7 @@ function renderPnlTab() {
           <td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlMarketing'), -d.marketing, 'neg', true)}
         ${line(t('pnlManagers'), -r.managerCost, 'neg', true)}
+        ${line(t('pnlStaff'), -(r.staffCost ?? 0), 'neg', true)}
         ${line(t('pnlPlatformDev'), -d.platformDev, 'neg', true)}
         ${line(t('pnlPlatformSeats'), -r.platformSeats, 'neg', true)}
         ${line(t('pnlProduct'), -d.product, 'neg', true)}

@@ -427,7 +427,7 @@ meaning as a price.
 ```
 variable costs = bandwidth + support + retention discounts
 contribution   = revenue − variable costs
-fixed costs    = hqMonthly + licensing + originals + marketing + technology + data science
+fixed costs    = hqMonthly + staff (₽6 × subscribers) + licensing + originals + marketing + technology + data science
 profit         = contribution − fixed costs
 ```
 
@@ -607,14 +607,13 @@ directions.
 |---|---|---|
 | 1 | reach 3.4M subscribers | can you grow at all |
 | 2 | 3 profitable months of 12 **and** base no lower than ×1.05 | can you grow and earn at the same time |
-| 3 | market share ≥ 60% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
+| 3 | market share ≥ 55% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
 
 These numbers were measured, not guessed: a hundred random strategies are run across
 three years, and each bar sits where the clearly better half clears it and the middle
-does not. Latest measurement: 41% of strategies clear year one, 23% clear year three.
-The year-three bar was raised from 35% to 60% after the catalogue rebalance: the median
-end-of-game share became 0.43, so two thirds of strategies were clearing the old goal —
-which means it had stopped being a goal.
+does not. Latest measurement: 37% of strategies clear year one, 22% clear year three.
+The year-three bar is 0.55: after the third act (the rival's last push) the share
+distribution shifted down, and the old 0.60 was cleared by barely one in ten.
 
 Year two is cleared by only 4%, and that is deliberate: a random strategy has no
 profitable months at all even at the ninetieth percentile, while a well-tuned one closes

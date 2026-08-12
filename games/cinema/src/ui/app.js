@@ -1586,6 +1586,7 @@ function renderPnlTab() {
       ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
       ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
       ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+      ${line(t('pnlStaff'), -(r.staffCost ?? 0), 'neg', true)}
       ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
       <tr class="total"><td>${t('pnlOperatingProfit')}</td>
         <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>

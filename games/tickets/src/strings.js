@@ -355,6 +355,7 @@ export const STRINGS = {
   pnlContribution: { ru: 'Маржа', en: 'Contribution' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlManagers: { ru: 'Аккаунт-менеджеры', en: 'Account managers' },
+  pnlStaff: { ru: 'Штат: интеграции, финансы, юристы', en: 'Staff: integrations, finance, legal' },
   pnlPlatformDev: { ru: 'Разработка платформы', en: 'Platform development' },
   pnlPlatformSeats: { ru: 'Содержание подключённых', en: 'Running connected accounts' },
   pnlProduct: { ru: 'Продукт', en: 'Product' },

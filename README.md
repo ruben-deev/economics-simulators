@@ -34,7 +34,7 @@
 
 Для раздачи студентам офлайн скачайте одиночный файл:
 [доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.1.html) ·
-[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.9.0.html).
+[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 Локально:
@@ -328,7 +328,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinopotok-streaming-simulator-v1.9.0.html
+  dist/kinopotok-streaming-simulator-v1.10.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```

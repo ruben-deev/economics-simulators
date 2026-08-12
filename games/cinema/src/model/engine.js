@@ -947,7 +947,11 @@ export function step(prevState, input = {}) {
   // это и есть инфраструктура под нагрузкой.
   const techUpkeep = platformUpkeep(
     (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
-  const fixed = CONFIG.hqMonthly + contentSpend + slotCost
+  // Штат растёт вместе с базой: продукт, биллинг, модерация, юристы.
+  // Ползунки технологий можно увести в ноль, но команду, обслуживающую
+  // миллионы подписчиков, в ноль не уведёшь — это фикс-кост масштаба.
+  const staffCost = subsAtStart * CONFIG.staffPerSub;
+  const fixed = CONFIG.hqMonthly + staffCost + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
   // Поштучные расходы событий: компенсации «каждому подписчику» считаются
   // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
@@ -1077,6 +1081,7 @@ export function step(prevState, input = {}) {
     contribution,
     cmPerSub,
     fixed,
+    staffCost,
     techUpkeep,
     contentSpend,
     contentCapped: capApplied ? cap : null,

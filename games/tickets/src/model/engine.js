@@ -615,7 +615,11 @@ export function step(prevState, input = {}) {
   const techUpkeep = platformUpkeep(
     state.platformStock + state.productStock + state.rndStock, CONFIG.techUpkeepRate);
   const serverCost = infraCost(ticketsTotal, CONFIG.serverPerTicket, prodLevel, CONFIG.serverTechRelief);
-  const fixed = CONFIG.hqMonthly + decisions.marketing + managerCost
+  // Штат растёт вместе с числом организаторов: интеграции, финансы, юристы,
+  // вторая линия поддержки. Аккаунт-менеджеры — отдельный ползунок и другая
+  // работа; этот штат в ноль не уведёшь — фикс-кост масштаба.
+  const staffCost = orgTotal(state) * CONFIG.staffPerOrg;
+  const fixed = CONFIG.hqMonthly + staffCost + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
     + onboardingSpend + techUpkeep + serverCost;
@@ -833,6 +837,7 @@ export function step(prevState, input = {}) {
     variableCost,
     contribution,
     managerCost,
+    staffCost,
     platformSeats,
     techUpkeep,
     serverCost,

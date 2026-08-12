@@ -1133,6 +1133,7 @@ function renderPnlTab() {
           <td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlMarketing'), -d.marketing, 'neg', true)}
         ${line(t('pnlManagers'), -r.managerCost, 'neg', true)}
+        ${line(t('pnlStaff'), -(r.staffCost ?? 0), 'neg', true)}
         ${line(t('pnlPlatformDev'), -d.platformDev, 'neg', true)}
         ${line(t('pnlPlatformSeats'), -r.platformSeats, 'neg', true)}
         ${line(t('pnlProduct'), -d.product, 'neg', true)}

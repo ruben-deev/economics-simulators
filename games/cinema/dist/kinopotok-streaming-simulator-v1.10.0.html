@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.9.0" />
+  <meta name="app-version" content="1.10.0" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1374,6 +1374,7 @@ const STRINGS = {
   pnlUpkeep: { ru: 'Содержание технологий', en: 'Technology upkeep' },
   pnlUpkeepNote: { ru: 'Содержание растёт от всего, что уже построено, серверы — от нагрузки. Обе статьи дорожают ровно тогда, когда дела идут хорошо.', en: 'Upkeep grows with everything already built, servers with the load. Both get more expensive exactly when things go well.' },
   pnlHq: { ru: 'Студия, редакция, офис', en: 'Studio, editorial, overheads' },
+  pnlStaff: { ru: 'Штат: продукт, биллинг, юристы', en: 'Staff: product, billing, legal' },
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы (внедрения, события)', en: 'One-off costs (rollouts, events)' },
   pnlCashChange: { ru: 'Изменение кассы', en: 'Change in cash' },
@@ -1913,6 +1914,10 @@ const CONFIG = {
   // сама выходила в плюс на 12-24 месяцах и доживала до конца — сервис
   // с миллионной базой не может стоить в содержании как ларёк.
   hqMonthly: 60_000_000,
+  // Штат, растущий с базой: продукт, биллинг, модерация, юристы — ₽ на
+  // подписчика в месяц. Бюджеты технологий игрок может увести в ноль,
+  // команду масштаба — нет.
+  staffPerSub: 6,
   techUpkeepRate: 0.0135,     // содержание накопленных технологий, доля в месяц
   techSaturation: 900_000_000,
 
@@ -4761,7 +4766,11 @@ function step(prevState, input = {}) {
   // это и есть инфраструктура под нагрузкой.
   const techUpkeep = platformUpkeep(
     (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
-  const fixed = CONFIG.hqMonthly + contentSpend + slotCost
+  // Штат растёт вместе с базой: продукт, биллинг, модерация, юристы.
+  // Ползунки технологий можно увести в ноль, но команду, обслуживающую
+  // миллионы подписчиков, в ноль не уведёшь — это фикс-кост масштаба.
+  const staffCost = subsAtStart * CONFIG.staffPerSub;
+  const fixed = CONFIG.hqMonthly + staffCost + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
   // Поштучные расходы событий: компенсации «каждому подписчику» считаются
   // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
@@ -4891,6 +4900,7 @@ function step(prevState, input = {}) {
     contribution,
     cmPerSub,
     fixed,
+    staffCost,
     techUpkeep,
     contentSpend,
     contentCapped: capApplied ? cap : null,
@@ -7096,6 +7106,7 @@ function renderPnlTab() {
       ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
       ${line(t('pnlRnd'), -r.decisions.rnd, 'neg', true)}
       ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
+      ${line(t('pnlStaff'), -(r.staffCost ?? 0), 'neg', true)}
       ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
       <tr class="total"><td>${t('pnlOperatingProfit')}</td>
         <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>

@@ -440,3 +440,10 @@ Both lines used to hide inside "office and administration" and grew with neither
 the product nor the load. The base fixed line was reduced by exactly what these
 two add under the reference strategy, so the balance did not shift — but the
 behaviour did: costs now grow together with the business.
+
+**Staff.** Beyond account managers (their own slider) the operator has a team you
+cannot set to zero: integrations, finance, legal, second-line support. It grows
+with the number of organisers being served: `staff = organisers × ₽6,000/mo`.
+Together with the office (₽22M/mo) these are the fixed costs of scale: a passive
+game of "sliders at midpoint, no funding rounds" no longer survives to the end
+on the starting cash.
