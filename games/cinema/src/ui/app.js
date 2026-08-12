@@ -21,9 +21,12 @@ import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
+import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinopotok-save-v1';
+const RECORDS_KEY = 'kinopotok-records';
+const GAME_TAG = 'КИНОПОТОК';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'cinema-2';
@@ -786,7 +789,22 @@ function buildNews(r) {
       note: t(`stance${r.rivalStance.charAt(0).toUpperCase()}${r.rivalStance.slice(1)}Hint`),
     })]);
   }
-  if (r?.rivalJustRaised) news.push(['warn', t('newsRivalRaised')]);
+  if (r?.rivalSurge) {
+    news.push(['warn', t('newsRivalSurge')]);
+  } else if (r?.rivalJustRaised) {
+    news.push(['warn', t('newsRivalRaised')]);
+  }
+
+  // Третий акт: обвал прав анонсируется заранее — это новость-предупреждение,
+  // на которую можно успеть ответить собственным производством.
+  if (r?.rightsCliffSoon) {
+    news.push(['warn', t('newsCliffSoon', {
+      months: num(r.rightsCliffIn, 0), share: pct(CONFIG.rightsCliffShare, 0),
+    })]);
+  }
+  if (r?.rightsCliffHit) {
+    news.push(['warn', t('newsCliffHit', { lost: compact(r.rightsCliffLost) })]);
+  }
 
   // Лицензии истекают сами, каждый месяц. Это беговая дорожка, и её видно
   // только если сказать словами: каталог тает, даже когда вы ничего не делаете.
@@ -1086,9 +1104,20 @@ function renderFunding() {
     </div>`;
   }).join('');
 
+  // Связка «запас хода ↔ раунды»: сколько месяцев проживёт касса при текущем
+  // темпе, прямо там, где принимается решение о деньгах.
+  const lastR = last();
+  const burn = lastR && lastR.profit < 0 ? -lastR.profit : 0;
+  const runwayTurns = burn > 0 ? state.cash / burn : null;
+  const runwayNote = runwayTurns !== null
+    ? `<div class="funding-note"${runwayTurns < 6 ? ' style="color:var(--bad)"' : ''}>${
+        t('fundingRunway', { n: num(runwayTurns, 1) })}</div>`
+    : '';
+
   el('funding').innerHTML = `
     <div class="funding-note">${t('fundingHead', {
       valuation: money(v), equity: pct(state.equity, 1), raised: money(state.raisedTotal) })}</div>
+    ${runwayNote}
     ${rows}
     <div class="funding-note">${t('fundingNote')}
       ${state.month < CONFIG.minMonthForFunding
@@ -1314,12 +1343,22 @@ function renderReport() {
         names: r.installedNow.map((k) => tx(algoByKey(k)?.name)).join(', '),
         cost: money(r.installCost) })}</div>` : '';
 
+  // Одна строка «что изменилось»: три главных числа против прошлого хода.
+  const p = prev();
+  const sm = (v) => (v >= 0 ? '+' : '') + money(v);
+  const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
+    subs: signedPct(r.subs / Math.max(1e-9, p.subs) - 1, 1),
+    profit: sm(r.profit - p.profit),
+    cash: sm(r.cash - p.cash),
+  })}</div>` : '';
+
   el('report-slot').innerHTML = `<div class="panel">
     <div class="report-head">
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         revenue: money(r.revenue), subscription: money(r.subscriptionRevenue), ads: money(r.adRevenue) })}</span>
     </div>
+    ${deltaLine}
     <div class="report-grid">
       ${stat(t('statSubs'), compact(r.subs), t('statSubsSub', {
         gained: compact(r.newSubs), lost: compact(r.lostSubs) }))}
@@ -1416,7 +1455,40 @@ const CHART_TABS = {
   },
 };
 
+// Дневник решений: ходы, в которые игрок что-то менял. Пунктир на графике
+// и список под ним связывают решение с последствием — без этого график
+// остаётся «просто кривой», по которой нечего разбирать.
+function decisionChanges() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 1; i < hist.length; i += 1) {
+    const prev = hist[i - 1].decisions ?? {};
+    const cur = hist[i].decisions ?? {};
+    const names = [];
+    for (const l of LEVERS) if ((cur[l.key] ?? 0) !== (prev[l.key] ?? 0)) names.push(tx(l.label));
+    for (const a of ALGORITHMS) {
+      if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
+    }
+    if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+function changesHtml(changes) {
+  if (!changes.length) return '';
+  const items = changes.slice(-4).map((c) => t('chartChangeItem', {
+    turn: c.turn,
+    what: c.names.slice(0, 3).join(', ') + (c.names.length > 3 ? '…' : ''),
+  })).join(' · ');
+  return `<div style="margin-top:4px">${t('chartChangesTitle')} ${items}</div>`;
+}
+
 function renderChart() {
+  // До первого хода график пуст: пустая «Динамика» не сообщает ничего,
+  // а новичку добавляет ещё одну непонятную панель. Прячем до первого отчёта.
+  const chartsPanel = el('chart').closest('.panel');
+  if (chartsPanel) chartsPanel.style.display = (state.history ?? []).length ? '' : 'none';
+  if (!(state.history ?? []).length) return;
   el('chart-tabs').innerHTML = Object.entries(CHART_TABS)
     .map(([k, v]) => `<button data-chart="${k}" class="${k === chartTab ? 'active' : ''}">${t(v.label)}</button>`).join('');
   el('chart-tabs').querySelectorAll('[data-chart]').forEach((b) => {
@@ -1425,10 +1497,12 @@ function renderChart() {
 
   const conf = CHART_TABS[chartTab];
   const series = conf.series(state.history);
+  const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
-  el('chart-caption').textContent = t(conf.caption);
+  el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
+    markers: changes.map((c) => c.index),
   });
 }
 
@@ -1630,6 +1704,83 @@ function toast(text) {
   setTimeout(() => node.remove(), 3500);
 }
 
+// Развилка перед смертью: игрок, который не смотрел на кассу, получает один
+// явный шанс осознать положение и поднять раунд — вместо молчаливого краха
+// через два хода. Показывается один раз за партию и только пока раунд доступен.
+function maybeDeathFork() {
+  if (state.over || state.deathWarned) return;
+  const r = last();
+  if (!r || r.profit >= 0) return;
+  const burn = -r.profit;
+  if (state.cash >= burn * 2) return;
+  if (state.month < CONFIG.minMonthForFunding) return;
+  state.deathWarned = true;
+  save();
+  const runway = Math.max(0, state.cash / burn);
+  const raiseActions = CONFIG.fundingOptions.slice(-2).map((amount) => {
+    const offer = fundingOffer(state, amount);
+    return {
+      label: t('deathRaise', { amount: money(amount), dilution: pct(offer.dilution, 0) }),
+      onClick: () => {
+        state = raise(state, amount).state;
+        save();
+        renderAll();
+        toast(t('deathRaised', { amount: money(amount), equity: pct(state.equity, 1) }));
+      },
+    };
+  });
+  modal(`<h2>${t('deathTitle')}</h2>
+    <p class="funding-note">${t('deathText', {
+      cash: money(state.cash), burn: money(burn),
+      runway: t('deathRunway', { n: num(runway, 1) }),
+    })}</p>`,
+  [...raiseActions, { label: t('deathIgnore') }]);
+}
+
+// Водопад последних месяцев: на экране смерти видно не «вы банкрот», а из
+// каких потоков это сложилось — выручка, расходы, итог месяца, касса.
+function waterfallHtml(rows) {
+  if (!rows.length) return '';
+  const cell = (v) => `<td>${money(v)}</td>`;
+  const line = (label, fn) => `<tr><td>${label}</td>${rows.map((r) => cell(fn(r))).join('')}</tr>`;
+  return `<h3 style="margin:12px 0 6px">${t('deathWaterfall')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th></th>${rows.map((r) => `<th>${t('wfTurn', { n: r.month })}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${line(t('wfRevenue'), (r) => r.revenue)}
+      ${line(t('wfCosts'), (r) => r.revenue - r.profit + r.oneOff)}
+      ${line(t('wfProfit'), (r) => r.profit - r.oneOff)}
+      ${line(t('wfCash'), (r) => r.cash)}
+    </tbody></table></div>`;
+}
+
+// Итог заносится в локальную таблицу рекордов один раз за партию; метка своей
+// записи хранится в state, чтобы переоткрытие экрана итогов её не теряло.
+function recordsBlockHtml(s) {
+  if (!state.recordId) {
+    state.recordId = String(Date.now());
+    addRecord(RECORDS_KEY, {
+      id: state.recordId,
+      date: new Date().toISOString().slice(0, 10),
+      seed: state.seed,
+      score: s.bankrupt ? 0 : Math.round(s.equityValue),
+      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      version: APP_VERSION,
+      turns: s.months,
+    });
+    save();
+  }
+  const top = loadRecords(RECORDS_KEY);
+  if (!top.length) return '';
+  const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
+    <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+  return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
@@ -1638,6 +1789,10 @@ function showGameOver() {
     : s.equityValue > 3e10 ? t('gradeSolid')
     : s.equityValue > 1e10 ? t('gradeSurvived') : t('gradeModest');
 
+  const line = resultString({
+    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
+  });
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
@@ -1654,9 +1809,20 @@ function showGameOver() {
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
+    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
+    <p class="funding-note">${t('resultNote')}</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+    </div>
+    ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
     [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
      { label: t('gameOverCharts'), onClick: () => {} }]);
+  el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
+  });
 }
 
 
@@ -1665,22 +1831,38 @@ function showGameOver() {
 // Игру часто открывают по присланной ссылке, без единого слова контекста,
 // и без этого экрана первое, что видит человек, — двенадцать ползунков.
 function showWelcome() {
+  // Код партии = сид мира. Поле читается через замыкание: модалка стирает
+  // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
+  let seedWanted = '';
+  const best = bestRecord(RECORDS_KEY);
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
-    <p class="funding-note">${t('welcomeHint')}</p>`,
-  [{ label: t('welcomeStart'), primary: true },
+    <p class="funding-note">${t('welcomeHint')}</p>
+    <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
+        style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    </label>
+    <p class="funding-note">${t('seedNote')}</p>
+    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
+  [{ label: t('welcomeStart'), primary: true, onClick: () => {
+      const v = seedWanted.trim();
+      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+    } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
+  el('modal-root').querySelector('#seed-input')
+    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
 }
 
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
+    + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
@@ -1706,6 +1888,7 @@ function nextMonth() {
   save();
   renderAll();
   if (state.over) showGameOver();
+  else maybeDeathFork();
 }
 
 function restart() {

@@ -19,7 +19,10 @@ function niceTicks(min, max, count = 4) {
 
 /**
  * series: [{ label, color?, data: number[] }]
- * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string }
+ * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
+ *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
+ * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
+ * кривой» и становится дневником — видно, где решение, а где последствия.
  */
 export function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -85,6 +88,20 @@ export function drawLineChart(canvas, series, opts = {}) {
   for (let i = 0; i < n; i += labelEvery) {
     ctx.fillStyle = 'rgba(148,163,184,0.6)';
     ctx.fillText(String(i + 1), x(i), padT + h + 6);
+  }
+
+  // маркеры решений — под линиями, чтобы не перекрывать данные
+  for (const mi of (opts.markers ?? [])) {
+    if (mi < 0 || mi >= n) continue;
+    const px = x(mi);
+    ctx.strokeStyle = 'rgba(251,191,36,0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(px + 0.5, padT);
+    ctx.lineTo(px + 0.5, padT + h);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // линии
