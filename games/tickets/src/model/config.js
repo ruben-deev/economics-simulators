@@ -123,6 +123,17 @@ export const CONFIG = {
   rndSaturation: 220_000_000,
   dataSaturation: 9_000_000,    // накопленных проданных билетов для «половины» эффекта
 
+  // --- Оценка компании ---
+  // Выручка, рост и маржа берутся одним окном: месяц у билетного сервиса
+  // слишком волнистый, а последний месяц вдобавок покупается одним решением —
+  // обнулив на нём вложения, множитель можно было задрать рывком.
+  valuationWindow: 9,
+  // Темп роста считается тем же окном — полгода против предыдущего полугодия.
+  growthWindow: 6,
+  // Пол под оценкой в раунде: посевную компанию оценивают не по выручке,
+  // которой ещё нет.
+  valuationFloor: 200_000_000,
+
   // --- Инвестиции ---
   minMonthForFunding: 3,
   fundingOptions: [400_000_000, 1_200_000_000, 3_000_000_000],
@@ -356,7 +367,7 @@ export const LEVERS = [
     group: 'growth',
     label: { ru: 'Маркетинг на зрителей', en: 'Marketing to buyers' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 400_000_000, step: 5_000_000, def: 15_000_000,
+    min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
       ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
       en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser.',
@@ -367,7 +378,7 @@ export const LEVERS = [
     group: 'growth',
     label: { ru: 'Аккаунт-менеджеры', en: 'Account managers' },
     unit: { ru: 'чел.', en: 'people' },
-    min: 0, max: 220, step: 5, def: 15,
+    min: 0, max: 120, step: 5, def: 15,
     tip: {
       ru: 'Кто подключает организаторов и разбирает их проблемы. Перегруженная команда теряет их быстрее, чем приводит новых.',
       en: 'The people who sign organisers up and sort out their problems. An overloaded team loses them faster than it brings new ones in.',
@@ -378,7 +389,7 @@ export const LEVERS = [
     group: 'growth',
     label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 0,
+    min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
       en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
@@ -389,7 +400,7 @@ export const LEVERS = [
     group: 'growth',
     label: { ru: 'Разработка платформы', en: 'Platform development' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
+    min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
       en: 'The ticketing widget for the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
@@ -400,7 +411,7 @@ export const LEVERS = [
     group: 'infra',
     label: { ru: 'Продукт и приложение', en: 'Product and app' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
+    min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Скорость оплаты, поиск, карта зала. Влияет на конверсию: сколько дошедших до корзины действительно платят.',
       en: 'Checkout speed, search, seat maps. It drives conversion: how many of the people who reach the cart actually pay.',
@@ -411,7 +422,7 @@ export const LEVERS = [
     group: 'infra',
     label: { ru: 'Поддержка', en: 'Support' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 6_000_000,
+    min: 0, max: 50_000_000, step: 1_000_000, def: 6_000_000,
     tip: {
       ru: 'Возвраты, потерянные билеты, вопросы на входе. Плохая поддержка бьёт по доверию зрителей и по терпению организаторов одновременно.',
       en: 'Refunds, lost tickets, questions at the door. Weak support hits buyer trust and organiser patience at the same time.',
@@ -422,7 +433,7 @@ export const LEVERS = [
     group: 'infra',
     label: { ru: 'Запас мощности', en: 'Capacity headroom' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 3_000_000,
+    min: 0, max: 50_000_000, step: 1_000_000, def: 3_000_000,
     tip: {
       ru: 'Серверы под старт продаж на хит. В обычный месяц это выброшенные деньги — ровно до того месяца, когда сайт ляжет на глазах у ста тысяч человек.',
       en: 'Servers for the on-sale rush of a hit. In a normal month this is money thrown away — right up to the month the site goes down in front of a hundred thousand people.',
@@ -433,7 +444,7 @@ export const LEVERS = [
     group: 'infra',
     label: { ru: 'Команда данных', en: 'Data team' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 90_000_000, step: 2_000_000, def: 0,
+    min: 0, max: 30_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Качество алгоритмов. Без неё умные механики работают наугад и вредят чаще, чем помогают.',
       en: 'The quality of the algorithms. Without it the smart mechanics guess, and hurt more often than they help.',

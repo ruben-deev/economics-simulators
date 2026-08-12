@@ -28,6 +28,7 @@ import {
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
+import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import {
   seasonOf, eventSeason, demandSeason, rollHit, hitById,
 } from './market.js';
@@ -1004,19 +1005,18 @@ export function valuation(state) {
   if (!last) return 0;
   // Год у билетного сервиса устроен волной: август и май отличаются вдвое.
   // Считать оценку по одному месяцу значит оценивать сезон, а не бизнес,
-  // поэтому и выручка, и рост берутся сглаженными.
-  const window = h.slice(-3);
-  const runRate = (window.reduce((s, r) => s + r.revenue, 0) / window.length) * 12;
-
-  const recent = h.slice(-6).reduce((s, r) => s + r.gmv, 0);
-  const older = h.slice(-12, -6).reduce((s, r) => s + r.gmv, 0);
-  const growth = older > 0 ? recent / older - 1 : 0.25;
-
-  const margin = last.revenue > 0 ? last.profit / last.revenue : -1;
-  const multiple = clamp(
-    2.4 + 5.5 * growth + 3.0 * clamp(margin, 0, 1) + 1.6 * clamp(margin, -1, 0),
-    0.5, 11,
-  );
+  // поэтому выручка, рост и маржа берутся одним окном. Маржа раньше бралась
+  // из последнего месяца — и обнулив на нём маркетинг и разработку, множитель
+  // можно было задрать рывком. См. shared/valuation.js.
+  const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -1;
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.4, growthWeight: 5.5, marginWeight: 3.0, marginPenalty: 1.6,
+    marginFloor: -1, marginCap: 1, max: 11,
+  });
   // Договоры с организаторами — актив: их нельзя купить деньгами за месяц
   const contracts = ORGANIZERS.reduce(
     (s, def) => s + (state.orgs[def.id] ?? 0) * def.eventsPerMonth * def.seats * def.avgPrice * 0.11,
@@ -1031,9 +1031,8 @@ export function valuation(state) {
 }
 
 export function fundingOffer(state, amount) {
-  const v = Math.max(200_000_000, valuation(state));
-  const dilution = clamp(amount / (v + amount), 0.02, 0.75);
-  return { amount, dilution, newEquity: state.equity * (1 - dilution), valuation: v };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, valuation: terms.pre, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 export function raise(state, amount) {

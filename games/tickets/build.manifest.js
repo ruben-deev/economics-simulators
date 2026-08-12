@@ -3,7 +3,7 @@
 
 export default {
   name: 'tickets',
-  version: '1.9.0',
+  version: '1.10.0',
   title: 'БИЛЕТОН · ticketing marketplace simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
@@ -18,6 +18,7 @@ export default {
     'src/strings.js',
     '../../shared/clone.js',
     '../../shared/upkeep.js',
+    '../../shared/valuation.js',
     '../../shared/rng.js',
     'src/model/config.js',
     'src/model/market.js',

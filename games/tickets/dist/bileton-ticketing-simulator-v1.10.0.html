@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.9.0" />
+  <meta name="app-version" content="1.10.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -581,6 +581,50 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
      чтобы прокручиваться внутри панели. */
   .col-center, .col-left, .col-right { min-width: 0; }
   .col-center > * { min-width: 0; }
+}
+
+/* --------------------- Пальцы, а не курсор ------------------------------
+   На телефоне попасть в ползунок высотой 16 px и во вкладку высотой 21 px
+   нечем: общепринятый минимум для пальца — 44 px. Увеличивается только
+   область нажатия, внешний вид остаётся прежним — иначе интерфейс, собранный
+   под плотную сетку показателей, расползётся. Приём один и тот же:
+   вертикальные отступы плюс подложка-псевдоэлемент.
+   ------------------------------------------------------------------------ */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .lever input[type="range"],
+  .algo-param input[type="range"],
+  .release-row input[type=range] {
+    /* Дорожка остаётся тонкой, а хвататься можно за всю высоту */
+    height: 40px;
+    padding: 0;
+    background: transparent;
+  }
+  .tab, .chart-tabs button {
+    position: relative;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tab::after, .chart-tabs button::after, .lever-why::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+  }
+  .lever-why {
+    position: relative;
+    display: inline-block;
+    padding: 9px 0;
+  }
+  /* Плитки выбора (жанр, масштаб, сегмент) и мелкие кнопки в таблицах */
+  .pick button, .btn.small {
+    position: relative;
+    min-height: 32px;
+  }
+  .pick button::after, .btn.small::after {
+    content: "";
+    position: absolute;
+    inset: -7px -4px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1393,6 +1437,110 @@ function infraCost(load, perUnit, techLevel = 0, relief = 0.35) {
 }
 
 
+// ===== ../../shared/valuation.js ===================================
+// ============================================================================
+// Как считается оценка компании — общая часть для всех трёх игр.
+//
+// Раньше каждая игра брала выручку и маржу из последнего хода. Это открывало
+// стратегию, не имеющую отношения к экономике: задрать все ставки, обнулить
+// все вложения — и сделать это за ход до конца партии. Бизнес разваливался,
+// а итоговый счёт рос. Измерено: в кинотеатре такой рывок давал +92%,
+// в билетном сервисе +58%.
+//
+// Лечится не запретом, а окном: инвестор смотрит не на последний месяц, а на
+// то, как компания шла последние полгода. Рывок в один ход в такое окно почти
+// не попадает, а рывок на полгода — это уже не рывок, а стратегия, и она
+// честно проигрывает по росту.
+//
+// Второе правило здесь же: сжатие должно стоить денег. Если множитель за
+// падение выручки не наказывает, «снять сливки и растерять базу» ничего
+// не стоит и снова становится выигрышной стратегией.
+// ============================================================================
+
+/**
+ * Среднее значение за последние n ходов.
+ *
+ * Последний ход весит столько же, сколько любой другой в окне, — поэтому
+ * его нельзя купить одним решением.
+ *
+ * @param history массив отчётов (как в state.history)
+ * @param n       длина окна в ходах
+ * @param pick    что берём из отчёта
+ */
+function windowAvg(history, n, pick) {
+  const window = history.slice(-Math.max(1, n));
+  if (!window.length) return 0;
+  return window.reduce((sum, r) => sum + (pick(r) ?? 0), 0) / window.length;
+}
+
+/**
+ * Темп роста: сумма за последние n ходов против суммы за предыдущие n.
+ * Возвращает прирост (0.2 = плюс двадцать процентов), а не отношение.
+ *
+ * Пока истории на два окна не хватает, роста ещё не видно — возвращается
+ * fallback, а не выдуманное число.
+ */
+function windowGrowth(history, n, pick, fallback = 0.25) {
+  const size = Math.max(1, n);
+  const recent = history.slice(-size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  const older = history.slice(-2 * size, -size).reduce((s, r) => s + (pick(r) ?? 0), 0);
+  if (older <= 0) return recent > 0 ? fallback : 0;
+  return recent / older - 1;
+}
+
+/**
+ * Множитель к выручке.
+ *
+ * @param growth       прирост за окно (может быть отрицательным)
+ * @param margin       маржа за то же окно
+ * @param k            коэффициенты игры
+ *
+ * Ключевое: `growthFloor` строго меньше нуля. Сжимающийся бизнес стоит
+ * дешевле стоящего на месте — иначе жадность бесплатна.
+ */
+function revenueMultiple(growth, margin, k) {
+  const {
+    base, growthWeight, marginWeight, marginPenalty,
+    growthFloor = -0.5, growthCap = 1,
+    marginFloor = -0.4, marginCap = 0.25,
+    min = 0.5, max = 12,
+  } = k;
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const growthScore = clamp(growth, growthFloor, growthCap);
+  const marginScore = clamp(margin, marginFloor, marginCap) / marginCap;
+  return clamp(
+    base + growthWeight * growthScore
+      + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
+    min, max,
+  );
+}
+
+/**
+ * Условия раунда: сколько доли уходит за деньги.
+ *
+ * Две защиты, без которых один раунд решает всю партию.
+ *
+ * ПОЛ ПОД ОЦЕНКОЙ. На третьей неделе компания по формуле стоит копейки, и
+ * раунд в её половину капитала забирает почти всё. В жизни так не бывает:
+ * посевной раунд оценивают по рынку и команде, а не по выручке, которой
+ * ещё нет.
+ *
+ * ПОТОЛОК НА ДОЛЮ. Никто не продаёт три четверти компании за один раунд —
+ * инвестор первым и откажется: основатель без доли перестаёт работать.
+ *
+ * Без этих двух строк вложить лишний миллион в маркетинг означало не
+ * «выросли заказы», а «раунд случился на шесть недель раньше и стоил
+ * шестьдесят пунктов доли». Измерено: та же компания с той же оценкой
+ * оставляла основателю 84% или 20% в зависимости от одной недели.
+ */
+function roundTerms(valuation, amount, { floor, maxShare = 0.75, minShare = 0.02 }) {
+  const pre = Math.max(floor, valuation);
+  const raw = amount / (pre + amount);
+  const dilution = Math.min(maxShare, Math.max(minShare, raw));
+  return { pre, post: pre + amount, amount, dilution };
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1565,6 +1713,17 @@ const CONFIG = {
   // --- Данные и алгоритмы ---
   rndSaturation: 220_000_000,
   dataSaturation: 9_000_000,    // накопленных проданных билетов для «половины» эффекта
+
+  // --- Оценка компании ---
+  // Выручка, рост и маржа берутся одним окном: месяц у билетного сервиса
+  // слишком волнистый, а последний месяц вдобавок покупается одним решением —
+  // обнулив на нём вложения, множитель можно было задрать рывком.
+  valuationWindow: 9,
+  // Темп роста считается тем же окном — полгода против предыдущего полугодия.
+  growthWindow: 6,
+  // Пол под оценкой в раунде: посевную компанию оценивают не по выручке,
+  // которой ещё нет.
+  valuationFloor: 200_000_000,
 
   // --- Инвестиции ---
   minMonthForFunding: 3,
@@ -1799,7 +1958,7 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Маркетинг на зрителей', en: 'Marketing to buyers' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 400_000_000, step: 5_000_000, def: 15_000_000,
+    min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
       ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
       en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser.',
@@ -1810,7 +1969,7 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Аккаунт-менеджеры', en: 'Account managers' },
     unit: { ru: 'чел.', en: 'people' },
-    min: 0, max: 220, step: 5, def: 15,
+    min: 0, max: 120, step: 5, def: 15,
     tip: {
       ru: 'Кто подключает организаторов и разбирает их проблемы. Перегруженная команда теряет их быстрее, чем приводит новых.',
       en: 'The people who sign organisers up and sort out their problems. An overloaded team loses them faster than it brings new ones in.',
@@ -1821,7 +1980,7 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 0,
+    min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
       en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
@@ -1832,7 +1991,7 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Разработка платформы', en: 'Platform development' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
+    min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
       en: 'The ticketing widget for the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
@@ -1843,7 +2002,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Продукт и приложение', en: 'Product and app' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
+    min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Скорость оплаты, поиск, карта зала. Влияет на конверсию: сколько дошедших до корзины действительно платят.',
       en: 'Checkout speed, search, seat maps. It drives conversion: how many of the people who reach the cart actually pay.',
@@ -1854,7 +2013,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Поддержка', en: 'Support' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 6_000_000,
+    min: 0, max: 50_000_000, step: 1_000_000, def: 6_000_000,
     tip: {
       ru: 'Возвраты, потерянные билеты, вопросы на входе. Плохая поддержка бьёт по доверию зрителей и по терпению организаторов одновременно.',
       en: 'Refunds, lost tickets, questions at the door. Weak support hits buyer trust and organiser patience at the same time.',
@@ -1865,7 +2024,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Запас мощности', en: 'Capacity headroom' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 120_000_000, step: 2_000_000, def: 3_000_000,
+    min: 0, max: 50_000_000, step: 1_000_000, def: 3_000_000,
     tip: {
       ru: 'Серверы под старт продаж на хит. В обычный месяц это выброшенные деньги — ровно до того месяца, когда сайт ляжет на глазах у ста тысяч человек.',
       en: 'Servers for the on-sale rush of a hit. In a normal month this is money thrown away — right up to the month the site goes down in front of a hundred thousand people.',
@@ -1876,7 +2035,7 @@ const LEVERS = [
     group: 'infra',
     label: { ru: 'Команда данных', en: 'Data team' },
     unit: { ru: '₽/мес', en: '₽/mo' },
-    min: 0, max: 90_000_000, step: 2_000_000, def: 0,
+    min: 0, max: 30_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Качество алгоритмов. Без неё умные механики работают наугад и вредят чаще, чем помогают.',
       en: 'The quality of the algorithms. Without it the smart mechanics guess, and hurt more often than they help.',
@@ -4348,19 +4507,18 @@ function valuation(state) {
   if (!last) return 0;
   // Год у билетного сервиса устроен волной: август и май отличаются вдвое.
   // Считать оценку по одному месяцу значит оценивать сезон, а не бизнес,
-  // поэтому и выручка, и рост берутся сглаженными.
-  const window = h.slice(-3);
-  const runRate = (window.reduce((s, r) => s + r.revenue, 0) / window.length) * 12;
-
-  const recent = h.slice(-6).reduce((s, r) => s + r.gmv, 0);
-  const older = h.slice(-12, -6).reduce((s, r) => s + r.gmv, 0);
-  const growth = older > 0 ? recent / older - 1 : 0.25;
-
-  const margin = last.revenue > 0 ? last.profit / last.revenue : -1;
-  const multiple = clamp(
-    2.4 + 5.5 * growth + 3.0 * clamp(margin, 0, 1) + 1.6 * clamp(margin, -1, 0),
-    0.5, 11,
-  );
+  // поэтому выручка, рост и маржа берутся одним окном. Маржа раньше бралась
+  // из последнего месяца — и обнулив на нём маркетинг и разработку, множитель
+  // можно было задрать рывком. См. shared/valuation.js.
+  const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
+  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
+  const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
+  const margin = marginWindow > 0
+    ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -1;
+  const multiple = revenueMultiple(growth, margin, {
+    base: 2.4, growthWeight: 5.5, marginWeight: 3.0, marginPenalty: 1.6,
+    marginFloor: -1, marginCap: 1, max: 11,
+  });
   // Договоры с организаторами — актив: их нельзя купить деньгами за месяц
   const contracts = ORGANIZERS.reduce(
     (s, def) => s + (state.orgs[def.id] ?? 0) * def.eventsPerMonth * def.seats * def.avgPrice * 0.11,
@@ -4375,9 +4533,8 @@ function valuation(state) {
 }
 
 function fundingOffer(state, amount) {
-  const v = Math.max(200_000_000, valuation(state));
-  const dilution = clamp(amount / (v + amount), 0.02, 0.75);
-  return { amount, dilution, newEquity: state.equity * (1 - dilution), valuation: v };
+  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  return { ...terms, valuation: terms.pre, newEquity: state.equity * (1 - terms.dilution) };
 }
 
 function raise(state, amount) {

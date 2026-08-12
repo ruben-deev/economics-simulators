@@ -169,7 +169,7 @@ the next.
 
 ## Technical notes for the teacher
 
-* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.9.0.html`.
+* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.10.0.html`.
   No internet, no install, runs from a USB stick.
 * The game saves in the browser. To have every team play the same world, hand out
   the same file: the sequence of events is deterministic and depends on the seed,
