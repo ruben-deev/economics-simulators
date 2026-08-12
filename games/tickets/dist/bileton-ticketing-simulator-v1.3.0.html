@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.2.0" />
+  <meta name="app-version" content="1.3.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -291,7 +291,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   border: 1px dashed rgba(96, 165, 250, 0.45); background: rgba(96, 165, 250, 0.07);
   border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;
 }
-.hint-box b { color: var(--accent-2); }
+/* Синий цвет означает «кликабельно» и больше ничего. Раньше им же красился
+   любой жирный текст в подсказке, и человек пытался нажать на слово, которое
+   никуда не ведёт. Выделение осталось, цвет ссылки — только у ссылок. */
+.hint-box b { color: var(--text); }
 
 /* ------------------------------ Алгоритмы ------------------------------- */
 .quality-box { margin-bottom: 10px; }
@@ -873,20 +876,20 @@ const STRINGS = {
     en: 'You have {cash} and a short list of organisers. The sequence is roughly this:',
   },
   reportStart1: {
-    ru: 'Решите, кому открыть <b>собственную кассу</b>. Без неё тысячи мелких клубов до вас просто не дойдут — обслуживать их руками нерентабельно.',
-    en: 'Decide who gets their <b>own checkout</b>. Without it thousands of small clubs never reach you — serving them by hand does not pay.',
+    ru: 'Решите, кому открыть <a class="jump" data-jump="panel:channel">собственную кассу</a>. Без неё тысячи мелких клубов до вас просто не дойдут — обслуживать их руками нерентабельно.',
+    en: 'Decide who gets their <a class="jump" data-jump="panel:channel">own checkout</a>. Without it thousands of small clubs never reach you — serving them by hand does not pay.',
   },
   reportStart2: {
-    ru: 'Разделите комиссию между <b>сбором с покупателя</b> и <b>комиссией с организатора</b>. Сумма одна, последствия разные.',
-    en: 'Split your take between the <b>buyer fee</b> and the <b>organiser commission</b>. The sum is the same, the consequences are not.',
+    ru: 'Разделите комиссию между <a class="jump" data-jump="lever:buyerFee">сбором с покупателя</a> и <a class="jump" data-jump="lever:orgCommission">комиссией с организатора</a>. Сумма одна, последствия разные.',
+    en: 'Split your take between the <a class="jump" data-jump="lever:buyerFee">buyer fee</a> and the <a class="jump" data-jump="lever:orgCommission">organiser commission</a>. The sum is the same, the consequences are not.',
   },
   reportStart3: {
-    ru: 'Наймите <b>аккаунт-менеджеров</b>: перегруженная команда теряет организаторов быстрее, чем приводит новых.',
-    en: 'Hire <b>account managers</b>: an overloaded team loses organisers faster than it signs them.',
+    ru: 'Наймите <a class="jump" data-jump="lever:managers">аккаунт-менеджеров</a>: перегруженная команда теряет организаторов быстрее, чем приводит новых.',
+    en: 'Hire <a class="jump" data-jump="lever:managers">account managers</a>: an overloaded team loses organisers faster than it signs them.',
   },
   reportStart4: {
-    ru: 'И только потом включайте <b>маркетинг</b>. Приводить зрителей в пустую афишу — самый дорогой способ ничего не продать.',
-    en: 'Only then turn on <b>marketing</b>. Bringing buyers to empty listings is the most expensive way to sell nothing.',
+    ru: 'И только потом включайте <a class="jump" data-jump="lever:marketing">маркетинг</a>. Приводить зрителей в пустую афишу — самый дорогой способ ничего не продать.',
+    en: 'Only then turn on <a class="jump" data-jump="lever:marketing">marketing</a>. Bringing buyers to empty listings is the most expensive way to sell nothing.',
   },
   reportStartAlgos: {
     ru: 'Умные механики откроются позже: им нужны данные, а данные берутся из проданных билетов.',
@@ -4414,8 +4417,16 @@ function jumpTo(target) {
   }
   const node = el(JUMP_PANELS[key] ?? key ?? kind);
   if (!node) return;
-  const box = node.classList.contains('panel') ? node
+  let box = node.classList.contains('panel') ? node
     : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
+  // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
+  // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
+  if (box.getBoundingClientRect().height < 8) {
+    let sib = box.previousElementSibling;
+    while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
+    box = sib ?? box.parentElement ?? box;
+  }
   box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   flash(box);
 }

@@ -83,6 +83,64 @@ function delta(cur, before) {
   return [signedPct(d), d > 0.001 ? 'up' : d < -0.001 ? 'down' : 'neutral'];
 }
 
+
+// ----------------------------------------------------------------------------
+// Переходы по подсказкам: синие слова в советах ведут к нужному блоку.
+// Правило простое: синий — значит кликабельно. Всё, что просто выделено,
+// выделяется жирным, но не синим, — иначе подсказка обещает ссылку, которой нет.
+// ----------------------------------------------------------------------------
+const JUMP_PANELS = {
+  districts: 'districts', levers: 'levers', algos: 'algos',
+  funding: 'funding', report: 'report-slot', ops: 'ops-readout',
+  weather: 'weather-slot', charts: 'chart',
+};
+function flash(node) {
+  if (!node) return;
+  node.classList.remove('jump-target');
+  void node.offsetWidth;
+  node.classList.add('jump-target');
+  setTimeout(() => node.classList.remove('jump-target'), 1600);
+}
+function jumpTo(target) {
+  const [kind, key] = String(target).split(':');
+  if (kind === 'lever') {
+    const node = document.querySelector(`.lever[data-key="${key}"]`);
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node);
+    return;
+  }
+  if (kind === 'tab') {
+    rightTab = key;
+    renderRightTab();
+    const node = el('tab-content');
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node?.closest('.panel') ?? node);
+    return;
+  }
+  const node = el(JUMP_PANELS[key] ?? key ?? kind);
+  if (!node) return;
+  let box = node.classList.contains('panel') ? node
+    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
+  // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
+  // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
+  if (box.getBoundingClientRect().height < 8) {
+    let sib = box.previousElementSibling;
+    while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
+    box = sib ?? box.parentElement ?? box;
+  }
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(box);
+}
+function bindJumps() {
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-jump]');
+    if (!link) return;
+    e.preventDefault();
+    jumpTo(link.dataset.jump);
+  });
+}
+
 function renderKpis() {
   const r = last();
   const p = prev();
@@ -501,11 +559,11 @@ function buildAlerts(r) {
   if (r.utilization > 1.02) {
     alerts.push(['bad', t('alertShortage', {
       fill: pct(r.fillRate, 0), lost: compact(r.lostOrders), time: num(r.avgDeliveryTime),
-    })]);
+    }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
       util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
-    })]);
+    }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
@@ -513,36 +571,36 @@ function buildAlerts(r) {
     alerts.push(['bad', t('alertNoApplicants', {
       pay: num(r.decisions.courierPay), orders: num(r.perCourier),
       market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
-    })]);
+    }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
       earnings: money(r.courierEarnings), market: money(CONFIG.courierMarketWeeklyPay),
       churn: pct(r.courierLeft / Math.max(1, r.couriers + r.courierLeft), 0),
-    })]);
+    }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) })]);
+    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
       cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
-    })]);
+    }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
-    alerts.push(['bad', t('alertRunway', { weeks: runway.toFixed(0), burn: money(burn) })]);
+    alerts.push(['bad', t('alertRunway', { weeks: runway.toFixed(0), burn: money(burn) }), 'panel:funding']);
   }
   if (r.restaurants < 5 && r.decisions.sales === 0) {
-    alerts.push(['bad', t('alertNoRestaurants')]);
+    alerts.push(['bad', t('alertNoRestaurants'), 'lever:sales']);
   }
   if (r.decisions.marketing === 0 && r.restaurants > 40) {
     alerts.push(['warn', t('alertNoMarketing', {
       decay: pct(CONFIG.awarenessDecay, 0),
       gained: compact(r.newCustomers), lost: compact(r.lostCustomers),
-    })]);
+    }), 'lever:marketing']);
   }
   if (r.restaurants < 40 && r.customers > 0) {
     alerts.push(['warn', t('alertFewRestaurants', {
       count: num(r.restaurants), factor: r.avgSelectionFactor.toFixed(2),
-    })]);
+    }), 'lever:sales']);
   }
   if (Number.isFinite(r.ltvCac) && r.ltvCac !== null && r.cac > 0) {
     if (r.ltvCac < 1) alerts.push(['bad', t('alertLtvCacBad', { value: r.ltvCac.toFixed(2) })]);
@@ -553,7 +611,7 @@ function buildAlerts(r) {
       weather: weatherName(r.weather),
       demand: signedPct(r.weatherDemandMult - 1, 0),
       capacity: signedPct(r.weatherCapacityMult - 1, 0),
-    })]);
+    }), 'lever:weatherBonus']);
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
@@ -564,13 +622,13 @@ function buildAlerts(r) {
   if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
     alerts.push(['warn', t('alertRndIdle', {
       cost: money(r.decisions.rnd), quality: pct(r.algoQuality, 0),
-    })]);
+    }), 'panel:algos']);
   }
   const ready = ALGORITHMS.filter((a) => !state.installed?.[a.key] && r.algoQuality >= a.unlock);
   if (ready.length) {
     alerts.push(['good', t('alertAlgosReady', {
       names: ready.map((a) => tx(a.name)).join(', '), quality: pct(r.algoQuality, 0),
-    })]);
+    }), 'panel:algos']);
   }
   if (r.profit > 0) alerts.push(['good', t('alertProfit', { value: money(r.profit) })]);
   return alerts;
@@ -635,7 +693,8 @@ function renderReport() {
 
   const alerts = buildAlerts(r);
   const alertsHtml = alerts.length
-    ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>`
+    ? `<div class="alerts">${alerts.map(([k, text, jump]) => `<div class="alert ${k}">${text}${
+        jump ? ` <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>` : ''}</div>`).join('')}</div>`
     : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
@@ -1206,6 +1265,7 @@ function boot() {
   // сброса сохранения, и двойная подписка гоняла бы неделю по два раза за клик.
   if (!bound) {
     bound = true;
+    bindJumps();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);

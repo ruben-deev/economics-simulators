@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.3.0" />
+  <meta name="app-version" content="1.4.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -291,7 +291,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   border: 1px dashed rgba(96, 165, 250, 0.45); background: rgba(96, 165, 250, 0.07);
   border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;
 }
-.hint-box b { color: var(--accent-2); }
+/* Синий цвет означает «кликабельно» и больше ничего. Раньше им же красился
+   любой жирный текст в подсказке, и человек пытался нажать на слово, которое
+   никуда не ведёт. Выделение осталось, цвет ссылки — только у ссылок. */
+.hint-box b { color: var(--text); }
 
 /* ------------------------------ Алгоритмы ------------------------------- */
 .quality-box { margin-bottom: 10px; }
@@ -940,16 +943,17 @@ const STRINGS = {
 
   // --- отчёт недели ---
   reportWeek0: { ru: 'Неделя 0. Город ждёт.', en: 'Week 0. The city is waiting.' },
+  jumpGo: { ru: 'перейти →', en: 'go there →' },
   reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
   reportStartIntro: { ru: 'У вас {cash} и пустой город. Порядок запуска почти всегда такой:', en: 'You have {cash} and an empty city. The opening sequence is almost always this:' },
-  reportStart1: { ru: 'Откройте <b>один</b> район (дешевле всего — Промзона, выгоднее всего — Центр).', en: 'Open <b>one</b> district (Industrial is cheapest, Downtown is the most lucrative).' },
-  reportStart2: { ru: 'Дайте бюджет на <b>подключение ресторанов</b>: без ассортимента спрос равен нулю.', en: 'Fund <b>restaurant acquisition</b>: with no selection, demand is exactly zero.' },
-  reportStart3: { ru: 'Наймите курьеров под ожидаемый спрос — и проверьте, что заработок курьера выше {market}/нед.', en: 'Hire couriers for the demand you expect — and check that a courier earns more than {market}/wk.' },
-  reportStart4: { ru: 'Только потом включайте <b>маркетинг</b>: платить за клиента, которому нечего заказать и некому привезти, — самый дорогой способ купить отток.', en: 'Only then turn on <b>marketing</b>: paying for a customer with nothing to order and nobody to deliver it is the most expensive way to buy churn.' },
-  reportStartUnit: { ru: 'Следите за панелью «Юнит-экономика» справа: она пересчитывается прямо во время движения ползунков.', en: 'Watch the Unit economics panel on the right: it recalculates as you drag the sliders.' },
+  reportStart1: { ru: 'Откройте <a class="jump" data-jump="panel:districts">один район</a> (дешевле всего — Промзона, выгоднее всего — Центр).', en: 'Open <a class="jump" data-jump="panel:districts">one district</a> (Industrial is cheapest, Downtown is the most lucrative).' },
+  reportStart2: { ru: 'Дайте бюджет на <a class="jump" data-jump="lever:sales">подключение ресторанов</a>: без ассортимента спрос равен нулю.', en: 'Fund <a class="jump" data-jump="lever:sales">restaurant acquisition</a>: with no selection, demand is exactly zero.' },
+  reportStart3: { ru: 'Наймите <a class="jump" data-jump="lever:targetCouriers">курьеров</a> под ожидаемый спрос — и проверьте, что заработок курьера выше {market}/нед.', en: 'Hire <a class="jump" data-jump="lever:targetCouriers">couriers</a> for the demand you expect — and check that a courier earns more than {market}/wk.' },
+  reportStart4: { ru: 'Только потом включайте <a class="jump" data-jump="lever:marketing">маркетинг</a>: платить за клиента, которому нечего заказать и некому привезти, — самый дорогой способ купить отток.', en: 'Only then turn on <a class="jump" data-jump="lever:marketing">marketing</a>: paying for a customer with nothing to order and nobody to deliver it is the most expensive way to buy churn.' },
+  reportStartUnit: { ru: 'Следите за панелью <a class="jump" data-jump="tab:unit">«Юнит-экономика»</a> справа: она пересчитывается прямо во время движения ползунков.', en: 'Watch the <a class="jump" data-jump="tab:unit">Unit economics</a> panel on the right: it recalculates as you drag the sliders.' },
   reportStartAlgos: {
-    ru: '<b>Алгоритмы</b> (динамическое ценообразование, персональные скидки, батчинг) откроются позже: им нужны данные, а данные копятся только от выполненных заказов. Не спешите включать Data Science в первую неделю — платить будете сразу, а получать нечего.',
-    en: '<b>Algorithms</b> (surge pricing, targeted discounts, batching) unlock later: they need data, and data only accumulates from completed orders. Do not switch on data science in week one — you pay immediately and there is nothing to learn from yet.',
+    ru: '<a class="jump" data-jump="panel:algos">Алгоритмы</a> (динамическое ценообразование, персональные скидки, батчинг) откроются позже: им нужны данные, а данные копятся только от выполненных заказов. Не спешите включать Data Science в первую неделю — платить будете сразу, а получать нечего.',
+    en: '<a class="jump" data-jump="panel:algos">Algorithms</a> (surge pricing, targeted discounts, batching) unlock later: they need data, and data only accumulates from completed orders. Do not switch on data science in week one — you pay immediately and there is nothing to learn from yet.',
   },
   reportTitle: { ru: 'Итоги недели {week}', en: 'Week {week} results' },
   reportHeadStats: { ru: 'GMV {gmv} · выручка {revenue} · take rate {take}', en: 'GMV {gmv} · revenue {revenue} · take rate {take}' },
@@ -3281,6 +3285,64 @@ function delta(cur, before) {
   return [signedPct(d), d > 0.001 ? 'up' : d < -0.001 ? 'down' : 'neutral'];
 }
 
+
+// ----------------------------------------------------------------------------
+// Переходы по подсказкам: синие слова в советах ведут к нужному блоку.
+// Правило простое: синий — значит кликабельно. Всё, что просто выделено,
+// выделяется жирным, но не синим, — иначе подсказка обещает ссылку, которой нет.
+// ----------------------------------------------------------------------------
+const JUMP_PANELS = {
+  districts: 'districts', levers: 'levers', algos: 'algos',
+  funding: 'funding', report: 'report-slot', ops: 'ops-readout',
+  weather: 'weather-slot', charts: 'chart',
+};
+function flash(node) {
+  if (!node) return;
+  node.classList.remove('jump-target');
+  void node.offsetWidth;
+  node.classList.add('jump-target');
+  setTimeout(() => node.classList.remove('jump-target'), 1600);
+}
+function jumpTo(target) {
+  const [kind, key] = String(target).split(':');
+  if (kind === 'lever') {
+    const node = document.querySelector(`.lever[data-key="${key}"]`);
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node);
+    return;
+  }
+  if (kind === 'tab') {
+    rightTab = key;
+    renderRightTab();
+    const node = el('tab-content');
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node?.closest('.panel') ?? node);
+    return;
+  }
+  const node = el(JUMP_PANELS[key] ?? key ?? kind);
+  if (!node) return;
+  let box = node.classList.contains('panel') ? node
+    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
+  // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
+  // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
+  if (box.getBoundingClientRect().height < 8) {
+    let sib = box.previousElementSibling;
+    while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
+    box = sib ?? box.parentElement ?? box;
+  }
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(box);
+}
+function bindJumps() {
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-jump]');
+    if (!link) return;
+    e.preventDefault();
+    jumpTo(link.dataset.jump);
+  });
+}
+
 function renderKpis() {
   const r = last();
   const p = prev();
@@ -3699,11 +3761,11 @@ function buildAlerts(r) {
   if (r.utilization > 1.02) {
     alerts.push(['bad', t('alertShortage', {
       fill: pct(r.fillRate, 0), lost: compact(r.lostOrders), time: num(r.avgDeliveryTime),
-    })]);
+    }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
       util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
-    })]);
+    }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
@@ -3711,36 +3773,36 @@ function buildAlerts(r) {
     alerts.push(['bad', t('alertNoApplicants', {
       pay: num(r.decisions.courierPay), orders: num(r.perCourier),
       market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
-    })]);
+    }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
       earnings: money(r.courierEarnings), market: money(CONFIG.courierMarketWeeklyPay),
       churn: pct(r.courierLeft / Math.max(1, r.couriers + r.courierLeft), 0),
-    })]);
+    }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) })]);
+    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
       cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
-    })]);
+    }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
-    alerts.push(['bad', t('alertRunway', { weeks: runway.toFixed(0), burn: money(burn) })]);
+    alerts.push(['bad', t('alertRunway', { weeks: runway.toFixed(0), burn: money(burn) }), 'panel:funding']);
   }
   if (r.restaurants < 5 && r.decisions.sales === 0) {
-    alerts.push(['bad', t('alertNoRestaurants')]);
+    alerts.push(['bad', t('alertNoRestaurants'), 'lever:sales']);
   }
   if (r.decisions.marketing === 0 && r.restaurants > 40) {
     alerts.push(['warn', t('alertNoMarketing', {
       decay: pct(CONFIG.awarenessDecay, 0),
       gained: compact(r.newCustomers), lost: compact(r.lostCustomers),
-    })]);
+    }), 'lever:marketing']);
   }
   if (r.restaurants < 40 && r.customers > 0) {
     alerts.push(['warn', t('alertFewRestaurants', {
       count: num(r.restaurants), factor: r.avgSelectionFactor.toFixed(2),
-    })]);
+    }), 'lever:sales']);
   }
   if (Number.isFinite(r.ltvCac) && r.ltvCac !== null && r.cac > 0) {
     if (r.ltvCac < 1) alerts.push(['bad', t('alertLtvCacBad', { value: r.ltvCac.toFixed(2) })]);
@@ -3751,7 +3813,7 @@ function buildAlerts(r) {
       weather: weatherName(r.weather),
       demand: signedPct(r.weatherDemandMult - 1, 0),
       capacity: signedPct(r.weatherCapacityMult - 1, 0),
-    })]);
+    }), 'lever:weatherBonus']);
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
@@ -3762,13 +3824,13 @@ function buildAlerts(r) {
   if ((r.decisions.rnd ?? 0) > 0 && !anyAlgoOn) {
     alerts.push(['warn', t('alertRndIdle', {
       cost: money(r.decisions.rnd), quality: pct(r.algoQuality, 0),
-    })]);
+    }), 'panel:algos']);
   }
   const ready = ALGORITHMS.filter((a) => !state.installed?.[a.key] && r.algoQuality >= a.unlock);
   if (ready.length) {
     alerts.push(['good', t('alertAlgosReady', {
       names: ready.map((a) => tx(a.name)).join(', '), quality: pct(r.algoQuality, 0),
-    })]);
+    }), 'panel:algos']);
   }
   if (r.profit > 0) alerts.push(['good', t('alertProfit', { value: money(r.profit) })]);
   return alerts;
@@ -3833,7 +3895,8 @@ function renderReport() {
 
   const alerts = buildAlerts(r);
   const alertsHtml = alerts.length
-    ? `<div class="alerts">${alerts.map(([k, text]) => `<div class="alert ${k}">${text}</div>`).join('')}</div>`
+    ? `<div class="alerts">${alerts.map(([k, text, jump]) => `<div class="alert ${k}">${text}${
+        jump ? ` <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>` : ''}</div>`).join('')}</div>`
     : '';
 
   const ev = r.event ? eventById(r.event.id) : null;
@@ -4404,6 +4467,7 @@ function boot() {
   // сброса сохранения, и двойная подписка гоняла бы неделю по два раза за клик.
   if (!bound) {
     bound = true;
+    bindJumps();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);

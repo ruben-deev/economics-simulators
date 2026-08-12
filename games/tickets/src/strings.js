@@ -72,20 +72,20 @@ export const STRINGS = {
     en: 'You have {cash} and a short list of organisers. The sequence is roughly this:',
   },
   reportStart1: {
-    ru: 'Решите, кому открыть <b>собственную кассу</b>. Без неё тысячи мелких клубов до вас просто не дойдут — обслуживать их руками нерентабельно.',
-    en: 'Decide who gets their <b>own checkout</b>. Without it thousands of small clubs never reach you — serving them by hand does not pay.',
+    ru: 'Решите, кому открыть <a class="jump" data-jump="panel:channel">собственную кассу</a>. Без неё тысячи мелких клубов до вас просто не дойдут — обслуживать их руками нерентабельно.',
+    en: 'Decide who gets their <a class="jump" data-jump="panel:channel">own checkout</a>. Without it thousands of small clubs never reach you — serving them by hand does not pay.',
   },
   reportStart2: {
-    ru: 'Разделите комиссию между <b>сбором с покупателя</b> и <b>комиссией с организатора</b>. Сумма одна, последствия разные.',
-    en: 'Split your take between the <b>buyer fee</b> and the <b>organiser commission</b>. The sum is the same, the consequences are not.',
+    ru: 'Разделите комиссию между <a class="jump" data-jump="lever:buyerFee">сбором с покупателя</a> и <a class="jump" data-jump="lever:orgCommission">комиссией с организатора</a>. Сумма одна, последствия разные.',
+    en: 'Split your take between the <a class="jump" data-jump="lever:buyerFee">buyer fee</a> and the <a class="jump" data-jump="lever:orgCommission">organiser commission</a>. The sum is the same, the consequences are not.',
   },
   reportStart3: {
-    ru: 'Наймите <b>аккаунт-менеджеров</b>: перегруженная команда теряет организаторов быстрее, чем приводит новых.',
-    en: 'Hire <b>account managers</b>: an overloaded team loses organisers faster than it signs them.',
+    ru: 'Наймите <a class="jump" data-jump="lever:managers">аккаунт-менеджеров</a>: перегруженная команда теряет организаторов быстрее, чем приводит новых.',
+    en: 'Hire <a class="jump" data-jump="lever:managers">account managers</a>: an overloaded team loses organisers faster than it signs them.',
   },
   reportStart4: {
-    ru: 'И только потом включайте <b>маркетинг</b>. Приводить зрителей в пустую афишу — самый дорогой способ ничего не продать.',
-    en: 'Only then turn on <b>marketing</b>. Bringing buyers to empty listings is the most expensive way to sell nothing.',
+    ru: 'И только потом включайте <a class="jump" data-jump="lever:marketing">маркетинг</a>. Приводить зрителей в пустую афишу — самый дорогой способ ничего не продать.',
+    en: 'Only then turn on <a class="jump" data-jump="lever:marketing">marketing</a>. Bringing buyers to empty listings is the most expensive way to sell nothing.',
   },
   reportStartAlgos: {
     ru: 'Умные механики откроются позже: им нужны данные, а данные берутся из проданных билетов.',

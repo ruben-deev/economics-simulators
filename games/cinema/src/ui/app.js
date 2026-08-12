@@ -419,8 +419,16 @@ function jumpTo(target) {
   if (!node) return;
   // Слоты вроде #slate-slot — это обёртки: сама панель лежит внутри.
   // Подсвечивать надо её, иначе рамка обводит пустой контейнер.
-  const box = node.classList.contains('panel') ? node
+  let box = node.classList.contains('panel') ? node
     : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+  // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
+  // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
+  // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
+  if (box.getBoundingClientRect().height < 8) {
+    let sib = box.previousElementSibling;
+    while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
+    box = sib ?? box.parentElement ?? box;
+  }
   box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   flash(box);
 }

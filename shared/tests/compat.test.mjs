@@ -225,3 +225,49 @@ test('первый экран объясняет, куда попал челов
     assert.ok(!html.includes('о какой версии речь'), `${game}: осталась старая подпись версии`);
   }
 });
+
+test('синим покрашено только то, на что можно нажать', () => {
+  // Человек читает подсказку, видит синее слово и жмёт на него. Если синим
+  // красится любой жирный текст, половина нажатий не делает ничего — и дальше
+  // не жмут уже никуда, включая настоящие ссылки. Цвет ссылки — только ссылкам.
+  const css = readFileSync(join(root, 'shared', 'styles.css'), 'utf8');
+  const hintBold = css.match(/\.hint-box b\s*\{[^}]*\}/)?.[0] ?? '';
+  assert.ok(hintBold, 'правило .hint-box b пропало — жирный текст снова покрасится ссылкой');
+  assert.ok(!/--accent/.test(hintBold),
+    'жирный текст в подсказке покрашен цветом ссылки, хотя никуда не ведёт');
+
+  for (const [game, bundle] of bundles) {
+    const html = readFileSync(bundle, 'utf8');
+
+    // Ссылки есть: механика подключена в каждой игре, а не только в кинотеатре
+    const targets = [...html.matchAll(/data-jump="([^"]+)"/g)].map((m) => m[1]);
+    assert.ok(targets.length >= 3, `${game}: в текстах почти нет переходов (${targets.length})`);
+
+    // И каждая ведёт в место, которое существует. Опечатку в data-jump
+    // в браузере видно только по «нажал — ничего не произошло».
+    const panels = Object.keys(Object.fromEntries(
+      [...(html.match(/const JUMP_PANELS = \{([\s\S]*?)\};/)?.[1] ?? '')
+        .matchAll(/([\w-]+)\s*:/g)].map((m) => [m[1], 1])));
+    assert.ok(panels.length, `${game}: не нашли JUMP_PANELS`);
+    // Рычаги описаны в трёх играх по-разному (где-то следом идёт group,
+    // где-то label), поэтому собираем объединение — лишний ключ безвреден,
+    // пропущенный сделал бы проверку слепой.
+    const levers = new Set([
+      ...[...html.matchAll(/key: '(\w+)',\s*group:/g)].map((m) => m[1]),
+      ...[...html.matchAll(/key: '(\w+)',\s*label: \{/g)].map((m) => m[1]),
+    ]);
+    const bad = [];
+    for (const target of new Set(targets)) {
+      if (target.startsWith('${')) continue; // шаблон, а не готовый адрес
+      const [kind, key] = target.split(':');
+      if (kind === 'lever') {
+        if (levers.size && !levers.has(key)) bad.push(target);
+      } else if (kind === 'tab') {
+        if (!html.includes(`'${key}'`)) bad.push(target);
+      } else if (!panels.includes(key ?? kind)) {
+        bad.push(target);
+      }
+    }
+    assert.deepEqual(bad, [], `${game}: переходы ведут в никуда`);
+  }
+});
