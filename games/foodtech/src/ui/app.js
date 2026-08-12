@@ -93,7 +93,7 @@ function delta(cur, before) {
 const JUMP_PANELS = {
   districts: 'districts', levers: 'levers', algos: 'algos',
   funding: 'funding', report: 'report-slot', ops: 'ops-readout',
-  weather: 'weather-slot', charts: 'chart',
+  weather: 'weather-slot', charts: 'chart', news: 'news-slot',
 };
 function flash(node) {
   if (!node) return;
@@ -346,6 +346,112 @@ function renderWeather() {
       ${weatherCard(next, t('weatherNext'), `weather-next ${nextSeverity >= 0.7 ? 'alarm' : ''}`)}
       ${advice}
     </div>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Новости недели.
+//
+// Всё это уже было в модели, но попадало на экран только цифрами — и неделя
+// читалась как таблица. Здесь то же самое, но словами и про город, а не про
+// ваши метрики: что обещают синоптики, кто вышел на смену, где встали заказы.
+// Каждая строка выведена из состояния: выдумывать нечего.
+// ----------------------------------------------------------------------------
+/**
+ * Приток против оттока. Сравниваются округлённые числа — те самые, которые
+ * стоят в строке рядом: «пришли 22, ушли 22» с приговором «уходит больше»
+ * читается как враньё, даже когда до округления так и было.
+ */
+function balance(inflow, outflow, goodKey, evenKey, badKey) {
+  const a = Math.round(inflow);
+  const b = Math.round(outflow);
+  if (a > b) return ['good', t(goodKey)];
+  if (a < b) return ['warn', t(badKey)];
+  return ['', t(evenKey)];
+}
+
+function buildNews(r) {
+  const news = [];
+  const week = state.week;
+
+  // Главное в этой игре — что будет на следующей неделе: и надбавку курьерам,
+  // и найм надо назначать заранее, задним числом смену не отработаешь.
+  const next = state.weatherNext ?? 'clear';
+  const nextFx = weatherEffect(next, state.decisions.weatherBonus ?? 0);
+  const severity = WEATHER[next]?.severity ?? 0;
+  if (severity >= 0.6) {
+    news.push(['warn', t('newsWeatherHard', {
+      weather: weatherName(next).toLowerCase(),
+      demand: signedPct(nextFx.demandMult - 1, 0),
+      capacity: signedPct(nextFx.capacityMult - 1, 0),
+    })]);
+  } else if (severity > 0) {
+    news.push(['', t('newsWeatherMild', {
+      weather: weatherName(next).toLowerCase(),
+      demand: signedPct(nextFx.demandMult - 1, 0),
+    })]);
+  } else {
+    news.push(['', t('newsWeatherClear')]);
+  }
+
+  // Смена сезона: спрос и погодная таблица меняются целиком
+  const nextSeason = seasonOf(week + 1);
+  if (nextSeason !== seasonOf(week)) {
+    news.push(['', t(`newsSeason${nextSeason.charAt(0).toUpperCase()}${nextSeason.slice(1)}`)]);
+  }
+
+  // Курьеры: рынок труда виден по очереди заявок, а не по числу нанятых
+  if (r && (r.hires > 0 || r.courierLeft > 0)) {
+    const [kind, verdict] = balance(r.hires, r.courierLeft,
+      'newsCouriersGood', 'newsCouriersEven', 'newsCouriersBad');
+    news.push([kind, t('newsCouriers', {
+      hires: num(r.hires, 0), left: num(r.courierLeft, 0), verdict,
+    })]);
+  }
+  if (r && r.applicants < 1 && r.courierLeft > 0) {
+    news.push(['bad', t('newsNoApplicants')]);
+  }
+
+  // Заказы, которые никто не повёз: спрос был, а машины не нашлось.
+  // Спрос проверяем отдельно: в мёртвом городе заказов нет вовсе, и говорить
+  // «не повезли сто процентов» там значит врать красивой цифрой.
+  if (r && r.orders > 0 && r.fillRate < 0.92) {
+    news.push([r.fillRate < 0.8 ? 'bad' : 'warn', t('newsUnserved', {
+      share: pct(1 - r.fillRate, 0), time: r.avgDeliveryTime.toFixed(0),
+    })]);
+  }
+
+  // Районы открываются и закрываются — это видно на карте, но не словами
+  for (const id of r?.launched ?? []) {
+    news.push(['good', t('newsDistrictOpen', { name: tx(districtById(id)?.name ?? '') })]);
+  }
+  for (const id of r?.closed ?? []) {
+    news.push(['warn', t('newsDistrictClosed', { name: tx(districtById(id)?.name ?? '') })]);
+  }
+
+  if (r && (r.newCustomers > 0 || r.lostCustomers > 0)) {
+    const [kind, verdict] = balance(r.newCustomers, r.lostCustomers,
+      'newsCustomersGood', 'newsCustomersEven', 'newsCustomersBad');
+    news.push([kind, t('newsCustomers', {
+      came: num(r.newCustomers, 0), left: num(r.lostCustomers, 0), verdict,
+    })]);
+  }
+
+  return news;
+}
+
+function renderNews() {
+  // После конца партии новостей нет: город живёт дальше без вас, а показывать
+  // прогноз на неделю, которой не будет, — то же самое, что и погодная панель
+  // на экране итогов. Она тоже гаснет.
+  if (state.over) { el('news-slot').innerHTML = ''; return; }
+  const r = last();
+  const news = buildNews(r);
+  el('news-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('newsPanel')}</h2>
+    ${news.length
+      ? news.map(([kind, text]) => `<div class="alert ${kind}">${text}</div>`).join('')
+      : `<div class="alert">${t('newsEmpty')}</div>`}
   </div>`;
 }
 
@@ -1215,6 +1321,7 @@ function renderAll() {
   renderWeather();
   renderEvent();
   renderReport();
+  renderNews();
   renderChart();
   renderRightTab();
 }

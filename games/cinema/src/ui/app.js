@@ -370,6 +370,7 @@ const JUMP_PANELS = {
   slate: 'slate-slot',
   partners: 'partner-slot',
   rival: 'rival-slot',
+  news: 'news-slot',
   board: 'board',
   algos: 'algos',
   funding: 'funding',
@@ -742,6 +743,104 @@ function rivalCard(type, when, cls = '') {
       <div class="weather-name">${rivalName(type)}</div>
       <div class="weather-fx">${effects}</div>
     </span>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Новости месяца.
+//
+// Всё это уже было в модели, но попадало на экран только цифрами — и партия
+// читалась как таблица. Здесь то же самое, но словами и про индустрию, а не
+// про ваши метрики: что вышло, что анонсировал сосед, что истекло само собой.
+// Каждая строка выведена из состояния: выдумывать нечего.
+// ----------------------------------------------------------------------------
+function buildNews(r) {
+  const news = [];
+  const month = state.month;
+  const hist = state.history ?? [];
+  const prevStance = hist.length > 1 ? hist[hist.length - 2].rivalStance : null;
+
+  // Свои премьеры — главное событие месяца в этой игре
+  for (const p of r?.premieres ?? []) {
+    news.push(['good', t('newsPremiere', {
+      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
+      quality: pct(p.quality, 0),
+      held: p.held > 0 ? t('newsPremiereHeld', { months: num(p.held, 0) }) : '',
+    })]);
+  }
+  if (r && !(r.premieres ?? []).length) {
+    news.push(['', t('newsNoPremiere', { vault: num((r.vault ?? []).length, 0) })]);
+  }
+
+  // Что заявил конкурент на следующий месяц — это и новость, и решение:
+  // выпускать своё в один месяц с его мегапремьерой значит делить внимание.
+  if (r?.rivalAlive && r.rivalNext && r.rivalNext !== 'none') {
+    const loud = (RIVAL_RELEASES[r.rivalNext]?.pull ?? 0) >= 0.7;
+    news.push([loud ? 'warn' : '', t(loud ? 'newsRivalLoud' : 'newsRivalQuiet', {
+      release: rivalName(r.rivalNext).toLowerCase(),
+    })]);
+  }
+  if (r?.rivalAlive && r.rivalStance && r.rivalStance !== prevStance) {
+    news.push(['warn', t('newsRivalStance', {
+      stance: stanceName(r.rivalStance).toLowerCase(),
+      note: t(`stance${r.rivalStance.charAt(0).toUpperCase()}${r.rivalStance.slice(1)}Hint`),
+    })]);
+  }
+  if (r?.rivalJustRaised) news.push(['warn', t('newsRivalRaised')]);
+
+  // Лицензии истекают сами, каждый месяц. Это беговая дорожка, и её видно
+  // только если сказать словами: каталог тает, даже когда вы ничего не делаете.
+  if (r && r.licenseExpired > 0) {
+    const shrinking = r.licenseBought < r.licenseExpired;
+    news.push([shrinking ? 'warn' : '', t('newsRights', {
+      gone: compact(r.licenseExpired), bought: compact(r.licenseBought),
+      verdict: t(shrinking ? 'newsRightsShrink' : 'newsRightsHold'),
+    })]);
+  }
+
+  // Права и талант дорожают, когда за них торгуетесь вы оба
+  if (r && r.licenseIndex > 1.4) {
+    news.push(['warn', t('newsLicensePrice', { index: r.licenseIndex.toFixed(2) })]);
+  }
+  if (r && r.talentIndex > 1.6) {
+    news.push(['warn', t('newsTalentPrice', { index: r.talentIndex.toFixed(2) })]);
+  }
+
+  // Проект доснят: с этого месяца его можно выпускать, а можно придержать
+  for (const p of r?.finished ?? []) {
+    news.push(['good', t('newsFinished', {
+      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
+    })]);
+  }
+
+  for (const ex of r?.partnerExpired ?? []) {
+    news.push(['warn', t('newsPartnerExpired', {
+      name: tx(partnerById(ex.id)?.name ?? ''),
+      lost: compact(ex.lost), kept: compact(ex.kept),
+    })]);
+  }
+
+  // Сезон: зимой смотрят вдвое больше, чем летом
+  const nextSeason = seasonOf(month + 1);
+  if (nextSeason !== seasonOf(month)) {
+    news.push(['', t(`newsSeason${nextSeason.charAt(0).toUpperCase()}${nextSeason.slice(1)}`)]);
+  }
+
+  return news;
+}
+
+function renderNews() {
+  // После конца партии новостей нет: город живёт дальше без вас, а показывать
+  // прогноз на неделю, которой не будет, — то же самое, что и погодная панель
+  // на экране итогов. Она тоже гаснет.
+  if (state.over) { el('news-slot').innerHTML = ''; return; }
+  const r = last();
+  const news = buildNews(r);
+  el('news-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('newsPanel')}</h2>
+    ${news.length
+      ? news.map(([kind, text]) => `<div class="alert ${kind}">${text}</div>`).join('')
+      : `<div class="alert">${t('newsEmpty')}</div>`}
   </div>`;
 }
 
@@ -1653,6 +1752,7 @@ function renderAll() {
   renderPartners();
   renderTurn();
   renderSlate();
+  renderNews();
   renderRival();
   renderChart();
   renderRightTab();

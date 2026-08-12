@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.5.0" />
+  <meta name="app-version" content="1.6.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>КИНОПОТОК · streaming economics simulator</title>
@@ -771,6 +771,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div id="partner-slot"></div>
       <div id="turn-slot"></div>
       <div id="slate-slot"></div>
+      <div id="news-slot"></div>
       <div id="rival-slot"></div>
       <div class="panel charts">
         <div class="charts-head">
@@ -1128,6 +1129,28 @@ const STRINGS = {
   seasonSpring: { ru: 'весна', en: 'spring' },
   seasonSummer: { ru: 'лето', en: 'summer' },
   seasonAutumn: { ru: 'осень', en: 'autumn' },
+
+  // --- что в индустрии ---
+  newsPanel: { ru: 'Что в индустрии', en: 'What is going on in the industry' },
+  newsEmpty: { ru: 'Месяц без событий: ни премьер, ни новостей от соседа. Такие месяцы и показывают настоящую экономику подписки — без всплесков от премьер.', en: 'A month with nothing in it: no premieres, no news from next door. These are the months that show the real economics of a subscription — without the premiere spikes.' },
+  newsPremiere: { ru: '<b>Премьера: {genre}, {scale}.</b> Качество {quality}.{held} Всплеск смотрения держится месяц, а платить за него будут те, кто останется после.', en: '<b>Premiere: {genre}, {scale}.</b> Quality {quality}.{held} The viewing spike lasts a month; the ones who pay for it are the ones who stay after.' },
+  newsPremiereHeld: { ru: ' Проект пролежал в запасе {months} мес. и за это время подвыветрился.', en: ' The project sat in the vault for {months} months and went a little stale.' },
+  newsNoPremiere: { ru: 'В этом месяце вы ничего не выпустили. В запасе готовых проектов: {vault}. Пустой месяц не бесплатен: без новинок база вспоминает, что подписку можно отменить.', en: 'You released nothing this month. Finished projects in the vault: {vault}. An empty month is not free: with nothing new, the base remembers that a subscription can be cancelled.' },
+  newsRivalLoud: { ru: '<b>У конкурента на следующий месяц заявлено: {release}.</b> Внимание зрителя в этот месяц будет делиться, а не складываться: выпускать своё крупное рядом — значит платить за кампанию дважды.', en: '<b>Announced next door for next month: {release}.</b> Attention that month gets divided, not added: putting your own big release beside it means paying for the campaign twice.' },
+  newsRivalQuiet: { ru: 'У конкурента на следующий месяц заявлено: {release}. Тихий месяц у соседа — лучшее окно для вашей премьеры.', en: 'Announced next door for next month: {release}. A quiet month next door is the best window for your own premiere.' },
+  newsRivalStance: { ru: '<b>Конкурент меняет тактику: {stance}.</b> {note}', en: '<b>The rival changes tack: {stance}.</b> {note}' },
+  newsRivalRaised: { ru: '<b>Конкурент поднял раунд.</b> Теперь ему есть на что демпинговать и перекупать права — и то и другое вы почувствуете не сразу.', en: '<b>The rival has raised a round.</b> Now they have money to undercut you and to outbid you for rights — and you will feel both with a delay.' },
+  newsRights: { ru: '<b>Истекли права на {gone} ч каталога,</b> куплено за месяц {bought} ч. {verdict}', en: '<b>Rights expired on {gone} h of the catalogue,</b> {bought} h bought this month. {verdict}' },
+  newsRightsShrink: { ru: 'Каталог тает: лицензии — это аренда, и платить надо каждый месяц просто чтобы остаться на месте. Своё этого не требует.', en: 'The catalogue is shrinking: licences are rent, and you pay every month just to stand still. Your own titles do not ask for that.' },
+  newsRightsHold: { ru: 'Закупка покрывает истечение — каталог держится. Ровно поэтому лицензионные часы дешевле собственных только на первый взгляд.', en: 'Buying covers the expiry — the catalogue holds. This is exactly why licensed hours only look cheaper than your own.' },
+  newsLicensePrice: { ru: '<b>Права подорожали: ×{index} к базовой цене часа.</b> Когда за одни и те же сериалы торгуетесь вы оба, дороже становится обоим.', en: '<b>Rights have gone up: ×{index} on the base price per hour.</b> When you both bid for the same shows, both of you pay more.' },
+  newsTalentPrice: { ru: '<b>Талант подорожал: ×{index} к базовой смете.</b> Режиссёров и актёров на рынке столько же, сколько было, а денег у индустрии стало больше.', en: '<b>Talent has gone up: ×{index} on the base budget.</b> There are as many directors and actors as before; there is just more money chasing them.' },
+  newsFinished: { ru: '<b>Проект доснят: {genre}, {scale}.</b> Его можно выпускать сейчас, а можно придержать до нужного месяца — но в запасе он выветривается.', en: '<b>A project is finished: {genre}, {scale}.</b> You can release it now or hold it for the right month — but it goes stale in the vault.' },
+  newsPartnerExpired: { ru: '<b>Договор с партнёром закончился: {name}.</b> Подписчиков ушло {lost}, осталось {kept}. Оптовая база уходит вместе с договором — она была не ваша.', en: '<b>A partner deal has ended: {name}.</b> {lost} subscribers left, {kept} stayed. A wholesale base leaves with the contract — it was never yours.' },
+  newsSeasonWinter: { ru: '<b>Начинается зима — высокий сезон.</b> Смотрят почти на пятую часть больше обычного, и премьеры соседа тоже придутся на эти месяцы.', en: '<b>Winter is starting — the high season.</b> People watch almost a fifth more than usual, and the rival premieres will land in these months too.' },
+  newsSeasonSpring: { ru: '<b>Начинается весна.</b> Смотрение возвращается к обычному: всплеск зимних премьер закончился, платить продолжают уже по привычке.', en: '<b>Spring is starting.</b> Viewing returns to normal: the winter premiere spike is over, and people keep paying out of habit.' },
+  newsSeasonSummer: { ru: '<b>Начинается лето — низкий сезон.</b> Смотрят меньше всего в году. Крупную премьеру летом видит меньше людей за те же деньги на кампанию.', en: '<b>Summer is starting — the low season.</b> This is the least-watched part of the year. A big premiere in summer reaches fewer people for the same campaign money.' },
+  newsSeasonAutumn: { ru: '<b>Начинается осень.</b> Зрители возвращаются к экрану — это разгон перед зимой и хорошее время выпускать то, что лежит в запасе.', en: '<b>Autumn is starting.</b> Viewers come back to the screen — this is the run-up to winter and a good time to release what is sitting in the vault.' },
 
   // --- алгоритмы ---
   algoData: { ru: 'Данные', en: 'Data' },
@@ -3880,7 +3903,11 @@ function step(prevState, input = {}) {
   const licensingEfficiency = 1 + 0.45 * forecastTrust * quality;
   const boughtHours = (contentBudget.licensing / (CONFIG.licenseCostPerHour * licenseIndex))
     * licensingEfficiency;
-  state.catalogLicensed = state.catalogLicensed * (1 - CONFIG.licenseDecay) + boughtHours;
+  // Права истекают сами по себе, и это происходит каждый месяц, даже если
+  // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
+  // лицензионного каталога видна только тем, кто читает исходники.
+  const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
   state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
@@ -4446,6 +4473,8 @@ function step(prevState, input = {}) {
     retailHoursPerSub: retailSubs > 0 ? retailHours / retailSubs : CONFIG.baseHoursPerSub,
     catalogHours,
     catalogLicensed: state.catalogLicensed,
+    licenseExpired,
+    licenseBought: boughtHours,
     catalogOriginal: state.catalogOriginal,
     originalsByGenre: { ...state.originalsByGenre },
     licensedFrozen: freeze,
@@ -5425,6 +5454,7 @@ const JUMP_PANELS = {
   slate: 'slate-slot',
   partners: 'partner-slot',
   rival: 'rival-slot',
+  news: 'news-slot',
   board: 'board',
   algos: 'algos',
   funding: 'funding',
@@ -5797,6 +5827,104 @@ function rivalCard(type, when, cls = '') {
       <div class="weather-name">${rivalName(type)}</div>
       <div class="weather-fx">${effects}</div>
     </span>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Новости месяца.
+//
+// Всё это уже было в модели, но попадало на экран только цифрами — и партия
+// читалась как таблица. Здесь то же самое, но словами и про индустрию, а не
+// про ваши метрики: что вышло, что анонсировал сосед, что истекло само собой.
+// Каждая строка выведена из состояния: выдумывать нечего.
+// ----------------------------------------------------------------------------
+function buildNews(r) {
+  const news = [];
+  const month = state.month;
+  const hist = state.history ?? [];
+  const prevStance = hist.length > 1 ? hist[hist.length - 2].rivalStance : null;
+
+  // Свои премьеры — главное событие месяца в этой игре
+  for (const p of r?.premieres ?? []) {
+    news.push(['good', t('newsPremiere', {
+      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
+      quality: pct(p.quality, 0),
+      held: p.held > 0 ? t('newsPremiereHeld', { months: num(p.held, 0) }) : '',
+    })]);
+  }
+  if (r && !(r.premieres ?? []).length) {
+    news.push(['', t('newsNoPremiere', { vault: num((r.vault ?? []).length, 0) })]);
+  }
+
+  // Что заявил конкурент на следующий месяц — это и новость, и решение:
+  // выпускать своё в один месяц с его мегапремьерой значит делить внимание.
+  if (r?.rivalAlive && r.rivalNext && r.rivalNext !== 'none') {
+    const loud = (RIVAL_RELEASES[r.rivalNext]?.pull ?? 0) >= 0.7;
+    news.push([loud ? 'warn' : '', t(loud ? 'newsRivalLoud' : 'newsRivalQuiet', {
+      release: rivalName(r.rivalNext).toLowerCase(),
+    })]);
+  }
+  if (r?.rivalAlive && r.rivalStance && r.rivalStance !== prevStance) {
+    news.push(['warn', t('newsRivalStance', {
+      stance: stanceName(r.rivalStance).toLowerCase(),
+      note: t(`stance${r.rivalStance.charAt(0).toUpperCase()}${r.rivalStance.slice(1)}Hint`),
+    })]);
+  }
+  if (r?.rivalJustRaised) news.push(['warn', t('newsRivalRaised')]);
+
+  // Лицензии истекают сами, каждый месяц. Это беговая дорожка, и её видно
+  // только если сказать словами: каталог тает, даже когда вы ничего не делаете.
+  if (r && r.licenseExpired > 0) {
+    const shrinking = r.licenseBought < r.licenseExpired;
+    news.push([shrinking ? 'warn' : '', t('newsRights', {
+      gone: compact(r.licenseExpired), bought: compact(r.licenseBought),
+      verdict: t(shrinking ? 'newsRightsShrink' : 'newsRightsHold'),
+    })]);
+  }
+
+  // Права и талант дорожают, когда за них торгуетесь вы оба
+  if (r && r.licenseIndex > 1.4) {
+    news.push(['warn', t('newsLicensePrice', { index: r.licenseIndex.toFixed(2) })]);
+  }
+  if (r && r.talentIndex > 1.6) {
+    news.push(['warn', t('newsTalentPrice', { index: r.talentIndex.toFixed(2) })]);
+  }
+
+  // Проект доснят: с этого месяца его можно выпускать, а можно придержать
+  for (const p of r?.finished ?? []) {
+    news.push(['good', t('newsFinished', {
+      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
+    })]);
+  }
+
+  for (const ex of r?.partnerExpired ?? []) {
+    news.push(['warn', t('newsPartnerExpired', {
+      name: tx(partnerById(ex.id)?.name ?? ''),
+      lost: compact(ex.lost), kept: compact(ex.kept),
+    })]);
+  }
+
+  // Сезон: зимой смотрят вдвое больше, чем летом
+  const nextSeason = seasonOf(month + 1);
+  if (nextSeason !== seasonOf(month)) {
+    news.push(['', t(`newsSeason${nextSeason.charAt(0).toUpperCase()}${nextSeason.slice(1)}`)]);
+  }
+
+  return news;
+}
+
+function renderNews() {
+  // После конца партии новостей нет: город живёт дальше без вас, а показывать
+  // прогноз на неделю, которой не будет, — то же самое, что и погодная панель
+  // на экране итогов. Она тоже гаснет.
+  if (state.over) { el('news-slot').innerHTML = ''; return; }
+  const r = last();
+  const news = buildNews(r);
+  el('news-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('newsPanel')}</h2>
+    ${news.length
+      ? news.map(([kind, text]) => `<div class="alert ${kind}">${text}</div>`).join('')
+      : `<div class="alert">${t('newsEmpty')}</div>`}
   </div>`;
 }
 
@@ -6708,6 +6836,7 @@ function renderAll() {
   renderPartners();
   renderTurn();
   renderSlate();
+  renderNews();
   renderRival();
   renderChart();
   renderRightTab();

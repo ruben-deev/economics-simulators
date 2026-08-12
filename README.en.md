@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.6.0.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.5.0.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.7.0.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.6.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -330,7 +330,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v1.5.0.html
+  dist/kinopotok-streaming-simulator-v1.6.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

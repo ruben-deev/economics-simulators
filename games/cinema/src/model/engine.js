@@ -434,7 +434,11 @@ export function step(prevState, input = {}) {
   const licensingEfficiency = 1 + 0.45 * forecastTrust * quality;
   const boughtHours = (contentBudget.licensing / (CONFIG.licenseCostPerHour * licenseIndex))
     * licensingEfficiency;
-  state.catalogLicensed = state.catalogLicensed * (1 - CONFIG.licenseDecay) + boughtHours;
+  // Права истекают сами по себе, и это происходит каждый месяц, даже если
+  // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
+  // лицензионного каталога видна только тем, кто читает исходники.
+  const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
   state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
@@ -1000,6 +1004,8 @@ export function step(prevState, input = {}) {
     retailHoursPerSub: retailSubs > 0 ? retailHours / retailSubs : CONFIG.baseHoursPerSub,
     catalogHours,
     catalogLicensed: state.catalogLicensed,
+    licenseExpired,
+    licenseBought: boughtHours,
     catalogOriginal: state.catalogOriginal,
     originalsByGenre: { ...state.originalsByGenre },
     licensedFrozen: freeze,
