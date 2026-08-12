@@ -34,6 +34,16 @@ const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content 
 const APP_BUILD_DATE = document.querySelector('meta[name="app-build-date"]')?.content ?? '';
 const el = (id) => document.getElementById(id);
 
+// Цель Яндекс.Метрики. Работает только на сайте: счётчик подключает
+// страница-обёртка (блок only-modular), в раздаваемом однофайловом HTML
+// window.__metrikaId нет — и вызов молча ничего не делает.
+function track(goal) {
+  try {
+    if (window.__metrikaId && window.ym) window.ym(window.__metrikaId, 'reachGoal', goal);
+  } catch { /* аналитика не должна мешать игре */ }
+}
+
+
 let state = null;
 let chartTab = 'orders';
 let rightTab = 'unit';
@@ -1464,6 +1474,7 @@ function showWelcome() {
     <p class="funding-note">${t('seedNote')}</p>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
+      track('game_start');
       const v = seedWanted.trim();
       if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
     } },
@@ -1498,8 +1509,12 @@ function nextWeek() {
   state = next;
   save();
   renderAll();
-  if (state.over) showGameOver();
-  else maybeDeathFork();
+  if (state.over) {
+    track(state.over === 'bankrupt' ? 'game_bankrupt' : 'game_finished');
+    showGameOver();
+  } else {
+    maybeDeathFork();
+  }
 }
 
 function restart() {

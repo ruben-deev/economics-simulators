@@ -104,6 +104,22 @@
 
   <script type="module" src="./src/main.js"></script>
   <!-- only-modular:start -->
+  <!-- Яндекс.Метрика. Считает только на сайте: этот блок живёт в странице-
+       обёртке и в раздаваемый однофайловый HTML не попадает. Пока номер
+       счётчика не задан (null) — не делает ничего. -->
+  <script>
+    window.__metrikaId = null;
+    if (window.__metrikaId) {
+      (function (m, e, t, r, i, k, a) {
+        m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); };
+        m[i].l = 1 * new Date();
+        k = e.createElement(t); a = e.getElementsByTagName(t)[0];
+        k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
+      })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+      ym(window.__metrikaId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true });
+    }
+  </script>
+
   <!-- Модульная версия работает только по http(s): браузер не грузит ES-модули
        с file://. Если страницу открыли двойным щелчком из папки, скрипт выше
        не выполнится, и человек увидит объяснение вместо пустого экрана.
