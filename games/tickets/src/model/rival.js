@@ -46,8 +46,8 @@ export const STANCES = {
     id: 'platform',
     name: { ru: 'Ставка на платформу', en: 'Betting on the platform' },
     hint: {
-      ru: 'Вкладывается в самостоятельную кассу и забирает длинный хвост: тысячи мелких организаторов, которых никто не обслуживает руками.',
-      en: 'Investing in self-service checkout and taking the long tail: thousands of small organisers nobody serves by hand.',
+      ru: 'Вкладывается в билетный виджет и забирает длинный хвост: тысячи мелких организаторов, которых никто не обслуживает руками.',
+      en: 'Investing in the ticketing widget and taking the long tail: thousands of small organisers nobody serves by hand.',
     },
     commission: 0.058, buyerFee: 0.10, marketing: 0.8, platform: 1.0,
   },
@@ -99,7 +99,7 @@ export function rivalPlatformLevel(rival) {
 export function rivalAppealFor(def, rival) {
   if (!rival.alive) return 0.001;
   const level = rivalPlatformLevel(rival);
-  // Конкурент даёт кассу тем, кому она нужнее всего, — по мере роста платформы
+  // Конкурент ставит виджет тем, кому он нужнее всего, — по мере роста платформы
   const connected = def.platformNeed * level > 0.42;
   return organizerAppeal(def, {
     orgCommission: rival.commission,

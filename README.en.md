@@ -267,10 +267,11 @@ comparable with the rival, the commission is visible in the contract.
 Splitting evenly is the worst option: you subsidise one side — and which one
 depends on your channels.
 
-**Channel conflict.** A checkout on the organiser's own site keeps them from
+**Channel conflict.** A ticketing widget on the organiser's own site — your
+ticket sales under their brand — keeps them from
 leaving and recovers turnover that would otherwise pass you by. But sales
 through it earn several times less, and those tickets **never appear in your
-listings** — so they never build your reach. Hand checkouts to everyone and
+listings** — so they never build your reach. Give everyone a widget and
 you undercut the very audience organisers come to you for. Measured: the
 optimum is clubs and concerts, but not theatres and not sport.
 

@@ -629,8 +629,9 @@ function renderChannels() {
       <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
       <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
       <td class="mono">${num(perSeat)} ₽</td>
-      <td><button class="btn small ${connected ? 'primary' : 'ghost'}" data-platform="${def.id}">${
-        connected ? t('channelOn') : t('channelOff')}</button></td>
+      <td class="mono">${connected ? t('channelOn') : t('channelOff')}</td>
+      <td><button class="btn small ghost" data-platform="${def.id}">${
+        connected ? t('channelDisconnect') : t('channelConnect')}</button></td>
     </tr>`;
   }).join('');
 
@@ -642,7 +643,8 @@ function renderChannels() {
     <table class="data">
       <thead><tr>
         <th>${t('channelColType')}</th><th>${t('channelColNeed')}</th>
-        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th><th></th>
+        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
+        <th>${t('channelColState')}</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>

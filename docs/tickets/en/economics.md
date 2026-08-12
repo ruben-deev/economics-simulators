@@ -32,7 +32,7 @@ You take money twice from the same transaction:
 
 ```
 listings revenue = listings turnover × (buyer fee + organiser commission)
-platform revenue = checkout turnover × platform rate
+platform revenue = widget turnover × platform rate
 subscriptions    = connected organisers × monthly fee
 ```
 
@@ -68,16 +68,17 @@ one side — and which one depends on how your channels are set up.
 ## 3. Channel conflict
 
 An organiser has two ways to sell: through your listings and through the
-checkout on their own site.
+**ticketing widget** — your ticket sales embedded in their own site: their
+domain, their branding, your engine underneath.
 
 ```
-connected:     checkout = own audience × (0.80 + 0.50 × platform level)
-               listings = 1 − checkout
+widget:        widget   = own audience × (0.80 + 0.50 × platform level)
+               listings = 1 − widget
                lost     = 0
 
-not connected: lost     = own audience × 0.80
+no widget:     lost     = own audience × 0.80
                listings = 1 − lost
-               checkout = 0
+               widget   = 0
 ```
 
 "Own audience" is the share of buyers the organiser brings themselves: sport
@@ -91,8 +92,8 @@ help them grow their own channel: the stronger the platform, the harder they
 push buyers towards it.
 
 The third effect is the least obvious and the most important. **Tickets sold
-through the organiser's checkout never appear in your listings.** And demand
-is computed from the listings, so handing checkouts to everyone undercuts the
+through the widget on the organiser's site never appear in your listings.** And
+demand is computed from the listings, so giving everyone a widget undercuts the
 very audience organisers come to you for. Measured on the reference strategy:
 
 ```
@@ -108,7 +109,7 @@ all four types             2.59 B
 Clubs need self-service badly: there are thousands of them and no way to serve
 them by hand. Concerts cost you almost nothing: they have no audience of their
 own to lose. Theatres and sport cost more than they bring: they move half the
-hall into their own checkout and the listings get thinner.
+hall into the widget on their own site and the listings get thinner.
 
 **The optimum is neither "everyone" nor "nobody" but per type.**
 
@@ -173,8 +174,8 @@ organiser barely sees it, and a buyer with nowhere else to go pays anything.
 ## 6. Turnover, revenue and acquiring
 
 ```
-turnover  = (listings tickets + checkout tickets) × average price
-revenue   = listings turnover × (fee + commission) + checkout turnover × rate + subscriptions
+turnover  = (listings tickets + widget tickets) × average price
+revenue   = listings turnover × (fee + commission) + widget turnover × rate + subscriptions
 acquiring = turnover × 0.022
 ```
 

@@ -57,12 +57,12 @@ export const CONFIG = {
   fillAngerPower: 1.8,
 
   // --- Платформа (white label) ---
-  // Своя касса на сайте организатора: он продаёт сам, вы берёте меньше,
+  // Билетный виджет на сайте организатора: он продаёт сам, вы берёте меньше,
   // но не теряете его целиком. Уровень платформы копится вложениями.
   platformSaturation: 620_000_000,
   platformSeatCost: 2_400,      // ₽/мес обслуживания одного подключённого организатора
-  // Организатор без своей кассы часть оборота уводит мимо вас: продаёт через
-  // собственный сайт, кассу у входа или другого оператора. Именно этот кусок
+  // Организатор без виджета часть оборота уводит мимо вас: продаёт через
+  // собственный сайт, кассу у входа в зал или другого оператора. Именно этот кусок
   // и возвращает подключение к платформе — но уже по платформенной ставке.
   leakWithoutPlatform: 0.80,
 
@@ -117,7 +117,7 @@ export const CONFIG = {
 // ============================================================================
 // Организаторы — сторона предложения. У каждого типа своя экономика:
 // сколько событий, какой зал, какой чек и, главное, сколько зрителей он
-// приводит сам. Именно последнее решает, во что вам обходится своя касса
+// приводит сам. Именно последнее решает, во что вам обходится виджет
 // на его сайте.
 // ============================================================================
 
@@ -133,7 +133,7 @@ export const ORGANIZERS = [
     commissionSensitivity: 1.5, // насколько больно берут комиссию
     feeAwareness: 0.9,          // насколько организатор замечает ваш сбор с покупателя
     loyalty: 0.55,              // множитель оттока: меньше — консервативнее
-    platformNeed: 0.55,         // насколько ему нужна своя касса
+    platformNeed: 0.55,         // насколько ему нужен билетный виджет
     selfTraffic: 0.50,          // какую долю зрителей он приводит сам
     serviceWeight: 1.0,         // сколько внимания менеджера требует
     hint: {
@@ -175,7 +175,7 @@ export const ORGANIZERS = [
     selfTraffic: 0.42,
     serviceWeight: 0.35,
     hint: {
-      ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без самостоятельной кассы они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
+      ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без билетного виджета они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
       en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without self-service they never reach you at all. In exchange they barely care about commission.',
     },
   },
@@ -194,8 +194,8 @@ export const ORGANIZERS = [
     selfTraffic: 0.72,
     serviceWeight: 1.8,
     hint: {
-      ru: 'Огромные объёмы и почти нулевая комиссия: клуб знает свою цену. Болельщик и так идёт на сайт клуба, поэтому своя касса им нужна как воздух — а вам она стоит дороже всего.',
-      en: 'Huge volumes and almost no commission: the club knows its worth. Fans go to the club site anyway, so they need their own checkout badly — and for you it is the most expensive one to give.',
+      ru: 'Огромные объёмы и почти нулевая комиссия: клуб знает свою цену. Болельщик и так идёт на сайт клуба, поэтому виджет им нужен как воздух — а вам он стоит дороже всего.',
+      en: 'Huge volumes and almost no commission: the club knows its worth. Fans go to the club site anyway, so they need the widget badly — and for you it is the most expensive one to give.',
     },
   },
 ];
@@ -304,8 +304,8 @@ export const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
-      ru: 'Сколько вы берёте с продаж через кассу на сайте организатора. Эти билеты вашу афишу не видят, поэтому и ставка ниже — но оборот всё равно ваш.',
-      en: 'What you take from sales through the checkout on the organiser site. Those tickets never see your listings, so the rate is lower — but the turnover is still yours.',
+      ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Эти билеты вашу афишу не видят, поэтому и ставка ниже — но оборот всё равно ваш.',
+      en: 'What you take from sales through the widget on the organiser site. Those tickets never see your listings, so the rate is lower — but the turnover is still yours.',
     },
   },
   {
@@ -348,8 +348,8 @@ export const LEVERS = [
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
     tip: {
-      ru: 'Своя касса на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
-      en: 'The checkout on the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
+      ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
+      en: 'The ticketing widget for the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
     },
   },
   {
@@ -508,7 +508,7 @@ export const algorithmByKey = (key) => ALGORITHMS.find((a) => a.key === key);
 
 export const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  // Каким типам организаторов вы даёте собственную кассу. Это решение, а не
+  // Каким типам организаторов вы ставите билетный виджет. Это решение, а не
   // ползунок: у него долгие последствия в обе стороны.
   platformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
   algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),

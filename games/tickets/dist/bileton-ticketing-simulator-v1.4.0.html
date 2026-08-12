@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.3.0" />
+  <meta name="app-version" content="1.4.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -876,8 +876,8 @@ const STRINGS = {
     en: 'You have {cash} and a short list of organisers. The sequence is roughly this:',
   },
   reportStart1: {
-    ru: 'Решите, кому открыть <a class="jump" data-jump="panel:channel">собственную кассу</a>. Без неё тысячи мелких клубов до вас просто не дойдут — обслуживать их руками нерентабельно.',
-    en: 'Decide who gets their <a class="jump" data-jump="panel:channel">own checkout</a>. Without it thousands of small clubs never reach you — serving them by hand does not pay.',
+    ru: 'Решите, кому поставить <a class="jump" data-jump="panel:channel">билетный виджет</a> — вашу продажу билетов прямо на сайте организатора. Без него тысячи мелких клубов до вас просто не дойдут: обслуживать их руками нерентабельно.',
+    en: 'Decide who gets a <a class="jump" data-jump="panel:channel">ticketing widget</a> — your ticket sales embedded in the organiser\'s own site. Without it thousands of small clubs never reach you: serving them by hand does not pay.',
   },
   reportStart2: {
     ru: 'Разделите комиссию между <a class="jump" data-jump="lever:buyerFee">сбором с покупателя</a> и <a class="jump" data-jump="lever:orgCommission">комиссией с организатора</a>. Сумма одна, последствия разные.',
@@ -946,8 +946,8 @@ const STRINGS = {
   alertTrustLow: { ru: 'Доверие упало до {value}. Оно возвращается месяцами, а тратится за один плохой старт продаж.', en: 'Trust has fallen to {value}. It comes back over months and is spent in one bad on-sale.' },
   alertBots: { ru: 'Перекупщики забрали {share} билетов на хитах. Оборот это даже поднимает, доверие — нет.', en: 'Resellers took {share} of tickets on the hits. It even lifts turnover; it does not lift trust.' },
   alertOutage: { ru: 'На старте продаж потеряно {share} спроса: мощности не хватило.', en: '{share} of demand lost at on-sale: not enough capacity.' },
-  alertPlatformThin: { ru: 'Через афишу идёт только {share} оборота. Своя касса удержала организаторов, но с билета вы получаете в разы меньше.', en: 'Only {share} of turnover goes through your listings. Their own checkout kept the organisers, but you earn several times less per ticket.' },
-  alertNoPlatform: { ru: 'Клубам и стендапу нужна самостоятельная касса: их тысячи, и вручную их не обслужить. Сейчас они идут к конкуренту.', en: 'Clubs and stand-up need self-service checkout: there are thousands of them and no way to serve them by hand. Right now they go to the rival.' },
+  alertPlatformThin: { ru: 'Через афишу идёт только {share} оборота. Виджеты удержали организаторов, но с билета, проданного на их сайте, вы получаете в разы меньше.', en: 'Only {share} of turnover goes through your listings. The widgets kept the organisers, but a ticket sold on their own site earns you several times less.' },
+  alertNoPlatform: { ru: 'Клубам и стендапу нужен билетный виджет: их тысячи, и вручную их не обслужить. Сейчас они идут к конкуренту.', en: 'Clubs and stand-up need a ticketing widget: there are thousands of them and no way to serve them by hand. Right now they go to the rival.' },
   alertTakeThin: { ru: 'Ваша доля оборота {take} при эквайринге {acq}. На вас остаётся почти ничего.', en: 'Your take rate is {take} against {acq} of acquiring. Almost nothing is left for you.' },
   alertProfit: { ru: 'Месяц закрыт в плюс: {value}.', en: 'The month closed in the black: {value}.' },
   alertRivalCut: { ru: 'Конкурент срезал комиссию до {value}. Организаторы уже считают.', en: 'The rival cut commission to {value}. Organisers are already doing the maths.' },
@@ -967,7 +967,7 @@ const STRINGS = {
   turnTitle: { ru: 'Месяц {month}: ваш ход', en: 'Month {month}: your move' },
   turnNothing: { ru: 'На этот месяц ничего не запланировано', en: 'Nothing planned for this month' },
   turnPlanned: { ru: 'запланировано: {list}', en: 'planned: {list}' },
-  todoPlatformTitle: { ru: 'Никому не открыта своя касса', en: 'Nobody has their own checkout' },
+  todoPlatformTitle: { ru: 'Виджет не стоит ни у кого', en: 'Nobody has the widget' },
   todoPlatformText: { ru: 'Длинный хвост мелких организаторов до вас не дойдёт: обслуживать их руками нерентабельно.', en: 'The long tail of small organisers will never reach you: serving them by hand does not pay.' },
   todoManagersTitle: { ru: 'Менеджеры перегружены', en: 'The managers are overloaded' },
   todoManagersText: { ru: 'На каждого приходится {perManager} организаторов вместо {norm}. Они уходят молча.', en: 'Each carries {perManager} organisers instead of {norm}. They leave without a word.' },
@@ -977,21 +977,22 @@ const STRINGS = {
   todoFeeText: { ru: 'Зритель сравнивает итоговую цену и уходит туда, где дешевле.', en: 'Buyers compare the final price and go where it is cheaper.' },
 
   // --- Каналы и платформа ---
-  channelPanel: { ru: 'Каналы продаж: афиша и своя касса', en: 'Sales channels: listings and own checkout' },
+  channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {
-    ru: 'Через афишу вы берёте и сбор с покупателя, и комиссию с организатора. Через его кассу — только ставку платформы. Но без своей кассы он уводит публику мимо вас целиком.',
-    en: 'Through your listings you take both the buyer fee and the organiser commission. Through their checkout — only the platform rate. But without their own checkout they take their audience past you entirely.',
+    ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. Через свою афишу вы берёте и сбор с покупателя, и комиссию с организатора. Через виджет — только ставку платформы, то есть в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.',
+    en: 'A <b>ticketing widget</b> is your ticket sales embedded in the organiser\'s own site: their domain, their branding, your engine underneath. Through your own listings you take both the buyer fee and the organiser commission. Through the widget — only the platform rate, several times less. But without the widget the organiser sells from their site on their own, and all of that turnover goes past you entirely.',
   },
   channelColType: { ru: 'Тип', en: 'Type' },
-  channelColNeed: { ru: 'Нужна касса', en: 'Needs checkout' },
-  channelColSplit: { ru: 'Афиша / касса / мимо', en: 'Listings / checkout / lost' },
+  channelColNeed: { ru: 'Нужен виджет', en: 'Needs widget' },
+  channelColSplit: { ru: 'Афиша / виджет / мимо', en: 'Listings / widget / lost' },
   channelColMoney: { ru: 'С билета', en: 'Per ticket' },
-  channelOn: { ru: 'подключено', en: 'connected' },
-  channelOff: { ru: 'нет кассы', en: 'no checkout' },
-  channelConnect: { ru: 'Открыть кассу', en: 'Open checkout' },
-  channelDisconnect: { ru: 'Закрыть кассу', en: 'Close checkout' },
-  channelDisconnectWarn: { ru: 'Закрытие кассы организаторы запоминают: часть уйдёт.', en: 'Organisers remember a checkout being taken away: some will leave.' },
-  channelNoPlatform: { ru: 'Платформы пока нет — вложитесь в разработку, иначе касса будет пустым обещанием.', en: 'There is no platform yet — invest in development, otherwise the checkout is an empty promise.' },
+  channelColState: { ru: 'Сейчас', en: 'Now' },
+  channelOn: { ru: 'виджет стоит', en: 'widget installed' },
+  channelOff: { ru: 'виджета нет', en: 'no widget' },
+  channelConnect: { ru: 'Поставить виджет', en: 'Install widget' },
+  channelDisconnect: { ru: 'Убрать виджет', en: 'Remove widget' },
+  channelDisconnectWarn: { ru: 'Снятый виджет организаторы запоминают: часть уйдёт.', en: 'Organisers remember a widget being taken away: some will leave.' },
+  channelNoPlatform: { ru: 'Платформы пока нет — вложитесь в разработку, иначе виджет будет пустым обещанием.', en: 'There is no platform yet — invest in development, otherwise the widget is an empty promise.' },
   channelLevel: { ru: 'Уровень платформы {level}', en: 'Platform level {level}' },
 
   // --- Организаторы ---
@@ -1075,10 +1076,10 @@ const STRINGS = {
   seriesThemOrgs: { ru: 'У конкурента', en: 'Rival’s' },
 
   chartChannels: { ru: 'Каналы', en: 'Channels' },
-  chartChannelsCaption: { ru: 'Две нижние линии складываются в верхнюю. Чем больше оборота уходит в кассы организаторов, тем ниже ваша доля с билета.', en: 'The two lower lines add up to the top one. The more turnover moves to organiser checkouts, the less you earn per ticket.' },
+  chartChannelsCaption: { ru: 'Две нижние линии складываются в верхнюю. Чем больше оборота уходит на сайты организаторов, тем ниже ваша доля с билета.', en: 'The two lower lines add up to the top one. The more turnover moves to the organisers\' own sites, the less you earn per ticket.' },
   seriesGmv: { ru: 'Оборот всего', en: 'Total turnover' },
   seriesGmvMarket: { ru: 'Через афишу', en: 'Via listings' },
-  seriesGmvPlatform: { ru: 'Через кассы организаторов', en: 'Via organiser checkouts' },
+  seriesGmvPlatform: { ru: 'Через виджет на их сайтах', en: 'Via widget on their sites' },
 
   chartMoney: { ru: 'Деньги', en: 'Money' },
   chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and acquiring still comes out of it.' },
@@ -1123,7 +1124,7 @@ const STRINGS = {
   unitColPerTicket: { ru: 'На билет', en: 'Per ticket' },
   unitPrice: { ru: 'Цена билета (не ваша)', en: 'Ticket price (not yours)' },
   unitMarket: { ru: 'Через афишу: сбор + комиссия', en: 'Via listings: fee + commission' },
-  unitPlatform: { ru: 'Через кассу организатора', en: 'Via organiser checkout' },
+  unitPlatform: { ru: 'Через виджет на сайте организатора', en: 'Via widget on the organiser\'s site' },
   unitBlended: { ru: 'Ваша выручка с билета', en: 'Your revenue per ticket' },
   unitAcquiring: { ru: 'Эквайринг', en: 'Acquiring' },
   unitSupport: { ru: 'Поддержка', en: 'Support' },
@@ -1176,8 +1177,8 @@ const STRINGS = {
     en: '<b>One revenue, two sides.</b> The service fee is paid by the buyer, the commission by the organiser. The sum can be identical and the consequences are not: the buyer sees the fee at checkout, the organiser sees the commission in the contract.',
   },
   helpChannel: {
-    ru: '<b>Конфликт каналов.</b> Своя касса на сайте организатора удерживает его от ухода, но продажи через неё приносят в разы меньше — и эти билеты не появляются в вашей афише, а значит, не работают на ваш охват.',
-    en: '<b>Channel conflict.</b> Their own checkout keeps an organiser from leaving, but sales through it earn several times less — and those tickets never appear in your listings, so they do not build your reach.',
+    ru: '<b>Конфликт каналов.</b> Билетный виджет на сайте организатора удерживает его от ухода, но продажи через него приносят в разы меньше — и эти билеты не появляются в вашей афише, а значит, не работают на ваш охват.',
+    en: '<b>Channel conflict.</b> A ticketing widget on the organiser\'s own site keeps them from leaving, but sales through it earn several times less — and those tickets never appear in your listings, so they do not build your reach.',
   },
   helpGmv: {
     ru: '<b>Оборот и выручка — разные числа.</b> Через вас проходят миллиарды, ваши из них — проценты. Эквайринг вычитается из этих процентов, а не из оборота.',
@@ -1399,12 +1400,12 @@ const CONFIG = {
   fillAngerPower: 1.8,
 
   // --- Платформа (white label) ---
-  // Своя касса на сайте организатора: он продаёт сам, вы берёте меньше,
+  // Билетный виджет на сайте организатора: он продаёт сам, вы берёте меньше,
   // но не теряете его целиком. Уровень платформы копится вложениями.
   platformSaturation: 620_000_000,
   platformSeatCost: 2_400,      // ₽/мес обслуживания одного подключённого организатора
-  // Организатор без своей кассы часть оборота уводит мимо вас: продаёт через
-  // собственный сайт, кассу у входа или другого оператора. Именно этот кусок
+  // Организатор без виджета часть оборота уводит мимо вас: продаёт через
+  // собственный сайт, кассу у входа в зал или другого оператора. Именно этот кусок
   // и возвращает подключение к платформе — но уже по платформенной ставке.
   leakWithoutPlatform: 0.80,
 
@@ -1459,7 +1460,7 @@ const CONFIG = {
 // ============================================================================
 // Организаторы — сторона предложения. У каждого типа своя экономика:
 // сколько событий, какой зал, какой чек и, главное, сколько зрителей он
-// приводит сам. Именно последнее решает, во что вам обходится своя касса
+// приводит сам. Именно последнее решает, во что вам обходится виджет
 // на его сайте.
 // ============================================================================
 
@@ -1475,7 +1476,7 @@ const ORGANIZERS = [
     commissionSensitivity: 1.5, // насколько больно берут комиссию
     feeAwareness: 0.9,          // насколько организатор замечает ваш сбор с покупателя
     loyalty: 0.55,              // множитель оттока: меньше — консервативнее
-    platformNeed: 0.55,         // насколько ему нужна своя касса
+    platformNeed: 0.55,         // насколько ему нужен билетный виджет
     selfTraffic: 0.50,          // какую долю зрителей он приводит сам
     serviceWeight: 1.0,         // сколько внимания менеджера требует
     hint: {
@@ -1517,7 +1518,7 @@ const ORGANIZERS = [
     selfTraffic: 0.42,
     serviceWeight: 0.35,
     hint: {
-      ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без самостоятельной кассы они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
+      ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без билетного виджета они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
       en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without self-service they never reach you at all. In exchange they barely care about commission.',
     },
   },
@@ -1536,8 +1537,8 @@ const ORGANIZERS = [
     selfTraffic: 0.72,
     serviceWeight: 1.8,
     hint: {
-      ru: 'Огромные объёмы и почти нулевая комиссия: клуб знает свою цену. Болельщик и так идёт на сайт клуба, поэтому своя касса им нужна как воздух — а вам она стоит дороже всего.',
-      en: 'Huge volumes and almost no commission: the club knows its worth. Fans go to the club site anyway, so they need their own checkout badly — and for you it is the most expensive one to give.',
+      ru: 'Огромные объёмы и почти нулевая комиссия: клуб знает свою цену. Болельщик и так идёт на сайт клуба, поэтому виджет им нужен как воздух — а вам он стоит дороже всего.',
+      en: 'Huge volumes and almost no commission: the club knows its worth. Fans go to the club site anyway, so they need the widget badly — and for you it is the most expensive one to give.',
     },
   },
 ];
@@ -1646,8 +1647,8 @@ const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
-      ru: 'Сколько вы берёте с продаж через кассу на сайте организатора. Эти билеты вашу афишу не видят, поэтому и ставка ниже — но оборот всё равно ваш.',
-      en: 'What you take from sales through the checkout on the organiser site. Those tickets never see your listings, so the rate is lower — but the turnover is still yours.',
+      ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Эти билеты вашу афишу не видят, поэтому и ставка ниже — но оборот всё равно ваш.',
+      en: 'What you take from sales through the widget on the organiser site. Those tickets never see your listings, so the rate is lower — but the turnover is still yours.',
     },
   },
   {
@@ -1690,8 +1691,8 @@ const LEVERS = [
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 8_000_000,
     tip: {
-      ru: 'Своя касса на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
-      en: 'The checkout on the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
+      ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
+      en: 'The ticketing widget for the organiser site, seating charts, season tickets, reports. The stronger the platform, the more organisers can work with you at all.',
     },
   },
   {
@@ -1850,7 +1851,7 @@ const algorithmByKey = (key) => ALGORITHMS.find((a) => a.key === key);
 
 const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  // Каким типам организаторов вы даёте собственную кассу. Это решение, а не
+  // Каким типам организаторов вы ставите билетный виджет. Это решение, а не
   // ползунок: у него долгие последствия в обе стороны.
   platformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
   algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),
@@ -1955,7 +1956,7 @@ const hitById = (id) => HITS.find((h) => h.id === id);
 
 /**
  * Выпадет ли хит в этом месяце и какой. Хит возможен только там, где у вас
- * есть организаторы соответствующего типа: чужой тур вашей кассе не поможет.
+ * есть организаторы соответствующего типа: чужой тур вашему виджету не поможет.
  */
 function rollHit(rng, month, orgCounts) {
   const season = seasonOf(month);
@@ -1992,7 +1993,7 @@ const seasonLabel = (season) => ({
 // Организатор выбирает билетного оператора по трём вещам, и только одна из
 // них — деньги. Вторая: сколько зрителей вы приводите. Третья: можно ли с
 // вами работать вообще — а для тысячи маленьких клубов это значит «есть ли
-// у вас самостоятельная касса».
+// у вас билетный виджет».
 // ============================================================================
 
 
@@ -2011,7 +2012,7 @@ function serviceQuality(managers, weightedOrgs) {
 }
 
 /**
- * Насколько ваша касса закрывает потребность организатора в самостоятельности.
+ * Насколько ваш виджет закрывает потребность организатора в самостоятельности.
  * Без подключения потребность остаётся неудовлетворённой — и чем она выше,
  * тем сильнее организатор смотрит на сторону.
  */
@@ -2075,7 +2076,7 @@ function preferenceAgainst(mine, theirs) {
 
 /**
  * Отток организаторов за месяц. Уходят не от хорошей жизни: пустые залы,
- * дорогая комиссия, неотвечающий менеджер и отсутствие своей кассы.
+ * дорогая комиссия, неотвечающий менеджер и отсутствие виджета.
  */
 function organizerChurn(def, appeal) {
   const base = CONFIG.baseOrgChurn * def.loyalty;
@@ -2222,22 +2223,22 @@ function buyerPreference(aud, mine, theirs) {
 // ============================================================================
 // Конфликт каналов.
 //
-// У организатора два способа продать билет: через вашу афишу и через кассу
-// на собственном сайте. Через афишу вы берёте и сбор с покупателя, и комиссию
-// с организатора. Через его кассу — только платформенную ставку, то есть в
-// разы меньше.
+// У организатора два способа продать билет: через вашу афишу и через билетный
+// виджет на собственном сайте — вашу продажу билетов под его брендом и на его
+// домене. Через афишу вы берёте и сбор с покупателя, и комиссию с организатора.
+// Через виджет — только платформенную ставку, то есть в разы меньше.
 //
-// Соблазн очевиден: не давать кассу вообще. Но без неё организатор уводит
+// Соблазн очевиден: не ставить виджет вообще. Но без него организатор уводит
 // свою публику мимо вас целиком — а спортивный клуб или театр с абонементами
 // половину зала продаёт своим людям, и эти люди на вашу афишу не заходят.
-// Подключив кассу, вы возвращаете этот оборот, но уже по низкой ставке,
+// Поставив виджет, вы возвращаете этот оборот, но уже по низкой ставке,
 // и вдобавок сами помогаете организатору растить собственный канал.
 // ============================================================================
 
 
 /**
- * Уровень платформы от накопленных вложений. Насыщается: первая версия кассы
- * даёт больше, чем десятая.
+ * Уровень платформы от накопленных вложений. Насыщается: первая версия
+ * виджета даёт больше, чем десятая.
  */
 function platformLevelOf(stock) {
   return clamp(stock / (stock + CONFIG.platformSaturation), 0, 0.95);
@@ -2248,13 +2249,14 @@ function platformLevelOf(stock) {
  *
  * Возвращает доли от всех мест, которые он выставляет:
  *   market   — продано через вашу афишу (сбор + комиссия)
- *   platform — продано через его кассу на вашей платформе (ставка платформы)
- *   lost     — продано мимо вас: своя касса у входа, другой оператор
+ *   platform — продано виджетом на его сайте (ставка платформы)
+ *   lost     — продано мимо вас: свой сайт без виджета, касса у входа в зал,
+ *              другой оператор
  */
 function channelSplit(def, connected, platformLevel) {
   if (connected) {
-    // Своя касса не просто забирает то, что и так уходило: организатор
-    // начинает её продвигать. Чем сильнее платформа, тем активнее он гонит
+    // Виджет не просто забирает то, что и так уходило: организатор
+    // начинает его продвигать. Чем сильнее платформа, тем активнее он гонит
     // покупателя к себе — и тем меньше остаётся вашей афише.
     const platform = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
     return { market: 1 - platform, platform, lost: 0 };
@@ -2337,8 +2339,8 @@ const STANCES = {
     id: 'platform',
     name: { ru: 'Ставка на платформу', en: 'Betting on the platform' },
     hint: {
-      ru: 'Вкладывается в самостоятельную кассу и забирает длинный хвост: тысячи мелких организаторов, которых никто не обслуживает руками.',
-      en: 'Investing in self-service checkout and taking the long tail: thousands of small organisers nobody serves by hand.',
+      ru: 'Вкладывается в билетный виджет и забирает длинный хвост: тысячи мелких организаторов, которых никто не обслуживает руками.',
+      en: 'Investing in the ticketing widget and taking the long tail: thousands of small organisers nobody serves by hand.',
     },
     commission: 0.058, buyerFee: 0.10, marketing: 0.8, platform: 1.0,
   },
@@ -2390,7 +2392,7 @@ function rivalPlatformLevel(rival) {
 function rivalAppealFor(def, rival) {
   if (!rival.alive) return 0.001;
   const level = rivalPlatformLevel(rival);
-  // Конкурент даёт кассу тем, кому она нужнее всего, — по мере роста платформы
+  // Конкурент ставит виджет тем, кому он нужнее всего, — по мере роста платформы
   const connected = def.platformNeed * level > 0.42;
   return organizerAppeal(def, {
     orgCommission: rival.commission,
@@ -2990,7 +2992,7 @@ const EVENTS = [
         effects: { oneOffCost: 75_000_000, orgJoinMult: 1.3 },
       },
       {
-        label: { ru: 'Предложить свою кассу', en: 'Offer your own checkout' },
+        label: { ru: 'Предложить билетный виджет', en: 'Offer a ticketing widget' },
         detail: { ru: 'Дешевле, но площадка согласится не сразу и не вся.', en: 'Cheaper, but the venue will only partly agree, and not at once.' },
         effects: { orgJoinMult: 1.05, orgAngerAdd: 0.01 },
       },
@@ -3143,7 +3145,7 @@ function createInitialState(seed = 'bileton') {
     // Ваши организаторы по типам. Начинаете маленьким оператором:
     // несколько театров, десяток клубов и один-два всего остального.
     orgs: { theatre: 16, concert: 3, club: 45, sport: 2 },
-    // Кому уже открыта своя касса. В начале — никому: платформы ещё нет.
+    // Кому уже поставлен билетный виджет. В начале — никому: платформы ещё нет.
     prevPlatformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
 
     // Охват по сегментам зрителей — доля потенциала, который вас помнит
@@ -3319,7 +3321,7 @@ function step(prevState, input = {}) {
   const rivalStance = riv.stance;
 
   // --- 4. Организаторы ---
-  // Решение о собственной кассе принимается по типам. Отключение уже
+  // Решение о виджете принимается по типам. Снятие уже
   // подключённых организаторов — отдельная боль: они это запомнят.
   const connectedFor = { ...(decisions.platformFor ?? {}) };
   let disconnectAnger = 0;
@@ -3346,7 +3348,7 @@ function step(prevState, input = {}) {
     const fillSeen = prevState.lastFillByType?.[def.id] ?? CONFIG.refFill;
 
     // Организатор считает, сколько у него забирают со всего оборота, а не
-    // только с той части, что идёт через афишу. Подключив кассу, он платит
+    // только с той части, что идёт через афишу. Получив виджет, он платит
     // комиссию с одних билетов и ставку платформы с других — и в переговорах
     // называет одно число. Без этого ставку платформы можно было поднять до
     // потолка, и ни один организатор бы не заметил.
@@ -3417,9 +3419,9 @@ function step(prevState, input = {}) {
 
   // --- 5. Афиша ---
   // Важно, какая именно афиша: зритель видит только те места, которые продаются
-  // через вас. Всё, что организатор продаёт своей кассой, в вашей афише не
+  // через вас. Всё, что организатор продаёт виджетом, в вашей афише не
   // появляется — и работать на ваш охват не может. Именно поэтому раздача
-  // собственных касс всем подряд подрезает ту самую аудиторию, ради которой
+  // виджетов всем подряд подрезает ту самую аудиторию, ради которой
   // организаторы к вам и приходят.
   let totalSeats = 0;
   let marketSeatsTotal = 0;
@@ -4882,8 +4884,9 @@ function renderChannels() {
       <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
       <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
       <td class="mono">${num(perSeat)} ₽</td>
-      <td><button class="btn small ${connected ? 'primary' : 'ghost'}" data-platform="${def.id}">${
-        connected ? t('channelOn') : t('channelOff')}</button></td>
+      <td class="mono">${connected ? t('channelOn') : t('channelOff')}</td>
+      <td><button class="btn small ghost" data-platform="${def.id}">${
+        connected ? t('channelDisconnect') : t('channelConnect')}</button></td>
     </tr>`;
   }).join('');
 
@@ -4895,7 +4898,8 @@ function renderChannels() {
     <table class="data">
       <thead><tr>
         <th>${t('channelColType')}</th><th>${t('channelColNeed')}</th>
-        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th><th></th>
+        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
+        <th>${t('channelColState')}</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>

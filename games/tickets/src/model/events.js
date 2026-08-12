@@ -126,7 +126,7 @@ export const EVENTS = [
         effects: { oneOffCost: 75_000_000, orgJoinMult: 1.3 },
       },
       {
-        label: { ru: 'Предложить свою кассу', en: 'Offer your own checkout' },
+        label: { ru: 'Предложить билетный виджет', en: 'Offer a ticketing widget' },
         detail: { ru: 'Дешевле, но площадка согласится не сразу и не вся.', en: 'Cheaper, but the venue will only partly agree, and not at once.' },
         effects: { orgJoinMult: 1.05, orgAngerAdd: 0.01 },
       },
