@@ -294,10 +294,14 @@ What matters is the remaining horizon, not the month.)
 
 ## Technical notes for the instructor
 
-**The same scenario for the whole group.** A game is deterministic in its seed: the same
-sequence of decisions on the same seed gives an identical result. The "Restart" button
-generates a random seed. To hand the whole group the same scenario, fix the seed in
-`games/cinema/src/ui/app.js` (the `createInitialState` call).
+**The same scenario for the whole group.** A game is deterministic in its game code
+(seed): the same sequence of decisions on the same code gives an identical result.
+The code is entered right on the welcome screen — invent one, dictate it to the group,
+and everyone plays the same market: the same rival premieres, events and seasons.
+The current game's code is shown in the help dialog ("?"). On the final screen the game
+produces a result string carrying the code, the score and a checksum — ask students to
+send it in: a doctored score fails the checksum. The final screen also keeps a table of
+the best games on that device.
 
 **Tuning difficulty.** All parameters live in `games/cinema/src/model/config.js`:
 * `startCash` — how much room there is for mistakes;
@@ -329,7 +333,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.7.0.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.8.0.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

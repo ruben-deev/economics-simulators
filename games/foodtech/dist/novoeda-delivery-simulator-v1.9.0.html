@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.8.0" />
+  <meta name="app-version" content="1.9.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -1000,6 +1000,7 @@ const STRINGS = {
     ru: 'На следующей неделе спрос подскочит, а курьеров на линии станет меньше. Нанимать надо <b>сейчас</b> — те, кого вы наймёте, выйдут именно на эту неделю. Надбавка за плохую погоду удержит смены и в ясные дни не стоит ничего.',
     en: 'Next week demand will spike while fewer couriers stay on the road. You have to hire <b>now</b> — whoever you hire goes out exactly then. A bad-weather bonus keeps shifts covered and costs nothing on clear days.',
   },
+  weatherHabit: { ru: 'Курьеры привыкли к надбавке: её эффект в плохую погоду ослаблен на {loss}. Постоянная доплата становится частью зарплаты — выключайте её в ясные недели, чтобы в шторм она снова работала.', en: 'Couriers are used to the bonus: its bad-weather effect is weakened by {loss}. A permanent extra becomes part of the wage — switch it off in clear weeks so it works again in a storm.' },
   wxClear: { ru: 'Ясно', en: 'Clear' },
   wxRain: { ru: 'Дождь', en: 'Rain' },
   wxStorm: { ru: 'Шторм', en: 'Storm' },
@@ -1364,6 +1365,44 @@ score = valuation × your stake`,
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
+  // --- Развилка перед смертью и разбор краха ---
+  deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
+  deathText: { ru: 'В кассе {cash}, за прошлую неделю сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'The till holds {cash}; last week burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the till is to zero, the worse the terms. You will only see this warning once.' },
+  deathRunway: { ru: '{n} нед.', en: '{n} wk' },
+  deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
+  deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
+  deathRaised: { ru: 'Раунд закрыт: +{amount} в кассу, доля снизилась до {equity}.', en: 'Round closed: +{amount} in the till, stake now {equity}.' },
+  deathWaterfall: { ru: 'Последние недели: куда ушли деньги', en: 'The final weeks: where the money went' },
+  wfRevenue: { ru: 'Выручка', en: 'Revenue' },
+  wfCosts: { ru: 'Расходы', en: 'Costs' },
+  wfProfit: { ru: 'Итог недели', en: 'Week net' },
+  wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
+  wfTurn: { ru: 'нед. {n}', en: 'wk {n}' },
+  // --- Код партии и таблица рекордов ---
+  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
+  resultCopy: { ru: 'Скопировать', en: 'Copy' },
+  resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },
+  recordsTitle: { ru: 'Ваши лучшие партии на этом устройстве', en: 'Your best games on this device' },
+  recordsDate: { ru: 'Дата', en: 'Date' },
+  recordsCode: { ru: 'Код партии', en: 'Game code' },
+  recordsScore: { ru: 'Итог', en: 'Score' },
+  recordsOutcome: { ru: 'Исход', en: 'Outcome' },
+  recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
+  recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsYou: { ru: '← эта партия', en: '← this game' },
+  recordsRank: { ru: 'Эта партия — {rank}-я из {total} сыгранных на устройстве.', en: 'This game ranks {rank} of {total} played on this device.' },
+  seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
+  seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
+  seedNote: { ru: 'Одинаковый код — одинаковый город: погода, события и рынок совпадут у всех, кто его введёт. Оставьте пустым, чтобы получить случайный.', en: 'The same code means the same city: weather, events and market will match for everyone who enters it. Leave empty for a random one.' },
+  welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
+  helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же город ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same city again.' },
+  // --- Дневник решений на графике ---
+  chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
+  chartChangeItem: { ru: 'нед. {turn}: {what}', en: 'wk {turn}: {what}' },
+  chartChangeDistricts: { ru: 'зоны покрытия', en: 'coverage areas' },
+  reportDelta: { ru: 'К прошлой неделе: заказы {orders}, прибыль {profit}, касса {cash}.', en: 'Versus last week: orders {orders}, profit {profit}, cash {cash}.' },
+  fundingRunway: { ru: 'При темпе прошлой недели кассы хватит примерно на {n} нед. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last week’s pace the till lasts about {n} weeks. A round is cheaper raised early, not at zero.' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
   welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, несколько сотен ресторанов и курьеры на самокатах. Дальше всё решаете вы — сколько брать за доставку, сколько удерживать с ресторана, сколько платить курьеру, в какие районы идти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, a few hundred restaurants and couriers on scooters. Everything after that is your call — what to charge for delivery, what to keep from the restaurant, what to pay a courier, which districts to enter and where the money goes.' },
@@ -1562,6 +1601,74 @@ function roundTerms(valuation, amount, { floor, maxShare = 0.75, minShare = 0.02
   const raw = amount / (pre + amount);
   const dilution = Math.min(maxShare, Math.max(minShare, raw));
   return { pre, post: pre + amount, amount, dilution };
+}
+
+
+// ===== ../../shared/records.js =====================================
+// ============================================================================
+// Код партии и таблица рекордов.
+//
+// Код партии — это сид генератора: одинаковый код даёт одинаковый город,
+// одинаковую погоду и одинаковые события. Так целая группа может играть
+// одну и ту же партию, а результаты становятся сравнимыми.
+//
+// Строка результата — короткая, машинно-проверяемая: игра, версия, код,
+// счёт, ходы и контрольная сумма. Подделать счёт, не пересчитав сумму,
+// не выйдет — а пересчитывать её вручную дольше, чем сыграть честно.
+//
+// Рекорды лежат в localStorage браузера: это личная таблица игрока на этом
+// устройстве, а не глобальный рейтинг. Ошибки хранилища (приватный режим,
+// переполнение) молча игнорируются: рекорды — украшение, а не механика.
+// ============================================================================
+
+// Контрольная сумма: djb2-xor, четыре hex-символа. Не криптография — защита
+// от опечатки и от «случайно дописал нолик», большего здесь не нужно.
+function checksum(text) {
+  let h = 5381;
+  for (const ch of String(text)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0;
+  return h.toString(16).toUpperCase().padStart(4, '0').slice(-4);
+}
+
+// Строка результата: «ИГРА|версия|код|счёт|ходов|#СУММА»
+function resultString({ tag, version, seed, score, turns }) {
+  const body = [tag, `v${version}`, seed, Math.round(score), turns].join('|');
+  return `${body}|#${checksum(body)}`;
+}
+
+// Проверка строки результата (для преподавателя): true, если сумма сходится
+function verifyResult(line) {
+  const at = String(line).lastIndexOf('|#');
+  if (at < 0) return false;
+  return checksum(line.slice(0, at)) === line.slice(at + 2).trim().toUpperCase();
+}
+
+const safeGet = (key) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? []; } catch { return []; }
+};
+const safeSet = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
+};
+
+function loadRecords(key) {
+  const list = safeGet(key);
+  return Array.isArray(list) ? list : [];
+}
+
+// Добавляет запись и возвращает свежий топ. Запись всегда сохраняется в топ-N
+// по счёту; если не дотянула — просто не попадает, но возвращается с рангом,
+// чтобы интерфейс мог сказать «вы на 14-м месте из 14».
+function addRecord(key, record, max = 10) {
+  const list = loadRecords(key);
+  list.push(record);
+  list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const rank = list.indexOf(record) + 1;
+  safeSet(key, list.slice(0, max));
+  return { top: list.slice(0, max), rank, total: list.length };
+}
+
+function bestRecord(key) {
+  const list = loadRecords(key);
+  return list.length ? list[0] : null;
 }
 
 
@@ -1889,8 +1996,8 @@ const LEVERS = [
     unit: { ru: '₽', en: '₽' },
     min: 0, max: 150, step: 10, def: 0,
     tip: {
-      ru: 'Доплата курьеру за заказ в дождь, снег и гололёд. В ясную погоду не стоит ничего: расход появляется ровно тогда, когда без него срываются смены.',
-      en: 'Extra pay per order in rain, snow and ice. Costs nothing when the weather is clear — the expense appears exactly when shifts would otherwise be abandoned.',
+      ru: 'Гарантированная доплата за заказ в плохую погоду. Треть платится и в ясные недели — обещание входит в ставку. Главное: включённая навсегда надбавка становится привычной и в настоящий шторм уже никого не выводит. Включайте её по прогнозу и выключайте в ясные недели.',
+      en: 'A guaranteed extra payment per order in bad weather. A third of it is paid even in clear weeks — a promise becomes part of the rate. Crucially, a bonus left on forever becomes the norm and stops bringing anyone out in a real storm. Switch it on with the forecast and off in clear weeks.',
     },
   },
   {
@@ -2108,14 +2215,18 @@ const DEFAULT_DECISIONS = {
 
 // severity — насколько погода «плохая» (0 = ясно, 1 = максимум).
 // От неё зависит и размер надбавки курьеру, и то, как сильно она помогает.
+// Мощность в тяжёлую погоду режется всерьёз: без надбавки заметная часть
+// курьеров просто не выходит на смену. Прежние значения (шторм ×0.80) делали
+// плохую погоду шумом: потерянное восстанавливалось за неделю, и готовиться
+// к шторму было незачем — что и показал замер.
 const WEATHER = {
   clear:  { id: 'clear',  icon: '☀️', demand: 1.00, capacity: 1.00, churn: 0,    severity: 0 },
-  rain:   { id: 'rain',   icon: '🌧️', demand: 1.16, capacity: 0.92, churn: 0.04, severity: 0.45 },
-  storm:  { id: 'storm',  icon: '⛈️', demand: 1.30, capacity: 0.80, churn: 0.12, severity: 1.00 },
-  heat:   { id: 'heat',   icon: '🔥', demand: 1.04, capacity: 0.86, churn: 0.10, severity: 0.70 },
-  snow:   { id: 'snow',   icon: '🌨️', demand: 1.22, capacity: 0.82, churn: 0.09, severity: 0.80 },
-  ice:    { id: 'ice',    icon: '🧊', demand: 1.10, capacity: 0.74, churn: 0.16, severity: 1.00 },
-  frost:  { id: 'frost',  icon: '❄️', demand: 1.14, capacity: 0.88, churn: 0.07, severity: 0.60 },
+  rain:   { id: 'rain',   icon: '🌧️', demand: 1.16, capacity: 0.88, churn: 0.05, severity: 0.45 },
+  storm:  { id: 'storm',  icon: '⛈️', demand: 1.30, capacity: 0.60, churn: 0.17, severity: 1.00 },
+  heat:   { id: 'heat',   icon: '🔥', demand: 1.04, capacity: 0.76, churn: 0.12, severity: 0.70 },
+  snow:   { id: 'snow',   icon: '🌨️', demand: 1.22, capacity: 0.66, churn: 0.13, severity: 0.80 },
+  ice:    { id: 'ice',    icon: '🧊', demand: 1.10, capacity: 0.56, churn: 0.21, severity: 1.00 },
+  frost:  { id: 'frost',  icon: '❄️', demand: 1.14, capacity: 0.78, churn: 0.09, severity: 0.60 },
 };
 
 // Неделя 1 — начало января, дальше по календарю
@@ -2144,25 +2255,52 @@ function rollWeather(rng, week) {
 /**
  * Итоговые множители недели с учётом надбавки курьерам за плохую погоду.
  *
- * Надбавка — условный расход: в ясную погоду она не стоит ничего, потому что
- * severity = 0. В шторм она возвращает часть сорванных смен и удерживает людей.
+ * Два правила, из-за которых надбавка — решение, а не настройка.
+ *
+ * ОБЕЩАНИЕ ПЛАТНОЕ. Раньше надбавка была условной: в ясную погоду она не
+ * стоила ничего, и «выставил 80 ₽ и забыл» было бесплатно в хорошие недели
+ * и автоматически правильно в плохие. Замер показал, что реагировать на
+ * прогноз и играть наоборот было одинаково (−2.6% и −2.5%): механика играла
+ * сама за себя. Теперь у гарантии есть безусловная часть — курьер, которому
+ * обещали доплату за погоду, получает её базу и в ясную неделю: гарантия
+ * входит в его ожидаемый заработок, иначе это не гарантия.
+ *
+ * ПРИВЫКАНИЕ. Надбавка, которая горит всегда, перестаёт быть стимулом:
+ * через пару месяцев курьеры считают её частью ставки, и в настоящий шторм
+ * она уже никого дополнительно не выводит. Свежесть надбавки — habit —
+ * копится, пока надбавка включена, и рассеивается, пока выключена.
+ * Включать её по прогнозу — и дешевле, и действеннее.
+ *
+ * @param habit 0..1 — насколько курьеры привыкли к надбавке (state.bonusHabit)
  */
-function weatherEffect(type, weatherBonus = 0) {
+function weatherEffect(type, weatherBonus = 0, habit = 0) {
   const w = WEATHER[type] ?? WEATHER.clear;
-  // Полное покрытие — 80 ₽ надбавки в самую скверную погоду
-  const coverage = Math.min(1, Math.max(0, weatherBonus) / 80);
+  // Полное покрытие — 80 ₽ надбавки в самую скверную погоду...
+  const rawCoverage = Math.min(1, Math.max(0, weatherBonus) / 80);
+  // ...но привычная надбавка мотивирует хуже свежей
+  const coverage = rawCoverage * (1 - 0.80 * Math.min(1, Math.max(0, habit)));
 
   return {
     ...w,
-    // Надбавка платится пропорционально тяжести погоды и лишь за ту часть недели,
-    // когда она реально держится: даже сильный шторм редко стоит все семь дней.
-    payPerOrder: weatherBonus * w.severity * 0.4,
-    // Деньги возвращают до 70% потерянной пропускной способности:
+    // Безусловная часть (35%) платится в любую погоду, остальное — по тяжести
+    payPerOrder: weatherBonus * 0.4 * (0.35 + 0.65 * w.severity),
+    // Деньги возвращают до 80% потерянной пропускной способности:
     // курьеры выходят на смену, но физику дороги надбавкой не отменишь
-    capacityMult: w.capacity + (1 - w.capacity) * 0.70 * coverage,
+    capacityMult: w.capacity + (1 - w.capacity) * 0.80 * coverage,
     churnAdd: w.churn * (1 - 0.85 * coverage),
     demandMult: w.demand,
   };
+}
+
+/**
+ * Недельный шаг привыкания: надбавка включена — привычка копится,
+ * выключена — рассеивается. Восемь-десять недель непрерывной надбавки —
+ * и она уже «часть зарплаты».
+ */
+function bonusHabitStep(habit, weatherBonus) {
+  const h = Math.min(1, Math.max(0, habit ?? 0));
+  const on = weatherBonus > 0 ? 1 : 0;
+  return h + (on - h) * 0.12;
 }
 
 
@@ -2220,7 +2358,9 @@ function makeGoal(quarter, state, orders, customers) {
       type: GOAL_TYPES.unit,
       // Вклад с заказа, а не прибыль: на этом сроке прибыли ещё нет ни у кого,
       // а вот довезти заказ дороже, чем взять за него денег, — уже стыдно.
-      target: 60,
+      // Снижено с 60 после ужесточения погоды: шторма теперь едят вклад,
+      // и прежняя планка проходила в 19% вместо целевых ~30%.
+      target: 50,
       ordersFloor: Math.round(Math.max(9_000, orders * 0.85)),
       reward: 0.10,
       penalty: 'marketingCap',
@@ -2233,12 +2373,18 @@ function makeGoal(quarter, state, orders, customers) {
       // Прибыльных недель из тринадцати. Замер: у случайной стратегии их ноль
       // даже на 85-м процентиле — к третьему кварталу в плюс выходят единицы.
       // Доведённая стратегия закрывает в плюс все тринадцать, так что планка
-      // в шесть недель отделяет работающий бизнес от почти работающего,
-      // а не наказывает за неудачный месяц.
-      target: 6,
+      // отделяет работающий бизнес от почти работающего, а не наказывает
+      // за неудачный месяц. Снижено с 6 до 4 после ужесточения погоды: шторм
+      // теперь способен съесть прибыль недели даже у собранной стратегии.
+      // Калибровка по случайным стратегиям здесь не работает: прибыльность —
+      // порог качества, у случайных стратегий прибыльных недель ноль и на
+      // 85-м процентиле, и планка 2 проходит так же редко, как 6 (замер: 8%).
+      // Это сознательно самая жёсткая цель года: доведённая стратегия
+      // закрывает в плюс все тринадцать недель.
+      target: 4,
       // И не ценой базы: срезать расходы, растеряв клиентов, — не то,
       // за что хвалят.
-      customersFloor: Math.round(Math.max(20_000, customers * 0.9)),
+      customersFloor: Math.round(Math.max(20_000, customers * 0.85)),
       reward: 0.12,
       penalty: 'marketingCap',
     };
@@ -2346,6 +2492,12 @@ function neutralModifiers() {
     satisfactionAdd: 0,     // прибавка к удовлетворённости клиентов
     awarenessAdd: 0,        // разовый прирост узнаваемости
     oneOffCost: 0,          // разовые расходы, ₽
+    // Поштучные разовые расходы: цена решения зависит от вашего размера.
+    // Доплата «всем курьерам» стоит по числу курьеров, раздача «всей базе» —
+    // по числу клиентов. Именно это делает выбор выбором: маленькой компании
+    // дёшево то, что большой не по карману, и наоборот.
+    oneOffCostPerCourier: 0,
+    oneOffCostPerCustomer: 0,
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -2447,20 +2599,20 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить бонус (1,5 млн ₽)', en: 'Pay the bonus (₽1.5M)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
         detail: {
-          ru: 'Разовые расходы, но отток курьеров резко падает.',
-          en: 'A one-off cost, but courier churn drops sharply.',
+          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
+          en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
         },
-        effects: { oneOffCost: 1_500_000, courierChurnAdd: -0.02, courierSupplyMult: 1.25 },
+        effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },
       {
         label: { ru: 'Проигнорировать', en: 'Ignore it' },
         detail: {
-          ru: 'Экономим деньги, но теряем людей и скорость.',
-          en: 'Saves money, costs you people and speed.',
+          ru: 'Дёшево, пока курьеры простаивают и очередь заявок полна. Дорого, когда каждый на счету.',
+          en: 'Cheap while couriers sit idle and the applications queue is full. Expensive when every one of them counts.',
         },
-        effects: { courierChurnAdd: 0.10, capacityMult: 0.9 },
+        effects: { courierChurnAdd: 0.07, capacityMult: 0.93 },
       },
     ],
   },
@@ -2479,10 +2631,10 @@ const EVENTS = [
       {
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет.',
-          en: '+40 restaurants at once, but the citywide commission sags.',
+          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
+          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.02, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },
@@ -2507,12 +2659,12 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо', en: 'Flood the market with promos' },
+        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
         detail: {
-          ru: 'Спрос вверх, маржа вниз, зато оценка компании выше.',
-          en: 'Demand up, margin down, valuation up.',
+          ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
+          en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
         },
-        effects: { demandMult: 1.18, variableCostAdd: 35, valuationBonus: 0.15 },
+        effects: { oneOffCostPerCustomer: 350, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -2520,7 +2672,7 @@ const EVENTS = [
           ru: 'Инвесторы недовольны, оценка ниже.',
           en: 'Investors are unhappy and the valuation suffers.',
         },
-        effects: { valuationBonus: -0.1 },
+        effects: { valuationBonus: -0.003 },
       },
     ],
   },
@@ -2537,18 +2689,18 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Ввести страховку добровольно', en: 'Introduce insurance voluntarily' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
         detail: {
-          ru: '+8 ₽ к себестоимости заказа, но курьеры довольны и репутация растёт.',
-          en: '+₽8 per order, but couriers are happy and your reputation grows.',
+          ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
+          en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',
         },
-        effects: { variableCostAdd: 8, courierChurnAdd: -0.02, awarenessAdd: 0.03 },
+        effects: { oneOffCostPerCourier: 3_000, courierChurnAdd: -0.02, awarenessAdd: 0.02 },
       },
       {
         label: { ru: 'Ждать закона', en: 'Wait for the law' },
         detail: {
-          ru: 'Экономим сейчас, рискуем штрафом позже.',
-          en: 'Save now, risk a fine later.',
+          ru: 'Экономим сейчас. Если штраф придёт — платить будете по штату на день штрафа, по двойной ставке.',
+          en: 'Save now. If the fine lands, you will pay for the fleet you have on that day — at double the rate.',
         },
         effects: { regulationRisk: true },
       },
@@ -2564,7 +2716,7 @@ const REGULATION_FINE = {
     ru: 'Вы решили дождаться закона — закон дождался вас. Городская инспекция выписала штраф.',
     en: 'You decided to wait for the law. The law waited for you: the city inspectorate has issued a fine.',
   },
-  effects: { oneOffCost: 4_000_000, awarenessAdd: -0.03 },
+  effects: { oneOffCostPerCourier: 8_000, awarenessAdd: -0.03 },
   lesson: {
     ru: 'Отложенный риск не исчезает, он лишь накапливает проценты.',
     en: 'Deferred risk does not disappear, it only accrues interest.',
@@ -2672,6 +2824,7 @@ function createInitialState(seed = 'novograd') {
     installed: {},           // внедрённые алгоритмы
     couriers: 0,
     courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
+    bonusHabit: 0,           // привычка курьеров к надбавке за погоду: 0 — свежая, 1 — часть зарплаты
     decisions: { ...DEFAULT_DECISIONS, districts: [] },
     districts: Object.fromEntries(
       DISTRICTS.map((d) => [d.id, {
@@ -2787,6 +2940,11 @@ function step(prevState, input = {}) {
     decisions.marketing = restrictions.marketingCap;
   }
 
+  // Размеры на начало недели: поштучные цены событий считаются от того, что
+  // игрок видит на экране в момент выбора, а не от состояния после хода.
+  const couriersAtStart = state.couriers;
+  const customersAtStart = DISTRICTS.reduce((acc, d) => acc + (state.districts[d.id]?.customers ?? 0), 0);
+
   // --- 1. Событие недели (было объявлено в конце прошлой недели) ---
   const mods = neutralModifiers();
   const event = state.pendingEvent;
@@ -2828,7 +2986,7 @@ function step(prevState, input = {}) {
   // Игрок знал её заранее: она была объявлена в конце прошлого хода.
   // Бьёт с двух сторон сразу — поднимает спрос и режет пропускную способность.
   const weatherType = state.weather ?? 'clear';
-  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0);
+  const wx = weatherEffect(weatherType, decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
 
   // --- 2б. Алгоритмы: доступность, внедрение, настройки ---
   const quality = algoQuality(state);
@@ -3055,7 +3213,7 @@ function step(prevState, input = {}) {
   // Ошибка прогноза детерминирована (не трогает ГПСЧ) и падает с ростом качества.
   // Наём этой недели выходит на линию на следующей, поэтому и прогноз, и ручное
   // решение игрока должны смотреть на погоду СЛЕДУЮЩЕЙ недели. Она объявлена публично.
-  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0);
+  const wxNext = weatherEffect(state.weatherNext ?? 'clear', decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
   let forecastDemand = null;
   let targetCouriers = Math.max(0, Math.round(decisions.targetCouriers));
   if (forecastOn) {
@@ -3201,7 +3359,12 @@ function step(prevState, input = {}) {
   // --- 9. Деньги ---
   const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
     + decisions.tech + (decisions.rnd ?? 0);
-  const oneOff = launchCost + hiringCost + installCost + (mods.oneOffCost ?? 0);
+  // Поштучные разовые расходы событий: «доплата всем курьерам» стоит по штату
+  // на начало недели, «раздача по базе» — по числу клиентов. Цена решения
+  // растёт вместе с компанией — это и делает выбор состояние-зависимым.
+  const perUnitCost = (mods.oneOffCostPerCourier ?? 0) * couriersAtStart
+    + (mods.oneOffCostPerCustomer ?? 0) * customersAtStart;
+  const oneOff = launchCost + hiringCost + installCost + (mods.oneOffCost ?? 0) + perUnitCost;
   const profit = contribution - opex;
   state.cash += profit - oneOff;
   state.techStock += decisions.tech;
@@ -3332,6 +3495,7 @@ function step(prevState, input = {}) {
     weatherBonusPerOrder: wx.payPerOrder,
     weatherBonusCost: orders * wx.payPerOrder,
     weatherChurnAdd: wx.churnAdd,
+    bonusHabit: state.bonusHabit,
     seasonName: seasonOf(week),
 
     // --- алгоритмы ---
@@ -3398,6 +3562,8 @@ function step(prevState, input = {}) {
   state.pendingEvent = rollEvent(rng, week + 1, state.flags);
   state.weather = state.weatherNext ?? 'clear';
   state.weatherNext = rollWeather(rng, week + 2);
+  // Привычка к надбавке: копится, пока надбавка включена, рассеивается без неё
+  state.bonusHabit = bonusHabitStep(state.bonusHabit, decisions.weatherBonus ?? 0);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';
@@ -3573,10 +3739,14 @@ function unitEconomics(state, decisions) {
 // Итоговый счёт партии
 function finalScore(state) {
   const v = valuation(state);
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
+  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
+  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
+  // в конце партии были бы бесплатными.
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: v * state.equity,
+    equityValue: (v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     weeks: state.week,
@@ -3743,7 +3913,10 @@ function niceTicks(min, max, count = 4) {
 
 /**
  * series: [{ label, color?, data: number[] }]
- * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string }
+ * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
+ *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
+ * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
+ * кривой» и становится дневником — видно, где решение, а где последствия.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -3811,6 +3984,20 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.fillText(String(i + 1), x(i), padT + h + 6);
   }
 
+  // маркеры решений — под линиями, чтобы не перекрывать данные
+  for (const mi of (opts.markers ?? [])) {
+    if (mi < 0 || mi >= n) continue;
+    const px = x(mi);
+    ctx.strokeStyle = 'rgba(251,191,36,0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(px + 0.5, padT);
+    ctx.lineTo(px + 0.5, padT + h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   // линии
   visible.forEach((s, si) => {
     ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
@@ -3852,6 +4039,8 @@ function legendHtml(series) {
 
 
 const SAVE_KEY = 'novoeda-save-v3';
+const RECORDS_KEY = 'novoeda-records';
+const GAME_TAG = 'НОВОЕДА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'foodtech-2';
@@ -4082,7 +4271,7 @@ function renderOpsReadout() {
 
   // Штат, набранный сейчас, выйдет на линию на следующей неделе — считаем по её погоде
   const nextType = state.weatherNext ?? 'clear';
-  const wxNext = weatherEffect(nextType, state.decisions.weatherBonus ?? 0);
+  const wxNext = weatherEffect(nextType, state.decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
   const perCourier = ordersPerCourier(state, avgDistance, (1 + 0.60 * batch * q) * wxNext.capacityMult);
   const payEff = state.decisions.courierPay * (1 - 0.20 * batch * q) + wxNext.payPerOrder;
   const expected = perCourier * CONFIG.courierExpectedLoad * payEff;
@@ -4141,7 +4330,7 @@ function renderOpsReadout() {
 // Погода
 // ----------------------------------------------------------------------------
 function weatherCard(type, when, cls = '') {
-  const fx = weatherEffect(type, state.decisions.weatherBonus ?? 0);
+  const fx = weatherEffect(type, state.decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
   const effects = type === 'clear'
     ? t('weatherNoEffect')
     : t('weatherEffects', {
@@ -4166,8 +4355,14 @@ function renderWeather() {
   const nextSeverity = WEATHER[next]?.severity ?? 0;
 
   const bonus = state.decisions.weatherBonus ?? 0;
+  const habit = state.bonusHabit ?? 0;
   const advice = nextSeverity >= 0.7 && bonus < 30
     ? `<div class="funding-note" style="flex-basis:100%">${t('weatherAdvice')}</div>` : '';
+  // Привычка — то, из-за чего вечная надбавка перестаёт работать. Игрок должен
+  // видеть, как она копится, иначе урок останется в исходниках.
+  const habitNote = bonus > 0 && habit > 0.35
+    ? `<div class="funding-note warn" style="flex-basis:100%">${t('weatherHabit', {
+        loss: pct(0.8 * habit, 0) })}</div>` : '';
 
   el('weather-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('weatherPanel', {
@@ -4176,7 +4371,7 @@ function renderWeather() {
     <div class="weather">
       ${weatherCard(now, t('weatherNow'), 'weather-now')}
       ${weatherCard(next, t('weatherNext'), `weather-next ${nextSeverity >= 0.7 ? 'alarm' : ''}`)}
-      ${advice}
+      ${advice}${habitNote}
     </div>
   </div>`;
 }
@@ -4254,7 +4449,7 @@ function buildNews(r) {
   // Главное в этой игре — что будет на следующей неделе: и надбавку курьерам,
   // и найм надо назначать заранее, задним числом смену не отработаешь.
   const next = state.weatherNext ?? 'clear';
-  const nextFx = weatherEffect(next, state.decisions.weatherBonus ?? 0);
+  const nextFx = weatherEffect(next, state.decisions.weatherBonus ?? 0, state.bonusHabit ?? 0);
   const severity = WEATHER[next]?.severity ?? 0;
   if (severity >= 0.6) {
     news.push(['warn', t('newsWeatherHard', {
@@ -4475,10 +4670,21 @@ function renderFunding() {
     </div>`;
   }).join('');
 
+  // Связка «запас хода ↔ раунды»: сколько недель проживёт касса при текущем
+  // темпе, прямо там, где принимается решение о деньгах.
+  const lastR = last();
+  const burn = lastR && lastR.profit < 0 ? -lastR.profit : 0;
+  const runwayTurns = burn > 0 ? state.cash / burn : null;
+  const runwayNote = runwayTurns !== null
+    ? `<div class="funding-note"${runwayTurns < 6 ? ' style="color:var(--bad)"' : ''}>${
+        t('fundingRunway', { n: num(runwayTurns, 1) })}</div>`
+    : '';
+
   el('funding').innerHTML = `
     <div class="funding-note">${t('fundingHead', {
       valuation: money(v), equity: pct(state.equity, 1), raised: money(state.raisedTotal),
     })}</div>
+    ${runwayNote}
     ${rows}
     <div class="funding-note">
       ${t('fundingNote')}
@@ -4702,6 +4908,16 @@ function renderReport() {
         cost: money(r.launchCost),
       })}</div>` : '';
 
+  // Одна строка «что изменилось»: три главных числа против прошлого хода.
+  // Подробный разбор ниже, но начинать чтение отчёта удобно с дельты.
+  const p = prev();
+  const sm = (v) => (v >= 0 ? '+' : '') + money(v);
+  const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
+    orders: signedPct(r.orders / Math.max(1e-9, p.orders) - 1, 0),
+    profit: sm(r.profit - p.profit),
+    cash: sm(r.cash - p.cash),
+  })}</div>` : '';
+
   el('report-slot').innerHTML = `<div class="panel">
     <div class="report-head">
       <h3>${t('reportTitle', { week: r.week })}</h3>
@@ -4710,6 +4926,7 @@ function renderReport() {
         take: pct(r.netRevenue / Math.max(1, r.gmv)),
       })}</span>
     </div>
+    ${deltaLine}
     <div class="report-grid">
       ${stat(t('statOrders'), compact(r.orders),
         t('statOrdersSub', { demand: compact(r.demand), lost: compact(r.lostOrders) }))}
@@ -4804,7 +5021,41 @@ const CHART_TABS = {
   },
 };
 
+// Дневник решений: ходы, в которые игрок что-то менял. Пунктир на графике
+// и список под ним связывают решение с последствием — без этого график
+// остаётся «просто кривой», по которой нечего разбирать.
+function decisionChanges() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 1; i < hist.length; i += 1) {
+    const prev = hist[i - 1].decisions ?? {};
+    const cur = hist[i].decisions ?? {};
+    const names = [];
+    for (const l of LEVERS) if ((cur[l.key] ?? 0) !== (prev[l.key] ?? 0)) names.push(tx(l.label));
+    if ((cur.districts ?? []).length !== (prev.districts ?? []).length) names.push(t('chartChangeDistricts'));
+    for (const a of ALGORITHMS) {
+      if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
+    }
+    if (names.length) out.push({ index: i, turn: hist[i].week, names });
+  }
+  return out;
+}
+
+function changesHtml(changes) {
+  if (!changes.length) return '';
+  const items = changes.slice(-4).map((c) => t('chartChangeItem', {
+    turn: c.turn,
+    what: c.names.slice(0, 3).join(', ') + (c.names.length > 3 ? '…' : ''),
+  })).join(' · ');
+  return `<div style="margin-top:4px">${t('chartChangesTitle')} ${items}</div>`;
+}
+
 function renderChart() {
+  // До первого хода график пуст: пустая «Динамика» не сообщает ничего,
+  // а новичку добавляет ещё одну непонятную панель. Прячем до первого отчёта.
+  const chartsPanel = el('chart').closest('.panel');
+  if (chartsPanel) chartsPanel.style.display = (state.history ?? []).length ? '' : 'none';
+  if (!(state.history ?? []).length) return;
   el('chart-tabs').innerHTML = Object.entries(CHART_TABS)
     .map(([k, v]) => `<button data-chart="${k}" class="${k === chartTab ? 'active' : ''}">${t(v.label)}</button>`)
     .join('');
@@ -4814,12 +5065,14 @@ function renderChart() {
 
   const conf = CHART_TABS[chartTab];
   const series = conf.series(state.history);
+  const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
-  el('chart-caption').textContent = t(conf.caption);
+  el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine,
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
+    markers: changes.map((c) => c.index),
   });
 }
 
@@ -5080,6 +5333,83 @@ function toast(text) {
   setTimeout(() => node.remove(), 3500);
 }
 
+// Развилка перед смертью: игрок, который не смотрел на кассу, получает один
+// явный шанс осознать положение и поднять раунд — вместо молчаливого краха
+// через два хода. Показывается один раз за партию и только пока раунд доступен.
+function maybeDeathFork() {
+  if (state.over || state.deathWarned) return;
+  const r = last();
+  if (!r || r.profit >= 0) return;
+  const burn = -r.profit;
+  if (state.cash >= burn * 2) return;
+  if (state.week < CONFIG.minWeekForFunding) return;
+  state.deathWarned = true;
+  save();
+  const runway = Math.max(0, state.cash / burn);
+  const raiseActions = CONFIG.fundingOptions.slice(-2).map((amount) => {
+    const offer = fundingOffer(state, amount);
+    return {
+      label: t('deathRaise', { amount: money(amount), dilution: pct(offer.dilution, 0) }),
+      onClick: () => {
+        state = raise(state, amount).state;
+        save();
+        renderAll();
+        toast(t('deathRaised', { amount: money(amount), equity: pct(state.equity, 1) }));
+      },
+    };
+  });
+  modal(`<h2>${t('deathTitle')}</h2>
+    <p class="funding-note">${t('deathText', {
+      cash: money(state.cash), burn: money(burn),
+      runway: t('deathRunway', { n: num(runway, 1) }),
+    })}</p>`,
+  [...raiseActions, { label: t('deathIgnore') }]);
+}
+
+// Водопад последних недель: на экране смерти видно не «вы банкрот», а из
+// каких потоков это сложилось — выручка, расходы, итог недели, касса.
+function waterfallHtml(rows) {
+  if (!rows.length) return '';
+  const cell = (v) => `<td>${money(v)}</td>`;
+  const line = (label, fn) => `<tr><td>${label}</td>${rows.map((r) => cell(fn(r))).join('')}</tr>`;
+  return `<h3 style="margin:12px 0 6px">${t('deathWaterfall')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th></th>${rows.map((r) => `<th>${t('wfTurn', { n: r.week })}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${line(t('wfRevenue'), (r) => r.netRevenue)}
+      ${line(t('wfCosts'), (r) => r.netRevenue - r.profit + r.oneOff)}
+      ${line(t('wfProfit'), (r) => r.profit - r.oneOff)}
+      ${line(t('wfCash'), (r) => r.cash)}
+    </tbody></table></div>`;
+}
+
+// Итог заносится в локальную таблицу рекордов один раз за партию; метка своей
+// записи хранится в state, чтобы переоткрытие экрана итогов её не теряло.
+function recordsBlockHtml(s) {
+  if (!state.recordId) {
+    state.recordId = String(Date.now());
+    addRecord(RECORDS_KEY, {
+      id: state.recordId,
+      date: new Date().toISOString().slice(0, 10),
+      seed: state.seed,
+      score: s.bankrupt ? 0 : Math.round(s.equityValue),
+      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      version: APP_VERSION,
+      turns: s.weeks,
+    });
+    save();
+  }
+  const top = loadRecords(RECORDS_KEY);
+  if (!top.length) return '';
+  const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
+    <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+  return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
@@ -5088,6 +5418,10 @@ function showGameOver() {
     : s.equityValue > 1e9 ? t('gradeSolid')
     : s.equityValue > 3e8 ? t('gradeSurvived') : t('gradeModest');
 
+  const line = resultString({
+    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    score: s.bankrupt ? 0 : s.equityValue, turns: s.weeks,
+  });
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
@@ -5104,11 +5438,22 @@ function showGameOver() {
       orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
+    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
+    <p class="funding-note">${t('resultNote')}</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+    </div>
+    ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
   ]);
+  el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
+  });
 }
 
 
@@ -5117,22 +5462,38 @@ function showGameOver() {
 // Игру часто открывают по присланной ссылке, без единого слова контекста,
 // и без этого экрана первое, что видит человек, — двенадцать ползунков.
 function showWelcome() {
+  // Код партии = сид мира. Поле читается через замыкание: модалка стирает
+  // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
+  let seedWanted = '';
+  const best = bestRecord(RECORDS_KEY);
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
-    <p class="funding-note">${t('welcomeHint')}</p>`,
-  [{ label: t('welcomeStart'), primary: true },
+    <p class="funding-note">${t('welcomeHint')}</p>
+    <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
+        style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    </label>
+    <p class="funding-note">${t('seedNote')}</p>
+    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
+  [{ label: t('welcomeStart'), primary: true, onClick: () => {
+      const v = seedWanted.trim();
+      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+    } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
+  el('modal-root').querySelector('#seed-input')
+    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
 }
 
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
+    + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
@@ -5153,6 +5514,7 @@ function nextWeek() {
   save();
   renderAll();
   if (state.over) showGameOver();
+  else maybeDeathFork();
 }
 
 function restart() {

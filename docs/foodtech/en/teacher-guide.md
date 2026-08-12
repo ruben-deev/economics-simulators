@@ -95,13 +95,19 @@ and explain what has to be done a week ahead of it.
 
 How it goes:
 1. Ask up front: weather lifts demand — is that good or bad? Most people say good. Then show
-   the table: demand ×1.30 at capacity ×0.80.
+   the table: demand ×1.30 at capacity ×0.60 — a storm doubles the load on every courier
+   who does show up.
 2. Let them live through a storm week unprepared. Work through the report: lost orders,
-   delivery time, courier churn.
+   delivery time, courier churn — and the two weeks after: couriers lost in the storm are
+   post-storm delivery times, and delivery times are customer churn.
 3. Replay with preparation: hiring a week early and a bad-weather bonus. Compare contribution
    and losses.
-4. Discuss what is cheaper across a year — keeping spare couriers permanently, or paying the
-   bonus in bad weeks. The answer depends on how often your climate turns bad.
+4. Discuss why "set the bonus to ₽80 and forget it" does not work. Two reasons, both visible
+   in the game: the promise is paid for (35% of the bonus reaches the courier even in a clear
+   week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
+   panel shows habit eating its effect over eight to ten weeks. A forecast-driven bonus is
+   both cheaper and stronger, and a mistimed one is ruinous: measured, playing it
+   backwards loses a quarter of the final score.
 
 The core idea: the weather forecast is public and every competitor sees it. The advantage
 comes not from the information but from the speed of the reaction to it.
@@ -180,10 +186,15 @@ science? What does the answer depend on, and how does it change between week 5 a
 
 ## Technical notes for instructors
 
-**The same city for the whole group.** A game is deterministic in its seed: an identical
-sequence of decisions under the same seed produces an identical result. The default seed is
-`novograd`; the Restart button generates a random one. To hand the whole group the same
-scenario, fix the seed in `games/foodtech/src/ui/app.js` (the `createInitialState` call).
+**The same city for the whole group.** A game is deterministic in its game code (seed):
+an identical sequence of decisions under the same code produces an identical result.
+The code is entered right on the welcome screen — invent one (say, `class-7b`), dictate
+it to the group, and everyone plays the same city: the same weather, events and market.
+The current game's code is shown in the help dialog ("?" button), so it can be shared
+after the fact too. On the final screen the game produces a **result string** carrying
+the game code, the score and a checksum. Ask students to send it in: a string with a
+doctored score fails the checksum (faking it is harder than playing honestly). The final
+screen also keeps a table of the best games on that device.
 
 **Tuning difficulty.** All parameters live in `games/foodtech/src/model/config.js`:
 * `startCash` — how much room for error students have;
@@ -207,5 +218,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.8.0.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.9.0.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.

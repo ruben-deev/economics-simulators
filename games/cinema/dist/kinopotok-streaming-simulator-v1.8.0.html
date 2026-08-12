@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.7.0" />
+  <meta name="app-version" content="1.8.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>КИНОПОТОК · streaming economics simulator</title>
@@ -1187,6 +1187,9 @@ const STRINGS = {
   newsRights: { ru: '<b>Истекли права на {gone} ч каталога,</b> куплено за месяц {bought} ч. {verdict}', en: '<b>Rights expired on {gone} h of the catalogue,</b> {bought} h bought this month. {verdict}' },
   newsRightsShrink: { ru: 'Каталог тает: лицензии — это аренда, и платить надо каждый месяц просто чтобы остаться на месте. Своё этого не требует.', en: 'The catalogue is shrinking: licences are rent, and you pay every month just to stand still. Your own titles do not ask for that.' },
   newsRightsHold: { ru: 'Закупка покрывает истечение — каталог держится. Ровно поэтому лицензионные часы дешевле собственных только на первый взгляд.', en: 'Buying covers the expiry — the catalogue holds. This is exactly why licensed hours only look cheaper than your own.' },
+  newsCliffSoon: { ru: '<b>Студии готовят собственные витрины: через {months} мес. с рынка отзовут около {share} лицензионных каталогов.</b> Удар придётся по всем — устоит тот, у кого к тому времени будет своё.', en: '<b>The studios are building their own storefronts: in {months} months about {share} of licensed catalogues will be pulled from the market.</b> Everyone takes the hit — whoever owns their own content by then stays standing.' },
+  newsCliffHit: { ru: '<b>Обвал прав: студии отозвали {lost} ч вашего лицензионного каталога.</b> У конкурента полка похудела так же. Дальше решает собственный контент.', en: '<b>The rights cliff: the studios pulled {lost} h of your licensed catalogue.</b> The rival’s shelf just got thinner too. From here on, original content decides.' },
+  newsRivalSurge: { ru: '<b>Конкурент закрыл внеплановый раунд и объявляет ценовую войну до конца года.</b> Досидеть финал на автопилоте не получится.', en: '<b>The rival has closed an unscheduled round and is declaring a price war until the end of the year.</b> You will not coast through the finale on autopilot.' },
   newsLicensePrice: { ru: '<b>Права подорожали: ×{index} к базовой цене часа.</b> Когда за одни и те же сериалы торгуетесь вы оба, дороже становится обоим.', en: '<b>Rights have gone up: ×{index} on the base price per hour.</b> When you both bid for the same shows, both of you pay more.' },
   newsTalentPrice: { ru: '<b>Талант подорожал: ×{index} к базовой смете.</b> Режиссёров и актёров на рынке столько же, сколько было, а денег у индустрии стало больше.', en: '<b>Talent has gone up: ×{index} on the base budget.</b> There are as many directors and actors as before; there is just more money chasing them.' },
   newsFinished: { ru: '<b>Проект доснят: {genre}, {scale}.</b> Его можно выпускать сейчас, а можно придержать до нужного месяца — но в запасе он выветривается.', en: '<b>A project is finished: {genre}, {scale}.</b> You can release it now or hold it for the right month — but it goes stale in the vault.' },
@@ -1464,6 +1467,42 @@ score = valuation × your stake`,
   gameOverLastMonth: { ru: 'Последний месяц: {subs} подписчиков, ARPU {arpu}, отток {churn}, прибыль {profit}.', en: 'Final month: {subs} subscribers, ARPU {arpu}, churn {churn}, profit {profit}.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> что удерживало подписчика — каталог или привычка? В какой момент рост часов перестал приносить прибыль? Сколько стоила бы та же база без единого оригинала?', en: '<b>Questions for the debrief:</b> what kept subscribers — the catalogue or the habit? At what point did rising hours stop producing profit? What would the same base be worth without a single original?' },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
+  // --- Развилка перед смертью и разбор краха ---
+  deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
+  deathText: { ru: 'В кассе {cash}, за прошлый месяц сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'The till holds {cash}; last month burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the till is to zero, the worse the terms. You will only see this warning once.' },
+  deathRunway: { ru: '{n} мес.', en: '{n} mo' },
+  deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
+  deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
+  deathRaised: { ru: 'Раунд закрыт: +{amount} в кассу, доля снизилась до {equity}.', en: 'Round closed: +{amount} in the till, stake now {equity}.' },
+  deathWaterfall: { ru: 'Последние месяцы: куда ушли деньги', en: 'The final months: where the money went' },
+  wfRevenue: { ru: 'Выручка', en: 'Revenue' },
+  wfCosts: { ru: 'Расходы', en: 'Costs' },
+  wfProfit: { ru: 'Итог месяца', en: 'Month net' },
+  wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
+  wfTurn: { ru: 'мес. {n}', en: 'mo {n}' },
+  // --- Код партии и таблица рекордов ---
+  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
+  resultCopy: { ru: 'Скопировать', en: 'Copy' },
+  resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },
+  recordsTitle: { ru: 'Ваши лучшие партии на этом устройстве', en: 'Your best games on this device' },
+  recordsDate: { ru: 'Дата', en: 'Date' },
+  recordsCode: { ru: 'Код партии', en: 'Game code' },
+  recordsScore: { ru: 'Итог', en: 'Score' },
+  recordsOutcome: { ru: 'Исход', en: 'Outcome' },
+  recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
+  recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsYou: { ru: '← эта партия', en: '← this game' },
+  seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
+  seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
+  seedNote: { ru: 'Одинаковый код — одинаковый рынок: премьеры конкурента, события и сезоны совпадут у всех, кто его введёт. Оставьте пустым, чтобы получить случайный.', en: 'The same code means the same market: rival premieres, events and seasons will match for everyone who enters it. Leave empty for a random one.' },
+  welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
+  helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
+  // --- Дневник решений на графике ---
+  chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
+  chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
+  reportDelta: { ru: 'К прошлому месяцу: подписчики {subs}, прибыль {profit}, касса {cash}.', en: 'Versus last month: subscribers {subs}, profit {profit}, cash {cash}.' },
+  fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the till lasts about {n} months. A round is cheaper raised early, not at zero.' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎬 Вы управляете онлайн-кинотеатром', en: '🎬 You are running a streaming service' },
@@ -1666,6 +1705,74 @@ function roundTerms(valuation, amount, { floor, maxShare = 0.75, minShare = 0.02
 }
 
 
+// ===== ../../shared/records.js =====================================
+// ============================================================================
+// Код партии и таблица рекордов.
+//
+// Код партии — это сид генератора: одинаковый код даёт одинаковый город,
+// одинаковую погоду и одинаковые события. Так целая группа может играть
+// одну и ту же партию, а результаты становятся сравнимыми.
+//
+// Строка результата — короткая, машинно-проверяемая: игра, версия, код,
+// счёт, ходы и контрольная сумма. Подделать счёт, не пересчитав сумму,
+// не выйдет — а пересчитывать её вручную дольше, чем сыграть честно.
+//
+// Рекорды лежат в localStorage браузера: это личная таблица игрока на этом
+// устройстве, а не глобальный рейтинг. Ошибки хранилища (приватный режим,
+// переполнение) молча игнорируются: рекорды — украшение, а не механика.
+// ============================================================================
+
+// Контрольная сумма: djb2-xor, четыре hex-символа. Не криптография — защита
+// от опечатки и от «случайно дописал нолик», большего здесь не нужно.
+function checksum(text) {
+  let h = 5381;
+  for (const ch of String(text)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0;
+  return h.toString(16).toUpperCase().padStart(4, '0').slice(-4);
+}
+
+// Строка результата: «ИГРА|версия|код|счёт|ходов|#СУММА»
+function resultString({ tag, version, seed, score, turns }) {
+  const body = [tag, `v${version}`, seed, Math.round(score), turns].join('|');
+  return `${body}|#${checksum(body)}`;
+}
+
+// Проверка строки результата (для преподавателя): true, если сумма сходится
+function verifyResult(line) {
+  const at = String(line).lastIndexOf('|#');
+  if (at < 0) return false;
+  return checksum(line.slice(0, at)) === line.slice(at + 2).trim().toUpperCase();
+}
+
+const safeGet = (key) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? []; } catch { return []; }
+};
+const safeSet = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
+};
+
+function loadRecords(key) {
+  const list = safeGet(key);
+  return Array.isArray(list) ? list : [];
+}
+
+// Добавляет запись и возвращает свежий топ. Запись всегда сохраняется в топ-N
+// по счёту; если не дотянула — просто не попадает, но возвращается с рангом,
+// чтобы интерфейс мог сказать «вы на 14-м месте из 14».
+function addRecord(key, record, max = 10) {
+  const list = loadRecords(key);
+  list.push(record);
+  list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const rank = list.indexOf(record) + 1;
+  safeSet(key, list.slice(0, max));
+  return { top: list.slice(0, max), rank, total: list.length };
+}
+
+function bestRecord(key) {
+  const list = loadRecords(key);
+  return list.length ? list[0] : null;
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1851,6 +1958,19 @@ const CONFIG = {
   licenseCalmSpend: 260_000_000, // совокупная закупка, при которой индекс ещё 1.0
   refLicenseSpend: 420_000_000,  // масштаб, на котором индекс успевает вырасти
   licenseIndexInertia: 0.72,     // сглаживание: рынок прав реагирует не мгновенно
+
+  // --- Третий акт ---
+  // Обвал прав: студии решают строить собственные витрины и разом отзывают
+  // долю лицензионных каталогов у всего рынка — и у вас, и у конкурента.
+  // Анонс за три месяца: у подготовившегося есть время нарастить своё.
+  rightsCliffAnnounceMonth: 24,
+  rightsCliffMonth: 27,
+  rightsCliffShare: 0.30,
+  // Последний рывок конкурента: раунд сверх лимита и ценовая война почти
+  // до конца партии — финал нельзя досидеть на автопилоте.
+  rivalSurgeMonth: 26,
+  rivalSurgeCash: 5_000_000_000,
+  rivalSurgeWarUntil: 35,
   // Талант дорожает вместе с вашим успехом: успешному сервису звёзды выставляют
   // другой счёт. Это и есть причина, по которой себестоимость хита растёт
   // быстрее его аудитории.
@@ -2977,7 +3097,12 @@ function stepRival(rival, ctx, rng) {
     return rival;
   }
 
-  const stance = chooseStance(rival, yourSubs, month);
+  let stance = chooseStance(rival, yourSubs, month);
+  // Последний рывок третьего акта: после внепланового раунда конкурент
+  // воюет ценой до объявленного месяца — если только не бежит с рынка.
+  if (rival.forcedStance && month <= (rival.forcedUntil ?? 0) && stance !== 'retreat') {
+    stance = rival.forcedStance;
+  }
   rival.stanceMonths = stance === rival.stance ? rival.stanceMonths + 1 : 0;
   rival.stance = stance;
   rival.stanceChangedIn = rival.stanceMonths === 0;
@@ -2999,6 +3124,20 @@ function stepRival(rival, ctx, rng) {
     originals: Math.round(base * 0.5 * S.budget),
     marketing: Math.round((55_000_000 + revenue * 0.26) * S.marketing),
   };
+
+  // Финальный рывок: внеплановый раунд не лежит в кассе, а сжигается.
+  // Пока идёт объявленная война, бюджеты масштабируются от денег, а не от
+  // выручки — маленький конкурент с большим чеком становится большим на время.
+  // Когда чек кончается, runway-логика сама уводит его в retreat: это и есть
+  // конец третьего акта.
+  const surgeActive = rival.forcedStance === 'war' && month <= (rival.forcedUntil ?? 0)
+    && stance === 'war' && rival.cash > 0;
+  if (surgeActive) {
+    const chest = rival.cash * 0.07;
+    rival.spend.licensing += Math.round(chest * 0.35);
+    rival.spend.originals += Math.round(chest * 0.35);
+    rival.spend.marketing += Math.round(chest * 0.30);
+  }
 
   // --- Раунд, если касса на исходе ---
   if (rival.cash < monthlyBurn(rival) * 4 && rival.raises < rival.maxRaises) {
@@ -3167,6 +3306,9 @@ function makeGoal(year, state, yourSubs, rivalSubs) {
       // Не разово, а устойчиво: минимум 3 прибыльных месяца из 12.
       // И при этом не ценой базы: сокращать расходы, теряя подписчиков,
       // — не то, за что хвалят. Отсюда «хотя бы не сжаться».
+      // Калибровка по случайным стратегиям здесь не работает: прибыльность —
+      // порог качества (у случайных стратегий прибыльных месяцев ноль и на
+      // 90-м процентиле), это сознательно самая жёсткая цель партии.
       target: 3,
       subsFloor: Math.round(Math.max(2_000_000, yourSubs * 1.05)),
       reward: 0.12,
@@ -3180,9 +3322,10 @@ function makeGoal(year, state, yourSubs, rivalSubs) {
     // заканчиваются, конкурент вырос. Удержать базу здесь уже достижение,
     // поэтому нижняя граница ниже единицы, а не выше.
     type: GOAL_TYPES.share,
-    // Планка поднята с 0.35 по замеру: медианная доля на конец партии 0.45,
-    // и прежнюю цель брали две трети стратегий — то есть это была не цель.
-    target: 0.60,
+    // Планка выставляется замером между медианой и 90-м процентилем.
+    // После третьего акта (рывок конкурента) распределение сдвинулось вниз:
+    // медиана доли 0.34, 90-й процентиль 0.62 — прежние 0.60 брали 11%.
+    target: 0.55,
     subsFloor: Math.round(Math.max(2_500_000, yourSubs * 0.75)),
     reward: 0.18,
     penalty: 'valuation',
@@ -3475,6 +3618,12 @@ function neutralModifiers() {
     churnAdd: 0,          // прибавка к оттоку
     awarenessAdd: 0,      // разовый прирост узнаваемости
     oneOffCost: 0,        // разовые расходы, ₽
+    // Поштучные разовые расходы: «компенсация каждому подписчику» стоит
+    // по размеру базы. Большой базе дорого то, что маленькой почти бесплатно —
+    // это и делает выбор состояние-зависимым.
+    oneOffCostPerSub: 0,
+    // Расходы, индексируемые ценой таланта: запросы звёзд растут вместе с рынком
+    oneOffCostTalent: 0,
     notes: [],
   };
 }
@@ -3560,14 +3709,14 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Заплатить (120 млн ₽)', en: 'Pay up (₽120M)' },
-        detail: { ru: 'Дорого, но проект продолжается и шум сохраняется.', en: 'Expensive, but the project continues and the buzz survives.' },
-        effects: { oneOffCost: 120_000_000, awarenessAdd: 0.03 },
+        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up (₽260M × talent index)' },
+        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: ₽260M early in the game, two or three times that by the end.' },
+        effects: { oneOffCostTalent: 260_000_000, awarenessAdd: 0.03 },
       },
       {
         label: { ru: 'Заменить актёра', en: 'Recast the role' },
-        detail: { ru: 'Экономим деньги, но зрители замечают и уходят.', en: 'Saves the money, but viewers notice and leave.' },
-        effects: { churnAdd: 0.025, demandMult: 0.92 },
+        detail: { ru: 'Экономим деньги, но зрители замечают и уходят. Чем дороже рынок таланта, тем чаще замена — правильный ответ.', en: 'Saves the money, but viewers notice and leave. The pricier the talent market, the more often recasting is the right call.' },
+        effects: { churnAdd: 0.010, demandMult: 0.98 },
       },
     ],
   },
@@ -3584,14 +3733,14 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Купить права (400 млн ₽)', en: 'Buy the rights (₽400M)' },
+        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights (₽500M)' },
         detail: { ru: 'Мощный приток и рост часов, но деньги ушли безвозвратно.', en: 'A strong inflow and more hours, but the money is gone for good.' },
-        effects: { oneOffCost: 400_000_000, demandMult: 1.3, hoursMult: 1.15, awarenessAdd: 0.05 },
+        effects: { oneOffCost: 500_000_000, demandMult: 1.16, hoursMult: 1.08, awarenessAdd: 0.05 },
       },
       {
         label: { ru: 'Пропустить', en: 'Pass' },
         detail: { ru: 'Права уходят конкуренту, часть зрителей — за ними.', en: 'The rights go to a rival, and some viewers follow them.' },
-        effects: { churnAdd: 0.015 },
+        effects: { churnAdd: 0.010 },
       },
     ],
   },
@@ -3608,14 +3757,14 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Устроить распродажу подписки', en: 'Run a subscription sale' },
-        detail: { ru: 'База растёт, выручка на подписчика падает, оценка выше.', en: 'The base grows, revenue per subscriber falls, valuation rises.' },
-        effects: { demandMult: 1.25, churnAdd: 0.01, valuationBonus: 0.12 },
+        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale (₽80 off per subscriber)' },
+        detail: { ru: 'Скидка достаётся и действующей базе: маленькой базе распродажа почти бесплатна, большой — очень дорога.', en: 'The discount reaches the existing base too: nearly free with a small base, very expensive with a large one.' },
+        effects: { oneOffCostPerSub: 80, demandMult: 1.12, churnAdd: 0.01, valuationBonus: 0.005 },
       },
       {
         label: { ru: 'Отстоять цену', en: 'Hold the price' },
         detail: { ru: 'Инвесторы недовольны, оценка ниже.', en: 'Investors are unhappy and the valuation suffers.' },
-        effects: { valuationBonus: -0.1 },
+        effects: { valuationBonus: -0.005 },
       },
     ],
   },
@@ -3632,14 +3781,14 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать', en: 'Own it and compensate' },
-        detail: { ru: 'Разовые расходы, но доверие удаётся сохранить.', en: 'A one-off cost, but trust survives.' },
-        effects: { oneOffCost: 90_000_000, churnAdd: 0.008 },
+        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate (₽60 per subscriber)' },
+        detail: { ru: 'Компенсация каждому: цена растёт вместе с базой. Маленькому сервису честность почти ничего не стоит.', en: 'Compensation for everyone: the price grows with the base. For a small service honesty costs almost nothing.' },
+        effects: { oneOffCostPerSub: 60, churnAdd: 0.006 },
       },
       {
         label: { ru: 'Промолчать', en: 'Say nothing' },
-        detail: { ru: 'Дешевле сейчас, дороже потом.', en: 'Cheaper now, more expensive later.' },
-        effects: { churnAdd: 0.03, awarenessAdd: -0.04, valuationBonus: -0.08 },
+        detail: { ru: 'Дешевле сейчас, дороже потом — и тем дороже, чем заметнее вы стали.', en: 'Cheaper now, more expensive later — and the more visible you are, the more expensive it gets.' },
+        effects: { churnAdd: 0.008, awarenessAdd: -0.01, valuationBonus: -0.005 },
       },
     ],
   },
@@ -3973,7 +4122,17 @@ function step(prevState, input = {}) {
   const talentIndex = talentIndexOf(state);
 
   // --- 5. Ход конкурента ---
+  // Третий акт: конкурент закрывает раунд сверх обычного лимита и включает
+  // ценовую войну почти до конца партии. Анонсируется новостями за месяц.
+  const rivalSurge = month === CONFIG.rivalSurgeMonth && state.rivalState.alive;
+  if (rivalSurge) {
+    state.rivalState.cash += CONFIG.rivalSurgeCash;
+    state.rivalState.forcedStance = 'war';
+    state.rivalState.forcedUntil = CONFIG.rivalSurgeWarUntil;
+    state.rivalState.surgeRaised = true;
+  }
   const yourSubsBefore = lastSubs(state);
+  const subsAtStart = yourSubsBefore;
   const rivalBefore = rivalSubs(state.rivalState);
   stepRival(state.rivalState, {
     yourPrice: decisions.priceNew,
@@ -4099,6 +4258,16 @@ function step(prevState, input = {}) {
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
   state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
+
+  // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
+  // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог
+  // не трогают: своё отобрать нельзя.
+  const rightsCliffHit = month === CONFIG.rightsCliffMonth;
+  const rightsCliffLost = rightsCliffHit ? state.catalogLicensed * CONFIG.rightsCliffShare : 0;
+  if (rightsCliffHit) {
+    state.catalogLicensed -= rightsCliffLost;
+    state.rivalState.catalogLicensed *= (1 - CONFIG.rightsCliffShare);
+  }
 
   // Иск замораживает часть арендованной библиотеки — своё отобрать нельзя
   const freeze = crisisMods.licensedFreeze ?? 0;
@@ -4585,7 +4754,11 @@ function step(prevState, input = {}) {
     (state.techStock ?? 0) + (state.rndStock ?? 0), CONFIG.techUpkeepRate);
   const fixed = CONFIG.hqMonthly + contentSpend + slotCost
     + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
-  const oneOff = installCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
+  // Поштучные расходы событий: компенсации «каждому подписчику» считаются
+  // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
+  const perUnitCost = (mods.oneOffCostPerSub ?? 0) * subsAtStart
+    + (mods.oneOffCostTalent ?? 0) * talentIndex;
+  const oneOff = installCost + perUnitCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
     + crisisCost + partnerFees;
   const profit = contribution - fixed;
 
@@ -4735,9 +4908,16 @@ function step(prevState, input = {}) {
     rivalRaised: riv.raises,
     rivalCatalog: riv.catalogLicensed + riv.catalogOriginal,
     rivalOriginals: riv.catalogOriginal,
-    rivalJustRaised: Boolean(riv.justRaised),
+    rivalJustRaised: Boolean(riv.justRaised) || Boolean(rivalSurge),
     duopolyShare,
     seasonHours: season,
+
+    // --- Третий акт ---
+    rightsCliffSoon: month === CONFIG.rightsCliffAnnounceMonth,
+    rightsCliffIn: Math.max(0, CONFIG.rightsCliffMonth - month),
+    rightsCliffHit,
+    rightsCliffLost,
+    rivalSurge: Boolean(rivalSurge),
 
     // --- Дорожающие ресурсы ---
     licenseIndex,
@@ -5043,10 +5223,14 @@ function explainFactors(prev, cur) {
 function finalScore(state) {
   const v = valuation(state);
   const last = state.history[state.history.length - 1];
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
+  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
+  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
+  // в конце партии были бы бесплатными.
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: v * state.equity,
+    equityValue: (v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
@@ -5217,7 +5401,10 @@ function niceTicks(min, max, count = 4) {
 
 /**
  * series: [{ label, color?, data: number[] }]
- * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string }
+ * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
+ *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
+ * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
+ * кривой» и становится дневником — видно, где решение, а где последствия.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -5285,6 +5472,20 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.fillText(String(i + 1), x(i), padT + h + 6);
   }
 
+  // маркеры решений — под линиями, чтобы не перекрывать данные
+  for (const mi of (opts.markers ?? [])) {
+    if (mi < 0 || mi >= n) continue;
+    const px = x(mi);
+    ctx.strokeStyle = 'rgba(251,191,36,0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(px + 0.5, padT);
+    ctx.lineTo(px + 0.5, padT + h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   // линии
   visible.forEach((s, si) => {
     ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
@@ -5325,6 +5526,8 @@ function legendHtml(series) {
 
 
 const SAVE_KEY = 'kinopotok-save-v1';
+const RECORDS_KEY = 'kinopotok-records';
+const GAME_TAG = 'КИНОПОТОК';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'cinema-2';
@@ -6087,7 +6290,22 @@ function buildNews(r) {
       note: t(`stance${r.rivalStance.charAt(0).toUpperCase()}${r.rivalStance.slice(1)}Hint`),
     })]);
   }
-  if (r?.rivalJustRaised) news.push(['warn', t('newsRivalRaised')]);
+  if (r?.rivalSurge) {
+    news.push(['warn', t('newsRivalSurge')]);
+  } else if (r?.rivalJustRaised) {
+    news.push(['warn', t('newsRivalRaised')]);
+  }
+
+  // Третий акт: обвал прав анонсируется заранее — это новость-предупреждение,
+  // на которую можно успеть ответить собственным производством.
+  if (r?.rightsCliffSoon) {
+    news.push(['warn', t('newsCliffSoon', {
+      months: num(r.rightsCliffIn, 0), share: pct(CONFIG.rightsCliffShare, 0),
+    })]);
+  }
+  if (r?.rightsCliffHit) {
+    news.push(['warn', t('newsCliffHit', { lost: compact(r.rightsCliffLost) })]);
+  }
 
   // Лицензии истекают сами, каждый месяц. Это беговая дорожка, и её видно
   // только если сказать словами: каталог тает, даже когда вы ничего не делаете.
@@ -6387,9 +6605,20 @@ function renderFunding() {
     </div>`;
   }).join('');
 
+  // Связка «запас хода ↔ раунды»: сколько месяцев проживёт касса при текущем
+  // темпе, прямо там, где принимается решение о деньгах.
+  const lastR = last();
+  const burn = lastR && lastR.profit < 0 ? -lastR.profit : 0;
+  const runwayTurns = burn > 0 ? state.cash / burn : null;
+  const runwayNote = runwayTurns !== null
+    ? `<div class="funding-note"${runwayTurns < 6 ? ' style="color:var(--bad)"' : ''}>${
+        t('fundingRunway', { n: num(runwayTurns, 1) })}</div>`
+    : '';
+
   el('funding').innerHTML = `
     <div class="funding-note">${t('fundingHead', {
       valuation: money(v), equity: pct(state.equity, 1), raised: money(state.raisedTotal) })}</div>
+    ${runwayNote}
     ${rows}
     <div class="funding-note">${t('fundingNote')}
       ${state.month < CONFIG.minMonthForFunding
@@ -6615,12 +6844,22 @@ function renderReport() {
         names: r.installedNow.map((k) => tx(algoByKey(k)?.name)).join(', '),
         cost: money(r.installCost) })}</div>` : '';
 
+  // Одна строка «что изменилось»: три главных числа против прошлого хода.
+  const p = prev();
+  const sm = (v) => (v >= 0 ? '+' : '') + money(v);
+  const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
+    subs: signedPct(r.subs / Math.max(1e-9, p.subs) - 1, 1),
+    profit: sm(r.profit - p.profit),
+    cash: sm(r.cash - p.cash),
+  })}</div>` : '';
+
   el('report-slot').innerHTML = `<div class="panel">
     <div class="report-head">
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         revenue: money(r.revenue), subscription: money(r.subscriptionRevenue), ads: money(r.adRevenue) })}</span>
     </div>
+    ${deltaLine}
     <div class="report-grid">
       ${stat(t('statSubs'), compact(r.subs), t('statSubsSub', {
         gained: compact(r.newSubs), lost: compact(r.lostSubs) }))}
@@ -6717,7 +6956,40 @@ const CHART_TABS = {
   },
 };
 
+// Дневник решений: ходы, в которые игрок что-то менял. Пунктир на графике
+// и список под ним связывают решение с последствием — без этого график
+// остаётся «просто кривой», по которой нечего разбирать.
+function decisionChanges() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 1; i < hist.length; i += 1) {
+    const prev = hist[i - 1].decisions ?? {};
+    const cur = hist[i].decisions ?? {};
+    const names = [];
+    for (const l of LEVERS) if ((cur[l.key] ?? 0) !== (prev[l.key] ?? 0)) names.push(tx(l.label));
+    for (const a of ALGORITHMS) {
+      if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
+    }
+    if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+function changesHtml(changes) {
+  if (!changes.length) return '';
+  const items = changes.slice(-4).map((c) => t('chartChangeItem', {
+    turn: c.turn,
+    what: c.names.slice(0, 3).join(', ') + (c.names.length > 3 ? '…' : ''),
+  })).join(' · ');
+  return `<div style="margin-top:4px">${t('chartChangesTitle')} ${items}</div>`;
+}
+
 function renderChart() {
+  // До первого хода график пуст: пустая «Динамика» не сообщает ничего,
+  // а новичку добавляет ещё одну непонятную панель. Прячем до первого отчёта.
+  const chartsPanel = el('chart').closest('.panel');
+  if (chartsPanel) chartsPanel.style.display = (state.history ?? []).length ? '' : 'none';
+  if (!(state.history ?? []).length) return;
   el('chart-tabs').innerHTML = Object.entries(CHART_TABS)
     .map(([k, v]) => `<button data-chart="${k}" class="${k === chartTab ? 'active' : ''}">${t(v.label)}</button>`).join('');
   el('chart-tabs').querySelectorAll('[data-chart]').forEach((b) => {
@@ -6726,10 +6998,12 @@ function renderChart() {
 
   const conf = CHART_TABS[chartTab];
   const series = conf.series(state.history);
+  const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
-  el('chart-caption').textContent = t(conf.caption);
+  el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
+    markers: changes.map((c) => c.index),
   });
 }
 
@@ -6931,6 +7205,83 @@ function toast(text) {
   setTimeout(() => node.remove(), 3500);
 }
 
+// Развилка перед смертью: игрок, который не смотрел на кассу, получает один
+// явный шанс осознать положение и поднять раунд — вместо молчаливого краха
+// через два хода. Показывается один раз за партию и только пока раунд доступен.
+function maybeDeathFork() {
+  if (state.over || state.deathWarned) return;
+  const r = last();
+  if (!r || r.profit >= 0) return;
+  const burn = -r.profit;
+  if (state.cash >= burn * 2) return;
+  if (state.month < CONFIG.minMonthForFunding) return;
+  state.deathWarned = true;
+  save();
+  const runway = Math.max(0, state.cash / burn);
+  const raiseActions = CONFIG.fundingOptions.slice(-2).map((amount) => {
+    const offer = fundingOffer(state, amount);
+    return {
+      label: t('deathRaise', { amount: money(amount), dilution: pct(offer.dilution, 0) }),
+      onClick: () => {
+        state = raise(state, amount).state;
+        save();
+        renderAll();
+        toast(t('deathRaised', { amount: money(amount), equity: pct(state.equity, 1) }));
+      },
+    };
+  });
+  modal(`<h2>${t('deathTitle')}</h2>
+    <p class="funding-note">${t('deathText', {
+      cash: money(state.cash), burn: money(burn),
+      runway: t('deathRunway', { n: num(runway, 1) }),
+    })}</p>`,
+  [...raiseActions, { label: t('deathIgnore') }]);
+}
+
+// Водопад последних месяцев: на экране смерти видно не «вы банкрот», а из
+// каких потоков это сложилось — выручка, расходы, итог месяца, касса.
+function waterfallHtml(rows) {
+  if (!rows.length) return '';
+  const cell = (v) => `<td>${money(v)}</td>`;
+  const line = (label, fn) => `<tr><td>${label}</td>${rows.map((r) => cell(fn(r))).join('')}</tr>`;
+  return `<h3 style="margin:12px 0 6px">${t('deathWaterfall')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th></th>${rows.map((r) => `<th>${t('wfTurn', { n: r.month })}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${line(t('wfRevenue'), (r) => r.revenue)}
+      ${line(t('wfCosts'), (r) => r.revenue - r.profit + r.oneOff)}
+      ${line(t('wfProfit'), (r) => r.profit - r.oneOff)}
+      ${line(t('wfCash'), (r) => r.cash)}
+    </tbody></table></div>`;
+}
+
+// Итог заносится в локальную таблицу рекордов один раз за партию; метка своей
+// записи хранится в state, чтобы переоткрытие экрана итогов её не теряло.
+function recordsBlockHtml(s) {
+  if (!state.recordId) {
+    state.recordId = String(Date.now());
+    addRecord(RECORDS_KEY, {
+      id: state.recordId,
+      date: new Date().toISOString().slice(0, 10),
+      seed: state.seed,
+      score: s.bankrupt ? 0 : Math.round(s.equityValue),
+      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      version: APP_VERSION,
+      turns: s.months,
+    });
+    save();
+  }
+  const top = loadRecords(RECORDS_KEY);
+  if (!top.length) return '';
+  const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
+    <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+  return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data">
+    <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
@@ -6939,6 +7290,10 @@ function showGameOver() {
     : s.equityValue > 3e10 ? t('gradeSolid')
     : s.equityValue > 1e10 ? t('gradeSurvived') : t('gradeModest');
 
+  const line = resultString({
+    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
+  });
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
@@ -6955,9 +7310,20 @@ function showGameOver() {
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
+    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
+    <p class="funding-note">${t('resultNote')}</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+    </div>
+    ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
     [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
      { label: t('gameOverCharts'), onClick: () => {} }]);
+  el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
+  });
 }
 
 
@@ -6966,22 +7332,38 @@ function showGameOver() {
 // Игру часто открывают по присланной ссылке, без единого слова контекста,
 // и без этого экрана первое, что видит человек, — двенадцать ползунков.
 function showWelcome() {
+  // Код партии = сид мира. Поле читается через замыкание: модалка стирает
+  // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
+  let seedWanted = '';
+  const best = bestRecord(RECORDS_KEY);
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
-    <p class="funding-note">${t('welcomeHint')}</p>`,
-  [{ label: t('welcomeStart'), primary: true },
+    <p class="funding-note">${t('welcomeHint')}</p>
+    <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
+        style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    </label>
+    <p class="funding-note">${t('seedNote')}</p>
+    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
+  [{ label: t('welcomeStart'), primary: true, onClick: () => {
+      const v = seedWanted.trim();
+      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+    } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
+  el('modal-root').querySelector('#seed-input')
+    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
 }
 
 function showHelp() {
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
+    + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION })}</p>`,
     [{ label: t('helpModalOk'), primary: true }]);
@@ -7007,6 +7389,7 @@ function nextMonth() {
   save();
   renderAll();
   if (state.over) showGameOver();
+  else maybeDeathFork();
 }
 
 function restart() {

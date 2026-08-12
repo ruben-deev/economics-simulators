@@ -169,11 +169,16 @@ the next.
 
 ## Technical notes for the teacher
 
-* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.10.0.html`.
+* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.11.0.html`.
   No internet, no install, runs from a USB stick.
 * The game saves in the browser. To have every team play the same world, hand out
-  the same file: the sequence of events is deterministic and depends on the seed,
-  and the seed is fixed when the game starts.
+  the same file and dictate a shared game code — it is entered on the welcome
+  screen, and under one code everyone gets the same city: the same listings,
+  events and hit of the month. The current game's code is shown in the help
+  dialog ("?"). On the final screen the game produces a result string carrying
+  the code, the score and a checksum — ask students to send it in: a doctored
+  score fails the checksum. The final screen also keeps a table of the best
+  games on that device.
 * The language switches in the header and on the welcome screen; the model is
   identical either way.
 * Formulas and constants are in `docs/tickets/en/economics.md`. Everything that

@@ -76,35 +76,52 @@ Each weather type sets three numbers: a demand multiplier, a capacity multiplier
 addition to courier churn. The key property is that they point in opposite directions:
 
 ```
-storm: demand ×1.30,  capacity ×0.80,  churn +12 pp
-ice:   demand ×1.10,  capacity ×0.74,  churn +16 pp
+storm: demand ×1.30,  capacity ×0.60,  churn +17 pp
+ice:   demand ×1.10,  capacity ×0.56,  churn +21 pp
 ```
 
-In a storm, courier utilisation rises from both ends at once: 1.30 / 0.80 = ×1.63. That
+In a storm, courier utilisation rises from both ends at once: 1.30 / 0.60 = ×2.17. That
 combination — a demand peak during a capacity trough — is what breaks delivery times in
 real services, and it is why weather is a system of its own here rather than a random event.
+An uncovered storm does not pass without a trace either: the couriers who quit are next
+week's delivery times, and delivery times are customer churn.
 
 **The forecast is public.** Next week's weather is known to the player in advance: weather
 reports are available to everyone, and hiding them would be artificial. The point is that
 hiring this week puts couriers on the road next week, so the forecast is a call to action
 rather than a hint.
 
-**The bad-weather bonus** is a conditional cost:
+**The bad-weather bonus** is a promise — and promises cost money:
 
 ```
-coverage      = min(1, bonus / ₽80)
-pay per order = bonus × severity × 0.4
-capacity      = base + (1 − base) × 0.70 × coverage
+coverage      = min(1, bonus / ₽80) × (1 − 0.80 × habit)
+pay per order = bonus × 0.4 × (0.35 + 0.65 × severity)
+capacity      = base + (1 − base) × 0.80 × coverage
 churn         = base × (1 − 0.85 × coverage)
+habit′        = habit + (on − habit) × 0.12   — one step per week
 ```
 
-The 0.4 factor reflects that even a severe storm rarely lasts a full week. In clear weather
-severity is 0, so the bonus costs nothing — the expense appears exactly when shifts would
-otherwise be abandoned.
+Two rules make the bonus a decision rather than a setting.
+
+**The promise is paid for.** A guarantee has an unconditional part (35%): a courier who
+was promised weather pay receives its base even in a clear week — otherwise it is not a
+guarantee but a lottery, and it never enters their expected earnings. The bonus used to be
+conditional: it cost nothing in clear weeks, so "set ₽80 and forget" was a free automatic
+strategy, and measurement showed reacting to the forecast was no better than doing the
+opposite. Now a permanent bonus is a permanent expense.
+
+**Habituation.** A bonus that is always on stops being an incentive: habit builds up over
+roughly eight to ten weeks and cuts the bonus's "freshness" to 20% of its power — in a real
+storm it no longer brings anyone extra onto the road. A switched-off bonus is forgotten at
+the same pace. Switching it on by forecast is both cheaper and more effective: on a
+re-optimised reference strategy, the policy "bonus only in heavy weather" measures +2%
+against the best constant, while playing it backwards — "bonus in clear weeks" — loses
+27%. The asymmetry is the lesson: the right timing earns a little, the wrong timing
+costs a lot.
 
 Economically it is an alternative to keeping spare couriers: permanent excess headcount
-costs money all 52 weeks, while the bonus is only paid in bad ones. With a thin roster the
-bonus wins; with a large buffer it becomes wasted spending.
+costs money all 52 weeks, while the bonus only costs while it is switched on. With a thin
+roster the forecast-driven bonus wins; with a large buffer it becomes wasted spending.
 
 ---
 
@@ -333,6 +350,19 @@ orders per week to break even = fixed costs / contribution per order
 If contribution per order is negative, break-even does not exist at any volume. That is the
 first thing to check whenever "we will grow into profitability" comes up.
 
+### Event decisions are priced by your size
+
+Some weekly events demand a choice, and the expensive options are priced per head:
+paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽350 ×
+your customer base, insurance ₽3,000 × headcount (and the fine for waiting out the
+law, ₽8,000 × the fleet you have on the day it lands). A hundred couriers make the
+strike payment a quarter of a million; fifteen hundred make it nearly four. So events
+have no memorised right answer: measured across three company sizes, the profitable
+option shifts with the state. Generosity is cheap for the small and dear for the
+large; the big chain's discounted commission cuts the other way — a bargain for a
+small city with a hundred restaurants, ruinous for a large one where the discount
+smears across the whole turnover.
+
 ---
 
 ## 7b. Algorithms: second-order optimisation
@@ -493,7 +523,11 @@ quarters of it, and the game was decided by the week the money ran out rather th
 economics. Measured: the same company at the same valuation left the founder with 84%
 or 20% depending on which week they had to go for money.
 
-The final score is **valuation × your stake**. Raising as much money as possible is
+The final score is **(valuation + cash in the till) × your stake**. The cash belongs
+to the shareholders: a rouble unspent by the finale is worth a rouble, and a rouble
+spent has to come back as valuation growth — without the cash term, one-off costs
+late in the game would be free, including the price of event decisions.
+Raising as much money as possible is
 therefore not a strategy: every round at a low valuation costs you a piece of the company.
 Early money is the most expensive money there is.
 

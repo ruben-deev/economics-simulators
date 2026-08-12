@@ -564,6 +564,34 @@ This is exactly why a hit's cost grows faster than its audience: stars charge a
 successful service differently. By the end of a good game a project costs twice what it
 did at the start.
 
+### 6a-2. The third act: the rights cliff and the rival's last push
+
+Before these mechanics, measuring "from which turn can the game be abandoned" showed
+that random decisions after month 30 barely changed the outcome: the finale played
+itself. Now two things happen in the last third of the game — both deterministic,
+both announced in advance.
+
+**The rights cliff (month 27, announced in month 24).** The studios decide to build
+their own storefronts and pull 30% of licensed catalogues from the whole market at
+once — yours and the rival's alike. Original catalogues are untouched: what you own
+cannot be taken away. The three months between the announcement and the cliff are
+time to ramp up production; a service living on cheap licences meets the finale with
+an emptying shelf and pricier rights (both sides rush to re-buy, so the rights index
+climbs).
+
+**The rival's last push (month 26, war until month 35).** The rival closes an
+unscheduled round (₽5B beyond its usual limit) and declares a price war. While the
+war is on, its budgets scale from its cash pile rather than its revenue: it burns 7%
+of the war chest a month on licensing, production and marketing. A small rival with
+a big cheque becomes big for a while — and when the cheque runs out, the runway logic
+walks it into retreat. That is how the third act ends.
+
+Measured after the change: a constant strategy loses ~17% of its outcome to the third
+act; the share of the outcome "decided" by turn 24 fell from 78% to 74%, by turn 30
+from 94% to 87%. The rest is bounded by the valuation windows (§9), which smooth late
+mistakes and late manipulation alike — a deliberate trade in favour of blocking the
+last-turn dash.
+
 **Marketing saturates:** the deeper your penetration into a segment, the more expensive
 the next viewer (`× 1 / (1 + 1.4 × penetration²)`).
 
@@ -696,10 +724,17 @@ four require a decision:
 
 | Event | Choice | Economic meaning |
 |---|---|---|
-| A star asks for a cut | pay ₽120M / recast | the bargaining power of talent: a hit's cost grows faster than its audience |
-| Sports rights | buy for ₽400M / pass | renting traffic versus building an asset |
-| The board demands growth | run a sale / hold the price | growing the base ≠ growing revenue |
-| Viewer data leak | own it and compensate / say nothing | the data your algorithms learn from is also a liability |
+| A star asks for a cut | pay ₽260M × talent index / recast | the bargaining power of talent: a hit's cost grows faster than its audience |
+| Sports rights | buy for ₽500M / pass | renting traffic versus building an asset |
+| The board demands growth | run a sale (₽80 per subscriber) / hold the price | growing the base ≠ growing revenue |
+| Viewer data leak | compensate (₽60 per subscriber) / say nothing | the data your algorithms learn from is also a liability |
+
+**The price of a decision depends on your size.** Compensations and sales are charged
+per head — against the base at the start of the month; the star's ask is indexed to the
+price of talent. Honesty and generosity cost a small service almost nothing and a large
+one dearly. That is why events have no "right answer": measured across three company
+sizes, the profitable option changes with the state, and the mean gap between
+"always first" and "always second" is a fraction of a percent.
 
 ---
 
@@ -713,8 +748,13 @@ multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5
 library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45
 position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
 valuation   = (run-rate × multiple + library) × position
-final score = valuation × your stake
+final score = (valuation + cash in the till) × your stake
 ```
+
+The cash in the till belongs to the shareholders: a rouble unspent by the finale is
+worth a rouble, and a rouble spent has to come back as valuation growth. Without the
+cash term, one-off costs late in the game would be free — including the price of
+event decisions.
 
 Your own library enters the valuation as a **separate term** — it is an asset on the
 balance sheet, while licences are not. And an hour of reality is worth a third of an hour
