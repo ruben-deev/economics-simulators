@@ -36,6 +36,20 @@ platform revenue = widget turnover × platform rate
 subscriptions    = connected organisers × monthly fee
 ```
 
+**There is no buyer fee on the widget at all** — and that is a chosen model, not
+an oversight. On your own listings you set the price the buyer sees, which is why
+you take from it twice. On the organiser's site they set it: there you are the
+engine vendor, not the seller, and all your revenue from such a ticket is the
+platform rate plus the subscription. Both arrangements exist in real life; the
+pure SaaS one is taken here because it turns channel conflict into a real choice
+rather than arithmetic.
+
+Count it after the bank: acquiring comes off the full ticket price alike in both
+channels, and on the platform rate it eats nearly everything. At default settings
+a ₽1400 club ticket leaves you ₽179 through the listings and ₽4 through the
+widget. The widget lives not off the ticket but off the subscription fee and off
+turnover that would otherwise pass you by entirely.
+
 **The buyer fee** is paid on top of the ticket price. It is visible at
 checkout and comparable with the rival, so it hits demand directly:
 

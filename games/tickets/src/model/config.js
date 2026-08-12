@@ -304,8 +304,8 @@ export const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
-      ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Эти билеты вашу афишу не видят, поэтому и ставка ниже — но оборот всё равно ваш.',
-      en: 'What you take from sales through the widget on the organiser site. Those tickets never see your listings, so the rate is lower — but the turnover is still yours.',
+      ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Сервисного сбора там нет: цену для покупателя на своём сайте назначает он, а не вы, — так что это вся ваша выручка с такого билета. Плюс эквайринг банк снимает и с неё тоже.',
+      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its acquiring out of it too.',
     },
   },
   {

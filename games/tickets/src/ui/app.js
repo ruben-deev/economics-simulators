@@ -620,18 +620,22 @@ function renderChannels() {
   const rows = ORGANIZERS.map((def) => {
     const connected = Boolean(d.platformFor?.[def.id]);
     const split = channelSplit(def, connected && level > 0.02, level);
-    const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission);
-    const perPlatform = def.avgPrice * d.platformRate;
-    const perSeat = split.market * perMarket + split.platform * perPlatform;
+    // Показываем то, что доходит до вас, а не то, что списывается с покупателя:
+    // эквайринг банк берёт с полной суммы билета одинаково в обоих каналах,
+    // и на ставке платформы он съедает почти всё. Без этого вычета колонка
+    // говорила «40 ₽» там, где на самом деле остаётся пять.
+    const acquiring = def.avgPrice * CONFIG.acquiringRate;
+    const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission) - acquiring;
+    const perPlatform = def.avgPrice * d.platformRate - acquiring;
     const need = def.platformNeed >= 1.3 ? 'bad' : def.platformNeed >= 0.5 ? 'warn' : '';
     return `<tr>
       <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}</div></td>
       <td class="${need}">${pct(clamp(def.platformNeed / 2, 0, 1), 0)}</td>
       <td class="mono">${pct(split.market, 0)} / ${pct(split.platform, 0)} / <span class="neg">${pct(split.lost, 0)}</span></td>
-      <td class="mono">${num(perSeat)} ₽</td>
+      <td class="mono">${num(perMarket)} / <span class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)}</span> ₽</td>
       <td class="mono">${connected ? t('channelOn') : t('channelOff')}</td>
       <td><button class="btn small ghost" data-platform="${def.id}">${
-        connected ? t('channelDisconnect') : t('channelConnect')}</button></td>
+        t(connected ? 'channelDisconnect' : 'channelConnect', { count: compact(state.orgs[def.id] ?? 0) })}</button></td>
     </tr>`;
   }).join('');
 
@@ -648,7 +652,8 @@ function renderChannels() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="funding-note" style="margin-top:8px">${t('channelLevel', { level: pct(level, 0) })}</div>
+    <div class="funding-note" style="margin-top:8px">${t('channelColMoneyNote')}</div>
+    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}</div>
   </div>`;
 
   el('channel-slot').querySelectorAll('[data-platform]').forEach((b) => {
