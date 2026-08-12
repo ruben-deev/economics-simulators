@@ -2,7 +2,7 @@
 
 *[English version](README.en.md)* · автор — **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)**
 
-**▶ [Открыть витрину со списком игр](https://ruben-deev.github.io/Foodtech-delivery-game/)**
+**▶ [Открыть витрину со списком игр](https://ruben-deev.github.io/economics-simulators/)**
 
 Две браузерные игры про управление бизнесом. Каждая — один ход в единицу времени, десяток
 рычагов и понятная причина, по которой можно разориться. Сделаны в первую очередь как
@@ -15,13 +15,16 @@
 
 | Игра | Бизнес | Ход | Партия | Главный конфликт |
 |---|---|---|---|---|
-| [🛵 **НОВОЕДА**](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/) | доставка еды | неделя | 52 недели | спрос против пропускной способности |
-| [🎬 **КИНОПОТОК**](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/) | онлайн-кинотеатр | месяц | 36 месяцев | война за рынок с живым конкурентом |
+| [🛵 **НОВОЕДА**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | доставка еды | неделя | 52 недели | спрос против пропускной способности |
+| [🎬 **КИНОПОТОК**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | онлайн-кинотеатр | месяц | 36 месяцев | война за рынок с живым конкурентом |
+| [🎟️ **БИЛЕТОН**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | билетный сервис | месяц | 36 месяцев | двусторонний рынок и конфликт каналов |
 
-Игры устроены одинаково и намеренно моделируют **противоположные** типы экономики:
-в доставке выручка с клиента растёт вместе с его активностью, в подписке она фиксирована,
-а расход растёт. Одни и те же слова — «вовлечённость», «удержание», «рост» — означают
-в них разные вещи. Это лучше всего видно, если сыграть в обе.
+Игры устроены одинаково, но намеренно моделируют **разные** типы экономики:
+в доставке выручка с клиента растёт вместе с его активностью, в подписке она
+фиксирована, а расход растёт, в билетном сервисе через вас проходят миллиарды,
+а вашими становятся проценты. Одни и те же слова — «вовлечённость», «удержание»,
+«рост» — означают в них разные вещи. Это лучше всего видно, если сыграть
+в несколько.
 
 > Если ссылки не открываются, значит в репозитории ещё не включены GitHub Pages:
 > Settings → Pages → Source: **GitHub Actions**. После этого достаточно перезапустить
@@ -29,12 +32,12 @@
 
 ## Быстрый старт
 
-Проще всего — [открыть в браузере](https://ruben-deev.github.io/Foodtech-delivery-game/).
+Проще всего — [открыть в браузере](https://ruben-deev.github.io/economics-simulators/).
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
-[кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 Локально:

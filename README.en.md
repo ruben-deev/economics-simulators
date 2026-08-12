@@ -2,7 +2,7 @@
 
 *[Русская версия](README.md)* · made by **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)**
 
-**▶ [Open the games index](https://ruben-deev.github.io/Foodtech-delivery-game/)**
+**▶ [Open the games index](https://ruben-deev.github.io/economics-simulators/)**
 
 Two browser games about running a business. Each is one turn per period, a dozen levers and
 a clear reason you can go bust. They exist first of all as **teaching tools**: the point is
@@ -15,13 +15,15 @@ between sessions and shared by all three games.
 
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
-| [🛵 **NOVOEDA**](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
-| [🎬 **KINOPOTOK**](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
+| [🛵 **NOVOEDA**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
+| [🎬 **KINOPOTOK**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
+| [🎟️ **BILETON**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
 
-The games are built the same way and deliberately model **opposite** kinds of economics:
+The games are built the same way but deliberately model **different** kinds of economics:
 in delivery, revenue per customer grows with their activity; in subscription it is fixed
-while cost grows. The same words — "engagement", "retention", "growth" — mean different
-things in the two. That is clearest if you play both.
+while cost grows; in ticketing billions pass through you and yours are the percentages.
+The same words — "engagement", "retention", "growth" — mean different things in each.
+That is clearest if you play more than one.
 
 > If the links do not open, GitHub Pages has not been enabled in the repository yet:
 > Settings → Pages → Source: **GitHub Actions**. After that it is enough to re-run the
@@ -29,12 +31,12 @@ things in the two. That is clearest if you play both.
 
 ## Quick start
 
-The easiest route is [opening it in a browser](https://ruben-deev.github.io/Foodtech-delivery-game/).
+The easiest route is [opening it in a browser](https://ruben-deev.github.io/economics-simulators/).
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.9.2.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.10.1.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
