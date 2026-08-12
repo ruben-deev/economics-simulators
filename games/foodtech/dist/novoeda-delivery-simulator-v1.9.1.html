@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru" class="no-js">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.9.0" />
+  <meta name="app-version" content="1.9.1" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -890,8 +890,10 @@ function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
   } catch { /* приватный режим */ }
-  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
-  return 'ru';
+  // Английский по умолчанию: ссылки на игры расходятся шире русскоязычной
+  // аудитории, а кнопка RU на видном месте. Выбор запоминается и действует
+  // на витрину и все игры сразу — ключ в localStorage общий.
+  return 'en';
 }
 
 // Двуязычное поле модели: { ru: '…', en: '…' }
@@ -1362,6 +1364,7 @@ score = valuation × your stake`,
   gradeSolid: { ru: 'Крепкий бизнес', en: 'A solid business' },
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромно', en: 'Modest' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом свыше 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market above ₽10B — surviving is easy, winning is not.' },
   gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm} ₽, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, ₽{cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
@@ -5436,6 +5439,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
+    <p class="funding-note">${t('gradeScale', { a: money(3e9), b: money(1e9), c: money(3e8) })}</p>
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),

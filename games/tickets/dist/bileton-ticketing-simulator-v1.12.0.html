@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru" class="no-js">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.11.0" />
+  <meta name="app-version" content="1.12.0" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -887,8 +887,10 @@ function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
   } catch { /* приватный режим */ }
-  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
-  return 'ru';
+  // Английский по умолчанию: ссылки на игры расходятся шире русскоязычной
+  // аудитории, а кнопка RU на видном месте. Выбор запоминается и действует
+  // на витрину и все игры сразу — ключ в localStorage общий.
+  return 'en';
 }
 
 // Двуязычное поле модели: { ru: '…', en: '…' }
@@ -965,6 +967,7 @@ const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around ₽10B — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -1810,7 +1813,11 @@ const CONFIG = {
 
   // --- Постоянные расходы ---
   // Офис и администрация. Разработка и серверы — отдельные статьи ниже.
-  hqMonthly: 13_000_000,
+  // Поднято с 13 млн: при символической постоянке пассивная партия
+  // «ползунки в серединку, раундов не берём» доживала до конца на стартовой
+  // кассе. Офис, юристы и бухгалтерия оператора с миллиардным оборотом
+  // стоят дороже.
+  hqMonthly: 22_000_000,
   // Содержание построенного: платформа, приложение и алгоритмы требуют
   // поддержки каждый месяц, сколько бы времени ни прошло с их запуска.
   techUpkeepRate: 0.0125,
@@ -6406,6 +6413,7 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
+    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
     ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>

@@ -130,8 +130,8 @@ The task: show that a strategy built for one quarter's goal does not carry to th
    themselves); missing two or three caps marketing for a quarter ahead — which breaks
    exactly the move the team has been using so far.
 
-The bars were set by measuring 120 random strategies: 33% clear the first quarter, 27%
-the second, 29% the fourth. No random strategy clears the third, while a well-tuned one
+The bars were set by measuring 120 random strategies: 30% clear the first quarter, 21%
+the second, 23% the fourth. Almost no random strategy clears the third, while a well-tuned one
 closes all thirteen weeks in profit — that goal separates a working business from an
 almost-working one.
 
@@ -218,5 +218,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.9.0.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.9.1.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.

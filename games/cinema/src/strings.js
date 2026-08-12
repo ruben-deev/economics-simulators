@@ -582,6 +582,8 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый рынок: премьеры конкурента, события и сезоны совпадут у всех, кто его введёт. Оставьте пустым, чтобы получить случайный.', en: 'The same code means the same market: rival premieres, events and seasons will match for everyone who enters it. Leave empty for a random one.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
+  alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Valuation pays for growth: a shrinking service is cheap even in the black.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с сотнями миллиардов — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market in the hundreds of billions — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },

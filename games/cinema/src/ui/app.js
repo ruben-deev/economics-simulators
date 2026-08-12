@@ -1175,6 +1175,23 @@ function buildAlerts(r) {
   const burn = r.fixed + r.oneOff - r.contribution;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Прибыль при тающей базе — дожинание, а не бизнес. Ровно это состояние
+  // игрок принимает за успех: «в плюсе — значит всё правильно». Оценка
+  // компании платит за рост, и сжимающийся сервис стоит дёшево даже
+  // с хорошей маржой — об этом надо говорить в момент, когда это происходит,
+  // а не на финальном экране.
+  const h = state.history;
+  if (h.length >= 4) {
+    const last3 = h.slice(-3);
+    const profitable3 = last3.every((x) => x.profit - x.oneOff > 0);
+    const shrinking = r.subs < h[h.length - 4].subs * 0.97;
+    if (profitable3 && shrinking) {
+      alerts.push(['warn', t('alertHarvest', {
+        lost: compact(h[h.length - 4].subs - r.subs),
+      }), 'panel:rival']);
+    }
+  }
+
   if (r.depth < 0.35) {
     alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) }), 'lever:licensing']);
   }
@@ -1807,6 +1824,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
+    <p class="funding-note">${t('gradeScale', { a: money(8e10), b: money(3e10), c: money(1e10) })}</p>
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}

@@ -41,8 +41,10 @@ export function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
   } catch { /* приватный режим */ }
-  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
-  return 'ru';
+  // Английский по умолчанию: ссылки на игры расходятся шире русскоязычной
+  // аудитории, а кнопка RU на видном месте. Выбор запоминается и действует
+  // на витрину и все игры сразу — ключ в localStorage общий.
+  return 'en';
 }
 
 // Двуязычное поле модели: { ru: '…', en: '…' }

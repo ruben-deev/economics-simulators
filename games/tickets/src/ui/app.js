@@ -1423,6 +1423,7 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
+    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
     ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>

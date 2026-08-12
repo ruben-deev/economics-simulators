@@ -11,7 +11,7 @@ interface carries a per-turn breakdown by factor, a unit economics table, a P&L 
 an explanation of the formulas.
 
 The interface is bilingual — the **RU / EN** button in the header. The choice is remembered
-between sessions and shared by both games.
+between sessions and shared by all three games.
 
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
@@ -33,15 +33,15 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.0.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.8.0.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.9.1.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.9.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
 
 ```
 npm start          # http://localhost:8080 — the games index
-npm test           # model and translation tests for both games
+npm test           # model and translation tests for all three games
 npm run build      # rebuild the single-file builds in games/*/dist/
 ```
 
@@ -292,7 +292,7 @@ lifts conversion at the cost of trust.
 
 ## Algorithms: second-order optimisation
 
-The mechanic is shared by both games. A slider sets a **number** ("delivery fee = ₽149").
+The mechanic is shared by all three games. A slider sets a **number** ("delivery fee = ₽149").
 An algorithm sets a **rule** ("price = f(utilisation)"), and a rule can differ across
 circumstances — which is why it can improve both ends of a trade-off that no single number
 can resolve.
@@ -330,7 +330,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v1.8.0.html
+  dist/kinopotok-streaming-simulator-v1.9.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```
@@ -352,7 +352,7 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — 180 checks across the two games. The tests
+After editing it is worth running `npm test` — over 270 checks across the three games. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 
@@ -368,7 +368,7 @@ Detailed lists of assumptions are at the end of each `docs/<game>/economics.md`.
 
 ## Author
 
-**[Ruben Deev](https://www.linkedin.com/in/ruben-deev)** — concept, economic models, interface and copy for both games.
+**[Ruben Deev](https://www.linkedin.com/in/ruben-deev)** — concept, economic models, interface and copy for all three games.
 
 The project is meant to be used in class: hand the games out to students, change the
 numbers to fit your course, work through the formulas on the board. A credit link is

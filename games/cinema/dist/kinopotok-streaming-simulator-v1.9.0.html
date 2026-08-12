@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru" class="no-js">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.8.0" />
+  <meta name="app-version" content="1.9.0" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -890,8 +890,10 @@ function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
   } catch { /* приватный режим */ }
-  if (typeof navigator !== 'undefined' && !/^ru\b/i.test(navigator.language ?? '')) return 'en';
-  return 'ru';
+  // Английский по умолчанию: ссылки на игры расходятся шире русскоязычной
+  // аудитории, а кнопка RU на видном месте. Выбор запоминается и действует
+  // на витрину и все игры сразу — ключ в localStorage общий.
+  return 'en';
 }
 
 // Двуязычное поле модели: { ru: '…', en: '…' }
@@ -1499,6 +1501,8 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый рынок: премьеры конкурента, события и сезоны совпадут у всех, кто его введёт. Оставьте пустым, чтобы получить случайный.', en: 'The same code means the same market: rival premieres, events and seasons will match for everyone who enters it. Leave empty for a random one.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
+  alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Valuation pays for growth: a shrinking service is cheap even in the black.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с сотнями миллиардов — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market in the hundreds of billions — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
@@ -1904,7 +1908,11 @@ const CONFIG = {
   // Студия, редакция и поддержка. Разработка вынесена отдельной статьёй:
   // построенный плеер и рекомендательный стек нужно содержать, а раньше
   // накопленный уровень технологий не стоил ничего.
-  hqMonthly: 20_000_000,      // студия, редакция, администрация
+  // Студия, редакция, администрация. Поднято с 20 млн: при символической
+  // постоянке пассивная партия «ползунки в серединку, раундов не берём»
+  // сама выходила в плюс на 12-24 месяцах и доживала до конца — сервис
+  // с миллионной базой не может стоить в содержании как ларёк.
+  hqMonthly: 60_000_000,
   techUpkeepRate: 0.0135,     // содержание накопленных технологий, доля в месяц
   techSaturation: 900_000_000,
 
@@ -6677,6 +6685,23 @@ function buildAlerts(r) {
   const burn = r.fixed + r.oneOff - r.contribution;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Прибыль при тающей базе — дожинание, а не бизнес. Ровно это состояние
+  // игрок принимает за успех: «в плюсе — значит всё правильно». Оценка
+  // компании платит за рост, и сжимающийся сервис стоит дёшево даже
+  // с хорошей маржой — об этом надо говорить в момент, когда это происходит,
+  // а не на финальном экране.
+  const h = state.history;
+  if (h.length >= 4) {
+    const last3 = h.slice(-3);
+    const profitable3 = last3.every((x) => x.profit - x.oneOff > 0);
+    const shrinking = r.subs < h[h.length - 4].subs * 0.97;
+    if (profitable3 && shrinking) {
+      alerts.push(['warn', t('alertHarvest', {
+        lost: compact(h[h.length - 4].subs - r.subs),
+      }), 'panel:rival']);
+    }
+  }
+
   if (r.depth < 0.35) {
     alerts.push(['bad', t('alertNoCatalog', { depth: r.depth.toFixed(2) }), 'lever:licensing']);
   }
@@ -7309,6 +7334,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
+    <p class="funding-note">${t('gradeScale', { a: money(8e10), b: money(3e10), c: money(1e10) })}</p>
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}

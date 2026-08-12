@@ -1083,29 +1083,34 @@ test('релиз в высокий сезон слышнее, чем в низк
 
 test('смешанный слейт бьёт однообразный', () => {
   // Сравниваем ровно одно: чередование масштабов. Всё остальное — цены,
-  // бюджеты, слоты, момент выхода — одинаковое. Раньше в этой проверке
-  // «смешанный» вариант заодно придерживал готовое до высокого сезона,
-  // и с какого-то момента она мерила не смесь масштабов, а придержание.
+  // бюджеты, слоты, момент выхода — одинаковое. Две ловушки, на которых эта
+  // проверка уже обжигалась: «смешанный» вариант не должен заодно придерживать
+  // готовое (иначе меряется придержание), а стратегия обязана быть
+  // платёжеспособной — на краю выживания итог решают обрывы раундов
+  // и разводнение, а не состав слейта.
   const play = (mixScales) => ['u1', 'u2', 'u3'].reduce((sum, seed) => {
     let state = createInitialState(seed);
-    let raises = 0;
+    let last = null;
     let n = 0;
     for (let i = 0; i < CONFIG.monthsTotal && !state.over; i++) {
-      if (state.cash < 800_000_000 && raises < CONFIG.fundingOptions.length) {
-        state = raise(state, CONFIG.fundingOptions[raises]).state; raises += 1;
+      const burn = Math.max(30e6, -(last?.profit ?? 0));
+      if (state.month >= CONFIG.minMonthForFunding && state.cash < burn * 4) {
+        state = raise(state, state.cash < burn * 2 ? 1_200_000_000 : 400_000_000).state;
       }
       const producing = state.slate.filter((p) => p.status === 'production').length;
       const scale = mixScales ? (n++ % 2 ? 'pilot' : 'season') : 'season';
-      state = step(state, {
+      const o = step(state, {
         decisions: decide({
-          priceNew: 449, priceAds: 166, adLoad: 6, annualDiscount: 0.1,
-          licensing: 440_000_000, brandMarketing: 220_000_000,
-          tech: 20_000_000, rnd: 20_000_000, studioSlots: 3,
+          priceNew: 799, priceAds: 120, adLoad: 2, annualDiscount: 0.15,
+          licensing: 375_000_000, brandMarketing: 60_000_000, trialDays: 21,
+          tech: 20_000_000, rnd: 10_000_000, studioSlots: 2,
         }),
-        commission: producing < 3 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
+        commission: producing < 2 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
         release: state.slate.filter((p) => p.status === 'ready')
-          .map((p) => ({ id: p.id, campaign: 250_000_000 })),
-      }).state;
+          .map((p) => ({ id: p.id, campaign: 25_000_000 })),
+      });
+      state = o.state;
+      last = o.report;
     }
     return sum + state.history[state.history.length - 1].equityValue;
   }, 0) / 3;

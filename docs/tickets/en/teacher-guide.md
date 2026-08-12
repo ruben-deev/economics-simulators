@@ -145,8 +145,8 @@ the next.
    above ₽700M. Pause and ask them to say out loud what has to change.
 3. Year three — 65% market share with 420 organisers: different again.
 4. Debrief: the take rate is a decision for the year, not a setting. The bars were
-   set by measuring the distribution, not by guessing: year one is cleared by 33%
-   of strategies, year two by 9%, year three by 22%. The measurement runs 120 random
+   set by measuring the distribution, not by guessing: year one is cleared by 30%
+   of strategies, year two by 6%, year three by 23%. The measurement runs 120 random
    strategies and assumes a player who raises rounds rather than dying halfway
    through: without rounds the bars would read about half as high.
 
@@ -169,7 +169,7 @@ the next.
 
 ## Technical notes for the teacher
 
-* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.11.0.html`.
+* The game is a single HTML file, `dist/bileton-ticketing-simulator-v1.12.0.html`.
   No internet, no install, runs from a USB stick.
 * The game saves in the browser. To have every team play the same world, hand out
   the same file and dictate a shared game code — it is entered on the welcome

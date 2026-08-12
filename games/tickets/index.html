@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" class="no-js">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -116,12 +116,23 @@
     </div>
   </div>
   <script>
-    // Модуль не загрузился — показываем объяснение вместо пустой страницы
-    setTimeout(function () {
-      if (!document.querySelector('#kpis .kpi') && !document.querySelector('.crash:not([hidden])')) {
-        document.getElementById('file-hint').hidden = false;
-      }
-    }, 600);
+    // Модуль не загрузился — показываем объяснение вместо пустой страницы.
+    // По сети модули могут ехать дольше секунды, поэтому подсказка не только
+    // появляется, но и прячется обратно, если игра всё-таки загрузилась:
+    // раньше она успевала выскочить на медленном соединении и оставалась
+    // висеть под работающей игрой.
+    (function () {
+      var hint = document.getElementById('file-hint');
+      var gameUp = function () {
+        return document.querySelector('#kpis .kpi') || document.querySelector('.crash:not([hidden])');
+      };
+      var delay = location.protocol === 'file:' ? 600 : 4000;
+      setTimeout(function tick() {
+        if (gameUp()) { hint.hidden = true; return; }
+        hint.hidden = false;
+        setTimeout(tick, 1000);
+      }, delay);
+    })();
   </script>
   <!-- only-modular:end -->
 </body>

@@ -51,6 +51,7 @@ export const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around ₽10B — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
