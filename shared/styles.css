@@ -574,6 +574,50 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .col-center > * { min-width: 0; }
 }
 
+/* --------------------- Пальцы, а не курсор ------------------------------
+   На телефоне попасть в ползунок высотой 16 px и во вкладку высотой 21 px
+   нечем: общепринятый минимум для пальца — 44 px. Увеличивается только
+   область нажатия, внешний вид остаётся прежним — иначе интерфейс, собранный
+   под плотную сетку показателей, расползётся. Приём один и тот же:
+   вертикальные отступы плюс подложка-псевдоэлемент.
+   ------------------------------------------------------------------------ */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .lever input[type="range"],
+  .algo-param input[type="range"],
+  .release-row input[type=range] {
+    /* Дорожка остаётся тонкой, а хвататься можно за всю высоту */
+    height: 40px;
+    padding: 0;
+    background: transparent;
+  }
+  .tab, .chart-tabs button {
+    position: relative;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tab::after, .chart-tabs button::after, .lever-why::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+  }
+  .lever-why {
+    position: relative;
+    display: inline-block;
+    padding: 9px 0;
+  }
+  /* Плитки выбора (жанр, масштаб, сегмент) и мелкие кнопки в таблицах */
+  .pick button, .btn.small {
+    position: relative;
+    min-height: 32px;
+  }
+  .pick button::after, .btn.small::after {
+    content: "";
+    position: absolute;
+    inset: -7px -4px;
+  }
+}
+
 @media (max-width: 700px) {
   /* Кнопки уходят вниз отдельной полосой, поэтому шапка складывается в две
      строки: название и плитка показателей. Без этого показатели вытягивались
