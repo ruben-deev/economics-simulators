@@ -76,7 +76,7 @@
         <ul id="food-list"></ul>
         <div class="card-actions">
           <a class="primary" href="games/foodtech/index.html" id="food-play"></a>
-          <a href="games/foodtech/dist/novoeda-delivery-simulator-v0.3.2.html" id="food-file"></a>
+          <a href="games/foodtech/dist/novoeda-delivery-simulator-v0.4.0.html" id="food-file"></a>
         </div>
       </section>
 
@@ -88,7 +88,19 @@
         <ul id="cinema-list"></ul>
         <div class="card-actions">
           <a class="primary" href="games/cinema/index.html" id="cinema-play"></a>
-          <a href="games/cinema/dist/kinopotok-streaming-simulator-v0.3.2.html" id="cinema-file"></a>
+          <a href="games/cinema/dist/kinopotok-streaming-simulator-v0.4.0.html" id="cinema-file"></a>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-icon">🎟️</div>
+        <h2 id="tickets-title"></h2>
+        <p class="sub" id="tickets-sub"></p>
+        <p id="tickets-text"></p>
+        <ul id="tickets-list"></ul>
+        <div class="card-actions">
+          <a class="primary" href="games/tickets/index.html" id="tickets-play"></a>
+          <a href="games/tickets/dist/bileton-ticketing-simulator-v0.4.0.html" id="tickets-file"></a>
         </div>
       </section>
     </div>
@@ -130,11 +142,21 @@
         ru: 'Аренда каталога против собственной библиотеки|Часы просмотра как расход, а не как успех|Чужие премьеры и контрпрограммирование|Рост базы против сохранения доли',
         en: 'Renting a catalogue versus owning a library|Watch hours as a cost, not a success|Rival premieres and counter-programming|Growing the base versus keeping your stake',
       },
+      ticketsTitle: { ru: '🎟️ БИЛЕТОН — билетный сервис', en: '🎟️ BILETON — ticketing marketplace' },
+      ticketsSub: { ru: '36 месяцев · двусторонний рынок · B2B и B2C', en: '36 months · two-sided market · B2B and B2C' },
+      ticketsText: {
+        ru: 'Вы управляете билетным оператором. С одной стороны организаторы дают афишу, с другой зрители покупают билеты. Ни одна сторона не приходит первой сама по себе.',
+        en: 'You run a ticketing operator. Organisers provide the listings on one side, buyers buy tickets on the other. Neither side arrives first on its own.',
+      },
+      ticketsList: {
+        ru: 'Одна выручка, две стороны: сбор с покупателя против комиссии с организатора|Конфликт каналов: своя касса удерживает клиента и уводит продажи|Оборот и выручка — разные числа, и эквайринг вычитается из второго|Доверие: перекупщики наполняют оборот и опустошают репутацию',
+        en: 'One revenue, two sides: buyer fee versus organiser commission|Channel conflict: their own checkout keeps the client and takes the sales|Turnover and revenue are different numbers, and acquiring comes out of the second|Trust: resellers fill the turnover and empty the reputation',
+      },
       play: { ru: 'Играть', en: 'Play' },
       single: { ru: 'Скачать одним файлом', en: 'Download as one file' },
       foot: {
-        ru: 'Игры работают в браузере без установки и без интернета. Версия «одним файлом» — это один HTML, который можно раздать студентам или открыть с флешки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a>.<br>Автор — <b>zero900</b>.',
-        en: 'The games run in a browser with no install and no internet. The single-file version is one HTML you can hand out or open from a USB stick. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.md">delivery</a> · <a href="docs/cinema/en/economics.md">streaming</a>.<br>Made by <b>zero900</b>.',
+        ru: 'Игры работают в браузере без установки и без интернета. Версия «одним файлом» — это один HTML, который можно раздать студентам или открыть с флешки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a> · <a href="docs/tickets/economics.md">билеты</a>.<br>Автор — <b>zero900</b>.',
+        en: 'The games run in a browser with no install and no internet. The single-file version is one HTML you can hand out or open from a USB stick. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.md">delivery</a> · <a href="docs/cinema/en/economics.md">streaming</a> · <a href="docs/tickets/en/economics.md">ticketing</a>.<br>Made by <b>zero900</b>.',
       },
       langBtn: { ru: 'EN', en: 'RU' },
     };
@@ -165,6 +187,12 @@
       set('cinema-sub', t('cinemaSub'));
       set('cinema-text', t('cinemaText'));
       list('cinema-list', 'cinemaList');
+      set('tickets-title', t('ticketsTitle'));
+      set('tickets-sub', t('ticketsSub'));
+      set('tickets-text', t('ticketsText'));
+      list('tickets-list', 'ticketsList');
+      set('tickets-play', t('play'));
+      set('tickets-file', t('single'));
       set('cinema-play', t('play'));
       set('cinema-file', t('single'));
 

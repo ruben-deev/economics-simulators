@@ -33,8 +33,8 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.3.2.html) ·
-[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.3.2.html).
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v0.4.0.html) ·
+[streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v0.4.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 Locally:
@@ -48,7 +48,7 @@ npm run build      # rebuild the single-file builds in games/*/dist/
 The built files are already in the repository, so the build step is only needed after edits.
 
 **Releasing a version.** The number lives in one place — `version` in `package.json`. It
-goes into the built file name (`…-simulator-v0.3.2.html`), into the page itself and into
+goes into the built file name (`…-simulator-v0.4.0.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
@@ -244,6 +244,47 @@ viewers choose rather than leave.
 
 ---
 
+# 🎟️ BILETON — ticketing marketplace
+
+You run a ticketing operator. One turn is a month, a game is 36 months, and
+the year starts in September with the opening of the season.
+
+This is a **two-sided market**: organisers provide the listings on one side,
+buyers buy tickets on the other. Neither side arrives first on its own, and
+that is the whole problem. Marketing into empty listings burns entirely; rich
+listings without buyers produce empty halls, which is exactly why organisers
+leave.
+
+**Three decisions the game is built around.**
+
+**One revenue, two sides.** The buyer pays the service fee on top of the
+price; the organiser pays the commission out of theirs. The sum can be
+identical and the consequences are not: the fee is visible at checkout and
+comparable with the rival, the commission is visible in the contract.
+Splitting evenly is the worst option: you subsidise one side — and which one
+depends on your channels.
+
+**Channel conflict.** A checkout on the organiser's own site keeps them from
+leaving and recovers turnover that would otherwise pass you by. But sales
+through it earn several times less, and those tickets **never appear in your
+listings** — so they never build your reach. Hand checkouts to everyone and
+you undercut the very audience organisers come to you for. Measured: the
+optimum is clubs and concerts, but not theatres and not sport.
+
+**Turnover and revenue are different numbers.** Billions pass through the
+service; percentages of it are yours. The 2.2% acquiring fee comes out of
+those percentages, not out of the turnover: a 3% take rate minus acquiring is
+almost nothing.
+
+Plus a live rival with its own stances, shareholder goals for each year,
+crises (resellers, a site that goes down at on-sale, the regulator, a
+cancelled tour) and four second-order algorithms — including the one that
+lifts conversion at the cost of trust.
+
+📘 [Formula write-up](docs/tickets/en/economics.md)
+
+---
+
 ## Algorithms: second-order optimisation
 
 The mechanic is shared by both games. A slider sets a **number** ("delivery fee = ₽149").
@@ -284,7 +325,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v0.3.2.html
+  dist/kinopotok-streaming-simulator-v0.4.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

@@ -557,6 +557,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .col-center { order: 1; }
   .col-left { order: 2; }
   .col-right { order: 3; }
+  /* Без min-width: 0 колонка не может стать уже своего самого широкого
+     содержимого — и широкая таблица растягивает всю страницу вместо того,
+     чтобы прокручиваться внутри панели. */
+  .col-center, .col-left, .col-right { min-width: 0; }
+  .col-center > * { min-width: 0; }
 }
 
 @media (max-width: 700px) {
@@ -595,7 +600,27 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--line);
   }
-  .topbar-actions .btn { padding: 10px 12px; }
-  .topbar-actions #btn-next { flex: 1; }
+  /* Четыре кнопки должны поместиться в ширину телефона: без права ужиматься
+     полоса становится шире экрана, браузер отдаляет страницу целиком, и
+     закреплённая полоса уезжает за нижний край. */
+  .topbar-actions { flex-wrap: wrap; }
+  .topbar-actions .btn { padding: 10px 10px; min-width: 0; flex-shrink: 1; }
+  /* Кнопка хода забирает отдельную строку: вчетвером они в ширину телефона
+     не помещаются, а полоса шире экрана заставляет браузер отдалить страницу
+     целиком — и тогда она же уезжает за нижний край. */
+  .topbar-actions #btn-next { flex: 1 1 100%; order: -1; }
   body { padding-bottom: 72px; }
+
+  /* Широкая таблица прокручивается внутри своей панели, а не растягивает
+     страницу. Горизонтальная прокрутка всего экрана на телефоне ломает не
+     только вёрстку: браузер отдаляет страницу целиком, визуальная область
+     становится выше вёрстки, и закреплённая полоса кнопок уезжает за экран. */
+  /* Панель никогда не шире колонки: лишнее прокручивается внутри неё.
+     max-width обязателен — одного overflow-x мало, потому что ширину
+     колонке задаёт самое широкое содержимое. */
+  .col-center, .col-center > *, .col-center .panel,
+  .col-left, .col-right { max-width: 100%; }
+  .col-center .panel, .col-right, .col-left { overflow-x: auto; }
+  .data { font-size: 11.5px; }
+  .data td, .data th { padding: 4px 6px; }
 }

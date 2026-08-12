@@ -146,7 +146,8 @@ test('версия видна в имени файла, внутри стран�
 
   const docs = ['README.md', 'README.en.md', 'index.html',
     'docs/cinema/teacher-guide.md', 'docs/cinema/en/teacher-guide.md',
-    'docs/foodtech/teacher-guide.md', 'docs/foodtech/en/teacher-guide.md'];
+    'docs/foodtech/teacher-guide.md', 'docs/foodtech/en/teacher-guide.md',
+    'docs/tickets/economics.md', 'docs/tickets/en/economics.md'];
   const stale = [];
   for (const doc of docs) {
     const text = readFileSync(join(root, doc), 'utf8');
