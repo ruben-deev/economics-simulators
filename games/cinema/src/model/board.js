@@ -23,13 +23,22 @@ export const GOAL_TYPES = {
 /**
  * Цель года. Считается от фактического состояния на начало года,
  * поэтому всегда остаётся вызовом и не превращается в формальность.
+ *
+ * Числа выставлены не на глаз, а по замеру: две с лишним сотни разных
+ * стратегий прогнаны на три года, и на каждой границе года посмотрено
+ * распределение. Планка стоит там, где её берёт заметно лучшая половина
+ * и не берёт середина. Раньше было наоборот: первый год проходил кто угодно
+ * (900 тыс. при медиане 3.6 млн), а второй и третий требовали роста базы
+ * в 1.5 и 1.35 раза при том, что медианный рост во второй год — 1.04,
+ * а в третий база вообще сжимается: 0.61. Цели, которые не берёт никто,
+ * учат ровно тому же, что цели, которые берут все, — то есть ничему.
  */
 export function makeGoal(year, state, yourSubs, rivalSubs) {
   if (year === 1) {
     return {
       year,
       type: GOAL_TYPES.subscribers,
-      target: 900_000,
+      target: 3_400_000,
       reward: 0.10,
       penalty: 'dilution',
     };
@@ -38,9 +47,11 @@ export function makeGoal(year, state, yourSubs, rivalSubs) {
     return {
       year,
       type: GOAL_TYPES.profit,
-      // Не разово, а устойчиво: минимум 4 прибыльных месяца из 12
+      // Не разово, а устойчиво: минимум 4 прибыльных месяца из 12.
+      // И при этом не ценой базы: сокращать расходы, теряя подписчиков,
+      // — не то, за что хвалят. Отсюда «хотя бы не сжаться».
       target: 4,
-      subsFloor: Math.round(Math.max(1_800_000, yourSubs * 1.5)),
+      subsFloor: Math.round(Math.max(2_000_000, yourSubs * 1.05)),
       reward: 0.12,
       penalty: 'contentCap',
     };
@@ -48,9 +59,12 @@ export function makeGoal(year, state, yourSubs, rivalSubs) {
   const total = yourSubs + rivalSubs;
   return {
     year,
+    // Третий год — год обороны: права истекают, партнёрские контракты
+    // заканчиваются, конкурент вырос. Удержать базу здесь уже достижение,
+    // поэтому нижняя граница ниже единицы, а не выше.
     type: GOAL_TYPES.share,
-    target: 0.5,
-    subsFloor: Math.round(Math.max(3_000_000, yourSubs * 1.35)),
+    target: 0.35,
+    subsFloor: Math.round(Math.max(2_500_000, yourSubs * 0.75)),
     reward: 0.18,
     penalty: 'valuation',
     startShare: total > 0 ? yourSubs / total : 0.5,

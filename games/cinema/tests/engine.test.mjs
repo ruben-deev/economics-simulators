@@ -1512,3 +1512,55 @@ test('содержание технологий растёт от вложенн
   assert.ok(after.techUpkeep > 0, 'построенное продолжает стоить и без новых вложений');
   assert.ok(after.fixed > CONFIG.hqMonthly, 'содержание попадает в постоянные расходы');
 });
+
+// ---------------------------------------------------------------------------
+// Пробный период должен чего-то стоить.
+//
+// Раньше он только повышал конверсию — и лучшим ответом всегда были предельные
+// 30 дней, то есть ползунка фактически не было. Замер за три года: 0 дней —
+// 4.7 млрд у основателя, 30 дней — 83 млрд, монотонно вверх. Теперь подаренные
+// дни считаются деньгами, а длинный триал приводит тех, кто уйдёт при первом
+// списании. Обе половины проверяются отдельно.
+// ---------------------------------------------------------------------------
+
+test('подаренные дни вычитаются из выручки', () => {
+  const short = run(10, decide({ trialDays: 0, brandMarketing: 150_000_000 }), 'trial');
+  const long = run(10, decide({ trialDays: 30, brandMarketing: 150_000_000 }), 'trial');
+  // Длинный триал приводит больше людей — и всё равно приносит меньше денег
+  // с человека в тот месяц, когда они пришли
+  assert.ok(long.last.newSubs > short.last.newSubs, 'длинный триал должен приводить больше людей');
+  const shortPerSub = short.last.subscriptionRevenue / Math.max(1, short.last.subs);
+  const longPerSub = long.last.subscriptionRevenue / Math.max(1, long.last.subs);
+  assert.ok(longPerSub < shortPerSub,
+    `выручка на подписчика: ${longPerSub.toFixed(0)} против ${shortPerSub.toFixed(0)}`);
+});
+
+test('длинный триал приводит тех, кто уйдёт при первом списании', () => {
+  const usual = run(14, decide({ trialDays: CONFIG.refTrialDays, brandMarketing: 150_000_000 }), 'greed');
+  const long = run(14, decide({ trialDays: 30, brandMarketing: 150_000_000 }), 'greed');
+  assert.ok(long.last.churnRate > usual.last.churnRate,
+    `отток при триале 30 дней ${(long.last.churnRate * 100).toFixed(2)}% против ${(usual.last.churnRate * 100).toFixed(2)}%`);
+  // Привычные две недели — точка отсчёта: ниже неё надбавки нет вовсе, и
+  // разница между 3 и 14 днями обязана быть на порядок меньше, чем между
+  // 14 и 30. Точного равенства тут не будет: состав базы всё равно другой.
+  const shorter = run(14, decide({ trialDays: 3, brandMarketing: 150_000_000 }), 'greed');
+  const below = Math.abs(shorter.last.churnRate - usual.last.churnRate);
+  const above = long.last.churnRate - usual.last.churnRate;
+  assert.ok(below < above / 5,
+    `ниже точки отсчёта разброс ${(below * 100).toFixed(3)}%, выше — ${(above * 100).toFixed(3)}%`);
+});
+
+test('цели совета берутся не всеми и не никем', () => {
+  // Планка выставлена по замеру распределения. Проверяем то, что от неё
+  // требуется по смыслу: она не 900 тысяч при медиане в миллионы и не просит
+  // роста базы там, где база по устройству модели сжимается.
+  const y1 = makeGoal(1, null, 0, 0);
+  assert.ok(y1.target >= 2_000_000, 'первый год не должен проходить сам собой');
+  const y2 = makeGoal(2, null, 4_000_000, 3_000_000);
+  assert.ok(y2.subsFloor <= 4_000_000 * 1.1,
+    'второй год не должен требовать роста, недостижимого для девяти из десяти');
+  const y3 = makeGoal(3, null, 4_000_000, 3_000_000);
+  assert.ok(y3.subsFloor < 4_000_000,
+    'третий год — год обороны: требовать роста базы в нём нельзя');
+  assert.ok(y3.target < 0.5, 'доля рынка в 50% лежит выше девяностого процентиля');
+});

@@ -269,9 +269,19 @@ export function step(prevState, input = {}) {
 
   for (const def of activeDefs) {
     const ds = state.districts[def.id];
-    const aov = aovOf(def);
-    const customerPrice = aov + decisions.deliveryFee - effPromo;
-    const refPrice = aov + CONFIG.refDeliveryFee;
+    // Комиссия выше привычной не остаётся между нами и рестораном: он
+    // поднимает цену блюда на нашей витрине, и чек растёт у клиента.
+    const markup = 1 + clamp(commissionPerceived - CONFIG.restaurantRefCommission, 0, 0.25)
+      * CONFIG.commissionPassThrough;
+    const aov = aovOf(def) * markup;
+    // Плата за доставку весит больше, чем те же деньги в цене блюда. Она стоит
+    // в чеке отдельной строкой, и за неё как будто не дают еды: сто рублей,
+    // размазанные по цене пиццы, проходят незаметно, а те же сто рублей в
+    // строке «доставка» останавливают заказ. Скидка считается так же — она
+    // видна ровно в том же месте и с тем же весом.
+    const visible = (decisions.deliveryFee - effPromo) * CONFIG.deliveryFeeSalience;
+    const customerPrice = aov + visible;
+    const refPrice = aovOf(def) + CONFIG.refDeliveryFee * CONFIG.deliveryFeeSalience;
     const priceFactor = clamp(Math.pow(refPrice / Math.max(50, customerPrice), def.elasticity), 0.2, 2.5);
 
     const selRaw = ds.restaurants / (ds.restaurants + 50);
@@ -519,15 +529,25 @@ export function step(prevState, input = {}) {
     ds.satisfaction = satisfaction;
     weightedSat += satisfaction * def.potential;
 
+    // Насколько мы дороже рынка. priceFactor = 1 — мы стоим как конкурент,
+    // и тогда эта величина ровно ноль: наценки нет, и ничего не происходит.
+    // Дальше она растёт вместе с чеком — и с ней растёт готовность уйти.
+    // Без этого поднимать цену было бы бесплатно: частота заказов падала
+    // плавно, а маржа росла быстрее, и упор ползунка оказывался лучшим ходом.
+    const pricePremium = clamp(1 / Math.max(0.25, p.priceFactor) - 1, 0, 1.5);
+    const rivalPull = def.competitor * pricePremium;
+
     const churn = clamp(
-      CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012,
+      CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012
+      + rivalPull * CONFIG.rivalPricePull,
       0, 0.6
     );
     const leaving = ds.customers * churn;
 
     const untapped = Math.max(0, reachableOf(def) - ds.customers);
     const trial = untapped * ds.awareness * CONFIG.trialRate
-      * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2);
+      * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2)
+      / (1 + rivalPull * CONFIG.rivalTrialPull);
     const wom = ds.customers * 0.02 * Math.max(0, satisfaction - 1);
 
     ds.customers = Math.max(0, ds.customers - leaving + trial + wom);
@@ -554,7 +574,12 @@ export function step(prevState, input = {}) {
     ? perDistrict.reduce((s, p) => s + p.newTime * p.served, 0) / orders
     : (perDistrict.length ? perDistrict.reduce((s, p) => s + p.newTime, 0) / perDistrict.length : 0);
 
-  const cityMarketOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  // Категория растёт вместе с нами: если раздать скидки, заказывать начинают
+  // чаще, чем «обычно», и город съедает больше доставки, чем съедал раньше.
+  // Но весь рынок нашим не станет — часть жителей прочно сидит у конкурента.
+  // Доля выше 100% — это ошибка счёта, а не достижение, и показывать её нельзя.
+  const baseCityOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  const cityMarketOrders = Math.max(baseCityOrders, orders / CONFIG.maxMarketShare);
   const marketShare = orders / cityMarketOrders;
 
   const cac = newCustomers > 0 ? (decisions.marketing) / newCustomers : 0;
@@ -754,7 +779,11 @@ export function valuation(state) {
   const tail = h.slice(-4).reduce((s, r) => s + r.orders, 0);
   const prev = h.slice(-8, -4).reduce((s, r) => s + r.orders, 0);
   const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.5 : 1);
-  const growthScore = clamp(growth - 1, 0, 1);
+  // Сжатие тоже считается. Раньше нижняя граница стояла на нуле: компанию,
+  // теряющую клиентов каждую неделю, оценивали как ровно стоящую, и выходило,
+  // что задрать цену и растерять половину рынка ничего не стоит. За падающий
+  // бизнес платят меньший множитель — это и есть цена жадности.
+  const growthScore = clamp(growth - 1, -0.5, 1);
 
   const margin = last.netRevenue > 0 ? last.profit / last.netRevenue : -0.5;
   const marginScore = clamp(margin, -0.4, 0.25) / 0.25;

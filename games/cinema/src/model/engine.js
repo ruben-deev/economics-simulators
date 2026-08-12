@@ -619,6 +619,7 @@ export function step(prevState, input = {}) {
     const categoryTrials = untapped * categoryAwareness * CONFIG.trialRate * categoryPull
       * rival.acquisitionMult * mods.demandMult * (crisisMods.demandMult ?? 1);
 
+    const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
     const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
     const converted = trials * CONFIG.trialConversion * trialFactor;
@@ -652,6 +653,16 @@ export function step(prevState, input = {}) {
       0.005, 0.5);
     const savedShare = winbackPower * 0.45;
     churnRate = churnRate * (1 - savedShare);
+
+    // Длинный пробный период приводит не только тех, кто распробовал, но и
+    // тех, кто пришёл ровно за бесплатным месяцем. Уходят они не сразу, а в
+    // момент первого списания — то есть попадают в отток следующего месяца,
+    // уже посчитавшись в приросте этого. Отсюда знакомая картина: график
+    // подписчиков красиво растёт, а через месяц осыпается.
+    // При привычных семи днях надбавки нет: она считается от отклонения.
+    const trialGreed = clamp((decisions.trialDays - CONFIG.refTrialDays) / 23, 0, 1);
+    const freshShare = subsBefore > 0 ? clamp(prevConverted / subsBefore, 0, 1) : 0;
+    churnRate = clamp(churnRate + trialGreed * freshShare * CONFIG.trialChurnAdd, 0.005, 0.6);
 
     // Годовой подписчик физически не может уйти: он уже заплатил за год.
     // В этом и ценность годового тарифа — не в скидке, а в том, что эти
@@ -709,6 +720,10 @@ export function step(prevState, input = {}) {
     const survivorAdShare = survivorAdShareGuess;
     seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
     seg.premium = Math.max(0, lockedIn + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+
+    // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
+    // отвалиться на первом списании, если триал был длинным.
+    seg.lastConverted = converted;
 
     newSubs += converted;
     lostSubs += leaving;
@@ -852,7 +867,19 @@ export function step(prevState, input = {}) {
     subscriptionRevenue += monthlyPremium * p.pricing.lockedPrice + p.seg.ads * decisions.priceAds;
   }
   subscriptionRevenue += partnerRev;
+
+  // Подаренные месяцы. Пробный период до сих пор только повышал конверсию и
+  // ничего не стоил — поэтому лучшим ответом всегда были максимальные 30 дней,
+  // то есть ползунка фактически не было. На деле пришедший в этом месяце
+  // человек первые trialDays дней смотрит бесплатно и платит только за
+  // остаток, а тот, кто попробовал и не остался, потребил трафик и не принёс
+  // ничего. Триал в 7 дней — привычная норма, и на ней это почти незаметно.
   const listRevenue = premiumSubs * decisions.priceNew + adSubs * decisions.priceAds;
+  const retailNow = premiumSubs + adSubs;
+  const blendedPrice = retailNow > 0 ? listRevenue / retailNow : decisions.priceNew;
+  const trialShare = clamp(decisions.trialDays / 30, 0, 1);
+  const trialGiveaway = newSubs * trialShare * blendedPrice;
+  subscriptionRevenue = Math.max(0, subscriptionRevenue - trialGiveaway);
   // Адаптивная реклама даёт больше показов при том же среднем раздражении
   const adYield = 1 + 0.25 * adSpread * quality;
   const impressions = adHours * decisions.adLoad * 2 * adYield;   // ролик — 30 секунд

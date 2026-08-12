@@ -213,10 +213,10 @@ The single most valuable scenario in the course if you only have time for one.
 Task: play 24 turns, meeting the board's goals.
 
 Running the session:
-1. Year one has one goal: reach 900K subscribers. Almost every team pours money into
+1. Year one has one goal: reach 3.4M subscribers. Almost every team pours money into
    content and marketing and meets it while going deeply into the red.
 2. In the first month of year two the board announces a new goal: **four profitable
-   months out of twelve and a base one and a half times larger**. Pause and ask the
+   months out of twelve and a base no smaller than it was**. Pause and ask the
    teams to say out loud what they will have to change.
 3. It usually turns out that the year-one strategy directly contradicts the year-two
    goal. They cannot cut content — the base falls; they cannot not cut it — there will
@@ -317,7 +317,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.3.0.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinopotok-streaming-simulator-v1.4.0.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

@@ -549,9 +549,17 @@ directions.
 
 | Year | Goal | What it tests |
 |---|---|---|
-| 1 | reach 900K subscribers | can you grow at all |
-| 2 | 4 profitable months of 12 **and** base ×1.5 | can you grow and earn at the same time |
-| 3 | market share ≥ 50% **and** base ×1.35 | have you won the duopoly |
+| 1 | reach 3.4M subscribers | can you grow at all |
+| 2 | 4 profitable months of 12 **and** base no lower than ×1.05 | can you grow and earn at the same time |
+| 3 | market share ≥ 35% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
+
+These numbers were measured, not guessed: over two hundred different strategies
+were run across three years, and each bar sits where the clearly better half
+clears it and the middle does not. Before, year one was passed by anyone (900K
+against a median of 3.6M) while years two and three were passed by nobody: they
+asked for base growth of 1.5× and 1.35× when the median second-year growth is
+1.04 and in the third year the base shrinks to 0.61. Year three is a defensive
+year: rights expire, partner contracts end, the rival has grown.
 
 The goal is announced in the first month of the year and is on screen every turn with
 its progress — this is planning, not a lottery.
@@ -746,3 +754,36 @@ Both lines used to hide inside "office and administration" and grew with neither
 the product nor the load. The base fixed line was reduced by exactly what these
 two add under the reference strategy, so the balance did not shift — but the
 behaviour did: costs now grow together with the business.
+
+---
+
+## The price of a free month
+
+The free trial used to lift conversion and cost nothing — so the best answer was
+always the maximum 30 days, which means the slider effectively did not exist. Two
+things were missing from the model, and both are obvious if you look at the cash
+rather than at the subscriber chart.
+
+**Given-away days are an invoice never sent.** Someone who arrives this month
+watches free for the first `trialDays` days and pays only for the remainder:
+
+```
+given away = new subscribers × (trialDays / 30) × average price
+```
+
+**A long trial brings in more than the people who got a taste.** It also brings in
+the people who came for exactly one free month. They do not leave straight away,
+but at the first charge — which lands in next month's churn, after they have
+already been counted in this month's growth. Hence the familiar picture: the
+subscriber chart climbs beautifully and crumbles a month later.
+
+```
+greed       = clamp((trialDays − 14) / 23, 0, 1)
+fresh share = last month's arrivals / base
+churn += greed × fresh share × 0.55
+```
+
+The usual two weeks are the reference point: there the surcharge is exactly zero.
+After the fix the optimum sits right there and falls off on both sides — a short
+trial loses the people who never got a taste, a long one buys people who leave at
+the first charge.

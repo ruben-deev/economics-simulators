@@ -556,6 +556,13 @@ function buildAlerts(r) {
   const burn = r.opex + r.oneOff - r.contribution;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Пока не открыт ни один район, неделя проходит вхолостую: заказов нет,
+  // а расходы идут. Без этой строки человек жмёт «сыграть неделю» ещё и ещё
+  // и не понимает, почему во всех графиках ноль.
+  if (!(state.decisions.districts ?? []).length) {
+    alerts.push(['bad', t('alertNoDistricts'), 'panel:districts']);
+  }
+
   if (r.utilization > 1.02) {
     alerts.push(['bad', t('alertShortage', {
       fill: pct(r.fillRate, 0), lost: compact(r.lostOrders), time: num(r.avgDeliveryTime),
@@ -1128,8 +1135,8 @@ function showWelcome() {
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
-    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>`,
   [{ label: t('welcomeStart'), primary: true },
    { label: t('welcomeMore'), onClick: showHelp },

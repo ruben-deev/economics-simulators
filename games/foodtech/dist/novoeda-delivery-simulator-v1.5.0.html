@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.4.0" />
+  <meta name="app-version" content="1.5.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -998,6 +998,7 @@ const STRINGS = {
   alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value} ₽). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative (₽{value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
   alertBreakEven: { ru: 'Каждый заказ приносит {cm} ₽ вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes ₽{cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
   alertRunway: { ru: 'Денег на {weeks} недель при текущем сжигании {burn}/нед. Пора резать расходы или привлекать раунд.', en: '{weeks} weeks of cash left at the current burn of {burn}/wk. Time to cut costs or raise a round.' },
+  alertNoDistricts: { ru: 'Не открыт ни один район — а значит, заказывать негде и заказов не будет. Неделя прошла вхолостую: расходы штаба списались, выручки не было. Начните с одного района: <a class="jump" data-jump="panel:districts">выбрать район</a>.', en: 'No district is open, so there is nowhere to order from and there will be no orders. The week ran empty: head-office costs were charged, revenue was zero. Start with one district: <a class="jump" data-jump="panel:districts">pick a district</a>.' },
   alertNoRestaurants: { ru: 'Ресторанов нет и бюджет на подключение равен нулю. В маркетплейсе предложение первично: пока заказывать нечего, ни один рубль маркетинга не сработает.', en: 'No restaurants and no acquisition budget. In a marketplace supply comes first: until there is something to order, not one rouble of marketing will work.' },
   alertNoMarketing: { ru: 'Маркетинг выключен: узнаваемость тает на {decay} в неделю, приток новых клиентов почти иссяк (+{gained} против −{lost} ушедших). Ассортимент уже есть — самое время покупать спрос.', en: 'Marketing is off: awareness decays {decay} a week and new customers have all but stopped (+{gained} against −{lost} lost). The selection is already there — this is the moment to buy demand.' },
   alertFewRestaurants: { ru: 'Всего {count} ресторанов — ассортимент режет спрос множителем {factor}. Без выбора маркетинг работает вхолостую.', en: 'Only {count} restaurants — selection cuts demand by a factor of {factor}. Without choice, marketing spins its wheels.' },
@@ -1213,13 +1214,13 @@ score = valuation × your stake`,
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
-  welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА». Вы принимаете решения за всю компанию: сколько брать с клиента и с ресторана, сколько платить курьерам, в какие районы идти и на что тратить деньги.', en: 'The city of Novograd, a service called NOVOEDA. You decide for the whole company: what to charge the customer and the restaurant, what to pay couriers, which districts to enter and where the money goes.' },
-  welcomeTurn: { ru: '<b>Ход — неделя.</b> Партия идёт год: 52 хода. Вы выставляете рычаги, нажимаете «Сыграть неделю» и читаете, что из этого вышло.', en: '<b>One turn is a week.</b> A game runs a year: 52 turns. You set the levers, press "Run week" and read what came of it.' },
-  welcomeGoal: { ru: '<b>Задача — не выжить, а понять.</b> Игра учебная: важнее увидеть, <i>почему</i> решения ведут к таким последствиям, чем набрать высокую оценку компании.', en: '<b>The point is not to survive but to understand.</b> This is a teaching model: seeing <i>why</i> decisions lead where they do matters more than a high valuation.' },
-  welcomeTension: { ru: '<b>Главная трудность.</b> Доставка — бизнес с отрицательной экономикой по умолчанию. Курьеры стоят денег, пока едут и пока стоят; скорость покупается людьми, а люди — маржой. Разориться здесь легко и понятно.', en: '<b>The hard part.</b> Delivery is a business with negative economics by default. Couriers cost money while riding and while idle; speed is bought with people, and people are bought with margin. Going broke here is easy and instructive.' },
+  welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, несколько сотен ресторанов и курьеры на самокатах. Дальше всё решаете вы — сколько брать за доставку, сколько удерживать с ресторана, сколько платить курьеру, в какие районы идти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, a few hundred restaurants and couriers on scooters. Everything after that is your call — what to charge for delivery, what to keep from the restaurant, what to pay a courier, which districts to enter and where the money goes.' },
+  welcomeTurn: { ru: '<b>Один ход — неделя,</b> вся партия — год, 52 хода. Вы двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что из этого вышло: сколько заказов, сколько денег, кто ушёл и почему.', en: '<b>One turn is a week,</b> and a whole game is a year — 52 turns. You move the sliders, press "Run week" and see what came of it: how many orders, how much money, who left and why.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Сейчас человек платит за доставку 149 ₽, а курьер за эту же поездку получает 180 ₽. Каждый заказ уходит в минус, и разницу нужно откуда-то добрать. Поднимете цену — закажут реже. Урежете курьерам — они уйдут, еда поедет дольше, и закажут реже уже из-за этого. Выход есть, но он не в одном ползунке.', en: '<b>Where the catch is.</b> Right now a customer pays ₽149 for delivery and the courier is paid ₽180 for that same trip. Every order loses money, and the gap has to come from somewhere. Raise the price and people order less. Cut courier pay and couriers leave, food arrives later, and people order less anyway. There is a way out, but it is not one slider.' },
+  welcomeGoal: { ru: '<b>Проиграть здесь не страшно.</b> Это не про рекорд: разориться на третьем месяце и понять почему — полезнее, чем случайно выжить и не понять ничего.', en: '<b>Losing here is fine.</b> This is not about a high score: going broke in month three and understanding why teaches you more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Как всё устроено', en: 'How it works' },
-  welcomeHint: { ru: 'Всё в игре объяснено на месте: у каждого рычага есть «зачем это?», а после каждого хода — разбор, из чего сложился результат. Подробности — по кнопке «?» в шапке.', en: 'Everything is explained in place: every lever has a "why does this matter?", and every turn ends with a breakdown of what the result is made of. More behind the "?" button in the header.' },
+  welcomeHint: { ru: '<b>Первый ход.</b> Можно ничего не трогать и просто нажать «Сыграть неделю» — посмотреть, как всё работает. У каждого ползунка есть «зачем это?», а после хода игра сама разбирает результат по частям. Кнопка «?» в шапке — если захочется подробностей.', en: '<b>Your first turn.</b> You can change nothing and just press "Run week" to see how it all moves. Every slider has a "why does this matter?", and after each turn the game takes the result apart for you. The "?" button in the header has the rest.' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpVersion: { ru: 'Сборка {version}.', en: 'Build {version}.' },
@@ -1374,6 +1375,10 @@ const CONFIG = {
 
   // --- Эталонные значения (точка, в которой все коэффициенты равны 1.0) ---
   refDeliveryFee: 149,     // эталонная стоимость доставки для клиента, ₽
+  // Во сколько раз плата за доставку заметнее тех же денег в цене блюда.
+  // При 149 ₽ это ничего не меняет — воспринимаемая цена считается от той же
+  // точки отсчёта. Работает только отклонение от неё.
+  deliveryFeeSalience: 2.5,
   refDeliveryTime: 35,     // эталонное время доставки, мин
   refRestaurants: 80,      // эталонное число ресторанов в районе
   refMarketingPerUser: 12, // эталонные маркетинговые траты на 1 потенц. клиента в неделю, ₽
@@ -1397,9 +1402,20 @@ const CONFIG = {
   // при любом объёме заказов, и никакой поток это не компенсирует.
   restaurantMaxCommission: 0.30,
   restaurantCommissionSpan: 0.12,
+  // Ресторан не работает себе в убыток: комиссию выше привычной он закладывает
+  // в цену блюда. Платит в итоге клиент — и видит это в чеке, а не в договоре.
+  // При комиссии 20% надбавки нет вовсе, так что опорный расчёт это не двигает.
+  commissionPassThrough: 0.6,
   salesRefBudget: 150_000,     // эталонный недельный бюджет отдела подключения, ₽
 
+  maxMarketShare: 0.90,       // потолок доли: часть города к нам не придёт никогда
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
+  // Конкурент рядом, и его цена за нашей не идёт. Пока мы стоим как рынок,
+  // эти два коэффициента не делают ничего: они включаются ровно настолько,
+  // насколько мы дороже. Частота заказов падает плавно, а уход к конкуренту —
+  // это уже потеря клиента, и вернуть его дороже, чем было удержать.
+  rivalPricePull: 0.32,        // насколько наценка ускоряет отток к конкуренту
+  rivalTrialPull: 1.8,         // насколько наценка мешает переманить нового человека
 
   // --- Клиенты ---
   customerBaseChurn: 0.07,     // базовый недельный отток клиентов
@@ -1432,7 +1448,10 @@ const CONFIG = {
   dataSaturation: 400_000,     // накопленных заказов для «половины» эффекта
 
   // --- Инвестиции ---
-  minWeekForFunding: 4,
+  // Раунд открыт со второй недели. На максимальном маркетинге стартовых денег
+  // хватает на три недели — при прежнем пороге в четыре предупреждение
+  // «деньги кончаются» вело к кнопке, которая ещё не работает, и выхода не было.
+  minWeekForFunding: 2,
   fundingOptions: [20_000_000, 50_000_000, 120_000_000],
 };
 
@@ -2411,9 +2430,19 @@ function step(prevState, input = {}) {
 
   for (const def of activeDefs) {
     const ds = state.districts[def.id];
-    const aov = aovOf(def);
-    const customerPrice = aov + decisions.deliveryFee - effPromo;
-    const refPrice = aov + CONFIG.refDeliveryFee;
+    // Комиссия выше привычной не остаётся между нами и рестораном: он
+    // поднимает цену блюда на нашей витрине, и чек растёт у клиента.
+    const markup = 1 + clamp(commissionPerceived - CONFIG.restaurantRefCommission, 0, 0.25)
+      * CONFIG.commissionPassThrough;
+    const aov = aovOf(def) * markup;
+    // Плата за доставку весит больше, чем те же деньги в цене блюда. Она стоит
+    // в чеке отдельной строкой, и за неё как будто не дают еды: сто рублей,
+    // размазанные по цене пиццы, проходят незаметно, а те же сто рублей в
+    // строке «доставка» останавливают заказ. Скидка считается так же — она
+    // видна ровно в том же месте и с тем же весом.
+    const visible = (decisions.deliveryFee - effPromo) * CONFIG.deliveryFeeSalience;
+    const customerPrice = aov + visible;
+    const refPrice = aovOf(def) + CONFIG.refDeliveryFee * CONFIG.deliveryFeeSalience;
     const priceFactor = clamp(Math.pow(refPrice / Math.max(50, customerPrice), def.elasticity), 0.2, 2.5);
 
     const selRaw = ds.restaurants / (ds.restaurants + 50);
@@ -2661,15 +2690,25 @@ function step(prevState, input = {}) {
     ds.satisfaction = satisfaction;
     weightedSat += satisfaction * def.potential;
 
+    // Насколько мы дороже рынка. priceFactor = 1 — мы стоим как конкурент,
+    // и тогда эта величина ровно ноль: наценки нет, и ничего не происходит.
+    // Дальше она растёт вместе с чеком — и с ней растёт готовность уйти.
+    // Без этого поднимать цену было бы бесплатно: частота заказов падала
+    // плавно, а маржа росла быстрее, и упор ползунка оказывался лучшим ходом.
+    const pricePremium = clamp(1 / Math.max(0.25, p.priceFactor) - 1, 0, 1.5);
+    const rivalPull = def.competitor * pricePremium;
+
     const churn = clamp(
-      CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012,
+      CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012
+      + rivalPull * CONFIG.rivalPricePull,
       0, 0.6
     );
     const leaving = ds.customers * churn;
 
     const untapped = Math.max(0, reachableOf(def) - ds.customers);
     const trial = untapped * ds.awareness * CONFIG.trialRate
-      * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2);
+      * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2)
+      / (1 + rivalPull * CONFIG.rivalTrialPull);
     const wom = ds.customers * 0.02 * Math.max(0, satisfaction - 1);
 
     ds.customers = Math.max(0, ds.customers - leaving + trial + wom);
@@ -2696,7 +2735,12 @@ function step(prevState, input = {}) {
     ? perDistrict.reduce((s, p) => s + p.newTime * p.served, 0) / orders
     : (perDistrict.length ? perDistrict.reduce((s, p) => s + p.newTime, 0) / perDistrict.length : 0);
 
-  const cityMarketOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  // Категория растёт вместе с нами: если раздать скидки, заказывать начинают
+  // чаще, чем «обычно», и город съедает больше доставки, чем съедал раньше.
+  // Но весь рынок нашим не станет — часть жителей прочно сидит у конкурента.
+  // Доля выше 100% — это ошибка счёта, а не достижение, и показывать её нельзя.
+  const baseCityOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  const cityMarketOrders = Math.max(baseCityOrders, orders / CONFIG.maxMarketShare);
   const marketShare = orders / cityMarketOrders;
 
   const cac = newCustomers > 0 ? (decisions.marketing) / newCustomers : 0;
@@ -2896,7 +2940,11 @@ function valuation(state) {
   const tail = h.slice(-4).reduce((s, r) => s + r.orders, 0);
   const prev = h.slice(-8, -4).reduce((s, r) => s + r.orders, 0);
   const growth = prev > 0 ? tail / prev : (tail > 0 ? 1.5 : 1);
-  const growthScore = clamp(growth - 1, 0, 1);
+  // Сжатие тоже считается. Раньше нижняя граница стояла на нуле: компанию,
+  // теряющую клиентов каждую неделю, оценивали как ровно стоящую, и выходило,
+  // что задрать цену и растерять половину рынка ничего не стоит. За падающий
+  // бизнес платят меньший множитель — это и есть цена жадности.
+  const growthScore = clamp(growth - 1, -0.5, 1);
 
   const margin = last.netRevenue > 0 ? last.profit / last.netRevenue : -0.5;
   const marginScore = clamp(margin, -0.4, 0.25) / 0.25;
@@ -3758,6 +3806,13 @@ function buildAlerts(r) {
   const burn = r.opex + r.oneOff - r.contribution;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
+  // Пока не открыт ни один район, неделя проходит вхолостую: заказов нет,
+  // а расходы идут. Без этой строки человек жмёт «сыграть неделю» ещё и ещё
+  // и не понимает, почему во всех графиках ноль.
+  if (!(state.decisions.districts ?? []).length) {
+    alerts.push(['bad', t('alertNoDistricts'), 'panel:districts']);
+  }
+
   if (r.utilization > 1.02) {
     alerts.push(['bad', t('alertShortage', {
       fill: pct(r.fillRate, 0), lost: compact(r.lostOrders), time: num(r.avgDeliveryTime),
@@ -4330,8 +4385,8 @@ function showWelcome() {
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
-    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>`,
   [{ label: t('welcomeStart'), primary: true },
    { label: t('welcomeMore'), onClick: showHelp },

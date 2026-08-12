@@ -841,13 +841,13 @@ const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
-  welcomeRole: { ru: 'Оператор «БИЛЕТОН». С одной стороны организаторы — театры, промоутеры, клубы, спортивные клубы. С другой зрители. Вы решаете, сколько брать с каждой стороны и кому открыть собственную кассу.', en: 'An operator called BILETON. On one side the organisers — theatres, promoters, clubs, sports clubs. On the other, buyers. You decide what to take from each side and who gets their own checkout.' },
-  welcomeTurn: { ru: '<b>Ход — месяц.</b> Партия идёт три года: 36 ходов, и год начинается в сентябре — с открытия сезона.', en: '<b>One turn is a month.</b> A game runs three years: 36 turns, and the year starts in September with the opening of the season.' },
-  welcomeGoal: { ru: '<b>Задача — не выжить, а понять.</b> Игра учебная: важнее увидеть, <i>почему</i> решения ведут к таким последствиям, чем набрать высокую оценку компании.', en: '<b>The point is not to survive but to understand.</b> This is a teaching model: seeing <i>why</i> decisions lead where they do matters more than a high valuation.' },
-  welcomeTension: { ru: '<b>Главная трудность.</b> Это двусторонний рынок: организаторы приходят за зрителями, зрители — за афишей, и ни одна сторона не приходит первой сама. Плюс оборот и выручка тут разные числа: через вас проходят миллиарды, ваши из них — проценты.', en: '<b>The hard part.</b> This is a two-sided market: organisers come for the buyers, buyers come for the listings, and neither side arrives first on its own. And turnover is not revenue: billions pass through you, percentages of it are yours.' },
+  welcomeRole: { ru: 'Оператор «БИЛЕТОН» — сайт, на котором покупают билеты. С одной стороны театры, концертные промоутеры, клубы и стадионы: им нужно продать зал. С другой зрители: им нужно куда-то сходить. Вы стоите посередине и решаете, сколько взять с тех и с других.', en: 'BILETON is the site where people buy tickets. On one side are theatres, concert promoters, clubs and stadiums: they need to fill a hall. On the other are the people looking for somewhere to go. You stand in the middle and decide what to charge each of them.' },
+  welcomeTurn: { ru: '<b>Один ход — месяц,</b> вся партия — три года, 36 ходов. Год начинается в сентябре: у театра сезон открывается осенью, а стадион живёт наоборот — летом.', en: '<b>One turn is a month,</b> and a whole game is three years — 36 turns. The year starts in September: a theatre opens its season in autumn, while a stadium lives the other way round, in summer.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Организаторы идут туда, где зрители, а зрители — туда, где интересная афиша. Первым не приходит никто: рекламировать пустую афишу — выбрасывать деньги, а собрать афишу без зрителей — устроить всем пустые залы, после которых организаторы уйдут. И второе: через вас проходят миллиарды, но это не ваши деньги. Ваши — несколько процентов сверху, и часть из них сразу забирает банк за приём платежей.', en: '<b>Where the catch is.</b> Organisers go where the buyers are, and buyers go where the listings are interesting. Neither side comes first: advertising an empty listing burns money, and filling the listings with no buyers gives everyone an empty hall — after which the organisers leave. And one more thing: billions pass through you, but they are not your money. Yours is a few percent on top, and the bank takes part of that straight away for processing the payments.' },
+  welcomeGoal: { ru: '<b>Проиграть здесь не страшно.</b> Это не про рекорд: растерять организаторов и понять, на каком решении это началось, — полезнее, чем случайно выжить и не понять ничего.', en: '<b>Losing here is fine.</b> This is not about a high score: losing your organisers and seeing which decision started it teaches you more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Как всё устроено', en: 'How it works' },
-  welcomeHint: { ru: 'Всё в игре объяснено на месте: у каждого рычага есть «зачем это?», а после каждого хода — разбор, из чего сложился результат. Подробности — по кнопке «?» в шапке.', en: 'Everything is explained in place: every lever has a "why does this matter?", and every turn ends with a breakdown of what the result is made of. More behind the "?" button in the header.' },
+  welcomeHint: { ru: '<b>Первый ход.</b> Можно ничего не трогать и просто запустить месяц — посмотреть, как всё работает. У каждого ползунка есть «зачем это?», а после хода игра сама разбирает результат по частям. Кнопка «?» в шапке — если захочется подробностей.', en: '<b>Your first turn.</b> You can change nothing and just run the month to see how it all moves. Every slider has a "why does this matter?", and after each turn the game takes the result apart for you. The "?" button in the header has the rest.' },
   helpModalTitle: { ru: 'Как устроена игра', en: 'How the game works' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpAuthor: { ru: 'Игру сделал <b>zero900</b>.', en: 'Made by <b>zero900</b>.' },
@@ -5395,8 +5395,8 @@ function showWelcome() {
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
-    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>`,
   [{ label: t('welcomeStart'), primary: true },
    { label: t('welcomeMore'), onClick: showHelp },

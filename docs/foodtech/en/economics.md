@@ -515,3 +515,50 @@ Both lines used to hide inside "office and administration" and grew with neither
 the product nor the load. The base fixed line was reduced by exactly what these
 two add under the reference strategy, so the balance did not shift — but the
 behaviour did: costs now grow together with the business.
+
+---
+
+## What limits greed
+
+Three places where the model used to let you take money for free, and no longer does.
+
+**The delivery fee is more visible than the same money inside the basket.** A
+hundred roubles spread across the price of a pizza passes unnoticed; the same
+hundred roubles on a separate "delivery" line stops the order — you seem to get
+no food for it. In the perceived price the fee carries a weight of 2.5:
+
+```
+perceived price = basket + (delivery fee − promo) × 2.5
+reference       = basket + 149 × 2.5
+```
+
+At ₽149 the multiplier does nothing: only the deviation from the reference
+matters. Without it, raising the price was free — order frequency fell smoothly
+while margin rose faster, and the top of the slider was always the best move.
+
+**A commission above the usual one ends up in the menu price.** A restaurant does
+not work at a loss: everything you take above 20% goes into the menu on your own
+storefront. The customer pays in the end — and sees it on the bill, not in the
+contract:
+
+```
+markup = 1 + clamp(commission − 20%, 0, 25%) × 0.6
+```
+
+**The rival is next door, and its price does not follow yours.** While you charge
+what the market charges, the next two coefficients are exactly zero. Beyond that
+they grow with your premium:
+
+```
+premium = clamp(1 / price factor − 1, 0, 1.5)
+leaving = rival strength × premium × 0.32     (added to weekly churn)
+winning = inflow / (1 + rival strength × premium × 1.8)
+```
+
+Order frequency falls smoothly; leaving for the rival is a lost customer, and
+winning one back costs more than holding on would have.
+
+**And finally: a shrinking business earns a lower multiple.** The growth term in
+the valuation used to be clamped at zero from below — a company losing customers
+every week was valued like a flat one. Now shrinkage counts: `growth − 1` is
+clamped to −0.5…1 rather than 0…1.

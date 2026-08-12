@@ -1142,8 +1142,8 @@ function showWelcome() {
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p>${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
-    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
+    <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>`,
   [{ label: t('welcomeStart'), primary: true },
    { label: t('welcomeMore'), onClick: showHelp },

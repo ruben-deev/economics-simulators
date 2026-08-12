@@ -617,3 +617,69 @@ test('знак разбора совпадает со знаком измене�
     assert.equal(Math.sign(net), Math.sign(actual), `н${c.week}: разбор ${net.toFixed(3)}, факт ${actual.toFixed(3)}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Жадность должна чего-то стоить.
+//
+// До правки два главных денежных рычага были не рычагами, а кнопками «сделать
+// хорошо»: и стоимость доставки, и комиссия окупались вплоть до упора ползунка.
+// Замер за год: 49 ₽ — 1.08 млрд у основателя, 399 ₽ — 16.8 млрд. Причина была
+// не в одном месте, поэтому и проверок несколько.
+// ---------------------------------------------------------------------------
+
+const WORK = { sales: 900_000, marketing: 2_000_000, targetCouriers: 900, courierPay: 190 };
+
+test('плата за доставку весит больше тех же денег в чеке', () => {
+  // Та же сумма, добавленная к чеку и к доставке, обязана бить по-разному:
+  // одна строка видна, другая растворяется в цене блюда.
+  const d = DISTRICTS[0];
+  const cheap = run(20, baseDecisions({ ...WORK, deliveryFee: 49 }), 'salience').reports.at(-1);
+  const dear = run(20, baseDecisions({ ...WORK, deliveryFee: 349 }), 'salience').reports.at(-1);
+  assert.ok(CONFIG.deliveryFeeSalience > 1, 'вес платы за доставку должен быть больше единицы');
+  // 300 ₽ разницы — это 300 × вес относительно чека, а не 300 к чеку
+  const naive = 1 - 300 / (aovOf(d) + CONFIG.refDeliveryFee);
+  const actual = dear.avgPriceFactor / cheap.avgPriceFactor;
+  assert.ok(actual < naive,
+    `цена доставки должна бить сильнее наивного счёта: ${actual.toFixed(3)} против ${naive.toFixed(3)}`);
+});
+
+test('комиссия выше привычной попадает в цену блюда', () => {
+  const usual = run(16, baseDecisions({ ...WORK, commissionRate: 0.20 }), 'passthru').reports.at(-1);
+  const greedy = run(16, baseDecisions({ ...WORK, commissionRate: 0.38 }), 'passthru').reports.at(-1);
+  // Чек клиента вырос, хотя рычаг называется «комиссия с ресторана»
+  assert.ok(greedy.gmv / greedy.orders > usual.gmv / usual.orders,
+    'при высокой комиссии средний чек обязан вырасти — её закладывают в меню');
+  // И при 20% надбавки нет: это точка отсчёта, а не «чуть-чуть»
+  const low = run(16, baseDecisions({ ...WORK, commissionRate: 0.10 }), 'passthru').reports.at(-1);
+  assert.ok(Math.abs(low.gmv / low.orders - usual.gmv / usual.orders) < 1,
+    'ниже 20% надбавки быть не должно');
+});
+
+test('наценка над рынком гонит клиентов к конкуренту', () => {
+  const fair = run(26, baseDecisions({ ...WORK, deliveryFee: 149 }), 'rival');
+  const dear = run(26, baseDecisions({ ...WORK, deliveryFee: 399 }), 'rival');
+  const lastFair = fair.reports.at(-1), lastDear = dear.reports.at(-1);
+  // Частота заказов падает у обоих, но запас клиентов — только у дорогого
+  assert.ok(lastDear.customers < lastFair.customers * 0.85,
+    `база при наценке должна заметно просесть: ${Math.round(lastDear.customers)} против ${Math.round(lastFair.customers)}`);
+  // При рыночной цене механизм выключен полностью — иначе он сдвинул бы баланс
+  assert.equal(CONFIG.refDeliveryFee, 149, 'точка отсчёта должна совпадать с ценой по умолчанию');
+});
+
+test('за сжимающийся бизнес платят меньший множитель', () => {
+  // Одна и та же выручка, но в одном случае бизнес растёт, в другом падает.
+  const grow = { history: Array.from({ length: 8 }, (_, i) => ({ orders: 1000 + i * 200, netRevenue: 1e7, profit: 1e6 })),
+    flags: { valuationBonus: 0 } };
+  const shrink = { history: Array.from({ length: 8 }, (_, i) => ({ orders: 3000 - i * 200, netRevenue: 1e7, profit: 1e6 })),
+    flags: { valuationBonus: 0 } };
+  assert.ok(valuation(shrink) < valuation(grow),
+    'падающий бизнес не может стоить столько же, сколько растущий');
+});
+
+test('доля рынка не бывает больше ста процентов', () => {
+  const huge = run(30, baseDecisions({ ...WORK, promo: 300, marketing: 8_000_000,
+    targetCouriers: 4000, districts: DISTRICTS.map((d) => d.id) }), 'share');
+  for (const r of huge.reports) {
+    assert.ok(r.marketShare <= 1.0001, `доля ${(r.marketShare * 100).toFixed(0)}% на неделе ${r.week}`);
+  }
+});
