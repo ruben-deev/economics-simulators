@@ -271,8 +271,19 @@ export function step(prevState, input = {}) {
     const connected = Boolean(connectedFor[def.id]) && pLevel > 0.02;
     const fillSeen = prevState.lastFillByType?.[def.id] ?? CONFIG.refFill;
 
+    // Организатор считает, сколько у него забирают со всего оборота, а не
+    // только с той части, что идёт через афишу. Подключив кассу, он платит
+    // комиссию с одних билетов и ставку платформы с других — и в переговорах
+    // называет одно число. Без этого ставку платформы можно было поднять до
+    // потолка, и ни один организатор бы не заметил.
+    const splitNow = channelSplit(def, connected, pLevel);
+    const feltTake = splitNow.market + splitNow.platform > 0
+      ? (decisions.orgCommission * splitNow.market + decisions.platformRate * splitNow.platform)
+        / (splitNow.market + splitNow.platform)
+      : decisions.orgCommission;
+
     const appeal = organizerAppeal(def, {
-      orgCommission: decisions.orgCommission,
+      orgCommission: feltTake,
       buyerFee: decisions.buyerFee,
       reach: reachBefore,
       platformLevel: pLevel,

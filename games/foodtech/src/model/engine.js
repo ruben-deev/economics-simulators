@@ -607,6 +607,12 @@ export function step(prevState, input = {}) {
     courierAttractiveness: state.couriers > 0 ? realizedAttractiveness : attractiveness,
     utilization,
     fillRate,
+    // Три числа, из которых заказы получаются точно:
+    //   заказы = клиенты × средняя_частота × surgeShave × заполнение
+    // Средняя частота определена как остаток, поэтому тождество выполняется
+    // при любом составе районов — без этого разбор не сходился с фактом.
+    demandPerCustomer: totalCustomers > 0 ? totalDemand / totalCustomers : 0,
+    surgeShave,
     capacity,
     perCourier,
     avgDeliveryTime,
@@ -780,20 +786,36 @@ export function raise(state, amount) {
 // ----------------------------------------------------------------------------
 export function explain(prev, cur) {
   if (!prev || !cur) return [];
-  // Возвращаем ключи, а не текст: подпись подставит слой интерфейса
+  // Первые недели — это запуск, а не динамика: база растёт с нуля, и любые
+  // отношения там бессмысленны. Разбирать нечего, пока заказов почти нет.
+  if (prev.orders < 100 || cur.orders < 100) return [];
+
+  // Разложение обязано быть точным. Заказы получаются из четырёх множителей
+  // по определению:
+  //   заказы = клиенты × средняя_частота × surgeShave × заполнение
+  // Частоту дальше раскладываем на названные причины, а всё, что они не
+  // объясняют, честно называется «состав районов»: когда открывается новый
+  // район, средняя частота меняется сама по себе, без единого решения.
+  const ratio = (a, b) => (a > 0 && b > 0 ? b / a : 1);
+  const named = [
+    ['driverPrice', ratio(prev.avgPriceFactor, cur.avgPriceFactor)],
+    ['driverSpeed', ratio(Math.pow(prev.avgSpeedFactor, 0.5), Math.pow(cur.avgSpeedFactor, 0.5))],
+    ['driverSelection', ratio(Math.pow(prev.avgSelectionFactor, 0.5), Math.pow(cur.avgSelectionFactor, 0.5))],
+    ['driverSeason', ratio(prev.season * prev.weatherDemandMult, cur.season * cur.weatherDemandMult)],
+  ];
+  const freqRatio = ratio(prev.demandPerCustomer, cur.demandPerCustomer);
+  const explained = named.reduce((acc, [, r]) => acc * r, 1);
+  const mix = explained > 0 ? freqRatio / explained : 1;
+
   const parts = [
-    ['driverCustomers', prev.customers, cur.customers],
-    ['driverPrice', prev.avgPriceFactor, cur.avgPriceFactor],
-    ['driverSpeed', Math.pow(prev.avgSpeedFactor, 0.5), Math.pow(cur.avgSpeedFactor, 0.5)],
-    ['driverSelection', Math.pow(prev.avgSelectionFactor, 0.5), Math.pow(cur.avgSelectionFactor, 0.5)],
-    ['driverSeason', prev.season * prev.weatherDemandMult, cur.season * cur.weatherDemandMult],
-    ['driverFill', Math.max(0.01, prev.fillRate), Math.max(0.01, cur.fillRate)],
+    ['driverCustomers', ratio(prev.customers, cur.customers)],
+    ...named,
+    ['driverMix', mix],
+    ['driverSurge', ratio(prev.surgeShave ?? 1, cur.surgeShave ?? 1)],
+    ['driverCapacity', ratio(Math.max(0.01, prev.fillRate), Math.max(0.01, cur.fillRate))],
   ];
   return parts
-    .map(([key, a, b]) => ({
-      key,
-      effect: a > 0 && b > 0 ? Math.exp(Math.log(b) - Math.log(a)) - 1 : 0,
-    }))
+    .map(([key, r]) => ({ key, effect: r - 1 }))
     .filter((p) => Math.abs(p.effect) > 0.002)
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
 }

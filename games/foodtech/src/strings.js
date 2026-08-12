@@ -171,13 +171,16 @@ export const STRINGS = {
   statCacOff: { ru: 'маркетинг выключен', en: 'marketing is off' },
   minutes: { ru: '{value} мин', en: '{value} min' },
 
-  driversTitle: { ru: 'Почему заказы изменились ({delta})', en: 'Why orders changed ({delta})' },
+  driversTitle: { ru: 'Из чего сложилось изменение заказов ({delta})', en: 'What the change in orders is made of ({delta})' },
+  driversNet: { ru: 'Итого', en: 'Net' },
   driverCustomers: { ru: 'База клиентов', en: 'Customer base' },
   driverPrice: { ru: 'Цена для клиента', en: 'Customer price' },
   driverSpeed: { ru: 'Скорость доставки', en: 'Delivery speed' },
   driverSelection: { ru: 'Выбор ресторанов', en: 'Restaurant selection' },
   driverSeason: { ru: 'Сезон, погода, события', en: 'Season, weather, events' },
-  driverFill: { ru: 'Нехватка курьеров', en: 'Courier shortage' },
+  driverCapacity: { ru: 'Пропускная способность', en: 'Courier capacity' },
+  driverMix: { ru: 'Состав районов', en: 'District mix' },
+  driverSurge: { ru: 'Динамическая цена', en: 'Surge pricing' },
 
   installNote: { ru: 'Внедрено: {names} — разовые {cost}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.', en: 'Rolled out: {names} — a one-off {cost}. The algorithm starts working this week and starts paying back considerably later.' },
   launchNote: { ru: 'Запущены районы: {names} — разовые затраты {cost}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.', en: 'Districts launched: {names} — a one-off {cost}. A new district loses money at first: there are no customers yet, but the fixed costs have already started.' },

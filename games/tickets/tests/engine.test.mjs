@@ -421,3 +421,16 @@ test('серверы растут вместе с билетами и дешев
   assert.ok(perTicket(rich) < perTicket(cheap),
     `с билета ${perTicket(rich).toFixed(2)} ₽ против ${perTicket(cheap).toFixed(2)} ₽`);
 });
+
+test('ставку платформы организатор замечает так же, как комиссию', () => {
+  // Организатор считает, сколько у него забирают со всего оборота. Пока
+  // ставка платформы в привлекательность не входила, её можно было поднять
+  // до потолка, и никто бы не ушёл — рычаг был односторонне выгодным.
+  const base = { platformFor: { club: true, sport: true }, managers: 25, platformDev: 15_000_000 };
+  const cheap = run(24, decide({ ...base, platformRate: 0 }), 'prate').last;
+  const dear = run(24, decide({ ...base, platformRate: 0.07 }), 'prate').last;
+  assert.ok(dear.orgs < cheap.orgs,
+    `организаторов при ставке 7%: ${Math.round(dear.orgs)} против ${Math.round(cheap.orgs)} при нуле`);
+  assert.ok(dear.gmv < cheap.gmv, 'оборот при высокой ставке ниже');
+  assert.ok(dear.revenue > cheap.revenue, 'но выручка выше — в этом и решение');
+});

@@ -33,7 +33,7 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.1.0.html) ·
+[доставка](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.2.0.html) ·
 [кинотеатр](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.1.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 

@@ -581,3 +581,39 @@ test('серверы растут вместе с заказами и дешев
   assert.ok(perOrder(rich) < perOrder(cheap),
     `с заказа ${perOrder(rich).toFixed(2)} ₽ против ${perOrder(cheap).toFixed(2)} ₽`);
 });
+
+// ----------------------------------------------------------------------------
+// Разбор недели
+// ----------------------------------------------------------------------------
+test('разбор недели перемножается ровно в изменение заказов', () => {
+  // Раньше строки разбора были набором «влияний»: их произведение расходилось
+  // с фактом почти на треть и иногда имело обратный знак. Теперь разложение
+  // точное по построению — остаток честно назван составом районов.
+  const WORKING = { sales: 300_000, marketing: 1_200_000, targetCouriers: 240 };
+  for (const seed of ['drv-a', 'drv-b']) {
+    const { reports } = run(40, baseDecisions({ ...WORKING, districts: ['center', 'univer'] }), seed);
+    for (let i = 1; i < reports.length; i++) {
+      const p = reports[i - 1], c = reports[i];
+      const drivers = explain(p, c);
+      if (!drivers.length) continue;
+      const product = drivers.reduce((acc, d) => acc * (1 + d.effect), 1);
+      const actual = c.orders / p.orders;
+      assert.ok(Math.abs(product - actual) / actual < 0.02,
+        `${seed} н${c.week}: произведение ${product.toFixed(3)}, факт ${actual.toFixed(3)}`);
+    }
+  }
+});
+
+test('знак разбора совпадает со знаком изменения заказов', () => {
+  const WORKING = { sales: 300_000, marketing: 1_200_000, targetCouriers: 240 };
+  const { reports } = run(40, baseDecisions({ ...WORKING, districts: ['center', 'univer'] }), 'sign');
+  for (let i = 1; i < reports.length; i++) {
+    const p = reports[i - 1], c = reports[i];
+    const drivers = explain(p, c);
+    if (!drivers.length) continue;
+    const actual = c.orders / p.orders - 1;
+    if (Math.abs(actual) < 0.01) continue;
+    const net = drivers.reduce((acc, d) => acc * (1 + d.effect), 1) - 1;
+    assert.equal(Math.sign(net), Math.sign(actual), `н${c.week}: разбор ${net.toFixed(3)}, факт ${actual.toFixed(3)}`);
+  }
+});

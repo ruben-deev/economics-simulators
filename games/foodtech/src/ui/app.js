@@ -597,14 +597,25 @@ function renderReport() {
   const r = last();
   if (!r) { el('report-slot').innerHTML = renderStartHint(); return; }
 
+  // Разбор — точное разложение: строки перемножаются в цифру заголовка.
+  // Строка «Итого» показывает произведение, чтобы это было видно, а не
+  // принималось на веру.
   const drivers = explain(prev(), r);
+  const netEffect = drivers.reduce((acc, d) => acc * (1 + d.effect), 1) - 1;
   const maxAbs = Math.max(0.02, ...drivers.map((d) => Math.abs(d.effect)));
+  const bar = (effect, scale) => {
+    const w = (Math.abs(effect) / scale) * 50;
+    const pos = effect > 0;
+    return `<span class="d-bar"><span class="d-fill" style="${
+      pos ? `left:50%;width:${w}%` : `right:50%;width:${w}%`};background:${
+      pos ? 'var(--good)' : 'var(--bad)'}"></span></span>`;
+  };
   const driversHtml = drivers.length ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
         delta: signedPct(r.orders / Math.max(1e-9, prev().orders) - 1),
       })}</div>
-      ${drivers.slice(0, 6).map((d) => {
+      ${drivers.slice(0, 8).map((d) => {
         const w = (Math.abs(d.effect) / maxAbs) * 50;
         const pos = d.effect > 0;
         return `<div class="driver">
@@ -615,6 +626,11 @@ function renderReport() {
           <span class="d-val ${pos ? 'pos' : 'neg'}">${signedPct(d.effect)}</span>
         </div>`;
       }).join('')}
+      <div class="d-sum">
+        <span class="d-name">${t('driversNet')}</span>
+        ${bar(netEffect, maxAbs)}
+        <span class="d-val ${netEffect > 0 ? 'pos' : 'neg'}">${signedPct(netEffect)}</span>
+      </div>
     </div>` : '';
 
   const alerts = buildAlerts(r);

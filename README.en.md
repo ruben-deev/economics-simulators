@@ -33,7 +33,7 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/Food
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.1.0.html) ·
+[delivery](https://ruben-deev.github.io/Foodtech-delivery-game/games/foodtech/dist/novoeda-delivery-simulator-v1.2.0.html) ·
 [streaming](https://ruben-deev.github.io/Foodtech-delivery-game/games/cinema/dist/kinopotok-streaming-simulator-v1.1.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 

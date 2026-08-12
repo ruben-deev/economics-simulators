@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 
 import { t, tx, setLang, getLang, setStrings } from '../../../shared/i18n.js';
 import { STRINGS } from '../src/strings.js';
+import { DEFAULT_DECISIONS } from '../src/model/config.js';
+import { createInitialState, step, explain } from '../src/model/engine.js';
 
 setStrings(STRINGS);
 import { DISTRICTS, LEVERS, ALGORITHMS } from '../src/model/config.js';
@@ -95,9 +97,23 @@ test('погодные и сезонные подписи существуют �
   }
 });
 
-test('подписи факторов разбора недели существуют для всех ключей движка', () => {
-  for (const key of ['driverCustomers', 'driverPrice', 'driverSpeed',
-    'driverSelection', 'driverSeason', 'driverFill']) {
+// Ключи берутся у самого движка, а не переписываются сюда руками: список,
+// скопированный в тест, продолжает проходить и после того, как движок
+// переименовал строки — именно так подпись однажды разъехалась со смыслом.
+test('подписи разбора недели существуют для всех ключей движка', () => {
+  const keys = new Set();
+  let state = createInitialState('i18n-drivers');
+  let prev = null;
+  const decisions = { ...DEFAULT_DECISIONS, districts: ['center', 'univer'],
+    sales: 300_000, marketing: 1_200_000, targetCouriers: 240 };
+  for (let i = 0; i < 30 && !state.over; i++) {
+    const res = step(state, { decisions, eventChoice: 0 });
+    state = res.state;
+    if (prev) for (const d of explain(prev, res.report)) keys.add(d.key);
+    prev = res.report;
+  }
+  assert.ok(keys.size >= 4, `движок вернул слишком мало ключей: ${keys.size}`);
+  for (const key of [...keys, 'driversTitle', 'driversNet']) {
     assert.ok(STRINGS[key], key);
   }
 });
