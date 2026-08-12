@@ -111,13 +111,16 @@ An organiser has two ways to sell: through your listings and through the
 domain, their branding, your engine underneath.
 
 ```
-widget:        widget   = own audience × (0.80 + 0.50 × platform level)
-               listings = 1 − widget
-               lost     = 0
+widget:        neutral  = own audience × (0.80 + 0.50 × platform level)
+               widget   = neutral × push(type, platform rate)
+               lost     = max(0, neutral − widget)
+               listings = 1 − widget − lost
 
 no widget:     lost     = own audience × 0.80
                listings = 1 − lost
                widget   = 0
+
+push = 1 − 0.32 × (rate / 0.025 − 1) × (0.5 + 0.5 × sensitivity)
 ```
 
 "Own audience" is the share of buyers the organiser brings themselves: sport
@@ -129,6 +132,27 @@ their own traffic entirely: they sell past you. **Connecting** recovers that
 turnover, but at the platform rate — several times lower. And you actively
 help them grow their own channel: the stronger the platform, the harder they
 push buyers towards it.
+
+"Push" is how eagerly the organiser drives buyers into the widget rather than
+your listings — and you set it, with the rate. **Below the market 2.5%** the
+widget is nearly free to them, so they promote it themselves — a banner, a
+mailing, a QR code on the poster — and move turnover out of your listings, where
+you took both the fee and the commission. **Above it** they do the arithmetic and
+route around the widget entirely: the box office at the door, season tickets sold
+to their own people, the old in-house solution. That turnover does not come back
+to your listings; it simply disappears. An expensive rate also slows migration —
+a factor of `1 − 0.35 × (rate/0.025 − 1)` on adoption speed, because moving is an
+investment decision with a payback period.
+
+So the platform rate has a peak, not a ceiling. Measured across three reference
+strategies (founder's equity over a full game, 12 seeds):
+
+```
+                0%       3.5%      7%
+lean          8.55     8.52     8.02 B
+mid           8.91    10.72     9.87 B
+wide          9.36    13.96    12.86 B
+```
 
 The third effect is the least obvious and the most important. **Tickets sold
 through the widget on the organiser's site never appear in your listings.** And
@@ -151,6 +175,64 @@ own to lose. Theatres and sport cost more than they bring: they move half the
 hall into the widget on their own site and the listings get thinner.
 
 **The optimum is neither "everyone" nor "nobody" but per type.**
+
+---
+
+## 3a. The subscription is a tier, not a deduction
+
+The subscription is charged per connected organiser and does not depend on
+turnover. It used to do exactly one thing — subtract:
+
+```
+drag(type) = 1 − subscription × 6 / monthly turnover of the type
+```
+
+For a stadium turning over ₽17M a month, ₽100k is loose change; for a club
+turning over ₽1.26M it is a reason not to connect at all. All true, but
+one-sided: if the subscription only takes, the right answer always collapsed to
+"charge nothing", and the lever was a button.
+
+In life an organiser pays not for access to the widget but for a tier: priority
+in the listings, hall analytics, a dedicated manager, box-office training. So
+the subscription gained its second half:
+
+```
+value(type) = 1 + 0.50 × (fee / (fee + 45 000))
+                       × platform level × widget need        (capped at 1.7)
+appeal = … × drag(type) × value(type)
+```
+
+Three consequences, all economic rather than arithmetic.
+
+**Free means no obligations.** At a zero subscription the value is exactly one:
+the tier promises nothing, and the organiser feels it.
+
+**You can only promise what you built.** The value is multiplied by platform
+maturity: a ₽100k tier on a raw product is a con, and it carries no value at
+all. Raising the subscription pays off after investment in the platform, not
+from month one.
+
+**A promise has to be serviced.** The tier is not paid for in words:
+
+```
+upkeep = connected × (₽2,400 + 0.30 × subscription)
+```
+
+Collecting a subscription and delivering nothing is not possible in this model —
+the cost is booked automatically, alongside the revenue.
+
+**The tier picks your clientele.** A 150-seat club walks away from ₽100k; a
+seven-thousand-seat stadium does not. A high subscription changes not only the
+money but the shape of the listings: the long tail disappears, breadth falls,
+and that feeds back into demand through listing strength. Measured (founder's
+equity, 12 seeds):
+
+```
+                 ₽0      ₽70–80k     ₽120k
+lean           7.45      10.15        6.30 B   (organisers 1071 → 540)
+mid            8.91      12.07       10.06 B   (organisers 1489 → 910)
+wide          11.16      16.60       15.32 B   (organisers 1746 → 1128)
+```
 
 ---
 
@@ -306,9 +388,9 @@ team without data.
 
 | Year | Goal | Failure |
 |---|---|---|
-| 1 | monthly turnover of ₽380M or more | shareholders inject money themselves, your stake is cut by 18% |
+| 1 | monthly turnover of ₽1.2B or more | shareholders inject money themselves, your stake is cut by 18% |
 | 2 | at least 3 profitable months with turnover above ₽700M | marketing capped for six months |
-| 3 | 30% market share with 420+ organisers | valuation drops by 15% |
+| 3 | 65% market share with 420+ organisers | valuation drops by 15% |
 
 The strategy that wins year one (low rates for turnover) fails year two. That
 is the point: the take rate is a decision for the year, not a setting.

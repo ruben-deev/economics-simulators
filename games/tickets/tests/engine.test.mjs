@@ -21,7 +21,10 @@ import {
 import {
   feeFactor, conversion, soldTickets, buyerPreference, segmentInterest,
 } from '../src/model/demand.js';
-import { channelSplit, platformLevelOf, subscriptionDrag } from '../src/model/channel.js';
+import {
+  channelSplit, platformCost, platformLevelOf, subscriptionDrag, subscriptionValue,
+  widgetAdoption,
+} from '../src/model/channel.js';
 import { createRival, rivalOrgTotal, STANCES, STANCE_MIN_MONTHS } from '../src/model/rival.js';
 import { makeGoal, goalProgress } from '../src/model/board.js';
 import { CRISES, crisisById, crisisEffects, resolutionCost, rollCrisis, MAX_ESCALATION } from '../src/model/crises.js';
@@ -210,6 +213,70 @@ test('абонплата отпугивает маленьких сильнее,
   assert.ok(subscriptionDrag(club, 60_000) < subscriptionDrag(sport, 60_000),
     'для клуба та же абонплата тяжелее');
   assert.equal(subscriptionDrag(club, 0), 1, 'без абонплаты помех нет');
+});
+
+test('у ставки платформы есть цена с обеих сторон', () => {
+  const sport = organizerById('sport');
+  const cheap = channelSplit(sport, 1, 0.6, 0.005);
+  const mid = channelSplit(sport, 1, 0.6, CONFIG.refPlatformRate);
+  const dear = channelSplit(sport, 1, 0.6, 0.07);
+
+  // Дешёвый виджет организатор продвигает сам — и уводит оборот из афиши,
+  // где вы берёте и сбор, и комиссию, туда, где берёте копейки.
+  assert.ok(cheap.platform > mid.platform, 'дешёвый виджет он гонит сам');
+  assert.ok(cheap.market < mid.market, 'и афише достаётся меньше');
+  // Дорогой он обходит вовсе, и этот оборот не возвращается в афишу.
+  assert.ok(dear.platform < mid.platform, 'дорогой виджет он обходит');
+  assert.ok(dear.lost > mid.lost, 'обойдённый оборот уходит мимо вас, а не в афишу');
+  assert.ok(dear.market <= mid.market + 1e-9, 'высокая ставка не дарит вам афишу');
+
+  for (const s of [cheap, mid, dear]) {
+    assert.ok(Math.abs(s.market + s.platform + s.lost - 1) < 1e-9, 'доли каналов должны давать единицу');
+  }
+});
+
+test('дорогая ставка тормозит переезд на виджет', () => {
+  const club = organizerById('club');
+  const args = [club, 0, 400_000, 0.6, 0];
+  assert.ok(widgetAdoption(...args, 0.07) < widgetAdoption(...args, CONFIG.refPlatformRate),
+    'при дорогой ставке организатор считает окупаемость и тянет');
+});
+
+test('абонплата — тариф, а не вычет: за неё что-то дают', () => {
+  const club = organizerById('club');
+  const concert = organizerById('concert');
+  assert.equal(subscriptionValue(club, 0, 0.6), 1, 'бесплатный тариф не даёт ничего');
+  assert.ok(subscriptionValue(club, 40_000, 0.6) > 1, 'платный — даёт');
+  // На сыром продукте обещать нечего, и организатор это видит
+  assert.ok(subscriptionValue(club, 40_000, 0.05) < subscriptionValue(club, 40_000, 0.8),
+    'ценность пакета держится на зрелости платформы');
+  // Пакет ценнее тому, кому виджет и так нужнее
+  assert.ok(subscriptionValue(club, 40_000, 0.6) > subscriptionValue(concert, 40_000, 0.6),
+    'клубу пакет заменяет IT-отдел, промоутеру тура — почти ничего');
+  // Насыщение: вторые сорок тысяч дают меньше первых
+  const first = subscriptionValue(club, 40_000, 0.6) - 1;
+  const second = subscriptionValue(club, 80_000, 0.6) - subscriptionValue(club, 40_000, 0.6);
+  assert.ok(second < first, 'ценность пакета насыщается');
+});
+
+test('обещанный тариф приходится содержать', () => {
+  assert.ok(platformCost(100, 60_000) > platformCost(100, 0),
+    'дорогой тариф дороже обслуживать');
+  assert.equal(platformCost(0, 60_000), 0, 'без подключённых нет и расходов');
+});
+
+test('абонплата перестала быть кнопкой «не брать ничего»', () => {
+  // Ровно тот замер, ради которого правилась связка: при живой платформе
+  // тариф должен быть выгоднее нуля, а потолок — хуже середины.
+  const paid = { platformDev: 30_000_000, onboarding: 20_000_000, managers: 40 };
+  const at = (fee) => run(24, decide({
+    platformFor: { club: true, sport: true }, platformFee: fee, ...paid,
+  }), 'fee').last;
+  const none = at(0);
+  const some = at(60_000);
+  const max = at(120_000);
+  assert.ok(some.revenue > none.revenue, 'тариф приносит деньги');
+  assert.ok(max.orgs < some.orgs, 'а на потолке разгоняет организаторов');
 });
 
 // ----------------------------------------------------------------------------

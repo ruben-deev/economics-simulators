@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.8.0" />
+  <meta name="app-version" content="1.9.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -1311,8 +1311,9 @@ const STRINGS = {
   newsRivalStance: { ru: '<b>Конкурент меняет тактику: {stance}.</b> {note}', en: '<b>The rival changes tack: {stance}.</b> {note}' },
   newsResellers: { ru: '<b>Перекупщики забрали {share} билетов.</b> Оборот от этого только вырос — а доверие зрителей падает, и это увидят не сразу.', en: '<b>Resellers took {share} of the tickets.</b> Turnover only went up — and buyer trust is falling, which nobody notices at once.' },
   newsOutage: { ru: '<b>Сайт не выдержал старта продаж:</b> потеряно {share} спроса. Запас мощности держат весь год ради одного такого дня.', en: '<b>The site went down at the on-sale:</b> {share} of demand lost. Capacity headroom is held all year for a single day like this one.' },
-  newsGrowth: { ru: '<b>За месяц пришли {joined} организаторов, ушли {left}.</b> {verdict}', en: '<b>{joined} organisers joined this month, {left} left.</b> {verdict}' },
+  newsGrowth: { ru: '<b>Организаторы за месяц: пришли {joined}, ушли {left}.</b> {verdict}', en: '<b>{joined} organisers joined this month, {left} left.</b> {verdict}' },
   newsGrowthGood: { ru: 'Приток обгоняет отток — рынок идёт к вам.', en: 'Inflow beats outflow — the market is coming your way.' },
+  newsGrowthEven: { ru: 'Сколько пришло, столько и ушло: база стоит на месте. Это не покой, а равновесие двух сильных потоков.', en: 'As many joined as left: the base is standing still. That is not calm, it is two strong flows cancelling out.' },
   newsGrowthBad: { ru: 'Уходит больше, чем приходит. Смотрите на заполняемость залов и на то, сколько вы забираете.', en: 'More are leaving than arriving. Look at hall fill and at how much you take.' },
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
@@ -1515,6 +1516,27 @@ const CONFIG = {
   // собственный сайт, кассу у входа в зал или другого оператора. Именно этот кусок
   // и возвращает подключение к платформе — но уже по платформенной ставке.
   leakWithoutPlatform: 0.80,
+
+  // Ставка платформы — не только цена, но и указание организатору, куда гнать
+  // покупателя. Дешёвый виджет он продвигает сам и уводит к себе тот оборот,
+  // с которого вы брали и сбор, и комиссию. Дорогой обходит вовсе: касса
+  // у входа, абонементы, старое самописное решение. Поэтому у ставки есть
+  // вершина, а не потолок.
+  ratePushBite: 0.32,
+  // И дорогой виджет вдобавок тормозит переезд: организатор считает
+  // окупаемость, и бюджет на подключения этого до конца не перебивает.
+  rateAdoptionBite: 0.35,
+
+  // --- Тариф платформы ---
+  // Абонплата — плата за пакет, а не просто за доступ к виджету: приоритет
+  // в афише, аналитика по залу, свой менеджер, обучение кассиров. Пакет
+  // насыщается — первые деньги дают личный кабинет, десятые не дают ничего —
+  // и держится на зрелости платформы: тариф за сто тысяч на сыром продукте
+  // организатор считает обманом. Обещанное приходится содержать, и это
+  // съедает часть собранной абонплаты.
+  tariffHalfValue: 45_000,   // абонплата, дающая половину ценности пакета
+  tariffGain: 0.50,          // насколько сильный пакет поднимает привлекательность
+  tariffServeShare: 0.30,    // какая доля абонплаты уходит на содержание обещанного
 
   // --- Заполняемость и спрос ---
   // Спрос и мест — два независимых числа, и продаётся минимум из них.
@@ -2374,7 +2396,7 @@ function platformLevelOf(stock) {
  *   lost     — продано мимо вас: свой сайт без виджета, касса у входа в зал,
  *              другой оператор
  */
-function channelSplit(def, share, platformLevel) {
+function channelSplit(def, share, platformLevel, platformRate = CONFIG.refPlatformRate) {
   // share — доля организаторов типа, у которых ваш виджет уже стоит.
   // Раньше здесь был да/нет, и это была неправда: тип из тридцати трёх клубов
   // не переезжает на новую билетную систему в один месяц и весь сразу.
@@ -2383,14 +2405,43 @@ function channelSplit(def, share, platformLevel) {
   // Виджет не просто забирает то, что и так уходило: организатор начинает его
   // продвигать. Чем сильнее платформа, тем активнее он гонит покупателя
   // к себе — и тем меньше остаётся вашей афише.
-  const platformIn = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  const neutral = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  // ...но насколько активно — решает ваша ставка. См. ownChannelPush.
+  const own = clamp(neutral * ownChannelPush(def, platformRate), 0, 0.92);
+  // Всё, что организатор при дорогой ставке не повёл через виджет, уходит
+  // не в вашу афишу, а мимо вас: кассой у входа и абонементами. Иначе
+  // высокая ставка была бы бесплатной — оборот просто перетекал бы туда,
+  // где вы берёте больше.
+  const bypass = Math.max(0, neutral - own);
   const lostOut = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
 
   return {
-    market: withWidget * (1 - platformIn) + (1 - withWidget) * (1 - lostOut),
-    platform: withWidget * platformIn,
-    lost: (1 - withWidget) * lostOut,
+    market: withWidget * (1 - own - bypass) + (1 - withWidget) * (1 - lostOut),
+    platform: withWidget * own,
+    lost: withWidget * bypass + (1 - withWidget) * lostOut,
   };
+}
+
+/**
+ * Насколько охотно организатор гонит покупателя в свой виджет вместо вашей
+ * афиши. Это решаете вы — ставкой.
+ *
+ * Ставка ниже рыночной: виджет для организатора почти бесплатен, и он
+ * продвигает его сам — баннером на сайте, ссылкой в рассылке, QR-кодом на
+ * афише. Оборот переезжает из вашей афиши, где вы берёте сбор с покупателя
+ * и комиссию, в виджет, где вы берёте копейки. Дешёвый виджет съедает
+ * маркетплейс.
+ *
+ * Ставка выше рыночной: организатор считает и обходит виджет вовсе —
+ * касса у входа, абонементы своим людям, старое самописное решение. Этот
+ * оборот не возвращается в вашу афишу, он просто исчезает.
+ *
+ * Больнее всего реагируют те, кто и так торгуется за каждый процент.
+ */
+function ownChannelPush(def, platformRate) {
+  const rel = clamp(platformRate / CONFIG.refPlatformRate, 0, 3);
+  const bite = CONFIG.ratePushBite * (rel - 1) * (0.5 + 0.5 * def.commissionSensitivity);
+  return clamp(1 - bite, 0.25, 1.45);
 }
 
 /**
@@ -2407,8 +2458,12 @@ function channelSplit(def, share, platformLevel) {
  * @param spendPerOrg бюджет подключений, приходящийся на одного организатора
  * @param platformLevel зрелость платформы: сырой продукт не переносит
  * @param rivalHold   какую долю типа конкурент держит намертво
+ * @param platformRate ваша ставка: дорогой виджет организатор считает дольше
  */
-function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold = 0) {
+function widgetAdoption(
+  def, share, spendPerOrg, platformLevel, rivalHold = 0,
+  platformRate = CONFIG.refPlatformRate,
+) {
   const ceiling = clamp(1 - rivalHold, 0, 1);
   const room = ceiling - clamp(share, 0, 1);
   if (room <= 0 || platformLevel <= 0.02) return 0;
@@ -2418,7 +2473,14 @@ function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold = 0) {
   const need = clamp(def.platformNeed / 1.5, 0.15, 1.2);
   const paid = Math.pow(clamp(spendPerOrg / (CONFIG.integrationCost / need), 0, 4), 0.6);
   const ready = clamp(platformLevel / (platformLevel + 0.18), 0, 1);
-  return room * clamp(CONFIG.adoptionPace * paid * ready, 0, 0.45);
+  // Переезд — инвестиционное решение организатора, и он считает окупаемость.
+  // При ставке вдвое выше рыночной разговор с его финдиректором совсем другой,
+  // и бюджетом на подключения это перебивается лишь отчасти.
+  const price = clamp(
+    1 - CONFIG.rateAdoptionBite * (platformRate - CONFIG.refPlatformRate) / CONFIG.refPlatformRate,
+    0.25, 1.35,
+  );
+  return room * clamp(CONFIG.adoptionPace * paid * ready * price, 0, 0.45);
 }
 
 /**
@@ -2444,9 +2506,15 @@ function revenuePerTicket(price, decisions, channel) {
 
 /**
  * Во сколько обходится содержание одного подключённого организатора.
+ *
+ * Кроме серверов и лицензий сюда входит содержание тарифа: приоритет в афише
+ * кто-то верстает, аналитику кто-то считает, на звонок кто-то отвечает. Чем
+ * дороже тариф, тем дороже его обслуживать — обещание не бывает бесплатным,
+ * и собрать абонплату, ничего за неё не делая, в этой модели нельзя.
  */
-function platformCost(connectedCount) {
-  return connectedCount * CONFIG.platformSeatCost;
+function platformCost(connectedCount, platformFee = 0) {
+  const serve = Math.max(0, platformFee) * CONFIG.tariffServeShare;
+  return connectedCount * (CONFIG.platformSeatCost + serve);
 }
 
 /**
@@ -2456,6 +2524,26 @@ function platformCost(connectedCount) {
 function subscriptionDrag(def, platformFee) {
   const monthlyGross = def.eventsPerMonth * def.seats * def.avgPrice;
   return clamp(1 - (platformFee * 6) / Math.max(1, monthlyGross), 0.25, 1);
+}
+
+/**
+ * Что организатор получает за абонплату.
+ *
+ * Абонплата — это тариф, а не пропуск: вместе с ней организатор покупает
+ * приоритет в афише, аналитику по залу, своего менеджера и обучение кассиров.
+ * Поэтому «не брать ничего» — не бесплатный выбор: бесплатный тариф означает
+ * и отсутствие обязательств, и организатор это чувствует.
+ *
+ * Ценность насыщается: первые деньги дают личный кабинет, десятые не дают
+ * ничего. И она держится на зрелости платформы — тариф за сто тысяч на сыром
+ * продукте организатор считает обманом, и никакой ценности там нет. Больше
+ * всех выигрывает тот, кому виджет и так нужнее: клубу без своей кассы пакет
+ * заменяет весь IT-отдел, промоутеру тура — почти ничего.
+ */
+function subscriptionValue(def, platformFee, platformLevel) {
+  if (platformFee <= 0) return 1;
+  const paid = platformFee / (platformFee + CONFIG.tariffHalfValue);
+  return clamp(1 + CONFIG.tariffGain * paid * platformLevel * def.platformNeed, 1, 1.7);
 }
 
 
@@ -2696,11 +2784,15 @@ function makeGoal(year, state, yourOrgs, rivalOrgs) {
     return {
       year,
       type: GOAL_TYPES.gmv,
-      // Оборот за месяц к концу первого года. Планка опущена с 520 млн после
-      // того, как переезд организаторов на виджет перестал быть мгновенным
-      // и бесплатным: замер по девяти десяткам стратегий даёт медиану 326 млн
-      // и 75-й процентиль 421 млн, так что прежние 520 млн брали единицы.
-      target: 380_000_000,
+      // Оборот за месяц к концу первого года.
+      //
+      // Планка поднята с 380 млн: прежняя мерилась на прогонах, где компания
+      // не брала раундов и умирала на середине партии. Игрок, который берёт
+      // деньги, — а игра их предлагает и без них не выжить, — закрывал 380 млн
+      // в 96 случаях из ста. Замер по 120 случайным стратегиям при двух разных
+      // денежных дисциплинах (щедрый и скупой раунд) даёт одинаковую картину:
+      // 900 млн берут 63%, 1.2 млрд — 33%, 1.5 млрд — 16%.
+      target: 1_200_000_000,
       reward: 0.10,
       penalty: 'dilution',
     };
@@ -2719,7 +2811,13 @@ function makeGoal(year, state, yourOrgs, rivalOrgs) {
   return {
     year,
     type: GOAL_TYPES.share,
-    target: 0.30,
+    // Доля организаторов к концу третьего года. Планка поднята с 30% по той же
+    // причине, что и в первом году: на прогонах с раундами треть рынка к концу
+    // партии есть у двух третей стратегий, а две трети рынка — у 22%.
+    target: 0.65,
+    // Нижняя граница по числу договоров — страховка от вырожденного случая
+    // «маленький, но главный»: доля растёт и когда конкурент просто умер.
+    // На замерах связывает именно доля, пол не срабатывает ни разу.
     orgFloor: Math.round(Math.max(420, yourOrgs * 1.15)),
     reward: 0.18,
     penalty: 'valuation',
@@ -3533,7 +3631,7 @@ function step(prevState, input = {}) {
     const was = clamp(state.platformShare[def.id] ?? 0, 0, 1);
     if (!connectedFor[def.id]) { state.platformShare[def.id] = 0; adoptionByType[def.id] = 0; continue; }
     const hold = rivalHoldOf(def, rivalPLevel, riv.orgs[def.id] ?? 0, prevState.orgs[def.id] ?? 0);
-    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold);
+    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold, decisions.platformRate);
     adoptionByType[def.id] = gain;
     state.platformShare[def.id] = clamp(was + gain, 0, 1);
   }
@@ -3566,11 +3664,17 @@ function step(prevState, input = {}) {
     // комиссию с одних билетов и ставку платформы с других — и в переговорах
     // называет одно число. Без этого ставку платформы можно было поднять до
     // потолка, и ни один организатор бы не заметил.
-    const splitNow = channelSplit(def, widgetShare, pLevel);
+    const splitNow = channelSplit(def, widgetShare, pLevel, decisions.platformRate);
     const feltTake = splitNow.market + splitNow.platform > 0
       ? (decisions.orgCommission * splitNow.market + decisions.platformRate * splitNow.platform)
         / (splitNow.market + splitNow.platform)
       : decisions.orgCommission;
+
+    // Абонплата вычитает и одновременно даёт: организатор покупает не пропуск
+    // к виджету, а тариф — приоритет в афише, аналитику, своего менеджера.
+    // Чистым вычетом она была мёртвым рычагом: правильный ответ всегда
+    // сводился к «не брать ничего».
+    const tariff = connected ? decisions.platformFee : 0;
 
     const appeal = organizerAppeal(def, {
       orgCommission: feltTake,
@@ -3581,7 +3685,7 @@ function step(prevState, input = {}) {
       service,
       fill: fillSeen,
       trust: prevState.trust,
-    }) * subscriptionDrag(def, connected ? decisions.platformFee : 0);
+    }) * subscriptionDrag(def, tariff) * subscriptionValue(def, tariff, pLevel);
 
     const rivalAppeal = rivalAppealFor(def, riv);
     const preference = preferenceAgainst(appeal, rivalAppeal);
@@ -3647,7 +3751,7 @@ function step(prevState, input = {}) {
     p.events = l.events;
     p.seats = l.seats;
     p.season = l.season;
-    p.split = channelSplit(p.def, p.widgetShare, pLevel);
+    p.split = channelSplit(p.def, p.widgetShare, pLevel, decisions.platformRate);
     p.marketSeats = l.seats * p.split.market;
     seatsByType[p.def.id] = l.seats;
     marketSeatsByType[p.def.id] = p.marketSeats;
@@ -3848,7 +3952,7 @@ function step(prevState, input = {}) {
   const contribution = revenue - variableCost;
 
   const managerCost = decisions.managers * CONFIG.managerCost;
-  const platformSeats = platformCost(connectedCount);
+  const platformSeats = platformCost(connectedCount, decisions.platformFee);
   // Построенное надо содержать, а серверы растут вместе с билетами: обе
   // статьи дорожают ровно тогда, когда дела идут хорошо.
   const techUpkeep = platformUpkeep(
@@ -5175,6 +5279,19 @@ function renderExclusive() {
 // таблица. Здесь то же самое, но словами и про мир, а не про ваши метрики.
 // Каждая строка выведена из состояния: выдумывать нечего.
 // ----------------------------------------------------------------------------
+/**
+ * Приток против оттока. Сравниваются округлённые числа — те самые, которые
+ * стоят в строке рядом: «пришли 22, ушли 22» с приговором «уходит больше»
+ * читается как враньё, даже когда до округления так и было.
+ */
+function balance(inflow, outflow, goodKey, evenKey, badKey) {
+  const a = Math.round(inflow);
+  const b = Math.round(outflow);
+  if (a > b) return ['good', t(goodKey)];
+  if (a < b) return ['warn', t(badKey)];
+  return ['', t(evenKey)];
+}
+
 function buildNews(r) {
   const news = [];
   const month = state.month;
@@ -5228,10 +5345,10 @@ function buildNews(r) {
   }
 
   if (r && (r.orgJoined > 0 || r.orgLeft > 0)) {
-    const good = r.orgJoined >= r.orgLeft;
-    news.push([good ? 'good' : 'warn', t('newsGrowth', {
-      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0),
-      verdict: good ? t('newsGrowthGood') : t('newsGrowthBad'),
+    const [kind, verdict] = balance(r.orgJoined, r.orgLeft,
+      'newsGrowthGood', 'newsGrowthEven', 'newsGrowthBad');
+    news.push([kind, t('newsGrowth', {
+      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0), verdict,
     })]);
   }
 
@@ -5239,6 +5356,10 @@ function buildNews(r) {
 }
 
 function renderNews() {
+  // После конца партии новостей нет: город живёт дальше без вас, а показывать
+  // прогноз на неделю, которой не будет, — то же самое, что и погодная панель
+  // на экране итогов. Она тоже гаснет.
+  if (state.over) { el('news-slot').innerHTML = ''; return; }
   const r = last();
   const news = buildNews(r);
   el('news-slot').innerHTML = `<div class="panel">

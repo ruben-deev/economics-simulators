@@ -32,7 +32,7 @@ export function platformLevelOf(stock) {
  *   lost     — продано мимо вас: свой сайт без виджета, касса у входа в зал,
  *              другой оператор
  */
-export function channelSplit(def, share, platformLevel) {
+export function channelSplit(def, share, platformLevel, platformRate = CONFIG.refPlatformRate) {
   // share — доля организаторов типа, у которых ваш виджет уже стоит.
   // Раньше здесь был да/нет, и это была неправда: тип из тридцати трёх клубов
   // не переезжает на новую билетную систему в один месяц и весь сразу.
@@ -41,14 +41,43 @@ export function channelSplit(def, share, platformLevel) {
   // Виджет не просто забирает то, что и так уходило: организатор начинает его
   // продвигать. Чем сильнее платформа, тем активнее он гонит покупателя
   // к себе — и тем меньше остаётся вашей афише.
-  const platformIn = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  const neutral = clamp(def.selfTraffic * (0.80 + 0.50 * platformLevel), 0, 0.92);
+  // ...но насколько активно — решает ваша ставка. См. ownChannelPush.
+  const own = clamp(neutral * ownChannelPush(def, platformRate), 0, 0.92);
+  // Всё, что организатор при дорогой ставке не повёл через виджет, уходит
+  // не в вашу афишу, а мимо вас: кассой у входа и абонементами. Иначе
+  // высокая ставка была бы бесплатной — оборот просто перетекал бы туда,
+  // где вы берёте больше.
+  const bypass = Math.max(0, neutral - own);
   const lostOut = clamp(def.selfTraffic * CONFIG.leakWithoutPlatform, 0, 0.9);
 
   return {
-    market: withWidget * (1 - platformIn) + (1 - withWidget) * (1 - lostOut),
-    platform: withWidget * platformIn,
-    lost: (1 - withWidget) * lostOut,
+    market: withWidget * (1 - own - bypass) + (1 - withWidget) * (1 - lostOut),
+    platform: withWidget * own,
+    lost: withWidget * bypass + (1 - withWidget) * lostOut,
   };
+}
+
+/**
+ * Насколько охотно организатор гонит покупателя в свой виджет вместо вашей
+ * афиши. Это решаете вы — ставкой.
+ *
+ * Ставка ниже рыночной: виджет для организатора почти бесплатен, и он
+ * продвигает его сам — баннером на сайте, ссылкой в рассылке, QR-кодом на
+ * афише. Оборот переезжает из вашей афиши, где вы берёте сбор с покупателя
+ * и комиссию, в виджет, где вы берёте копейки. Дешёвый виджет съедает
+ * маркетплейс.
+ *
+ * Ставка выше рыночной: организатор считает и обходит виджет вовсе —
+ * касса у входа, абонементы своим людям, старое самописное решение. Этот
+ * оборот не возвращается в вашу афишу, он просто исчезает.
+ *
+ * Больнее всего реагируют те, кто и так торгуется за каждый процент.
+ */
+export function ownChannelPush(def, platformRate) {
+  const rel = clamp(platformRate / CONFIG.refPlatformRate, 0, 3);
+  const bite = CONFIG.ratePushBite * (rel - 1) * (0.5 + 0.5 * def.commissionSensitivity);
+  return clamp(1 - bite, 0.25, 1.45);
 }
 
 /**
@@ -65,8 +94,12 @@ export function channelSplit(def, share, platformLevel) {
  * @param spendPerOrg бюджет подключений, приходящийся на одного организатора
  * @param platformLevel зрелость платформы: сырой продукт не переносит
  * @param rivalHold   какую долю типа конкурент держит намертво
+ * @param platformRate ваша ставка: дорогой виджет организатор считает дольше
  */
-export function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold = 0) {
+export function widgetAdoption(
+  def, share, spendPerOrg, platformLevel, rivalHold = 0,
+  platformRate = CONFIG.refPlatformRate,
+) {
   const ceiling = clamp(1 - rivalHold, 0, 1);
   const room = ceiling - clamp(share, 0, 1);
   if (room <= 0 || platformLevel <= 0.02) return 0;
@@ -76,7 +109,14 @@ export function widgetAdoption(def, share, spendPerOrg, platformLevel, rivalHold
   const need = clamp(def.platformNeed / 1.5, 0.15, 1.2);
   const paid = Math.pow(clamp(spendPerOrg / (CONFIG.integrationCost / need), 0, 4), 0.6);
   const ready = clamp(platformLevel / (platformLevel + 0.18), 0, 1);
-  return room * clamp(CONFIG.adoptionPace * paid * ready, 0, 0.45);
+  // Переезд — инвестиционное решение организатора, и он считает окупаемость.
+  // При ставке вдвое выше рыночной разговор с его финдиректором совсем другой,
+  // и бюджетом на подключения это перебивается лишь отчасти.
+  const price = clamp(
+    1 - CONFIG.rateAdoptionBite * (platformRate - CONFIG.refPlatformRate) / CONFIG.refPlatformRate,
+    0.25, 1.35,
+  );
+  return room * clamp(CONFIG.adoptionPace * paid * ready * price, 0, 0.45);
 }
 
 /**
@@ -102,9 +142,15 @@ export function revenuePerTicket(price, decisions, channel) {
 
 /**
  * Во сколько обходится содержание одного подключённого организатора.
+ *
+ * Кроме серверов и лицензий сюда входит содержание тарифа: приоритет в афише
+ * кто-то верстает, аналитику кто-то считает, на звонок кто-то отвечает. Чем
+ * дороже тариф, тем дороже его обслуживать — обещание не бывает бесплатным,
+ * и собрать абонплату, ничего за неё не делая, в этой модели нельзя.
  */
-export function platformCost(connectedCount) {
-  return connectedCount * CONFIG.platformSeatCost;
+export function platformCost(connectedCount, platformFee = 0) {
+  const serve = Math.max(0, platformFee) * CONFIG.tariffServeShare;
+  return connectedCount * (CONFIG.platformSeatCost + serve);
 }
 
 /**
@@ -114,4 +160,24 @@ export function platformCost(connectedCount) {
 export function subscriptionDrag(def, platformFee) {
   const monthlyGross = def.eventsPerMonth * def.seats * def.avgPrice;
   return clamp(1 - (platformFee * 6) / Math.max(1, monthlyGross), 0.25, 1);
+}
+
+/**
+ * Что организатор получает за абонплату.
+ *
+ * Абонплата — это тариф, а не пропуск: вместе с ней организатор покупает
+ * приоритет в афише, аналитику по залу, своего менеджера и обучение кассиров.
+ * Поэтому «не брать ничего» — не бесплатный выбор: бесплатный тариф означает
+ * и отсутствие обязательств, и организатор это чувствует.
+ *
+ * Ценность насыщается: первые деньги дают личный кабинет, десятые не дают
+ * ничего. И она держится на зрелости платформы — тариф за сто тысяч на сыром
+ * продукте организатор считает обманом, и никакой ценности там нет. Больше
+ * всех выигрывает тот, кому виджет и так нужнее: клубу без своей кассы пакет
+ * заменяет весь IT-отдел, промоутеру тура — почти ничего.
+ */
+export function subscriptionValue(def, platformFee, platformLevel) {
+  if (platformFee <= 0) return 1;
+  const paid = platformFee / (platformFee + CONFIG.tariffHalfValue);
+  return clamp(1 + CONFIG.tariffGain * paid * platformLevel * def.platformNeed, 1, 1.7);
 }

@@ -588,6 +588,19 @@ function renderExclusive() {
 // таблица. Здесь то же самое, но словами и про мир, а не про ваши метрики.
 // Каждая строка выведена из состояния: выдумывать нечего.
 // ----------------------------------------------------------------------------
+/**
+ * Приток против оттока. Сравниваются округлённые числа — те самые, которые
+ * стоят в строке рядом: «пришли 22, ушли 22» с приговором «уходит больше»
+ * читается как враньё, даже когда до округления так и было.
+ */
+function balance(inflow, outflow, goodKey, evenKey, badKey) {
+  const a = Math.round(inflow);
+  const b = Math.round(outflow);
+  if (a > b) return ['good', t(goodKey)];
+  if (a < b) return ['warn', t(badKey)];
+  return ['', t(evenKey)];
+}
+
 function buildNews(r) {
   const news = [];
   const month = state.month;
@@ -641,10 +654,10 @@ function buildNews(r) {
   }
 
   if (r && (r.orgJoined > 0 || r.orgLeft > 0)) {
-    const good = r.orgJoined >= r.orgLeft;
-    news.push([good ? 'good' : 'warn', t('newsGrowth', {
-      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0),
-      verdict: good ? t('newsGrowthGood') : t('newsGrowthBad'),
+    const [kind, verdict] = balance(r.orgJoined, r.orgLeft,
+      'newsGrowthGood', 'newsGrowthEven', 'newsGrowthBad');
+    news.push([kind, t('newsGrowth', {
+      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0), verdict,
     })]);
   }
 
@@ -652,6 +665,10 @@ function buildNews(r) {
 }
 
 function renderNews() {
+  // После конца партии новостей нет: город живёт дальше без вас, а показывать
+  // прогноз на неделю, которой не будет, — то же самое, что и погодная панель
+  // на экране итогов. Она тоже гаснет.
+  if (state.over) { el('news-slot').innerHTML = ''; return; }
   const r = last();
   const news = buildNews(r);
   el('news-slot').innerHTML = `<div class="panel">

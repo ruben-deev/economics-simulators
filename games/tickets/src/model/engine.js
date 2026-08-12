@@ -40,7 +40,7 @@ import {
   buyerPreference,
 } from './demand.js';
 import {
-  platformLevelOf, channelSplit, platformCost, subscriptionDrag,
+  platformLevelOf, channelSplit, platformCost, subscriptionDrag, subscriptionValue,
   widgetAdoption, rivalHoldOf,
 } from './channel.js';
 import {
@@ -287,7 +287,7 @@ export function step(prevState, input = {}) {
     const was = clamp(state.platformShare[def.id] ?? 0, 0, 1);
     if (!connectedFor[def.id]) { state.platformShare[def.id] = 0; adoptionByType[def.id] = 0; continue; }
     const hold = rivalHoldOf(def, rivalPLevel, riv.orgs[def.id] ?? 0, prevState.orgs[def.id] ?? 0);
-    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold);
+    const gain = widgetAdoption(def, was, spendPerOrg, pLevel, hold, decisions.platformRate);
     adoptionByType[def.id] = gain;
     state.platformShare[def.id] = clamp(was + gain, 0, 1);
   }
@@ -320,11 +320,17 @@ export function step(prevState, input = {}) {
     // комиссию с одних билетов и ставку платформы с других — и в переговорах
     // называет одно число. Без этого ставку платформы можно было поднять до
     // потолка, и ни один организатор бы не заметил.
-    const splitNow = channelSplit(def, widgetShare, pLevel);
+    const splitNow = channelSplit(def, widgetShare, pLevel, decisions.platformRate);
     const feltTake = splitNow.market + splitNow.platform > 0
       ? (decisions.orgCommission * splitNow.market + decisions.platformRate * splitNow.platform)
         / (splitNow.market + splitNow.platform)
       : decisions.orgCommission;
+
+    // Абонплата вычитает и одновременно даёт: организатор покупает не пропуск
+    // к виджету, а тариф — приоритет в афише, аналитику, своего менеджера.
+    // Чистым вычетом она была мёртвым рычагом: правильный ответ всегда
+    // сводился к «не брать ничего».
+    const tariff = connected ? decisions.platformFee : 0;
 
     const appeal = organizerAppeal(def, {
       orgCommission: feltTake,
@@ -335,7 +341,7 @@ export function step(prevState, input = {}) {
       service,
       fill: fillSeen,
       trust: prevState.trust,
-    }) * subscriptionDrag(def, connected ? decisions.platformFee : 0);
+    }) * subscriptionDrag(def, tariff) * subscriptionValue(def, tariff, pLevel);
 
     const rivalAppeal = rivalAppealFor(def, riv);
     const preference = preferenceAgainst(appeal, rivalAppeal);
@@ -401,7 +407,7 @@ export function step(prevState, input = {}) {
     p.events = l.events;
     p.seats = l.seats;
     p.season = l.season;
-    p.split = channelSplit(p.def, p.widgetShare, pLevel);
+    p.split = channelSplit(p.def, p.widgetShare, pLevel, decisions.platformRate);
     p.marketSeats = l.seats * p.split.market;
     seatsByType[p.def.id] = l.seats;
     marketSeatsByType[p.def.id] = p.marketSeats;
@@ -602,7 +608,7 @@ export function step(prevState, input = {}) {
   const contribution = revenue - variableCost;
 
   const managerCost = decisions.managers * CONFIG.managerCost;
-  const platformSeats = platformCost(connectedCount);
+  const platformSeats = platformCost(connectedCount, decisions.platformFee);
   // Построенное надо содержать, а серверы растут вместе с билетами: обе
   // статьи дорожают ровно тогда, когда дела идут хорошо.
   const techUpkeep = platformUpkeep(
