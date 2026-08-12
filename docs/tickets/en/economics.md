@@ -242,6 +242,28 @@ The chance of a hit depends on the season (34% in summer, 30% in winter, 26%
 otherwise) and on whether you have organisers of the right type: somebody else's
 tour does nothing for your listings.
 
+## 6c. An advance is a loan, not a fee
+
+An exclusive is not bought with money for rights but with an **advance against
+future sales**: the organiser takes ₽120–500M now — for a production, a tour, a
+venue — and repays it out of the revenue of their own tickets.
+
+```
+withheld per month = that type's turnover × 35%
+term               = 12 months
+not repaid by then -> written off as a loss
+```
+
+Three things follow that an ordinary commission does not have. **A cash gap:**
+the money leaves in one payment and comes back over a year. **Repayment is not
+revenue:** while the debt is open the inflow returns principal, so it is in the
+cash and not in the profit. **Recoupment risk:** if the halls did not sell, there
+is nothing to repay from, and the remainder is written off — the organiser sold
+what they sold and does not owe the difference out of pocket.
+
+This is why ticketing operators carry a large balance sheet on a thin margin:
+they do not only take a percentage, they finance the market.
+
 ## 7. Trust
 
 The one asset that cannot be bought in the month it turns out to be needed.

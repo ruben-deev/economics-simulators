@@ -632,6 +632,14 @@ function buildNews(r) {
     news.push(['bad', t('newsOutage', { share: pct(r.outageLoss, 0) })]);
   }
 
+  if (r && r.advanceWrittenOff > 0) {
+    news.push(['bad', t('newsAdvanceLost', { lost: money(r.advanceWrittenOff) })]);
+  }
+  if (r && r.advanceRecouped > 0) {
+    news.push(['', t('newsAdvance', {
+      back: money(r.advanceRecouped), left: money(r.advanceOutstanding) })]);
+  }
+
   if (r && (r.orgJoined > 0 || r.orgLeft > 0)) {
     const good = r.orgJoined >= r.orgLeft;
     news.push([good ? 'good' : 'warn', t('newsGrowth', {

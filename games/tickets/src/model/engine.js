@@ -76,6 +76,10 @@ export function createInitialState(seed = 'bileton') {
     // афиши ещё нет, и приезжать не к кому.
     pendingHit: null,
 
+    // Выданные организаторам авансы под будущие продажи. Это не расход,
+    // а актив: деньги ушли из кассы, но должны вернуться из их выручки.
+    advances: [],
+
     // Какая доля организаторов каждого типа уже переехала на ваш виджет.
     // Не да/нет: тип из сорока пяти клубов переезжает месяцами и по частям.
     platformShare: Object.fromEntries(ORGANIZERS.map((o) => [o.id, 0])),
@@ -679,6 +683,34 @@ export function step(prevState, input = {}) {
   }
 
   // --- 13. Эксклюзивы ---
+  // --- Возврат авансов ---
+  // Каждый месяц удерживаем часть оборота того типа, кому дали денег. Пока
+  // долг не закрыт, эти деньги — не выручка, а возврат тела: в отчёте о
+  // прибыли их нет, в кассе они есть. Разницу между этими двумя вещами
+  // и надо увидеть.
+  let advanceRecouped = 0;
+  let advanceWrittenOff = 0;
+  // Оборот по типам считаем по доле выставленных мест: отдельного счётчика
+  // на тип нет, а места — ровно то, чем тип участвует в обороте.
+  const seatsTotal = Object.values(seatsByType).reduce((sum, v) => sum + v, 0) || 1;
+  const gmvByOrg = Object.fromEntries(
+    Object.entries(seatsByType).map(([id, seats]) => [id, gmv * (seats / seatsTotal)]));
+  for (const adv of state.advances) {
+    const flow = (gmvByOrg[adv.org] ?? 0) * CONFIG.advanceRecoupRate;
+    const take = Math.min(adv.outstanding, flow);
+    adv.outstanding -= take;
+    advanceRecouped += take;
+    adv.monthsLeft -= 1;
+  }
+  state.cash += advanceRecouped;
+  // Срок вышел — что не вернулось, то потеряно. Организатор не обязан
+  // доплачивать из своего кармана: он продал столько, сколько продал.
+  for (const adv of state.advances) {
+    if (adv.monthsLeft <= 0 && adv.outstanding > 0) advanceWrittenOff += adv.outstanding;
+  }
+  state.advances = state.advances.filter((adv) => adv.monthsLeft > 0 && adv.outstanding > 1);
+  const advanceOutstanding = state.advances.reduce((sum, adv) => sum + adv.outstanding, 0);
+
   for (const key of Object.keys(state.exclusives)) {
     state.exclusives[key] -= 1;
     if (state.exclusives[key] <= 0) delete state.exclusives[key];
@@ -688,6 +720,14 @@ export function step(prevState, input = {}) {
     const offer = prevState.exclusiveOffer;
     state.exclusives[offer.org] = CONFIG.exclusiveHoldMonths;
     state.cash -= offer.advance;
+    // Это не плата за права, а деньги в долг под будущие продажи: организатор
+    // берёт их сейчас на постановку и тур, а возвращает из выручки своих же
+    // билетов. Отсюда и риск, которого нет у обычной комиссии: если зал не
+    // соберётся, возвращать будет не из чего, и остаток придётся списать.
+    state.advances.push({
+      org: offer.org, amount: offer.advance, outstanding: offer.advance,
+      monthsLeft: CONFIG.exclusiveHoldMonths, signed: month,
+    });
     exclusiveSigned = offer;
   }
   state.exclusiveOffer = null;
@@ -748,6 +788,9 @@ export function step(prevState, input = {}) {
     breadth: listingBreadth,
     hit: hit ? { id: hit.id, size: hit.size } : null,
     hitNext: state.pendingHit ? { ...state.pendingHit } : null,
+    advanceRecouped,
+    advanceWrittenOff,
+    advanceOutstanding,
 
     // --- Зрители ---
     reach: reachAfter,

@@ -530,3 +530,42 @@ test('в первый месяц ничего не объявлено: афиш�
   const s = createInitialState('news');
   assert.equal(s.pendingHit, null, 'на старте городу нечего анонсировать');
 });
+
+test('аванс — это долг под будущие продажи, а не плата за права', () => {
+  // Деньги уходят сразу, возвращаются из оборота того же организатора, и
+  // то, что не вернулось за срок, списывается. Именно это отличает
+  // финансирование от комиссии: у него есть риск невозврата.
+  const d = decide({ platformFor: { club: true, concert: true }, onboarding: 20_000_000,
+    marketing: 60_000_000, managers: 15, platformDev: 20_000_000 });
+  let recouped = 0;
+  let written = 0;
+  let advanced = 0;
+  let signedAny = false;
+  for (const seed of ['a', 'b', 'c', 'd']) {
+    let s = createInitialState(seed);
+    for (let i = 0; i < 36 && !s.over; i++) {
+      const take = Boolean(s.exclusiveOffer) && s.cash > s.exclusiveOffer.advance * 1.2;
+      if (take) { signedAny = true; advanced += s.exclusiveOffer.advance; }
+      const r = step(s, { decisions: d, eventChoice: 0, exclusiveAnswer: take ? 'accept' : 'decline' });
+      s = r.state;
+      recouped += r.report.advanceRecouped;
+      written += r.report.advanceWrittenOff;
+      // Долг никогда не отрицательный: больше выданного вернуться не может
+      assert.ok(r.report.advanceOutstanding >= 0, 'остаток долга ушёл в минус');
+    }
+  }
+  assert.ok(signedAny, 'предпосылка теста: хотя бы один аванс должен быть выдан');
+  assert.ok(recouped > 0, 'выданные деньги обязаны возвращаться из оборота');
+  // Больше выданного вернуться не может, и списанное плюс возвращённое
+  // не превышает выданного: это те же деньги, а не новая выручка.
+  assert.ok(recouped + written <= advanced + 1,
+    `вернулось и списано ${Math.round((recouped + written) / 1e6)} млн при выданных ${Math.round(advanced / 1e6)} млн`);
+
+  // Риск невозврата существует: если срок вышел, а оборот был мал, остаток
+  // списывается. Проверяем сам механизм, не полагаясь на удачу сида.
+  const starved = createInitialState('starve');
+  starved.advances = [{ org: 'club', amount: 300e6, outstanding: 300e6, monthsLeft: 1, signed: 1 }];
+  const after = step(starved, { decisions: decide({ marketing: 0 }), eventChoice: 0 }).report;
+  assert.ok(after.advanceWrittenOff > 0, 'по истечении срока непогашенный остаток обязан списаться');
+  assert.equal(after.advanceOutstanding, 0, 'списанное не должно остаться висеть долгом');
+});
