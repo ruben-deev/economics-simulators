@@ -72,6 +72,10 @@ export function createInitialState(seed = 'bileton') {
     orgs: { theatre: 16, concert: 3, club: 45, sport: 2 },
     // Кому уже поставлен билетный виджет. В начале — никому: платформы ещё нет.
     prevPlatformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
+    // Что приезжает в город в следующем месяце. В первый месяц — ничего:
+    // афиши ещё нет, и приезжать не к кому.
+    pendingHit: null,
+
     // Какая доля организаторов каждого типа уже переехала на ваш виджет.
     // Не да/нет: тип из сорока пяти клубов переезжает месяцами и по частям.
     platformShare: Object.fromEntries(ORGANIZERS.map((o) => [o.id, 0])),
@@ -409,9 +413,15 @@ export function step(prevState, input = {}) {
   const listingBreadth = breadth(marketSeatsByType);
 
   // --- 5a. Хит месяца ---
+  // Хит объявляется за месяц. Раньше он выпадал в тот же ход, и запас
+  // мощности приходилось покупать вслепую: сайт лёг, деньги потеряны, а
+  // решение принять было негде. Теперь тур виден заранее — и становится
+  // решением, а не случайностью. Заодно это единственная новость, которую
+  // в игре про билеты человек ждёт: что приезжает в город.
   const orgCounts = Object.fromEntries(perOrg.map((p) => [p.def.id, p.count]));
-  const hit = rollHit(rng, month, orgCounts);
+  const hit = prevState.pendingHit ?? null;
   const hitDef = hit ? hitById(hit.id) : null;
+  state.pendingHit = rollHit(rng, month + 1, orgCounts);
 
   // --- 6. Охват зрителей ---
   // Маркетинг растит охват, но приводить людей некуда, если афиша пуста:
@@ -737,6 +747,7 @@ export function step(prevState, input = {}) {
     seatShare,
     breadth: listingBreadth,
     hit: hit ? { id: hit.id, size: hit.size } : null,
+    hitNext: state.pendingHit ? { ...state.pendingHit } : null,
 
     // --- Зрители ---
     reach: reachAfter,

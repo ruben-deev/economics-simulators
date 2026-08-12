@@ -2,7 +2,7 @@
 <html lang="ru" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.6.0" />
+  <meta name="app-version" content="1.7.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="zero900" />
   <title>БИЛЕТОН · ticketing marketplace simulator</title>
@@ -766,6 +766,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div id="crisis-slot"></div>
       <div id="exclusive-slot"></div>
       <div id="turn-slot"></div>
+      <div id="news-slot"></div>
       <div id="channel-slot"></div>
       <div id="supply-slot"></div>
       <div id="rival-slot"></div>
@@ -1293,6 +1294,24 @@ const STRINGS = {
   seasonSummer: { ru: 'лето', en: 'summer' },
 
   hitTitle: { ru: 'Хит месяца: {name}', en: 'Hit of the month: {name}' },
+
+  // --- Новости месяца ---
+  todoCapacityUrgentTitle: { ru: 'Запаса мощности нет, а в город едет: {name}', en: 'No capacity headroom, and this is coming to town: {name}' },
+  todoCapacityUrgentText: { ru: 'Тур уже объявлен — значит в день старта продаж на сайт придут все сразу. Купить запас можно только заранее: в тот самый день он не появится.', en: 'The tour is announced, so on the on-sale day everyone arrives at once. Headroom can only be bought in advance — it will not appear on the day itself.' },
+  newsPanel: { ru: 'Что в городе', en: 'What is on in town' },
+  newsEmpty: { ru: 'Месяц без событий: обычная афиша, обычные залы. Такие месяцы и кормят — на них видно настоящую экономику сервиса, без всплесков.', en: 'A month with nothing in it: ordinary listings, ordinary halls. These are the months that feed you — they show the real economics of the service, without the spikes.' },
+  newsHitNext: { ru: '<b>В следующем месяце: {name}.</b> {note} Спрос подскочит, а вместе с ним нагрузка на сайт и интерес перекупщиков. Готовиться надо сейчас: <a class="jump" data-jump="lever:capacityTech">запас мощности</a> покупается заранее, в день старта продаж уже поздно.', en: '<b>Next month: {name}.</b> {note} Demand will spike, and so will the load on the site and the interest of resellers. Prepare now: <a class="jump" data-jump="lever:capacityTech">capacity headroom</a> is bought in advance — on the on-sale day it is too late.' },
+  newsHitNow: { ru: '<b>{name} — сейчас.</b> {note}', en: '<b>{name} — this month.</b> {note}' },
+  newsHitQuiet: { ru: 'На следующий месяц ничего крупного не заявлено. Спокойный месяц — хорошее время что-то поменять и увидеть эффект без помех.', en: 'Nothing big is announced for next month. A quiet month is a good time to change something and see the effect without noise.' },
+  newsSeasonAutumn: { ru: '<b>Сентябрь: открывается театральный сезон.</b> Театры и филармонии выкатывают афишу на год вперёд — их проще подключить именно сейчас.', en: '<b>September: the theatre season opens.</b> Theatres and concert halls publish a year of listings at once — this is when they are easiest to sign.' },
+  newsSeasonSummer: { ru: '<b>Лето: театры закрыты, стадионы полны.</b> Половина обычной афиши исчезает, зато у спорта и фестивалей это лучшие месяцы года.', en: '<b>Summer: theatres are dark, stadiums are full.</b> Half the usual listings vanish, but for sport and festivals these are the best months of the year.' },
+  newsSeasonWinter: { ru: '<b>Декабрь и январь: ёлки и корпоративы.</b> Спрос высокий, но короткий — и почти весь приходится на две недели.', en: '<b>December and January: holiday shows.</b> Demand is high but short, and almost all of it lands in two weeks.' },
+  newsRivalStance: { ru: '<b>Конкурент меняет тактику: {stance}.</b> {note}', en: '<b>The rival changes tack: {stance}.</b> {note}' },
+  newsResellers: { ru: '<b>Перекупщики забрали {share} билетов.</b> Оборот от этого только вырос — а доверие зрителей падает, и это увидят не сразу.', en: '<b>Resellers took {share} of the tickets.</b> Turnover only went up — and buyer trust is falling, which nobody notices at once.' },
+  newsOutage: { ru: '<b>Сайт не выдержал старта продаж:</b> потеряно {share} спроса. Запас мощности держат весь год ради одного такого дня.', en: '<b>The site went down at the on-sale:</b> {share} of demand lost. Capacity headroom is held all year for a single day like this one.' },
+  newsGrowth: { ru: '<b>За месяц пришли {joined} организаторов, ушли {left}.</b> {verdict}', en: '<b>{joined} organisers joined this month, {left} left.</b> {verdict}' },
+  newsGrowthGood: { ru: 'Приток обгоняет отток — рынок идёт к вам.', en: 'Inflow beats outflow — the market is coming your way.' },
+  newsGrowthBad: { ru: 'Уходит больше, чем приходит. Смотрите на заполняемость залов и на то, сколько вы забираете.', en: 'More are leaving than arriving. Look at hall fill and at how much you take.' },
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
   unitOrgs: { ru: 'организаторов', en: 'organisers' },
@@ -3294,6 +3313,10 @@ function createInitialState(seed = 'bileton') {
     orgs: { theatre: 16, concert: 3, club: 45, sport: 2 },
     // Кому уже поставлен билетный виджет. В начале — никому: платформы ещё нет.
     prevPlatformFor: Object.fromEntries(ORGANIZERS.map((o) => [o.id, false])),
+    // Что приезжает в город в следующем месяце. В первый месяц — ничего:
+    // афиши ещё нет, и приезжать не к кому.
+    pendingHit: null,
+
     // Какая доля организаторов каждого типа уже переехала на ваш виджет.
     // Не да/нет: тип из сорока пяти клубов переезжает месяцами и по частям.
     platformShare: Object.fromEntries(ORGANIZERS.map((o) => [o.id, 0])),
@@ -3631,9 +3654,15 @@ function step(prevState, input = {}) {
   const listingBreadth = breadth(marketSeatsByType);
 
   // --- 5a. Хит месяца ---
+  // Хит объявляется за месяц. Раньше он выпадал в тот же ход, и запас
+  // мощности приходилось покупать вслепую: сайт лёг, деньги потеряны, а
+  // решение принять было негде. Теперь тур виден заранее — и становится
+  // решением, а не случайностью. Заодно это единственная новость, которую
+  // в игре про билеты человек ждёт: что приезжает в город.
   const orgCounts = Object.fromEntries(perOrg.map((p) => [p.def.id, p.count]));
-  const hit = rollHit(rng, month, orgCounts);
+  const hit = prevState.pendingHit ?? null;
   const hitDef = hit ? hitById(hit.id) : null;
+  state.pendingHit = rollHit(rng, month + 1, orgCounts);
 
   // --- 6. Охват зрителей ---
   // Маркетинг растит охват, но приводить людей некуда, если афиша пуста:
@@ -3959,6 +3988,7 @@ function step(prevState, input = {}) {
     seatShare,
     breadth: listingBreadth,
     hit: hit ? { id: hit.id, size: hit.size } : null,
+    hitNext: state.pendingHit ? { ...state.pendingHit } : null,
 
     // --- Зрители ---
     reach: reachAfter,
@@ -5088,6 +5118,81 @@ function renderExclusive() {
 // ----------------------------------------------------------------------------
 // Ход: что осталось решить
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Новости месяца.
+//
+// В игре про билеты человек ждёт, что в городе что-то происходит: приезжает
+// тур, открывается сезон, конкурент меняет тактику. Раньше всё это было
+// в модели, но на экран попадало только цифрами — и партия читалась как
+// таблица. Здесь то же самое, но словами и про мир, а не про ваши метрики.
+// Каждая строка выведена из состояния: выдумывать нечего.
+// ----------------------------------------------------------------------------
+function buildNews(r) {
+  const news = [];
+  const month = state.month;
+  // Тактику конкурента сравниваем с прошлым месяцем: новость — это смена,
+  // а не сама тактика, которая и так висит в его панели.
+  const hist = state.history ?? [];
+  const prevStance = hist.length > 1 ? hist[hist.length - 2].rivalStance : null;
+
+  // Главное: что заявлено на следующий месяц. Это и новость, и решение —
+  // запас мощности покупается заранее.
+  if (r?.hitNext) {
+    const def = hitById(r.hitNext.id);
+    news.push(['good', t('newsHitNext', { name: tx(def?.name ?? ''), note: tx(def?.note ?? '') })]);
+  } else if (r) {
+    news.push(['', t('newsHitQuiet')]);
+  }
+
+  if (r?.hit) {
+    const def = hitById(r.hit.id);
+    news.push(['', t('newsHitNow', { name: tx(def?.name ?? ''), note: tx(def?.note ?? '') })]);
+  }
+
+  // Сезон: год начинается в сентябре, и театр со стадионом живут наоборот
+  const nextSeason = seasonOf(month + 1);
+  const nextInYear = (month % 12) + 1;
+  if (nextInYear === 1) news.push(['', t('newsSeasonAutumn')]);
+  else if (nextSeason === 'summer' && seasonOf(month) !== 'summer') news.push(['', t('newsSeasonSummer')]);
+  else if (nextSeason === 'winter' && seasonOf(month) !== 'winter') news.push(['', t('newsSeasonWinter')]);
+
+  // Конкурент сменил тактику — это видно и без нас, но лучше сказать словами
+  if (r && r.rivalAlive && r.rivalStance && r.rivalStance !== prevStance) {
+    // STANCES здесь — объект по ключу, а не массив: .find на нём падает,
+    // и падает только в тот месяц, когда конкурент меняет тактику.
+    const st = STANCES[r.rivalStance];
+    if (st) news.push(['warn', t('newsRivalStance', { stance: tx(st.name), note: tx(st.hint) })]);
+  }
+
+  if (r && r.botShare > 0.08) {
+    news.push(['warn', t('newsResellers', { share: pct(r.botShare, 0) })]);
+  }
+  if (r && r.outageLoss > 0.02) {
+    news.push(['bad', t('newsOutage', { share: pct(r.outageLoss, 0) })]);
+  }
+
+  if (r && (r.orgJoined > 0 || r.orgLeft > 0)) {
+    const good = r.orgJoined >= r.orgLeft;
+    news.push([good ? 'good' : 'warn', t('newsGrowth', {
+      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0),
+      verdict: good ? t('newsGrowthGood') : t('newsGrowthBad'),
+    })]);
+  }
+
+  return news;
+}
+
+function renderNews() {
+  const r = last();
+  const news = buildNews(r);
+  el('news-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('newsPanel')}</h2>
+    ${news.length
+      ? news.map(([kind, text]) => `<div class="alert ${kind}">${text}</div>`).join('')
+      : `<div class="alert">${t('newsEmpty')}</div>`}
+  </div>`;
+}
+
 function renderTurn() {
   const d = state.decisions;
   const r = last();
@@ -5101,8 +5206,14 @@ function renderTurn() {
     todos.push(['bad', t('todoManagersTitle'), t('todoManagersText', {
       perManager: num(Math.min(perManager, 9999), 0), norm: CONFIG.orgPerManager }), 'lever:managers']);
   }
+  // Про мощность напоминаем всегда, но если тур уже объявлен — это не совет,
+  // а срочное дело: запас покупается заранее, в день старта продаж поздно.
   if (d.capacityTech < 4_000_000) {
-    todos.push(['warn', t('todoCapacityTitle'), t('todoCapacityText'), 'lever:capacityTech']);
+    const soon = r?.hitNext ? hitById(r.hitNext.id) : null;
+    todos.push(soon
+      ? ['bad', t('todoCapacityUrgentTitle', { name: tx(soon.name) }),
+        t('todoCapacityUrgentText'), 'lever:capacityTech']
+      : ['warn', t('todoCapacityTitle'), t('todoCapacityText'), 'lever:capacityTech']);
   }
   if (r && r.rivalAlive && d.buyerFee > r.rivalBuyerFee + 0.005) {
     todos.push(['warn', t('todoFeeTitle'), t('todoFeeText'), 'lever:buyerFee']);
@@ -5721,6 +5832,7 @@ function renderAll() {
   renderCrisis();
   renderExclusive();
   renderTurn();
+  renderNews();
   renderChannels();
   renderSupply();
   renderRival();

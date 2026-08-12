@@ -494,3 +494,39 @@ test('доля оборота через виджет растёт вместе 
   assert.ok(late.gmvPlatform / late.gmv > early.gmvPlatform / early.gmv,
     'больше переехавших — больше оборота идёт мимо афиши');
 });
+
+// ---------------------------------------------------------------------------
+// Хит объявляется заранее.
+//
+// Раньше тур выпадал в тот же ход: запас мощности приходилось покупать
+// вслепую, сайт ложился, и решение принять было негде — только смотреть.
+// Теперь то, что приезжает в город, видно за месяц, и это одновременно
+// новость и решение.
+// ---------------------------------------------------------------------------
+
+test('то, что случится в этом месяце, было объявлено в прошлом', () => {
+  const d = decide({ platformFor: { club: true, concert: true }, onboarding: 20_000_000,
+    marketing: 60_000_000, managers: 15, platformDev: 20_000_000 });
+  let announced = 0;
+  let happened = 0;
+  let matched = 0;
+  for (const seed of ['a', 'b', 'c', 'd']) {
+    const { reports } = run(36, d, seed);
+    for (let i = 0; i < reports.length; i++) {
+      if (reports[i].hitNext) announced += 1;
+      if (!reports[i].hit) continue;
+      happened += 1;
+      const promised = i > 0 ? reports[i - 1].hitNext : null;
+      assert.ok(promised, `месяц ${reports[i].month}: хит случился без анонса`);
+      if (promised.id === reports[i].hit.id) matched += 1;
+    }
+  }
+  assert.ok(happened > 10, `хиты должны случаться: их всего ${happened}`);
+  assert.equal(matched, happened, 'каждый хит обязан совпасть с тем, что было объявлено');
+  assert.ok(announced >= happened, 'анонсов не меньше, чем состоявшихся хитов');
+});
+
+test('в первый месяц ничего не объявлено: афиши ещё нет', () => {
+  const s = createInitialState('news');
+  assert.equal(s.pendingHit, null, 'на старте городу нечего анонсировать');
+});

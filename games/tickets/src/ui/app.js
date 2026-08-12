@@ -579,6 +579,81 @@ function renderExclusive() {
 // ----------------------------------------------------------------------------
 // Ход: что осталось решить
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Новости месяца.
+//
+// В игре про билеты человек ждёт, что в городе что-то происходит: приезжает
+// тур, открывается сезон, конкурент меняет тактику. Раньше всё это было
+// в модели, но на экран попадало только цифрами — и партия читалась как
+// таблица. Здесь то же самое, но словами и про мир, а не про ваши метрики.
+// Каждая строка выведена из состояния: выдумывать нечего.
+// ----------------------------------------------------------------------------
+function buildNews(r) {
+  const news = [];
+  const month = state.month;
+  // Тактику конкурента сравниваем с прошлым месяцем: новость — это смена,
+  // а не сама тактика, которая и так висит в его панели.
+  const hist = state.history ?? [];
+  const prevStance = hist.length > 1 ? hist[hist.length - 2].rivalStance : null;
+
+  // Главное: что заявлено на следующий месяц. Это и новость, и решение —
+  // запас мощности покупается заранее.
+  if (r?.hitNext) {
+    const def = hitById(r.hitNext.id);
+    news.push(['good', t('newsHitNext', { name: tx(def?.name ?? ''), note: tx(def?.note ?? '') })]);
+  } else if (r) {
+    news.push(['', t('newsHitQuiet')]);
+  }
+
+  if (r?.hit) {
+    const def = hitById(r.hit.id);
+    news.push(['', t('newsHitNow', { name: tx(def?.name ?? ''), note: tx(def?.note ?? '') })]);
+  }
+
+  // Сезон: год начинается в сентябре, и театр со стадионом живут наоборот
+  const nextSeason = seasonOf(month + 1);
+  const nextInYear = (month % 12) + 1;
+  if (nextInYear === 1) news.push(['', t('newsSeasonAutumn')]);
+  else if (nextSeason === 'summer' && seasonOf(month) !== 'summer') news.push(['', t('newsSeasonSummer')]);
+  else if (nextSeason === 'winter' && seasonOf(month) !== 'winter') news.push(['', t('newsSeasonWinter')]);
+
+  // Конкурент сменил тактику — это видно и без нас, но лучше сказать словами
+  if (r && r.rivalAlive && r.rivalStance && r.rivalStance !== prevStance) {
+    // STANCES здесь — объект по ключу, а не массив: .find на нём падает,
+    // и падает только в тот месяц, когда конкурент меняет тактику.
+    const st = STANCES[r.rivalStance];
+    if (st) news.push(['warn', t('newsRivalStance', { stance: tx(st.name), note: tx(st.hint) })]);
+  }
+
+  if (r && r.botShare > 0.08) {
+    news.push(['warn', t('newsResellers', { share: pct(r.botShare, 0) })]);
+  }
+  if (r && r.outageLoss > 0.02) {
+    news.push(['bad', t('newsOutage', { share: pct(r.outageLoss, 0) })]);
+  }
+
+  if (r && (r.orgJoined > 0 || r.orgLeft > 0)) {
+    const good = r.orgJoined >= r.orgLeft;
+    news.push([good ? 'good' : 'warn', t('newsGrowth', {
+      joined: num(r.orgJoined, 0), left: num(r.orgLeft, 0),
+      verdict: good ? t('newsGrowthGood') : t('newsGrowthBad'),
+    })]);
+  }
+
+  return news;
+}
+
+function renderNews() {
+  const r = last();
+  const news = buildNews(r);
+  el('news-slot').innerHTML = `<div class="panel">
+    <h2 class="panel-title">${t('newsPanel')}</h2>
+    ${news.length
+      ? news.map(([kind, text]) => `<div class="alert ${kind}">${text}</div>`).join('')
+      : `<div class="alert">${t('newsEmpty')}</div>`}
+  </div>`;
+}
+
 function renderTurn() {
   const d = state.decisions;
   const r = last();
@@ -592,8 +667,14 @@ function renderTurn() {
     todos.push(['bad', t('todoManagersTitle'), t('todoManagersText', {
       perManager: num(Math.min(perManager, 9999), 0), norm: CONFIG.orgPerManager }), 'lever:managers']);
   }
+  // Про мощность напоминаем всегда, но если тур уже объявлен — это не совет,
+  // а срочное дело: запас покупается заранее, в день старта продаж поздно.
   if (d.capacityTech < 4_000_000) {
-    todos.push(['warn', t('todoCapacityTitle'), t('todoCapacityText'), 'lever:capacityTech']);
+    const soon = r?.hitNext ? hitById(r.hitNext.id) : null;
+    todos.push(soon
+      ? ['bad', t('todoCapacityUrgentTitle', { name: tx(soon.name) }),
+        t('todoCapacityUrgentText'), 'lever:capacityTech']
+      : ['warn', t('todoCapacityTitle'), t('todoCapacityText'), 'lever:capacityTech']);
   }
   if (r && r.rivalAlive && d.buyerFee > r.rivalBuyerFee + 0.005) {
     todos.push(['warn', t('todoFeeTitle'), t('todoFeeText'), 'lever:buyerFee']);
@@ -1212,6 +1293,7 @@ function renderAll() {
   renderCrisis();
   renderExclusive();
   renderTurn();
+  renderNews();
   renderChannels();
   renderSupply();
   renderRival();

@@ -225,6 +225,23 @@ it are yours, and one of those percentages goes to the bank.
 
 ---
 
+## 6b. The hit of the month is announced in advance
+
+The city is not the same every month: a stadium tour arrives, a derby is played,
+a headline premiere opens, a festival happens. A hit raises demand, site load and
+reseller interest all at once.
+
+The point is that it is **visible a month ahead**. Before, a hit landed in the
+same turn, so capacity headroom had to be bought blind: the site went down, the
+money was lost, and there had been no decision to make — only something to watch.
+Now what is coming to town is announced in advance, and headroom becomes a
+decision: holding it all year is expensive, and it cannot be bought on the
+on-sale day.
+
+The chance of a hit depends on the season (34% in summer, 30% in winter, 26%
+otherwise) and on whether you have organisers of the right type: somebody else's
+tour does nothing for your listings.
+
 ## 7. Trust
 
 The one asset that cannot be bought in the month it turns out to be needed.
