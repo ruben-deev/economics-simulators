@@ -33,9 +33,9 @@ import { resultString, addRecord, loadRecords, bestRecord } from '../../../../sh
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
-const SAVE_KEY = 'bileton-save-v1';
-const RECORDS_KEY = 'bileton-records';
-const GAME_TAG = 'БИЛЕТОН';
+const SAVE_KEY = 'biletville-save-v1';
+const RECORDS_KEY = 'biletville-records';
+const GAME_TAG = 'БИЛЕТВИЛЬ';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'tickets-1';
@@ -1471,7 +1471,7 @@ function showGameOver() {
 
 function restart() {
   dropSave();
-  state = createInitialState(`bileton-${Date.now() % 100000}`);
+  state = createInitialState(`biletville-${Date.now() % 100000}`);
   clearActions();
   leversBuilt = false;
   renderAll();
@@ -1632,7 +1632,7 @@ function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   const saved = load();
-  state = saved ?? createInitialState('bileton');
+  state = saved ?? createInitialState('biletville');
   state.pendingInstall = state.pendingInstall ?? [];
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после

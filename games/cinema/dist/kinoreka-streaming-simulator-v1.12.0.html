@@ -2,11 +2,11 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.11.4" />
+  <meta name="app-version" content="1.12.0" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
-  <title>КИНОПОТОК · streaming economics simulator</title>
+  <title>КИНОРЕКА · streaming economics simulator</title>
   <style>
 :root {
   --bg: #0b1120;
@@ -360,7 +360,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-fx b.up { color: var(--good); }
 .weather-fx b.down { color: var(--bad); }
 
-/* ---------------- Конкурент, цели совета, кризис (КИНОПОТОК) ------------- */
+/* ---------------- Конкурент, цели совета, кризис (КИНОРЕКА) ------------- */
 .rival-head {
   display: flex;
   gap: 14px;
@@ -417,7 +417,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
 
-/* ------------- Слейт, ход месяца, группы рычагов (КИНОПОТОК) ------------- */
+/* ------------- Слейт, ход месяца, группы рычагов (КИНОРЕКА) ------------- */
 .lever-group { border-bottom: 1px solid var(--line); }
 .lever-group:last-child { border-bottom: none; }
 .lever-group-head {
@@ -517,7 +517,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   color: var(--muted);
 }
 
-/* ------------------- Партнёрства и разрыв цены (КИНОПОТОК) --------------- */
+/* ------------------- Партнёрства и разрыв цены (КИНОРЕКА) --------------- */
 .deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .deal { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
 .deal.ending { border-color: rgba(251, 191, 36, 0.45); }
@@ -965,13 +965,13 @@ function t(key, vars) {
 
 // ===== src/strings.js ==============================================
 // ============================================================================
-// Строки интерфейса игры «КИНОПОТОК». Пары { ru, en }.
+// Строки интерфейса игры «КИНОРЕКА». Пары { ru, en }.
 // Регистрируются в ядре локализации вызовом setStrings() при старте.
 // ============================================================================
 
 const STRINGS = {
   // --- шапка ---
-  brandTitle: { ru: 'КИНОПОТОК', en: 'KINOPOTOK' },
+  brandTitle: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
   brandSub: { ru: 'экономический симулятор онлайн-кинотеатра', en: 'streaming service economics simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
@@ -1583,7 +1583,7 @@ score = valuation × your stake`,
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎬 Вы управляете онлайн-кинотеатром', en: '🎬 You are running a streaming service' },
-  welcomeRole: { ru: 'Сервис «КИНОПОТОК» — подписка на кино и сериалы. Вы решаете, что взять у студий, что снять самим, сколько стоит подписка — и что делать, когда конкурент выкатывает громкий сериал.', en: 'KINOPOTOK is a subscription service for films and shows. You decide what to license from studios, what to make yourself, what the subscription costs — and what to do when the rival drops a hit show.' },
+  welcomeRole: { ru: 'Сервис «КИНОРЕКА» — подписка на кино и сериалы. Вы решаете, что взять у студий, что снять самим, сколько стоит подписка — и что делать, когда конкурент выкатывает громкий сериал.', en: 'KINOREKA is a subscription service for films and shows. You decide what to license from studios, what to make yourself, what the subscription costs — and what to do when the rival drops a hit show.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов: принимаете решения, запускаете месяц и читаете, что изменилось.', en: '<b>One turn is a month,</b> a game is three years — 36 turns: make your decisions, run the month and read what changed.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Подписчик платит одно и то же, а вы — за каждый просмотренный час: чем больше смотрят, тем дороже вам. И время против вас: чужие права истекают, а свой сериал выходит через полгода после оплаты.', en: '<b>Where the catch is.</b> A subscriber pays the same either way, while you pay for every hour watched: the more they watch, the more they cost you. Time is against you too: licensed rights expire, and your own show arrives six months after you pay.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять подписчиков и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing subscribers and seeing which decision started it teaches more than surviving by accident.' },
@@ -2089,7 +2089,7 @@ function weightedPick(rng, items) {
 
 // ===== src/model/config.js =========================================
 // ============================================================================
-// Параметры мира онлайн-кинотеатра «КИНОПОТОК».
+// Параметры мира онлайн-кинотеатра «КИНОРЕКА».
 // Денежная единица — рубли, шаг времени — 1 месяц.
 //
 // Текстовые поля двуязычны: { ru, en }. Разворачивает их i18n.tx().
@@ -4177,7 +4177,7 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-function createInitialState(seed = 'kinopotok') {
+function createInitialState(seed = 'kinoreka') {
   const rng = createRng(seed);
   resetProjectIds(1);
   const rival = createRival(rng);
@@ -5799,15 +5799,15 @@ function legendHtml(series) {
 
 // ===== src/ui/app.js ===============================================
 // ============================================================================
-// Слой интерфейса «КИНОПОТОКА»: состояние партии, отрисовка, обработка ввода.
+// Слой интерфейса «КИНОРЕКИ»: состояние партии, отрисовка, обработка ввода.
 // Вся экономика живёт в src/model — здесь только показ и управление.
 // Текст берётся из src/strings.js через t() и tx().
 // ============================================================================
 
 
-const SAVE_KEY = 'kinopotok-save-v1';
-const RECORDS_KEY = 'kinopotok-records';
-const GAME_TAG = 'КИНОПОТОК';
+const SAVE_KEY = 'kinoreka-save-v1';
+const RECORDS_KEY = 'kinoreka-records';
+const GAME_TAG = 'КИНОРЕКА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'cinema-2';
@@ -7722,7 +7722,7 @@ function nextMonth() {
 }
 
 function restart() {
-  state = createInitialState(`kinopotok-${Math.floor(Math.random() * 1e6)}`);
+  state = createInitialState(`kinoreka-${Math.floor(Math.random() * 1e6)}`);
   save();
   renderAll();
   showWelcome();
@@ -7844,7 +7844,7 @@ function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   const saved = load();
-  state = saved ?? createInitialState('kinopotok');
+  state = saved ?? createInitialState('kinoreka');
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после
   // сброса сохранения, и двойная подписка гоняла бы месяц по два раза за клик.

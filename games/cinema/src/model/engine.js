@@ -97,7 +97,7 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'kinopotok') {
+export function createInitialState(seed = 'kinoreka') {
   const rng = createRng(seed);
   resetProjectIds(1);
   const rival = createRival(rng);

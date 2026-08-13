@@ -16,8 +16,8 @@ between sessions and shared by all three games.
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
 | [🛵 **NOVOEDA**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
-| [🎬 **KINOPOTOK**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
-| [🎟️ **BILETON**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
+| [🎬 **KINOREKA**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
+| [🎟️ **BILETVILLE**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
 
 The games are built the same way but deliberately model **different** kinds of economics:
 in delivery, revenue per customer grows with their activity; in subscription it is fixed
@@ -36,8 +36,8 @@ Nothing to install.
 
 To hand games out offline, download the single-file build:
 [delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.4.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.11.4.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/bileton-ticketing-simulator-v1.14.5.html).
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.12.0.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **World leaderboard.** Each game's final screen keeps a local per-device record
@@ -151,7 +151,7 @@ couriers hired today go on the road exactly in the week the forecast covers.
 
 ---
 
-# 🎬 KINOPOTOK — a streaming service
+# 🎬 KINOREKA — a streaming service
 
 You build a streaming service. One turn is a month; a game is three years.
 
@@ -257,7 +257,7 @@ viewers choose rather than leave.
 
 ---
 
-# 🎟️ BILETON — ticketing marketplace
+# 🎟️ BILETVILLE — ticketing marketplace
 
 You run a ticketing operator. One turn is a month, a game is 36 months, and
 the year starts in September with the opening of the season.
@@ -340,7 +340,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinopotok-streaming-simulator-v1.11.4.html
+  dist/kinoreka-streaming-simulator-v1.12.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

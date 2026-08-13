@@ -3,15 +3,15 @@
 
 export default {
   name: 'cinema',
-  version: '1.11.4',
-  title: 'КИНОПОТОК · streaming economics simulator',
+  version: '1.12.0',
+  title: 'КИНОРЕКА · streaming economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
   // и не говорит ни о содержимом, ни о том, какая это из двух игр.
   // {version} подставляется из поля version ниже. Версии игр независимы:
   // правка в кинотеатре не должна переименовывать файл доставки и делать вид,
   // что он тоже обновился.
-  output: 'dist/kinopotok-streaming-simulator-v{version}.html',
+  output: 'dist/kinoreka-streaming-simulator-v{version}.html',
   css: ['../../shared/styles.css'],
   modules: [
     '../../shared/i18n.js',

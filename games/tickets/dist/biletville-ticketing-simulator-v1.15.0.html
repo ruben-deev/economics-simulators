@@ -2,11 +2,11 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.14.5" />
+  <meta name="app-version" content="1.15.0" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
-  <title>БИЛЕТОН · ticketing marketplace simulator</title>
+  <title>БИЛЕТВИЛЬ · ticketing marketplace simulator</title>
   <style>
 :root {
   --bg: #0b1120;
@@ -360,7 +360,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-fx b.up { color: var(--good); }
 .weather-fx b.down { color: var(--bad); }
 
-/* ---------------- Конкурент, цели совета, кризис (КИНОПОТОК) ------------- */
+/* ---------------- Конкурент, цели совета, кризис (КИНОРЕКА) ------------- */
 .rival-head {
   display: flex;
   gap: 14px;
@@ -417,7 +417,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
 
-/* ------------- Слейт, ход месяца, группы рычагов (КИНОПОТОК) ------------- */
+/* ------------- Слейт, ход месяца, группы рычагов (КИНОРЕКА) ------------- */
 .lever-group { border-bottom: 1px solid var(--line); }
 .lever-group:last-child { border-bottom: none; }
 .lever-group-head {
@@ -517,7 +517,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   color: var(--muted);
 }
 
-/* ------------------- Партнёрства и разрыв цены (КИНОПОТОК) --------------- */
+/* ------------------- Партнёрства и разрыв цены (КИНОРЕКА) --------------- */
 .deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .deal { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
 .deal.ending { border-color: rgba(251, 191, 36, 0.45); }
@@ -968,7 +968,7 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
-  brand: { ru: 'БИЛЕТОН', en: 'BILETON' },
+  brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
   langToggle: { ru: 'EN', en: 'RU' },
   langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
@@ -1002,7 +1002,7 @@ const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
-  welcomeRole: { ru: 'Оператор «БИЛЕТОН» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETON is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
+  welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years — 36 turns. The year starts in September, with the opening of the theatre season.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The billions in turnover are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
@@ -1968,7 +1968,7 @@ function weightedPick(rng, items) {
 
 // ===== src/model/config.js =========================================
 // ============================================================================
-// Параметры мира билетного сервиса «БИЛЕТОН».
+// Параметры мира билетного сервиса «БИЛЕТВИЛЬ».
 // Денежная единица — рубли, шаг времени — 1 месяц.
 //
 // Это двусторонний рынок: с одной стороны организаторы, которые дают афишу,
@@ -3924,7 +3924,7 @@ function applyEvent(mods, event, optionIndex) {
 
 // ===== src/model/engine.js =========================================
 // ============================================================================
-// Движок билетного сервиса «БИЛЕТОН».
+// Движок билетного сервиса «БИЛЕТВИЛЬ».
 //
 // Чистая функция: step(state, input) -> { state, report }. Ни одного обращения
 // к DOM, поэтому модель можно прогнать в тестах и в оптимизаторе баланса.
@@ -3951,7 +3951,7 @@ function applyEvent(mods, event, optionIndex) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-function createInitialState(seed = 'bileton') {
+function createInitialState(seed = 'biletville') {
   const rng = createRng(seed);
   const state = {
     seed,
@@ -5295,9 +5295,9 @@ function legendHtml(series) {
 // ============================================================================
 
 
-const SAVE_KEY = 'bileton-save-v1';
-const RECORDS_KEY = 'bileton-records';
-const GAME_TAG = 'БИЛЕТОН';
+const SAVE_KEY = 'biletville-save-v1';
+const RECORDS_KEY = 'biletville-records';
+const GAME_TAG = 'БИЛЕТВИЛЬ';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'tickets-1';
@@ -6733,7 +6733,7 @@ function showGameOver() {
 
 function restart() {
   dropSave();
-  state = createInitialState(`bileton-${Date.now() % 100000}`);
+  state = createInitialState(`biletville-${Date.now() % 100000}`);
   clearActions();
   leversBuilt = false;
   renderAll();
@@ -6894,7 +6894,7 @@ function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   const saved = load();
-  state = saved ?? createInitialState('bileton');
+  state = saved ?? createInitialState('biletville');
   state.pendingInstall = state.pendingInstall ?? [];
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после

@@ -1,5 +1,5 @@
 // ============================================================================
-// Слой интерфейса «КИНОПОТОКА»: состояние партии, отрисовка, обработка ввода.
+// Слой интерфейса «КИНОРЕКИ»: состояние партии, отрисовка, обработка ввода.
 // Вся экономика живёт в src/model — здесь только показ и управление.
 // Текст берётся из src/strings.js через t() и tx().
 // ============================================================================
@@ -25,9 +25,9 @@ import { resultString, addRecord, loadRecords, bestRecord } from '../../../../sh
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
-const SAVE_KEY = 'kinopotok-save-v1';
-const RECORDS_KEY = 'kinopotok-records';
-const GAME_TAG = 'КИНОПОТОК';
+const SAVE_KEY = 'kinoreka-save-v1';
+const RECORDS_KEY = 'kinoreka-records';
+const GAME_TAG = 'КИНОРЕКА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'cinema-2';
@@ -1942,7 +1942,7 @@ function nextMonth() {
 }
 
 function restart() {
-  state = createInitialState(`kinopotok-${Math.floor(Math.random() * 1e6)}`);
+  state = createInitialState(`kinoreka-${Math.floor(Math.random() * 1e6)}`);
   save();
   renderAll();
   showWelcome();
@@ -2064,7 +2064,7 @@ function boot() {
   setStrings(STRINGS);
   setLang(detectLang());
   const saved = load();
-  state = saved ?? createInitialState('kinopotok');
+  state = saved ?? createInitialState('kinoreka');
 
   // Обработчики вешаются один раз: init() может позвать boot() повторно после
   // сброса сохранения, и двойная подписка гоняла бы месяц по два раза за клик.

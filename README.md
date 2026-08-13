@@ -16,8 +16,8 @@
 | Игра | Бизнес | Ход | Партия | Главный конфликт |
 |---|---|---|---|---|
 | [🛵 **НОВОЕДА**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | доставка еды | неделя | 52 недели | спрос против пропускной способности |
-| [🎬 **КИНОПОТОК**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | онлайн-кинотеатр | месяц | 36 месяцев | война за рынок с живым конкурентом |
-| [🎟️ **БИЛЕТОН**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | билетный сервис | месяц | 36 месяцев | двусторонний рынок и конфликт каналов |
+| [🎬 **КИНОРЕКА**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | онлайн-кинотеатр | месяц | 36 месяцев | война за рынок с живым конкурентом |
+| [🎟️ **БИЛЕТВИЛЬ**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | билетный сервис | месяц | 36 месяцев | двусторонний рынок и конфликт каналов |
 
 Игры устроены одинаково, но намеренно моделируют **разные** типы экономики:
 в доставке выручка с клиента растёт вместе с его активностью, в подписке она
@@ -37,8 +37,8 @@
 
 Для раздачи студентам офлайн скачайте одиночный файл:
 [доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.4.html) ·
-[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.11.4.html) ·
-[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/bileton-ticketing-simulator-v1.14.5.html).
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.12.0.html) ·
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 **Мировая таблица результатов.** На финальном экране каждой игры есть локальная
@@ -152,7 +152,7 @@ JavaScript**. Встроенный браузер того же Телеграм
 
 ---
 
-# 🎬 КИНОПОТОК — онлайн-кинотеатр
+# 🎬 КИНОРЕКА — онлайн-кинотеатр
 
 Вы строите стриминговый сервис. Каждый ход — месяц, партия — три года.
 
@@ -258,7 +258,7 @@ JavaScript**. Встроенный браузер того же Телеграм
 
 ---
 
-# 🎟️ БИЛЕТОН — билетный сервис
+# 🎟️ БИЛЕТВИЛЬ — билетный сервис
 
 Вы управляете билетным оператором. Каждый ход — месяц, партия — 36 месяцев,
 год начинается в сентябре, с открытия сезона.
@@ -339,7 +339,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinopotok-streaming-simulator-v1.11.4.html
+  dist/kinoreka-streaming-simulator-v1.12.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```

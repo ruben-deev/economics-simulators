@@ -350,7 +350,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-fx b.up { color: var(--good); }
 .weather-fx b.down { color: var(--bad); }
 
-/* ---------------- Конкурент, цели совета, кризис (КИНОПОТОК) ------------- */
+/* ---------------- Конкурент, цели совета, кризис (КИНОРЕКА) ------------- */
 .rival-head {
   display: flex;
   gap: 14px;
@@ -407,7 +407,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .event-card.crisis h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .event-option.chosen { border-color: var(--accent); background: rgba(74, 222, 128, 0.12); }
 
-/* ------------- Слейт, ход месяца, группы рычагов (КИНОПОТОК) ------------- */
+/* ------------- Слейт, ход месяца, группы рычагов (КИНОРЕКА) ------------- */
 .lever-group { border-bottom: 1px solid var(--line); }
 .lever-group:last-child { border-bottom: none; }
 .lever-group-head {
@@ -507,7 +507,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   color: var(--muted);
 }
 
-/* ------------------- Партнёрства и разрыв цены (КИНОПОТОК) --------------- */
+/* ------------------- Партнёрства и разрыв цены (КИНОРЕКА) --------------- */
 .deals { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .deal { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
 .deal.ending { border-color: rgba(251, 191, 36, 0.45); }

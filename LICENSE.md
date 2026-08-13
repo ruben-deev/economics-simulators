@@ -1,6 +1,6 @@
 # Лицензия · License
 
-**Учебные экономические симуляторы** (НОВОЕДА, КИНОПОТОК, БИЛЕТОН): код, экономические
+**Учебные экономические симуляторы** (НОВОЕДА, КИНОРЕКА, БИЛЕТВИЛЬ): код, экономические
 модели, тексты и документация.
 
 © Ruben Deev — https://www.linkedin.com/in/ruben-deev
@@ -30,7 +30,7 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.ru
 
 ---
 
-**Educational economics simulators** (NOVOEDA, KINOPOTOK, BILETON): code, economic
+**Educational economics simulators** (NOVOEDA, KINOREKA, BILETVILLE): code, economic
 models, copy and documentation.
 
 © Ruben Deev — https://www.linkedin.com/in/ruben-deev

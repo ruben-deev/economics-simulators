@@ -5,7 +5,7 @@
 // ============================================================================
 
 export const STRINGS = {
-  brand: { ru: 'БИЛЕТОН', en: 'BILETON' },
+  brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
   langToggle: { ru: 'EN', en: 'RU' },
   langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
@@ -39,7 +39,7 @@ export const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
-  welcomeRole: { ru: 'Оператор «БИЛЕТОН» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETON is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
+  welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years — 36 turns. The year starts in September, with the opening of the theatre season.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The billions in turnover are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
