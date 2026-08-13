@@ -1440,6 +1440,7 @@ function showGameOver() {
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
     <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
+    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
@@ -1448,7 +1449,6 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${recordsBlockHtml(score)}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
    { label: t('gameOverCharts') }]);

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.14.1" />
+  <meta name="app-version" content="1.14.2" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1416,6 +1416,7 @@ const STRINGS = {
   lbSending: { ru: 'Отправляю…', en: 'Sending…' },
   lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
   lbYou: { ru: '(вы)', en: '(you)' },
+  lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the table is shared by everyone playing online.' },
   lbYourPlace: { ru: 'Ваш лучший отправленный результат: {score} — место {rank} из {total} на момент отправки.', en: 'Your best submitted result: {score} — rank {rank} of {total} at submission time.' },
   lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
   lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
@@ -1842,21 +1843,24 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted }
         })}</p>` : '';
   };
 
+  // Форма стоит выше таблицы и зовёт вписаться: имя подставляется из прошлой
+  // отправки на этом устройстве, остаётся одно нажатие.
   const formHtml = submitted
     ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
-    : `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+    : `<p class="funding-note" style="margin:2px 0 0">${t('lbInvite')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
         <input id="lb-name" type="text" maxlength="24" placeholder="${t('lbNamePlaceholder')}"
           value="${esc(lbName())}"
           style="flex:1;min-width:140px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-        <button class="btn small" id="lb-send" type="button">${t('lbSubmit')}</button>
+        <button class="btn small primary" id="lb-send" type="button">${t('lbSubmit')}</button>
       </div>
       <p class="funding-note" style="margin-top:4px">${t('lbConsent')}</p>`;
 
   root.innerHTML = `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>
-    <div id="lb-table"><p class="funding-note">${t('lbLoading')}</p></div>
-    <div id="lb-place">${placeHtml()}</div>
     <div id="lb-form">${formHtml}</div>
-    <p class="funding-note" id="lb-status"></p>`;
+    <p class="funding-note" id="lb-status"></p>
+    <div id="lb-place">${placeHtml()}</div>
+    <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
@@ -6680,6 +6684,7 @@ function showGameOver() {
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
     <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
+    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
@@ -6688,7 +6693,6 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${recordsBlockHtml(score)}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
    { label: t('gameOverCharts') }]);

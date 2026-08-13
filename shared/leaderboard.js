@@ -124,21 +124,24 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
         })}</p>` : '';
   };
 
+  // Форма стоит выше таблицы и зовёт вписаться: имя подставляется из прошлой
+  // отправки на этом устройстве, остаётся одно нажатие.
   const formHtml = submitted
     ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
-    : `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+    : `<p class="funding-note" style="margin:2px 0 0">${t('lbInvite')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
         <input id="lb-name" type="text" maxlength="24" placeholder="${t('lbNamePlaceholder')}"
           value="${esc(lbName())}"
           style="flex:1;min-width:140px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-        <button class="btn small" id="lb-send" type="button">${t('lbSubmit')}</button>
+        <button class="btn small primary" id="lb-send" type="button">${t('lbSubmit')}</button>
       </div>
       <p class="funding-note" style="margin-top:4px">${t('lbConsent')}</p>`;
 
   root.innerHTML = `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>
-    <div id="lb-table"><p class="funding-note">${t('lbLoading')}</p></div>
-    <div id="lb-place">${placeHtml()}</div>
     <div id="lb-form">${formHtml}</div>
-    <p class="funding-note" id="lb-status"></p>`;
+    <p class="funding-note" id="lb-status"></p>
+    <div id="lb-place">${placeHtml()}</div>
+    <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');

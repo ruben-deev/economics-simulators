@@ -3,7 +3,7 @@
 
 export default {
   name: 'foodtech',
-  version: '1.10.1',
+  version: '1.10.2',
   title: 'НОВОЕДА · food delivery economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
