@@ -7,6 +7,7 @@
 export const STRINGS = {
   brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
+  btnRestart: { ru: 'Заново', en: 'Restart' },
   langToggle: { ru: 'EN', en: 'RU' },
   langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
 

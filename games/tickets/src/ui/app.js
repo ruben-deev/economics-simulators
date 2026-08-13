@@ -1546,7 +1546,7 @@ function renderAll() {
   // играх и на витрине. Раньше показывала текущий и читалась наоборот.
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
-  el('btn-restart').textContent = t('restartYes');
+  el('btn-restart').textContent = t('btnRestart');
   el('app-foot').textContent = t('footNumbers');
   // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:
   // офлайн-файл не показывает ни ту, ни другую.

@@ -38,7 +38,7 @@
 Для раздачи студентам офлайн скачайте одиночный файл:
 [доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.4.html) ·
 [кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.12.0.html) ·
-[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.0.html).
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.1.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 **Мировая таблица результатов.** На финальном экране каждой игры есть локальная
