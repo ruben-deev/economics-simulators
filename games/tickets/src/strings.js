@@ -7,6 +7,8 @@
 export const STRINGS = {
   brand: { ru: 'БИЛЕТОН', en: 'BILETON' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
+  langToggle: { ru: 'EN', en: 'RU' },
+  langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
 
   // --- Шапка ---
   kpiMonth: { ru: 'Месяц', en: 'Month' },

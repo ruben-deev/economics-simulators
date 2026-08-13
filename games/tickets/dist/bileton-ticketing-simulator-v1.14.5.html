@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.14.4" />
+  <meta name="app-version" content="1.14.5" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -970,6 +970,8 @@ function t(key, vars) {
 const STRINGS = {
   brand: { ru: 'БИЛЕТОН', en: 'BILETON' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
+  langToggle: { ru: 'EN', en: 'RU' },
+  langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
 
   // --- Шапка ---
   kpiMonth: { ru: 'Месяц', en: 'Month' },
@@ -6802,7 +6804,10 @@ function renderAll() {
   el('title-board').textContent = t('boardPanel');
   el('title-funding').textContent = t('fundingTitle');
   el('title-dynamics').textContent = t('chartMarket');
-  el('btn-lang').textContent = getLang() === 'ru' ? 'RU' : 'EN';
+  // Кнопка показывает язык, НА КОТОРЫЙ переключишься, — как в двух других
+  // играх и на витрине. Раньше показывала текущий и читалась наоборот.
+  el('btn-lang').textContent = t('langToggle');
+  el('btn-lang').title = t('langTitle');
   el('btn-restart').textContent = t('restartYes');
   el('app-foot').textContent = t('footNumbers');
   // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:

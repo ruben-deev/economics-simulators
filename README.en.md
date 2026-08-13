@@ -37,7 +37,7 @@ Nothing to install.
 To hand games out offline, download the single-file build:
 [delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.4.html) ·
 [streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.11.4.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/bileton-ticketing-simulator-v1.14.4.html).
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/bileton-ticketing-simulator-v1.14.5.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **World leaderboard.** Each game's final screen keeps a local per-device record

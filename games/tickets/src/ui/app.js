@@ -1542,7 +1542,10 @@ function renderAll() {
   el('title-board').textContent = t('boardPanel');
   el('title-funding').textContent = t('fundingTitle');
   el('title-dynamics').textContent = t('chartMarket');
-  el('btn-lang').textContent = getLang() === 'ru' ? 'RU' : 'EN';
+  // Кнопка показывает язык, НА КОТОРЫЙ переключишься, — как в двух других
+  // играх и на витрине. Раньше показывала текущий и читалась наоборот.
+  el('btn-lang').textContent = t('langToggle');
+  el('btn-lang').title = t('langTitle');
   el('btn-restart').textContent = t('restartYes');
   el('app-foot').textContent = t('footNumbers');
   // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:
