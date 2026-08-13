@@ -57,7 +57,8 @@ export function lbSaveName(name) {
  * таблицу топа, ваше место и форму отправки. Отправка — только по кнопке:
  * результат не уходит в сеть без явного действия игрока.
  *
- * opts: { root, t, money, game, line, myScore, submitted, onSubmitted }
+ * opts: { root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly }
+ *   viewOnly — только посмотреть топ (кнопка 🏆 в шапке): без формы отправки
  *   t        — переводчик строк игры (ключи lb*)
  *   money    — форматтер счёта
  *   myScore  — счёт этой партии (для подсветки своей строки в топе)
@@ -81,7 +82,7 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted }) {
+export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
   if (!root || !lbEndpoint()) return;
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
@@ -126,7 +127,9 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
 
   // Форма стоит выше таблицы и зовёт вписаться: имя подставляется из прошлой
   // отправки на этом устройстве, остаётся одно нажатие.
-  const formHtml = submitted
+  const formHtml = viewOnly
+    ? ''
+    : submitted
     ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
     : `<p class="funding-note" style="margin:2px 0 0">${t('lbInvite')}</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">

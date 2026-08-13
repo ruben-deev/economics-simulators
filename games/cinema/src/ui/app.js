@@ -1948,6 +1948,15 @@ function restart() {
   showWelcome();
 }
 
+function showWorldTop() {
+  modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
+    [{ label: t('helpModalOk'), primary: true }]);
+  lbMount({
+    root: el('modal-root').querySelector('#lb-root'),
+    t, money, game: GAME_TAG, viewOnly: true,
+  });
+}
+
 function renderChrome() {
   el('brand-title').textContent = t('brandTitle');
   el('brand-sub').textContent = t('brandSub');
@@ -1961,6 +1970,20 @@ function renderChrome() {
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
   el('app-foot').textContent = t('footNumbers');
+  // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:
+  // офлайн-файл не показывает ни ту, ни другую.
+  const homeBtn = el('btn-home');
+  if (homeBtn) {
+    homeBtn.hidden = !window.__homeUrl;
+    if (window.__homeUrl) {
+      homeBtn.href = window.__homeUrl;
+      homeBtn.textContent = t('btnHome');
+      homeBtn.title = t('btnHomeTitle');
+    }
+  }
+  const topBtn = el('btn-top');
+  if (topBtn) { topBtn.hidden = !lbEndpoint(); topBtn.title = t('lbTitle'); }
+
   el('btn-next').textContent = state.over ? t('btnResults') : t('btnNext', { month: state.month + 1 });
   for (const [tab, key] of Object.entries({
     unit: 'tabUnit', pnl: 'tabPnl', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
@@ -2052,6 +2075,7 @@ function boot() {
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
     el('btn-next').addEventListener('click', nextMonth);
+    el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);
     el('btn-restart').addEventListener('click', () => {

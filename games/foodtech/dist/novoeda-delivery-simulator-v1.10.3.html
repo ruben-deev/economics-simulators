@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.10.2" />
+  <meta name="app-version" content="1.10.3" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -81,6 +81,13 @@ button { font-family: inherit; }
   color: var(--text);
   padding: 9px 14px;
   cursor: pointer;
+  /* Кнопкой бывает и ссылка (например «Игры» в шапке): без этого <a>
+     подчёркивается и красится как ссылка, а не как кнопка. */
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   font-weight: 600;
   transition: 0.15s;
 }
@@ -817,6 +824,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="topbar-actions">
+      <a id="btn-home" class="btn ghost" hidden></a>
+      <button id="btn-top" class="btn ghost" hidden>🏆</button>
       <button id="btn-lang" class="btn ghost"></button>
       <button id="btn-help" class="btn ghost">?</button>
       <button id="btn-restart" class="btn ghost"></button>
@@ -1463,6 +1472,8 @@ score = valuation × your stake`,
   lbSending: { ru: 'Отправляю…', en: 'Sending…' },
   lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
   lbYou: { ru: '(вы)', en: '(you)' },
+  btnHome: { ru: 'Игры', en: 'Games' },
+  btnHomeTitle: { ru: 'К списку игр', en: 'Back to all games' },
   lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the table is shared by everyone playing online.' },
   lbYourPlace: { ru: 'Ваш лучший отправленный результат: {score} — место {rank} из {total} на момент отправки.', en: 'Your best submitted result: {score} — rank {rank} of {total} at submission time.' },
   lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
@@ -1806,7 +1817,8 @@ function lbSaveName(name) {
  * таблицу топа, ваше место и форму отправки. Отправка — только по кнопке:
  * результат не уходит в сеть без явного действия игрока.
  *
- * opts: { root, t, money, game, line, myScore, submitted, onSubmitted }
+ * opts: { root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly }
+ *   viewOnly — только посмотреть топ (кнопка 🏆 в шапке): без формы отправки
  *   t        — переводчик строк игры (ключи lb*)
  *   money    — форматтер счёта
  *   myScore  — счёт этой партии (для подсветки своей строки в топе)
@@ -1830,7 +1842,7 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
   if (!root || !lbEndpoint()) return;
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
@@ -1875,7 +1887,9 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted }
 
   // Форма стоит выше таблицы и зовёт вписаться: имя подставляется из прошлой
   // отправки на этом устройстве, остаётся одно нажатие.
-  const formHtml = submitted
+  const formHtml = viewOnly
+    ? ''
+    : submitted
     ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
     : `<p class="funding-note" style="margin:2px 0 0">${t('lbInvite')}</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
@@ -6034,6 +6048,15 @@ function restart() {
 }
 
 // Статические подписи разметки
+function showWorldTop() {
+  modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
+    [{ label: t('helpModalOk'), primary: true }]);
+  lbMount({
+    root: el('modal-root').querySelector('#lb-root'),
+    t, money, game: GAME_TAG, viewOnly: true,
+  });
+}
+
 function renderChrome() {
   el('brand-title').textContent = t('brandTitle');
   el('brand-sub').textContent = t('brandSub');
@@ -6048,6 +6071,20 @@ function renderChrome() {
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
   el('app-foot').textContent = t('footNumbers');
+  // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:
+  // офлайн-файл не показывает ни ту, ни другую.
+  const homeBtn = el('btn-home');
+  if (homeBtn) {
+    homeBtn.hidden = !window.__homeUrl;
+    if (window.__homeUrl) {
+      homeBtn.href = window.__homeUrl;
+      homeBtn.textContent = t('btnHome');
+      homeBtn.title = t('btnHomeTitle');
+    }
+  }
+  const topBtn = el('btn-top');
+  if (topBtn) { topBtn.hidden = !lbEndpoint(); topBtn.title = t('lbTitle'); }
+
   el('btn-next').textContent = state.over
     ? t('btnResults') : t('btnNext', { week: state.week + 1 });
   for (const [tab, key] of Object.entries({
@@ -6136,6 +6173,7 @@ function boot() {
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
     el('btn-next').addEventListener('click', nextWeek);
+    el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);
     el('btn-lang').addEventListener('click', switchLang);
     el('btn-restart').addEventListener('click', () => {

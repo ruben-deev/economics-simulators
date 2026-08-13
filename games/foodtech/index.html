@@ -43,6 +43,8 @@
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="topbar-actions">
+      <a id="btn-home" class="btn ghost" hidden></a>
+      <button id="btn-top" class="btn ghost" hidden>🏆</button>
       <button id="btn-lang" class="btn ghost"></button>
       <button id="btn-help" class="btn ghost">?</button>
       <button id="btn-restart" class="btn ghost"></button>
@@ -131,6 +133,9 @@
        Пока адрес не задан (null) — блок таблицы не показывается.
        Как развернуть сервер за 5 минут: server/README.md. -->
   <script>
+    // Кнопка «Игры» в шапке: витрина есть только на сайте и при npm start,
+    // в раздаваемом однофайловом HTML её нет — и кнопки там тоже нет.
+    window.__homeUrl = '../../index.html';
     window.__lbEndpoint = 'https://script.google.com/macros/s/AKfycbz47A5KW2B9i_Jwfd-rfH3Z2pC9OjH08mGlOCXxc2-RXTxISDg9bNsDWgajYswVnLvPyA/exec';
   </script>
 
