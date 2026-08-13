@@ -1866,7 +1866,7 @@ function showWelcome() {
   let seedWanted = '';
   const best = bestRecord(RECORDS_KEY);
   modal(`<h2>${t('welcomeTitle')}</h2>
-    <p>${t('welcomeRole')}</p>
+    <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
