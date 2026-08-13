@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.15.1" />
+  <meta name="app-version" content="1.15.2" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -73,6 +73,16 @@ button { font-family: inherit; }
 .neutral { color: var(--muted); }
 
 .topbar-actions { display: flex; gap: 8px; }
+
+/* Планшет и узкий десктоп: шапке не хватает ширины на три блока сразу.
+   Раньше показатели сжимались в столбец шириной в одну плашку между
+   названием и кнопками, и шапка вырастала на пол-экрана. Теперь на этих
+   ширинах строка показателей переезжает на собственную строку во всю
+   ширину; телефоны (≤700px) живут по своим правилам ниже. */
+@media (min-width: 701px) and (max-width: 1250px) {
+  .topbar-actions { margin-left: auto; }
+  .kpis { order: 3; flex-basis: 100%; }
+}
 
 .btn {
   border-radius: 9px;
