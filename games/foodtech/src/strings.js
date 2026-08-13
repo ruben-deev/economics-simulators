@@ -505,6 +505,8 @@ score = valuation × your stake`,
   lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the table needs a signed result.' },
   lbSending: { ru: 'Отправляю…', en: 'Sending…' },
   lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
+  lbYou: { ru: '(вы)', en: '(you)' },
+  lbYourPlace: { ru: 'Ваш лучший отправленный результат: {score} — место {rank} из {total} на момент отправки.', en: 'Your best submitted result: {score} — rank {rank} of {total} at submission time.' },
   lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
   lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---

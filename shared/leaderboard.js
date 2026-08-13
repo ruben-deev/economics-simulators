@@ -54,29 +54,75 @@ export function lbSaveName(name) {
 
 /**
  * Живой блок мировой таблицы на финальном экране. Строит DOM внутри root:
- * таблицу топа и форму отправки. Отправка — только по кнопке: результат не
- * уходит в сеть без явного действия игрока.
+ * таблицу топа, ваше место и форму отправки. Отправка — только по кнопке:
+ * результат не уходит в сеть без явного действия игрока.
  *
- * opts: { root, t, money, game, line, submitted, onSubmitted }
+ * opts: { root, t, money, game, line, myScore, submitted, onSubmitted }
  *   t        — переводчик строк игры (ключи lb*)
  *   money    — форматтер счёта
+ *   myScore  — счёт этой партии (для подсветки своей строки в топе)
  *   submitted— результат уже отправлялся в этой партии (не слать дважды)
  *   onSubmitted(rank, total) — колбэк после успешной отправки (сохранить флаг)
  */
-export function lbMount({ root, t, money, game, line, submitted, onSubmitted }) {
+
+// Лучшая отправка с этого устройства — чтобы место было видно и при
+// повторном открытии финала, и в следующих партиях. Место фиксируется
+// на момент отправки: таблица живая, и старое место могло съехать.
+const mineKey = (game) => `lb-mine-${game}`;
+export function lbMine(game) {
+  try { return JSON.parse(localStorage.getItem(mineKey(game))); } catch { return null; }
+}
+function lbRemember(game, entry) {
+  try {
+    const prev = lbMine(game);
+    if (!prev || entry.score >= prev.score) {
+      localStorage.setItem(mineKey(game), JSON.stringify(entry));
+    }
+  } catch { /* приватный режим */ }
+}
+
+export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted }) {
   if (!root || !lbEndpoint()) return;
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
-  const tableHtml = (top) => top.length
-    ? `<div style="overflow-x:auto"><table class="data">
-        <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColCode')}</th><th>${t('lbColDate')}</th></tr></thead>
-        <tbody>${top.map((r, i) => `<tr>
-          <td>${i + 1}</td><td>${esc(r.name)}</td><td>${money(r.score)}</td>
-          <td>${esc(r.seed ?? '')}</td><td>${esc((r.date ?? '').slice(0, 10))}</td>
-        </tr>`).join('')}</tbody></table></div>`
-    : `<p class="funding-note">${t('lbEmpty')}</p>`;
+  // Своя строка узнаётся по имени и счёту: сервер в топе строк не помечает.
+  const isMine = (r) => {
+    const mine = lbMine(game);
+    const name = lbName();
+    if (!name || r.name !== name) return false;
+    return r.score === Math.round(myScore ?? -1) || (mine && r.score === mine.score);
+  };
+
+  const tableHtml = (top) => {
+    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    const mine = lbMine(game);
+    const inTop = top.some(isMine);
+    const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
+      <td>${i + 1}</td><td>${esc(r.name)}${isMine(r) ? ` ${t('lbYou')}` : ''}</td>
+      <td>${money(r.score)}</td>
+      <td>${esc(r.seed ?? '')}</td><td>${esc((r.date ?? '').slice(0, 10))}</td>
+    </tr>`);
+    // Не дотянули до топа — своя строка дописывается снизу со своим номером,
+    // чтобы место было видно, а не только надпись «вы 47-й».
+    if (!inTop && mine) {
+      rows.push(`<tr class="total"><td>${mine.rank}</td>
+        <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
+        <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
+    }
+    return `<div style="overflow-x:auto"><table class="data">
+      <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColCode')}</th><th>${t('lbColDate')}</th></tr></thead>
+      <tbody>${rows.join('')}</tbody></table></div>`;
+  };
+
+  const placeHtml = () => {
+    const mine = lbMine(game);
+    return mine
+      ? `<p class="funding-note">${t('lbYourPlace', {
+          score: money(mine.score), rank: mine.rank, total: mine.total,
+        })}</p>` : '';
+  };
 
   const formHtml = submitted
     ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
@@ -90,14 +136,17 @@ export function lbMount({ root, t, money, game, line, submitted, onSubmitted }) 
 
   root.innerHTML = `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>
     <div id="lb-table"><p class="funding-note">${t('lbLoading')}</p></div>
+    <div id="lb-place">${placeHtml()}</div>
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-
-  lbTop(game).then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
+  const refreshTop = () => lbTop(game)
+    .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
+
+  refreshTop();
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -110,9 +159,14 @@ export function lbMount({ root, t, money, game, line, submitted, onSubmitted }) 
       const out = await lbSubmit({ game, name, line });
       if (out?.ok) {
         statusEl.textContent = t('lbSent', { rank: out.rank, total: out.total });
+        lbRemember(game, {
+          name, score: Math.round(myScore ?? 0), rank: out.rank, total: out.total,
+          date: new Date().toISOString().slice(0, 10),
+        });
+        root.querySelector('#lb-place').innerHTML = placeHtml();
         root.querySelector('#lb-form').innerHTML = `<p class="funding-note">${t('lbAlreadySent')}</p>`;
         onSubmitted?.(out.rank, out.total);
-        lbTop(game).then((top) => { tableEl.innerHTML = tableHtml(top ?? []); }).catch(() => {});
+        refreshTop();
       } else {
         statusEl.textContent = t('lbError');
         btn.disabled = false;

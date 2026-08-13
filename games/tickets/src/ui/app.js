@@ -1460,6 +1460,7 @@ function showGameOver() {
     money,
     game: GAME_TAG,
     line,
+    myScore: score.bankrupt ? 0 : score.equityValue,
     submitted: Boolean(state.lbSent),
     onSubmitted: () => { state.lbSent = true; save(); },
   });
