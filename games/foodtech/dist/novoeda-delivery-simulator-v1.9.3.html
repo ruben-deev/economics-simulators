@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.9.2" />
+  <meta name="app-version" content="1.9.3" />
   <meta name="app-build-date" content="2026-08-12" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -673,7 +673,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
      не помещаются, а полоса шире экрана заставляет браузер отдалить страницу
      целиком — и тогда она же уезжает за нижний край. */
   .topbar-actions #btn-next { flex: 1 1 100%; order: -1; }
-  body { padding-bottom: 72px; }
+  /* Отступ снизу — под реальную высоту полосы. Кнопка хода на своей строке
+     делает полосу двухэтажной (~96px): с прежними 72px полоса накрывала
+     последние строки страницы, включая сноску о числах. */
+  body { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 
   /* Широкая таблица прокручивается внутри своей панели, а не растягивает
      страницу. Горизонтальная прокрутка всего экрана на телефоне ломает не
@@ -744,6 +747,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   /* Кнопка в карточке занимает всю ширину: попасть пальцем в узкую ячейку
      на краю экрана невозможно. */
   table.data td .btn { width: 100%; margin-top: 4px; }
+}
+
+/* Постоянная оговорка о числах — одна строка мелким шрифтом под всеми
+   колонками. Живёт в обычном потоке документа: на телефоне отступ снизу
+   у body резервирует место под закреплённую полосу кнопок, поэтому сноска
+   стоит над ней и ни на что не наезжает. */
+.app-foot {
+  padding: 2px 14px 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
 }
 
 </style>
@@ -840,6 +855,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div id="tab-content" class="tab-content"></div>
     </aside>
   </main>
+
+  <!-- Постоянная оговорка о числах: видна и тому, кто попал в игру по ссылке
+       посреди партии и не открывал экран приветствия. Текст ставит app.js —
+       он меняется вместе с языком. -->
+  <footer class="app-foot" id="app-foot"></footer>
 
   <div id="modal-root"></div>
 
@@ -1400,6 +1420,9 @@ score = valuation × your stake`,
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedNote: { ru: 'Одинаковый код — одинаковый город: погода, события и рынок совпадут у всех, кто его введёт. Оставьте пустым, чтобы получить случайный.', en: 'The same code means the same city: weather, events and market will match for everyone who enters it. Leave empty for a random one.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
+  // --- Оговорка о числах: одинаковая во всех трёх играх ---
+  welcomeNumbers: { ru: '<b>О числах в модели.</b> Структура модели — рычаги и связи между ними — восстановлена по рабочему опыту. Числовые значения подобраны так, чтобы партия была играбельной и поучительной: это не отраслевые бенчмарки, не результаты измерений и не данные какой-либо компании. Игра иллюстрирует направление и механику связей, а не величины. Для оценки реальных бизнесов и принятия решений она не предназначена.', en: '<b>About the numbers.</b> The structure of the model — the levers and how they are linked — is drawn from working experience. The numeric values are chosen to make the game playable and instructive: they are not industry benchmarks, not measurements, and not any company’s data. The game illustrates the direction and the mechanics of the relationships, not the magnitudes. It is not meant for valuing real businesses or making decisions about them.' },
+  footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же город ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same city again.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
@@ -5493,7 +5516,8 @@ function showWelcome() {
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     </label>
     <p class="funding-note">${t('seedNote')}</p>
-    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
+    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
+    <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
@@ -5560,6 +5584,7 @@ function renderChrome() {
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
+  el('app-foot').textContent = t('footNumbers');
   el('btn-next').textContent = state.over
     ? t('btnResults') : t('btnNext', { week: state.week + 1 });
   for (const [tab, key] of Object.entries({

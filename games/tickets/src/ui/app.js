@@ -1485,7 +1485,8 @@ function showWelcome() {
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     </label>
     <p class="funding-note">${t('seedNote')}</p>
-    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}`,
+    ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
+    <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
@@ -1520,6 +1521,7 @@ function renderAll() {
   el('title-dynamics').textContent = t('chartMarket');
   el('btn-lang').textContent = getLang() === 'ru' ? 'RU' : 'EN';
   el('btn-restart').textContent = t('restartYes');
+  el('app-foot').textContent = t('footNumbers');
   el('btn-next').textContent = state.over
     ? t('btnResults') : t('btnNext', { month: state.month + 1 });
 
