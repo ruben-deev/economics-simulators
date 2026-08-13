@@ -1,0 +1,73 @@
+# Живая проверка сервера мировой таблицы (запускается вручную).
+# Песочница рабочей сессии не выпускает запросы к script.google.com,
+# а у раннера Actions интернет открыт — поэтому проверка живёт здесь.
+name: Проверка сервера таблицы
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: GET и POST по всем трём играм
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Опрос сервера
+        run: |
+          node --input-type=module << 'EOF'
+          import { resultString, verifyResult } from './shared/records.js';
+
+          const EP = 'https://script.google.com/macros/s/AKfycbz47A5KW2B9i_Jwfd-rfH3Z2pC9OjH08mGlOCXxc2-RXTxISDg9bNsDWgajYswVnLvPyA/exec';
+          const GAMES = ['НОВОЕДА', 'КИНОРЕКА', 'БИЛЕТВИЛЬ'];
+          let failed = false;
+
+          for (const game of GAMES) {
+            const res = await fetch(`${EP}?game=${encodeURIComponent(game)}&limit=3`);
+            const data = await res.json().catch(() => null);
+            if (data?.ok) {
+              console.log(`✓ GET ${game}: ok, записей в топе: ${data.top.length}`);
+            } else {
+              console.log(`✗ GET ${game}: ${JSON.stringify(data)}`);
+              failed = true;
+            }
+          }
+
+          // Настоящая подписанная строка: сервер обязан её принять и вернуть место.
+          // Счёт 1 — чтобы тестовая запись не висела над результатами живых игроков.
+          for (const game of ['КИНОРЕКА', 'БИЛЕТВИЛЬ']) {
+            const line = resultString({ tag: game, version: '0.0.0', seed: 'проверка-сервера', score: 1, turns: 36 });
+            if (!verifyResult(line)) throw new Error('строка не сходится локально');
+            const res = await fetch(EP, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ game, name: 'проверка (можно удалить)', line }),
+            });
+            const data = await res.json().catch(() => null);
+            if (data?.ok) {
+              console.log(`✓ POST ${game}: принят, место ${data.rank} из ${data.total}`);
+            } else {
+              console.log(`✗ POST ${game}: ${JSON.stringify(data)}`);
+              failed = true;
+            }
+          }
+
+          // Битая строка обязана быть отвергнута
+          const bad = await fetch(EP, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ game: 'КИНОРЕКА', name: 'жулик', line: 'КИНОРЕКА|v0.0.0|x|999999999999|36|#0000' }),
+          });
+          const badData = await bad.json().catch(() => null);
+          if (badData && badData.ok === false) {
+            console.log(`✓ подделка отвергнута: ${badData.error}`);
+          } else {
+            console.log(`✗ подделка прошла: ${JSON.stringify(badData)}`);
+            failed = true;
+          }
+
+          if (failed) process.exit(1);
+          console.log('\nСервер отвечает по всем трём играм, подпись проверяется.');
+          EOF
