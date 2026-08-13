@@ -24,15 +24,24 @@ jobs:
           const GAMES = ['НОВОЕДА', 'КИНОРЕКА', 'БИЛЕТВИЛЬ'];
           let failed = false;
 
+          // GET с ретраями и диагностикой: Apps Script иногда отвечает
+          // HTML-страницей (холодный старт / перегрузка) — покажем, чем именно.
           for (const game of GAMES) {
-            const res = await fetch(`${EP}?game=${encodeURIComponent(game)}&limit=3`);
-            const data = await res.json().catch(() => null);
-            if (data?.ok) {
-              console.log(`✓ GET ${game}: ok, записей в топе: ${data.top.length}`);
-            } else {
-              console.log(`✗ GET ${game}: ${JSON.stringify(data)}`);
-              failed = true;
+            let ok = false;
+            for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+              const res = await fetch(`${EP}?game=${encodeURIComponent(game)}&limit=3`);
+              const text = await res.text();
+              let data = null;
+              try { data = JSON.parse(text); } catch { /* не JSON */ }
+              if (data?.ok) {
+                console.log(`✓ GET ${game}: ok, записей в топе: ${data.top.length}${attempt > 1 ? ` (попытка ${attempt})` : ''}`);
+                ok = true;
+              } else {
+                console.log(`… GET ${game}, попытка ${attempt}: HTTP ${res.status}, тело: ${text.slice(0, 180).replace(/\s+/g, ' ')}`);
+                await new Promise((r) => setTimeout(r, 3000));
+              }
             }
+            if (!ok) { console.log(`✗ GET ${game}: не ответил JSONом за 3 попытки`); failed = true; }
           }
 
           // Настоящая подписанная строка: сервер обязан её принять и вернуть место.
