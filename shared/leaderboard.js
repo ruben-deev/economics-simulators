@@ -140,7 +140,9 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
       </div>
       <p class="funding-note" style="margin-top:4px">${t('lbConsent')}</p>`;
 
-  root.innerHTML = `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>
+  // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
+  // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
