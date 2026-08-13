@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.9.4" />
+  <meta name="app-version" content="1.10.0" />
   <meta name="app-build-date" content="2026-08-13" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -157,6 +157,15 @@ button { font-family: inherit; }
 }
 .district:hover { border-color: rgba(148, 163, 184, 0.35); }
 .district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
+/* Шапка второго города в панели районов: выглядит как карточка, но не кликается —
+   вход в город платится сам, вместе с запуском первого района. */
+.district-city {
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 9px 10px;
+  margin-top: 10px;
+  background: transparent;
+}
 .district-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .district-name { font-weight: 700; font-size: 13px; }
 .district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }
@@ -987,7 +996,7 @@ const STRINGS = {
   // --- панели ---
   panelLevers: { ru: 'Рычаги управления', en: 'Business levers' },
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
-  panelCoverage: { ru: 'Покрытие города', en: 'City coverage' },
+  panelCoverage: { ru: 'География', en: 'Geography' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
@@ -1100,6 +1109,13 @@ const STRINGS = {
   // --- районы ---
   districtLive: { ru: 'работает', en: 'live' },
   districtLaunch: { ru: 'запуск {cost}', en: 'launch {cost}' },
+  // --- Экспансия во второй город ---
+  cityEntry: { ru: 'вход {cost}', en: 'entry {cost}' },
+  cityEntered: { ru: 'вы в городе', en: 'you are in' },
+  cityLocked: { ru: 'с нед. {week}, от {n} районов дома', en: 'from wk {week}, {n}+ home districts' },
+  cityLockedToast: { ru: 'Совет согласует второй город с недели {week} и при {n} работающих районах Новограда.', en: 'The board will approve a second city from week {week}, with at least {n} Novograd districts running.' },
+  cityFixedNote: { ru: 'Вход {entry} платится с первым районом, офис города — {weekly}/нед, пока открыт хоть один район. После входа доля рынка считается по обоим городам, а хозяин ответит промо-войной.', en: 'The {entry} entry fee is paid with your first district; the city office costs {weekly}/wk while at least one district is open. After entry your market share covers both cities — and the incumbent will fight back.' },
+  alertCityWar: { ru: '«СтароЕд» отвечает промо-войной: приток новых клиентов в Старгороде урезан, отток выше. Ещё {weeks} нед.', en: 'The local incumbent is fighting back: new-customer inflow in Stargorod is cut and churn is up. {weeks} more weeks.' },
   districtStatsLive: { ru: '{customers} клиентов · {restaurants} ресторанов · {time} мин · охват {reach}', en: '{customers} customers · {restaurants} restaurants · {time} min · reach {reach}' },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} ₽ · плечо {km} км', en: '{potential} potential customers · basket ₽{aov} · leg {km} km' },
 
@@ -1170,6 +1186,7 @@ const STRINGS = {
 
   installNote: { ru: 'Внедрено: {names} — разовые {cost}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.', en: 'Rolled out: {names} — a one-off {cost}. The algorithm starts working this week and starts paying back considerably later.' },
   launchNote: { ru: 'Запущены районы: {names} — разовые затраты {cost}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.', en: 'Districts launched: {names} — a one-off {cost}. A new district loses money at first: there are no customers yet, but the fixed costs have already started.' },
+  cityEnterNote: { ru: 'Вы вышли в {names}: вход {cost} разово, дальше — городской офис каждую неделю. Узнаваемость там нулевая, а доля рынка теперь считается по обоим городам.', en: 'You have entered {names}: a one-off {cost}, then a weekly city office. Awareness there starts at zero, and your market share is now measured across both cities.' },
 
   // --- предупреждения ---
   alertShortage: { ru: 'Курьеров не хватает: спрос покрыт на {fill}. Потеряно {lost} заказов, время доставки выросло до {time} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.', en: 'Not enough couriers: only {fill} of demand was served. {lost} orders lost and delivery time climbed to {time} min. A lost order hits you twice — revenue today, retention tomorrow.' },
@@ -1375,6 +1392,8 @@ score = valuation × your stake`,
   },
   helpScoreText: { ru: 'Поэтому привлечь много денег — не победа: каждый раунд размывает вашу долю. Выиграет тот, кто дошёл до прибыльности с наименьшим разводнением.', en: 'So raising a lot of money is not a win: every round dilutes you. The winner is whoever reaches profitability with the least dilution.' },
   helpLimitsTitle: { ru: 'Ограничения модели', en: 'Limits of the model' },
+  helpCityTitle: { ru: 'Второй город', en: 'The second city' },
+  helpCityText: { ru: 'Когда Новоград близок к насыщению, рост можно купить географией: Старгород — рынок больше половины домашнего. Совет согласует выход с 14-й недели при трёх работающих районах дома. Вход стоит денег разово, городской офис — каждую неделю, узнаваемость там нулевая, маркетинг делится на два города, а местный «СтароЕд» первые месяцы отвечает промо-войной. Поздний вход не успевает окупить войну и разгон — это проект середины партии, а не последнего рывка.', en: 'When Novograd approaches saturation, growth can be bought with geography: Stargorod is a market more than half the size of home. The board approves entry from week 14 with three home districts running. Entry costs money once, the city office bills weekly, awareness starts at zero, marketing is split across two cities, and the local incumbent answers with a promo war for the first months. A late entry cannot pay back the war and the ramp-up — this is a mid-game project, not a final sprint.' },
   helpLimitsText: { ru: 'Это учебная модель, а не прогноз. Конкурент здесь не адаптируется к вашим действиям, рестораны не торгуются индивидуально, а клиенты однородны внутри района. Модель предназначена показать <i>структуру</i> зависимостей, а не предсказать конкретный рынок.', en: 'This is a teaching model, not a forecast. The competitor does not adapt to you, restaurants do not negotiate individually, and customers are homogeneous within a district. The model exists to show the <i>structure</i> of the dependencies, not to predict a real market.' },
 
   // --- финал ---
@@ -1429,6 +1448,22 @@ score = valuation × your stake`,
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
+  // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
+  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
+  lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
+  lbColPlayer: { ru: 'Игрок', en: 'Player' },
+  lbColScore: { ru: 'Счёт', en: 'Score' },
+  lbColCode: { ru: 'Код партии', en: 'Game code' },
+  lbColDate: { ru: 'Дата', en: 'Date' },
+  lbNamePlaceholder: { ru: 'Ваше имя или ник', en: 'Your name or nickname' },
+  lbSubmit: { ru: 'Отправить результат', en: 'Submit result' },
+  lbConsent: { ru: 'Отправляются только имя и строка результата: игра, версия, код партии, счёт и ходы.', en: 'Only your name and the result string are sent: game, version, game code, score and turns.' },
+  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the table needs a signed result.' },
+  lbSending: { ru: 'Отправляю…', en: 'Sending…' },
+  lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
+  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
+  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---
   welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
@@ -1708,6 +1743,134 @@ function bestRecord(key) {
 }
 
 
+// ===== ../../shared/leaderboard.js =================================
+// ============================================================================
+// Глобальная таблица результатов — общий клиент для всех трёх игр.
+//
+// Работает только там, где страница знает адрес сервера: window.__lbEndpoint
+// ставится в онлайн-версии (блок only-modular в index.html). В раздаваемых
+// однофайловых сборках адреса нет — там блок просто не показывается, игра
+// ничего никуда не отправляет.
+//
+// Сервер — Google Apps Script поверх Google Таблицы (server/leaderboard.gs):
+//   GET  ?game=НОВОЕДА&limit=10  ->  { ok, top: [{name, score, seed, turns,
+//                                                 version, date}] }
+//   POST {game, name, line}      ->  { ok, rank, total } | { ok:false, error }
+// Строка результата уходит целиком: сервер сам проверяет контрольную сумму
+// (тот же djb2-xor, что в records.js) и разбирает счёт из строки — присланное
+// отдельным полем число ему не указ.
+//
+// POST уходит с Content-Type: text/plain — это «простой» запрос без
+// CORS-preflight, на который Apps Script отвечать не умеет.
+// ============================================================================
+
+function lbEndpoint() {
+  return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
+}
+
+async function lbTop(game, limit = 10) {
+  const base = lbEndpoint();
+  if (!base) return null;
+  const res = await fetch(`${base}?game=${encodeURIComponent(game)}&limit=${limit}`);
+  if (!res.ok) throw new Error(`leaderboard ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data.top) ? data.top : [];
+}
+
+async function lbSubmit({ game, name, line }) {
+  const base = lbEndpoint();
+  if (!base) return null;
+  const res = await fetch(base, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ game, name, line }),
+  });
+  if (!res.ok) throw new Error(`leaderboard ${res.status}`);
+  return res.json();
+}
+
+// Имя игрока — на устройстве, чтобы не спрашивать каждый раз
+const NAME_KEY = 'lb-name';
+function lbName() {
+  try { return localStorage.getItem(NAME_KEY) ?? ''; } catch { return ''; }
+}
+function lbSaveName(name) {
+  try { localStorage.setItem(NAME_KEY, String(name).slice(0, 24)); } catch { /* приватный режим */ }
+}
+
+/**
+ * Живой блок мировой таблицы на финальном экране. Строит DOM внутри root:
+ * таблицу топа и форму отправки. Отправка — только по кнопке: результат не
+ * уходит в сеть без явного действия игрока.
+ *
+ * opts: { root, t, money, game, line, submitted, onSubmitted }
+ *   t        — переводчик строк игры (ключи lb*)
+ *   money    — форматтер счёта
+ *   submitted— результат уже отправлялся в этой партии (не слать дважды)
+ *   onSubmitted(rank, total) — колбэк после успешной отправки (сохранить флаг)
+ */
+function lbMount({ root, t, money, game, line, submitted, onSubmitted }) {
+  if (!root || !lbEndpoint()) return;
+
+  const esc = (s) => String(s).replace(/[&<>"]/g,
+    (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+
+  const tableHtml = (top) => top.length
+    ? `<div style="overflow-x:auto"><table class="data">
+        <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColCode')}</th><th>${t('lbColDate')}</th></tr></thead>
+        <tbody>${top.map((r, i) => `<tr>
+          <td>${i + 1}</td><td>${esc(r.name)}</td><td>${money(r.score)}</td>
+          <td>${esc(r.seed ?? '')}</td><td>${esc((r.date ?? '').slice(0, 10))}</td>
+        </tr>`).join('')}</tbody></table></div>`
+    : `<p class="funding-note">${t('lbEmpty')}</p>`;
+
+  const formHtml = submitted
+    ? `<p class="funding-note">${t('lbAlreadySent')}</p>`
+    : `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+        <input id="lb-name" type="text" maxlength="24" placeholder="${t('lbNamePlaceholder')}"
+          value="${esc(lbName())}"
+          style="flex:1;min-width:140px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+        <button class="btn small" id="lb-send" type="button">${t('lbSubmit')}</button>
+      </div>
+      <p class="funding-note" style="margin-top:4px">${t('lbConsent')}</p>`;
+
+  root.innerHTML = `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>
+    <div id="lb-table"><p class="funding-note">${t('lbLoading')}</p></div>
+    <div id="lb-form">${formHtml}</div>
+    <p class="funding-note" id="lb-status"></p>`;
+
+  const tableEl = root.querySelector('#lb-table');
+  const statusEl = root.querySelector('#lb-status');
+
+  lbTop(game).then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
+    .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
+
+  root.querySelector('#lb-send')?.addEventListener('click', async () => {
+    const btn = root.querySelector('#lb-send');
+    const name = (root.querySelector('#lb-name')?.value ?? '').trim();
+    if (!name) { statusEl.textContent = t('lbNameNeeded'); return; }
+    lbSaveName(name);
+    btn.disabled = true;
+    statusEl.textContent = t('lbSending');
+    try {
+      const out = await lbSubmit({ game, name, line });
+      if (out?.ok) {
+        statusEl.textContent = t('lbSent', { rank: out.rank, total: out.total });
+        root.querySelector('#lb-form').innerHTML = `<p class="funding-note">${t('lbAlreadySent')}</p>`;
+        onSubmitted?.(out.rank, out.total);
+        lbTop(game).then((top) => { tableEl.innerHTML = tableHtml(top ?? []); }).catch(() => {});
+      } else {
+        statusEl.textContent = t('lbError');
+        btn.disabled = false;
+      }
+    } catch {
+      statusEl.textContent = t('lbError');
+      btn.disabled = false;
+    }
+  });
+}
+
+
 // ===== ../../shared/rng.js =========================================
 // Детерминированный генератор псевдослучайных чисел (mulberry32).
 // Нужен, чтобы одна и та же игра с одним и тем же seed воспроизводилась точно:
@@ -1885,16 +2048,62 @@ const CONFIG = {
   // «деньги кончаются» вело к кнопке, которая ещё не работает, и выхода не было.
   minWeekForFunding: 2,
   fundingOptions: [20_000_000, 50_000_000, 120_000_000],
+
+  // --- Экспансия во второй город ---
+  // Ворота входа: совет не согласует второй город, пока не увидел первый
+  // квартал и работающую машину дома. Без ворот замер показывал «выходи как
+  // можно раньше и всюду» (+58% на 8-й неделе) — решение без решения.
+  expansion: {
+    minWeek: 14,          // после первого отчёта совету
+    minHomeDistricts: 3,  // и минимум трёх работающих районов Новограда
+    // «СтароЕд» отвечает на вход промо-войной: первые недели приток новых
+    // клиентов в его городе урезан, а отток повышен. Война конечна — хозяин
+    // тоже не может жечь деньги вечно.
+    warWeeks: 16,
+    warTrialCut: 0.55,    // насколько режется приток новых клиентов
+    warChurnAdd: 0.03,    // добавка к недельному оттоку
+  },
 };
 
 // ============================================================================
-// Районы вымышленного города Новоград (~1.4 млн жителей).
-// potential — потенциальные клиенты (взрослые, готовые заказывать доставку).
+// Города. Новоград — домашний, вход бесплатный. Выход в следующий город —
+// проект: юрлицо, локальная команда, запуск логистики (разовая цена платится
+// при запуске первого района) плюс городской офис каждую неделю, пока в городе
+// открыт хоть один район. Закрыли все районы — офис распущен, но повторный
+// вход разовую цену второй раз не берёт: юрлицо и опыт никуда не делись.
+// ============================================================================
+
+const CITIES = [
+  {
+    id: 'novograd',
+    name: { ru: 'Новоград', en: 'Novograd' },
+    home: true, entryCost: 0, weeklyFixed: 0,
+  },
+  {
+    id: 'stargorod',
+    name: { ru: 'Старгород', en: 'Stargorod' },
+    home: false,
+    entryCost: 30_000_000,
+    weeklyFixed: 1_200_000,
+    hint: {
+      ru: 'Соседний город-миллионник. Рынок больше половины новоградского, но там уже пять лет работает местный сервис «СтароЕд» — часть города вы не получите никогда, а каждого клиента придётся отбивать.',
+      en: 'A neighbouring city of a million people. The market is more than half the size of Novograd — but a local service has been running there for five years: part of the city will never be yours, and every customer has to be won over.',
+    },
+  },
+];
+
+
+// ============================================================================
+// Районы. Новоград (~1.4 млн жителей) — домашний город, его районы доступны
+// сразу. Старгород — соседний миллионник с сильным местным конкурентом:
+// его районы открываются как обычные, но первый запуск платит вход в город
+// (см. CITIES выше). potential — потенциальные клиенты района.
 // ============================================================================
 
 const DISTRICTS = [
   {
     id: 'center',
+    city: 'novograd',
     name: { ru: 'Центр', en: 'Downtown' },
     potential: 130_000, income: 1.35, distanceKm: 2.4, baseTime: 19,
     elasticity: 1.0, baseFreq: 0.60, competitor: 0.50,
@@ -1906,6 +2115,7 @@ const DISTRICTS = [
   },
   {
     id: 'sever',
+    city: 'novograd',
     name: { ru: 'Северный', en: 'Northside' },
     potential: 180_000, income: 1.00, distanceKm: 3.6, baseTime: 23,
     elasticity: 1.4, baseFreq: 0.45, competitor: 0.35,
@@ -1917,6 +2127,7 @@ const DISTRICTS = [
   },
   {
     id: 'zarechie',
+    city: 'novograd',
     name: { ru: 'Заречье', en: 'Riverside' },
     potential: 150_000, income: 0.90, distanceKm: 5.0, baseTime: 27,
     elasticity: 1.6, baseFreq: 0.38, competitor: 0.25,
@@ -1928,6 +2139,7 @@ const DISTRICTS = [
   },
   {
     id: 'univer',
+    city: 'novograd',
     name: { ru: 'Университетский', en: 'Campus' },
     potential: 90_000, income: 0.70, distanceKm: 3.0, baseTime: 21,
     elasticity: 2.2, baseFreq: 0.75, competitor: 0.40,
@@ -1939,6 +2151,7 @@ const DISTRICTS = [
   },
   {
     id: 'promzona',
+    city: 'novograd',
     name: { ru: 'Промзона', en: 'Industrial' },
     potential: 110_000, income: 0.75, distanceKm: 6.0, baseTime: 31,
     elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
@@ -1950,6 +2163,7 @@ const DISTRICTS = [
   },
   {
     id: 'zagorod',
+    city: 'novograd',
     name: { ru: 'Загородный', en: 'Suburbs' },
     potential: 60_000, income: 1.60, distanceKm: 9.0, baseTime: 38,
     elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
@@ -1957,6 +2171,59 @@ const DISTRICTS = [
     hint: {
       ru: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
       en: 'Wealthy houses that never look at the price — but the delivery legs are enormous and couriers barely complete a shift.',
+    },
+  },
+
+  // --- Старгород: экспансия во второй город ---
+  // Рынок в сумме ~55% новоградского, но конкурент здесь не «один из», а
+  // хозяин: у него выше доля запертых клиентов, и каждый район стартует
+  // с нулевой узнаваемости — маркетинг придётся делить на два города.
+  {
+    id: 'st-center',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Центр', en: 'Stargorod · Downtown' },
+    potential: 90_000, income: 1.25, distanceKm: 2.6, baseTime: 20,
+    elasticity: 1.1, baseFreq: 0.55, competitor: 0.80,
+    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 400_000,
+    hint: {
+      ru: 'Витрина чужого города: экономика заказа хорошая, но «СтароЕд» держит центр крепче всего.',
+      en: 'The rival’s shop window: order economics are good, but the local incumbent holds downtown hardest.',
+    },
+  },
+  {
+    id: 'st-vostok',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Восточный', en: 'Stargorod · Eastside' },
+    potential: 140_000, income: 0.95, distanceKm: 3.8, baseTime: 24,
+    elasticity: 1.5, baseFreq: 0.42, competitor: 0.55,
+    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 320_000,
+    hint: {
+      ru: 'Главный спальный массив Старгорода — основной объём второго города, если сумеете его разбудить.',
+      en: 'Stargorod’s main residential belt — the second city’s volume, if you can wake it up.',
+    },
+  },
+  {
+    id: 'st-port',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Портовый', en: 'Stargorod · Harbour' },
+    potential: 80_000, income: 0.85, distanceKm: 5.5, baseTime: 29,
+    elasticity: 1.7, baseFreq: 0.33, competitor: 0.35,
+    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 260_000,
+    hint: {
+      ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
+      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
+    },
+  },
+  {
+    id: 'st-sloboda',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Слобода', en: 'Stargorod · Old Quarter' },
+    potential: 60_000, income: 1.30, distanceKm: 7.5, baseTime: 34,
+    elasticity: 0.95, baseFreq: 0.32, competitor: 0.28,
+    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 270_000,
+    hint: {
+      ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
+      en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
     },
   },
 ];
@@ -2826,6 +3093,10 @@ function districtById(id) {
   return DISTRICTS.find((d) => d.id === id);
 }
 
+function cityById(id) {
+  return CITIES.find((c) => c.id === id);
+}
+
 // Средний чек района зависит от уровня дохода
 function aovOf(district) {
   return CONFIG.aovBase * Math.pow(district.income, CONFIG.aovIncomeExponent);
@@ -2862,6 +3133,8 @@ function createInitialState(seed = 'novograd') {
     courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
     bonusHabit: 0,           // привычка курьеров к надбавке за погоду: 0 — свежая, 1 — часть зарплаты
     decisions: { ...DEFAULT_DECISIONS, districts: [] },
+    // Вход в город платится один раз; домашний город открыт с самого начала.
+    cityEntered: { novograd: true },
     districts: Object.fromEntries(
       DISTRICTS.map((d) => [d.id, {
         id: d.id,
@@ -2991,13 +3264,46 @@ function step(prevState, input = {}) {
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
   // --- 2. Запуск и закрытие районов ---
+  // Сохранение из версии без Старгорода: дописываем недостающие районы
+  // и города, не трогая существующие. Партия продолжается, а не сбрасывается.
+  state.cityEntered = state.cityEntered ?? { novograd: true };
+  for (const def of DISTRICTS) {
+    if (!state.districts[def.id]) {
+      state.districts[def.id] = {
+        id: def.id, active: false, launchedWeek: null, awareness: 0,
+        customers: 0, restaurants: 0, deliveryTime: def.baseTime, satisfaction: 1,
+      };
+    }
+  }
+
   const wanted = new Set(decisions.districts ?? []);
   let launchCost = 0;
+  let cityEntryCost = 0;
   const launched = [];
   const closed = [];
+  const enteredCities = [];
+  // Ворота экспансии: совет согласует второй город после первого квартала
+  // и при работающей машине дома. Новоградские районы в DISTRICTS идут
+  // первыми, так что открытые этой же неделей уже посчитаны.
+  const homeActive = () => DISTRICTS
+    .filter((d) => d.city === 'novograd' && state.districts[d.id].active).length;
+  const expansionOpen = () => week >= CONFIG.expansion.minWeek
+    && homeActive() >= CONFIG.expansion.minHomeDistricts;
   for (const def of DISTRICTS) {
     const ds = state.districts[def.id];
     if (wanted.has(def.id) && !ds.active) {
+      // Первый район в новом городе тянет за собой вход в город: юрлицо,
+      // локальная команда, запуск логистики. Платится один раз за партию.
+      if (!state.cityEntered[def.city]) {
+        if (!expansionOpen()) continue;   // ворота закрыты — заявка ждёт
+        state.cityEntered[def.city] = true;
+        cityEntryCost += cityById(def.city)?.entryCost ?? 0;
+        enteredCities.push(def.city);
+        // Хозяин города отвечает на вход промо-войной — конечной: жечь
+        // деньги вечно не может и он.
+        state.cityWar = state.cityWar ?? {};
+        state.cityWar[def.city] = week + CONFIG.expansion.warWeeks;
+      }
       ds.active = true;
       ds.launchedWeek = week;
       ds.deliveryTime = def.baseTime;
@@ -3013,6 +3319,7 @@ function step(prevState, input = {}) {
       closed.push(def.id);
     }
   }
+  launchCost += cityEntryCost;
 
   const activeDefs = DISTRICTS.filter((d) => state.districts[d.id].active);
   const commission = effectiveCommission(state, decisions);
@@ -3212,7 +3519,11 @@ function step(prevState, input = {}) {
   const variableCost = courierCost + promoCost + paymentCost + supportCost;
   const contribution = netRevenue - variableCost;
 
-  const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0);
+  // Городской офис — пока в городе открыт хоть один район. Домашний город
+  // уже входит в hqWeeklyBase, у него weeklyFixed = 0.
+  const activeCities = [...new Set(activeDefs.map((d) => d.city))];
+  const cityFixed = activeCities.reduce((s, id) => s + (cityById(id)?.weeklyFixed ?? 0), 0);
+  const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0) + cityFixed;
   // Построенное стоит денег каждую неделю, а серверы дорожают вместе с
   // заказами: обе статьи раньше прятались внутри «офиса и менеджмента».
   const techUpkeep = platformUpkeep(
@@ -3372,9 +3683,13 @@ function step(prevState, input = {}) {
     const pricePremium = clamp(1 / Math.max(0.25, p.priceFactor) - 1, 0, 1.5);
     const rivalPull = def.competitor * pricePremium;
 
+    // Промо-война хозяина города после вашего входа: приток урезан, отток выше.
+    const atWar = (state.cityWar?.[def.city] ?? 0) > week;
+
     const churn = clamp(
       CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012
-      + rivalPull * CONFIG.rivalPricePull,
+      + rivalPull * CONFIG.rivalPricePull
+      + (atWar ? CONFIG.expansion.warChurnAdd : 0),
       0, 0.6
     );
     const leaving = ds.customers * churn;
@@ -3382,7 +3697,8 @@ function step(prevState, input = {}) {
     const untapped = Math.max(0, reachableOf(def) - ds.customers);
     const trial = untapped * ds.awareness * CONFIG.trialRate
       * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2)
-      / (1 + rivalPull * CONFIG.rivalTrialPull);
+      / (1 + rivalPull * CONFIG.rivalTrialPull)
+      * (atWar ? 1 - CONFIG.expansion.warTrialCut : 1);
     const wom = ds.customers * 0.02 * Math.max(0, satisfaction - 1);
 
     ds.customers = Math.max(0, ds.customers - leaving + trial + wom);
@@ -3418,7 +3734,12 @@ function step(prevState, input = {}) {
   // чаще, чем «обычно», и город съедает больше доставки, чем съедал раньше.
   // Но весь рынок нашим не станет — часть жителей прочно сидит у конкурента.
   // Доля выше 100% — это ошибка счёта, а не достижение, и показывать её нельзя.
-  const baseCityOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  // Знаменатель — города присутствия: пока вы не вышли в Старгород, его рынок
+  // в вашу долю не входит; вышли — доля считается по обоим городам сразу.
+  const shareCities = new Set(activeCities.length ? activeCities : ['novograd']);
+  const baseCityOrders = DISTRICTS
+    .filter((d) => shareCities.has(d.city))
+    .reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
   const cityMarketOrders = Math.max(baseCityOrders, orders / CONFIG.maxMarketShare);
   const marketShare = orders / cityMarketOrders;
 
@@ -3490,6 +3811,11 @@ function step(prevState, input = {}) {
     serverCost,
     oneOff,
     launchCost,
+    cityEntryCost,
+    cityFixed,
+    enteredCities,
+    // Сколько недель хозяину второго города осталось воевать (0 — мир)
+    cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,
     profit,
     cash: state.cash,
@@ -4661,8 +4987,9 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 function renderDistricts() {
   const chosen = new Set(state.decisions.districts ?? []);
-  el('districts').innerHTML = DISTRICTS.map((d) => {
-    const ds = state.districts[d.id];
+  const entered = state.cityEntered ?? { novograd: true };
+  const card = (d) => {
+    const ds = state.districts[d.id] ?? { active: false, deliveryTime: d.baseTime };
     const on = chosen.has(d.id);
     const live = ds.active;
     const stats = live
@@ -4682,12 +5009,51 @@ function renderDistricts() {
       <div class="district-meta">${stats}</div>
       <div class="district-meta">${tx(d.hint)}</div>
     </div>`;
+  };
+  // Ворота экспансии считаются как в модели: следующая неделя и число
+  // выбранных районов дома — они откроются тем же ходом, что и заявка.
+  const homeChosen = DISTRICTS
+    .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
+  const gateOpen = state.week + 1 >= CONFIG.expansion.minWeek
+    && homeChosen >= CONFIG.expansion.minHomeDistricts;
+
+  // Районы группируются по городам. Домашний город идёт без шапки, чужой —
+  // с ценой входа: разовый платёж уходит вместе с запуском первого района.
+  el('districts').innerHTML = CITIES.map((c) => {
+    const defs = DISTRICTS.filter((d) => d.city === c.id);
+    if (!defs.length) return '';
+    const badge = entered[c.id]
+      ? `<span class="badge on">${t('cityEntered')}</span>`
+      : gateOpen
+        ? `<span class="badge">${t('cityEntry', { cost: money(c.entryCost) })}</span>`
+        : `<span class="badge">${t('cityLocked', {
+            week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+          })}</span>`;
+    const head = c.home ? '' : `<div class="district-city">
+      <div class="district-head">
+        <span class="district-name">${tx(c.name)}</span>
+        ${badge}
+      </div>
+      <div class="district-meta">${tx(c.hint)} ${t('cityFixedNote', {
+        entry: money(c.entryCost), weekly: money(c.weeklyFixed),
+      })}</div>
+    </div>`;
+    return head + defs.map(card).join('');
   }).join('');
 
   el('districts').querySelectorAll('.district').forEach((node) => {
     node.addEventListener('click', () => {
       const id = node.dataset.id;
+      const def = districtById(id);
       const set = new Set(state.decisions.districts ?? []);
+      // В закрытый город заявку не принимаем: молча ждущая галочка, которая
+      // сама срабатывает через несколько недель, хуже честного отказа.
+      if (!set.has(id) && def && !entered[def.city] && !gateOpen) {
+        toast(t('cityLockedToast', {
+          week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+        }));
+        return;
+      }
       if (set.has(id)) set.delete(id); else set.add(id);
       state.decisions.districts = [...set];
       renderDistricts();
@@ -4798,6 +5164,12 @@ function buildAlerts(r) {
   // и не понимает, почему во всех графиках ноль.
   if (!(state.decisions.districts ?? []).length) {
     alerts.push(['bad', t('alertNoDistricts'), 'panel:districts']);
+  }
+
+  // Промо-война хозяина второго города: цифры Старгорода будут хуже ожиданий,
+  // и человек должен видеть почему — и что это закончится.
+  if (r.cityWarWeeks > 0) {
+    alerts.push(['warn', t('alertCityWar', { weeks: r.cityWarWeeks }), 'panel:districts']);
   }
 
   if (r.utilization > 1.02) {
@@ -4954,6 +5326,11 @@ function renderReport() {
         names: r.launched.map((id) => tx(districtById(id)?.name)).join(', '),
         cost: money(r.launchCost),
       })}</div>` : '';
+  const cityNote = r.enteredCities?.length
+    ? `<div class="alert warn" style="margin-top:8px">${t('cityEnterNote', {
+        names: r.enteredCities.map((id) => tx(CITIES.find((c) => c.id === id)?.name)).join(', '),
+        cost: money(r.cityEntryCost ?? 0),
+      })}</div>` : '';
 
   // Одна строка «что изменилось»: три главных числа против прошлого хода.
   // Подробный разбор ниже, но начинать чтение отчёта удобно с дельты.
@@ -4998,6 +5375,7 @@ function renderReport() {
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
+    ${cityNote}
     ${launchNote}
     ${driversHtml}
     ${alertsHtml}
@@ -5305,6 +5683,9 @@ function renderHelpTab() {
     <h4>${t('helpWeatherTitle')}</h4>
     <p>${t('helpWeatherText')}</p>
 
+    <h4>${t('helpCityTitle')}</h4>
+    <p>${t('helpCityText')}</p>
+
     <h4>${t('helpSpiralsTitle')}</h4>
     <ul>
       <li>${t('helpSpiralSpeed')}</li>
@@ -5494,11 +5875,23 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${recordsBlockHtml(s)}
+    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
   ]);
+  // Мировая таблица: живёт только там, где страница знает адрес сервера.
+  // Отправка — по явной кнопке; факт отправки помнится внутри партии.
+  lbMount({
+    root: el('modal-root').querySelector('#lb-root'),
+    t,
+    money,
+    game: GAME_TAG,
+    line,
+    submitted: Boolean(state.lbSent),
+    onSubmitted: () => { state.lbSent = true; save(); },
+  });
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });

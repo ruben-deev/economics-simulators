@@ -22,6 +22,7 @@ import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinopotok-save-v1';
@@ -1847,9 +1848,21 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${recordsBlockHtml(s)}
+    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
     [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
      { label: t('gameOverCharts'), onClick: () => {} }]);
+  // Мировая таблица: живёт только там, где страница знает адрес сервера.
+  // Отправка — по явной кнопке; факт отправки помнится внутри партии.
+  lbMount({
+    root: el('modal-root').querySelector('#lb-root'),
+    t,
+    money,
+    game: GAME_TAG,
+    line,
+    submitted: Boolean(state.lbSent),
+    onSubmitted: () => { state.lbSent = true; save(); },
+  });
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });

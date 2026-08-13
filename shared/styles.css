@@ -147,6 +147,15 @@ button { font-family: inherit; }
 }
 .district:hover { border-color: rgba(148, 163, 184, 0.35); }
 .district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
+/* Шапка второго города в панели районов: выглядит как карточка, но не кликается —
+   вход в город платится сам, вместе с запуском первого района. */
+.district-city {
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 9px 10px;
+  margin-top: 10px;
+  background: transparent;
+}
 .district-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .district-name { font-weight: 700; font-size: 13px; }
 .district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }

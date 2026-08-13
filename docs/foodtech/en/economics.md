@@ -58,6 +58,35 @@ This is a ceiling on reach. Downtown has a competitor strength of 0.5, so at mos
 its 130,000 residents can ever be yours, no matter what you spend on marketing. The lesson:
 market share is limited not only by your budget but by the structure of the market.
 
+### The second city: Stargorod
+
+When Novograd approaches saturation (around week 20–25 for a played-in strategy),
+growth can be bought with geography. Stargorod is four districts with a combined
+addressable market of roughly 45% of Novograd's — and an incumbent: the local
+service holds downtown at competitor strength 0.80 (the most contested district
+at home is 0.50).
+
+Entry is a project, not a checkbox:
+
+* **a gate** — the board approves a second city from week 14 and only with three
+  Novograd districts running;
+* **a one-off entry fee** — ₽30M (legal entity, local team, logistics launch),
+  paid together with the first district launch; never charged twice;
+* **a city office** — ₽1.2M/wk while at least one district is open;
+* **a promo war** — for 16 weeks after entry the incumbent fights back:
+  new-customer inflow in its city is cut by 55% and weekly churn is 3 pp higher;
+* **awareness starts at zero**, and the marketing budget is shared: every rouble
+  of advertising is now split between cities in proportion to population;
+* **market share is measured across the cities you are present in** — entering
+  dilutes your share, which makes the fourth-quarter goal (45% share) noticeably
+  harder after expansion.
+
+Measured on polished reference strategies (8 seeds, taking rounds): entering with
+all four districts on weeks 14–20 adds +28–34% to the mid base's final score and
++30–36% to the wide base; Eastside alone adds +11–12%; entering on week 34 cannot
+pay back the war and the ramp-up (−11% to +5%). The narrow single-district
+strategy cannot expand at all — the gate demands home coverage.
+
 ---
 
 ## 2b. Weather

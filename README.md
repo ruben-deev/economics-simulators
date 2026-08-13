@@ -4,7 +4,7 @@
 
 **▶ [Открыть витрину со списком игр](https://ruben-deev.github.io/economics-simulators/)**
 
-Две браузерные игры про управление бизнесом. Каждая — один ход в единицу времени, десяток
+Три браузерные игры про управление бизнесом. Каждая — один ход в единицу времени, десяток
 рычагов и понятная причина, по которой можно разориться. Сделаны в первую очередь как
 **учебные тренажёры**: важнее не выиграть, а увидеть, почему решения ведут именно к таким
 последствиям. Поэтому в интерфейсе есть разбор каждого хода по факторам, таблица
@@ -36,9 +36,17 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.9.4.html) ·
-[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.10.3.html).
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.0.html) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinopotok-streaming-simulator-v1.11.0.html) ·
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/bileton-ticketing-simulator-v1.14.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
+
+**Мировая таблица результатов.** На финальном экране каждой игры есть локальная
+таблица рекордов устройства, а на сайте — ещё и глобальная: игрок может отправить
+подписанную строку результата (с контрольной суммой) и увидеть своё место. Сервер
+таблицы разворачивается за пять минут на Google Apps Script — инструкция в
+[`server/README.md`](server/README.md). Офлайн-файлы адреса сервера не содержат
+и ничего никуда не отправляют.
 
 Локально:
 
@@ -331,7 +339,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinopotok-streaming-simulator-v1.10.3.html
+  dist/kinopotok-streaming-simulator-v1.11.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```

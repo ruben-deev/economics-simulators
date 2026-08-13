@@ -18,7 +18,7 @@
 // падает удовлетворённость -> растёт отток клиентов -> спрос падает.
 // ============================================================================
 
-import { CONFIG, DISTRICTS, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
+import { CONFIG, DISTRICTS, CITIES, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
 import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
@@ -32,6 +32,10 @@ const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
 
 export function districtById(id) {
   return DISTRICTS.find((d) => d.id === id);
+}
+
+export function cityById(id) {
+  return CITIES.find((c) => c.id === id);
 }
 
 // Средний чек района зависит от уровня дохода
@@ -70,6 +74,8 @@ export function createInitialState(seed = 'novograd') {
     courierMorale: 1,        // отношение заработка курьера к рынку на прошлой неделе
     bonusHabit: 0,           // привычка курьеров к надбавке за погоду: 0 — свежая, 1 — часть зарплаты
     decisions: { ...DEFAULT_DECISIONS, districts: [] },
+    // Вход в город платится один раз; домашний город открыт с самого начала.
+    cityEntered: { novograd: true },
     districts: Object.fromEntries(
       DISTRICTS.map((d) => [d.id, {
         id: d.id,
@@ -199,13 +205,46 @@ export function step(prevState, input = {}) {
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
   // --- 2. Запуск и закрытие районов ---
+  // Сохранение из версии без Старгорода: дописываем недостающие районы
+  // и города, не трогая существующие. Партия продолжается, а не сбрасывается.
+  state.cityEntered = state.cityEntered ?? { novograd: true };
+  for (const def of DISTRICTS) {
+    if (!state.districts[def.id]) {
+      state.districts[def.id] = {
+        id: def.id, active: false, launchedWeek: null, awareness: 0,
+        customers: 0, restaurants: 0, deliveryTime: def.baseTime, satisfaction: 1,
+      };
+    }
+  }
+
   const wanted = new Set(decisions.districts ?? []);
   let launchCost = 0;
+  let cityEntryCost = 0;
   const launched = [];
   const closed = [];
+  const enteredCities = [];
+  // Ворота экспансии: совет согласует второй город после первого квартала
+  // и при работающей машине дома. Новоградские районы в DISTRICTS идут
+  // первыми, так что открытые этой же неделей уже посчитаны.
+  const homeActive = () => DISTRICTS
+    .filter((d) => d.city === 'novograd' && state.districts[d.id].active).length;
+  const expansionOpen = () => week >= CONFIG.expansion.minWeek
+    && homeActive() >= CONFIG.expansion.minHomeDistricts;
   for (const def of DISTRICTS) {
     const ds = state.districts[def.id];
     if (wanted.has(def.id) && !ds.active) {
+      // Первый район в новом городе тянет за собой вход в город: юрлицо,
+      // локальная команда, запуск логистики. Платится один раз за партию.
+      if (!state.cityEntered[def.city]) {
+        if (!expansionOpen()) continue;   // ворота закрыты — заявка ждёт
+        state.cityEntered[def.city] = true;
+        cityEntryCost += cityById(def.city)?.entryCost ?? 0;
+        enteredCities.push(def.city);
+        // Хозяин города отвечает на вход промо-войной — конечной: жечь
+        // деньги вечно не может и он.
+        state.cityWar = state.cityWar ?? {};
+        state.cityWar[def.city] = week + CONFIG.expansion.warWeeks;
+      }
       ds.active = true;
       ds.launchedWeek = week;
       ds.deliveryTime = def.baseTime;
@@ -221,6 +260,7 @@ export function step(prevState, input = {}) {
       closed.push(def.id);
     }
   }
+  launchCost += cityEntryCost;
 
   const activeDefs = DISTRICTS.filter((d) => state.districts[d.id].active);
   const commission = effectiveCommission(state, decisions);
@@ -420,7 +460,11 @@ export function step(prevState, input = {}) {
   const variableCost = courierCost + promoCost + paymentCost + supportCost;
   const contribution = netRevenue - variableCost;
 
-  const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0);
+  // Городской офис — пока в городе открыт хоть один район. Домашний город
+  // уже входит в hqWeeklyBase, у него weeklyFixed = 0.
+  const activeCities = [...new Set(activeDefs.map((d) => d.city))];
+  const cityFixed = activeCities.reduce((s, id) => s + (cityById(id)?.weeklyFixed ?? 0), 0);
+  const districtFixed = activeDefs.reduce((s, d) => s + d.weeklyFixed, 0) + cityFixed;
   // Построенное стоит денег каждую неделю, а серверы дорожают вместе с
   // заказами: обе статьи раньше прятались внутри «офиса и менеджмента».
   const techUpkeep = platformUpkeep(
@@ -580,9 +624,13 @@ export function step(prevState, input = {}) {
     const pricePremium = clamp(1 / Math.max(0.25, p.priceFactor) - 1, 0, 1.5);
     const rivalPull = def.competitor * pricePremium;
 
+    // Промо-война хозяина города после вашего входа: приток урезан, отток выше.
+    const atWar = (state.cityWar?.[def.city] ?? 0) > week;
+
     const churn = clamp(
       CONFIG.customerBaseChurn + Math.max(0, 1 - satisfaction) * 0.30 + def.competitor * 0.012
-      + rivalPull * CONFIG.rivalPricePull,
+      + rivalPull * CONFIG.rivalPricePull
+      + (atWar ? CONFIG.expansion.warChurnAdd : 0),
       0, 0.6
     );
     const leaving = ds.customers * churn;
@@ -590,7 +638,8 @@ export function step(prevState, input = {}) {
     const untapped = Math.max(0, reachableOf(def) - ds.customers);
     const trial = untapped * ds.awareness * CONFIG.trialRate
       * clamp(satisfaction, 0.3, 1.3) * clamp(p.selectionFactor, 0, 1.2)
-      / (1 + rivalPull * CONFIG.rivalTrialPull);
+      / (1 + rivalPull * CONFIG.rivalTrialPull)
+      * (atWar ? 1 - CONFIG.expansion.warTrialCut : 1);
     const wom = ds.customers * 0.02 * Math.max(0, satisfaction - 1);
 
     ds.customers = Math.max(0, ds.customers - leaving + trial + wom);
@@ -626,7 +675,12 @@ export function step(prevState, input = {}) {
   // чаще, чем «обычно», и город съедает больше доставки, чем съедал раньше.
   // Но весь рынок нашим не станет — часть жителей прочно сидит у конкурента.
   // Доля выше 100% — это ошибка счёта, а не достижение, и показывать её нельзя.
-  const baseCityOrders = DISTRICTS.reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
+  // Знаменатель — города присутствия: пока вы не вышли в Старгород, его рынок
+  // в вашу долю не входит; вышли — доля считается по обоим городам сразу.
+  const shareCities = new Set(activeCities.length ? activeCities : ['novograd']);
+  const baseCityOrders = DISTRICTS
+    .filter((d) => shareCities.has(d.city))
+    .reduce((s, d) => s + d.potential * d.baseFreq * 0.45, 0);
   const cityMarketOrders = Math.max(baseCityOrders, orders / CONFIG.maxMarketShare);
   const marketShare = orders / cityMarketOrders;
 
@@ -698,6 +752,11 @@ export function step(prevState, input = {}) {
     serverCost,
     oneOff,
     launchCost,
+    cityEntryCost,
+    cityFixed,
+    enteredCities,
+    // Сколько недель хозяину второго города осталось воевать (0 — мир)
+    cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,
     profit,
     cash: state.cash,

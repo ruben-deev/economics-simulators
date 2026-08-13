@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CONFIG, DEFAULT_DECISIONS, DISTRICTS } from '../src/model/config.js';
+import { CONFIG, DEFAULT_DECISIONS, DISTRICTS, CITIES } from '../src/model/config.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise, explain, finalScore,
   ordersPerCourier, techLevel, reachableOf, aovOf,
@@ -776,4 +776,102 @@ test('прогресс по цели читается в ту же сторон�
   for (const q of [1, 2, 3, 4]) {
     assert.equal(goalProgress(makeGoal(q, s, 20_000, 40_000), weak).done, false);
   }
+});
+
+// ----------------------------------------------------------------------------
+// Экспансия во второй город
+// ----------------------------------------------------------------------------
+
+// Готовое к экспансии состояние: три района дома, первый квартал сыгран.
+function readyForExpansion(seed = 'geo') {
+  const d = baseDecisions({
+    districts: ['center', 'sever', 'univer'], marketing: 1_500_000,
+    sales: 200_000, targetCouriers: 300, courierPay: 200,
+  });
+  let state = createInitialState(seed);
+  for (let i = 0; i < 14 && !state.over; i++) state = step(state, { decisions: d }).state;
+  return { state, d };
+}
+
+test('ворота экспансии: до 14-й недели и без трёх районов дома входа нет', () => {
+  // Рано: неделя 1, хоть районов и три в заявке — старгородский не откроется
+  const early = step(createInitialState('gate'), {
+    decisions: baseDecisions({ districts: ['center', 'sever', 'univer', 'st-vostok'] }),
+  });
+  assert.equal(early.state.districts['st-vostok'].active, false, 'ворота закрыты по неделе');
+  assert.equal(early.report.cityEntryCost, 0);
+
+  // Поздно по неделе, но дома только один район — тоже нет
+  let narrow = createInitialState('gate2');
+  const dn = baseDecisions({ districts: ['center'], targetCouriers: 150 });
+  for (let i = 0; i < 15 && !narrow.over; i++) narrow = step(narrow, { decisions: dn }).state;
+  const r = step(narrow, { decisions: { ...dn, districts: ['center', 'st-vostok'] } });
+  assert.equal(r.state.districts['st-vostok'].active, false, 'ворота закрыты по охвату дома');
+});
+
+test('вход в Старгород платится один раз, вместе с первым районом', () => {
+  const { state: ready, d } = readyForExpansion();
+  const dExp = { ...d, districts: [...d.districts, 'st-vostok'] };
+  const r1 = step(ready, { decisions: dExp }).report;
+  const st = CITIES.find((c) => c.id === 'stargorod');
+  assert.equal(r1.cityEntryCost, st.entryCost, 'вход в город в разовых расходах');
+  assert.deepEqual(r1.enteredCities, ['stargorod']);
+  const launch = DISTRICTS.find((x) => x.id === 'st-vostok').launchCost;
+  assert.equal(r1.launchCost, launch + st.entryCost, 'запуск района + вход');
+
+  // Закрыли все районы города и открыли снова — вход второй раз не берётся
+  let state = step(ready, { decisions: dExp }).state;
+  state = step(state, { decisions: d }).state;
+  const r3 = step(state, { decisions: dExp }).report;
+  assert.equal(r3.cityEntryCost, 0, 'повторный вход бесплатен');
+  assert.equal(r3.enteredCities.length, 0);
+});
+
+test('промо-война хозяина: приток в Старгороде урезан, пока идёт война', () => {
+  const { state: ready, d } = readyForExpansion('war');
+  const dExp = { ...d, districts: [...d.districts, 'st-vostok'] };
+  let s = step(ready, { decisions: dExp }).state;
+  const r = step(s, { decisions: dExp }).report;
+  assert.ok(r.cityWarWeeks > 0, 'война идёт');
+  assert.ok(r.cityWarWeeks <= CONFIG.expansion.warWeeks);
+});
+
+test('городской офис Старгорода идёт в постоянные, пока город открыт', () => {
+  const st = CITIES.find((c) => c.id === 'stargorod');
+  const { state: ready, d } = readyForExpansion('cf');
+  const home = step(ready, { decisions: d }).report;
+  const away = step(ready, { decisions: { ...d, districts: [...d.districts, 'st-port'] } }).report;
+  const portFixed = DISTRICTS.find((x) => x.id === 'st-port').weeklyFixed;
+  assert.equal(away.cityFixed, st.weeklyFixed);
+  assert.equal(away.districtFixed - home.districtFixed, portFixed + st.weeklyFixed);
+});
+
+test('доля рынка считается по городам присутствия', () => {
+  // Одинаковая партия в Новограде; у второй в последнюю неделю открывается
+  // Старгород — знаменатель доли должен вырасти, а доля упасть.
+  const d = baseDecisions({
+    districts: ['center', 'sever', 'univer'], marketing: 1_500_000, sales: 200_000,
+    targetCouriers: 300, courierPay: 200,
+  });
+  let a = createInitialState('share');
+  for (let i = 0; i < 14; i++) a = step(a, { decisions: d }).state;
+  const stay = step(a, { decisions: d }).report;
+  const expand = step(a, {
+    decisions: { ...d, districts: [...d.districts, 'st-vostok'] },
+  }).report;
+  assert.ok(expand.marketShare < stay.marketShare * 0.8,
+    `после входа доля должна размыться: ${stay.marketShare} -> ${expand.marketShare}`);
+});
+
+test('старое сохранение без Старгорода не ломает партию', () => {
+  const { state: ready, d } = readyForExpansion('mig');
+  // Симулируем сохранение старой версии: районов Старгорода и cityEntered нет
+  delete ready.cityEntered;
+  for (const def of DISTRICTS.filter((x) => x.city === 'stargorod')) {
+    delete ready.districts[def.id];
+  }
+  const res = step(ready, { decisions: { ...d, districts: [...d.districts, 'st-port'] } });
+  assert.ok(res.report.orders >= 0, 'ход считается');
+  assert.equal(res.state.cityEntered.stargorod, true, 'город дописан и вход учтён');
+  assert.ok(res.state.districts['st-port'].active, 'новый район открыт');
 });

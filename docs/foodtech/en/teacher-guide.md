@@ -88,6 +88,33 @@ Question: which district is better with a contribution of ₽150 per order, and 
 
 ---
 
+## Scenario 4b. "The second city" (40 minutes)
+
+The task: by week 20 growth in Novograd is over — orders sit on a plateau. Decide
+whether to enter Stargorod, when, and with which districts.
+
+How the session runs:
+1. Bring a game (or hand out a save) to saturation: 4–5 districts at home, flat
+   orders. Ask: where is the growth? The Geography panel shows the second city
+   and its entry price.
+2. Before any decision, have each team do the napkin maths: ₽30M entry, a
+   ₽1.2M/wk city office, awareness from zero, marketing split between two
+   cities, and 16 weeks of a promo war — the incumbent cuts new-customer inflow
+   in half. How many weeks to payback, and does the game have that many left?
+3. Play 10–12 weeks. Compare teams: all four districts versus one, entry on
+   week 16 versus week 30.
+4. Debrief against the measurement: entering with all four districts on weeks
+   14–20 adds +28–36% to the final score, Eastside alone +11–12%, and an entry
+   after week 30 never pays the war back. Separately: after entry your market
+   share is measured across both cities — the fourth-quarter goal (45%) gets
+   noticeably harder.
+
+The main idea: expansion is not "more districts" — it is a second company
+launch, with a working machine behind you and an enemy on his own field.
+Timing matters more than the district mix.
+
+---
+
 ## Scenario 5. "Storm on Thursday" (25 minutes)
 
 The task: get the service running steadily, then wait for a forecast showing a storm or ice
@@ -123,7 +150,7 @@ The task: show that a strategy built for one quarter's goal does not carry to th
 2. Quarter two announces something else: contribution of ₽60 per order **and** an order
    flow no lower than before. Pause and ask them to say out loud what has to change.
    It usually turns out that what has to change is exactly what won them quarter one.
-3. Quarter three — six profitable weeks out of thirteen with a base that has not shrunk.
+3. Quarter three — four profitable weeks out of thirteen with a base that has not shrunk.
    Quarter four — a 45% city share.
 4. Debrief: the delivery fee and the commission are decisions for the quarter, not
    settings. Missing quarter one costs 15% of the stake (shareholders inject the money
@@ -218,5 +245,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.9.4.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.10.0.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.

@@ -39,7 +39,7 @@ export const STRINGS = {
   // --- панели ---
   panelLevers: { ru: 'Рычаги управления', en: 'Business levers' },
   panelAlgos: { ru: 'Алгоритмы и данные', en: 'Algorithms and data' },
-  panelCoverage: { ru: 'Покрытие города', en: 'City coverage' },
+  panelCoverage: { ru: 'География', en: 'Geography' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
@@ -152,6 +152,13 @@ export const STRINGS = {
   // --- районы ---
   districtLive: { ru: 'работает', en: 'live' },
   districtLaunch: { ru: 'запуск {cost}', en: 'launch {cost}' },
+  // --- Экспансия во второй город ---
+  cityEntry: { ru: 'вход {cost}', en: 'entry {cost}' },
+  cityEntered: { ru: 'вы в городе', en: 'you are in' },
+  cityLocked: { ru: 'с нед. {week}, от {n} районов дома', en: 'from wk {week}, {n}+ home districts' },
+  cityLockedToast: { ru: 'Совет согласует второй город с недели {week} и при {n} работающих районах Новограда.', en: 'The board will approve a second city from week {week}, with at least {n} Novograd districts running.' },
+  cityFixedNote: { ru: 'Вход {entry} платится с первым районом, офис города — {weekly}/нед, пока открыт хоть один район. После входа доля рынка считается по обоим городам, а хозяин ответит промо-войной.', en: 'The {entry} entry fee is paid with your first district; the city office costs {weekly}/wk while at least one district is open. After entry your market share covers both cities — and the incumbent will fight back.' },
+  alertCityWar: { ru: '«СтароЕд» отвечает промо-войной: приток новых клиентов в Старгороде урезан, отток выше. Ещё {weeks} нед.', en: 'The local incumbent is fighting back: new-customer inflow in Stargorod is cut and churn is up. {weeks} more weeks.' },
   districtStatsLive: { ru: '{customers} клиентов · {restaurants} ресторанов · {time} мин · охват {reach}', en: '{customers} customers · {restaurants} restaurants · {time} min · reach {reach}' },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} ₽ · плечо {km} км', en: '{potential} potential customers · basket ₽{aov} · leg {km} km' },
 
@@ -222,6 +229,7 @@ export const STRINGS = {
 
   installNote: { ru: 'Внедрено: {names} — разовые {cost}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.', en: 'Rolled out: {names} — a one-off {cost}. The algorithm starts working this week and starts paying back considerably later.' },
   launchNote: { ru: 'Запущены районы: {names} — разовые затраты {cost}. Первые недели район убыточен: клиентов ещё нет, а постоянные расходы уже идут.', en: 'Districts launched: {names} — a one-off {cost}. A new district loses money at first: there are no customers yet, but the fixed costs have already started.' },
+  cityEnterNote: { ru: 'Вы вышли в {names}: вход {cost} разово, дальше — городской офис каждую неделю. Узнаваемость там нулевая, а доля рынка теперь считается по обоим городам.', en: 'You have entered {names}: a one-off {cost}, then a weekly city office. Awareness there starts at zero, and your market share is now measured across both cities.' },
 
   // --- предупреждения ---
   alertShortage: { ru: 'Курьеров не хватает: спрос покрыт на {fill}. Потеряно {lost} заказов, время доставки выросло до {time} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.', en: 'Not enough couriers: only {fill} of demand was served. {lost} orders lost and delivery time climbed to {time} min. A lost order hits you twice — revenue today, retention tomorrow.' },
@@ -427,6 +435,8 @@ score = valuation × your stake`,
   },
   helpScoreText: { ru: 'Поэтому привлечь много денег — не победа: каждый раунд размывает вашу долю. Выиграет тот, кто дошёл до прибыльности с наименьшим разводнением.', en: 'So raising a lot of money is not a win: every round dilutes you. The winner is whoever reaches profitability with the least dilution.' },
   helpLimitsTitle: { ru: 'Ограничения модели', en: 'Limits of the model' },
+  helpCityTitle: { ru: 'Второй город', en: 'The second city' },
+  helpCityText: { ru: 'Когда Новоград близок к насыщению, рост можно купить географией: Старгород — рынок больше половины домашнего. Совет согласует выход с 14-й недели при трёх работающих районах дома. Вход стоит денег разово, городской офис — каждую неделю, узнаваемость там нулевая, маркетинг делится на два города, а местный «СтароЕд» первые месяцы отвечает промо-войной. Поздний вход не успевает окупить войну и разгон — это проект середины партии, а не последнего рывка.', en: 'When Novograd approaches saturation, growth can be bought with geography: Stargorod is a market more than half the size of home. The board approves entry from week 14 with three home districts running. Entry costs money once, the city office bills weekly, awareness starts at zero, marketing is split across two cities, and the local incumbent answers with a promo war for the first months. A late entry cannot pay back the war and the ramp-up — this is a mid-game project, not a final sprint.' },
   helpLimitsText: { ru: 'Это учебная модель, а не прогноз. Конкурент здесь не адаптируется к вашим действиям, рестораны не торгуются индивидуально, а клиенты однородны внутри района. Модель предназначена показать <i>структуру</i> зависимостей, а не предсказать конкретный рынок.', en: 'This is a teaching model, not a forecast. The competitor does not adapt to you, restaurants do not negotiate individually, and customers are homogeneous within a district. The model exists to show the <i>structure</i> of the dependencies, not to predict a real market.' },
 
   // --- финал ---
@@ -481,6 +491,22 @@ score = valuation × your stake`,
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
+  // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
+  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
+  lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
+  lbColPlayer: { ru: 'Игрок', en: 'Player' },
+  lbColScore: { ru: 'Счёт', en: 'Score' },
+  lbColCode: { ru: 'Код партии', en: 'Game code' },
+  lbColDate: { ru: 'Дата', en: 'Date' },
+  lbNamePlaceholder: { ru: 'Ваше имя или ник', en: 'Your name or nickname' },
+  lbSubmit: { ru: 'Отправить результат', en: 'Submit result' },
+  lbConsent: { ru: 'Отправляются только имя и строка результата: игра, версия, код партии, счёт и ходы.', en: 'Only your name and the result string are sent: game, version, game code, score and turns.' },
+  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the table needs a signed result.' },
+  lbSending: { ru: 'Отправляю…', en: 'Sending…' },
+  lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
+  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
+  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---
   welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },

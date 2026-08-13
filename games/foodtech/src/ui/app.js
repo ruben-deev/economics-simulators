@@ -5,7 +5,7 @@
 // tx() для двуязычных полей модели (районы, рычаги, события, алгоритмы).
 // ============================================================================
 
-import { CONFIG, DISTRICTS, LEVERS, ALGORITHMS } from '../model/config.js';
+import { CONFIG, DISTRICTS, CITIES, LEVERS, ALGORITHMS } from '../model/config.js';
 import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import {
@@ -19,6 +19,7 @@ import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'novoeda-save-v3';
@@ -608,8 +609,9 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 function renderDistricts() {
   const chosen = new Set(state.decisions.districts ?? []);
-  el('districts').innerHTML = DISTRICTS.map((d) => {
-    const ds = state.districts[d.id];
+  const entered = state.cityEntered ?? { novograd: true };
+  const card = (d) => {
+    const ds = state.districts[d.id] ?? { active: false, deliveryTime: d.baseTime };
     const on = chosen.has(d.id);
     const live = ds.active;
     const stats = live
@@ -629,12 +631,51 @@ function renderDistricts() {
       <div class="district-meta">${stats}</div>
       <div class="district-meta">${tx(d.hint)}</div>
     </div>`;
+  };
+  // Ворота экспансии считаются как в модели: следующая неделя и число
+  // выбранных районов дома — они откроются тем же ходом, что и заявка.
+  const homeChosen = DISTRICTS
+    .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
+  const gateOpen = state.week + 1 >= CONFIG.expansion.minWeek
+    && homeChosen >= CONFIG.expansion.minHomeDistricts;
+
+  // Районы группируются по городам. Домашний город идёт без шапки, чужой —
+  // с ценой входа: разовый платёж уходит вместе с запуском первого района.
+  el('districts').innerHTML = CITIES.map((c) => {
+    const defs = DISTRICTS.filter((d) => d.city === c.id);
+    if (!defs.length) return '';
+    const badge = entered[c.id]
+      ? `<span class="badge on">${t('cityEntered')}</span>`
+      : gateOpen
+        ? `<span class="badge">${t('cityEntry', { cost: money(c.entryCost) })}</span>`
+        : `<span class="badge">${t('cityLocked', {
+            week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+          })}</span>`;
+    const head = c.home ? '' : `<div class="district-city">
+      <div class="district-head">
+        <span class="district-name">${tx(c.name)}</span>
+        ${badge}
+      </div>
+      <div class="district-meta">${tx(c.hint)} ${t('cityFixedNote', {
+        entry: money(c.entryCost), weekly: money(c.weeklyFixed),
+      })}</div>
+    </div>`;
+    return head + defs.map(card).join('');
   }).join('');
 
   el('districts').querySelectorAll('.district').forEach((node) => {
     node.addEventListener('click', () => {
       const id = node.dataset.id;
+      const def = districtById(id);
       const set = new Set(state.decisions.districts ?? []);
+      // В закрытый город заявку не принимаем: молча ждущая галочка, которая
+      // сама срабатывает через несколько недель, хуже честного отказа.
+      if (!set.has(id) && def && !entered[def.city] && !gateOpen) {
+        toast(t('cityLockedToast', {
+          week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+        }));
+        return;
+      }
       if (set.has(id)) set.delete(id); else set.add(id);
       state.decisions.districts = [...set];
       renderDistricts();
@@ -745,6 +786,12 @@ function buildAlerts(r) {
   // и не понимает, почему во всех графиках ноль.
   if (!(state.decisions.districts ?? []).length) {
     alerts.push(['bad', t('alertNoDistricts'), 'panel:districts']);
+  }
+
+  // Промо-война хозяина второго города: цифры Старгорода будут хуже ожиданий,
+  // и человек должен видеть почему — и что это закончится.
+  if (r.cityWarWeeks > 0) {
+    alerts.push(['warn', t('alertCityWar', { weeks: r.cityWarWeeks }), 'panel:districts']);
   }
 
   if (r.utilization > 1.02) {
@@ -901,6 +948,11 @@ function renderReport() {
         names: r.launched.map((id) => tx(districtById(id)?.name)).join(', '),
         cost: money(r.launchCost),
       })}</div>` : '';
+  const cityNote = r.enteredCities?.length
+    ? `<div class="alert warn" style="margin-top:8px">${t('cityEnterNote', {
+        names: r.enteredCities.map((id) => tx(CITIES.find((c) => c.id === id)?.name)).join(', '),
+        cost: money(r.cityEntryCost ?? 0),
+      })}</div>` : '';
 
   // Одна строка «что изменилось»: три главных числа против прошлого хода.
   // Подробный разбор ниже, но начинать чтение отчёта удобно с дельты.
@@ -945,6 +997,7 @@ function renderReport() {
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
+    ${cityNote}
     ${launchNote}
     ${driversHtml}
     ${alertsHtml}
@@ -1252,6 +1305,9 @@ function renderHelpTab() {
     <h4>${t('helpWeatherTitle')}</h4>
     <p>${t('helpWeatherText')}</p>
 
+    <h4>${t('helpCityTitle')}</h4>
+    <p>${t('helpCityText')}</p>
+
     <h4>${t('helpSpiralsTitle')}</h4>
     <ul>
       <li>${t('helpSpiralSpeed')}</li>
@@ -1441,11 +1497,23 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${recordsBlockHtml(s)}
+    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
   ]);
+  // Мировая таблица: живёт только там, где страница знает адрес сервера.
+  // Отправка — по явной кнопке; факт отправки помнится внутри партии.
+  lbMount({
+    root: el('modal-root').querySelector('#lb-root'),
+    t,
+    money,
+    game: GAME_TAG,
+    line,
+    submitted: Boolean(state.lbSent),
+    onSubmitted: () => { state.lbSent = true; save(); },
+  });
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });

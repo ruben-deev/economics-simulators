@@ -127,16 +127,62 @@ export const CONFIG = {
   // «деньги кончаются» вело к кнопке, которая ещё не работает, и выхода не было.
   minWeekForFunding: 2,
   fundingOptions: [20_000_000, 50_000_000, 120_000_000],
+
+  // --- Экспансия во второй город ---
+  // Ворота входа: совет не согласует второй город, пока не увидел первый
+  // квартал и работающую машину дома. Без ворот замер показывал «выходи как
+  // можно раньше и всюду» (+58% на 8-й неделе) — решение без решения.
+  expansion: {
+    minWeek: 14,          // после первого отчёта совету
+    minHomeDistricts: 3,  // и минимум трёх работающих районов Новограда
+    // «СтароЕд» отвечает на вход промо-войной: первые недели приток новых
+    // клиентов в его городе урезан, а отток повышен. Война конечна — хозяин
+    // тоже не может жечь деньги вечно.
+    warWeeks: 16,
+    warTrialCut: 0.55,    // насколько режется приток новых клиентов
+    warChurnAdd: 0.03,    // добавка к недельному оттоку
+  },
 };
 
 // ============================================================================
-// Районы вымышленного города Новоград (~1.4 млн жителей).
-// potential — потенциальные клиенты (взрослые, готовые заказывать доставку).
+// Города. Новоград — домашний, вход бесплатный. Выход в следующий город —
+// проект: юрлицо, локальная команда, запуск логистики (разовая цена платится
+// при запуске первого района) плюс городской офис каждую неделю, пока в городе
+// открыт хоть один район. Закрыли все районы — офис распущен, но повторный
+// вход разовую цену второй раз не берёт: юрлицо и опыт никуда не делись.
+// ============================================================================
+
+export const CITIES = [
+  {
+    id: 'novograd',
+    name: { ru: 'Новоград', en: 'Novograd' },
+    home: true, entryCost: 0, weeklyFixed: 0,
+  },
+  {
+    id: 'stargorod',
+    name: { ru: 'Старгород', en: 'Stargorod' },
+    home: false,
+    entryCost: 30_000_000,
+    weeklyFixed: 1_200_000,
+    hint: {
+      ru: 'Соседний город-миллионник. Рынок больше половины новоградского, но там уже пять лет работает местный сервис «СтароЕд» — часть города вы не получите никогда, а каждого клиента придётся отбивать.',
+      en: 'A neighbouring city of a million people. The market is more than half the size of Novograd — but a local service has been running there for five years: part of the city will never be yours, and every customer has to be won over.',
+    },
+  },
+];
+
+
+// ============================================================================
+// Районы. Новоград (~1.4 млн жителей) — домашний город, его районы доступны
+// сразу. Старгород — соседний миллионник с сильным местным конкурентом:
+// его районы открываются как обычные, но первый запуск платит вход в город
+// (см. CITIES выше). potential — потенциальные клиенты района.
 // ============================================================================
 
 export const DISTRICTS = [
   {
     id: 'center',
+    city: 'novograd',
     name: { ru: 'Центр', en: 'Downtown' },
     potential: 130_000, income: 1.35, distanceKm: 2.4, baseTime: 19,
     elasticity: 1.0, baseFreq: 0.60, competitor: 0.50,
@@ -148,6 +194,7 @@ export const DISTRICTS = [
   },
   {
     id: 'sever',
+    city: 'novograd',
     name: { ru: 'Северный', en: 'Northside' },
     potential: 180_000, income: 1.00, distanceKm: 3.6, baseTime: 23,
     elasticity: 1.4, baseFreq: 0.45, competitor: 0.35,
@@ -159,6 +206,7 @@ export const DISTRICTS = [
   },
   {
     id: 'zarechie',
+    city: 'novograd',
     name: { ru: 'Заречье', en: 'Riverside' },
     potential: 150_000, income: 0.90, distanceKm: 5.0, baseTime: 27,
     elasticity: 1.6, baseFreq: 0.38, competitor: 0.25,
@@ -170,6 +218,7 @@ export const DISTRICTS = [
   },
   {
     id: 'univer',
+    city: 'novograd',
     name: { ru: 'Университетский', en: 'Campus' },
     potential: 90_000, income: 0.70, distanceKm: 3.0, baseTime: 21,
     elasticity: 2.2, baseFreq: 0.75, competitor: 0.40,
@@ -181,6 +230,7 @@ export const DISTRICTS = [
   },
   {
     id: 'promzona',
+    city: 'novograd',
     name: { ru: 'Промзона', en: 'Industrial' },
     potential: 110_000, income: 0.75, distanceKm: 6.0, baseTime: 31,
     elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
@@ -192,6 +242,7 @@ export const DISTRICTS = [
   },
   {
     id: 'zagorod',
+    city: 'novograd',
     name: { ru: 'Загородный', en: 'Suburbs' },
     potential: 60_000, income: 1.60, distanceKm: 9.0, baseTime: 38,
     elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
@@ -199,6 +250,59 @@ export const DISTRICTS = [
     hint: {
       ru: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
       en: 'Wealthy houses that never look at the price — but the delivery legs are enormous and couriers barely complete a shift.',
+    },
+  },
+
+  // --- Старгород: экспансия во второй город ---
+  // Рынок в сумме ~55% новоградского, но конкурент здесь не «один из», а
+  // хозяин: у него выше доля запертых клиентов, и каждый район стартует
+  // с нулевой узнаваемости — маркетинг придётся делить на два города.
+  {
+    id: 'st-center',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Центр', en: 'Stargorod · Downtown' },
+    potential: 90_000, income: 1.25, distanceKm: 2.6, baseTime: 20,
+    elasticity: 1.1, baseFreq: 0.55, competitor: 0.80,
+    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 400_000,
+    hint: {
+      ru: 'Витрина чужого города: экономика заказа хорошая, но «СтароЕд» держит центр крепче всего.',
+      en: 'The rival’s shop window: order economics are good, but the local incumbent holds downtown hardest.',
+    },
+  },
+  {
+    id: 'st-vostok',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Восточный', en: 'Stargorod · Eastside' },
+    potential: 140_000, income: 0.95, distanceKm: 3.8, baseTime: 24,
+    elasticity: 1.5, baseFreq: 0.42, competitor: 0.55,
+    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 320_000,
+    hint: {
+      ru: 'Главный спальный массив Старгорода — основной объём второго города, если сумеете его разбудить.',
+      en: 'Stargorod’s main residential belt — the second city’s volume, if you can wake it up.',
+    },
+  },
+  {
+    id: 'st-port',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Портовый', en: 'Stargorod · Harbour' },
+    potential: 80_000, income: 0.85, distanceKm: 5.5, baseTime: 29,
+    elasticity: 1.7, baseFreq: 0.33, competitor: 0.35,
+    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 260_000,
+    hint: {
+      ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
+      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
+    },
+  },
+  {
+    id: 'st-sloboda',
+    city: 'stargorod',
+    name: { ru: 'Старгород · Слобода', en: 'Stargorod · Old Quarter' },
+    potential: 60_000, income: 1.30, distanceKm: 7.5, baseTime: 34,
+    elasticity: 0.95, baseFreq: 0.32, competitor: 0.28,
+    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 270_000,
+    hint: {
+      ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
+      en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
     },
   },
 ];
