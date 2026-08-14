@@ -1,0 +1,568 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS, assetById, verticalById,
+} from '../src/model/config.js';
+import {
+  createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
+  finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
+} from '../src/model/engine.js';
+import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
+import { EVENTS, eventById, neutralModifiers, applyEvent } from '../src/model/events.js';
+
+const taxiDef = verticalById('taxi');
+
+const baseDecisions = (over = {}) => ({ ...DEFAULT_DECISIONS, ...over });
+
+// Разумная стратегия экспансии: запуск такси после ворот, бюджеты по фазам
+const expansionDecisions = (s, over = {}) => baseDecisions({
+  verticals: ['taxi'],
+  foodOps: 5_000_000,
+  foodMarketing: 2_000_000,
+  crossSell: s.taxi.on ? 4_000_000 : 0,
+  mgmt: s.taxi.on ? 6_000_000 : 0,
+  taxiSupply: s.taxi.on ? 6_000_000 : 0,
+  taxiMarketing: s.taxi.on ? 10_000_000 : 0,
+  ...over,
+});
+
+// Прогоняет n месяцев; decide может быть объектом или функцией от состояния.
+// Раунды обязательны: прогон без денег сравнивает даты смерти, а не стратегии.
+function run(months, decide, seed = 'test', { rounds = true } = {}) {
+  let state = createInitialState(seed);
+  const reports = [];
+  for (let i = 0; i < months && !state.over; i++) {
+    if (rounds && state.month >= CONFIG.minMonthForFunding) {
+      const lastR = state.history[state.history.length - 1];
+      if (lastR && lastR.profit < 0 && state.cash < -lastR.profit * 3) {
+        state = raise(state, CONFIG.fundingOptions[1]).state;
+      }
+    }
+    const d = typeof decide === 'function' ? decide(state) : decide;
+    // Перемирие не принимается автоматически: иначе прогоны «случайно»
+    // заканчивают войну, и тесты войны меряют выбор события, а не модель
+    const choice = state.pendingEvent?.id === 'truce_offer' ? 1 : 0;
+    const res = step(state, { decisions: d, eventChoice: choice });
+    state = res.state;
+    reports.push(res.report);
+  }
+  return { state, reports };
+}
+
+// Прогретая партия с работающим такси (после войны)
+function warmEcosystem(seed = 'warm', months = 20) {
+  return run(months, (s) => expansionDecisions(s), seed);
+}
+
+test('стартовое состояние согласовано и читается из дескриптора актива', () => {
+  const s = createInitialState('a');
+  const asset = assetById('delivery');
+  assert.equal(s.cash, CONFIG.startCash);
+  assert.equal(s.month, 0);
+  assert.equal(s.equity, 1);
+  assert.equal(s.food.users, asset.users);
+  assert.equal(s.taxi.on, false);
+  assert.equal(s.both, 0);
+  assert.equal(uniqueUsers(s), asset.users);
+  assert.ok(s.board.goal, 'цель первого года объявлена до первого хода');
+  assert.equal(s.board.goal.year, 1);
+});
+
+test('дескриптор стартового актива параметризует движок, а не хардкод', () => {
+  // Архитектурное требование ТЗ: старты от других игр добавляются данными.
+  // Проверяем, что движок реально читает поля дескриптора.
+  for (const a of START_ASSETS) {
+    assert.ok(a.users > 0 && a.arpu > 0 && a.margin > 0, a.id);
+    assert.ok(a.synergy && typeof a.synergy.taxi === 'number', `${a.id}: профиль синергий`);
+  }
+  const s = createInitialState('d', 'delivery');
+  assert.equal(s.assetId, 'delivery');
+  const r = step(s, { decisions: baseDecisions() }).report;
+  const asset = assetById('delivery');
+  // Выручка первого месяца собрана из agрегатов дескриптора
+  assert.ok(Math.abs(r.revenueFood / (asset.users * asset.arpu) - 1) < 0.25,
+    'выручка еды считается от базы и ARPU дескриптора');
+});
+
+test('симуляция детерминирована при одном seed', () => {
+  const a = run(20, (s) => expansionDecisions(s), 'seed-42');
+  const b = run(20, (s) => expansionDecisions(s), 'seed-42');
+  assert.deepEqual(
+    a.reports.map((r) => [r.revenue, r.cash, r.taxiUsers]),
+    b.reports.map((r) => [r.revenue, r.cash, r.taxiUsers]),
+  );
+});
+
+test('разные seed дают разные партии', () => {
+  const a = run(30, (s) => expansionDecisions(s), 'seed-1');
+  const b = run(30, (s) => expansionDecisions(s), 'seed-2');
+  assert.notDeepEqual(a.reports.map((r) => r.cash), b.reports.map((r) => r.cash));
+});
+
+test('ни одна метрика не становится NaN или бесконечной', () => {
+  const { reports } = run(36, (s) => expansionDecisions(s, {
+    foodTake: 1.2, taxiPrice: 0.9, crossSell: 20_000_000, taxiMarketing: 25_000_000,
+  }));
+  assert.ok(reports.length >= 12, 'партия прожила заметный срок');
+  for (const r of reports) {
+    for (const [key, value] of Object.entries(r)) {
+      if (typeof value === 'number') {
+        assert.ok(Number.isFinite(value), `${key} в месяце ${r.month} = ${value}`);
+      }
+    }
+    assert.ok(r.foodUsers >= 0 && r.taxiUsers >= 0 && r.bothUsers >= 0);
+    assert.ok(r.bothUsers <= r.foodUsers + 1e-6 && r.bothUsers <= r.taxiUsers + 1e-6,
+      'пересечение не больше любой из баз');
+    assert.ok(Math.abs(r.uniqueUsers - (r.foodUsers + r.taxiUsers - r.bothUsers)) < 1e-6,
+      'уникальные = еда + такси − оба');
+  }
+});
+
+test('P&L сходится: выручка, вклад, прибыль и касса', () => {
+  let state = createInitialState('pnl');
+  for (let i = 0; i < 14 && !state.over; i++) {
+    const before = state.cash;
+    const res = step(state, { decisions: expansionDecisions(state), eventChoice: 0 });
+    state = res.state;
+    const r = res.report;
+    assert.ok(Math.abs((r.revenueFood + r.revenueTaxi) - r.revenue) < 1e-6);
+    assert.ok(Math.abs((r.contribFood + r.contribTaxi) - r.contribution) < 1e-6);
+    assert.ok(Math.abs((r.contribution - r.opex) - r.profit) < 1e-6);
+    assert.ok(Math.abs((before + r.profit - r.oneOff) - state.cash) < 1e-6,
+      `касса в месяце ${r.month}`);
+  }
+});
+
+// ----------------------------------------------------------------------------
+// Ворота и война: открытие вертикали — решение с ценой и таймингом
+// ----------------------------------------------------------------------------
+
+test('ворота совета: до минимального месяца такси не запускается', () => {
+  let s = createInitialState('gate');
+  const d = baseDecisions({ verticals: ['taxi'] });
+  for (let i = 0; i < taxiDef.gate.minMonth - 1; i++) {
+    s = step(s, { decisions: d }).state;
+    assert.equal(s.taxi.on, false, `месяц ${s.month}: ворота ещё закрыты`);
+  }
+  s = step(s, { decisions: d }).state;
+  assert.equal(s.taxi.on, true, 'на минимальном месяце заявка проходит');
+});
+
+test('ворота совета: убыточная еда не пускает в экспансию', () => {
+  // Дожимаем до убытка: максимальный возврат при пустом пуле и нулевой отдаче
+  let s = createInitialState('gate2');
+  const bad = baseDecisions({ foodOps: 12_000_000, foodMarketing: 15_000_000, foodTake: 0.8 });
+  for (let i = 0; i < taxiDef.gate.minMonth + 2; i++) {
+    s = step(s, { decisions: { ...bad, verticals: ['taxi'] } }).state;
+  }
+  const h = s.history.slice(-taxiDef.gate.assetContributionMonths);
+  const avg = h.reduce((acc, r) => acc + r.foodFullContribution, 0) / h.length;
+  assert.ok(avg < 0, 'выбранная стратегия действительно делает еду убыточной');
+  assert.equal(s.taxi.on, false, 'совет не согласует вторую ногу при убыточной первой');
+});
+
+test('запуск такси платит разовую цену и начинает войну', () => {
+  const { state: ready } = run(taxiDef.gate.minMonth, baseDecisions(), 'launch', { rounds: false });
+  const res = step(ready, { decisions: baseDecisions({ verticals: ['taxi'] }) });
+  assert.equal(res.state.taxi.on, true);
+  assert.equal(res.report.launchCost, taxiDef.launchCost);
+  // В этом месяце могло случиться и событие с разовой ценой — запуск
+  // обязан входить в разовые расходы, но не обязан быть их единственной строкой
+  assert.ok(res.report.oneOff >= taxiDef.launchCost);
+  assert.ok(res.report.atWar, 'хозяин рынка отвечает войной сразу');
+  assert.equal(res.report.warMonthsLeft, taxiDef.warMonths);
+});
+
+test('война конечна и режет приток холодного маркетинга', () => {
+  const { state } = warmEcosystem('war', 6 + 1);
+  const r = state.history[state.history.length - 1];
+  assert.ok(r.atWar, 'на этом сроке война ещё идёт');
+  // Тот же самый месяц без войны: снимаем флаг и сравниваем приток
+  const peace = JSON.parse(JSON.stringify(state));
+  peace.taxi.warUntil = 0;
+  const dWar = expansionDecisions(state);
+  const inWar = step(state, { decisions: dWar }).report;
+  const inPeace = step(peace, { decisions: dWar }).report;
+  assert.ok(inPeace.coldAcq > inWar.coldAcq * 1.5,
+    `в мирное время холодный приток заметно больше: ${inPeace.coldAcq} против ${inWar.coldAcq}`);
+  assert.ok(inPeace.fareEff > inWar.fareEff, 'война продавливает цены рынка');
+
+  const long = warmEcosystem('war', taxiDef.gate.minMonth + taxiDef.warMonths + 2);
+  const lastR = long.state.history[long.state.history.length - 1];
+  assert.equal(lastR.warMonthsLeft, 0, 'война заканчивается');
+});
+
+// ----------------------------------------------------------------------------
+// Кросс-селл и общая база
+// ----------------------------------------------------------------------------
+
+test('кросс-селл дешевле холодного привлечения, но упирается в ёмкость', () => {
+  const { state } = warmEcosystem('cross', 14);
+  const d = expansionDecisions(state, { crossSell: 4_000_000, taxiMarketing: 10_000_000 });
+  const r = step(state, { decisions: d }).report;
+  assert.ok(r.crossConv > 0, 'кросс-селл приводит клиентов');
+  assert.ok(r.coldAcq > 0, 'маркетинг приводит клиентов');
+  assert.ok(r.crossCac > 0 && r.cacCold > 0);
+  assert.ok(r.crossCac < r.cacCold * 0.7,
+    `клиент из кросс-селла в разы дешевле: ${r.crossCac} против ${r.cacCold}`);
+
+  // Ёмкость: двадцатикратный бюджет не даёт двадцатикратной конверсии
+  const heavy = step(state, { decisions: expansionDecisions(state, { crossSell: 25_000_000 }) }).report;
+  assert.ok(heavy.crossConv < r.crossConv * 3,
+    'перерасход упирается в ёмкость канала');
+  assert.ok(heavy.crossWasted > 0, 'сгоревший бюджет виден в отчёте');
+});
+
+test('кросс-селл не спасает мёртвую вертикаль: конверсия зависит от качества', () => {
+  const { state } = warmEcosystem('dead', 14);
+  // Здоровое такси против такси без водителей (подача сорвана)
+  const healthy = step(state, { decisions: expansionDecisions(state) }).report;
+  const starved = JSON.parse(JSON.stringify(state));
+  starved.taxi.drivers = Math.round(starved.taxi.drivers * 0.1);
+  const broken = step(starved, { decisions: expansionDecisions(starved) }).report;
+  assert.ok(broken.fill < healthy.fill, 'подача действительно сорвана');
+  assert.ok(broken.crossConv < healthy.crossConv,
+    `в сломанный продукт конвертится хуже: ${broken.crossConv} против ${healthy.crossConv}`);
+});
+
+test('клиент двух сервисов уходит реже — экосистемное удержание', () => {
+  const { state } = warmEcosystem('eco', 16);
+  const withBoth = JSON.parse(JSON.stringify(state));
+  const noBoth = JSON.parse(JSON.stringify(state));
+  noBoth.both = 0;   // те же базы, но пересечения нет
+  const d = expansionDecisions(state, { crossSell: 0 });
+  const a = step(withBoth, { decisions: d }).report;
+  const b = step(noBoth, { decisions: d }).report;
+  assert.ok(withBoth.both > 10_000, 'в прогретой партии есть пересечение');
+  assert.ok(a.lostFood < b.lostFood, 'отток еды ниже при живом пересечении');
+  assert.ok(a.lostTaxi < b.lostTaxi, 'отток такси ниже при живом пересечении');
+});
+
+test('пересечение растёт только через кросс-селл, холодный маркетинг ведёт новичков', () => {
+  const { state } = warmEcosystem('mix', 14);
+  const before = state.both;
+  const onlyCold = step(state, {
+    decisions: expansionDecisions(state, { crossSell: 0, taxiMarketing: 20_000_000 }),
+  });
+  assert.ok(onlyCold.report.coldAcq > 0);
+  assert.ok(onlyCold.state.both <= before + 1e-6, 'холодный приток не создаёт пересечения');
+  const onlyCross = step(state, {
+    decisions: expansionDecisions(state, { crossSell: 6_000_000, taxiMarketing: 0 }),
+  });
+  assert.ok(onlyCross.state.both > before, 'кросс-селл наращивает пересечение');
+});
+
+// ----------------------------------------------------------------------------
+// Дожим стартового актива
+// ----------------------------------------------------------------------------
+
+test('дожим даёт деньги сейчас и сжигает базу потом', () => {
+  const gentle = run(12, baseDecisions({ foodTake: 1.0 }), 'milk', { rounds: false });
+  const greedy = run(12, baseDecisions({ foodTake: 1.28 }), 'milk', { rounds: false });
+  const g1 = gentle.reports[0];
+  const m1 = greedy.reports[0];
+  assert.ok(m1.revenueFood > g1.revenueFood * 1.05,
+    'в первый месяц дожим приносит заметно больше выручки');
+  const gEnd = gentle.reports[gentle.reports.length - 1];
+  const mEnd = greedy.reports[greedy.reports.length - 1];
+  assert.ok(mEnd.foodUsers < gEnd.foodUsers * 0.8,
+    `за год дожатая база заметно меньше: ${mEnd.foodUsers} против ${gEnd.foodUsers}`);
+});
+
+test('дожатая корова кормит кросс-селл хуже: пул донора тает', () => {
+  const mk = (take) => {
+    const { state } = run(16, (s) => expansionDecisions(s, { foodTake: take }), 'milk2');
+    const r = step(state, { decisions: expansionDecisions(state, { foodTake: take, crossSell: 25_000_000 }) }).report;
+    return r.crossConv;
+  };
+  const gentleConv = mk(1.0);
+  const greedyConv = mk(1.28);
+  assert.ok(greedyConv < gentleConv,
+    `ёмкость кросс-селла при дожиме меньше: ${greedyConv} против ${gentleConv}`);
+});
+
+// ----------------------------------------------------------------------------
+// Водители и мощность такси
+// ----------------------------------------------------------------------------
+
+test('водителей мало — подача сорвана, клиенты уходят быстрее', () => {
+  const { state } = warmEcosystem('drv', 16);
+  const starved = JSON.parse(JSON.stringify(state));
+  starved.taxi.drivers = Math.round(starved.taxi.drivers * 0.15);
+  const d = expansionDecisions(state);
+  const ok = step(state, { decisions: d }).report;
+  const bad = step(starved, { decisions: d }).report;
+  assert.ok(bad.fill < ok.fill);
+  assert.ok(bad.churnTaxiRate > ok.churnTaxiRate, 'недовоз гонит клиентов');
+  assert.ok(bad.servedTrips < ok.servedTrips);
+});
+
+test('водители без поездок уходят сами: простой ускоряет отток парка', () => {
+  const { state } = warmEcosystem('idle', 16);
+  const bloated = JSON.parse(JSON.stringify(state));
+  bloated.taxi.drivers = state.taxi.drivers * 5;
+  const d = expansionDecisions(state, { taxiSupply: 0 });
+  const lean = step(state, { decisions: d }).report;
+  const fat = step(bloated, { decisions: d }).report;
+  assert.ok(fat.utilDrivers < lean.utilDrivers, 'раздутый парк простаивает');
+  assert.ok(fat.driversLost / bloated.taxi.drivers > lean.driversLost / state.taxi.drivers,
+    'доля уходящих водителей выше при простое');
+});
+
+test('низкий тариф даёт спрос, высокий — маржу', () => {
+  const { state } = warmEcosystem('price', 16);
+  // Парк с запасом: иначе дешёвый тариф перегружает подачу, и отток от
+  // недовоза заслоняет отток от цены — сравнение перестаёт быть чистым
+  const padded = JSON.parse(JSON.stringify(state));
+  padded.taxi.drivers = state.taxi.drivers * 3;
+  const cheap = step(padded, { decisions: expansionDecisions(padded, { taxiPrice: 0.87 }) }).report;
+  const dear = step(padded, { decisions: expansionDecisions(padded, { taxiPrice: 1.2 }) }).report;
+  assert.ok(cheap.demandTrips > dear.demandTrips, 'дешёвый тариф создаёт больше спроса');
+  assert.ok(dear.cmPerTrip > cheap.cmPerTrip, 'дорогой тариф даёт больший вклад с поездки');
+  assert.ok(dear.churnTaxiRate > cheap.churnTaxiRate, 'и больший отток');
+});
+
+// ----------------------------------------------------------------------------
+// Фокус и управляющая компания
+// ----------------------------------------------------------------------------
+
+test('вторая вертикаль размывает фокус, управляющая компания выкупает штраф', () => {
+  const one = createInitialState('focus');
+  assert.equal(focusPenalty(one, baseDecisions()), 0, 'с одной вертикалью штрафа нет');
+  const two = createInitialState('focus');
+  two.taxi.on = true;
+  const bare = focusPenalty(two, baseDecisions({ mgmt: 0 }));
+  const managed = focusPenalty(two, baseDecisions({ mgmt: 12_000_000 }));
+  assert.ok(bare > 0.08, 'без управляющей компании штраф ощутим');
+  assert.ok(managed < bare * 0.5, 'управляющая компания выкупает большую часть');
+  assert.ok(foodQuality(two, baseDecisions({ mgmt: 0 }))
+    < foodQuality(one, baseDecisions({ mgmt: 0 })), 'штраф бьёт и по стартовому активу');
+});
+
+// ----------------------------------------------------------------------------
+// Оценка: sum-of-parts
+// ----------------------------------------------------------------------------
+
+test('оценка холдинга — сумма частей с премией за пересечение', () => {
+  const { state } = warmEcosystem('sop', 20);
+  const sop = sumOfParts(state);
+  assert.ok(sop.parts.length === 2, 'две вертикали — две части');
+  assert.ok(sop.multiShare > 0.02, 'пересечение накопилось');
+  assert.ok(sop.crossPremium > 0, 'премия за кросс-селл действует');
+  assert.ok(sop.total > 0);
+  // Премия исчезает вместе с пересечением
+  const flat = JSON.parse(JSON.stringify(state));
+  flat.both = 0;
+  const sopFlat = sumOfParts(flat);
+  assert.equal(sopFlat.crossPremium, 0);
+  assert.ok(sopFlat.total < sop.total, 'без склейки холдинг стоит дешевле');
+});
+
+test('убыточная вертикаль без роста — «зоопарк» и вычитается из оценки', () => {
+  const { state } = warmEcosystem('zoo', 20);
+  // Ломаем такси: без водителей и бюджетов выручка падает, фиксы остаются
+  let s = JSON.parse(JSON.stringify(state));
+  s.taxi.drivers = 0;
+  for (let i = 0; i < 8 && !s.over; i++) {
+    s = step(s, { decisions: expansionDecisions(s, {
+      taxiSupply: 0, taxiMarketing: 0, crossSell: 0 }) }).state;
+  }
+  const sop = sumOfParts(s);
+  const taxiPart = sop.parts.find((p) => p.id === 'taxi');
+  assert.ok(taxiPart.zoo, 'мёртвое такси распознано как зоопарк');
+  assert.ok(taxiPart.value < 0, 'и вычитается из суммы');
+});
+
+test('за сжимающийся бизнес платят меньший множитель', () => {
+  const grow = run(16, (s) => expansionDecisions(s), 'mult-a');
+  const shrinkState = run(16, baseDecisions({ foodTake: 1.3, foodOps: 0 }), 'mult-a', { rounds: false });
+  const a = sumOfParts(grow.state).parts.find((p) => p.id === 'food');
+  const b = sumOfParts(shrinkState.state).parts.find((p) => p.id === 'food');
+  assert.ok(b.growth < a.growth);
+  assert.ok(b.value < a.value, 'тающая еда стоит дешевле ухоженной');
+});
+
+test('раунд даёт деньги и размывает долю; итоговый счёт учитывает кассу', () => {
+  const { state } = run(10, baseDecisions(), 'fund', { rounds: false });
+  const before = { cash: state.cash, equity: state.equity };
+  const { state: after, offer } = raise(state, 400_000_000);
+  assert.equal(after.cash, before.cash + 400_000_000);
+  assert.ok(offer.dilution > 0 && offer.dilution < 1);
+  assert.ok(Math.abs(after.equity - before.equity * (1 - offer.dilution)) < 1e-12);
+
+  const f = finalScore(after);
+  assert.ok(Math.abs(f.equityValue - (f.valuation + Math.max(0, after.cash)) * after.equity) < 1);
+});
+
+test('банкротство наступает при уходе кассы в минус', () => {
+  const { state } = run(36, (s) => expansionDecisions(s, {
+    taxiMarketing: 25_000_000, crossSell: 25_000_000, taxiSupply: 20_000_000,
+    mgmt: 15_000_000, foodMarketing: 15_000_000,
+  }), 'burn', { rounds: false });
+  assert.equal(state.over, 'bankrupt');
+  assert.ok(state.cash < 0);
+  assert.ok(finalScore(state).bankrupt);
+});
+
+test('игра завершается ровно через заданное число месяцев', () => {
+  const { state } = run(50, baseDecisions(), 'end');
+  assert.ok(state.month <= CONFIG.monthsTotal);
+  assert.ok(state.over === 'finished' || state.over === 'bankrupt');
+});
+
+// ----------------------------------------------------------------------------
+// Совет директоров
+// ----------------------------------------------------------------------------
+
+test('цели трёх лет разные и тянут в разные стороны', () => {
+  const s = createInitialState('goals');
+  const types = [1, 2, 3].map((y) => makeGoal(y, s, 200_000).type);
+  assert.equal(new Set(types).size, 3, `цели должны быть разными: ${types}`);
+});
+
+test('совет подводит итог ровно на границе года', () => {
+  const { reports } = run(CONFIG.boardYearMonths + 1, (s) => expansionDecisions(s), 'edge');
+  const atBorder = reports[CONFIG.boardYearMonths - 1];
+  assert.ok(atBorder.goalOutcome, 'на двенадцатом месяце итог подводится');
+  assert.equal(atBorder.goalOutcome.year, 1);
+  assert.equal(reports[CONFIG.boardYearMonths - 2].goalOutcome, null, 'а на одиннадцатом ещё нет');
+  assert.equal(reports[reports.length - 1].goal.year, 2, 'и сразу объявляется следующая цель');
+});
+
+test('провал цели имеет последствия, а не грустную надпись', () => {
+  const state = createInitialState('fail');
+  const goal = makeGoal(2, state, 200_000);
+  applyGoalOutcome(state, goal, { done: false }, 24);
+  assert.ok(state.restrictions?.marketingCap > 0, 'бюджеты режутся');
+  assert.ok(state.flags.valuationBonus < 0, 'и оценка страдает');
+
+  const ok = createInitialState('pass');
+  applyGoalOutcome(ok, makeGoal(2, ok, 200_000), { done: true }, 24);
+  assert.ok(ok.flags.valuationBonus > 0, 'выполненная цель вознаграждается');
+  assert.equal(ok.restrictions, null);
+});
+
+test('порезанные бюджеты реально режутся, а не только в надписи', () => {
+  let state = createInitialState('cap');
+  state.restrictions = { marketingCap: 6_000_000, until: 10 };
+  const r = step(state, { decisions: baseDecisions({ foodMarketing: 15_000_000 }) }).report;
+  assert.equal(r.marketingCapped, 6_000_000);
+  assert.equal(r.decisions.foodMarketing, 6_000_000, 'решение действительно урезано');
+});
+
+test('прогресс по целям читается и считается без сюрпризов', () => {
+  const s = createInitialState('prog');
+  const ctx = { taxiUsers: 50_000, multiShare: 0.2, profitableMonths: 8, uniqueUsers: 250_000 };
+  for (const y of [1, 2, 3]) {
+    const g = makeGoal(y, s, 200_000);
+    const p = goalProgress(g, ctx);
+    assert.equal(typeof p.done, 'boolean');
+    assert.ok(Number.isFinite(p.value) && Number.isFinite(p.target));
+  }
+  const weak = { taxiUsers: 0, multiShare: 0, profitableMonths: 0, uniqueUsers: 1000 };
+  for (const y of [1, 2, 3]) {
+    assert.equal(goalProgress(makeGoal(y, s, 200_000), weak).done, false);
+  }
+});
+
+// ----------------------------------------------------------------------------
+// События
+// ----------------------------------------------------------------------------
+
+test('поштучные цены событий растут вместе с размером холдинга', () => {
+  const { state } = warmEcosystem('ev', 16);
+  const leak = eventById('data_leak');
+  assert.ok(leak.options[0].effects.oneOffCostPerUniqueUser > 0,
+    'компенсация утечки — поштучная цена по базе');
+  const strike = eventById('driver_strike');
+  assert.ok(strike.options[0].effects.oneOffCostPerDriver > 0,
+    'доплата бастующим — поштучная цена по парку');
+
+  // Цена решения в отчёте реально зависит от размера
+  const sBig = JSON.parse(JSON.stringify(state));
+  sBig.pendingEvent = { ...leak };
+  const sSmall = JSON.parse(JSON.stringify(state));
+  sSmall.food.users = Math.round(sSmall.food.users * 0.3);
+  sSmall.taxi.users = Math.round(sSmall.taxi.users * 0.3);
+  sSmall.both = Math.round(sSmall.both * 0.3);
+  sSmall.pendingEvent = { ...leak };
+  const big = step(sBig, { decisions: expansionDecisions(sBig), eventChoice: 0 }).report;
+  const small = step(sSmall, { decisions: expansionDecisions(sSmall), eventChoice: 0 }).report;
+  assert.ok(big.oneOff > small.oneOff * 2,
+    `большому холдингу извинение дороже: ${big.oneOff} против ${small.oneOff}`);
+});
+
+test('замолчать утечку — подорвать доверие: кросс-селл работает вполсилы', () => {
+  const { state } = warmEcosystem('trust', 16);
+  const leak = eventById('data_leak');
+  const sQuiet = JSON.parse(JSON.stringify(state));
+  sQuiet.pendingEvent = { ...leak };
+  const afterQuiet = step(sQuiet, { decisions: expansionDecisions(sQuiet), eventChoice: 1 });
+  assert.ok(afterQuiet.state.trustUntil > afterQuiet.state.month, 'недоверие включено');
+  const rNext = step(afterQuiet.state, { decisions: expansionDecisions(afterQuiet.state) }).report;
+
+  const sPaid = JSON.parse(JSON.stringify(state));
+  sPaid.pendingEvent = { ...leak };
+  const afterPaid = step(sPaid, { decisions: expansionDecisions(sPaid), eventChoice: 0 });
+  const rPaidNext = step(afterPaid.state, { decisions: expansionDecisions(afterPaid.state) }).report;
+  assert.ok(rNext.crossConv < rPaidNext.crossConv,
+    'после замалчивания кросс-селл конвертит хуже');
+});
+
+test('перемирие заканчивает войну, но отдаёт конкуренту часть рынка', () => {
+  const { state } = warmEcosystem('truce', taxiDef.gate.minMonth + 2);
+  assert.ok(state.taxi.warUntil > state.month, 'война идёт');
+  const truce = eventById('truce_offer');
+  const s = JSON.parse(JSON.stringify(state));
+  s.pendingEvent = { ...truce };
+  const lockBefore = s.taxi.lockAdd;
+  const after = step(s, { decisions: expansionDecisions(s), eventChoice: 0 });
+  assert.equal(after.report.warMonthsLeft, 0, 'война закончилась немедленно');
+  assert.ok(after.state.taxi.lockAdd > lockBefore, 'но рынок стал меньше');
+});
+
+test('штраф регулятора прилетает только решившим ждать закона', () => {
+  const mods = neutralModifiers();
+  const reg = eventById('taxi_regulation');
+  applyEvent(mods, reg, 1);
+  assert.equal(mods.regulationRisk, true);
+  const fine = eventById('regulation_fine');
+  assert.ok(fine.effects.oneOffCostPerDriver > 0);
+});
+
+test('события переведены и имеют нужную структуру', () => {
+  for (const e of EVENTS) {
+    assert.ok(e.id && e.weight > 0);
+    assert.ok(e.title?.ru && e.title?.en, e.id);
+    for (const o of e.options ?? []) {
+      assert.ok(o.label?.ru && o.label?.en, e.id);
+      assert.ok(o.effects, e.id);
+    }
+  }
+});
+
+// ----------------------------------------------------------------------------
+// Разбор месяца
+// ----------------------------------------------------------------------------
+
+test('разбор месяца перемножается ровно в изменение выручки', () => {
+  const { reports } = run(24, (s) => expansionDecisions(s), 'drv');
+  for (let i = 1; i < reports.length; i++) {
+    const p = reports[i - 1];
+    const c = reports[i];
+    const drivers = explain(p, c);
+    if (!drivers.length) continue;
+    const product = drivers.reduce((acc, d) => acc * (1 + d.effect), 1);
+    const actual = c.revenue / p.revenue;
+    assert.ok(Math.abs(product - actual) / actual < 0.02,
+      `м${c.month}: произведение ${product.toFixed(3)}, факт ${actual.toFixed(3)}`);
+  }
+});
+
+test('ворота экспансии видны интерфейсу тем же вызовом, что и движку', () => {
+  const early = createInitialState('ui-gate');
+  assert.equal(expansionOpen(early, taxiDef), false);
+  const { state: ready } = run(taxiDef.gate.minMonth, baseDecisions(), 'ui-gate', { rounds: false });
+  assert.equal(expansionOpen(ready, taxiDef), true);
+});
