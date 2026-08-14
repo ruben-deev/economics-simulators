@@ -721,7 +721,7 @@ export const STRINGS = {
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
-  gradeScale: { ru: 'Шкала: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. Доведённые стратегии заканчивают партию выше {a} — выжить легко, выиграть нет.', en: 'The scale: “a true ecosystem” starts at {a}, “a solid holding” at {b}, “survived” at {c}. Polished strategies finish above {a} — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя и более сервисами {multi}.',
     en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on two or more services.',

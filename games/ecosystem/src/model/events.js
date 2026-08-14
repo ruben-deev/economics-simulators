@@ -76,8 +76,8 @@ export const EVENTS = [
     id: 'super_app_viral', weight: 5, minMonth: 4,
     title: { ru: 'Супер-апп хвалят в соцсетях', en: 'The super-app goes viral' },
     text: {
-      ru: 'Популярный блогер показал, как заказывает еду и такси в одном приложении. Бесплатное внимание к экосистеме.',
-      en: 'A popular blogger showed off ordering food and a ride in one app. Free attention for the ecosystem.',
+      ru: 'Популярный блогер показал, как в одном приложении заказывает такси и всё остальное. Бесплатное внимание к экосистеме.',
+      en: 'A popular blogger showed off ordering a ride and everything else in one app. Free attention for the ecosystem.',
     },
     effects: { crossSellMult: 1.35, foodDemandMult: 1.03 },
     lesson: {
@@ -214,10 +214,10 @@ export const EVENTS = [
   },
   {
     id: 'food_rival', weight: 6, minMonth: 5,
-    title: { ru: 'Федеральный агрегатор еды пробует город', en: 'A national food platform probes the city' },
+    title: { ru: 'Федеральный игрок пробует ваш рынок', en: 'A national player probes your market' },
     text: {
-      ru: 'Федеральный игрок запустил в Новограде промокампанию: ваш насыщенный рынок перестал быть только вашим.',
-      en: 'A national player has launched a promo push in Novograd: your saturated market is no longer only yours.',
+      ru: 'Столичный конкурент запустил в Новограде промокампанию против вашего стартового актива: насыщенный рынок перестал быть только вашим.',
+      en: 'A national competitor has launched a promo push in Novograd against your starting asset: the saturated market is no longer only yours.',
     },
     lesson: {
       ru: 'Дойная корова тоже требует защиты: насыщенный рынок — это не рента, а позиция, которую держат.',
@@ -228,7 +228,7 @@ export const EVENTS = [
         // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
         // защита базы должна стоить настолько дорого, чтобы дожатой или
         // маленькой базе иногда было правильнее переждать.
-        label: { ru: 'Ответное промо (220 ₽ на клиента еды)', en: 'Counter-promo (₽220 per food customer)' },
+        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo (₽220 per hub customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
@@ -281,8 +281,8 @@ export const EVENTS = [
     id: 'fed_ecosystem', weight: 9, minMonth: 14, once: true,
     title: { ru: 'Федеральная экосистема выходит в Новоград', en: 'A national ecosystem enters Novograd' },
     text: {
-      ru: 'Столичный гигант открыл в городе и еду, и такси разом — с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
-      en: 'A national giant has opened both food and taxi in the city at once — with a subscription and ads on every corner. Your home market is no longer only yours.',
+      ru: 'Столичный гигант открыл в городе сразу несколько сервисов — включая двойника вашего хаба и такси, с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
+      en: 'A national giant has opened several services in the city at once — a twin of your hub and a taxi arm among them, with a subscription and ads on every corner. Your home market is no longer only yours.',
     },
     lesson: {
       ru: 'Экосистемы конкурируют с экосистемами. Защита — не цена, а склейка: клиента двух ваших сервисов переманить вдвое сложнее.',

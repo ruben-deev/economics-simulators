@@ -178,6 +178,8 @@ export const START_ASSETS = [
     icon: '🛵',
     fromGame: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
     name: { ru: 'Доставка еды «Новоеда»', en: 'Novoeda food delivery' },
+    // Короткое имя для строк, где полное встало бы в кавычки внутри кавычек
+    short: { ru: 'доставка', en: 'delivery' },
     hint: {
       ru: 'Вы выиграли рынок доставки еды Новограда. Рынок насыщен: расти числом клиентов больше некуда, город ваш. Дальше — расти выручкой с клиента.',
       en: 'You won Novograd’s food delivery market. It is saturated: there is no one left to acquire — the city is yours. From here, growth means revenue per customer.',
@@ -194,6 +196,12 @@ export const START_ASSETS = [
     // Профиль синергий: во сколько раз кросс-селл в целевую вертикаль
     // дешевле эталона. У доставки лучшая синергия — е-ком (курьеры уже
     // ездят по городу), у стриминга была бы подписка, у билетов — партнёрства.
+    // Шкала вердиктов и порог «достойного финала» — свои у каждого актива:
+    // замеренные оптимумы расходятся втрое (доставка 13.6, стриминг 13.7,
+    // билеты 3.4 млрд), и общая шкала объявляла бы отличную партию за билеты
+    // «скромным итогом». Пороги — доли от оптимума актива: 80% / 45% / 15%.
+    // worthy (обратные бонусы и секретная концовка) равен «крепкому» порогу.
+    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
     // Готовая инфраструктура удешевляет запуск родственной вертикали
     launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
@@ -209,6 +217,7 @@ export const START_ASSETS = [
     icon: '🎬',
     fromGame: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
     name: { ru: 'Стриминг «Кинорека»', en: 'Kinoreka streaming' },
+    short: { ru: 'стриминг', en: 'streaming' },
     hint: {
       ru: 'Вы выиграли рынок стриминга. База меньше, чем у доставки, зато подписная: высокая маржа, низкий отток — и привычка платить каждый месяц.',
       en: 'You won the streaming market. The base is smaller than delivery’s but subscription-based: high margin, low churn — and a habit of paying monthly.',
@@ -222,6 +231,7 @@ export const START_ASSETS = [
     returnPool: 18_000,
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
+    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
@@ -237,6 +247,7 @@ export const START_ASSETS = [
     icon: '🎟️',
     fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
     name: { ru: 'Билетный сервис «Билетвиль»', en: 'Biletville ticketing' },
+    short: { ru: 'билеты', en: 'ticketing' },
     hint: {
       ru: 'Вы выиграли рынок билетов. Самая маленькая база и казна из трёх стартов — зато партнёрская сеть организаторов, через которую дешевеет любое привлечение. Сложный класс.',
       en: 'You won the ticketing market. The smallest base and treasury of the three starts — but a partner network of organisers that makes all acquisition cheaper. Hard mode.',
@@ -249,6 +260,7 @@ export const START_ASSETS = [
     returnPool: 14_000,
     reachableCap: 125_000,
     startCash: 160_000_000,
+    grades: { excellent: 2.7e9, solid: 1.5e9, survived: 0.5e9, worthy: 1.5e9 },
     synergy: { taxi: 1.1, scooters: 1.0, ecom: 1.0, subscription: 0.9 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Партнёрская сеть: афиши и кассы города — дешёвый канал привлечения,

@@ -16,7 +16,7 @@ globalThis.localStorage = {
 const {
   parseResultLine, addResultLine, savedLines, legacyUnlocks, legacyFor,
   rememberNovogradResult, novogradBest, conglomerateUnlocked, tripleCrown,
-  LEGACY_GAMES, NOVOGRAD_WORTHY,
+  LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY,
 } = await import('../meta.js');
 const { resultString } = await import('../records.js');
 
@@ -82,4 +82,20 @@ test('обратный бонус открывается достойным фи
   // Худший результат не затирает лучший
   rememberNovogradResult(1);
   assert.equal(novogradBest(), NOVOGRAD_WORTHY + 1);
+});
+
+test('порог достойного финала приходит от актива, а не общий на всех', () => {
+  store.clear();
+  // Сложный стартовый актив: его потолок втрое ниже, поэтому НОВОГРАД
+  // передаёт свой порог. Счёт ниже общего порога всё равно засчитывается.
+  const hardWorthy = NOVOGRAD_WORTHY / 4;
+  rememberNovogradResult(hardWorthy - 1, hardWorthy);
+  assert.equal(conglomerateUnlocked(), false, 'ниже своего порога — не открыт');
+  rememberNovogradResult(hardWorthy + 1, hardWorthy);
+  assert.equal(conglomerateUnlocked(), true, 'выше своего порога — открыт');
+
+  // Запись прошлой версии несла только счёт: заслуженный бейдж не пропадает
+  store.clear();
+  localStorage.setItem(META_BEST_KEY, JSON.stringify({ best: NOVOGRAD_WORTHY + 1 }));
+  assert.equal(conglomerateUnlocked(), true, 'старая запись читается по общему порогу');
 });

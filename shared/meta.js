@@ -108,14 +108,26 @@ export function novogradBest() {
 
 // Запоминает лучший финал НОВОГРАДА — старые игры читают его для
 // неэкономических обратных бонусов (бейдж, спец-сиды).
-export function rememberNovogradResult(score) {
-  const best = Math.max(novogradBest(), Number(score) || 0);
-  safeSetJson(META_BEST_KEY, { best });
+//
+// «Достойность» зависит от стартового актива: у сложных активов оптимум
+// втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
+// уже флагом. Второй аргумент необязателен — без него работает общий
+// порог, как раньше.
+export function rememberNovogradResult(score, worthyAt = NOVOGRAD_WORTHY) {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  const value = Number(score) || 0;
+  const best = Math.max(Number(saved?.best) || 0, value);
+  const worthy = Boolean(saved?.worthy) || value >= (Number(worthyAt) || NOVOGRAD_WORTHY);
+  safeSetJson(META_BEST_KEY, { best, worthy });
   return best;
 }
 
-// Открыт ли обратный бонус (бейдж конгломерата в старых играх)
+// Открыт ли обратный бонус (бейдж конгломерата в старых играх).
+// Записи прошлых версий несли только счёт — для них сравниваем с общим
+// порогом, чтобы уже заслуженный бейдж не пропал.
 export function conglomerateUnlocked() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  if (saved && saved.worthy) return true;
   return novogradBest() >= NOVOGRAD_WORTHY;
 }
 

@@ -841,3 +841,20 @@ test('третий акт: в последний год убыточные ча�
   early.month = 12;
   assert.equal(sumOfParts(early).thirdAct, false);
 });
+
+test('шкала вердиктов у каждого актива своя и упорядочена', () => {
+  // Замеры дали разные потолки: доставка 13.6, стриминг 13.7, билеты 3.4 млрд.
+  // Общая шкала объявляла бы отличную партию за билеты «скромным итогом»,
+  // поэтому пороги живут в дескрипторе — и должны быть согласованы.
+  for (const asset of START_ASSETS) {
+    const g = asset.grades;
+    assert.ok(g, `${asset.id}: у актива есть шкала вердиктов`);
+    assert.ok(g.excellent > g.solid && g.solid > g.survived && g.survived > 0,
+      `${asset.id}: пороги строго убывают`);
+    assert.ok(g.worthy >= g.solid && g.worthy <= g.excellent,
+      `${asset.id}: «достойный финал» лежит между крепким и отличным`);
+  }
+  const byId = Object.fromEntries(START_ASSETS.map((a) => [a.id, a.grades]));
+  assert.ok(byId.tickets.excellent < byId.delivery.excellent,
+    'у сложного актива планка ниже: иначе она недостижима');
+});

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.0.1" />
+  <meta name="app-version" content="1.1.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1728,7 +1728,7 @@ const STRINGS = {
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
-  gradeScale: { ru: 'Шкала: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. Доведённые стратегии заканчивают партию выше {a} — выжить легко, выиграть нет.', en: 'The scale: “a true ecosystem” starts at {a}, “a solid holding” at {b}, “survived” at {c}. Polished strategies finish above {a} — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя и более сервисами {multi}.',
     en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on two or more services.',
@@ -2095,14 +2095,26 @@ function novogradBest() {
 
 // Запоминает лучший финал НОВОГРАДА — старые игры читают его для
 // неэкономических обратных бонусов (бейдж, спец-сиды).
-function rememberNovogradResult(score) {
-  const best = Math.max(novogradBest(), Number(score) || 0);
-  safeSetJson(META_BEST_KEY, { best });
+//
+// «Достойность» зависит от стартового актива: у сложных активов оптимум
+// втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
+// уже флагом. Второй аргумент необязателен — без него работает общий
+// порог, как раньше.
+function rememberNovogradResult(score, worthyAt = NOVOGRAD_WORTHY) {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  const value = Number(score) || 0;
+  const best = Math.max(Number(saved?.best) || 0, value);
+  const worthy = Boolean(saved?.worthy) || value >= (Number(worthyAt) || NOVOGRAD_WORTHY);
+  safeSetJson(META_BEST_KEY, { best, worthy });
   return best;
 }
 
-// Открыт ли обратный бонус (бейдж конгломерата в старых играх)
+// Открыт ли обратный бонус (бейдж конгломерата в старых играх).
+// Записи прошлых версий несли только счёт — для них сравниваем с общим
+// порогом, чтобы уже заслуженный бейдж не пропал.
 function conglomerateUnlocked() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  if (saved && saved.worthy) return true;
   return novogradBest() >= NOVOGRAD_WORTHY;
 }
 
@@ -2534,6 +2546,8 @@ const START_ASSETS = [
     icon: '🛵',
     fromGame: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
     name: { ru: 'Доставка еды «Новоеда»', en: 'Novoeda food delivery' },
+    // Короткое имя для строк, где полное встало бы в кавычки внутри кавычек
+    short: { ru: 'доставка', en: 'delivery' },
     hint: {
       ru: 'Вы выиграли рынок доставки еды Новограда. Рынок насыщен: расти числом клиентов больше некуда, город ваш. Дальше — расти выручкой с клиента.',
       en: 'You won Novograd’s food delivery market. It is saturated: there is no one left to acquire — the city is yours. From here, growth means revenue per customer.',
@@ -2550,6 +2564,12 @@ const START_ASSETS = [
     // Профиль синергий: во сколько раз кросс-селл в целевую вертикаль
     // дешевле эталона. У доставки лучшая синергия — е-ком (курьеры уже
     // ездят по городу), у стриминга была бы подписка, у билетов — партнёрства.
+    // Шкала вердиктов и порог «достойного финала» — свои у каждого актива:
+    // замеренные оптимумы расходятся втрое (доставка 13.6, стриминг 13.7,
+    // билеты 3.4 млрд), и общая шкала объявляла бы отличную партию за билеты
+    // «скромным итогом». Пороги — доли от оптимума актива: 80% / 45% / 15%.
+    // worthy (обратные бонусы и секретная концовка) равен «крепкому» порогу.
+    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
     // Готовая инфраструктура удешевляет запуск родственной вертикали
     launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
@@ -2565,6 +2585,7 @@ const START_ASSETS = [
     icon: '🎬',
     fromGame: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
     name: { ru: 'Стриминг «Кинорека»', en: 'Kinoreka streaming' },
+    short: { ru: 'стриминг', en: 'streaming' },
     hint: {
       ru: 'Вы выиграли рынок стриминга. База меньше, чем у доставки, зато подписная: высокая маржа, низкий отток — и привычка платить каждый месяц.',
       en: 'You won the streaming market. The base is smaller than delivery’s but subscription-based: high margin, low churn — and a habit of paying monthly.',
@@ -2578,6 +2599,7 @@ const START_ASSETS = [
     returnPool: 18_000,
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
+    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
@@ -2593,6 +2615,7 @@ const START_ASSETS = [
     icon: '🎟️',
     fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
     name: { ru: 'Билетный сервис «Билетвиль»', en: 'Biletville ticketing' },
+    short: { ru: 'билеты', en: 'ticketing' },
     hint: {
       ru: 'Вы выиграли рынок билетов. Самая маленькая база и казна из трёх стартов — зато партнёрская сеть организаторов, через которую дешевеет любое привлечение. Сложный класс.',
       en: 'You won the ticketing market. The smallest base and treasury of the three starts — but a partner network of organisers that makes all acquisition cheaper. Hard mode.',
@@ -2605,6 +2628,7 @@ const START_ASSETS = [
     returnPool: 14_000,
     reachableCap: 125_000,
     startCash: 160_000_000,
+    grades: { excellent: 2.7e9, solid: 1.5e9, survived: 0.5e9, worthy: 1.5e9 },
     synergy: { taxi: 1.1, scooters: 1.0, ecom: 1.0, subscription: 0.9 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Партнёрская сеть: афиши и кассы города — дешёвый канал привлечения,
@@ -3132,8 +3156,8 @@ const EVENTS = [
     id: 'super_app_viral', weight: 5, minMonth: 4,
     title: { ru: 'Супер-апп хвалят в соцсетях', en: 'The super-app goes viral' },
     text: {
-      ru: 'Популярный блогер показал, как заказывает еду и такси в одном приложении. Бесплатное внимание к экосистеме.',
-      en: 'A popular blogger showed off ordering food and a ride in one app. Free attention for the ecosystem.',
+      ru: 'Популярный блогер показал, как в одном приложении заказывает такси и всё остальное. Бесплатное внимание к экосистеме.',
+      en: 'A popular blogger showed off ordering a ride and everything else in one app. Free attention for the ecosystem.',
     },
     effects: { crossSellMult: 1.35, foodDemandMult: 1.03 },
     lesson: {
@@ -3270,10 +3294,10 @@ const EVENTS = [
   },
   {
     id: 'food_rival', weight: 6, minMonth: 5,
-    title: { ru: 'Федеральный агрегатор еды пробует город', en: 'A national food platform probes the city' },
+    title: { ru: 'Федеральный игрок пробует ваш рынок', en: 'A national player probes your market' },
     text: {
-      ru: 'Федеральный игрок запустил в Новограде промокампанию: ваш насыщенный рынок перестал быть только вашим.',
-      en: 'A national player has launched a promo push in Novograd: your saturated market is no longer only yours.',
+      ru: 'Столичный конкурент запустил в Новограде промокампанию против вашего стартового актива: насыщенный рынок перестал быть только вашим.',
+      en: 'A national competitor has launched a promo push in Novograd against your starting asset: the saturated market is no longer only yours.',
     },
     lesson: {
       ru: 'Дойная корова тоже требует защиты: насыщенный рынок — это не рента, а позиция, которую держат.',
@@ -3284,7 +3308,7 @@ const EVENTS = [
         // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
         // защита базы должна стоить настолько дорого, чтобы дожатой или
         // маленькой базе иногда было правильнее переждать.
-        label: { ru: 'Ответное промо (220 ₽ на клиента еды)', en: 'Counter-promo (₽220 per food customer)' },
+        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo (₽220 per hub customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
@@ -3337,8 +3361,8 @@ const EVENTS = [
     id: 'fed_ecosystem', weight: 9, minMonth: 14, once: true,
     title: { ru: 'Федеральная экосистема выходит в Новоград', en: 'A national ecosystem enters Novograd' },
     text: {
-      ru: 'Столичный гигант открыл в городе и еду, и такси разом — с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
-      en: 'A national giant has opened both food and taxi in the city at once — with a subscription and ads on every corner. Your home market is no longer only yours.',
+      ru: 'Столичный гигант открыл в городе сразу несколько сервисов — включая двойника вашего хаба и такси, с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
+      en: 'A national giant has opened several services in the city at once — a twin of your hub and a taxi arm among them, with a subscription and ads on every corner. Your home market is no longer only yours.',
     },
     lesson: {
       ru: 'Экосистемы конкурируют с экосистемами. Защита — не цена, а склейка: клиента двух ваших сервисов переманить вдвое сложнее.',
@@ -6356,7 +6380,8 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
-        : (s.equityValue >= NOVOGRAD_WORTHY && tripleCrown() ? 'conglomerate' : 'finished'),
+        : (s.equityValue >= assetById(state.assetId).grades.worthy && tripleCrown()
+          ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
     });
@@ -6380,17 +6405,21 @@ function showGameOver() {
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
   const r = last();
+  // Шкала вердиктов своя у каждого стартового актива: замеренные оптимумы
+  // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
+  // «скромным итогом». Пороги лежат в дескрипторе актива.
+  const gr = assetById(state.assetId).grades;
   const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.equityValue > 5e9 ? t('gradeExcellent')
-    : s.equityValue > 2e9 ? t('gradeSolid')
-    : s.equityValue > 8e8 ? t('gradeSurvived') : t('gradeModest');
+    : s.equityValue > gr.excellent ? t('gradeExcellent')
+    : s.equityValue > gr.solid ? t('gradeSolid')
+    : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
 
   // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
   // бонусы в старых играх (бейдж и спец-сиды на их финальных экранах)
-  if (!s.bankrupt) rememberNovogradResult(s.equityValue);
+  if (!s.bankrupt) rememberNovogradResult(s.equityValue, gr.worthy);
   // Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
   // Строго косметика — никакого множителя к счёту.
-  const crown = !s.bankrupt && s.equityValue >= NOVOGRAD_WORTHY && tripleCrown();
+  const crown = !s.bankrupt && s.equityValue >= gr.worthy && tripleCrown();
   const crownHtml = crown ? `
     <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
     ${t('crownText')}</div>` : '';
@@ -6411,7 +6440,10 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2e9), c: money(8e8) })}</p>
+    <p class="funding-note">${t('gradeScale', {
+      a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
+      asset: tx(assetById(state.assetId).short),
+    })}</p>
     ${crownHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {

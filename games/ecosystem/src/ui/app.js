@@ -1569,7 +1569,8 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
-        : (s.equityValue >= NOVOGRAD_WORTHY && tripleCrown() ? 'conglomerate' : 'finished'),
+        : (s.equityValue >= assetById(state.assetId).grades.worthy && tripleCrown()
+          ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
     });
@@ -1593,17 +1594,21 @@ function showGameOver() {
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
   const r = last();
+  // Шкала вердиктов своя у каждого стартового актива: замеренные оптимумы
+  // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
+  // «скромным итогом». Пороги лежат в дескрипторе актива.
+  const gr = assetById(state.assetId).grades;
   const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.equityValue > 5e9 ? t('gradeExcellent')
-    : s.equityValue > 2e9 ? t('gradeSolid')
-    : s.equityValue > 8e8 ? t('gradeSurvived') : t('gradeModest');
+    : s.equityValue > gr.excellent ? t('gradeExcellent')
+    : s.equityValue > gr.solid ? t('gradeSolid')
+    : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
 
   // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
   // бонусы в старых играх (бейдж и спец-сиды на их финальных экранах)
-  if (!s.bankrupt) rememberNovogradResult(s.equityValue);
+  if (!s.bankrupt) rememberNovogradResult(s.equityValue, gr.worthy);
   // Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
   // Строго косметика — никакого множителя к счёту.
-  const crown = !s.bankrupt && s.equityValue >= NOVOGRAD_WORTHY && tripleCrown();
+  const crown = !s.bankrupt && s.equityValue >= gr.worthy && tripleCrown();
   const crownHtml = crown ? `
     <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
     ${t('crownText')}</div>` : '';
@@ -1624,7 +1629,10 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2e9), c: money(8e8) })}</p>
+    <p class="funding-note">${t('gradeScale', {
+      a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
+      asset: tx(assetById(state.assetId).short),
+    })}</p>
     ${crownHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
