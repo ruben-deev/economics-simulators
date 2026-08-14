@@ -418,7 +418,7 @@ export const LEVERS = [
   {
     key: 'foodTake',
     group: 'food',
-    label: { ru: 'Монетизация доставки', en: 'Delivery monetisation' },
+    label: { ru: 'Монетизация актива', en: 'Asset monetisation' },
     unit: { ru: '%', en: '%' },
     min: 80, max: 130, step: 1, def: 100, scale: 0.01,
     // Политика, а не настройка: пять режимов вместо ползунка. Это решение
@@ -443,7 +443,7 @@ export const LEVERS = [
   {
     key: 'foodOps',
     group: 'food',
-    label: { ru: 'Сервис и удержание еды', en: 'Food service and retention' },
+    label: { ru: 'Сервис и удержание', en: 'Service and retention' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 4_000_000,
     tip: {

@@ -793,7 +793,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
    ============================================================================ */
 .policy-seg { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .policy-seg button {
-  flex: 1 1 auto; background: transparent; border: 1px solid var(--line);
+  /* Не ужиматься уже текста: лучше перенос на новую строку, чем срезанная подпись */
+  flex: 1 0 auto; background: transparent; border: 1px solid var(--line);
   color: var(--muted); border-radius: 8px; padding: 5px 6px; font-size: 11px;
   cursor: pointer; line-height: 1.2; min-height: 30px;
 }
@@ -810,7 +811,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
 .budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
 
-.eco-map svg { width: 100%; height: auto; display: block; }
+/* На телефоне карта не ужимается до нечитаемости, а прокручивается вбок —
+   как таблицы. Минимальная ширина держит текст в читаемом масштабе. */
+.eco-map .map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.eco-map svg { width: 100%; min-width: 620px; height: auto; display: block; }
 .eco-map .node { cursor: pointer; }
 .eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
 .eco-map text { font-size: 12px; fill: var(--text); }

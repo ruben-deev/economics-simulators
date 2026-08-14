@@ -1431,6 +1431,16 @@ function conglomerateBadgeHtml() {
   return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
 }
 
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+}
+
 function showGameOver() {
   const score = finalScore(state);
   const goals = (state.board?.history ?? [])
@@ -1458,6 +1468,7 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
+    ${novogradInviteHtml()}
     ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(score)}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,

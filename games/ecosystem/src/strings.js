@@ -110,7 +110,7 @@ export const STRINGS = {
   // --- бюджетная полоса ---
   budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
   budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
-  budgetFood: { ru: 'еда', en: 'food' },
+  budgetFood: { ru: 'хаб', en: 'hub' },
   budgetTaxi: { ru: 'такси', en: 'taxi' },
   budgetEcom: { ru: 'е-ком', en: 'e-com' },
   budgetEco: { ru: 'экосистема', en: 'ecosystem' },
@@ -141,8 +141,8 @@ export const STRINGS = {
     en: 'Unique holding customers: {unique} — {share} of the city. Circles are service bases; their overlap is people on both.',
   },
   mapCaption: {
-    ru: 'Потоки за прошлый месяц: зелёное — кросс-селл по общей базе, розовое — холодное привлечение, красное — отток. Склейка видна геометрией: чем больше пересечение, тем крепче экосистема.',
-    en: 'Last month’s flows: green is cross-sell across the shared base, pink is cold acquisition, red is churn. The glue is visible as geometry: the bigger the overlap, the stronger the ecosystem.',
+    ru: 'Подписи — потоки клиентов за прошлый месяц: зелёное — пришли по кросс-селлу из общей базы, бирюзовое — приведены холодным маркетингом, синее — возврат и органика хаба, красное — ушли. Чем больше пересечение кругов, тем крепче экосистема.',
+    en: 'Labels are last month’s customer flows: green joined via cross-sell from the shared base, teal was brought in by cold marketing, blue is the hub’s win-back and organic inflow, red left. The bigger the circle overlap, the stronger the ecosystem.',
   },
 
   // --- вертикали ---
@@ -202,8 +202,8 @@ export const STRINGS = {
   },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (customers and fleet are released)' },
   vertLockedToast: {
-    ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльная еда {n} месяца подряд. Заявка сохранена.',
-    en: 'The board will not approve the launch yet: you need month {month} and food profitable for {n} straight months. The request is saved.',
+    ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльный стартовый актив {n} месяца подряд. Заявка сохранена.',
+    en: 'The board will not approve the launch yet: you need month {month} and the starting asset profitable for {n} straight months. The request is saved.',
   },
 
   // --- совет ---
@@ -253,8 +253,8 @@ export const STRINGS = {
   reportMonth0: { ru: 'Месяц 0 · перед первым ходом', en: 'Month 0 · before the first move' },
   reportStartTitle: { ru: 'Вы выиграли прошлую игру.', en: 'You won the previous game.' },
   reportStartIntro: {
-    ru: 'Доставка еды победила: рынок Новограда насыщен, расти числом клиентов больше некуда. В казне {cash}, совет ждёт экосистему. Первый настоящий ход — куда идти дальше, и у каждого пути своя цена:',
-    en: 'Food delivery has won: Novograd’s market is saturated and there is no one left to acquire. The treasury holds {cash}, and the board expects an ecosystem. The first real move is choosing where to go next — and every path has its price:',
+    ru: 'Ваш стартовый актив — {asset} — выиграл свой рынок: Новоград насыщен, расти числом клиентов больше некуда. В казне {cash}, совет ждёт экосистему. Первый настоящий ход — куда идти дальше, и у каждого пути своя цена:',
+    en: 'Your starting asset — {asset} — has won its market: Novograd is saturated and there is no one left to acquire. The treasury holds {cash}, and the board expects an ecosystem. The first real move is choosing where to go next — and every path has its price:',
   },
   forkLaunchTitle: { ru: 'Запустить такси сразу.', en: 'Launch taxi right away.' },
   forkLaunchBody: {
@@ -268,8 +268,8 @@ export const STRINGS = {
   },
   forkMilkTitle: { ru: 'Дожимать корову.', en: 'Milk the cow.' },
   forkMilkBody: {
-    ru: 'Поднять монетизацию еды: деньги сейчас без чужих раундов. Цена — ускоренный отток базы, а это ещё и пул кросс-селла будущего такси.',
-    en: 'Raise food monetisation: money now without outside rounds. The price is faster base churn — and that base is your future taxi’s cross-sell pool.',
+    ru: 'Поднять монетизацию стартового актива: деньги сейчас и без чужих раундов. Цена — ускоренный отток базы, а база — это ещё и пул кросс-селла будущих вертикалей.',
+    en: 'Raise the starting asset’s monetisation: money now, no outside rounds. The price is faster base churn — and that base is the future verticals’ cross-sell pool.',
   },
   forkFooter: {
     ru: 'Общая база клиентов — главный ресурс всех трёх путей: посмотрите её состав во вкладке «База» и следите за ARPU холдинга в шапке.',
@@ -277,19 +277,19 @@ export const STRINGS = {
   },
   reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
   reportHeadStats: {
-    ru: 'выручка {revenue} · еда {food} · такси {taxi}',
-    en: 'revenue {revenue} · food {food} · taxi {taxi}',
+    ru: 'выручка {revenue} · хаб {food} · такси {taxi}',
+    en: 'revenue {revenue} · hub {food} · taxi {taxi}',
   },
   reportDelta: {
     ru: 'К прошлому месяцу: выручка {revenue}, прибыль {profit}, касса {cash}.',
     en: 'Versus last month: revenue {revenue}, profit {profit}, cash {cash}.',
   },
   statRevenue: { ru: 'Выручка холдинга', en: 'Holding revenue' },
-  statRevenueSub: { ru: 'еда {food} · такси {taxi}', en: 'food {food} · taxi {taxi}' },
+  statRevenueSub: { ru: 'хаб {food} · такси {taxi}', en: 'hub {food} · taxi {taxi}' },
   statProfit: { ru: 'Прибыль', en: 'Profit' },
   statProfitSub: { ru: 'вклад {contribution} − расходы {opex}', en: 'contribution {contribution} − opex {opex}' },
   statUnique: { ru: 'Клиенты холдинга', en: 'Holding customers' },
-  statUniqueSub: { ru: 'еда {food} · такси {taxi} · оба {both}', en: 'food {food} · taxi {taxi} · both {both}' },
+  statUniqueSub: { ru: 'хаб {food} · такси {taxi} · мульти {both}', en: 'hub {food} · taxi {taxi} · multi {both}' },
   statArpu: { ru: 'ARPU холдинга', en: 'Holding ARPU' },
   statArpuSub: { ru: 'выручка на уникального клиента', en: 'revenue per unique customer' },
   statTaxi: { ru: 'Такси', en: 'Taxi' },
@@ -348,12 +348,12 @@ export const STRINGS = {
     en: 'Cross-sell hit the channel’s capacity: {wasted} of the budget burned. The neighbouring vertical’s pool is finite — an extra rouble buys nothing here.',
   },
   alertTakeExodus: {
-    ru: 'Монетизация {take} — за порогом: клиенты еды уходят к конкуренту ускоренно, и вместе с ними тает пул кросс-селла.',
-    en: 'Monetisation at {take} is past the threshold: food customers are fleeing — and the cross-sell pool thins with them.',
+    ru: 'Монетизация {take} — за порогом: клиенты хаба уходят к конкуренту ускоренно, и вместе с ними тает пул кросс-селла.',
+    en: 'Monetisation at {take} is past the threshold: the hub’s customers are fleeing — and the cross-sell pool thins with them.',
   },
   alertFoodShrinking: {
-    ru: 'База еды сжимается: −{lost} против +{gained} за месяц. В насыщенном рынке вернуть дороже, чем удержать.',
-    en: 'The food base is shrinking: −{lost} against +{gained} this month. In a saturated market re-acquiring costs more than retaining.',
+    ru: 'База хаба сжимается: −{lost} против +{gained} за месяц. В насыщенном рынке вернуть клиента дороже, чем удержать.',
+    en: 'The hub base is shrinking: −{lost} against +{gained} this month. In a saturated market re-acquiring costs more than retaining.',
   },
   alertWinbackDry: {
     ru: 'Пул возврата исчерпан: {wasted} бюджета возврата не нашли, кого возвращать.',
@@ -371,7 +371,7 @@ export const STRINGS = {
     ru: 'Кассы хватит примерно на {months} мес. при текущем темпе (−{burn}/мес). Раунд лучше поднимать до того, как деньги кончились.',
     en: 'Cash covers roughly {months} months at the current burn (−{burn}/mo). Raise before the money runs out, not after.',
   },
-  alertProfit: { ru: 'Холдинг прибыален: +{value} за месяц.', en: 'The holding is profitable: +{value} this month.' },
+  alertProfit: { ru: 'Холдинг прибылен: +{value} за месяц.', en: 'The holding is profitable: +{value} this month.' },
   alertFed: {
     ru: 'Набег федеральной экосистемы: привлечение дороже, отток выше ещё {months} мес. Лучшая защита — клиенты двух сервисов: их переманить сложнее.',
     en: 'The national ecosystem’s raid: dearer acquisition and higher churn for {months} more months. The best defence is two-service customers — they are harder to poach.',
@@ -444,13 +444,13 @@ export const STRINGS = {
   // --- графики ---
   chartClients: { ru: 'Клиенты', en: 'Customers' },
   chartClientsCaption: {
-    ru: 'Общая база — главный ресурс экосистемы: еда кормит такси клиентами, пересечение удерживает обоих.',
-    en: 'The shared base is the ecosystem’s main resource: food feeds taxi with customers, the overlap retains both.',
+    ru: 'Общая база — главный ресурс экосистемы: хаб кормит вертикали клиентами, а пересечение удерживает всех.',
+    en: 'The shared base is the ecosystem’s main resource: the hub feeds the verticals with customers, and the overlap retains everyone.',
   },
   chartMoney: { ru: 'Деньги', en: 'Money' },
   chartMoneyCaption: {
-    ru: 'Выручка, вклад и прибыль холдинга. Пока такси в инвестиционной фазе, прибыль держит только дисциплина еды.',
-    en: 'Holding revenue, contribution and profit. While taxi is in its investment phase, only food discipline keeps profit alive.',
+    ru: 'Выручка, вклад и прибыль холдинга. Пока новые вертикали в инвестиционной фазе, прибыль держит только дисциплина хаба.',
+    en: 'Holding revenue, contribution and profit. While the new verticals are in their investment phase, only hub discipline keeps profit alive.',
   },
   chartCash: { ru: 'Касса', en: 'Cash' },
   chartCashCaption: {
@@ -464,15 +464,15 @@ export const STRINGS = {
   },
   chartValue: { ru: 'Оценка', en: 'Valuation' },
   chartValueCaption: {
-    ru: 'Сумма частей: зрелая еда и растущее такси оцениваются разными множителями, премия — за клиентов двух сервисов.',
-    en: 'Sum of parts: mature food and growing taxi carry different multiples; the premium is for two-service customers.',
+    ru: 'Сумма частей: зрелый хаб и растущие вертикали оцениваются разными множителями, премия — за клиентов двух и более сервисов.',
+    en: 'Sum of parts: the mature hub and the growing verticals carry different multiples; the premium is for multi-service customers.',
   },
   chartAcq: { ru: 'Привлечение', en: 'Acquisition' },
   chartAcqCaption: {
     ru: 'Два канала роста такси: кросс-селл из своей базы и холодный маркетинг. У кросс-селла ниже цена, у маркетинга — выше потолок.',
     en: 'Taxi’s two growth channels: cross-sell from your own base and cold marketing. Cross-sell is cheaper; marketing scales higher.',
   },
-  seriesFood: { ru: 'Еда', en: 'Food' },
+  seriesFood: { ru: 'Хаб', en: 'Hub' },
   seriesTaxi: { ru: 'Такси', en: 'Taxi' },
   seriesEcom: { ru: 'Е-ком', en: 'E-com' },
   seriesBoth: { ru: 'Мульти-клиенты', en: 'Multi-service' },
@@ -501,15 +501,15 @@ export const STRINGS = {
   tabBase: { ru: 'База', en: 'Base' },
   tabHelp: { ru: 'Справка', en: 'How to play' },
   sopIntro: {
-    ru: 'Инвестор оценивает холдинг по сумме частей: каждая вертикаль — своим множителем от годовой выручки. Зрелая еда стоит как дойная корова, растущее такси — как история роста.',
-    en: 'Investors value the holding as a sum of parts: each vertical gets its own multiple of annualised revenue. Mature food is priced like a cash cow, growing taxi like a growth story.',
+    ru: 'Инвестор оценивает холдинг по сумме частей: каждая вертикаль — своим множителем от годовой выручки. Зрелый стартовый актив стоит как дойная корова, растущие вертикали — как история роста.',
+    en: 'Investors value the holding as a sum of parts: each vertical gets its own multiple of annualised revenue. The mature starting asset is priced like a cash cow, the growing verticals like a growth story.',
   },
   sopColPart: { ru: 'Вертикаль', en: 'Vertical' },
   sopColRunRate: { ru: 'Выручка, год', en: 'Revenue, yr' },
   sopColGrowth: { ru: 'Рост', en: 'Growth' },
   sopColMargin: { ru: 'Маржа', en: 'Margin' },
   sopColValue: { ru: 'Оценка', en: 'Value' },
-  sopPartFood: { ru: 'Доставка еды', en: 'Food delivery' },
+  sopPartFood: { ru: 'Стартовый актив', en: 'Starting asset' },
   sopPartTaxi: { ru: 'Такси', en: 'Taxi' },
   sopPartEcom: { ru: 'Е-ком', en: 'E-commerce' },
   sopPartPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
@@ -527,25 +527,25 @@ export const STRINGS = {
   },
 
   // --- правая колонка: P&L ---
-  pnlRevenueFood: { ru: 'Выручка еды', en: 'Food revenue' },
+  pnlRevenueFood: { ru: 'Выручка хаба', en: 'Hub revenue' },
   pnlRevenueTaxi: { ru: 'Выручка такси', en: 'Taxi revenue' },
   pnlRevenueEcom: { ru: 'Выручка е-кома', en: 'E-commerce revenue' },
   pnlRevenuePlus: { ru: 'Подписка Plus', en: 'Plus subscriptions' },
   pnlRevenueTickets: { ru: 'Партнёрство по билетам', en: 'Ticketing partnership' },
   pnlRevenue: { ru: 'Выручка холдинга', en: 'Holding revenue' },
-  pnlContribFood: { ru: 'Вклад еды', en: 'Food contribution' },
+  pnlContribFood: { ru: 'Вклад хаба', en: 'Hub contribution' },
   pnlContribTaxi: { ru: 'Вклад такси', en: 'Taxi contribution' },
   pnlContribEcom: { ru: 'Вклад е-кома', en: 'E-commerce contribution' },
   pnlPlusNet: { ru: 'Подписка минус её выгоды', en: 'Subscription net of perks' },
   pnlContribution: { ru: 'Вклад', en: 'Contribution' },
-  pnlFixedFood: { ru: 'Фикс еды', en: 'Food fixed costs' },
+  pnlFixedFood: { ru: 'Фикс хаба', en: 'Hub fixed costs' },
   pnlFixedTaxi: { ru: 'Фикс такси', en: 'Taxi fixed costs' },
   pnlFixedEcom: { ru: 'Фикс е-кома', en: 'E-commerce fixed costs' },
   pnlHq: { ru: 'Управление холдинга', en: 'Holding HQ' },
   pnlMgmt: { ru: 'Управляющая компания', en: 'Management company' },
   pnlCrossSell: { ru: 'Кросс-селл', en: 'Cross-sell' },
-  pnlFoodOps: { ru: 'Сервис еды', en: 'Food service' },
-  pnlFoodMarketing: { ru: 'Возврат клиентов еды', en: 'Food win-back' },
+  pnlFoodOps: { ru: 'Сервис хаба', en: 'Hub service' },
+  pnlFoodMarketing: { ru: 'Возврат клиентов хаба', en: 'Hub win-back' },
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
   pnlEcomOps: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
@@ -567,14 +567,14 @@ export const STRINGS = {
   },
   baseColWho: { ru: 'Сегмент', en: 'Segment' },
   baseColCount: { ru: 'Людей', en: 'People' },
-  baseFood: { ru: 'Клиенты еды', en: 'Food customers' },
+  baseFood: { ru: 'Клиенты хаба', en: 'Hub customers' },
   baseTaxi: { ru: 'Клиенты такси', en: 'Taxi customers' },
   baseEcom: { ru: 'Клиенты е-кома', en: 'E-commerce customers' },
   baseBoth: { ru: 'Два и более сервисов', en: 'Two or more services' },
   basePlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   baseUnique: { ru: 'Уникальных клиентов', en: 'Unique customers' },
   baseMultiShare: { ru: 'Доля с двумя и более сервисами', en: 'Share on two or more services' },
-  baseReturnPool: { ru: 'Пул возврата еды (недавно ушли)', en: 'Food win-back pool (recent leavers)' },
+  baseReturnPool: { ru: 'Пул возврата хаба (недавно ушли)', en: 'Hub win-back pool (recent leavers)' },
   baseAcqTitle: { ru: 'Каналы привлечения за месяц', en: 'Acquisition channels this month' },
   baseColChannel: { ru: 'Канал', en: 'Channel' },
   baseColPeople: { ru: 'Пришло', en: 'Arrived' },
@@ -584,8 +584,8 @@ export const STRINGS = {
   baseChColdEcom: { ru: 'Маркетинг е-кома (холодный)', en: 'E-com marketing (cold)' },
   baseChCrossBack: { ru: 'Кросс-селл (обратно в хаб)', en: 'Cross-sell (back to the hub)' },
   baseChCold: { ru: 'Маркетинг такси (холодный)', en: 'Taxi marketing (cold)' },
-  baseChWinback: { ru: 'Возврат в еду', en: 'Food win-back' },
-  baseChOrganic: { ru: 'Органика еды', en: 'Food organic' },
+  baseChWinback: { ru: 'Возврат в хаб', en: 'Hub win-back' },
+  baseChOrganic: { ru: 'Органика хаба', en: 'Hub organic' },
   baseAcqNote: {
     ru: 'Кросс-селл дешевле холодного в разы, но у него есть ёмкость: пул соседней вертикали конечен, а конверсия зависит от качества принимающего сервиса. Маркетинг дороже, зато масштабируем и приводит новых для холдинга людей.',
     en: 'Cross-sell is several times cheaper than cold — but it has a ceiling: the neighbouring pool is finite, and conversion depends on the receiving service’s quality. Marketing costs more but scales, and brings people new to the holding.',
@@ -598,8 +598,8 @@ export const STRINGS = {
   // --- справка ---
   helpWhatTitle: { ru: 'Что это за игра', en: 'What this game is' },
   helpWhatText: {
-    ru: 'Вы — генеральный директор компании, победившей на своём рынке (в прототипе — доставка еды из НОВОЕДЫ). Рынок насыщен, и расти дальше можно только выручкой с клиента: новые вертикали, кросс-селл, общая база. Ход — месяц, партия — три года.',
-    en: 'You run the company that won its market (in this prototype — food delivery from NOVOEDA). The market is saturated, so further growth can only come from revenue per customer: new verticals, cross-sell, a shared base. A turn is a month; the game is three years.',
+    ru: 'Вы — генеральный директор компании, победившей на своём рынке: стартовый актив (доставка, стриминг или билеты) выбирается на экране приветствия. Рынок насыщен, и расти дальше можно только выручкой с клиента: новые вертикали, кросс-селл, общая база. Ход — месяц, партия — три года.',
+    en: 'You run the company that won its market: the starting asset (delivery, streaming or ticketing) is chosen on the welcome screen. The market is saturated, so further growth can only come from revenue per customer: new verticals, cross-sell, a shared base. A turn is a month; the game is three years.',
   },
   helpAssetTitle: { ru: 'Стартовый актив — «класс персонажа»', en: 'The starting asset is your character class' },
   helpAssetText: {
@@ -671,7 +671,7 @@ export const STRINGS = {
 
   // --- приветствие ---
   welcomeTitle: { ru: 'НОВОГРАД: экосистема', en: 'NOVOGRAD: the ecosystem' },
-  welcomeRole: { ru: 'Вы — генеральный директор компании, которая уже выиграла свой рынок: доставка еды «Новоеда» победила, город насыщен, расти числом клиентов больше некуда. Эта партия начинается там, где закончилась прошлая игра.', en: 'You are the CEO of a company that has already won its market: Novoeda food delivery prevailed, the city is saturated, and there is no one left to acquire. This game starts where the previous one ended.' },
+  welcomeRole: { ru: 'Вы — генеральный директор компании, которая уже выиграла свой рынок: одна из трёх игр серии закончилась победой, город насыщен, расти числом клиентов больше некуда. Эта партия начинается там, где закончилась прошлая.', en: 'You are the CEO of a company that has already won its market: one of the three games of the series ended in victory, the city is saturated, and there is no one left to acquire. This game starts where the previous one ended.' },
   welcomeTurn: { ru: 'Ход — месяц, партия — три года. Вы управляете холдингом на уровне портфеля: несколько рычагов на вертикаль, микроменеджмент остался в исходных играх.', en: 'A turn is a month; the game is three years. You run the holding at portfolio level: a few levers per vertical — the micromanagement stayed in the original games.' },
   welcomeTension: { ru: 'Главное напряжение: дожимать насыщенную корову или строить вторую ногу — такси, кросс-селл, общая база. Деньги сейчас против выручки с клиента завтра; и на ваш вход хозяин рынка ответит войной.', en: 'The core tension: milk the saturated cow, or build a second leg — taxi, cross-sell, the shared base. Money now versus revenue per customer later; and the market’s owner will answer your entry with a war.' },
   welcomeGoal: { ru: 'Счёт партии — стоимость вашей доли: (оценка холдинга по сумме частей + касса) × доля. Инвестор платит премию за клиентов двух и более сервисов.', en: 'The score is the value of your stake: (sum-of-parts valuation + cash) × your stake. Investors pay a premium for customers on two or more services.' },
@@ -723,8 +723,8 @@ export const STRINGS = {
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeScale: { ru: 'Шкала: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. Доведённые стратегии заканчивают партию выше {a} — выжить легко, выиграть нет.', en: 'The scale: “a true ecosystem” starts at {a}, “a solid holding” at {b}, “survived” at {c}. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
-    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя сервисами {multi}.',
-    en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on both services.',
+    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя и более сервисами {multi}.',
+    en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on two or more services.',
   },
   gameOverQuestions: {
     ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',

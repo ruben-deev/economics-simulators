@@ -3,7 +3,7 @@
 
 export default {
   name: 'ecosystem',
-  version: '1.0.0',
+  version: '1.0.1',
   title: 'НОВОГРАД · ecosystem economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки». {version} подставляется из поля version:

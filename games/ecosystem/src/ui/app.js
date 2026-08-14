@@ -498,16 +498,27 @@ function renderEcoMap() {
   const link = (x1, y1, x2, y2, on) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
     stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
 
+  // Пока сервис маленький, подписи в круг не помещаются — выносим их наружу:
+  // имя над кругом, число под ним. С ростом круга подписи переезжают внутрь.
   const spoke = (on, cx, cyS, rr, icon, name, users, jump, offLabel) => (on
-    ? `<g class="node" data-jump="${jump}">
-        <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
-        <text x="${cx}" y="${cyS - 2}" text-anchor="middle">${icon} ${name}</text>
-        <text x="${cx}" y="${cyS + 13}" text-anchor="middle" class="m-num">${compact(users)}</text>
-      </g>`
+    ? (rr >= 26
+      ? `<g class="node" data-jump="${jump}">
+          <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+          <text x="${cx}" y="${cyS - 2}" text-anchor="middle">${icon} ${name}</text>
+          <text x="${cx}" y="${cyS + 13}" text-anchor="middle" class="m-num">${compact(users)}</text>
+        </g>`
+      : `<g class="node" data-jump="${jump}">
+          <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+          <text x="${cx}" y="${cyS - rr - 8}" text-anchor="middle">${icon} ${name}</text>
+          <text x="${cx}" y="${cyS + rr + 14}" text-anchor="middle" class="m-num">${compact(users)}</text>
+        </g>`)
     : `<g class="node" data-jump="panel:verticals">
         <circle cx="${cx}" cy="${cyS}" r="14" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
         <text x="${cx}" y="${cyS - 22}" text-anchor="middle" class="m-muted">${icon} ${offLabel}</text>
       </g>`);
+  // Отток пишется под числом сервиса; для маленьких кругов число стоит ниже —
+  // сдвигаем и отток, чтобы подписи не легли друг на друга.
+  const churnY = (rr) => (rr >= 26 ? rr + 14 : rr + 28);
 
   const bothNode = (rr, mid, users, label) => (rr > 0
     ? `<g class="node" data-jump="lever:crossSell">
@@ -528,7 +539,8 @@ function renderEcoMap() {
 
   const badges = [];
   if (r && r.warMonthsLeft > 0) {
-    badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - 10}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
+    // У маленького круга имя сервиса стоит над ним — бейдж войны поднимается выше
+    badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - (rTaxi >= 26 ? 10 : 24)}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
   }
   if (r && r.fedMonthsLeft > 0) {
     badges.push(`<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
@@ -539,6 +551,7 @@ function renderEcoMap() {
 
   box.innerHTML = `<div class="panel eco-map">
     <h2 class="panel-title">${t('mapTitle')}</h2>
+    <div class="map-scroll">
     <svg viewBox="0 0 700 268" role="img" aria-label="${t('mapTitle')}">
       <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
       ${link(cx1 + rFood - 4, cy - 14, tx2 - rTaxi + 4, ty2 + 6, bothU > 500)}
@@ -558,12 +571,12 @@ function renderEcoMap() {
       ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
         r && r.crossEcomConv > 0.5 ? `${t('mapCross')} +${compact(r.crossEcomConv)}` : '', PALETTE[0])}
       ${flowLabel(tx2 + rTaxi + 8, ty2 + 4,
-        r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '', PALETTE[2], 'start')}
+        r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '', PALETTE[5], 'start')}
       ${flowLabel(ex2 + rEcom + 8, ey2 + 4,
-        r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '', PALETTE[2], 'start')}
-      ${flowLabel(tx2, ty2 + rTaxi + 14,
+        r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '', PALETTE[5], 'start')}
+      ${flowLabel(tx2, ty2 + churnY(rTaxi),
         r && taxiOn && r.lostTaxi > 0.5 ? `−${compact(r.lostTaxi)}` : '', 'var(--bad)')}
-      ${flowLabel(ex2, ey2 + rEcom + 14,
+      ${flowLabel(ex2, ey2 + churnY(rEcom),
         r && ecomOn && r.lostEcom > 0.5 ? `−${compact(r.lostEcom)}` : '', 'var(--bad)')}
       ${flowLabel(cx1, cy + rFood + (plusOn ? 24 : 14),
         r && r.lostFood > 0.5 ? `−${compact(r.lostFood)}` : '', 'var(--bad)')}
@@ -574,6 +587,7 @@ function renderEcoMap() {
         unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
       })}</text>
     </svg>
+    </div>
     <div class="chart-caption">${t('mapCaption')}</div>
   </div>`;
 }
@@ -963,7 +977,9 @@ function renderStartHint() {
   return `<div class="panel">
     <h3 style="margin:0 0 8px">${t('reportMonth0')}</h3>
     <div class="funding-note">
-      <b>${t('reportStartTitle')}</b> ${t('reportStartIntro', { cash: money(CONFIG.startCash) })}
+      <b>${t('reportStartTitle')}</b> ${t('reportStartIntro', {
+        cash: money(CONFIG.startCash), asset: tx(assetById(state.assetId).name),
+      })}
     </div>
     ${fork(t('forkLaunchTitle'), t('forkLaunchBody', {
       cost: money(taxi.launchCost), war: taxi.warMonths,

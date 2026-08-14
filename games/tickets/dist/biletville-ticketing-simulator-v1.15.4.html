@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.15.3" />
+  <meta name="app-version" content="1.15.4" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -803,7 +803,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
    ============================================================================ */
 .policy-seg { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .policy-seg button {
-  flex: 1 1 auto; background: transparent; border: 1px solid var(--line);
+  /* Не ужиматься уже текста: лучше перенос на новую строку, чем срезанная подпись */
+  flex: 1 0 auto; background: transparent; border: 1px solid var(--line);
   color: var(--muted); border-radius: 8px; padding: 5px 6px; font-size: 11px;
   cursor: pointer; line-height: 1.2; min-height: 30px;
 }
@@ -820,7 +821,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
 .budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
 
-.eco-map svg { width: 100%; height: auto; display: block; }
+/* На телефоне карта не ужимается до нечитаемости, а прокручивается вбок —
+   как таблицы. Минимальная ширина держит текст в читаемом масштабе. */
+.eco-map .map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.eco-map svg { width: 100%; min-width: 620px; height: auto; display: block; }
 .eco-map .node { cursor: pointer; }
 .eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
 .eco-map text { font-size: 12px; fill: var(--text); }
@@ -1529,6 +1533,12 @@ const STRINGS = {
     ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
     en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
   },
+  metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
+  metaContinueText: {
+    ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
+    en: 'NOVOGRAD is the series endgame: the business you won here becomes the starting asset of a holding with ride-hailing, e-commerce and a subscription. Keep the result string above and enter it on NOVOGRAD’s welcome screen — a strong finale counts as a legacy and boosts your start.',
+  },
+  metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
 };
 
 
@@ -6870,6 +6880,16 @@ function conglomerateBadgeHtml() {
   return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
 }
 
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+}
+
 function showGameOver() {
   const score = finalScore(state);
   const goals = (state.board?.history ?? [])
@@ -6897,6 +6917,7 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
+    ${novogradInviteHtml()}
     ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(score)}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,

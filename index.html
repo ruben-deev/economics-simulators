@@ -44,6 +44,20 @@
     .home-foot { margin-top: 30px; color: var(--muted); font-size: 13px; line-height: 1.7; }
     .home-foot a { color: var(--accent-2); }
     .home-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    /* НОВОГРАД — финал серии: отдельный широкий блок под тремя играми */
+    .eco-label { margin: 34px 0 12px; color: var(--muted); font-size: 12px;
+      letter-spacing: 0.14em; text-transform: uppercase; }
+    .eco-card { border-color: rgba(74, 222, 128, 0.4);
+      background: linear-gradient(180deg, rgba(74, 222, 128, 0.06), var(--panel) 55%); }
+    .eco-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .eco-head .card-icon { font-size: 30px; align-self: center; }
+    .eco-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #06210f;
+      background: var(--accent); border-radius: 999px; padding: 3px 10px; text-transform: uppercase; }
+    @media (min-width: 720px) {
+      .eco-card ul { columns: 2; column-gap: 32px; }
+      .eco-card ul li { break-inside: avoid; }
+      .eco-card .card-actions { max-width: 340px; }
+    }
   </style>
   <!-- Яндекс.Метрика. Считает только на сайте: этот блок живёт в странице-
        обёртке и в раздаваемый однофайловый HTML не попадает. Пока номер
@@ -109,18 +123,6 @@
         </div>
       </section>
 
-      <section class="card" style="border-color: rgba(74, 222, 128, 0.35)">
-        <div class="card-icon">🏙️</div>
-        <h2 id="eco-title"></h2>
-        <p class="sub" id="eco-sub"></p>
-        <p id="eco-text"></p>
-        <ul id="eco-list"></ul>
-        <p class="sub" id="eco-meta" style="margin-top:6px"></p>
-        <div class="card-actions">
-          <a class="primary" href="games/ecosystem/index.html" id="eco-play"></a>
-        </div>
-      </section>
-
       <section class="card">
         <div class="card-icon">🎟️</div>
         <h2 id="tickets-title"></h2>
@@ -132,6 +134,22 @@
         </div>
       </section>
     </div>
+
+    <p class="eco-label" id="eco-label"></p>
+    <section class="card eco-card">
+      <div class="eco-head">
+        <div class="card-icon">🏙️</div>
+        <h2 id="eco-title"></h2>
+        <span class="eco-badge" id="eco-badge"></span>
+      </div>
+      <p class="sub" id="eco-sub"></p>
+      <p id="eco-text"></p>
+      <ul id="eco-list"></ul>
+      <p class="sub" id="eco-meta" style="margin-top:6px"></p>
+      <div class="card-actions">
+        <a class="primary" href="games/ecosystem/index.html" id="eco-play"></a>
+      </div>
+    </section>
 
     <p class="home-foot" id="home-foot"></p>
   </main>
@@ -164,8 +182,8 @@
         en: 'Economics simulators for the classroom',
       },
       homeLead: {
-        ru: 'Три игры про управление бизнесом. Каждая — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
-        en: 'Three games about running a business. Each is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
+        ru: 'Три игры про управление бизнесом и общий финал — экосистема, в которую вы приходите победителем любой из них. Каждая игра — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
+        en: 'Three games about running a business, plus a shared endgame — an ecosystem you enter as the winner of any of them. Each game is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
       },
       foodTitle: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
       foodSub: { ru: 'доставка еды в городе · ход = неделя · 52 недели', en: 'food delivery in a city · turn = week · 52 weeks' },
@@ -197,19 +215,21 @@
         ru: 'Одна выручка, две стороны: сбор с покупателя против комиссии с организатора|Конфликт каналов: билетный виджет удерживает клиента и уводит продажи|Оборот и выручка — разные числа, и эквайринг вычитается из второго|Доверие: перекупщики наполняют оборот и опустошают репутацию',
         en: 'One revenue, two sides: buyer fee versus organiser commission|Channel conflict: a ticketing widget keeps the client and takes the sales|Turnover and revenue are different numbers, and acquiring comes out of the second|Trust: resellers fill the turnover and empty the reputation',
       },
-      ecoTitle: { ru: 'НОВОГРАД · бета', en: 'NOVOGRAD · beta' },
-      ecoSub: { ru: 'экосистема — эндгейм набора · ход = месяц · 36 месяцев', en: 'the ecosystem endgame · turn = month · 36 months' },
+      ecoLabel: { ru: 'Финал серии', en: 'The series endgame' },
+      ecoTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
+      ecoBadge: { ru: 'бета', en: 'beta' },
+      ecoSub: { ru: 'экосистема сервисов · ход = месяц · 36 месяцев', en: 'a service ecosystem · turn = month · 36 months' },
       ecoText: {
-        ru: 'Вы выиграли одну из трёх игр — а рынок насыщен. Дальше растут не числом клиентов, а выручкой с каждого: такси, е-ком, подписка Plus, кросс-селл по общей базе и оценка холдинга по сумме частей.',
-        en: 'You have won one of the three games — and the market is saturated. From here you grow revenue per customer, not head count: taxi, e-commerce, the Plus subscription, cross-sell across a shared base, and a sum-of-parts valuation.',
+        ru: 'Продолжение любой из трёх игр: ваш выигранный бизнес становится стартовым активом холдинга. Свой рынок он уже насытил — дальше рост не числом клиентов, а новыми сервисами для тех же людей: такси, е-ком, подписка «Плюс». Инвестор оценивает холдинг по сумме частей, и убыточная вертикаль без роста тянет оценку вниз.',
+        en: 'The continuation of any of the three games: the business you won becomes the holding’s starting asset. It has already saturated its own market — growth now comes from new services for the same people: ride-hailing, e-commerce, the Plus subscription. Investors value the holding as a sum of parts, and a loss-making vertical with no growth drags the valuation down.',
       },
       ecoList: {
-        ru: 'Стартовый актив как класс персонажа: доставка, стриминг или билеты|Кросс-селл против холодного маркетинга|Подписка: покупка удержания за маржу|Финалы трёх игр усиливают старт — а достойный НОВОГРАД открывает бейджи в них',
-        en: 'Your starting asset is your character class: delivery, streaming or ticketing|Cross-sell versus cold marketing|A subscription buys retention with margin|Three endgames boost your start — and a worthy NOVOGRAD unlocks badges back in them',
+        ru: 'Стартовый актив задаёт форму экосистемы: доставка, стриминг или билеты|Кросс-селл по своей базе против дорогого холодного маркетинга|Подписка «Плюс»: платите маржой сейчас за удержание потом|Финалы трёх игр дают наследие на старте — а сильный финал НОВОГРАДА открывает памятные знаки в них',
+        en: 'The starting asset shapes the ecosystem: delivery, streaming or ticketing|Cross-selling your own base versus expensive cold marketing|The Plus subscription: pay margin now for retention later|The three endgames grant a legacy at the start — and a strong NOVOGRAD finale unlocks keepsake badges back in them',
       },
       ecoMetaNone: {
-        ru: 'Путь конгломерата: ☆ НОВОЕДА · ☆ КИНОРЕКА · ☆ БИЛЕТВИЛЬ — финалы старых игр усиливают старт.',
-        en: 'The conglomerate path: ☆ NOVOEDA · ☆ KINOREKA · ☆ BILETVILLE — the old games’ endgames boost your start.',
+        ru: 'Путь конгломерата: ☆ НОВОЕДА · ☆ КИНОРЕКА · ☆ БИЛЕТВИЛЬ. Финал каждой игры на этом устройстве зажигает звезду и даёт наследие на старте НОВОГРАДА.',
+        en: 'The conglomerate path: ☆ NOVOEDA · ☆ KINOREKA · ☆ BILETVILLE. Finishing each game on this device lights a star and grants a legacy at the start of NOVOGRAD.',
       },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
@@ -244,7 +264,9 @@
       set('cinema-sub', t('cinemaSub'));
       set('cinema-text', t('cinemaText'));
       list('cinema-list', 'cinemaList');
+      set('eco-label', t('ecoLabel'));
       set('eco-title', t('ecoTitle'));
+      set('eco-badge', t('ecoBadge'));
       set('eco-sub', t('ecoSub'));
       set('eco-text', t('ecoText'));
       list('eco-list', 'ecoList');
