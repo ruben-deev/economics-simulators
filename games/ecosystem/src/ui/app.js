@@ -97,6 +97,16 @@ function jumpTo(target) {
     flash(node);
     return;
   }
+  if (kind === 'group') {
+    const node = document.querySelector(`.lever-group[data-group="${key}"]`);
+    if (node && !node.classList.contains('open')) {
+      openGroups[key] = true;
+      node.classList.add('open');
+    }
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node);
+    return;
+  }
   if (kind === 'tab') {
     rightTab = key;
     renderRightTab();
@@ -185,13 +195,21 @@ function renderKpis() {
 const openGroups = { food: true, taxi: true, holding: true };
 
 function leverHtml(l) {
+  // Политика — решение с именем, а не процент: сегментные режимы вместо
+  // ползунка. Бюджеты остаются ползунками — там непрерывность уместна.
+  const control = l.policy
+    ? `<div class="policy-seg" data-policy="${l.key}">
+        ${l.policy.map((p) => `<button type="button" data-policy-value="${p.v}">${tx(p.label)}</button>`).join('')}
+      </div>
+      <div class="policy-note" id="note-${l.key}"></div>`
+    : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`;
   return `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
         <span class="lever-value" id="val-${l.key}"></span>
       </div>
-      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+      ${control}
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
     </div>`;
@@ -218,12 +236,25 @@ function buildLevers() {
   }).join('');
 
   for (const l of LEVERS) {
+    if (l.policy) {
+      el('levers').querySelectorAll(`[data-policy="${l.key}"] [data-policy-value]`)
+        .forEach((b) => b.addEventListener('click', () => {
+          state.decisions[l.key] = Number(b.dataset.policyValue) * (l.scale ?? 1);
+          syncLevers();
+          renderLeverReadouts();
+          renderBudgetBar();
+          renderRightTab();
+          save();
+        }));
+      continue;
+    }
     const input = el(`in-${l.key}`);
     if (!input) continue;
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
       renderLeverReadouts();
+      renderBudgetBar();
       renderRightTab();
       save();
     });
@@ -319,11 +350,205 @@ function leverDisplay(l, raw) {
 function syncLevers() {
   for (const l of LEVERS) {
     const raw = state.decisions[l.key] / (l.scale ?? 1);
+    if (l.policy) {
+      const seg = el('levers').querySelector(`[data-policy="${l.key}"]`);
+      if (!seg) continue;
+      // Ближайший режим: сохранения и политики замеров могут держать
+      // значение вне сетки — подсвечиваем то, что ближе всего
+      let current = l.policy[0];
+      for (const p of l.policy) {
+        if (Math.abs(p.v - raw) < Math.abs(current.v - raw)) current = p;
+      }
+      seg.querySelectorAll('[data-policy-value]').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.policyValue) === current.v);
+      });
+      const val = el(`val-${l.key}`);
+      if (val) val.textContent = `${tx(current.label)} · ${raw}%`;
+      const note = el(`note-${l.key}`);
+      if (note) note.textContent = tx(current.note);
+      continue;
+    }
     const input = el(`in-${l.key}`);
     if (!input) continue;
     input.value = String(raw);
     el(`val-${l.key}`).textContent = leverDisplay(l, raw);
   }
+}
+
+// ----------------------------------------------------------------------------
+// Бюджетная полоса: из чего складываются расходы месяца при текущих
+// ползунках — и что от них останется при вчерашнем вкладе.
+// ----------------------------------------------------------------------------
+const BUDGET_COLORS = {
+  fixed: '#64748b',
+  food: PALETTE[1],
+  taxi: PALETTE[2],
+  eco: PALETTE[0],
+};
+
+function renderBudgetBar() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const taxiOn = state.taxi.on;
+  const asset = assetById(state.assetId);
+  const fixed = (r ? r.fixedFood + r.fixedTaxi + r.hqCost
+    : asset.fixedMonthly + CONFIG.hqMonthly);
+  const food = (d.foodOps ?? 0) + (d.foodMarketing ?? 0);
+  const taxi = taxiOn ? (d.taxiSupply ?? 0) + (d.taxiMarketing ?? 0) : 0;
+  const eco = taxiOn ? (d.crossSell ?? 0) + (d.mgmt ?? 0) : (d.mgmt ?? 0);
+  const total = fixed + food + taxi + eco;
+  const contribution = r ? r.contribution : asset.users * asset.arpu * asset.margin;
+  const net = contribution - total;
+
+  const seg = (key, v) => (v > 0
+    ? `<span style="width:${(100 * v / total).toFixed(1)}%;background:${BUDGET_COLORS[key]}"></span>` : '');
+  const leg = (key, label, v) => (v > 0
+    ? `<span><i style="background:${BUDGET_COLORS[key]}"></i>${label} ${money(v)}</span>` : '');
+  box.innerHTML = `<div class="hint-box" style="margin-bottom:12px">
+    <div>${t('budgetTitle', { total: money(total) })}</div>
+    <div class="budget-bar">
+      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('eco', eco)}
+    </div>
+    <div class="budget-legend">
+      ${leg('fixed', t('budgetFixed'), fixed)}
+      ${leg('food', t('budgetFood'), food)}
+      ${leg('taxi', t('budgetTaxi'), taxi)}
+      ${leg('eco', t('budgetEco'), eco)}
+    </div>
+    <div class="funding-note" style="margin-top:4px">${t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    })}</div>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Карта экосистемы: круги баз с пересечением и потоки месяца.
+// Это главный «прибор» игры: склейка видна геометрией, а не строкой в таблице.
+// ----------------------------------------------------------------------------
+function renderEcoMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const asset = assetById(state.assetId);
+  const taxi = verticalById('taxi');
+  const foodU = r ? r.foodUsers : asset.users;
+  const taxiU = r ? r.taxiUsers : 0;
+  const bothU = r ? r.bothUsers : 0;
+  const unique = r ? r.uniqueUsers : asset.users;
+  const taxiOn = state.taxi.on;
+
+  // Радиусы от численности. Пересечение — отдельный узел между кругами:
+  // его размер и есть склейка экосистемы
+  const rFood = 30 + 38 * Math.sqrt(foodU / 260_000);
+  const rTaxi = taxiOn ? 12 + 40 * Math.sqrt(taxiU / 300_000) : 16;
+  const rBoth = taxiOn && bothU > 500 ? 8 + 26 * Math.sqrt(bothU / 150_000) : 0;
+  const cx1 = 235;
+  const cx2 = 465;
+  const cxB = (cx1 + cx2) / 2;
+  const cy = 103;
+
+  const foodIn = r ? r.wonBack + r.organicFood : 0;
+  // Наконечник — цветная точка на конце пути: SVG-маркеры не наследуют
+  // цвет в старых Safari, а точка работает везде
+  const arrow = (path, ex, ey, color, label, x, y, anchor = 'middle') => `
+    <path class="flow" d="${path}" stroke="${color}"/>
+    <circle cx="${ex}" cy="${ey}" r="3" fill="${color}"/>
+    <text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted">${label}</text>`;
+
+  const flows = [];
+  if (r && taxiOn) {
+    if (r.crossConv > 0.5) {
+      flows.push(arrow(
+        `M ${cx1 + 20} ${cy - rFood + 6} C ${cx1 + 60} ${cy - rFood - 34}, ${cx2 - 50} ${cy - rTaxi - 34}, ${cx2 - 10} ${cy - rTaxi + 2}`,
+        cx2 - 10, cy - rTaxi + 2,
+        PALETTE[0], `${t('mapCross')} +${compact(r.crossConv)}`, (cx1 + cx2) / 2 + 10, cy - rFood - 26));
+    }
+    if (r.crossBackConv > 0.5) {
+      flows.push(arrow(
+        `M ${cx2 - 14} ${cy + rTaxi - 2} C ${cx2 - 50} ${cy + rTaxi + 30}, ${cx1 + 60} ${cy + rFood + 30}, ${cx1 + 24} ${cy + rFood - 4}`,
+        cx1 + 24, cy + rFood - 4,
+        PALETTE[0], `${t('mapCrossBack')} +${compact(r.crossBackConv)}`, (cx1 + cx2) / 2 + 10, cy + rFood + 34));
+    }
+    if (r.coldAcq > 0.5) {
+      flows.push(arrow(
+        `M 640 ${cy - 30} C 600 ${cy - 26}, ${cx2 + rTaxi + 40} ${cy - 14}, ${cx2 + rTaxi + 4} ${cy - 6}`,
+        cx2 + rTaxi + 4, cy - 6,
+        PALETTE[2], `${t('mapCold')} +${compact(r.coldAcq)}`, 640, cy - 40, 'end'));
+    }
+    if (r.lostTaxi > 0.5) {
+      flows.push(arrow(
+        `M ${cx2 + 8} ${cy + rTaxi + 2} L ${cx2 + 22} ${cy + rTaxi + 26}`,
+        cx2 + 22, cy + rTaxi + 26,
+        'var(--bad)', `−${compact(r.lostTaxi)}`, cx2 + 30, cy + rTaxi + 38));
+    }
+  }
+  if (r && foodIn > 0.5) {
+    flows.push(arrow(
+      `M 55 ${cy - 26} C 95 ${cy - 24}, ${cx1 - rFood - 36} ${cy - 12}, ${cx1 - rFood - 4} ${cy - 4}`,
+      cx1 - rFood - 4, cy - 4,
+      PALETTE[1], `${t('mapWinback')} +${compact(foodIn)}`, 57, cy - 36, 'start'));
+  }
+  if (r && r.lostFood > 0.5) {
+    flows.push(arrow(
+      `M ${cx1 - 10} ${cy + rFood + 2} L ${cx1 - 24} ${cy + rFood + 26}`,
+      cx1 - 24, cy + rFood + 26,
+      'var(--bad)', `−${compact(r.lostFood)}`, cx1 - 32, cy + rFood + 38));
+  }
+
+  // Значки состояния рынка
+  const badges = [];
+  if (r && r.warMonthsLeft > 0) {
+    badges.push(`<text x="${cx2 + rTaxi + 12}" y="${cy + 4}" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
+  }
+  if (r && r.fedMonthsLeft > 0) {
+    badges.push(`<text x="640" y="26" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
+  }
+
+  const taxiNode = taxiOn
+    ? `<g class="node" data-jump="group:taxi">
+        <circle cx="${cx2}" cy="${cy}" r="${rTaxi}" fill="rgba(244,114,182,0.14)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+        <text x="${cx2}" y="${cy - 2}" text-anchor="middle">${taxi.icon} ${t('mapTaxi')}</text>
+        <text x="${cx2}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(taxiU)}</text>
+      </g>`
+    : `<g class="node" data-jump="panel:verticals">
+        <circle cx="${cx2}" cy="${cy}" r="16" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+        <text x="${cx2}" y="${cy - 26}" text-anchor="middle" class="m-muted">${taxi.icon} ${t('mapTaxiOff')}</text>
+      </g>`;
+
+  // Узел склейки: люди в двух сервисах — цветом серии «Оба сервиса» с графика
+  const bothLabel = rBoth > 0
+    ? `<g class="node" data-jump="lever:crossSell">
+        <line x1="${cx1 + rFood - 4}" y1="${cy}" x2="${cxB - rBoth}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
+        <line x1="${cxB + rBoth}" y1="${cy}" x2="${cx2 - rTaxi + 4}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
+        <circle cx="${cxB}" cy="${cy}" r="${rBoth}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.5"/>
+        <text x="${cxB}" y="${cy - rBoth - 8}" text-anchor="middle" class="m-muted">${t('mapBoth')}</text>
+        <text x="${cxB}" y="${cy + 4}" text-anchor="middle" class="m-num" style="font-size:11px">${compact(bothU)}</text>
+      </g>`
+    : '';
+
+  box.innerHTML = `<div class="panel eco-map">
+    <h2 class="panel-title">${t('mapTitle')}</h2>
+    <svg viewBox="0 0 700 248" role="img" aria-label="${t('mapTitle')}">
+      <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
+      <g class="node" data-jump="group:food">
+        <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
+        <text x="${cx1 - 14}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapFood')}</text>
+        <text x="${cx1 - 14}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
+      </g>
+      ${taxiNode}
+      ${bothLabel}
+      ${flows.join('')}
+      ${badges.join('')}
+      <text x="350" y="240" text-anchor="middle" class="m-muted">${t('mapUnique', {
+        unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
+      })}</text>
+    </svg>
+    <div class="chart-caption">${t('mapCaption')}</div>
+  </div>`;
 }
 
 // ----------------------------------------------------------------------------
@@ -1331,6 +1556,8 @@ function renderAll() {
   renderChrome();
   syncLevers();
   renderLeverReadouts();
+  renderBudgetBar();
+  renderEcoMap();
   renderKpis();
   renderVerticals();
   renderBoard();

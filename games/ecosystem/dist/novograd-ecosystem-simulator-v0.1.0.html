@@ -796,6 +796,37 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   text-align: center;
 }
 
+/* ============================================================================
+   НОВОГРАД (games/ecosystem): собственные органы управления — сегментные
+   политики, бюджетная полоса, карта экосистемы. Только новые классы:
+   старые игры этих имён не используют, правки обратимо-совместимы.
+   ============================================================================ */
+.policy-seg { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.policy-seg button {
+  flex: 1 1 auto; background: transparent; border: 1px solid var(--line);
+  color: var(--muted); border-radius: 8px; padding: 5px 6px; font-size: 11px;
+  cursor: pointer; line-height: 1.2; min-height: 30px;
+}
+.policy-seg button.active {
+  color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1);
+}
+.policy-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+.budget-bar {
+  display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+  margin: 6px 0 5px; background: rgba(148, 163, 184, 0.12);
+}
+.budget-bar span { display: block; height: 100%; min-width: 1px; }
+.budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
+.budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+
+.eco-map svg { width: 100%; height: auto; display: block; }
+.eco-map .node { cursor: pointer; }
+.eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
+.eco-map text { font-size: 12px; fill: var(--text); }
+.eco-map .m-muted { fill: var(--muted); font-size: 10px; }
+.eco-map .m-num { font-weight: 700; }
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -847,6 +878,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     <!-- ЛЕВАЯ КОЛОНКА: рычаги и вертикали -->
     <aside class="panel col-left">
       <h2 class="panel-title" id="title-levers"></h2>
+      <div id="budget-slot"></div>
       <div id="levers"></div>
 
       <h2 class="panel-title" id="title-verticals"></h2>
@@ -862,6 +894,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
     <!-- ЦЕНТР: события, разбор месяца, графики -->
     <section class="col-center">
       <div id="event-slot"></div>
+      <div id="map-slot"></div>
       <div id="report-slot"></div>
       <div id="news-slot"></div>
       <div class="panel charts">
@@ -1059,6 +1092,38 @@ const STRINGS = {
   readoutCrossWasted: {
     ru: ' Сгорело о ёмкость канала: {wasted}.',
     en: ' Burned against the channel’s capacity: {wasted}.',
+  },
+
+  // --- бюджетная полоса ---
+  budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
+  budgetFood: { ru: 'еда', en: 'food' },
+  budgetTaxi: { ru: 'такси', en: 'taxi' },
+  budgetEco: { ru: 'экосистема', en: 'ecosystem' },
+  budgetNet: {
+    ru: 'Вклад прошлого месяца {contribution} → прибыль примерно <b class="{cls}">{net}</b>.',
+    en: 'Last month’s contribution {contribution} → profit roughly <b class="{cls}">{net}</b>.',
+  },
+
+  // --- карта экосистемы ---
+  mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
+  mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
+  mapFood: { ru: 'Еда', en: 'Food' },
+  mapTaxi: { ru: 'Такси', en: 'Taxi' },
+  mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
+  mapBoth: { ru: 'оба сервиса', en: 'both services' },
+  mapCross: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCold: { ru: 'маркетинг', en: 'marketing' },
+  mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
+  mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
+  mapUnique: {
+    ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, их пересечение — люди в двух сервисах.',
+    en: 'Unique holding customers: {unique} — {share} of the city. Circles are service bases; their overlap is people on both.',
+  },
+  mapCaption: {
+    ru: 'Потоки за прошлый месяц: зелёное — кросс-селл по общей базе, розовое — холодное привлечение, красное — отток. Склейка видна геометрией: чем больше пересечение, тем крепче экосистема.',
+    en: 'Last month’s flows: green is cross-sell across the shared base, pink is cold acquisition, red is churn. The glue is visible as geometry: the bigger the overlap, the stronger the ecosystem.',
   },
 
   // --- вертикали ---
@@ -2350,9 +2415,23 @@ const LEVERS = [
     label: { ru: 'Монетизация доставки', en: 'Delivery monetisation' },
     unit: { ru: '%', en: '%' },
     min: 80, max: 130, step: 1, def: 100, scale: 0.01,
+    // Политика, а не настройка: пять режимов вместо ползунка. Это решение
+    // уровня совета директоров — у него должны быть имена, а не проценты.
+    policy: [
+      { v: 90, label: { ru: 'Щадящая', en: 'Gentle' },
+        note: { ru: 'Комиссии ниже привычного: частота растёт, база бережётся — но вы недобираете выручку.', en: 'Fees below the norm: frequency grows and the base is preserved — but you leave revenue behind.' } },
+      { v: 100, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Монетизация как все: клиенты не замечают вас в чеке.', en: 'Monetisation like everyone else: customers do not notice you in the bill.' } },
+      { v: 105, label: { ru: 'Плотная', en: 'Firm' },
+        note: { ru: 'Чуть выше рынка: выручка растёт, отток ускоряется едва заметно.', en: 'A notch above market: revenue up, churn barely faster.' } },
+      { v: 115, label: { ru: 'Дожим', en: 'Milking' },
+        note: { ru: 'На пороге терпения: деньги сейчас, ускоренный отток — и тающий пул кросс-селла.', en: 'At the tolerance threshold: money now, faster churn — and a thinning cross-sell pool.' } },
+      { v: 128, label: { ru: 'Выжать всё', en: 'Squeeze dry' },
+        note: { ru: 'За порогом: клиенты бегут к конкуренту. Стратегия одного года, не трёх.', en: 'Past the threshold: customers flee to the competitor. A one-year strategy, not a three-year one.' } },
+    ],
     tip: {
-      ru: 'Насколько жёстко доить насыщенный актив: комиссии, сборы, реклама в приложении. Выше 100% — выручка с клиента растёт, но отток ускоряется, а за порогом ~115% клиенты уходят к конкуренту ускоренно. Дожатая корова хуже кормит и кросс-селл: уходящие уносят с собой будущих клиентов такси.',
-      en: 'How hard to milk the saturated asset: fees, commissions, in-app ads. Above 100%, revenue per customer rises but churn accelerates — and past ~115% customers flee outright. An over-milked cow also starves your cross-sell: leavers take your future taxi customers with them.',
+      ru: 'Насколько жёстко доить насыщенный актив: комиссии, сборы, реклама в приложении. Дожатая корова хуже кормит и кросс-селл: уходящие уносят с собой будущих клиентов такси.',
+      en: 'How hard to milk the saturated asset: fees, commissions, in-app ads. An over-milked cow also starves your cross-sell: leavers take your future taxi customers with them.',
     },
   },
   {
@@ -2380,12 +2459,24 @@ const LEVERS = [
   {
     key: 'taxiPrice',
     group: 'taxi',
-    label: { ru: 'Тариф такси', en: 'Taxi fares' },
+    label: { ru: 'Тарифная политика такси', en: 'Taxi fare policy' },
     unit: { ru: '%', en: '%' },
     min: 85, max: 125, step: 1, def: 100, scale: 0.01,
+    policy: [
+      { v: 88, label: { ru: 'Демпинг', en: 'Dumping' },
+        note: { ru: 'Часть каждой поездки субсидируете вы: покупаете рост, сжигая маржу.', en: 'You subsidise part of every ride: buying growth by burning margin.' } },
+      { v: 95, label: { ru: 'Ниже рынка', en: 'Below market' },
+        note: { ru: 'Заметно дешевле «Таксограда»: рост быстрее, вклад с поездки тоньше.', en: 'Visibly cheaper than Taxograd: faster growth, thinner per-trip contribution.' } },
+      { v: 100, label: { ru: 'Рынок', en: 'Market' },
+        note: { ru: 'Цена как у всех: конкурируете сервисом и подачей, а не рублём.', en: 'Priced like everyone: you compete on service and pickup, not roubles.' } },
+      { v: 108, label: { ru: 'Премиум', en: 'Premium' },
+        note: { ru: 'Дороже рынка: маржа сейчас, спрос и рост — медленнее.', en: 'Above market: margin now, slower demand and growth.' } },
+      { v: 120, label: { ru: 'Снять сливки', en: 'Skim' },
+        note: { ru: 'Максимальная маржа с поездки, отток и торможение роста в подарок.', en: 'Maximum per-trip margin, with churn and stalled growth thrown in.' } },
+    ],
     tip: {
-      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «Таксоградом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
-      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the Taxograd war the market is dumped down, and a high fare hurts twice as much.',
+      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны рынок продавлен демпингом «Таксограда», и высокий тариф бьёт больнее.',
+      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the war the market is dumped down by Taxograd, and a high fare hurts twice as much.',
     },
   },
   {
@@ -4135,6 +4226,16 @@ function jumpTo(target) {
     flash(node);
     return;
   }
+  if (kind === 'group') {
+    const node = document.querySelector(`.lever-group[data-group="${key}"]`);
+    if (node && !node.classList.contains('open')) {
+      openGroups[key] = true;
+      node.classList.add('open');
+    }
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flash(node);
+    return;
+  }
   if (kind === 'tab') {
     rightTab = key;
     renderRightTab();
@@ -4223,13 +4324,21 @@ function renderKpis() {
 const openGroups = { food: true, taxi: true, holding: true };
 
 function leverHtml(l) {
+  // Политика — решение с именем, а не процент: сегментные режимы вместо
+  // ползунка. Бюджеты остаются ползунками — там непрерывность уместна.
+  const control = l.policy
+    ? `<div class="policy-seg" data-policy="${l.key}">
+        ${l.policy.map((p) => `<button type="button" data-policy-value="${p.v}">${tx(p.label)}</button>`).join('')}
+      </div>
+      <div class="policy-note" id="note-${l.key}"></div>`
+    : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`;
   return `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
         <span class="lever-value" id="val-${l.key}"></span>
       </div>
-      <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+      ${control}
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
     </div>`;
@@ -4256,12 +4365,25 @@ function buildLevers() {
   }).join('');
 
   for (const l of LEVERS) {
+    if (l.policy) {
+      el('levers').querySelectorAll(`[data-policy="${l.key}"] [data-policy-value]`)
+        .forEach((b) => b.addEventListener('click', () => {
+          state.decisions[l.key] = Number(b.dataset.policyValue) * (l.scale ?? 1);
+          syncLevers();
+          renderLeverReadouts();
+          renderBudgetBar();
+          renderRightTab();
+          save();
+        }));
+      continue;
+    }
     const input = el(`in-${l.key}`);
     if (!input) continue;
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
       renderLeverReadouts();
+      renderBudgetBar();
       renderRightTab();
       save();
     });
@@ -4357,11 +4479,205 @@ function leverDisplay(l, raw) {
 function syncLevers() {
   for (const l of LEVERS) {
     const raw = state.decisions[l.key] / (l.scale ?? 1);
+    if (l.policy) {
+      const seg = el('levers').querySelector(`[data-policy="${l.key}"]`);
+      if (!seg) continue;
+      // Ближайший режим: сохранения и политики замеров могут держать
+      // значение вне сетки — подсвечиваем то, что ближе всего
+      let current = l.policy[0];
+      for (const p of l.policy) {
+        if (Math.abs(p.v - raw) < Math.abs(current.v - raw)) current = p;
+      }
+      seg.querySelectorAll('[data-policy-value]').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.policyValue) === current.v);
+      });
+      const val = el(`val-${l.key}`);
+      if (val) val.textContent = `${tx(current.label)} · ${raw}%`;
+      const note = el(`note-${l.key}`);
+      if (note) note.textContent = tx(current.note);
+      continue;
+    }
     const input = el(`in-${l.key}`);
     if (!input) continue;
     input.value = String(raw);
     el(`val-${l.key}`).textContent = leverDisplay(l, raw);
   }
+}
+
+// ----------------------------------------------------------------------------
+// Бюджетная полоса: из чего складываются расходы месяца при текущих
+// ползунках — и что от них останется при вчерашнем вкладе.
+// ----------------------------------------------------------------------------
+const BUDGET_COLORS = {
+  fixed: '#64748b',
+  food: PALETTE[1],
+  taxi: PALETTE[2],
+  eco: PALETTE[0],
+};
+
+function renderBudgetBar() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const taxiOn = state.taxi.on;
+  const asset = assetById(state.assetId);
+  const fixed = (r ? r.fixedFood + r.fixedTaxi + r.hqCost
+    : asset.fixedMonthly + CONFIG.hqMonthly);
+  const food = (d.foodOps ?? 0) + (d.foodMarketing ?? 0);
+  const taxi = taxiOn ? (d.taxiSupply ?? 0) + (d.taxiMarketing ?? 0) : 0;
+  const eco = taxiOn ? (d.crossSell ?? 0) + (d.mgmt ?? 0) : (d.mgmt ?? 0);
+  const total = fixed + food + taxi + eco;
+  const contribution = r ? r.contribution : asset.users * asset.arpu * asset.margin;
+  const net = contribution - total;
+
+  const seg = (key, v) => (v > 0
+    ? `<span style="width:${(100 * v / total).toFixed(1)}%;background:${BUDGET_COLORS[key]}"></span>` : '');
+  const leg = (key, label, v) => (v > 0
+    ? `<span><i style="background:${BUDGET_COLORS[key]}"></i>${label} ${money(v)}</span>` : '');
+  box.innerHTML = `<div class="hint-box" style="margin-bottom:12px">
+    <div>${t('budgetTitle', { total: money(total) })}</div>
+    <div class="budget-bar">
+      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('eco', eco)}
+    </div>
+    <div class="budget-legend">
+      ${leg('fixed', t('budgetFixed'), fixed)}
+      ${leg('food', t('budgetFood'), food)}
+      ${leg('taxi', t('budgetTaxi'), taxi)}
+      ${leg('eco', t('budgetEco'), eco)}
+    </div>
+    <div class="funding-note" style="margin-top:4px">${t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    })}</div>
+  </div>`;
+}
+
+// ----------------------------------------------------------------------------
+// Карта экосистемы: круги баз с пересечением и потоки месяца.
+// Это главный «прибор» игры: склейка видна геометрией, а не строкой в таблице.
+// ----------------------------------------------------------------------------
+function renderEcoMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const asset = assetById(state.assetId);
+  const taxi = verticalById('taxi');
+  const foodU = r ? r.foodUsers : asset.users;
+  const taxiU = r ? r.taxiUsers : 0;
+  const bothU = r ? r.bothUsers : 0;
+  const unique = r ? r.uniqueUsers : asset.users;
+  const taxiOn = state.taxi.on;
+
+  // Радиусы от численности. Пересечение — отдельный узел между кругами:
+  // его размер и есть склейка экосистемы
+  const rFood = 30 + 38 * Math.sqrt(foodU / 260_000);
+  const rTaxi = taxiOn ? 12 + 40 * Math.sqrt(taxiU / 300_000) : 16;
+  const rBoth = taxiOn && bothU > 500 ? 8 + 26 * Math.sqrt(bothU / 150_000) : 0;
+  const cx1 = 235;
+  const cx2 = 465;
+  const cxB = (cx1 + cx2) / 2;
+  const cy = 103;
+
+  const foodIn = r ? r.wonBack + r.organicFood : 0;
+  // Наконечник — цветная точка на конце пути: SVG-маркеры не наследуют
+  // цвет в старых Safari, а точка работает везде
+  const arrow = (path, ex, ey, color, label, x, y, anchor = 'middle') => `
+    <path class="flow" d="${path}" stroke="${color}"/>
+    <circle cx="${ex}" cy="${ey}" r="3" fill="${color}"/>
+    <text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted">${label}</text>`;
+
+  const flows = [];
+  if (r && taxiOn) {
+    if (r.crossConv > 0.5) {
+      flows.push(arrow(
+        `M ${cx1 + 20} ${cy - rFood + 6} C ${cx1 + 60} ${cy - rFood - 34}, ${cx2 - 50} ${cy - rTaxi - 34}, ${cx2 - 10} ${cy - rTaxi + 2}`,
+        cx2 - 10, cy - rTaxi + 2,
+        PALETTE[0], `${t('mapCross')} +${compact(r.crossConv)}`, (cx1 + cx2) / 2 + 10, cy - rFood - 26));
+    }
+    if (r.crossBackConv > 0.5) {
+      flows.push(arrow(
+        `M ${cx2 - 14} ${cy + rTaxi - 2} C ${cx2 - 50} ${cy + rTaxi + 30}, ${cx1 + 60} ${cy + rFood + 30}, ${cx1 + 24} ${cy + rFood - 4}`,
+        cx1 + 24, cy + rFood - 4,
+        PALETTE[0], `${t('mapCrossBack')} +${compact(r.crossBackConv)}`, (cx1 + cx2) / 2 + 10, cy + rFood + 34));
+    }
+    if (r.coldAcq > 0.5) {
+      flows.push(arrow(
+        `M 640 ${cy - 30} C 600 ${cy - 26}, ${cx2 + rTaxi + 40} ${cy - 14}, ${cx2 + rTaxi + 4} ${cy - 6}`,
+        cx2 + rTaxi + 4, cy - 6,
+        PALETTE[2], `${t('mapCold')} +${compact(r.coldAcq)}`, 640, cy - 40, 'end'));
+    }
+    if (r.lostTaxi > 0.5) {
+      flows.push(arrow(
+        `M ${cx2 + 8} ${cy + rTaxi + 2} L ${cx2 + 22} ${cy + rTaxi + 26}`,
+        cx2 + 22, cy + rTaxi + 26,
+        'var(--bad)', `−${compact(r.lostTaxi)}`, cx2 + 30, cy + rTaxi + 38));
+    }
+  }
+  if (r && foodIn > 0.5) {
+    flows.push(arrow(
+      `M 55 ${cy - 26} C 95 ${cy - 24}, ${cx1 - rFood - 36} ${cy - 12}, ${cx1 - rFood - 4} ${cy - 4}`,
+      cx1 - rFood - 4, cy - 4,
+      PALETTE[1], `${t('mapWinback')} +${compact(foodIn)}`, 57, cy - 36, 'start'));
+  }
+  if (r && r.lostFood > 0.5) {
+    flows.push(arrow(
+      `M ${cx1 - 10} ${cy + rFood + 2} L ${cx1 - 24} ${cy + rFood + 26}`,
+      cx1 - 24, cy + rFood + 26,
+      'var(--bad)', `−${compact(r.lostFood)}`, cx1 - 32, cy + rFood + 38));
+  }
+
+  // Значки состояния рынка
+  const badges = [];
+  if (r && r.warMonthsLeft > 0) {
+    badges.push(`<text x="${cx2 + rTaxi + 12}" y="${cy + 4}" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
+  }
+  if (r && r.fedMonthsLeft > 0) {
+    badges.push(`<text x="640" y="26" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
+  }
+
+  const taxiNode = taxiOn
+    ? `<g class="node" data-jump="group:taxi">
+        <circle cx="${cx2}" cy="${cy}" r="${rTaxi}" fill="rgba(244,114,182,0.14)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+        <text x="${cx2}" y="${cy - 2}" text-anchor="middle">${taxi.icon} ${t('mapTaxi')}</text>
+        <text x="${cx2}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(taxiU)}</text>
+      </g>`
+    : `<g class="node" data-jump="panel:verticals">
+        <circle cx="${cx2}" cy="${cy}" r="16" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+        <text x="${cx2}" y="${cy - 26}" text-anchor="middle" class="m-muted">${taxi.icon} ${t('mapTaxiOff')}</text>
+      </g>`;
+
+  // Узел склейки: люди в двух сервисах — цветом серии «Оба сервиса» с графика
+  const bothLabel = rBoth > 0
+    ? `<g class="node" data-jump="lever:crossSell">
+        <line x1="${cx1 + rFood - 4}" y1="${cy}" x2="${cxB - rBoth}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
+        <line x1="${cxB + rBoth}" y1="${cy}" x2="${cx2 - rTaxi + 4}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
+        <circle cx="${cxB}" cy="${cy}" r="${rBoth}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.5"/>
+        <text x="${cxB}" y="${cy - rBoth - 8}" text-anchor="middle" class="m-muted">${t('mapBoth')}</text>
+        <text x="${cxB}" y="${cy + 4}" text-anchor="middle" class="m-num" style="font-size:11px">${compact(bothU)}</text>
+      </g>`
+    : '';
+
+  box.innerHTML = `<div class="panel eco-map">
+    <h2 class="panel-title">${t('mapTitle')}</h2>
+    <svg viewBox="0 0 700 248" role="img" aria-label="${t('mapTitle')}">
+      <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
+      <g class="node" data-jump="group:food">
+        <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
+        <text x="${cx1 - 14}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapFood')}</text>
+        <text x="${cx1 - 14}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
+      </g>
+      ${taxiNode}
+      ${bothLabel}
+      ${flows.join('')}
+      ${badges.join('')}
+      <text x="350" y="240" text-anchor="middle" class="m-muted">${t('mapUnique', {
+        unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
+      })}</text>
+    </svg>
+    <div class="chart-caption">${t('mapCaption')}</div>
+  </div>`;
 }
 
 // ----------------------------------------------------------------------------
@@ -5369,6 +5685,8 @@ function renderAll() {
   renderChrome();
   syncLevers();
   renderLeverReadouts();
+  renderBudgetBar();
+  renderEcoMap();
   renderKpis();
   renderVerticals();
   renderBoard();

@@ -316,9 +316,23 @@ export const LEVERS = [
     label: { ru: 'Монетизация доставки', en: 'Delivery monetisation' },
     unit: { ru: '%', en: '%' },
     min: 80, max: 130, step: 1, def: 100, scale: 0.01,
+    // Политика, а не настройка: пять режимов вместо ползунка. Это решение
+    // уровня совета директоров — у него должны быть имена, а не проценты.
+    policy: [
+      { v: 90, label: { ru: 'Щадящая', en: 'Gentle' },
+        note: { ru: 'Комиссии ниже привычного: частота растёт, база бережётся — но вы недобираете выручку.', en: 'Fees below the norm: frequency grows and the base is preserved — but you leave revenue behind.' } },
+      { v: 100, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Монетизация как все: клиенты не замечают вас в чеке.', en: 'Monetisation like everyone else: customers do not notice you in the bill.' } },
+      { v: 105, label: { ru: 'Плотная', en: 'Firm' },
+        note: { ru: 'Чуть выше рынка: выручка растёт, отток ускоряется едва заметно.', en: 'A notch above market: revenue up, churn barely faster.' } },
+      { v: 115, label: { ru: 'Дожим', en: 'Milking' },
+        note: { ru: 'На пороге терпения: деньги сейчас, ускоренный отток — и тающий пул кросс-селла.', en: 'At the tolerance threshold: money now, faster churn — and a thinning cross-sell pool.' } },
+      { v: 128, label: { ru: 'Выжать всё', en: 'Squeeze dry' },
+        note: { ru: 'За порогом: клиенты бегут к конкуренту. Стратегия одного года, не трёх.', en: 'Past the threshold: customers flee to the competitor. A one-year strategy, not a three-year one.' } },
+    ],
     tip: {
-      ru: 'Насколько жёстко доить насыщенный актив: комиссии, сборы, реклама в приложении. Выше 100% — выручка с клиента растёт, но отток ускоряется, а за порогом ~115% клиенты уходят к конкуренту ускоренно. Дожатая корова хуже кормит и кросс-селл: уходящие уносят с собой будущих клиентов такси.',
-      en: 'How hard to milk the saturated asset: fees, commissions, in-app ads. Above 100%, revenue per customer rises but churn accelerates — and past ~115% customers flee outright. An over-milked cow also starves your cross-sell: leavers take your future taxi customers with them.',
+      ru: 'Насколько жёстко доить насыщенный актив: комиссии, сборы, реклама в приложении. Дожатая корова хуже кормит и кросс-селл: уходящие уносят с собой будущих клиентов такси.',
+      en: 'How hard to milk the saturated asset: fees, commissions, in-app ads. An over-milked cow also starves your cross-sell: leavers take your future taxi customers with them.',
     },
   },
   {
@@ -346,12 +360,24 @@ export const LEVERS = [
   {
     key: 'taxiPrice',
     group: 'taxi',
-    label: { ru: 'Тариф такси', en: 'Taxi fares' },
+    label: { ru: 'Тарифная политика такси', en: 'Taxi fare policy' },
     unit: { ru: '%', en: '%' },
     min: 85, max: 125, step: 1, def: 100, scale: 0.01,
+    policy: [
+      { v: 88, label: { ru: 'Демпинг', en: 'Dumping' },
+        note: { ru: 'Часть каждой поездки субсидируете вы: покупаете рост, сжигая маржу.', en: 'You subsidise part of every ride: buying growth by burning margin.' } },
+      { v: 95, label: { ru: 'Ниже рынка', en: 'Below market' },
+        note: { ru: 'Заметно дешевле «Таксограда»: рост быстрее, вклад с поездки тоньше.', en: 'Visibly cheaper than Taxograd: faster growth, thinner per-trip contribution.' } },
+      { v: 100, label: { ru: 'Рынок', en: 'Market' },
+        note: { ru: 'Цена как у всех: конкурируете сервисом и подачей, а не рублём.', en: 'Priced like everyone: you compete on service and pickup, not roubles.' } },
+      { v: 108, label: { ru: 'Премиум', en: 'Premium' },
+        note: { ru: 'Дороже рынка: маржа сейчас, спрос и рост — медленнее.', en: 'Above market: margin now, slower demand and growth.' } },
+      { v: 120, label: { ru: 'Снять сливки', en: 'Skim' },
+        note: { ru: 'Максимальная маржа с поездки, отток и торможение роста в подарок.', en: 'Maximum per-trip margin, with churn and stalled growth thrown in.' } },
+    ],
     tip: {
-      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «Таксоградом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
-      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the Taxograd war the market is dumped down, and a high fare hurts twice as much.',
+      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны рынок продавлен демпингом «Таксограда», и высокий тариф бьёт больнее.',
+      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the war the market is dumped down by Taxograd, and a high fare hurts twice as much.',
     },
   },
   {

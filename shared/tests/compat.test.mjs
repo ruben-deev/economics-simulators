@@ -269,6 +269,11 @@ test('синим покрашено только то, на что можно н
         if (levers.size && !levers.has(key)) bad.push(target);
       } else if (kind === 'tab') {
         if (!html.includes(`'${key}'`)) bad.push(target);
+      } else if (kind === 'group') {
+        // Переход к группе рычагов (НОВОГРАД): разметка групп строится в
+        // рантайме, поэтому проверяем объявление группы в исходнике —
+        // так же, как проверяются вкладки
+        if (!html.includes(`'${key}'`)) bad.push(target);
       } else if (!panels.includes(key ?? kind)) {
         bad.push(target);
       }

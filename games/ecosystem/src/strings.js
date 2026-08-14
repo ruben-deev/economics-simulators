@@ -91,6 +91,38 @@ export const STRINGS = {
     en: ' Burned against the channel’s capacity: {wasted}.',
   },
 
+  // --- бюджетная полоса ---
+  budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
+  budgetFood: { ru: 'еда', en: 'food' },
+  budgetTaxi: { ru: 'такси', en: 'taxi' },
+  budgetEco: { ru: 'экосистема', en: 'ecosystem' },
+  budgetNet: {
+    ru: 'Вклад прошлого месяца {contribution} → прибыль примерно <b class="{cls}">{net}</b>.',
+    en: 'Last month’s contribution {contribution} → profit roughly <b class="{cls}">{net}</b>.',
+  },
+
+  // --- карта экосистемы ---
+  mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
+  mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
+  mapFood: { ru: 'Еда', en: 'Food' },
+  mapTaxi: { ru: 'Такси', en: 'Taxi' },
+  mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
+  mapBoth: { ru: 'оба сервиса', en: 'both services' },
+  mapCross: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCold: { ru: 'маркетинг', en: 'marketing' },
+  mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
+  mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
+  mapUnique: {
+    ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, их пересечение — люди в двух сервисах.',
+    en: 'Unique holding customers: {unique} — {share} of the city. Circles are service bases; their overlap is people on both.',
+  },
+  mapCaption: {
+    ru: 'Потоки за прошлый месяц: зелёное — кросс-селл по общей базе, розовое — холодное привлечение, красное — отток. Склейка видна геометрией: чем больше пересечение, тем крепче экосистема.',
+    en: 'Last month’s flows: green is cross-sell across the shared base, pink is cold acquisition, red is churn. The glue is visible as geometry: the bigger the overlap, the stronger the ecosystem.',
+  },
+
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
   vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },

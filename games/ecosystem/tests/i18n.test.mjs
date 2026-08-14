@@ -78,11 +78,27 @@ test('рычаги и группы переведены полностью', () 
     checkBilingual(`lever ${l.key}.label`, l.label, missing);
     checkBilingual(`lever ${l.key}.tip`, l.tip, missing);
     checkBilingual(`lever ${l.key}.unit`, l.unit, missing);
+    for (const p of l.policy ?? []) {
+      checkBilingual(`lever ${l.key}.policy[${p.v}].label`, p.label, missing);
+      checkBilingual(`lever ${l.key}.policy[${p.v}].note`, p.note, missing);
+    }
   }
   for (const g of LEVER_GROUPS) {
     checkBilingual(`group ${g.id}.label`, g.label, missing);
+    checkBilingual(`group ${g.id}.desc`, g.desc, missing);
   }
   assert.deepEqual(missing, []);
+});
+
+test('режимы политик лежат в диапазоне рычага и содержат вариант по умолчанию', () => {
+  for (const l of LEVERS) {
+    if (!l.policy) continue;
+    for (const p of l.policy) {
+      assert.ok(p.v >= l.min && p.v <= l.max, `${l.key}: режим ${p.v} вне диапазона`);
+    }
+    assert.ok(l.policy.some((p) => p.v === l.def),
+      `${l.key}: среди режимов нет значения по умолчанию ${l.def}`);
+  }
 });
 
 test('события и варианты выбора переведены полностью', () => {
