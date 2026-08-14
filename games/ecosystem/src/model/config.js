@@ -126,6 +126,20 @@ export const CONFIG = {
 // компанию исходной игры до портфельного уровня: агрегаты вместо
 // микроменеджмента. Микроменеджмент остаётся в исходных играх.
 //
+// КОНТРАКТ ДЕСКРИПТОРА. Движок не знает, из какой игры пришёл актив, —
+// он читает только эти поля. Новая игра-источник (как НОВОЕДА) встраивается
+// записью здесь и ничем больше:
+//   users/arpu/margin/fixedMonthly/baseChurn/returnPool/reachableCap —
+//     агрегаты вертикали на старте;
+//   synergy[verticalId]  — во сколько раз кросс-селл в эту вертикаль дешевле
+//     эталона (курьеры, привычка платить, партнёрская сеть);
+//   launchCostMult[verticalId] — скидка на запуск вертикали, где у актива
+//     есть готовая инфраструктура (у доставки е-ком дешевле: курьеры и
+//     дарксторы уже есть);
+//   perks[] — именованные грани, которые механики будущих фаз читают по
+//     ключу (подписка, партнёрства, логистика): новая игра приносит новую
+//     грань как данные, а не как ветку в движке.
+//
 // В прототипе фазы 1 играбелен один старт — доставка. Записи от КИНОРЕКИ
 // (стриминг: дешёвая синергия с подпиской) и БИЛЕТВИЛЯ (партнёрская сеть
 // организаторов) добавятся сюда данными после одобрения прототипа.
@@ -153,6 +167,10 @@ export const START_ASSETS = [
     // дешевле эталона. У доставки лучшая синергия — е-ком (курьеры уже
     // ездят по городу), у стриминга была бы подписка, у билетов — партнёрства.
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
+    // Готовая инфраструктура удешевляет запуск родственной вертикали
+    launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
+    // Грани актива для механик будущих фаз (общая логистика еды и е-кома)
+    perks: ['courier-logistics'],
     synergyNote: {
       ru: 'Сильная сторона доставки: собственная курьерская логистика. Дешевле всего ей даётся е-ком (фаза 2) — курьеры уже ездят по городу.',
       en: 'Delivery’s edge is its own courier logistics. Its cheapest synergy is e-commerce (phase 2): the couriers already criss-cross the city.',
@@ -173,22 +191,24 @@ export const VERTICALS = [
   {
     id: 'taxi',
     icon: '🚕',
-    name: { ru: 'Такси «Новоград.Драйв»', en: 'Novograd.Drive taxi' },
+    name: { ru: 'Такси «Новоград»', en: 'Novograd taxi' },
     hint: {
-      ru: 'Самый большой смежный рынок города. Но в нём уже десять лет живёт «СитиДрайв»: часть города не отдаст никогда, а на ваш вход ответит демпингом.',
-      en: 'The city’s largest adjacent market. But CityDrive has run it for a decade: part of the city will never switch, and your entry will be answered with a price war.',
+      ru: 'Самый большой смежный рынок города. Но в нём уже десять лет живёт «Таксоград»: часть города не отдаст никогда, а на ваш вход ответит демпингом.',
+      en: 'The city’s largest adjacent market. But Taxograd has run it for a decade: part of the city will never switch, and your entry will be answered with a price war.',
     },
     potential: 430_000,      // взрослые, пользующиеся агрегаторами такси
-    incumbentName: { ru: 'СитиДрайв', en: 'CityDrive' },
+    incumbentName: { ru: 'Таксоград', en: 'Taxograd' },
     incumbentLock: 0.35,     // доля рынка, запертая у конкурента
     launchCost: 60_000_000,  // лицензии, приложение, запуск парка
     fixedMonthly: 6_000_000, // офис вертикали, колл-центр, диспетчеризация
     tripsPerUser: 6.5,       // поездок в месяц у активного клиента
     fare: 260,               // средний чек поездки, ₽
     takeRate: 0.22,          // комиссия платформы с поездки
-    // Ворота совета: диверсификацию согласуют, когда увидят, что стартовый
-    // актив управляем — квартал истории и положительный вклад еды.
-    gate: { minMonth: 5, assetContributionMonths: 3 },
+    // Ворот у такси нет: вы — победитель своего рынка, совет доверяет,
+    // и вопрос первых ходов — «что запускаем», а не «когда разрешат».
+    // Механика ворот (minMonth + прибыльность актива) остаётся в движке:
+    // вертикали следующих фаз (е-ком, подписка) выйдут за ними.
+    gate: { minMonth: 1, assetContributionMonths: 0 },
     // Ответ хозяина рынка: конечная промо-война после вашего входа
     warMonths: 9,
     warAcqCut: 0.45,         // демпинг перехватывает часть вашего притока
@@ -235,9 +255,36 @@ export const verticalById = (id) => VERTICALS.find((v) => v.id === id);
 // ============================================================================
 
 export const LEVER_GROUPS = [
-  { id: 'holding', label: { ru: 'Холдинг', en: 'Holding' }, open: true },
-  { id: 'food', label: { ru: 'Доставка еды · стартовый актив', en: 'Food delivery · starting asset' }, open: true },
-  { id: 'taxi', label: { ru: 'Такси', en: 'Taxi' }, open: true },
+  {
+    id: 'food',
+    icon: '🛵',
+    label: { ru: 'Доставка еды — дойная корова', en: 'Food delivery — the cash cow' },
+    desc: {
+      ru: 'Насыщенный стартовый актив. Здесь не растут — здесь решают, сколько доить и сколько тратить на удержание.',
+      en: 'The saturated starting asset. You do not grow here — you decide how hard to milk it and how much to spend on retention.',
+    },
+    open: true,
+  },
+  {
+    id: 'taxi',
+    icon: '🚕',
+    label: { ru: 'Такси — вторая нога', en: 'Taxi — the second leg' },
+    desc: {
+      ru: 'Растущая вертикаль: цена поездки, мощность парка и холодное привлечение. Мощность ведут за спросом.',
+      en: 'The growth vertical: fares, fleet capacity and cold acquisition. Capacity follows demand.',
+    },
+    open: true,
+  },
+  {
+    id: 'holding',
+    icon: '🏙️',
+    label: { ru: 'Экосистема — склейка', en: 'Ecosystem — the glue' },
+    desc: {
+      ru: 'То, что превращает два бизнеса в холдинг: кросс-селл по общей базе и управляющая компания против размытого фокуса.',
+      en: 'What turns two businesses into a holding: cross-sell across the shared base, and the management company against diluted focus.',
+    },
+    open: true,
+  },
 ];
 
 export const LEVERS = [
@@ -303,8 +350,8 @@ export const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 85, max: 125, step: 1, def: 100, scale: 0.01,
     tip: {
-      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «СитиДрайвом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
-      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the CityDrive war the market is dumped down, and a high fare hurts twice as much.',
+      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «Таксоградом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
+      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the Taxograd war the market is dumped down, and a high fare hurts twice as much.',
     },
   },
   {

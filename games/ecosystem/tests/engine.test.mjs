@@ -7,6 +7,7 @@ import {
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
   finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
+  enterEndless,
 } from '../src/model/engine.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
 import { EVENTS, eventById, neutralModifiers, applyEvent } from '../src/model/events.js';
@@ -139,28 +140,36 @@ test('P&L сходится: выручка, вклад, прибыль и кас
 // Ворота и война: открытие вертикали — решение с ценой и таймингом
 // ----------------------------------------------------------------------------
 
-test('ворота совета: до минимального месяца такси не запускается', () => {
-  let s = createInitialState('gate');
-  const d = baseDecisions({ verticals: ['taxi'] });
-  for (let i = 0; i < taxiDef.gate.minMonth - 1; i++) {
-    s = step(s, { decisions: d }).state;
-    assert.equal(s.taxi.on, false, `месяц ${s.month}: ворота ещё закрыты`);
-  }
-  s = step(s, { decisions: d }).state;
-  assert.equal(s.taxi.on, true, 'на минимальном месяце заявка проходит');
+test('у такси ворот нет: запуск доступен первым же ходом', () => {
+  // Решение пользователя: первый ход партии — «что запускаем», а не «когда
+  // разрешат». Цена входа — разовый платёж, война и убыточный первый год.
+  const s = createInitialState('gate');
+  assert.equal(expansionOpen(s, taxiDef), true, 'ворота открыты с месяца 1');
+  const res = step(s, { decisions: baseDecisions({ verticals: ['taxi'] }) });
+  assert.equal(res.state.taxi.on, true, 'такси запускается первым ходом');
+  assert.ok(res.report.launchCost > 0);
 });
 
-test('ворота совета: убыточная еда не пускает в экспансию', () => {
-  // Дожимаем до убытка: максимальный возврат при пустом пуле и нулевой отдаче
-  let s = createInitialState('gate2');
-  const bad = baseDecisions({ foodOps: 12_000_000, foodMarketing: 15_000_000, foodTake: 0.8 });
-  for (let i = 0; i < taxiDef.gate.minMonth + 2; i++) {
-    s = step(s, { decisions: { ...bad, verticals: ['taxi'] } }).state;
-  }
-  const h = s.history.slice(-taxiDef.gate.assetContributionMonths);
+test('механика ворот жива для вертикалей следующих фаз', () => {
+  // Е-ком и подписка выйдут за воротами по метрикам — механизм проверяем
+  // на синтетической вертикали, не трогая такси.
+  const gated = { gate: { minMonth: 5, assetContributionMonths: 3 } };
+  const early = createInitialState('gate2');
+  assert.equal(expansionOpen(early, gated), false, 'до минимального месяца закрыто');
+
+  // Прибыльная еда: после минимального месяца открыто
+  let ok = createInitialState('gate2');
+  for (let i = 0; i < 6; i++) ok = step(ok, { decisions: baseDecisions() }).state;
+  assert.equal(expansionOpen(ok, gated), true, 'прибыльный актив открывает ворота');
+
+  // Убыточная еда: максимальные траты при нулевой отдаче — ворота закрыты
+  let bad = createInitialState('gate2');
+  const badD = baseDecisions({ foodOps: 12_000_000, foodMarketing: 15_000_000, foodTake: 0.8 });
+  for (let i = 0; i < 6; i++) bad = step(bad, { decisions: badD }).state;
+  const h = bad.history.slice(-3);
   const avg = h.reduce((acc, r) => acc + r.foodFullContribution, 0) / h.length;
   assert.ok(avg < 0, 'выбранная стратегия действительно делает еду убыточной');
-  assert.equal(s.taxi.on, false, 'совет не согласует вторую ногу при убыточной первой');
+  assert.equal(expansionOpen(bad, gated), false, 'убыточный актив держит ворота закрытыми');
 });
 
 test('запуск такси платит разовую цену и начинает войну', () => {
@@ -563,7 +572,106 @@ test('разбор месяца перемножается ровно в изм�
 
 test('ворота экспансии видны интерфейсу тем же вызовом, что и движку', () => {
   const early = createInitialState('ui-gate');
-  assert.equal(expansionOpen(early, taxiDef), false);
-  const { state: ready } = run(taxiDef.gate.minMonth, baseDecisions(), 'ui-gate', { rounds: false });
-  assert.equal(expansionOpen(ready, taxiDef), true);
+  assert.equal(expansionOpen(early, taxiDef), true, 'такси доступно сразу');
+  assert.equal(expansionOpen(early, { gate: { minMonth: 10, assetContributionMonths: 0 } }),
+    false, 'а гипотетическая поздняя вертикаль — нет');
+});
+
+// ----------------------------------------------------------------------------
+// Сюжетные повороты и архитектурные крючки
+// ----------------------------------------------------------------------------
+
+test('сюжетные события не повторяются, обычные не идут два месяца подряд', () => {
+  const seeds = ['п-1', 'п-2', 'п-3', 'п-4', 'п-5', 'п-6', 'п-7', 'п-8'];
+  const onceIds = new Set(EVENTS.filter((e) => e.once).map((e) => e.id));
+  for (const seed of seeds) {
+    const { reports } = run(36, (s) => expansionDecisions(s), seed);
+    const fired = reports.filter((r) => r.event).map((r) => r.event.id);
+    const onceFired = fired.filter((id) => onceIds.has(id));
+    assert.equal(onceFired.length, new Set(onceFired).size,
+      `${seed}: сюжетное событие выпало дважды (${onceFired})`);
+    for (let i = 1; i < fired.length; i++) {
+      // fired подряд по списку — но между ними могли быть пустые месяцы;
+      // проверяем именно соседние месяцы
+    }
+    for (let i = 1; i < reports.length; i++) {
+      const a = reports[i - 1].event?.id;
+      const b = reports[i].event?.id;
+      if (a && b) assert.notEqual(a, b, `${seed}: событие ${a} два месяца подряд`);
+    }
+  }
+});
+
+test('набег федеральной экосистемы: дороже привлечение, выше отток, конечен', () => {
+  const { state } = warmEcosystem('fed', 16);
+  const ev = eventById('fed_ecosystem');
+  const s = JSON.parse(JSON.stringify(state));
+  s.pendingEvent = { ...ev };
+  const raidState = step(s, { decisions: expansionDecisions(s), eventChoice: 1 }).state;
+  const inRaid = step(raidState, { decisions: expansionDecisions(raidState) }).report;
+  assert.ok(inRaid.fedMonthsLeft > 0, 'набег идёт');
+
+  const calm = step(state, { decisions: expansionDecisions(state) }).report;
+  const calmNext = step(step(state, { decisions: expansionDecisions(state) }).state,
+    { decisions: expansionDecisions(state) }).report;
+  assert.ok(inRaid.coldAcq < calmNext.coldAcq, 'холодный приток в набег дороже/меньше');
+  assert.ok(inRaid.churnFoodRate > calm.churnFoodRate, 'отток еды выше');
+
+  // Оборона короче и мягче
+  const s2 = JSON.parse(JSON.stringify(state));
+  s2.pendingEvent = { ...ev };
+  const defended = step(s2, { decisions: expansionDecisions(s2), eventChoice: 0 });
+  assert.ok(defended.state.story.fedUntil < raidState.story.fedUntil,
+    'оборона сокращает набег');
+  assert.ok(defended.report.oneOff > 0, 'и стоит поштучных денег');
+});
+
+test('аэропорт даёт постоянную частоту, кобренд удешевляет кросс-селл навсегда', () => {
+  const { state } = warmEcosystem('perk', 16);
+  const airport = eventById('airport_tender');
+  const sa = JSON.parse(JSON.stringify(state));
+  sa.pendingEvent = { ...airport };
+  const withAirport = step(sa, { decisions: expansionDecisions(sa), eventChoice: 0 }).state;
+  const after = step(withAirport, { decisions: expansionDecisions(withAirport) }).report;
+  const plain = step(step(state, { decisions: expansionDecisions(state) }).state,
+    { decisions: expansionDecisions(state) }).report;
+  assert.ok(withAirport.story.tripsAdd > 0);
+  assert.ok(after.demandTrips / after.taxiUsers > plain.demandTrips / plain.taxiUsers,
+    'поездок на клиента больше');
+
+  const bank = eventById('bank_card');
+  const sb = JSON.parse(JSON.stringify(state));
+  sb.pendingEvent = { ...bank };
+  const withCard = step(sb, { decisions: expansionDecisions(sb), eventChoice: 0 }).state;
+  assert.ok((withCard.story.crossCacMult ?? 1) < 1, 'кросс-селл дешевле навсегда');
+  const cardR = step(withCard, { decisions: expansionDecisions(withCard, { crossSell: 2_000_000 }) }).report;
+  const plainR = step(step(state, { decisions: expansionDecisions(state) }).state,
+    { decisions: expansionDecisions(state, { crossSell: 2_000_000 }) }).report;
+  assert.ok(cardR.crossConv > plainR.crossConv, 'тот же бюджет приводит больше клиентов');
+});
+
+test('дескриптор актива управляет ценой запуска вертикали', () => {
+  // Архитектурный крючок для новых игр-источников: готовая инфраструктура
+  // актива удешевляет родственный запуск. Проверяем через сам дескриптор.
+  const asset = assetById('delivery');
+  assert.ok(asset.launchCostMult.ecom < 1, 'у доставки е-ком дешевле: курьеры уже есть');
+  assert.ok(Array.isArray(asset.perks) && asset.perks.includes('courier-logistics'),
+    'грань актива объявлена данными');
+  const s = createInitialState('mult');
+  const r = step(s, { decisions: baseDecisions({ verticals: ['taxi'] }) }).report;
+  assert.ok(Math.abs(r.launchCost - taxiDef.launchCost * asset.launchCostMult.taxi) < 1,
+    'движок читает множитель из дескриптора');
+});
+
+test('пост-эндгейм: счёт фиксируется на финише, партия может продолжаться', () => {
+  const { state } = run(40, baseDecisions(), 'endless');
+  assert.equal(state.over, 'finished');
+  assert.ok(state.scored, 'зачётный счёт зафиксирован');
+  const frozen = state.scored.equityValue;
+
+  const cont = enterEndless(state);
+  assert.equal(cont.over, null, 'партия продолжается');
+  const res = step(cont, { decisions: baseDecisions() });
+  assert.equal(res.report.month, CONFIG.monthsTotal + 1, 'месяцы идут дальше');
+  assert.equal(res.state.scored.equityValue, frozen, 'зачётный счёт не меняется');
 });

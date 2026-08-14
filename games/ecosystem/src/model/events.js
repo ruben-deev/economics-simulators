@@ -34,12 +34,30 @@ export function neutralModifiers() {
     endWar: false,           // перемирие с хозяином рынка такси
     lockAdd: 0,              // закреплённая за конкурентом доля рынка растёт
     regulationRisk: false,
+    // --- сюжетные повороты: эффекты длиной в несколько месяцев и навсегда ---
+    fedMonths: 0,            // набег федеральной экосистемы: месяцы давления
+    fedSoft: false,          // оборона выбрана: давление мягче
+    crisisMonths: 0,         // экономический спад: месяцы слабого спроса
+    crisisCut: false,        // расходы срезаны: дешевле, но исполнение страдает
+    tripsPerUserAdd: 0,      // постоянная прибавка частоты поездок (аэропорт)
+    crossCacMult: 1,         // постоянный множитель цены кросс-селла (кобренд)
+    crossReachMult: 1,       // постоянный множитель ёмкости кросс-селла (кобренд)
     notes: [],
   };
 }
 
 // needsTaxi: событие имеет смысл только при запущенном такси.
-// needsWar: только пока идёт промо-война с «СитиДрайвом».
+// needsWar: только пока идёт промо-война с «Таксоградом».
+// once: сюжетное событие, случается не больше раза за партию.
+//
+// Замечание к аудиту доминации. «Капитальные» опции (аэропорт, кобренд,
+// оборона от федеральной экосистемы) при замере политикой с автоматическими
+// раундами выигрывают почти всегда: у такой политики деньги бесплатны, и
+// любой положительный NPV доминирует по построению. Контрольный замер с
+// дорогим капиталом (раунды только на грани смерти) даёт живой выбор:
+// оборона 75/25, аэропорт 67/33, утечка 40/60 — с зазорами в десятки
+// процентов. Это и есть смысл этих событий: капитальное решение зависит от
+// стоимости капитала, а не от таблички «правильных ответов».
 export const EVENTS = [
   {
     id: 'fuel', weight: 6, minMonth: 3, needsTaxi: true,
@@ -144,12 +162,12 @@ export const EVENTS = [
       {
         // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
         // побеждало в 100% состояний — при дешёвом извинении это викторина.
-        label: { ru: 'Признать и компенсировать (250 ₽ на клиента базы)', en: 'Own it and compensate (₽250 per customer)' },
+        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate (₽380 per customer)' },
         detail: {
-          ru: 'Плюс 15 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'Plus ₽15M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          ru: 'Плюс 20 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
+          en: 'Plus ₽20M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
-        effects: { oneOffCostPerUniqueUser: 250, oneOffCost: 15_000_000 },
+        effects: { oneOffCostPerUniqueUser: 380, oneOffCost: 20_000_000 },
       },
       {
         label: { ru: 'Замять', en: 'Bury it' },
@@ -157,13 +175,13 @@ export const EVENTS = [
           ru: 'Бесплатно сегодня. Доверие к единому аккаунту падает: кросс-селл работает вполсилы несколько месяцев, отток выше.',
           en: 'Free today. Trust in the single account drops: cross-sell runs at half power for months, churn ticks up.',
         },
-        effects: { trustMonths: 4, foodChurnAdd: 0.012, taxiChurnAdd: 0.012 },
+        effects: { trustMonths: 2, foodChurnAdd: 0.005, taxiChurnAdd: 0.005 },
       },
     ],
   },
   {
     id: 'truce_offer', weight: 8, minMonth: 6, needsWar: true,
-    title: { ru: '«СитиДрайв» предлагает перемирие', en: 'CityDrive offers a truce' },
+    title: { ru: '«Таксоград» предлагает перемирие', en: 'Taxograd offers a truce' },
     text: {
       ru: 'Хозяин рынка такси устал жечь деньги и предлагает разойтись: он прекращает демпинг, вы не трогаете его корпоративных клиентов и аэропорт.',
       en: 'The incumbent is tired of burning money and offers a deal: they stop dumping, you stay away from their corporate accounts and the airport.',
@@ -257,6 +275,171 @@ export const EVENTS = [
       },
     ],
   },
+
+  // --- Сюжетные повороты: случаются раз за партию и меняют рельеф игры ---
+  {
+    id: 'fed_ecosystem', weight: 9, minMonth: 14, once: true,
+    title: { ru: 'Федеральная экосистема выходит в Новоград', en: 'A national ecosystem enters Novograd' },
+    text: {
+      ru: 'Столичный гигант открыл в городе и еду, и такси разом — с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
+      en: 'A national giant has opened both food and taxi in the city at once — with a subscription and ads on every corner. Your home market is no longer only yours.',
+    },
+    lesson: {
+      ru: 'Экосистемы конкурируют с экосистемами. Защита — не цена, а склейка: клиента двух ваших сервисов переманить вдвое сложнее.',
+      en: 'Ecosystems compete with ecosystems. The defence is not price but glue: a customer on two of your services is twice as hard to poach.',
+    },
+    options: [
+      {
+        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign (₽340 per customer)' },
+        detail: {
+          ru: 'Дорого по всей базе, но набег выдыхается вдвое быстрее и бьёт заметно слабее.',
+          en: 'Expensive across the whole base, but the raid runs out of steam twice as fast and hits far softer.',
+        },
+        effects: { oneOffCostPerUniqueUser: 340, fedMonths: 4, fedSoft: true },
+      },
+      {
+        label: { ru: 'Пережить набег', en: 'Ride out the raid' },
+        detail: {
+          ru: 'Бесплатно сейчас, но шесть месяцев дорогого привлечения и повышенного оттока в обеих вертикалях.',
+          en: 'Free today — but six months of dear acquisition and higher churn in both verticals.',
+        },
+        effects: { fedMonths: 6 },
+      },
+    ],
+  },
+  {
+    id: 'econ_crisis', weight: 7, minMonth: 16, once: true,
+    title: { ru: 'Экономический спад', en: 'An economic downturn' },
+    text: {
+      ru: 'Реальные доходы горожан просели: заказывают реже, ездят экономнее. Рынок сжался на несколько месяцев — у всех.',
+      en: 'Real incomes have sagged: people order less and ride cheaper. The market has shrunk for months — for everyone.',
+    },
+    lesson: {
+      ru: 'Спад — проверка структуры расходов: переменные сжимаются сами, постоянные приходится резать руками — и у среза есть цена.',
+      en: 'A downturn stress-tests your cost structure: variable costs shrink on their own, fixed ones must be cut by hand — and cuts have a price.',
+    },
+    options: [
+      {
+        label: { ru: 'Срезать постоянные расходы', en: 'Cut fixed costs' },
+        detail: {
+          ru: 'Фиксы обеих вертикалей на время спада минус 25%, но исполнение страдает — отток выше.',
+          en: 'Both verticals’ fixed costs drop 25% for the downturn, but execution suffers — churn rises.',
+        },
+        effects: { crisisMonths: 4, crisisCut: true },
+      },
+      {
+        label: { ru: 'Держать сервис', en: 'Hold service levels' },
+        detail: {
+          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой.',
+          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive.',
+        },
+        effects: { crisisMonths: 4 },
+      },
+    ],
+  },
+  {
+    id: 'driver_poach', weight: 6, minMonth: 8, once: true, needsTaxi: true,
+    title: { ru: '«Таксоград» переманивает водителей', en: 'Taxograd poaches your drivers' },
+    text: {
+      ru: 'Конкурент объявил бонус за переход: гарантированный доход первый месяц. Ваши водители читают эту рекламу прямо сейчас.',
+      en: 'The incumbent announced a switching bonus: guaranteed income for the first month. Your drivers are reading that ad right now.',
+    },
+    lesson: {
+      ru: 'Предложение труда мобильнее спроса: водитель меняет приложение за вечер, а вы парк за вечер не восстановите.',
+      en: 'Labour supply moves faster than demand: a driver switches apps in an evening; you cannot rebuild a fleet in one.',
+    },
+    options: [
+      {
+        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus (₽4,000 per driver)' },
+        detail: {
+          ru: 'Цена по сегодняшнему парку. Водители остаются, и приток даже растёт.',
+          en: 'Priced by today’s fleet. Drivers stay, and applications even pick up.',
+        },
+        effects: { oneOffCostPerDriver: 4_000, driverChurnAdd: -0.02, driverSupplyMult: 1.15 },
+      },
+      {
+        label: { ru: 'Не ввязываться', en: 'Sit it out' },
+        detail: {
+          ru: 'Бесплатно, но часть парка уедет к конкуренту, и подача просядет.',
+          en: 'Free — but part of the fleet drives off, and pickups sag.',
+        },
+        effects: { driverChurnAdd: 0.12, taxiCapacityMult: 0.95 },
+      },
+    ],
+  },
+  {
+    id: 'airport_tender', weight: 6, minMonth: 12, once: true, needsTaxi: true,
+    title: { ru: 'Тендер на аэропорт', en: 'The airport tender' },
+    text: {
+      ru: 'Аэропорт выбирает официального перевозчика на выделенных стоянках. Дорогой контракт — и постоянный поток дальних поездок.',
+      en: 'The airport is choosing an official operator for its dedicated ranks. A dear contract — and a permanent stream of long rides.',
+    },
+    lesson: {
+      ru: 'Инфраструктурные контракты покупают частоту навсегда, но платятся вперёд — это капитальное решение, а не операционное.',
+      en: 'Infrastructure contracts buy frequency forever but are paid up front — a capital decision, not an operating one.',
+    },
+    options: [
+      {
+        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender (₽110M)' },
+        detail: {
+          ru: 'Разово дорого, зато каждый клиент такси ездит чаще — до конца партии.',
+          en: 'A steep one-off — but every taxi customer rides more often, for the rest of the game.',
+        },
+        effects: { oneOffCost: 110_000_000, tripsPerUserAdd: 0.35 },
+      },
+      {
+        label: { ru: 'Уступить', en: 'Pass' },
+        detail: {
+          ru: 'Аэропорт достаётся «Таксограду» — его позиции в городе чуть крепче.',
+          en: 'The airport goes to Taxograd — its grip on the city tightens a little.',
+        },
+        effects: { lockAdd: 0.02 },
+      },
+    ],
+  },
+  {
+    id: 'bank_card', weight: 5, minMonth: 10, once: true,
+    title: { ru: 'Банк предлагает кобрендовую карту', en: 'A bank proposes a co-branded card' },
+    text: {
+      ru: 'Крупный банк хочет карту с кешбэком на ваши сервисы. Единый счёт клиента — это дешёвый кросс-селл и первый шаг к финтеху.',
+      en: 'A major bank wants a card with cashback on your services. A single customer account means cheap cross-sell — and a first step into fintech.',
+    },
+    lesson: {
+      ru: 'Платёжная привычка — самая крепкая склейка экосистемы: тот, кто платит вашей картой, уже наполовину подписчик.',
+      en: 'A payment habit is the strongest ecosystem glue: whoever pays with your card is already half a subscriber.',
+    },
+    options: [
+      {
+        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card (₽25M)' },
+        detail: {
+          ru: 'Интеграция и маркетинг запуска. Кросс-селл дешевеет на 10%, а круг готовых попробовать второй сервис немного расширяется — до конца партии.',
+          en: 'Integration and launch marketing. Cross-sell gets 10% cheaper and the circle willing to try a second service grows a little — for the rest of the game.',
+        },
+        effects: { oneOffCost: 25_000_000, crossCacMult: 0.9, crossReachMult: 1.12 },
+      },
+      {
+        label: { ru: 'Отказаться', en: 'Decline' },
+        detail: {
+          ru: 'Без обязательств: банк уйдёт к другому партнёру.',
+          en: 'No strings attached: the bank will find another partner.',
+        },
+        effects: {},
+      },
+    ],
+  },
+  {
+    id: 'taxi_outage', weight: 5, minMonth: 6, needsTaxi: true,
+    title: { ru: 'Сбой в приложении такси', en: 'Taxi app outage' },
+    text: {
+      ru: 'Диспетчеризация лежала вечер пятницы — самые дорогие часы недели. Заказы уходили к конкуренту.',
+      en: 'Dispatch was down on Friday evening — the dearest hours of the week. Orders went to the incumbent.',
+    },
+    effects: { taxiDemandMult: 0.88, taxiChurnAdd: 0.012, oneOffCost: 4_000_000 },
+    lesson: {
+      ru: 'Технический долг — тоже строка P&L, просто отложенная.',
+      en: 'Technical debt is a P&L line too — just a deferred one.',
+    },
+  },
 ];
 
 // Штраф прилетает только тем, кто решил дождаться закона
@@ -279,15 +462,21 @@ export function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
-// Выбирает событие месяца (или null). Вероятность события ~40%.
-// ctx: { taxiOn, atWar } — событиям нужен контекст холдинга.
+// Выбирает событие месяца (или null). Вероятность события ~45%.
+// ctx: { taxiOn, atWar, seen, lastId } — контекст холдинга и история событий:
+// сюжетные события (once) не повторяются, обычные не идут два месяца подряд.
 export function rollEvent(rng, month, flags = {}, ctx = {}) {
   if (month < 2) return null;
-  if (rng() > 0.4) return null;
+  if (rng() > 0.45) return null;
+  const seen = new Set(ctx.seen ?? []);
   const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0)
     && (!e.needsTaxi || ctx.taxiOn)
-    && (!e.needsWar || ctx.atWar));
-  if (flags.regulationRisk && ctx.taxiOn) pool.push(REGULATION_FINE);
+    && (!e.needsWar || ctx.atWar)
+    && !(e.once && seen.has(e.id))
+    && e.id !== ctx.lastId);
+  if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {
+    pool.push(REGULATION_FINE);
+  }
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
@@ -300,7 +489,7 @@ export function applyEvent(mods, event, optionIndex) {
     Object.assign(effects, event.options[optionIndex].effects);
   }
   const multiplicative = new Set(['foodDemandMult', 'taxiDemandMult', 'taxiCapacityMult',
-    'driverSupplyMult', 'crossSellMult']);
+    'driverSupplyMult', 'crossSellMult', 'crossCacMult', 'crossReachMult']);
   for (const [key, value] of Object.entries(effects)) {
     if (multiplicative.has(key)) {
       mods[key] *= value;

@@ -11,7 +11,7 @@ import {
 import { eventById } from '../model/events.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
-  fundingOffer, raise, finalScore, expansionOpen, uniqueUsers,
+  fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty,
 } from '../model/engine.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
@@ -179,8 +179,11 @@ function renderKpis() {
 }
 
 // ----------------------------------------------------------------------------
-// Рычаги: три группы, такси открывается вместе с вертикалью
+// Рычаги: три складных блока (как в БИЛЕТВИЛЕ) с описанием группы и живой
+// сводкой — по ней видно, что механика группы делает прямо сейчас.
 // ----------------------------------------------------------------------------
+const openGroups = { food: true, taxi: true, holding: true };
+
 function leverHtml(l) {
   return `
     <div class="lever" data-key="${l.key}">
@@ -198,17 +201,19 @@ function buildLevers() {
   const taxiOn = state.taxi.on;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     const levers = LEVERS.filter((l) => l.group === g.id);
-    if (g.id === 'taxi' && !taxiOn) {
-      return `<div class="lever-group">
-        <div class="district-head"><span class="district-name">${tx(g.label)}</span>
-          <span class="badge">🔒</span></div>
-        <div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
-          <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>
-      </div>`;
-    }
-    return `<div class="lever-group">
-      <div class="district-head"><span class="district-name">${tx(g.label)}</span></div>
-      ${levers.map(leverHtml).join('')}
+    const locked = g.id === 'taxi' && !taxiOn;
+    const body = locked
+      ? `<div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
+          <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>`
+      : `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>
+        <div id="readout-${g.id}"></div>
+        ${levers.map(leverHtml).join('')}`;
+    return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
+      <button class="lever-group-head" type="button">
+        <span class="lg-caret">▾</span><span>${g.icon} ${tx(g.label)}</span>
+        <span class="lg-count">${locked ? '🔒' : levers.length}</span>
+      </button>
+      <div class="lever-group-body">${body}</div>
     </div>`;
   }).join('');
 
@@ -218,15 +223,91 @@ function buildLevers() {
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
+      renderLeverReadouts();
       renderRightTab();
       save();
     });
   }
+  el('levers').querySelectorAll('.lever-group-head').forEach((head) => {
+    head.addEventListener('click', () => {
+      const box = head.closest('.lever-group');
+      const id = box.dataset.group;
+      openGroups[id] = !openGroups[id];
+      box.classList.toggle('open', openGroups[id]);
+    });
+  });
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
   leversBuiltTaxiOn = taxiOn;
+}
+
+// Живые сводки групп: что механика делает при текущих ползунках.
+// Считаются от последнего отчёта — тех же чисел, что видит игрок в центре.
+function renderLeverReadouts() {
+  const r = last();
+  const asset = assetById(state.assetId);
+  const d = state.decisions;
+
+  const foodBox = el('readout-food');
+  if (foodBox) {
+    const lost = r ? r.lostFood : asset.users * asset.baseChurn;
+    const gained = r ? r.wonBack + r.organicFood + r.crossBackConv : 0;
+    const pool = r ? r.returnPool : asset.returnPool;
+    const balanceCls = gained >= lost ? 'pos' : 'neg';
+    const takeWarn = (d.foodTake ?? 1) > CONFIG.foodTakeThreshold
+      ? `<div class="neg">${t('readoutFoodExodus')}</div>` : '';
+    foodBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutFood', {
+        lost: compact(lost), gained: compact(gained), cls: balanceCls,
+      })}</div>
+      <div>${t('readoutFoodPool', { pool: compact(pool) })}</div>
+      ${takeWarn}
+    </div>`;
+  }
+
+  const taxiBox = el('readout-taxi');
+  if (taxiBox && state.taxi.on) {
+    const capacity = state.taxi.drivers * CONFIG.taxiTripsPerDriver;
+    const demand = r ? r.demandTrips : 0;
+    const hires = (d.taxiSupply ?? 0) / CONFIG.taxiDriverOnboardCost;
+    const war = r && r.warMonthsLeft > 0
+      ? `<div class="neg">${t('readoutTaxiWar', { months: r.warMonthsLeft })}</div>` : '';
+    taxiBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTaxi', {
+        drivers: num(state.taxi.drivers), capacity: compact(capacity),
+        hires: num(hires, 0),
+      })}</div>
+      ${demand > 0 ? `<div>${t('readoutTaxiDemand', {
+        demand: compact(demand),
+        util: pct(capacity > 0 ? Math.min(demand / capacity, 3) : 0, 0),
+        cls: demand > capacity ? 'neg' : (demand < capacity * 0.55 ? 'neg' : 'pos'),
+      })}</div>` : ''}
+      ${war}
+    </div>`;
+  }
+
+  const holdBox = el('readout-holding');
+  if (holdBox) {
+    const penalty = focusPenalty(state, d);
+    const focusLine = state.taxi.on
+      ? t('readoutFocus', {
+          penalty: pct(penalty, 0),
+          cls: penalty > 0.05 ? 'neg' : 'pos',
+        })
+      : t('readoutFocusSingle');
+    const crossLine = r && state.taxi.on && (d.crossSell ?? 0) > 0
+      ? `<div>${t('readoutCross', {
+          conv: compact(r.crossConv + r.crossBackConv),
+          wasted: r.crossWasted > 0 ? t('readoutCrossWasted', { wasted: money(r.crossWasted) }) : '',
+        })}</div>`
+      : '';
+    holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${focusLine}</div>
+      ${crossLine}
+    </div>`;
+  }
 }
 
 function leverDisplay(l, raw) {
@@ -471,6 +552,13 @@ function buildAlerts(r) {
   if (r.atWar && r.warMonthsLeft > 0) {
     alerts.push(['warn', t('alertWar', { months: r.warMonthsLeft }), 'panel:verticals']);
   }
+  if (r.fedMonthsLeft > 0) {
+    alerts.push(['warn', t('alertFed', { months: r.fedMonthsLeft })]);
+  }
+  if (r.crisisMonthsLeft > 0) {
+    alerts.push(['warn', t(r.crisisCut ? 'alertCrisisCut' : 'alertCrisis', {
+      months: r.crisisMonthsLeft })]);
+  }
   if (state.taxi.on && r.fill < 0.9 && r.demandTrips > 0) {
     alerts.push(['bad', t('alertNoDrivers', { fill: pct(r.fill, 0) }), 'lever:taxiSupply']);
   } else if (state.taxi.on && r.utilDrivers > 0 && r.utilDrivers < 0.45 && r.drivers > 300) {
@@ -505,19 +593,25 @@ function buildAlerts(r) {
   return alerts;
 }
 
+// Экран месяца 0: первый настоящий ход — «куда идти дальше».
+// Три развилки с ценой каждой, а не список настроек.
 function renderStartHint() {
   const taxi = verticalById('taxi');
+  const fork = (title, body, jump) => `<div class="hint-box" style="margin-top:8px">
+    <b>${title}</b> ${body} <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>
+  </div>`;
   return `<div class="panel">
     <h3 style="margin:0 0 8px">${t('reportMonth0')}</h3>
-    <div class="hint-box">
+    <div class="funding-note">
       <b>${t('reportStartTitle')}</b> ${t('reportStartIntro', { cash: money(CONFIG.startCash) })}
-      <ol style="margin:6px 0 0 16px;padding:0">
-        <li>${t('reportStart1')} <a class="jump" data-jump="tab:pnl">${t('jumpGo')}</a></li>
-        <li>${t('reportStart2', { month: taxi.gate.minMonth })} <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></li>
-        <li>${t('reportStart3')} <a class="jump" data-jump="tab:base">${t('jumpGo')}</a></li>
-        <li>${t('reportStart4')} <a class="jump" data-jump="panel:board">${t('jumpGo')}</a></li>
-      </ol>
     </div>
+    ${fork(t('forkLaunchTitle'), t('forkLaunchBody', {
+      cost: money(taxi.launchCost), war: taxi.warMonths,
+    }), 'panel:verticals')}
+    ${fork(t('forkSaveTitle'), t('forkSaveBody'), 'panel:funding')}
+    ${fork(t('forkMilkTitle'), t('forkMilkBody'), 'lever:foodTake')}
+    <div class="funding-note" style="margin-top:8px">${t('forkFooter')}
+      <a class="jump" data-jump="tab:base">${t('jumpGo')}</a></div>
   </div>`;
 }
 
@@ -648,6 +742,11 @@ function buildNews(r) {
   else if (r && r.taxiOn && prev()?.warMonthsLeft > 0 && r.warMonthsLeft === 0) {
     news.push(['good', t('newsWarOver')]);
   }
+  if (r && r.fedMonthsLeft > 0) news.push(['warn', t('newsFed', { months: r.fedMonthsLeft })]);
+  if (r && prev()?.fedMonthsLeft > 0 && r.fedMonthsLeft === 0) news.push(['good', t('newsFedOver')]);
+  if (r && r.crisisMonthsLeft > 0) news.push(['warn', t('newsCrisis', { months: r.crisisMonthsLeft })]);
+  if (r && prev()?.crisisMonthsLeft > 0 && r.crisisMonthsLeft === 0) news.push(['good', t('newsCrisisOver')]);
+  if (r && r.tripsAdd > 0 && prev() && !(prev().tripsAdd > 0)) news.push(['good', t('newsAirport')]);
 
   if (r) {
     const came = r.wonBack + r.organicFood + r.coldAcq + r.crossConv + r.crossBackConv;
@@ -1049,7 +1148,9 @@ function recordsBlockHtml(s) {
 }
 
 function showGameOver() {
-  const s = finalScore(state);
+  // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
+  // (следующие фазы) сможет продолжать партию, не трогая результат
+  const s = state.scored ?? finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
     : s.equityValue > 5e9 ? t('gradeExcellent')
@@ -1229,6 +1330,7 @@ function renderAll() {
   if (!leversBuilt || leversBuiltTaxiOn !== state.taxi.on) buildLevers();
   renderChrome();
   syncLevers();
+  renderLeverReadouts();
   renderKpis();
   renderVerticals();
   renderBoard();

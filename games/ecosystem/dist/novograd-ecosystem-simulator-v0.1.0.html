@@ -1019,6 +1019,48 @@ const STRINGS = {
     en: 'Taxi levers appear once the vertical is launched — see the Taxi card in the Verticals panel.',
   },
 
+  // --- живые сводки групп рычагов ---
+  readoutFood: {
+    ru: 'Отток ~<b>{lost}</b> клиентов/мес, приток (возврат + органика + кросс-селл) ~<b class="{cls}">{gained}</b>.',
+    en: 'Churn ~<b>{lost}</b> customers/mo; inflow (win-back + organic + cross-sell) ~<b class="{cls}">{gained}</b>.',
+  },
+  readoutFoodPool: {
+    ru: 'Пул возврата: {pool} недавно ушедших — только их и можно вернуть маркетингом.',
+    en: 'Win-back pool: {pool} recent leavers — marketing can bring back only them.',
+  },
+  readoutFoodExodus: {
+    ru: 'Монетизация за порогом: клиенты уходят к конкуренту ускоренно.',
+    en: 'Monetisation past the threshold: customers are fleeing to the competitor.',
+  },
+  readoutTaxi: {
+    ru: 'Парк: <b>{drivers}</b> водителей → мощность <b>{capacity}</b> поездок/мес; бюджет доведёт ~{hires} новых водителей.',
+    en: 'Fleet: <b>{drivers}</b> drivers → capacity <b>{capacity}</b> trips/mo; the budget onboards ~{hires} new drivers.',
+  },
+  readoutTaxiDemand: {
+    ru: 'Спрос прошлого месяца: {demand} поездок → загрузка парка <b class="{cls}">{util}</b>.',
+    en: 'Last month’s demand: {demand} trips → fleet utilisation <b class="{cls}">{util}</b>.',
+  },
+  readoutTaxiWar: {
+    ru: 'Идёт война с «Таксоградом»: приток урезан, цены продавлены (ещё {months} мес.).',
+    en: 'The Taxograd war is on: intake cut, fares pushed down ({months} months left).',
+  },
+  readoutFocus: {
+    ru: 'Штраф фокуса к исполнению всех вертикалей: <b class="{cls}">−{penalty}</b>.',
+    en: 'Focus penalty on every vertical’s execution: <b class="{cls}">−{penalty}</b>.',
+  },
+  readoutFocusSingle: {
+    ru: 'Пока вертикаль одна, фокус не размыт — управляющая компания почти не нужна.',
+    en: 'With a single vertical focus is undiluted — you barely need the management company.',
+  },
+  readoutCross: {
+    ru: 'Кросс-селл в прошлом месяце привёл <b>{conv}</b> клиентов.{wasted}',
+    en: 'Cross-sell brought <b>{conv}</b> customers last month.{wasted}',
+  },
+  readoutCrossWasted: {
+    ru: ' Сгорело о ёмкость канала: {wasted}.',
+    en: ' Burned against the channel’s capacity: {wasted}.',
+  },
+
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
   vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },
@@ -1096,24 +1138,27 @@ const STRINGS = {
   reportMonth0: { ru: 'Месяц 0 · перед первым ходом', en: 'Month 0 · before the first move' },
   reportStartTitle: { ru: 'Вы выиграли прошлую игру.', en: 'You won the previous game.' },
   reportStartIntro: {
-    ru: 'Доставка еды победила: рынок Новограда насыщен, расти числом клиентов больше некуда. В казне {cash}. Совет ждёт экосистему. План на первые ходы:',
-    en: 'Food delivery has won: Novograd’s market is saturated and there is no one left to acquire. The treasury holds {cash}. The board expects an ecosystem. A plan for the first moves:',
+    ru: 'Доставка еды победила: рынок Новограда насыщен, расти числом клиентов больше некуда. В казне {cash}, совет ждёт экосистему. Первый настоящий ход — куда идти дальше, и у каждого пути своя цена:',
+    en: 'Food delivery has won: Novograd’s market is saturated and there is no one left to acquire. The treasury holds {cash}, and the board expects an ecosystem. The first real move is choosing where to go next — and every path has its price:',
   },
-  reportStart1: {
-    ru: 'Посмотрите на стартовый актив: сколько он приносит и как быстро тает база (вкладка «P&L» и панель «Вертикали»).',
-    en: 'Look at your starting asset: what it earns and how fast the base is thinning (the P&L tab and the Verticals panel).',
+  forkLaunchTitle: { ru: 'Запустить такси сразу.', en: 'Launch taxi right away.' },
+  forkLaunchBody: {
+    ru: 'Разово {cost}, «Таксоград» ответит {war} месяцами демпинга, и первый год вертикаль будет убыточной. Зато время работает на вас: каждый месяц роста компаундится до конца партии.',
+    en: 'A one-off {cost}; Taxograd answers with {war} months of dumping, and the vertical loses money in year one. But time works for you: every month of growth compounds to the end of the game.',
   },
-  reportStart2: {
-    ru: 'Решите главный вопрос партии: когда открывать такси. Ворота совета — с месяца {month}, и «СитиДрайв» ответит войной.',
-    en: 'Settle the game’s main question: when to open the taxi vertical. The board gate opens at month {month}, and CityDrive will answer with a war.',
+  forkSaveTitle: { ru: 'Подкопить и зайти позже.', en: 'Save up and enter later.' },
+  forkSaveBody: {
+    ru: 'Меньше риска банкротства и раунды по лучшей оценке — но каждый месяц ожидания это минус месяцы роста такси, а совет к концу года ждёт вторую ногу.',
+    en: 'Less bankruptcy risk and rounds at a better valuation — but every month of waiting costs taxi growth, and the board expects a second leg by year end.',
   },
-  reportStart3: {
-    ru: 'После запуска сравнивайте два канала роста такси: холодный маркетинг и кросс-селл из базы еды (вкладка «База»).',
-    en: 'After launch, compare taxi’s two growth channels: cold marketing and cross-sell from the food base (the Base tab).',
+  forkMilkTitle: { ru: 'Дожимать корову.', en: 'Milk the cow.' },
+  forkMilkBody: {
+    ru: 'Поднять монетизацию еды: деньги сейчас без чужих раундов. Цена — ускоренный отток базы, а это ещё и пул кросс-селла будущего такси.',
+    en: 'Raise food monetisation: money now without outside rounds. The price is faster base churn — and that base is your future taxi’s cross-sell pool.',
   },
-  reportStart4: {
-    ru: 'Следите за ARPU холдинга в шапке: после насыщения растёт не число клиентов, а выручка с каждого.',
-    en: 'Watch holding ARPU in the header: after saturation it is revenue per customer that grows, not the customer count.',
+  forkFooter: {
+    ru: 'Общая база клиентов — главный ресурс всех трёх путей: посмотрите её состав во вкладке «База» и следите за ARPU холдинга в шапке.',
+    en: 'The shared customer base is the key resource of all three paths: see its make-up in the Base tab and watch holding ARPU in the header.',
   },
   reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
   reportHeadStats: {
@@ -1145,8 +1190,8 @@ const STRINGS = {
   statFocusOk: { ru: 'исполнение не размыто', en: 'execution undiluted' },
 
   launchNote: {
-    ru: 'Запущено такси: разовый платёж {cost}. «СитиДрайв» объявил войну — {months} месяцев демпинга.',
-    en: 'Taxi launched: one-off cost {cost}. CityDrive declared war — {months} months of dumping.',
+    ru: 'Запущено такси: разовый платёж {cost}. «Таксоград» объявил войну — {months} месяцев демпинга.',
+    en: 'Taxi launched: one-off cost {cost}. Taxograd declared war — {months} months of dumping.',
   },
   closeNote: {
     ru: 'Вертикаль такси закрыта: клиенты и парк распущены, фикс больше не платится.',
@@ -1168,8 +1213,8 @@ const STRINGS = {
     en: 'The board expects a second leg: the year-one goal is {target} taxi customers, and the vertical is not launched yet.',
   },
   alertWar: {
-    ru: 'Война со «СитиДрайвом»: приток такси урезан и цены продавлены ещё {months} мес. Это конечно — но каждый месяц войны стоит денег.',
-    en: 'The CityDrive war: taxi intake is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
+    ru: 'Война с «Таксоградом»: приток такси урезан и цены продавлены ещё {months} мес. Это конечно — но каждый месяц войны стоит денег.',
+    en: 'The Taxograd war: taxi intake is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
   },
   alertNoDrivers: {
     ru: 'Водителей не хватает: подача выполняется на {fill}, клиенты уходят из-за долгого ожидания.',
@@ -1208,6 +1253,18 @@ const STRINGS = {
     en: 'Cash covers roughly {months} months at the current burn (−{burn}/mo). Raise before the money runs out, not after.',
   },
   alertProfit: { ru: 'Холдинг прибыален: +{value} за месяц.', en: 'The holding is profitable: +{value} this month.' },
+  alertFed: {
+    ru: 'Набег федеральной экосистемы: привлечение дороже, отток выше ещё {months} мес. Лучшая защита — клиенты двух сервисов: их переманить сложнее.',
+    en: 'The national ecosystem’s raid: dearer acquisition and higher churn for {months} more months. The best defence is two-service customers — they are harder to poach.',
+  },
+  alertCrisis: {
+    ru: 'Экономический спад: рынок сжат ещё {months} мес. Переменные расходы сжимаются сами — следите за постоянными.',
+    en: 'The downturn: the market stays shrunk for {months} more months. Variable costs shrink on their own — watch the fixed ones.',
+  },
+  alertCrisisCut: {
+    ru: 'Спад ещё {months} мес.: фиксы срезаны на 25%, но исполнение страдает — отток выше обычного.',
+    en: 'The downturn runs {months} more months: fixed costs are cut 25%, but execution suffers — churn is above normal.',
+  },
   jumpGo: { ru: 'показать →', en: 'show →' },
 
   // --- новости ---
@@ -1217,8 +1274,8 @@ const STRINGS = {
     ru: 'Совет готов согласовать запуск такси: стартовый актив прибыльный, ворота открыты.',
     en: 'The board is ready to approve the taxi launch: the starting asset is profitable, the gate is open.',
   },
-  newsWarStarted: { ru: '«СитиДрайв» начал войну: демпинг и перехват вашей рекламы.', en: 'CityDrive opened the war: dumping and intercepting your ads.' },
-  newsWarLeft: { ru: 'Война со «СитиДрайвом»: ещё {months} мес. демпинга.', en: 'The CityDrive war: {months} more months of dumping.' },
+  newsWarStarted: { ru: '«Таксоград» начал войну: демпинг и перехват вашей рекламы.', en: 'Taxograd opened the war: dumping and intercepting your ads.' },
+  newsWarLeft: { ru: 'Война с «Таксоградом»: ещё {months} мес. демпинга.', en: 'The Taxograd war: {months} more months of dumping.' },
   newsWarOver: { ru: 'Война закончилась: рынок такси вернулся к нормальным ценам.', en: 'The war is over: the taxi market is back to normal fares.' },
   newsCustomers: { ru: 'Клиенты холдинга: +{came} / −{left} — {verdict}', en: 'Holding customers: +{came} / −{left} — {verdict}' },
   newsCustomersGood: { ru: 'база растёт', en: 'the base is growing' },
@@ -1231,6 +1288,26 @@ const STRINGS = {
   newsGoalTight: {
     ru: 'До отчёта совету {months} мес., цель года пока не выполнена.',
     en: '{months} months to the board review, and the year’s goal is not met yet.',
+  },
+  newsFed: {
+    ru: 'Федеральная экосистема давит на город: ещё {months} мес. дорогого привлечения.',
+    en: 'The national ecosystem is pressing the city: {months} more months of dear acquisition.',
+  },
+  newsFedOver: {
+    ru: 'Набег федеральной экосистемы выдохся: рынок привлечения вернулся к норме.',
+    en: 'The national ecosystem’s raid has run out of steam: acquisition is back to normal.',
+  },
+  newsCrisis: {
+    ru: 'Экономический спад: горожане экономят ещё {months} мес.',
+    en: 'The downturn: the city keeps saving for {months} more months.',
+  },
+  newsCrisisOver: {
+    ru: 'Спад закончился: спрос вернулся к обычному уровню.',
+    en: 'The downturn is over: demand is back to its usual level.',
+  },
+  newsAirport: {
+    ru: 'Аэропорт ваш: официальные стоянки дают постоянный поток дальних поездок.',
+    en: 'The airport is yours: official ranks feed a permanent stream of long rides.',
   },
 
   // --- графики ---
@@ -1384,8 +1461,8 @@ const STRINGS = {
   },
   helpWarTitle: { ru: 'Война за рынок', en: 'The market war' },
   helpWarText: {
-    ru: 'В такси уже десять лет живёт «СитиДрайв». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
-    en: 'CityDrive has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
+    ru: 'В такси уже десять лет живёт «Таксоград». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
+    en: 'Taxograd has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -2083,6 +2160,20 @@ const CONFIG = {
 // компанию исходной игры до портфельного уровня: агрегаты вместо
 // микроменеджмента. Микроменеджмент остаётся в исходных играх.
 //
+// КОНТРАКТ ДЕСКРИПТОРА. Движок не знает, из какой игры пришёл актив, —
+// он читает только эти поля. Новая игра-источник (как НОВОЕДА) встраивается
+// записью здесь и ничем больше:
+//   users/arpu/margin/fixedMonthly/baseChurn/returnPool/reachableCap —
+//     агрегаты вертикали на старте;
+//   synergy[verticalId]  — во сколько раз кросс-селл в эту вертикаль дешевле
+//     эталона (курьеры, привычка платить, партнёрская сеть);
+//   launchCostMult[verticalId] — скидка на запуск вертикали, где у актива
+//     есть готовая инфраструктура (у доставки е-ком дешевле: курьеры и
+//     дарксторы уже есть);
+//   perks[] — именованные грани, которые механики будущих фаз читают по
+//     ключу (подписка, партнёрства, логистика): новая игра приносит новую
+//     грань как данные, а не как ветку в движке.
+//
 // В прототипе фазы 1 играбелен один старт — доставка. Записи от КИНОРЕКИ
 // (стриминг: дешёвая синергия с подпиской) и БИЛЕТВИЛЯ (партнёрская сеть
 // организаторов) добавятся сюда данными после одобрения прототипа.
@@ -2110,6 +2201,10 @@ const START_ASSETS = [
     // дешевле эталона. У доставки лучшая синергия — е-ком (курьеры уже
     // ездят по городу), у стриминга была бы подписка, у билетов — партнёрства.
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
+    // Готовая инфраструктура удешевляет запуск родственной вертикали
+    launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
+    // Грани актива для механик будущих фаз (общая логистика еды и е-кома)
+    perks: ['courier-logistics'],
     synergyNote: {
       ru: 'Сильная сторона доставки: собственная курьерская логистика. Дешевле всего ей даётся е-ком (фаза 2) — курьеры уже ездят по городу.',
       en: 'Delivery’s edge is its own courier logistics. Its cheapest synergy is e-commerce (phase 2): the couriers already criss-cross the city.',
@@ -2130,22 +2225,24 @@ const VERTICALS = [
   {
     id: 'taxi',
     icon: '🚕',
-    name: { ru: 'Такси «Новоград.Драйв»', en: 'Novograd.Drive taxi' },
+    name: { ru: 'Такси «Новоград»', en: 'Novograd taxi' },
     hint: {
-      ru: 'Самый большой смежный рынок города. Но в нём уже десять лет живёт «СитиДрайв»: часть города не отдаст никогда, а на ваш вход ответит демпингом.',
-      en: 'The city’s largest adjacent market. But CityDrive has run it for a decade: part of the city will never switch, and your entry will be answered with a price war.',
+      ru: 'Самый большой смежный рынок города. Но в нём уже десять лет живёт «Таксоград»: часть города не отдаст никогда, а на ваш вход ответит демпингом.',
+      en: 'The city’s largest adjacent market. But Taxograd has run it for a decade: part of the city will never switch, and your entry will be answered with a price war.',
     },
     potential: 430_000,      // взрослые, пользующиеся агрегаторами такси
-    incumbentName: { ru: 'СитиДрайв', en: 'CityDrive' },
+    incumbentName: { ru: 'Таксоград', en: 'Taxograd' },
     incumbentLock: 0.35,     // доля рынка, запертая у конкурента
     launchCost: 60_000_000,  // лицензии, приложение, запуск парка
     fixedMonthly: 6_000_000, // офис вертикали, колл-центр, диспетчеризация
     tripsPerUser: 6.5,       // поездок в месяц у активного клиента
     fare: 260,               // средний чек поездки, ₽
     takeRate: 0.22,          // комиссия платформы с поездки
-    // Ворота совета: диверсификацию согласуют, когда увидят, что стартовый
-    // актив управляем — квартал истории и положительный вклад еды.
-    gate: { minMonth: 5, assetContributionMonths: 3 },
+    // Ворот у такси нет: вы — победитель своего рынка, совет доверяет,
+    // и вопрос первых ходов — «что запускаем», а не «когда разрешат».
+    // Механика ворот (minMonth + прибыльность актива) остаётся в движке:
+    // вертикали следующих фаз (е-ком, подписка) выйдут за ними.
+    gate: { minMonth: 1, assetContributionMonths: 0 },
     // Ответ хозяина рынка: конечная промо-война после вашего входа
     warMonths: 9,
     warAcqCut: 0.45,         // демпинг перехватывает часть вашего притока
@@ -2192,9 +2289,36 @@ const verticalById = (id) => VERTICALS.find((v) => v.id === id);
 // ============================================================================
 
 const LEVER_GROUPS = [
-  { id: 'holding', label: { ru: 'Холдинг', en: 'Holding' }, open: true },
-  { id: 'food', label: { ru: 'Доставка еды · стартовый актив', en: 'Food delivery · starting asset' }, open: true },
-  { id: 'taxi', label: { ru: 'Такси', en: 'Taxi' }, open: true },
+  {
+    id: 'food',
+    icon: '🛵',
+    label: { ru: 'Доставка еды — дойная корова', en: 'Food delivery — the cash cow' },
+    desc: {
+      ru: 'Насыщенный стартовый актив. Здесь не растут — здесь решают, сколько доить и сколько тратить на удержание.',
+      en: 'The saturated starting asset. You do not grow here — you decide how hard to milk it and how much to spend on retention.',
+    },
+    open: true,
+  },
+  {
+    id: 'taxi',
+    icon: '🚕',
+    label: { ru: 'Такси — вторая нога', en: 'Taxi — the second leg' },
+    desc: {
+      ru: 'Растущая вертикаль: цена поездки, мощность парка и холодное привлечение. Мощность ведут за спросом.',
+      en: 'The growth vertical: fares, fleet capacity and cold acquisition. Capacity follows demand.',
+    },
+    open: true,
+  },
+  {
+    id: 'holding',
+    icon: '🏙️',
+    label: { ru: 'Экосистема — склейка', en: 'Ecosystem — the glue' },
+    desc: {
+      ru: 'То, что превращает два бизнеса в холдинг: кросс-селл по общей базе и управляющая компания против размытого фокуса.',
+      en: 'What turns two businesses into a holding: cross-sell across the shared base, and the management company against diluted focus.',
+    },
+    open: true,
+  },
 ];
 
 const LEVERS = [
@@ -2260,8 +2384,8 @@ const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 85, max: 125, step: 1, def: 100, scale: 0.01,
     tip: {
-      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «СитиДрайвом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
-      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the CityDrive war the market is dumped down, and a high fare hurts twice as much.',
+      ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны с «Таксоградом» рынок продавлен демпингом, и высокий тариф бьёт больнее.',
+      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the Taxograd war the market is dumped down, and a high fare hurts twice as much.',
     },
   },
   {
@@ -2328,11 +2452,12 @@ function makeGoal(year, state, uniqueUsers) {
     return {
       year,
       type: GOAL_TYPES.secondLeg,
-      // Клиентов такси к 12-му месяцу. Замер по доведённым опорам:
-      // средняя даёт ~76 тыс, размашистая ~89 тыс, бережливая с запуском
-      // на 10-м месяце — ~27 тыс и цель проваливает: «вторая нога» требует
-      // решения в первый год, и совет наказывает выжидание размытием.
-      target: 40_000,
+      // Клиентов такси к 12-му месяцу. Замер по доведённым опорам (запуск
+      // доступен с первого хода): средняя даёт ~105 тыс, размашистая
+      // ~128 тыс, бережливая с запуском на 8-м месяце — ~46 тыс и цель
+      // проваливает: «вторая нога» требует решительного входа, выжидание
+      // совет наказывает размытием.
+      target: 60_000,
       reward: 0.10,
       penalty: 'dilution',
     };
@@ -2463,12 +2588,30 @@ function neutralModifiers() {
     endWar: false,           // перемирие с хозяином рынка такси
     lockAdd: 0,              // закреплённая за конкурентом доля рынка растёт
     regulationRisk: false,
+    // --- сюжетные повороты: эффекты длиной в несколько месяцев и навсегда ---
+    fedMonths: 0,            // набег федеральной экосистемы: месяцы давления
+    fedSoft: false,          // оборона выбрана: давление мягче
+    crisisMonths: 0,         // экономический спад: месяцы слабого спроса
+    crisisCut: false,        // расходы срезаны: дешевле, но исполнение страдает
+    tripsPerUserAdd: 0,      // постоянная прибавка частоты поездок (аэропорт)
+    crossCacMult: 1,         // постоянный множитель цены кросс-селла (кобренд)
+    crossReachMult: 1,       // постоянный множитель ёмкости кросс-селла (кобренд)
     notes: [],
   };
 }
 
 // needsTaxi: событие имеет смысл только при запущенном такси.
-// needsWar: только пока идёт промо-война с «СитиДрайвом».
+// needsWar: только пока идёт промо-война с «Таксоградом».
+// once: сюжетное событие, случается не больше раза за партию.
+//
+// Замечание к аудиту доминации. «Капитальные» опции (аэропорт, кобренд,
+// оборона от федеральной экосистемы) при замере политикой с автоматическими
+// раундами выигрывают почти всегда: у такой политики деньги бесплатны, и
+// любой положительный NPV доминирует по построению. Контрольный замер с
+// дорогим капиталом (раунды только на грани смерти) даёт живой выбор:
+// оборона 75/25, аэропорт 67/33, утечка 40/60 — с зазорами в десятки
+// процентов. Это и есть смысл этих событий: капитальное решение зависит от
+// стоимости капитала, а не от таблички «правильных ответов».
 const EVENTS = [
   {
     id: 'fuel', weight: 6, minMonth: 3, needsTaxi: true,
@@ -2573,12 +2716,12 @@ const EVENTS = [
       {
         // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
         // побеждало в 100% состояний — при дешёвом извинении это викторина.
-        label: { ru: 'Признать и компенсировать (250 ₽ на клиента базы)', en: 'Own it and compensate (₽250 per customer)' },
+        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate (₽380 per customer)' },
         detail: {
-          ru: 'Плюс 15 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'Plus ₽15M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          ru: 'Плюс 20 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
+          en: 'Plus ₽20M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
-        effects: { oneOffCostPerUniqueUser: 250, oneOffCost: 15_000_000 },
+        effects: { oneOffCostPerUniqueUser: 380, oneOffCost: 20_000_000 },
       },
       {
         label: { ru: 'Замять', en: 'Bury it' },
@@ -2586,13 +2729,13 @@ const EVENTS = [
           ru: 'Бесплатно сегодня. Доверие к единому аккаунту падает: кросс-селл работает вполсилы несколько месяцев, отток выше.',
           en: 'Free today. Trust in the single account drops: cross-sell runs at half power for months, churn ticks up.',
         },
-        effects: { trustMonths: 4, foodChurnAdd: 0.012, taxiChurnAdd: 0.012 },
+        effects: { trustMonths: 2, foodChurnAdd: 0.005, taxiChurnAdd: 0.005 },
       },
     ],
   },
   {
     id: 'truce_offer', weight: 8, minMonth: 6, needsWar: true,
-    title: { ru: '«СитиДрайв» предлагает перемирие', en: 'CityDrive offers a truce' },
+    title: { ru: '«Таксоград» предлагает перемирие', en: 'Taxograd offers a truce' },
     text: {
       ru: 'Хозяин рынка такси устал жечь деньги и предлагает разойтись: он прекращает демпинг, вы не трогаете его корпоративных клиентов и аэропорт.',
       en: 'The incumbent is tired of burning money and offers a deal: they stop dumping, you stay away from their corporate accounts and the airport.',
@@ -2686,6 +2829,171 @@ const EVENTS = [
       },
     ],
   },
+
+  // --- Сюжетные повороты: случаются раз за партию и меняют рельеф игры ---
+  {
+    id: 'fed_ecosystem', weight: 9, minMonth: 14, once: true,
+    title: { ru: 'Федеральная экосистема выходит в Новоград', en: 'A national ecosystem enters Novograd' },
+    text: {
+      ru: 'Столичный гигант открыл в городе и еду, и такси разом — с подпиской и рекламой на каждом углу. Ваш домашний рынок перестал быть только вашим.',
+      en: 'A national giant has opened both food and taxi in the city at once — with a subscription and ads on every corner. Your home market is no longer only yours.',
+    },
+    lesson: {
+      ru: 'Экосистемы конкурируют с экосистемами. Защита — не цена, а склейка: клиента двух ваших сервисов переманить вдвое сложнее.',
+      en: 'Ecosystems compete with ecosystems. The defence is not price but glue: a customer on two of your services is twice as hard to poach.',
+    },
+    options: [
+      {
+        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign (₽340 per customer)' },
+        detail: {
+          ru: 'Дорого по всей базе, но набег выдыхается вдвое быстрее и бьёт заметно слабее.',
+          en: 'Expensive across the whole base, but the raid runs out of steam twice as fast and hits far softer.',
+        },
+        effects: { oneOffCostPerUniqueUser: 340, fedMonths: 4, fedSoft: true },
+      },
+      {
+        label: { ru: 'Пережить набег', en: 'Ride out the raid' },
+        detail: {
+          ru: 'Бесплатно сейчас, но шесть месяцев дорогого привлечения и повышенного оттока в обеих вертикалях.',
+          en: 'Free today — but six months of dear acquisition and higher churn in both verticals.',
+        },
+        effects: { fedMonths: 6 },
+      },
+    ],
+  },
+  {
+    id: 'econ_crisis', weight: 7, minMonth: 16, once: true,
+    title: { ru: 'Экономический спад', en: 'An economic downturn' },
+    text: {
+      ru: 'Реальные доходы горожан просели: заказывают реже, ездят экономнее. Рынок сжался на несколько месяцев — у всех.',
+      en: 'Real incomes have sagged: people order less and ride cheaper. The market has shrunk for months — for everyone.',
+    },
+    lesson: {
+      ru: 'Спад — проверка структуры расходов: переменные сжимаются сами, постоянные приходится резать руками — и у среза есть цена.',
+      en: 'A downturn stress-tests your cost structure: variable costs shrink on their own, fixed ones must be cut by hand — and cuts have a price.',
+    },
+    options: [
+      {
+        label: { ru: 'Срезать постоянные расходы', en: 'Cut fixed costs' },
+        detail: {
+          ru: 'Фиксы обеих вертикалей на время спада минус 25%, но исполнение страдает — отток выше.',
+          en: 'Both verticals’ fixed costs drop 25% for the downturn, but execution suffers — churn rises.',
+        },
+        effects: { crisisMonths: 4, crisisCut: true },
+      },
+      {
+        label: { ru: 'Держать сервис', en: 'Hold service levels' },
+        detail: {
+          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой.',
+          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive.',
+        },
+        effects: { crisisMonths: 4 },
+      },
+    ],
+  },
+  {
+    id: 'driver_poach', weight: 6, minMonth: 8, once: true, needsTaxi: true,
+    title: { ru: '«Таксоград» переманивает водителей', en: 'Taxograd poaches your drivers' },
+    text: {
+      ru: 'Конкурент объявил бонус за переход: гарантированный доход первый месяц. Ваши водители читают эту рекламу прямо сейчас.',
+      en: 'The incumbent announced a switching bonus: guaranteed income for the first month. Your drivers are reading that ad right now.',
+    },
+    lesson: {
+      ru: 'Предложение труда мобильнее спроса: водитель меняет приложение за вечер, а вы парк за вечер не восстановите.',
+      en: 'Labour supply moves faster than demand: a driver switches apps in an evening; you cannot rebuild a fleet in one.',
+    },
+    options: [
+      {
+        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus (₽4,000 per driver)' },
+        detail: {
+          ru: 'Цена по сегодняшнему парку. Водители остаются, и приток даже растёт.',
+          en: 'Priced by today’s fleet. Drivers stay, and applications even pick up.',
+        },
+        effects: { oneOffCostPerDriver: 4_000, driverChurnAdd: -0.02, driverSupplyMult: 1.15 },
+      },
+      {
+        label: { ru: 'Не ввязываться', en: 'Sit it out' },
+        detail: {
+          ru: 'Бесплатно, но часть парка уедет к конкуренту, и подача просядет.',
+          en: 'Free — but part of the fleet drives off, and pickups sag.',
+        },
+        effects: { driverChurnAdd: 0.12, taxiCapacityMult: 0.95 },
+      },
+    ],
+  },
+  {
+    id: 'airport_tender', weight: 6, minMonth: 12, once: true, needsTaxi: true,
+    title: { ru: 'Тендер на аэропорт', en: 'The airport tender' },
+    text: {
+      ru: 'Аэропорт выбирает официального перевозчика на выделенных стоянках. Дорогой контракт — и постоянный поток дальних поездок.',
+      en: 'The airport is choosing an official operator for its dedicated ranks. A dear contract — and a permanent stream of long rides.',
+    },
+    lesson: {
+      ru: 'Инфраструктурные контракты покупают частоту навсегда, но платятся вперёд — это капитальное решение, а не операционное.',
+      en: 'Infrastructure contracts buy frequency forever but are paid up front — a capital decision, not an operating one.',
+    },
+    options: [
+      {
+        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender (₽110M)' },
+        detail: {
+          ru: 'Разово дорого, зато каждый клиент такси ездит чаще — до конца партии.',
+          en: 'A steep one-off — but every taxi customer rides more often, for the rest of the game.',
+        },
+        effects: { oneOffCost: 110_000_000, tripsPerUserAdd: 0.35 },
+      },
+      {
+        label: { ru: 'Уступить', en: 'Pass' },
+        detail: {
+          ru: 'Аэропорт достаётся «Таксограду» — его позиции в городе чуть крепче.',
+          en: 'The airport goes to Taxograd — its grip on the city tightens a little.',
+        },
+        effects: { lockAdd: 0.02 },
+      },
+    ],
+  },
+  {
+    id: 'bank_card', weight: 5, minMonth: 10, once: true,
+    title: { ru: 'Банк предлагает кобрендовую карту', en: 'A bank proposes a co-branded card' },
+    text: {
+      ru: 'Крупный банк хочет карту с кешбэком на ваши сервисы. Единый счёт клиента — это дешёвый кросс-селл и первый шаг к финтеху.',
+      en: 'A major bank wants a card with cashback on your services. A single customer account means cheap cross-sell — and a first step into fintech.',
+    },
+    lesson: {
+      ru: 'Платёжная привычка — самая крепкая склейка экосистемы: тот, кто платит вашей картой, уже наполовину подписчик.',
+      en: 'A payment habit is the strongest ecosystem glue: whoever pays with your card is already half a subscriber.',
+    },
+    options: [
+      {
+        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card (₽25M)' },
+        detail: {
+          ru: 'Интеграция и маркетинг запуска. Кросс-селл дешевеет на 10%, а круг готовых попробовать второй сервис немного расширяется — до конца партии.',
+          en: 'Integration and launch marketing. Cross-sell gets 10% cheaper and the circle willing to try a second service grows a little — for the rest of the game.',
+        },
+        effects: { oneOffCost: 25_000_000, crossCacMult: 0.9, crossReachMult: 1.12 },
+      },
+      {
+        label: { ru: 'Отказаться', en: 'Decline' },
+        detail: {
+          ru: 'Без обязательств: банк уйдёт к другому партнёру.',
+          en: 'No strings attached: the bank will find another partner.',
+        },
+        effects: {},
+      },
+    ],
+  },
+  {
+    id: 'taxi_outage', weight: 5, minMonth: 6, needsTaxi: true,
+    title: { ru: 'Сбой в приложении такси', en: 'Taxi app outage' },
+    text: {
+      ru: 'Диспетчеризация лежала вечер пятницы — самые дорогие часы недели. Заказы уходили к конкуренту.',
+      en: 'Dispatch was down on Friday evening — the dearest hours of the week. Orders went to the incumbent.',
+    },
+    effects: { taxiDemandMult: 0.88, taxiChurnAdd: 0.012, oneOffCost: 4_000_000 },
+    lesson: {
+      ru: 'Технический долг — тоже строка P&L, просто отложенная.',
+      en: 'Technical debt is a P&L line too — just a deferred one.',
+    },
+  },
 ];
 
 // Штраф прилетает только тем, кто решил дождаться закона
@@ -2708,15 +3016,21 @@ function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
-// Выбирает событие месяца (или null). Вероятность события ~40%.
-// ctx: { taxiOn, atWar } — событиям нужен контекст холдинга.
+// Выбирает событие месяца (или null). Вероятность события ~45%.
+// ctx: { taxiOn, atWar, seen, lastId } — контекст холдинга и история событий:
+// сюжетные события (once) не повторяются, обычные не идут два месяца подряд.
 function rollEvent(rng, month, flags = {}, ctx = {}) {
   if (month < 2) return null;
-  if (rng() > 0.4) return null;
+  if (rng() > 0.45) return null;
+  const seen = new Set(ctx.seen ?? []);
   const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0)
     && (!e.needsTaxi || ctx.taxiOn)
-    && (!e.needsWar || ctx.atWar));
-  if (flags.regulationRisk && ctx.taxiOn) pool.push(REGULATION_FINE);
+    && (!e.needsWar || ctx.atWar)
+    && !(e.once && seen.has(e.id))
+    && e.id !== ctx.lastId);
+  if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {
+    pool.push(REGULATION_FINE);
+  }
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
@@ -2729,7 +3043,7 @@ function applyEvent(mods, event, optionIndex) {
     Object.assign(effects, event.options[optionIndex].effects);
   }
   const multiplicative = new Set(['foodDemandMult', 'taxiDemandMult', 'taxiCapacityMult',
-    'driverSupplyMult', 'crossSellMult']);
+    'driverSupplyMult', 'crossSellMult', 'crossCacMult', 'crossReachMult']);
   for (const [key, value] of Object.entries(effects)) {
     if (multiplicative.has(key)) {
       mods[key] *= value;
@@ -2804,6 +3118,14 @@ function createInitialState(seed = 'novograd', assetId = 'delivery') {
     },
     both: 0,          // клиенты двух и более сервисов — сердце экосистемы
     trustUntil: 0,    // до какого месяца подорвано доверие к единому аккаунту
+    // Сюжетные повороты: длящиеся и постоянные эффекты событий-арок
+    story: {},        // fedUntil/fedSoft, crisisUntil/crisisCut, tripsAdd, crossCacMult
+    seenEvents: [],   // сюжетные события не повторяются
+    // Пост-эндгейм: счёт фиксируется на последнем месяце (state.scored),
+    // после чего партия архитектурно может продолжаться (endless) —
+    // геймплей после победы появится следующими фазами.
+    endless: false,
+    scored: null,
     decisions: { ...DEFAULT_DECISIONS, verticals: [] },
     flags: { valuationBonus: 0, regulationRisk: false },
     board: { goal: null, history: [], profitableMonths: 0 },
@@ -2848,16 +3170,20 @@ function uniqueUsers(state) {
   return Math.max(0, state.food.users + state.taxi.users - state.both);
 }
 
-// Ворота совета: диверсификацию согласуют после квартала истории
-// и при положительном вкладе стартового актива за последние месяцы.
+// Ворота совета. У такси их нет (gate.minMonth = 1, историй не требуется):
+// первый ход партии — «что запускаем». Механика остаётся для вертикалей
+// следующих фаз: е-ком и подписка выйдут за воротами по метрикам.
 function expansionOpen(state, vertical) {
   const gate = vertical.gate;
   const nextMonth = state.month + 1;
   if (nextMonth < gate.minMonth) return false;
-  const h = state.history.slice(-gate.assetContributionMonths);
-  if (h.length < gate.assetContributionMonths) return false;
-  const avg = h.reduce((s, r) => s + (r.foodFullContribution ?? 0), 0) / h.length;
-  return avg > 0;
+  if (gate.assetContributionMonths > 0) {
+    const h = state.history.slice(-gate.assetContributionMonths);
+    if (h.length < gate.assetContributionMonths) return false;
+    const avg = h.reduce((s, r) => s + (r.foodFullContribution ?? 0), 0) / h.length;
+    if (avg <= 0) return false;
+  }
+  return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -2911,6 +3237,31 @@ function step(prevState, input = {}) {
   if (mods.trustMonths) state.trustUntil = Math.max(state.trustUntil, month + mods.trustMonths);
   if (mods.endWar) state.taxi.warUntil = month;   // перемирие: война кончается сейчас
   if (mods.lockAdd) state.taxi.lockAdd += mods.lockAdd;
+  // Сюжетные повороты: набег федеральной экосистемы, спад, постоянные бусты
+  state.story = state.story ?? {};
+  if (mods.fedMonths) {
+    state.story.fedUntil = month + mods.fedMonths - 1;
+    state.story.fedSoft = Boolean(mods.fedSoft);
+  }
+  if (mods.crisisMonths) {
+    state.story.crisisUntil = month + mods.crisisMonths - 1;
+    state.story.crisisCut = Boolean(mods.crisisCut);
+  }
+  if (mods.tripsPerUserAdd) state.story.tripsAdd = (state.story.tripsAdd ?? 0) + mods.tripsPerUserAdd;
+  if (mods.crossCacMult !== 1) {
+    state.story.crossCacMult = (state.story.crossCacMult ?? 1) * mods.crossCacMult;
+  }
+  if (mods.crossReachMult !== 1) {
+    state.story.crossReachMult = (state.story.crossReachMult ?? 1) * mods.crossReachMult;
+  }
+  const fedActive = (state.story.fedUntil ?? 0) >= month;
+  const fedChurnAdd = fedActive ? (state.story.fedSoft ? 0.004 : 0.008) : 0;
+  const fedAcqMult = fedActive ? (state.story.fedSoft ? 0.85 : 0.75) : 1;
+  const crisisActive = (state.story.crisisUntil ?? 0) >= month;
+  const crisisFoodDemand = crisisActive ? 0.93 : 1;
+  const crisisTaxiDemand = crisisActive ? 0.88 : 1;
+  const crisisFixedMult = crisisActive && state.story.crisisCut ? 0.75 : 1;
+  const crisisQualityMult = crisisActive && state.story.crisisCut ? 0.93 : 1;
 
   // --- 2. Запуск вертикалей (ворота + разовая цена + ответ хозяина рынка) ---
   const wanted = new Set(decisions.verticals ?? []);
@@ -2922,10 +3273,11 @@ function step(prevState, input = {}) {
       state.taxi.on = true;
       state.taxi.launchedMonth = month;
       state.taxi.warUntil = month + taxiDef.warMonths;
-      // Стартовый парк и ранние клиенты входят в цену запуска
+      // Стартовый парк и ранние клиенты входят в цену запуска.
+      // Готовая инфраструктура актива удешевляет запуск — из дескриптора.
       state.taxi.drivers = 200;
       state.taxi.users = 3_000;
-      launchCost += taxiDef.launchCost;
+      launchCost += taxiDef.launchCost * (asset.launchCostMult?.taxi ?? 1);
       taxiLaunched = true;
     }
     // ворота закрыты — заявка ждёт следующего месяца
@@ -2944,9 +3296,10 @@ function step(prevState, input = {}) {
   const trustBroken = state.trustUntil > month;
 
   // --- 3. Фокус и качество исполнения ---
+  // Срезанные в кризис фиксы — это уволенные люди: исполнение проседает
   const penalty = focusPenalty(state, decisions);
-  const qFood = foodQuality(state, decisions);
-  const qTaxi = taxiQuality(state, decisions);
+  const qFood = foodQuality(state, decisions) * crisisQualityMult;
+  const qTaxi = taxiQuality(state, decisions) * crisisQualityMult;
 
   // --- 4. Еда: дожим, выручка, отток, возврат ---
   const takeIdx = clamp(decisions.foodTake ?? 1, 0.8, 1.3);
@@ -2954,7 +3307,7 @@ function step(prevState, input = {}) {
   const takeFreqFactor = Math.pow(takeIdx, -CONFIG.foodTakeElasticity);
   const foodSeason = seasonFood(month);
   const arpuFood = asset.arpu * takeIdx * takeFreqFactor
-    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult;
+    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult * crisisFoodDemand;
   const revenueFood = state.food.users * arpuFood;
   const contribFood = revenueFood * asset.margin;
 
@@ -2966,7 +3319,8 @@ function step(prevState, input = {}) {
     asset.baseChurn
     + CONFIG.foodChurnQuality * Math.max(0, CONFIG.foodQualityRef - qFood)
     + takePressure
-    + mods.foodChurnAdd,
+    + mods.foodChurnAdd
+    + fedChurnAdd,
     0.005, 0.5,
   );
   // Клиент двух сервисов уходит реже — экосистемная привычка
@@ -2998,8 +3352,10 @@ function step(prevState, input = {}) {
     taxiPool = Math.max(0, taxiDef.potential * (1 - lock) - state.taxi.users);
 
     fareEff = taxiDef.fare * priceIdx * (atWar ? 1 - taxiDef.warFareCut : 1);
-    demandTrips = state.taxi.users * taxiDef.tripsPerUser * taxiPriceFactor
-      * seasonTaxi(month) * mods.taxiDemandMult;
+    // Частота поездок: базовая + постоянные контракты (аэропорт)
+    const tripsPerUser = taxiDef.tripsPerUser + (state.story.tripsAdd ?? 0);
+    demandTrips = state.taxi.users * tripsPerUser * taxiPriceFactor
+      * seasonTaxi(month) * mods.taxiDemandMult * crisisTaxiDemand;
     const capacity = state.taxi.drivers * CONFIG.taxiTripsPerDriver * mods.taxiCapacityMult;
     servedTrips = Math.min(demandTrips, capacity);
     fill = demandTrips > 0 ? servedTrips / demandTrips : 1;
@@ -3030,7 +3386,8 @@ function step(prevState, input = {}) {
       + CONFIG.taxiChurnQuality * Math.max(0, 0.8 - qTaxi)
       + CONFIG.taxiChurnFill * (1 - fill)
       + 0.08 * Math.max(0, priceIdx - 1)
-      + mods.taxiChurnAdd,
+      + mods.taxiChurnAdd
+      + fedChurnAdd,
       0.01, 0.6,
     );
     const taxiOnly = Math.max(0, state.taxi.users - state.both);
@@ -3043,7 +3400,8 @@ function step(prevState, input = {}) {
     coldAcq = taxiPool * CONFIG.taxiMarketingReach
       * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation))
       * clamp(Math.pow(taxiPriceFactor, 0.7), 0.5, 1.3)
-      * (atWar ? 1 - taxiDef.warAcqCut : 1);
+      * (atWar ? 1 - taxiDef.warAcqCut : 1)
+      * fedAcqMult;
 
     // Пересечение: ушедшие «оба» из такси остаются клиентами еды
     state.both = Math.max(0, state.both - lostTaxiBoth);
@@ -3059,26 +3417,31 @@ function step(prevState, input = {}) {
   if (taxiOn && crossBudget > 0) {
     const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
     const synergy = asset.synergy?.taxi ?? 1;
-    const cacEff = CONFIG.crossSellCac / synergy;
+    // Цена кросс-селла: эталон / синергия актива x постоянные бусты (кобренд)
+    const storyCac = state.story.crossCacMult ?? 1;
+    const cacEff = (CONFIG.crossSellCac / synergy) * storyCac;
 
     // еда -> такси: главное направление
     const budgetF = crossBudget * (1 - CONFIG.crossBackShare);
     const poolF = Math.max(0, state.food.users - state.both);
     const attractTaxi = clamp(0.25 + 0.75 * qTaxi, 0, 1.1)
       * clamp(taxiPriceFactor, 0.6, 1.15) * (0.5 + 0.5 * fill);
-    const capF = poolF * CONFIG.crossSellMonthlyReach * attractTaxi * trustMult;
+    // Кобрендовая карта расширяет круг готовых попробовать второй сервис
+    const storyReach = state.story.crossReachMult ?? 1;
+    const capF = poolF * CONFIG.crossSellMonthlyReach * attractTaxi * trustMult * storyReach;
     crossConv = Math.min(budgetF / cacEff, capF);
     // такси -> еда: обратное направление, у него свой пул и своя цена
     const budgetB = crossBudget * CONFIG.crossBackShare;
     const poolB = Math.max(0, state.taxi.users - state.both);
     const attractFood = clamp(0.25 + 0.75 * qFood, 0, 1.1);
     const capB = Math.min(
-      poolB * CONFIG.crossBackMonthlyReach * attractFood * trustMult,
+      poolB * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
       Math.max(0, asset.reachableCap - state.food.users),
     );
-    crossBackConv = Math.min(budgetB / CONFIG.crossBackCac, capB);
+    const backCac = CONFIG.crossBackCac * storyCac;
+    crossBackConv = Math.min(budgetB / backCac, capB);
 
-    crossSpent = crossConv * cacEff + crossBackConv * CONFIG.crossBackCac;
+    crossSpent = crossConv * cacEff + crossBackConv * backCac;
     // Перерасход сверх ёмкости канала сгорает — и виден в отчёте
     crossWasted = Math.max(0, crossBudget - crossSpent);
     crossCac = (crossConv + crossBackConv) > 0
@@ -3103,8 +3466,8 @@ function step(prevState, input = {}) {
   // --- 7. P&L холдинга ---
   const revenue = revenueFood + revenueTaxi;
   const contribution = contribFood + contribTaxi;
-  const fixedFood = asset.fixedMonthly;
-  const fixedTaxi = taxiOn ? taxiDef.fixedMonthly : 0;
+  const fixedFood = asset.fixedMonthly * crisisFixedMult;
+  const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
   const opex = CONFIG.hqMonthly + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
@@ -3226,6 +3589,14 @@ function step(prevState, input = {}) {
     crossWasted,
     trustBroken,
     trustMonthsLeft: Math.max(0, state.trustUntil - month),
+    // --- сюжетные повороты ---
+    fedActive,
+    fedMonthsLeft: fedActive ? state.story.fedUntil - month + 1 : 0,
+    crisisActive,
+    crisisMonthsLeft: crisisActive ? state.story.crisisUntil - month + 1 : 0,
+    crisisCut: Boolean(crisisActive && state.story.crisisCut),
+    tripsAdd: state.story.tripsAdd ?? 0,
+    crossCacStoryMult: state.story.crossCacMult ?? 1,
     // --- совет ---
     goal: state.board.goal ? { ...state.board.goal } : null,
     goalProgress: progress,
@@ -3245,14 +3616,20 @@ function step(prevState, input = {}) {
   state.month = month;
   state.history.push(report);
   state.pendingChoice = null;
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
   state.pendingEvent = rollEvent(rng, month + 1, state.flags, {
     taxiOn: state.taxi.on,
     atWar: state.taxi.on && state.taxi.warUntil > month + 1,
+    seen: state.seenEvents ?? [],
+    lastId: event?.id ?? null,
   });
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';
-  else if (month >= CONFIG.monthsTotal) state.over = 'finished';
+  else if (month >= CONFIG.monthsTotal && !state.endless) state.over = 'finished';
 
   const sop = sumOfParts(state);
   report.valuation = sop.total;
@@ -3261,7 +3638,27 @@ function step(prevState, input = {}) {
   report.sopFoodValue = sop.parts.find((p) => p.id === 'food')?.value ?? 0;
   report.sopTaxiValue = sop.parts.find((p) => p.id === 'taxi')?.value ?? 0;
 
+  // Зачётный счёт фиксируется в момент финиша: пост-эндгейм (следующие фазы)
+  // сможет продолжать партию, не трогая результат для таблиц и строки.
+  if (state.over === 'finished' && !state.scored) {
+    state.scored = finalScore(state);
+  }
+
   return { state, report };
+}
+
+// ----------------------------------------------------------------------------
+// Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован
+// в state.scored. Интерфейсная кнопка появится вместе с фазой пост-эндгейма;
+// движок готов уже сейчас (и это проверяется тестом).
+// ----------------------------------------------------------------------------
+function enterEndless(state) {
+  const next = deepClone(state);
+  if (next.over === 'finished') {
+    next.endless = true;
+    next.over = null;
+  }
+  return next;
 }
 
 // ----------------------------------------------------------------------------
@@ -3820,8 +4217,11 @@ function renderKpis() {
 }
 
 // ----------------------------------------------------------------------------
-// Рычаги: три группы, такси открывается вместе с вертикалью
+// Рычаги: три складных блока (как в БИЛЕТВИЛЕ) с описанием группы и живой
+// сводкой — по ней видно, что механика группы делает прямо сейчас.
 // ----------------------------------------------------------------------------
+const openGroups = { food: true, taxi: true, holding: true };
+
 function leverHtml(l) {
   return `
     <div class="lever" data-key="${l.key}">
@@ -3839,17 +4239,19 @@ function buildLevers() {
   const taxiOn = state.taxi.on;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     const levers = LEVERS.filter((l) => l.group === g.id);
-    if (g.id === 'taxi' && !taxiOn) {
-      return `<div class="lever-group">
-        <div class="district-head"><span class="district-name">${tx(g.label)}</span>
-          <span class="badge">🔒</span></div>
-        <div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
-          <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>
-      </div>`;
-    }
-    return `<div class="lever-group">
-      <div class="district-head"><span class="district-name">${tx(g.label)}</span></div>
-      ${levers.map(leverHtml).join('')}
+    const locked = g.id === 'taxi' && !taxiOn;
+    const body = locked
+      ? `<div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
+          <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>`
+      : `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>
+        <div id="readout-${g.id}"></div>
+        ${levers.map(leverHtml).join('')}`;
+    return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
+      <button class="lever-group-head" type="button">
+        <span class="lg-caret">▾</span><span>${g.icon} ${tx(g.label)}</span>
+        <span class="lg-count">${locked ? '🔒' : levers.length}</span>
+      </button>
+      <div class="lever-group-body">${body}</div>
     </div>`;
   }).join('');
 
@@ -3859,15 +4261,91 @@ function buildLevers() {
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
+      renderLeverReadouts();
       renderRightTab();
       save();
     });
   }
+  el('levers').querySelectorAll('.lever-group-head').forEach((head) => {
+    head.addEventListener('click', () => {
+      const box = head.closest('.lever-group');
+      const id = box.dataset.group;
+      openGroups[id] = !openGroups[id];
+      box.classList.toggle('open', openGroups[id]);
+    });
+  });
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
   leversBuiltTaxiOn = taxiOn;
+}
+
+// Живые сводки групп: что механика делает при текущих ползунках.
+// Считаются от последнего отчёта — тех же чисел, что видит игрок в центре.
+function renderLeverReadouts() {
+  const r = last();
+  const asset = assetById(state.assetId);
+  const d = state.decisions;
+
+  const foodBox = el('readout-food');
+  if (foodBox) {
+    const lost = r ? r.lostFood : asset.users * asset.baseChurn;
+    const gained = r ? r.wonBack + r.organicFood + r.crossBackConv : 0;
+    const pool = r ? r.returnPool : asset.returnPool;
+    const balanceCls = gained >= lost ? 'pos' : 'neg';
+    const takeWarn = (d.foodTake ?? 1) > CONFIG.foodTakeThreshold
+      ? `<div class="neg">${t('readoutFoodExodus')}</div>` : '';
+    foodBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutFood', {
+        lost: compact(lost), gained: compact(gained), cls: balanceCls,
+      })}</div>
+      <div>${t('readoutFoodPool', { pool: compact(pool) })}</div>
+      ${takeWarn}
+    </div>`;
+  }
+
+  const taxiBox = el('readout-taxi');
+  if (taxiBox && state.taxi.on) {
+    const capacity = state.taxi.drivers * CONFIG.taxiTripsPerDriver;
+    const demand = r ? r.demandTrips : 0;
+    const hires = (d.taxiSupply ?? 0) / CONFIG.taxiDriverOnboardCost;
+    const war = r && r.warMonthsLeft > 0
+      ? `<div class="neg">${t('readoutTaxiWar', { months: r.warMonthsLeft })}</div>` : '';
+    taxiBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTaxi', {
+        drivers: num(state.taxi.drivers), capacity: compact(capacity),
+        hires: num(hires, 0),
+      })}</div>
+      ${demand > 0 ? `<div>${t('readoutTaxiDemand', {
+        demand: compact(demand),
+        util: pct(capacity > 0 ? Math.min(demand / capacity, 3) : 0, 0),
+        cls: demand > capacity ? 'neg' : (demand < capacity * 0.55 ? 'neg' : 'pos'),
+      })}</div>` : ''}
+      ${war}
+    </div>`;
+  }
+
+  const holdBox = el('readout-holding');
+  if (holdBox) {
+    const penalty = focusPenalty(state, d);
+    const focusLine = state.taxi.on
+      ? t('readoutFocus', {
+          penalty: pct(penalty, 0),
+          cls: penalty > 0.05 ? 'neg' : 'pos',
+        })
+      : t('readoutFocusSingle');
+    const crossLine = r && state.taxi.on && (d.crossSell ?? 0) > 0
+      ? `<div>${t('readoutCross', {
+          conv: compact(r.crossConv + r.crossBackConv),
+          wasted: r.crossWasted > 0 ? t('readoutCrossWasted', { wasted: money(r.crossWasted) }) : '',
+        })}</div>`
+      : '';
+    holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${focusLine}</div>
+      ${crossLine}
+    </div>`;
+  }
 }
 
 function leverDisplay(l, raw) {
@@ -4112,6 +4590,13 @@ function buildAlerts(r) {
   if (r.atWar && r.warMonthsLeft > 0) {
     alerts.push(['warn', t('alertWar', { months: r.warMonthsLeft }), 'panel:verticals']);
   }
+  if (r.fedMonthsLeft > 0) {
+    alerts.push(['warn', t('alertFed', { months: r.fedMonthsLeft })]);
+  }
+  if (r.crisisMonthsLeft > 0) {
+    alerts.push(['warn', t(r.crisisCut ? 'alertCrisisCut' : 'alertCrisis', {
+      months: r.crisisMonthsLeft })]);
+  }
   if (state.taxi.on && r.fill < 0.9 && r.demandTrips > 0) {
     alerts.push(['bad', t('alertNoDrivers', { fill: pct(r.fill, 0) }), 'lever:taxiSupply']);
   } else if (state.taxi.on && r.utilDrivers > 0 && r.utilDrivers < 0.45 && r.drivers > 300) {
@@ -4146,19 +4631,25 @@ function buildAlerts(r) {
   return alerts;
 }
 
+// Экран месяца 0: первый настоящий ход — «куда идти дальше».
+// Три развилки с ценой каждой, а не список настроек.
 function renderStartHint() {
   const taxi = verticalById('taxi');
+  const fork = (title, body, jump) => `<div class="hint-box" style="margin-top:8px">
+    <b>${title}</b> ${body} <a class="jump" data-jump="${jump}">${t('jumpGo')}</a>
+  </div>`;
   return `<div class="panel">
     <h3 style="margin:0 0 8px">${t('reportMonth0')}</h3>
-    <div class="hint-box">
+    <div class="funding-note">
       <b>${t('reportStartTitle')}</b> ${t('reportStartIntro', { cash: money(CONFIG.startCash) })}
-      <ol style="margin:6px 0 0 16px;padding:0">
-        <li>${t('reportStart1')} <a class="jump" data-jump="tab:pnl">${t('jumpGo')}</a></li>
-        <li>${t('reportStart2', { month: taxi.gate.minMonth })} <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></li>
-        <li>${t('reportStart3')} <a class="jump" data-jump="tab:base">${t('jumpGo')}</a></li>
-        <li>${t('reportStart4')} <a class="jump" data-jump="panel:board">${t('jumpGo')}</a></li>
-      </ol>
     </div>
+    ${fork(t('forkLaunchTitle'), t('forkLaunchBody', {
+      cost: money(taxi.launchCost), war: taxi.warMonths,
+    }), 'panel:verticals')}
+    ${fork(t('forkSaveTitle'), t('forkSaveBody'), 'panel:funding')}
+    ${fork(t('forkMilkTitle'), t('forkMilkBody'), 'lever:foodTake')}
+    <div class="funding-note" style="margin-top:8px">${t('forkFooter')}
+      <a class="jump" data-jump="tab:base">${t('jumpGo')}</a></div>
   </div>`;
 }
 
@@ -4289,6 +4780,11 @@ function buildNews(r) {
   else if (r && r.taxiOn && prev()?.warMonthsLeft > 0 && r.warMonthsLeft === 0) {
     news.push(['good', t('newsWarOver')]);
   }
+  if (r && r.fedMonthsLeft > 0) news.push(['warn', t('newsFed', { months: r.fedMonthsLeft })]);
+  if (r && prev()?.fedMonthsLeft > 0 && r.fedMonthsLeft === 0) news.push(['good', t('newsFedOver')]);
+  if (r && r.crisisMonthsLeft > 0) news.push(['warn', t('newsCrisis', { months: r.crisisMonthsLeft })]);
+  if (r && prev()?.crisisMonthsLeft > 0 && r.crisisMonthsLeft === 0) news.push(['good', t('newsCrisisOver')]);
+  if (r && r.tripsAdd > 0 && prev() && !(prev().tripsAdd > 0)) news.push(['good', t('newsAirport')]);
 
   if (r) {
     const came = r.wonBack + r.organicFood + r.coldAcq + r.crossConv + r.crossBackConv;
@@ -4690,7 +5186,9 @@ function recordsBlockHtml(s) {
 }
 
 function showGameOver() {
-  const s = finalScore(state);
+  // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
+  // (следующие фазы) сможет продолжать партию, не трогая результат
+  const s = state.scored ?? finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
     : s.equityValue > 5e9 ? t('gradeExcellent')
@@ -4870,6 +5368,7 @@ function renderAll() {
   if (!leversBuilt || leversBuiltTaxiOn !== state.taxi.on) buildLevers();
   renderChrome();
   syncLevers();
+  renderLeverReadouts();
   renderKpis();
   renderVerticals();
   renderBoard();

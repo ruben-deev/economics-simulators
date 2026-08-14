@@ -49,6 +49,48 @@ export const STRINGS = {
     en: 'Taxi levers appear once the vertical is launched — see the Taxi card in the Verticals panel.',
   },
 
+  // --- живые сводки групп рычагов ---
+  readoutFood: {
+    ru: 'Отток ~<b>{lost}</b> клиентов/мес, приток (возврат + органика + кросс-селл) ~<b class="{cls}">{gained}</b>.',
+    en: 'Churn ~<b>{lost}</b> customers/mo; inflow (win-back + organic + cross-sell) ~<b class="{cls}">{gained}</b>.',
+  },
+  readoutFoodPool: {
+    ru: 'Пул возврата: {pool} недавно ушедших — только их и можно вернуть маркетингом.',
+    en: 'Win-back pool: {pool} recent leavers — marketing can bring back only them.',
+  },
+  readoutFoodExodus: {
+    ru: 'Монетизация за порогом: клиенты уходят к конкуренту ускоренно.',
+    en: 'Monetisation past the threshold: customers are fleeing to the competitor.',
+  },
+  readoutTaxi: {
+    ru: 'Парк: <b>{drivers}</b> водителей → мощность <b>{capacity}</b> поездок/мес; бюджет доведёт ~{hires} новых водителей.',
+    en: 'Fleet: <b>{drivers}</b> drivers → capacity <b>{capacity}</b> trips/mo; the budget onboards ~{hires} new drivers.',
+  },
+  readoutTaxiDemand: {
+    ru: 'Спрос прошлого месяца: {demand} поездок → загрузка парка <b class="{cls}">{util}</b>.',
+    en: 'Last month’s demand: {demand} trips → fleet utilisation <b class="{cls}">{util}</b>.',
+  },
+  readoutTaxiWar: {
+    ru: 'Идёт война с «Таксоградом»: приток урезан, цены продавлены (ещё {months} мес.).',
+    en: 'The Taxograd war is on: intake cut, fares pushed down ({months} months left).',
+  },
+  readoutFocus: {
+    ru: 'Штраф фокуса к исполнению всех вертикалей: <b class="{cls}">−{penalty}</b>.',
+    en: 'Focus penalty on every vertical’s execution: <b class="{cls}">−{penalty}</b>.',
+  },
+  readoutFocusSingle: {
+    ru: 'Пока вертикаль одна, фокус не размыт — управляющая компания почти не нужна.',
+    en: 'With a single vertical focus is undiluted — you barely need the management company.',
+  },
+  readoutCross: {
+    ru: 'Кросс-селл в прошлом месяце привёл <b>{conv}</b> клиентов.{wasted}',
+    en: 'Cross-sell brought <b>{conv}</b> customers last month.{wasted}',
+  },
+  readoutCrossWasted: {
+    ru: ' Сгорело о ёмкость канала: {wasted}.',
+    en: ' Burned against the channel’s capacity: {wasted}.',
+  },
+
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
   vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },
@@ -126,24 +168,27 @@ export const STRINGS = {
   reportMonth0: { ru: 'Месяц 0 · перед первым ходом', en: 'Month 0 · before the first move' },
   reportStartTitle: { ru: 'Вы выиграли прошлую игру.', en: 'You won the previous game.' },
   reportStartIntro: {
-    ru: 'Доставка еды победила: рынок Новограда насыщен, расти числом клиентов больше некуда. В казне {cash}. Совет ждёт экосистему. План на первые ходы:',
-    en: 'Food delivery has won: Novograd’s market is saturated and there is no one left to acquire. The treasury holds {cash}. The board expects an ecosystem. A plan for the first moves:',
+    ru: 'Доставка еды победила: рынок Новограда насыщен, расти числом клиентов больше некуда. В казне {cash}, совет ждёт экосистему. Первый настоящий ход — куда идти дальше, и у каждого пути своя цена:',
+    en: 'Food delivery has won: Novograd’s market is saturated and there is no one left to acquire. The treasury holds {cash}, and the board expects an ecosystem. The first real move is choosing where to go next — and every path has its price:',
   },
-  reportStart1: {
-    ru: 'Посмотрите на стартовый актив: сколько он приносит и как быстро тает база (вкладка «P&L» и панель «Вертикали»).',
-    en: 'Look at your starting asset: what it earns and how fast the base is thinning (the P&L tab and the Verticals panel).',
+  forkLaunchTitle: { ru: 'Запустить такси сразу.', en: 'Launch taxi right away.' },
+  forkLaunchBody: {
+    ru: 'Разово {cost}, «Таксоград» ответит {war} месяцами демпинга, и первый год вертикаль будет убыточной. Зато время работает на вас: каждый месяц роста компаундится до конца партии.',
+    en: 'A one-off {cost}; Taxograd answers with {war} months of dumping, and the vertical loses money in year one. But time works for you: every month of growth compounds to the end of the game.',
   },
-  reportStart2: {
-    ru: 'Решите главный вопрос партии: когда открывать такси. Ворота совета — с месяца {month}, и «СитиДрайв» ответит войной.',
-    en: 'Settle the game’s main question: when to open the taxi vertical. The board gate opens at month {month}, and CityDrive will answer with a war.',
+  forkSaveTitle: { ru: 'Подкопить и зайти позже.', en: 'Save up and enter later.' },
+  forkSaveBody: {
+    ru: 'Меньше риска банкротства и раунды по лучшей оценке — но каждый месяц ожидания это минус месяцы роста такси, а совет к концу года ждёт вторую ногу.',
+    en: 'Less bankruptcy risk and rounds at a better valuation — but every month of waiting costs taxi growth, and the board expects a second leg by year end.',
   },
-  reportStart3: {
-    ru: 'После запуска сравнивайте два канала роста такси: холодный маркетинг и кросс-селл из базы еды (вкладка «База»).',
-    en: 'After launch, compare taxi’s two growth channels: cold marketing and cross-sell from the food base (the Base tab).',
+  forkMilkTitle: { ru: 'Дожимать корову.', en: 'Milk the cow.' },
+  forkMilkBody: {
+    ru: 'Поднять монетизацию еды: деньги сейчас без чужих раундов. Цена — ускоренный отток базы, а это ещё и пул кросс-селла будущего такси.',
+    en: 'Raise food monetisation: money now without outside rounds. The price is faster base churn — and that base is your future taxi’s cross-sell pool.',
   },
-  reportStart4: {
-    ru: 'Следите за ARPU холдинга в шапке: после насыщения растёт не число клиентов, а выручка с каждого.',
-    en: 'Watch holding ARPU in the header: after saturation it is revenue per customer that grows, not the customer count.',
+  forkFooter: {
+    ru: 'Общая база клиентов — главный ресурс всех трёх путей: посмотрите её состав во вкладке «База» и следите за ARPU холдинга в шапке.',
+    en: 'The shared customer base is the key resource of all three paths: see its make-up in the Base tab and watch holding ARPU in the header.',
   },
   reportTitle: { ru: 'Итоги месяца {month}', en: 'Month {month} results' },
   reportHeadStats: {
@@ -175,8 +220,8 @@ export const STRINGS = {
   statFocusOk: { ru: 'исполнение не размыто', en: 'execution undiluted' },
 
   launchNote: {
-    ru: 'Запущено такси: разовый платёж {cost}. «СитиДрайв» объявил войну — {months} месяцев демпинга.',
-    en: 'Taxi launched: one-off cost {cost}. CityDrive declared war — {months} months of dumping.',
+    ru: 'Запущено такси: разовый платёж {cost}. «Таксоград» объявил войну — {months} месяцев демпинга.',
+    en: 'Taxi launched: one-off cost {cost}. Taxograd declared war — {months} months of dumping.',
   },
   closeNote: {
     ru: 'Вертикаль такси закрыта: клиенты и парк распущены, фикс больше не платится.',
@@ -198,8 +243,8 @@ export const STRINGS = {
     en: 'The board expects a second leg: the year-one goal is {target} taxi customers, and the vertical is not launched yet.',
   },
   alertWar: {
-    ru: 'Война со «СитиДрайвом»: приток такси урезан и цены продавлены ещё {months} мес. Это конечно — но каждый месяц войны стоит денег.',
-    en: 'The CityDrive war: taxi intake is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
+    ru: 'Война с «Таксоградом»: приток такси урезан и цены продавлены ещё {months} мес. Это конечно — но каждый месяц войны стоит денег.',
+    en: 'The Taxograd war: taxi intake is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
   },
   alertNoDrivers: {
     ru: 'Водителей не хватает: подача выполняется на {fill}, клиенты уходят из-за долгого ожидания.',
@@ -238,6 +283,18 @@ export const STRINGS = {
     en: 'Cash covers roughly {months} months at the current burn (−{burn}/mo). Raise before the money runs out, not after.',
   },
   alertProfit: { ru: 'Холдинг прибыален: +{value} за месяц.', en: 'The holding is profitable: +{value} this month.' },
+  alertFed: {
+    ru: 'Набег федеральной экосистемы: привлечение дороже, отток выше ещё {months} мес. Лучшая защита — клиенты двух сервисов: их переманить сложнее.',
+    en: 'The national ecosystem’s raid: dearer acquisition and higher churn for {months} more months. The best defence is two-service customers — they are harder to poach.',
+  },
+  alertCrisis: {
+    ru: 'Экономический спад: рынок сжат ещё {months} мес. Переменные расходы сжимаются сами — следите за постоянными.',
+    en: 'The downturn: the market stays shrunk for {months} more months. Variable costs shrink on their own — watch the fixed ones.',
+  },
+  alertCrisisCut: {
+    ru: 'Спад ещё {months} мес.: фиксы срезаны на 25%, но исполнение страдает — отток выше обычного.',
+    en: 'The downturn runs {months} more months: fixed costs are cut 25%, but execution suffers — churn is above normal.',
+  },
   jumpGo: { ru: 'показать →', en: 'show →' },
 
   // --- новости ---
@@ -247,8 +304,8 @@ export const STRINGS = {
     ru: 'Совет готов согласовать запуск такси: стартовый актив прибыльный, ворота открыты.',
     en: 'The board is ready to approve the taxi launch: the starting asset is profitable, the gate is open.',
   },
-  newsWarStarted: { ru: '«СитиДрайв» начал войну: демпинг и перехват вашей рекламы.', en: 'CityDrive opened the war: dumping and intercepting your ads.' },
-  newsWarLeft: { ru: 'Война со «СитиДрайвом»: ещё {months} мес. демпинга.', en: 'The CityDrive war: {months} more months of dumping.' },
+  newsWarStarted: { ru: '«Таксоград» начал войну: демпинг и перехват вашей рекламы.', en: 'Taxograd opened the war: dumping and intercepting your ads.' },
+  newsWarLeft: { ru: 'Война с «Таксоградом»: ещё {months} мес. демпинга.', en: 'The Taxograd war: {months} more months of dumping.' },
   newsWarOver: { ru: 'Война закончилась: рынок такси вернулся к нормальным ценам.', en: 'The war is over: the taxi market is back to normal fares.' },
   newsCustomers: { ru: 'Клиенты холдинга: +{came} / −{left} — {verdict}', en: 'Holding customers: +{came} / −{left} — {verdict}' },
   newsCustomersGood: { ru: 'база растёт', en: 'the base is growing' },
@@ -261,6 +318,26 @@ export const STRINGS = {
   newsGoalTight: {
     ru: 'До отчёта совету {months} мес., цель года пока не выполнена.',
     en: '{months} months to the board review, and the year’s goal is not met yet.',
+  },
+  newsFed: {
+    ru: 'Федеральная экосистема давит на город: ещё {months} мес. дорогого привлечения.',
+    en: 'The national ecosystem is pressing the city: {months} more months of dear acquisition.',
+  },
+  newsFedOver: {
+    ru: 'Набег федеральной экосистемы выдохся: рынок привлечения вернулся к норме.',
+    en: 'The national ecosystem’s raid has run out of steam: acquisition is back to normal.',
+  },
+  newsCrisis: {
+    ru: 'Экономический спад: горожане экономят ещё {months} мес.',
+    en: 'The downturn: the city keeps saving for {months} more months.',
+  },
+  newsCrisisOver: {
+    ru: 'Спад закончился: спрос вернулся к обычному уровню.',
+    en: 'The downturn is over: demand is back to its usual level.',
+  },
+  newsAirport: {
+    ru: 'Аэропорт ваш: официальные стоянки дают постоянный поток дальних поездок.',
+    en: 'The airport is yours: official ranks feed a permanent stream of long rides.',
   },
 
   // --- графики ---
@@ -414,8 +491,8 @@ export const STRINGS = {
   },
   helpWarTitle: { ru: 'Война за рынок', en: 'The market war' },
   helpWarText: {
-    ru: 'В такси уже десять лет живёт «СитиДрайв». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
-    en: 'CityDrive has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
+    ru: 'В такси уже десять лет живёт «Таксоград». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
+    en: 'Taxograd has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
