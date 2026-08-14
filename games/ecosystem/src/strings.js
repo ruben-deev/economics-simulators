@@ -640,8 +640,8 @@ export const STRINGS = {
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
-    ru: 'Финалы старых игр открывают стартовые бонусы (актив, лицензия, партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
-    en: 'The old games’ endgames unlock starting bonuses (asset, licence, partnership) — they stack, but are sized to be felt without deciding the game. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
+    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -699,8 +699,8 @@ export const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, льготные первый год лицензия кино и партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a discounted cinema licence and ticketing partnership for the first year — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {

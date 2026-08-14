@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.3.0" />
+  <meta name="app-version" content="1.4.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1647,8 +1647,8 @@ const STRINGS = {
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
-    ru: 'Финалы старых игр открывают стартовые бонусы (актив, лицензия, партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
-    en: 'The old games’ endgames unlock starting bonuses (asset, licence, partnership) — they stack, but are sized to be felt without deciding the game. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
+    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -1706,8 +1706,8 @@ const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, льготные первый год лицензия кино и партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a discounted cinema licence and ticketing partnership for the first year — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
@@ -2575,9 +2575,15 @@ const CONFIG = {
   // заслуженный вход даёт преимущество, а не победу. Размер замерен.
   legacyCarry: {
     cashPerRatio: 0.02,   // +2% к стартовой казне за каждую «крепкую победу» сверх первой
-    cashCap: 0.06,        // но не больше +6%
+    cashCap: 0.05,        // но не больше +5%
+    // Наследие — фора на старте, а не рента на всю партию. Льготы по
+    // абоненткам действуют первый год: снятая навсегда абонентка давала
+    // +11.5% к итогу (замер), потому что экономия компаундится 36 месяцев.
+    graceMonths: 12,
+    cinemaFeeMult: 0.5,   // лицензия кино в льготный период
+    ticketsFeeMult: 0.4,  // партнёрство по билетам в льготный период
     roundPerRatio: 0.015, // репутация: раунд оценивают выше, доля тает медленнее
-    roundCap: 0.04,
+    roundCap: 0.03,
     floorPerRatio: 0.08,  // и пол оценки в раунде выше
     floorCap: 0.15,
   },
@@ -3959,18 +3965,31 @@ function plusLaunchCost(state) {
   return CONFIG.plus.launchCost * (hasPerk(asset, 'subscription-habit') ? 0.6 : 1);
 }
 
-// Лицензия кино в подписку: со своим контентом не нужна, наследие даёт скидку
+// Льготный период наследия: фора действует первый год партии. Постоянная
+// льгота на 36 месяцев компаундилась и решала партию — замер показал +11.5%
+// от одной снятой абонентки, что вне правила «ощутимо, но не решает».
+function legacyGraceActive(state) {
+  return (state.month ?? 0) < CONFIG.legacyCarry.graceMonths;
+}
+
+// Лицензия кино в подписку: со своим контентом не нужна, наследие КИНОРЕКИ
+// даёт скидку на первый год.
 function cinemaLicenseFee(state) {
   const asset = assetById(state.assetId);
   if (hasPerk(asset, 'own-content')) return 0;
-  return CONFIG.partners.cinemaLicenseMonthly * (state.legacy?.cinema ? 0.6 : 1);
+  const discounted = state.legacy?.cinema && legacyGraceActive(state);
+  return CONFIG.partners.cinemaLicenseMonthly
+    * (discounted ? CONFIG.legacyCarry.cinemaFeeMult : 1);
 }
 
-// Партнёрство по билетам: своему билетному сервису и наследию — бесплатно
+// Партнёрство по билетам: своему билетному сервису бесплатно всегда,
+// наследию БИЛЕТВИЛЯ — льготный тариф на первый год.
 function ticketsPartnerFee(state) {
   const asset = assetById(state.assetId);
   if (hasPerk(asset, 'own-tickets')) return 0;
-  return state.legacy?.tickets ? 0 : CONFIG.partners.ticketsMonthly;
+  const discounted = state.legacy?.tickets && legacyGraceActive(state);
+  return CONFIG.partners.ticketsMonthly
+    * (discounted ? CONFIG.legacyCarry.ticketsFeeMult : 1);
 }
 
 // ----------------------------------------------------------------------------

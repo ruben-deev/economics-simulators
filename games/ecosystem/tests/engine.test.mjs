@@ -791,9 +791,20 @@ test('стартовые активы — данными: у стриминга 
 test('наследие: бонусы применяются и складываются, но не решают партию', () => {
   const plain = createInitialState('legacy', 'delivery');
   const blessed = createInitialState('legacy', 'delivery', { asset: true, cinema: true, tickets: true });
-  assert.equal(cinemaLicenseFee(blessed), CONFIG.partners.cinemaLicenseMonthly * 0.6);
-  assert.equal(ticketsPartnerFee(blessed), 0);
+  // Наследие даёт льготу на первый год, а не ренту на всю партию: снятая
+  // навсегда абонентка компаундилась и давала +11.5% к итогу (замер).
+  assert.equal(cinemaLicenseFee(blessed),
+    CONFIG.partners.cinemaLicenseMonthly * CONFIG.legacyCarry.cinemaFeeMult);
+  assert.equal(ticketsPartnerFee(blessed),
+    CONFIG.partners.ticketsMonthly * CONFIG.legacyCarry.ticketsFeeMult);
   assert.equal(cinemaLicenseFee(plain), CONFIG.partners.cinemaLicenseMonthly);
+
+  // После льготного года платят все одинаково
+  const later = { ...blessed, month: CONFIG.legacyCarry.graceMonths };
+  assert.equal(cinemaLicenseFee(later), CONFIG.partners.cinemaLicenseMonthly,
+    'льгота на лицензию кончается через год');
+  assert.equal(ticketsPartnerFee(later), CONFIG.partners.ticketsMonthly,
+    'льгота на партнёрство кончается через год');
 
   const runLeg = (legacy) => {
     let s = createInitialState('legacy-run', 'delivery', legacy);

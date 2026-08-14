@@ -217,18 +217,31 @@ export function plusLaunchCost(state) {
   return CONFIG.plus.launchCost * (hasPerk(asset, 'subscription-habit') ? 0.6 : 1);
 }
 
-// Лицензия кино в подписку: со своим контентом не нужна, наследие даёт скидку
+// Льготный период наследия: фора действует первый год партии. Постоянная
+// льгота на 36 месяцев компаундилась и решала партию — замер показал +11.5%
+// от одной снятой абонентки, что вне правила «ощутимо, но не решает».
+export function legacyGraceActive(state) {
+  return (state.month ?? 0) < CONFIG.legacyCarry.graceMonths;
+}
+
+// Лицензия кино в подписку: со своим контентом не нужна, наследие КИНОРЕКИ
+// даёт скидку на первый год.
 export function cinemaLicenseFee(state) {
   const asset = assetById(state.assetId);
   if (hasPerk(asset, 'own-content')) return 0;
-  return CONFIG.partners.cinemaLicenseMonthly * (state.legacy?.cinema ? 0.6 : 1);
+  const discounted = state.legacy?.cinema && legacyGraceActive(state);
+  return CONFIG.partners.cinemaLicenseMonthly
+    * (discounted ? CONFIG.legacyCarry.cinemaFeeMult : 1);
 }
 
-// Партнёрство по билетам: своему билетному сервису и наследию — бесплатно
+// Партнёрство по билетам: своему билетному сервису бесплатно всегда,
+// наследию БИЛЕТВИЛЯ — льготный тариф на первый год.
 export function ticketsPartnerFee(state) {
   const asset = assetById(state.assetId);
   if (hasPerk(asset, 'own-tickets')) return 0;
-  return state.legacy?.tickets ? 0 : CONFIG.partners.ticketsMonthly;
+  const discounted = state.legacy?.tickets && legacyGraceActive(state);
+  return CONFIG.partners.ticketsMonthly
+    * (discounted ? CONFIG.legacyCarry.ticketsFeeMult : 1);
 }
 
 // ----------------------------------------------------------------------------

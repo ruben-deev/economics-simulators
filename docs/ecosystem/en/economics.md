@@ -97,11 +97,26 @@ anchors: delivery +0.4…+1.0 pp, streaming −0.1…+0.6 pp, ticketing
 it shows up larger on ticketing because capital is the binding constraint
 there and the base of comparison is smaller.
 
-**An open balance question.** The same measurement showed that the legacy
-*flags* themselves (own asset + cinema licence + ticketing partnership) have
-grown to +21% for delivery and +12% for ticketing against the documented
-+4–6%. That exceeds the “felt but not decisive” rule; the flags need to be
-re-measured and trimmed (logged in the roadmap).
+**A legacy is a head start, not a rent.** The first per-flag measurement
+exposed a skew: permanently waived monthly fees (the free ticketing
+partnership, the cinema licence discount) were worth +11.5% and +8.0% of the
+final score, and the whole stack +21% for delivery. The cause was
+structural: saving ₽2.5M a month compounds across all 36 months. The fix is
+not a tweak to the numbers but a term: legacy discounts now last the first
+year, after which everyone pays the same.
+
+Measured after the fix (share of the final score, on tuned anchors):
+
+| Asset | own asset | licence | partnership | flag stack | + numbers ×2 | + numbers ×4 |
+|---|---|---|---|---|---|---|
+| delivery | +3.5% | +0.2% | +0.8% | **+4.5%** | +4.8% | +5.4% |
+| streaming | +0.7% | 0.0% | +0.3% | **+2.5%** | +2.9% | +3.4% |
+| ticketing | +2.2% | +0.5% | 0.0% | **+2.7%** | +5.7% | +9.3% |
+
+The zeros are not errors: your own content needs no cinema licence, your own
+ticketing needs no partnership. The extreme +9.3% for ticketing corresponds
+to a BILETVILLE finale four times its solid threshold (₽16bn) — a rare case,
+and it does not lift a verdict grade on its own.
 
 ## The mid-game crisis: an antitrust case
 
