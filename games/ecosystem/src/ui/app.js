@@ -6,13 +6,19 @@
 // ============================================================================
 
 import {
-  CONFIG, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS, assetById, verticalById,
+  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS,
+  assetById, verticalById,
 } from '../model/config.js';
 import { eventById } from '../model/events.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
   fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty,
+  plusAvailable, plusLaunchCost, cinemaLicenseFee, ticketsPartnerFee, hasPerk,
 } from '../model/engine.js';
+import {
+  legacyUnlocks, legacyFor, addResultLine, rememberNovogradResult,
+  tripleCrown, NOVOGRAD_WORTHY, LEGACY_GAMES,
+} from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
@@ -46,8 +52,10 @@ let state = null;
 let chartTab = 'clients';
 let rightTab = 'sop';
 let leversBuilt = false;
-let leversBuiltTaxiOn = false;    // рычаги такси перестраиваются при запуске
+let leversSignature = '';         // группы перестраиваются при запусках
 let bound = false;                // обработчики уже навешаны
+
+const versSignature = () => `${state.taxi.on}|${state.ecom.on}|${state.plus.on}`;
 
 // ----------------------------------------------------------------------------
 // Сохранение
@@ -192,7 +200,7 @@ function renderKpis() {
 // Рычаги: три складных блока (как в БИЛЕТВИЛЕ) с описанием группы и живой
 // сводкой — по ней видно, что механика группы делает прямо сейчас.
 // ----------------------------------------------------------------------------
-const openGroups = { food: true, taxi: true, holding: true };
+const openGroups = { food: true, taxi: true, ecom: true, holding: true };
 
 function leverHtml(l) {
   // Политика — решение с именем, а не процент: сегментные режимы вместо
@@ -216,12 +224,15 @@ function leverHtml(l) {
 }
 
 function buildLevers() {
-  const taxiOn = state.taxi.on;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
-    const levers = LEVERS.filter((l) => l.group === g.id);
-    const locked = g.id === 'taxi' && !taxiOn;
+    // Цена Plus появляется вместе с подпиской
+    const levers = LEVERS.filter((l) => l.group === g.id
+      && !(l.key === 'plusPrice' && !state.plus.on));
+    const locked = (g.id === 'taxi' && !state.taxi.on)
+      || (g.id === 'ecom' && !state.ecom.on);
     const body = locked
-      ? `<div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
+      ? `<div class="hint-box" style="margin:6px 0 12px">${t(g.id === 'taxi'
+          ? 'leverGroupLockedTaxi' : 'leverGroupLockedEcom')}
           <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>`
       : `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>
         <div id="readout-${g.id}"></div>
@@ -271,7 +282,7 @@ function buildLevers() {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
-  leversBuiltTaxiOn = taxiOn;
+  leversSignature = versSignature();
 }
 
 // Живые сводки групп: что механика делает при текущих ползунках.
@@ -319,24 +330,42 @@ function renderLeverReadouts() {
     </div>`;
   }
 
+  const ecomBox = el('readout-ecom');
+  if (ecomBox && state.ecom.on && r) {
+    ecomBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutEcom', {
+        users: compact(state.ecom.users),
+        lost: compact(r.lostEcom), gained: compact(r.ecomColdAcq + r.crossEcomConv),
+        cls: (r.ecomColdAcq + r.crossEcomConv) >= r.lostEcom ? 'pos' : 'neg',
+      })}</div>
+      ${r.logistics ? `<div class="pos">${t('readoutEcomLogistics')}</div>` : ''}
+    </div>`;
+  }
+
   const holdBox = el('readout-holding');
   if (holdBox) {
     const penalty = focusPenalty(state, d);
-    const focusLine = state.taxi.on
+    const anySpoke = state.taxi.on || state.ecom.on;
+    const focusLine = anySpoke
       ? t('readoutFocus', {
           penalty: pct(penalty, 0),
           cls: penalty > 0.05 ? 'neg' : 'pos',
         })
       : t('readoutFocusSingle');
-    const crossLine = r && state.taxi.on && (d.crossSell ?? 0) > 0
+    const crossLine = r && anySpoke && (d.crossSell ?? 0) > 0
       ? `<div>${t('readoutCross', {
-          conv: compact(r.crossConv + r.crossBackConv),
+          conv: compact(r.crossConv + r.crossEcomConv + r.crossBackConv),
           wasted: r.crossWasted > 0 ? t('readoutCrossWasted', { wasted: money(r.crossWasted) }) : '',
         })}</div>`
       : '';
+    const plusLine = state.plus.on && r
+      ? `<div>${t('readoutPlus', {
+          subs: compact(state.plus.subs), multi: compact(r.multiUsers),
+        })}</div>` : '';
     holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${focusLine}</div>
       ${crossLine}
+      ${plusLine}
     </div>`;
   }
 }
@@ -383,6 +412,7 @@ const BUDGET_COLORS = {
   fixed: '#64748b',
   food: PALETTE[1],
   taxi: PALETTE[2],
+  ecom: PALETTE[4],
   eco: PALETTE[0],
 };
 
@@ -392,13 +422,17 @@ function renderBudgetBar() {
   const d = state.decisions;
   const r = last();
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const anySpoke = taxiOn || ecomOn;
   const asset = assetById(state.assetId);
-  const fixed = (r ? r.fixedFood + r.fixedTaxi + r.hqCost
+  const fixed = (r ? r.fixedFood + r.fixedTaxi + (r.fixedEcom ?? 0) + r.hqCost
     : asset.fixedMonthly + CONFIG.hqMonthly);
   const food = (d.foodOps ?? 0) + (d.foodMarketing ?? 0);
   const taxi = taxiOn ? (d.taxiSupply ?? 0) + (d.taxiMarketing ?? 0) : 0;
-  const eco = taxiOn ? (d.crossSell ?? 0) + (d.mgmt ?? 0) : (d.mgmt ?? 0);
-  const total = fixed + food + taxi + eco;
+  const ecom = ecomOn ? (d.ecomOps ?? 0) + (d.ecomMarketing ?? 0) : 0;
+  const eco = (anySpoke ? (d.crossSell ?? 0) : 0) + (d.mgmt ?? 0)
+    + (r ? (r.licenseFee ?? 0) + (r.ticketsFee ?? 0) + (r.plusPerkCost ?? 0) : 0);
+  const total = fixed + food + taxi + ecom + eco;
   const contribution = r ? r.contribution : asset.users * asset.arpu * asset.margin;
   const net = contribution - total;
 
@@ -409,12 +443,13 @@ function renderBudgetBar() {
   box.innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>${t('budgetTitle', { total: money(total) })}</div>
     <div class="budget-bar">
-      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('eco', eco)}
+      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('ecom', ecom)}${seg('eco', eco)}
     </div>
     <div class="budget-legend">
       ${leg('fixed', t('budgetFixed'), fixed)}
       ${leg('food', t('budgetFood'), food)}
       ${leg('taxi', t('budgetTaxi'), taxi)}
+      ${leg('ecom', t('budgetEcom'), ecom)}
       ${leg('eco', t('budgetEco'), eco)}
     </div>
     <div class="funding-note" style="margin-top:4px">${t('budgetNet', {
@@ -435,115 +470,107 @@ function renderEcoMap() {
   const r = last();
   const asset = assetById(state.assetId);
   const taxi = verticalById('taxi');
+  const ecomDef = verticalById('ecom');
   const foodU = r ? r.foodUsers : asset.users;
   const taxiU = r ? r.taxiUsers : 0;
+  const ecomU = r ? r.ecomUsers : 0;
   const bothU = r ? r.bothUsers : 0;
+  const bothEcomU = r ? r.bothEcomUsers : 0;
   const unique = r ? r.uniqueUsers : asset.users;
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const plusOn = state.plus.on;
 
-  // Радиусы от численности. Пересечение — отдельный узел между кругами:
-  // его размер и есть склейка экосистемы
-  const rFood = 30 + 38 * Math.sqrt(foodU / 260_000);
-  const rTaxi = taxiOn ? 12 + 40 * Math.sqrt(taxiU / 300_000) : 16;
-  const rBoth = taxiOn && bothU > 500 ? 8 + 26 * Math.sqrt(bothU / 150_000) : 0;
-  const cx1 = 235;
-  const cx2 = 465;
-  const cxB = (cx1 + cx2) / 2;
-  const cy = 103;
+  // Хаб слева, спицы справа: топология экосистемы буквально на экране.
+  // Узлы пересечений — на связях; подписка — кольцо вокруг хаба.
+  const cx1 = 210;
+  const cy = 130;
+  const rFood = 28 + 36 * Math.sqrt(foodU / 260_000);
+  const tx2 = 500; const ty2 = 78;
+  const ex2 = 500; const ey2 = 192;
+  const rTaxi = taxiOn ? 10 + 36 * Math.sqrt(taxiU / 300_000) : 14;
+  const rEcom = ecomOn ? 10 + 34 * Math.sqrt(ecomU / 300_000) : 14;
+  const rBoth = taxiOn && bothU > 500 ? 6 + 20 * Math.sqrt(bothU / 150_000) : 0;
+  const rBothE = ecomOn && bothEcomU > 500 ? 6 + 20 * Math.sqrt(bothEcomU / 150_000) : 0;
+  const midT = { x: (cx1 + tx2) / 2, y: (cy + ty2) / 2 - 6 };
+  const midE = { x: (cx1 + ex2) / 2, y: (cy + ey2) / 2 + 6 };
 
-  const foodIn = r ? r.wonBack + r.organicFood : 0;
-  // Наконечник — цветная точка на конце пути: SVG-маркеры не наследуют
-  // цвет в старых Safari, а точка работает везде
-  const arrow = (path, ex, ey, color, label, x, y, anchor = 'middle') => `
-    <path class="flow" d="${path}" stroke="${color}"/>
-    <circle cx="${ex}" cy="${ey}" r="3" fill="${color}"/>
-    <text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted">${label}</text>`;
+  const link = (x1, y1, x2, y2, on) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+    stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
 
-  const flows = [];
-  if (r && taxiOn) {
-    if (r.crossConv > 0.5) {
-      flows.push(arrow(
-        `M ${cx1 + 20} ${cy - rFood + 6} C ${cx1 + 60} ${cy - rFood - 34}, ${cx2 - 50} ${cy - rTaxi - 34}, ${cx2 - 10} ${cy - rTaxi + 2}`,
-        cx2 - 10, cy - rTaxi + 2,
-        PALETTE[0], `${t('mapCross')} +${compact(r.crossConv)}`, (cx1 + cx2) / 2 + 10, cy - rFood - 26));
-    }
-    if (r.crossBackConv > 0.5) {
-      flows.push(arrow(
-        `M ${cx2 - 14} ${cy + rTaxi - 2} C ${cx2 - 50} ${cy + rTaxi + 30}, ${cx1 + 60} ${cy + rFood + 30}, ${cx1 + 24} ${cy + rFood - 4}`,
-        cx1 + 24, cy + rFood - 4,
-        PALETTE[0], `${t('mapCrossBack')} +${compact(r.crossBackConv)}`, (cx1 + cx2) / 2 + 10, cy + rFood + 34));
-    }
-    if (r.coldAcq > 0.5) {
-      flows.push(arrow(
-        `M 640 ${cy - 30} C 600 ${cy - 26}, ${cx2 + rTaxi + 40} ${cy - 14}, ${cx2 + rTaxi + 4} ${cy - 6}`,
-        cx2 + rTaxi + 4, cy - 6,
-        PALETTE[2], `${t('mapCold')} +${compact(r.coldAcq)}`, 640, cy - 40, 'end'));
-    }
-    if (r.lostTaxi > 0.5) {
-      flows.push(arrow(
-        `M ${cx2 + 8} ${cy + rTaxi + 2} L ${cx2 + 22} ${cy + rTaxi + 26}`,
-        cx2 + 22, cy + rTaxi + 26,
-        'var(--bad)', `−${compact(r.lostTaxi)}`, cx2 + 30, cy + rTaxi + 38));
-    }
-  }
-  if (r && foodIn > 0.5) {
-    flows.push(arrow(
-      `M 55 ${cy - 26} C 95 ${cy - 24}, ${cx1 - rFood - 36} ${cy - 12}, ${cx1 - rFood - 4} ${cy - 4}`,
-      cx1 - rFood - 4, cy - 4,
-      PALETTE[1], `${t('mapWinback')} +${compact(foodIn)}`, 57, cy - 36, 'start'));
-  }
-  if (r && r.lostFood > 0.5) {
-    flows.push(arrow(
-      `M ${cx1 - 10} ${cy + rFood + 2} L ${cx1 - 24} ${cy + rFood + 26}`,
-      cx1 - 24, cy + rFood + 26,
-      'var(--bad)', `−${compact(r.lostFood)}`, cx1 - 32, cy + rFood + 38));
-  }
-
-  // Значки состояния рынка
-  const badges = [];
-  if (r && r.warMonthsLeft > 0) {
-    badges.push(`<text x="${cx2 + rTaxi + 12}" y="${cy + 4}" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
-  }
-  if (r && r.fedMonthsLeft > 0) {
-    badges.push(`<text x="640" y="26" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
-  }
-
-  const taxiNode = taxiOn
-    ? `<g class="node" data-jump="group:taxi">
-        <circle cx="${cx2}" cy="${cy}" r="${rTaxi}" fill="rgba(244,114,182,0.14)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
-        <text x="${cx2}" y="${cy - 2}" text-anchor="middle">${taxi.icon} ${t('mapTaxi')}</text>
-        <text x="${cx2}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(taxiU)}</text>
+  const spoke = (on, cx, cyS, rr, icon, name, users, jump, offLabel) => (on
+    ? `<g class="node" data-jump="${jump}">
+        <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+        <text x="${cx}" y="${cyS - 2}" text-anchor="middle">${icon} ${name}</text>
+        <text x="${cx}" y="${cyS + 13}" text-anchor="middle" class="m-num">${compact(users)}</text>
       </g>`
     : `<g class="node" data-jump="panel:verticals">
-        <circle cx="${cx2}" cy="${cy}" r="16" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
-        <text x="${cx2}" y="${cy - 26}" text-anchor="middle" class="m-muted">${taxi.icon} ${t('mapTaxiOff')}</text>
-      </g>`;
+        <circle cx="${cx}" cy="${cyS}" r="14" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+        <text x="${cx}" y="${cyS - 22}" text-anchor="middle" class="m-muted">${icon} ${offLabel}</text>
+      </g>`);
 
-  // Узел склейки: люди в двух сервисах — цветом серии «Оба сервиса» с графика
-  const bothLabel = rBoth > 0
+  const bothNode = (rr, mid, users, label) => (rr > 0
     ? `<g class="node" data-jump="lever:crossSell">
-        <line x1="${cx1 + rFood - 4}" y1="${cy}" x2="${cxB - rBoth}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
-        <line x1="${cxB + rBoth}" y1="${cy}" x2="${cx2 - rTaxi + 4}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
-        <circle cx="${cxB}" cy="${cy}" r="${rBoth}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.5"/>
-        <text x="${cxB}" y="${cy - rBoth - 8}" text-anchor="middle" class="m-muted">${t('mapBoth')}</text>
-        <text x="${cxB}" y="${cy + 4}" text-anchor="middle" class="m-num" style="font-size:11px">${compact(bothU)}</text>
-      </g>`
+        <circle cx="${mid.x}" cy="${mid.y}" r="${rr}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.4"/>
+        <text x="${mid.x}" y="${mid.y + 3}" text-anchor="middle" class="m-num" style="font-size:10px">${compact(users)}</text>
+        <text x="${mid.x}" y="${mid.y - rr - 6}" text-anchor="middle" class="m-muted">${label}</text>
+      </g>` : '');
+
+  // Потоки месяца: подписи на связях, отток — красным под кругами
+  const flowLabel = (x, y, text, color, anchor = 'middle') => (text
+    ? `<text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted" style="fill:${color}">${text}</text>` : '');
+
+  const plusRing = plusOn
+    ? `<circle cx="${cx1}" cy="${cy}" r="${rFood + 10}" fill="none" stroke="${PALETTE[0]}"
+        stroke-width="1.6" stroke-dasharray="6 4" opacity="0.8"/>
+      <text x="${cx1}" y="${cy - rFood - 16}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[0]}">➕ ${t('mapPlus', { subs: compact(state.plus.subs) })}</text>`
     : '';
+
+  const badges = [];
+  if (r && r.warMonthsLeft > 0) {
+    badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - 10}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
+  }
+  if (r && r.fedMonthsLeft > 0) {
+    badges.push(`<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
+  }
+  if (r && r.crisisMonthsLeft > 0) {
+    badges.push(`<text x="686" y="40" text-anchor="end" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`);
+  }
 
   box.innerHTML = `<div class="panel eco-map">
     <h2 class="panel-title">${t('mapTitle')}</h2>
-    <svg viewBox="0 0 700 248" role="img" aria-label="${t('mapTitle')}">
+    <svg viewBox="0 0 700 268" role="img" aria-label="${t('mapTitle')}">
       <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
+      ${link(cx1 + rFood - 4, cy - 14, tx2 - rTaxi + 4, ty2 + 6, bothU > 500)}
+      ${ecomOn || !taxiOn ? link(cx1 + rFood - 4, cy + 14, ex2 - rEcom + 4, ey2 - 6, bothEcomU > 500) : ''}
+      ${plusRing}
       <g class="node" data-jump="group:food">
         <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
-        <text x="${cx1 - 14}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapFood')}</text>
-        <text x="${cx1 - 14}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
+        <text x="${cx1}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapHub')}</text>
+        <text x="${cx1}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
       </g>
-      ${taxiNode}
-      ${bothLabel}
-      ${flows.join('')}
+      ${spoke(taxiOn, tx2, ty2, rTaxi, taxi.icon, t('mapTaxi'), taxiU, 'group:taxi', t('mapTaxiOff'))}
+      ${spoke(ecomOn, ex2, ey2, rEcom, ecomDef.icon, t('mapEcom'), ecomU, 'group:ecom', t('mapEcomOff'))}
+      ${bothNode(rBoth, midT, bothU, t('mapBoth'))}
+      ${bothNode(rBothE, midE, bothEcomU, t('mapBoth'))}
+      ${flowLabel(midT.x, midT.y + (rBoth || 8) + 14,
+        r && r.crossConv > 0.5 ? `${t('mapCross')} +${compact(r.crossConv)}` : '', PALETTE[0])}
+      ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
+        r && r.crossEcomConv > 0.5 ? `${t('mapCross')} +${compact(r.crossEcomConv)}` : '', PALETTE[0])}
+      ${flowLabel(tx2 + rTaxi + 8, ty2 + 4,
+        r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '', PALETTE[2], 'start')}
+      ${flowLabel(ex2 + rEcom + 8, ey2 + 4,
+        r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '', PALETTE[2], 'start')}
+      ${flowLabel(tx2, ty2 + rTaxi + 14,
+        r && taxiOn && r.lostTaxi > 0.5 ? `−${compact(r.lostTaxi)}` : '', 'var(--bad)')}
+      ${flowLabel(ex2, ey2 + rEcom + 14,
+        r && ecomOn && r.lostEcom > 0.5 ? `−${compact(r.lostEcom)}` : '', 'var(--bad)')}
+      ${flowLabel(cx1, cy + rFood + (plusOn ? 24 : 14),
+        r && r.lostFood > 0.5 ? `−${compact(r.lostFood)}` : '', 'var(--bad)')}
+      ${flowLabel(cx1 - rFood - 10, cy - 4,
+        r && (r.wonBack + r.organicFood) > 0.5 ? `+${compact(r.wonBack + r.organicFood)}` : '', PALETTE[1], 'end')}
       ${badges.join('')}
-      <text x="350" y="240" text-anchor="middle" class="m-muted">${t('mapUnique', {
+      <text x="350" y="260" text-anchor="middle" class="m-muted">${t('mapUnique', {
         unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
       })}</text>
     </svg>
@@ -611,6 +638,83 @@ function renderVerticals() {
     ${stats}
   </div>`;
 
+  // Е-ком: третья нога за воротами по метрикам
+  const ecomDef = verticalById('ecom');
+  const ecomOn = state.ecom.on;
+  const ecomPlanned = chosen.has('ecom') && !ecomOn;
+  const ecomGateOpen = expansionOpen(state, ecomDef);
+  const ecomCost = ecomDef.launchCost * (asset.launchCostMult?.ecom ?? 1);
+  const ecomBadge = ecomOn
+    ? `<span class="badge on">${t('vertLive')}</span>`
+    : ecomPlanned
+      ? `<span class="badge">${t('vertPlanned')}</span>`
+      : ecomGateOpen
+        ? `<span class="badge">${t('vertLaunch', { cost: money(ecomCost) })}</span>`
+        : `<span class="badge">${t('vertLocked', {
+            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
+          })}</span>`;
+  const logisticsNote = hasPerk(asset, 'courier-logistics')
+    ? `<div class="district-meta pos">${t('vertLogistics', {
+        discount: pct(1 - (asset.launchCostMult?.ecom ?? 1), 0) })}</div>` : '';
+  const ecomCard = `<div class="district ${ecomOn || ecomPlanned ? 'active' : ''}" data-vertical="ecom">
+    <div class="district-head">
+      <span class="district-name">${ecomDef.icon} ${tx(ecomDef.name)}</span>
+      ${ecomBadge}
+    </div>
+    <div class="district-meta">${tx(ecomDef.hint)}</div>
+    ${ecomOn ? `<div class="district-meta">${t('vertEcomStats', {
+      users: compact(state.ecom.users), margin: pct(r?.marginEcom ?? ecomDef.margin, 0),
+    })}</div>` : ''}
+    ${logisticsNote}
+  </div>`;
+
+  // Подписка Plus: склейка, а не вертикаль
+  const plusOn = state.plus.on;
+  const plusPlanned = chosen.has('plus') && !plusOn;
+  const plusOk = plusAvailable(state);
+  const plusBadge = plusOn
+    ? `<span class="badge on">${t('vertLive')}</span>`
+    : plusOk
+      ? `<span class="badge">${t('vertLaunch', { cost: money(plusLaunchCost(state)) })}</span>`
+      : `<span class="badge">${t('plusNeedsVerticals')}</span>`;
+  const plusCard = `<div class="district ${plusOn || plusPlanned ? 'active' : ''}" data-vertical="plus">
+    <div class="district-head">
+      <span class="district-name">➕ ${t('plusName')}</span>
+      ${plusBadge}
+    </div>
+    <div class="district-meta">${t('plusHint')}</div>
+    ${plusOn ? `<div class="district-meta">${t('plusStats', {
+      subs: compact(state.plus.subs), price: num(state.decisions.plusPrice ?? 299),
+    })}</div>` : ''}
+  </div>`;
+
+  // Партнёрства: кино и билеты входят лицензиями, а не играми
+  const partnersChosen = new Set(state.decisions.partners ?? []);
+  const ownContent = hasPerk(asset, 'own-content');
+  const ownTickets = hasPerk(asset, 'own-tickets');
+  const licenseFee = cinemaLicenseFee(state);
+  const ticketsFee = ticketsPartnerFee(state);
+  const partnerCard = (id, icon, name, hint, own, fee, feeNote, active) => `
+    <div class="district ${active ? 'active' : ''}" ${own ? '' : `data-partner="${id}"`}>
+      <div class="district-head">
+        <span class="district-name">${icon} ${name}</span>
+        <span class="badge ${active ? 'on' : ''}">${own ? t('partnerOwn')
+          : active ? feeNote : t('partnerJoin', { fee: feeNote })}</span>
+      </div>
+      <div class="district-meta">${hint}</div>
+    </div>`;
+  const cinemaActive = plusOn && (partnersChosen.has('cinema') || ownContent);
+  const ticketsActive = partnersChosen.has('tickets') || ownTickets;
+  const cinemaCard = partnerCard('cinema', '🎬', t('partnerCinema'),
+    plusOn ? t('partnerCinemaHint') : t('partnerCinemaNeedsPlus'),
+    ownContent, licenseFee,
+    licenseFee > 0 ? t('perMonth', { value: money(licenseFee) }) : t('partnerFree'),
+    cinemaActive);
+  const ticketsCard = partnerCard('tickets', '🎟️', t('partnerTickets'),
+    t('partnerTicketsHint'), ownTickets, ticketsFee,
+    ticketsFee > 0 ? t('perMonth', { value: money(ticketsFee) }) : t('partnerFree'),
+    ticketsActive);
+
   // Будущие фазы: видны, но заперты — дисциплина скоупа наглядно
   const future = FUTURE_VERTICALS.map((v) => `<div class="district" style="opacity:.55">
     <div class="district-head">
@@ -620,21 +724,40 @@ function renderVerticals() {
     <div class="district-meta">${tx(v.hint)}</div>
   </div>`).join('');
 
-  el('verticals').innerHTML = assetCard + taxiCard + future;
+  el('verticals').innerHTML = assetCard + taxiCard + ecomCard + plusCard
+    + cinemaCard + ticketsCard + future;
 
   el('verticals').querySelectorAll('[data-vertical]').forEach((node) => {
     node.addEventListener('click', () => {
       const id = node.dataset.vertical;
       const set = new Set(state.decisions.verticals ?? []);
-      if (!set.has(id) && !state.taxi.on && !gateOpen) {
-        toast(t('vertLockedToast', {
-          month: taxi.gate.minMonth, n: taxi.gate.assetContributionMonths,
-        }));
+      if (!set.has(id)) {
+        if (id === 'ecom' && !state.ecom.on && !ecomGateOpen) {
+          toast(t('vertLockedToast', {
+            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
+          }));
+        }
+        if (id === 'plus' && !state.plus.on && !plusOk) {
+          toast(t('plusNeedsVerticalsToast'));
+          return;
+        }
       }
       if (set.has(id)) set.delete(id); else set.add(id);
       state.decisions.verticals = [...set];
       renderVerticals();
       renderRightTab();
+      save();
+    });
+  });
+  el('verticals').querySelectorAll('[data-partner]').forEach((node) => {
+    node.addEventListener('click', () => {
+      const id = node.dataset.partner;
+      if (id === 'cinema' && !state.plus.on) { toast(t('partnerCinemaNeedsPlus')); return; }
+      const set = new Set(state.decisions.partners ?? []);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      state.decisions.partners = [...set];
+      renderVerticals();
+      renderBudgetBar();
       save();
     });
   });
@@ -792,6 +915,18 @@ function buildAlerts(r) {
   if (r.crossWasted > 0.2 * (r.decisions.crossSell ?? 0) && (r.decisions.crossSell ?? 0) > 0) {
     alerts.push(['warn', t('alertCrossWasted', { wasted: money(r.crossWasted) }), 'lever:crossSell']);
   }
+  if (!state.ecom.on && state.month >= 8 && expansionOpen(state, verticalById('ecom'))
+      && !(state.decisions.verticals ?? []).includes('ecom')) {
+    alerts.push(['good', t('alertEcomGateOpen'), 'panel:verticals']);
+  }
+  if (!state.plus.on && plusAvailable(state) && r.multiUsers > 30_000
+      && !(state.decisions.verticals ?? []).includes('plus')) {
+    alerts.push(['good', t('alertPlusReady', { multi: compact(r.multiUsers) }), 'panel:verticals']);
+  }
+  if (r.plusOn && r.plusSubs < r.multiUsers * 0.1 && r.plusSubs > 0
+      && (r.decisions.plusPrice ?? 299) > 299) {
+    alerts.push(['warn', t('alertPlusPricey'), 'lever:plusPrice']);
+  }
   if ((r.decisions.foodTake ?? 1) > CONFIG.foodTakeThreshold) {
     alerts.push(['bad', t('alertTakeExodus', {
       take: pct(r.decisions.foodTake, 0) }), 'lever:foodTake']);
@@ -917,14 +1052,19 @@ function renderReport() {
         t('statProfitSub', { contribution: money(r.contribution), opex: money(r.opex) }))}
       ${stat(t('statUnique'), compact(r.uniqueUsers),
         t('statUniqueSub', {
-          food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.bothUsers),
+          food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.multiUsers),
         }))}
       ${stat(t('statArpu'), `${num(r.arpuHolding)} ₽`, t('statArpuSub'))}
       ${stat(t('statTaxi'), r.taxiOn ? compact(r.taxiUsers) : '—',
         r.taxiOn ? t('statTaxiSub', { drivers: num(r.drivers), fill: pct(r.fill, 0) }) : t('statTaxiOff'))}
-      ${stat(t('statCross'), r.crossConv + r.crossBackConv > 0
-          ? `+${compact(r.crossConv + r.crossBackConv)}` : '—',
-        r.crossConv + r.crossBackConv > 0
+      ${stat(t('statEcom'), r.ecomOn ? compact(r.ecomUsers) : '—',
+        r.ecomOn ? t('statEcomSub', { margin: pct(r.marginEcom, 0) }) : t('statTaxiOff'))}
+      ${stat(t('statPlus'), r.plusOn ? compact(r.plusSubs) : '—',
+        r.plusOn ? t('statPlusSub', {
+          conv: num(r.plusConv, 0), churned: num(r.plusChurned, 0) }) : t('statTaxiOff'))}
+      ${stat(t('statCross'), r.crossConv + r.crossEcomConv + r.crossBackConv > 0
+          ? `+${compact(r.crossConv + r.crossEcomConv + r.crossBackConv)}` : '—',
+        r.crossConv + r.crossEcomConv + r.crossBackConv > 0
           ? t('statCrossSub', {
               cac: `${num(r.crossCac)} ₽`,
               cold: r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—',
@@ -1027,7 +1167,9 @@ const CHART_TABS = {
       { label: t('seriesUnique'), data: h.map((r) => r.uniqueUsers), color: PALETTE[0] },
       { label: t('seriesFood'), data: h.map((r) => r.foodUsers), color: PALETTE[1] },
       { label: t('seriesTaxi'), data: h.map((r) => r.taxiUsers), color: PALETTE[2] },
-      { label: t('seriesBoth'), data: h.map((r) => r.bothUsers), color: PALETTE[3] },
+      { label: t('seriesEcom'), data: h.map((r) => r.ecomUsers ?? 0), color: PALETTE[4] },
+      { label: t('seriesBoth'), data: h.map((r) => r.multiUsers ?? r.bothUsers), color: PALETTE[3] },
+      { label: t('seriesPlus'), data: h.map((r) => r.plusSubs ?? 0), color: PALETTE[5] },
     ],
   },
   money: {
@@ -1053,14 +1195,16 @@ const CHART_TABS = {
       { label: t('seriesValueTotal'), data: h.map((r) => r.valuation ?? 0), color: PALETTE[0] },
       { label: t('seriesValueFood'), data: h.map((r) => r.sopFoodValue ?? 0), color: PALETTE[1] },
       { label: t('seriesValueTaxi'), data: h.map((r) => r.sopTaxiValue ?? 0), color: PALETTE[2] },
+      { label: t('seriesValueEcom'), data: h.map((r) => r.sopEcomValue ?? 0), color: PALETTE[4] },
+      { label: t('seriesValuePlus'), data: h.map((r) => r.sopPlusValue ?? 0), color: PALETTE[5] },
     ],
   },
   acq: {
     label: 'chartAcq', caption: 'chartAcqCaption',
     format: (v) => `${Math.round(v)}`,
     series: (h) => [
-      { label: t('seriesCrossAcq'), data: h.map((r) => r.crossConv + r.crossBackConv), color: PALETTE[0] },
-      { label: t('seriesColdAcq'), data: h.map((r) => r.coldAcq), color: PALETTE[2] },
+      { label: t('seriesCrossAcq'), data: h.map((r) => r.crossConv + (r.crossEcomConv ?? 0) + r.crossBackConv), color: PALETTE[0] },
+      { label: t('seriesColdAcq'), data: h.map((r) => r.coldAcq + (r.ecomColdAcq ?? 0)), color: PALETTE[2] },
     ],
   },
 };
@@ -1076,6 +1220,9 @@ function decisionChanges() {
     for (const l of LEVERS) if ((cur[l.key] ?? 0) !== (before[l.key] ?? 0)) names.push(tx(l.label));
     if ((cur.verticals ?? []).length !== (before.verticals ?? []).length) {
       names.push(t('chartChangeVerticals'));
+    }
+    if ((cur.partners ?? []).length !== (before.partners ?? []).length) {
+      names.push(t('chartChangePartners'));
     }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
   }
@@ -1120,7 +1267,9 @@ function renderChart() {
 // ----------------------------------------------------------------------------
 function renderSopTab() {
   const sop = sumOfParts(state);
-  const partName = (id) => (id === 'food' ? t('sopPartFood') : t('sopPartTaxi'));
+  const partName = (id) => t({
+    food: 'sopPartFood', taxi: 'sopPartTaxi', ecom: 'sopPartEcom', plus: 'sopPartPlus',
+  }[id] ?? 'sopPartFood');
   const rows = sop.parts.map((p) => `<tr>
     <td>${partName(p.id)}${p.zoo ? `<div class="funding-note neg">${t('sopZoo')}</div>` : ''}</td>
     <td>${money(p.runRate)}</td>
@@ -1142,6 +1291,7 @@ function renderSopTab() {
         <tr class="total"><td colspan="4">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
       </tbody>
     </table>
+    ${sop.thirdAct ? `<div class="alert warn" style="margin-top:8px">${t('sopThirdAct')}</div>` : ''}
     <p class="funding-note" style="margin-top:10px">${t('sopNote')}</p>`;
 }
 
@@ -1155,20 +1305,31 @@ function renderPnlTab() {
     <table class="data">
       <tbody>
         ${line(t('pnlRevenueFood'), r.revenueFood, 'pos', true)}
-        ${line(t('pnlRevenueTaxi'), r.revenueTaxi, 'pos', true)}
+        ${r.taxiOn ? line(t('pnlRevenueTaxi'), r.revenueTaxi, 'pos', true) : ''}
+        ${r.ecomOn ? line(t('pnlRevenueEcom'), r.revenueEcom, 'pos', true) : ''}
+        ${r.plusOn ? line(t('pnlRevenuePlus'), r.revenuePlus, 'pos', true) : ''}
+        ${r.revenueTickets > 0 ? line(t('pnlRevenueTickets'), r.revenueTickets, 'pos', true) : ''}
         <tr class="total"><td>${t('pnlRevenue')}</td><td class="pos">${moneyExact(r.revenue)}</td></tr>
         ${line(t('pnlContribFood'), r.contribFood, 'pos', true)}
-        ${line(t('pnlContribTaxi'), r.contribTaxi, r.contribTaxi >= 0 ? 'pos' : 'neg', true)}
+        ${r.taxiOn ? line(t('pnlContribTaxi'), r.contribTaxi, r.contribTaxi >= 0 ? 'pos' : 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlContribEcom'), r.contribEcom, r.contribEcom >= 0 ? 'pos' : 'neg', true) : ''}
+        ${r.plusOn ? line(t('pnlPlusNet'), r.revenuePlus - r.plusPerkCost,
+          (r.revenuePlus - r.plusPerkCost) >= 0 ? 'pos' : 'neg', true) : ''}
         <tr class="total"><td>${t('pnlContribution')}</td><td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlFixedFood'), -r.fixedFood, 'neg', true)}
         ${r.taxiOn ? line(t('pnlFixedTaxi'), -r.fixedTaxi, 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlFixedEcom'), -r.fixedEcom, 'neg', true) : ''}
         ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
         ${line(t('pnlMgmt'), -(d.mgmt ?? 0), 'neg', true)}
-        ${r.taxiOn ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
+        ${(r.taxiOn || r.ecomOn) ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
         ${line(t('pnlFoodOps'), -(d.foodOps ?? 0), 'neg', true)}
         ${line(t('pnlFoodMarketing'), -(d.foodMarketing ?? 0), 'neg', true)}
         ${r.taxiOn ? line(t('pnlTaxiSupply'), -(d.taxiSupply ?? 0), 'neg', true) : ''}
         ${r.taxiOn ? line(t('pnlTaxiMarketing'), -(d.taxiMarketing ?? 0), 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlEcomOps'), -(d.ecomOps ?? 0), 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlEcomMarketing'), -(d.ecomMarketing ?? 0), 'neg', true) : ''}
+        ${r.licenseFee > 0 ? line(t('pnlLicense'), -r.licenseFee, 'neg', true) : ''}
+        ${r.ticketsFee > 0 ? line(t('pnlTicketsFee'), -r.ticketsFee, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -1182,7 +1343,9 @@ function renderBaseTab() {
   const asset = assetById(state.assetId);
   const foodU = r ? r.foodUsers : asset.users;
   const taxiU = r ? r.taxiUsers : 0;
-  const bothU = r ? r.bothUsers : 0;
+  const ecomU = r ? r.ecomUsers : 0;
+  const multiU = r ? r.multiUsers : 0;
+  const subs = r ? r.plusSubs : 0;
   const unique = r ? r.uniqueUsers : asset.users;
   const pool = r ? r.returnPool : asset.returnPool;
 
@@ -1192,27 +1355,28 @@ function renderBaseTab() {
       <tbody>
         <tr><td>${t('baseFood')}</td><td>${compact(foodU)}</td></tr>
         <tr><td>${t('baseTaxi')}</td><td>${compact(taxiU)}</td></tr>
-        <tr><td>${t('baseBoth')}</td><td>${compact(bothU)}</td></tr>
+        <tr><td>${t('baseEcom')}</td><td>${state.ecom.on ? compact(ecomU) : '—'}</td></tr>
+        <tr><td>${t('baseBoth')}</td><td>${compact(multiU)}</td></tr>
+        <tr><td>${t('basePlus')}</td><td>${state.plus.on ? compact(subs) : '—'}</td></tr>
         <tr class="total"><td>${t('baseUnique')}</td><td>${compact(unique)}</td></tr>
-        <tr class="sub"><td>${t('baseMultiShare')}</td><td>${pct(unique > 0 ? bothU / unique : 0, 1)}</td></tr>
+        <tr class="sub"><td>${t('baseMultiShare')}</td><td>${pct(unique > 0 ? multiU / unique : 0, 1)}</td></tr>
         <tr class="sub"><td>${t('baseReturnPool')}</td><td>${compact(pool)}</td></tr>
       </tbody>
     </table>`;
 
   let channels = '';
-  if (r && state.taxi.on) {
-    const cacOf = (spentPer, conv) => (conv > 0 ? `${num(spentPer / conv)} ₽` : '—');
-    const budgetF = (r.decisions.crossSell ?? 0) * (1 - CONFIG.crossBackShare);
-    const budgetB = (r.decisions.crossSell ?? 0) * CONFIG.crossBackShare;
+  if (r && (state.taxi.on || state.ecom.on)) {
     channels = `
       <h4 style="margin:14px 0 6px;font-size:13px">${t('baseAcqTitle')}</h4>
       <table class="data">
         <thead><tr><th>${t('baseColChannel')}</th><th>${t('baseColPeople')}</th><th>${t('baseColCac')}</th></tr></thead>
         <tbody>
-          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td>${cacOf(budgetF, r.crossConv)}</td></tr>
-          <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td><td>${cacOf(budgetB, r.crossBackConv)}</td></tr>
+          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${num(r.crossCac)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCrossEcom')}</td><td>${num(r.crossEcomConv, 0)}</td></tr>
+          <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td></tr>
           <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${cacOf(r.decisions.foodMarketing ?? 0, r.wonBack)}</td></tr>
+          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${num(r.cacColdEcom)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${num((r.decisions.foodMarketing ?? 0) / r.wonBack)} ₽` : '—'}</td></tr>
           <tr><td>${t('baseChOrganic')}</td><td>${num(r.organicFood, 0)}</td><td>—</td></tr>
         </tbody>
       </table>
@@ -1238,6 +1402,12 @@ function renderHelpTab() {
 
     <h4>${t('helpWarTitle')}</h4>
     <p>${t('helpWarText')}</p>
+
+    <h4>${t('helpPlusTitle')}</h4>
+    <p>${t('helpPlusText')}</p>
+
+    <h4>${t('helpMetaTitle')}</h4>
+    <p>${t('helpMetaText')}</p>
 
     <h4>${t('helpFocusTitle')}</h4>
     <p>${t('helpFocusText')}</p>
@@ -1355,7 +1525,9 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      // Титул «Конгломерат Новограда» остаётся в локальных рекордах
+      outcome: s.bankrupt ? 'bankrupt'
+        : (s.equityValue >= NOVOGRAD_WORTHY && tripleCrown() ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
     });
@@ -1365,7 +1537,9 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt'
+      : rec.outcome === 'conglomerate' ? 'recordsOutcomeConglomerate'
+      : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
@@ -1381,6 +1555,16 @@ function showGameOver() {
     : s.equityValue > 5e9 ? t('gradeExcellent')
     : s.equityValue > 2e9 ? t('gradeSolid')
     : s.equityValue > 8e8 ? t('gradeSurvived') : t('gradeModest');
+
+  // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
+  // бонусы в старых играх (бейдж и спец-сиды на их финальных экранах)
+  if (!s.bankrupt) rememberNovogradResult(s.equityValue);
+  // Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
+  // Строго косметика — никакого множителя к счёту.
+  const crown = !s.bankrupt && s.equityValue >= NOVOGRAD_WORTHY && tripleCrown();
+  const crownHtml = crown ? `
+    <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
+    ${t('crownText')}</div>` : '';
 
   const line = resultString({
     tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
@@ -1399,6 +1583,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2e9), c: money(8e8) })}</p>
+    ${crownHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       revenue: money(r.revenue), arpu: num(r.arpuHolding),
@@ -1433,21 +1618,44 @@ function showGameOver() {
   });
 }
 
-// Приветственный экран: куда человек попал и что от него хотят.
+// Приветственный экран: куда человек попал, выбор стартового актива
+// («класс персонажа») и наследие из трёх игр набора.
 function showWelcome() {
   let seedWanted = '';
+  let assetWanted = state.assetId;
   const best = bestRecord(RECORDS_KEY);
-  const asset = assetById(state.assetId);
+  const unlocks = legacyUnlocks();
+
+  const assetCards = START_ASSETS.map((a) => `
+    <button type="button" class="event-option ${a.id === assetWanted ? 'selected' : ''}" data-asset="${a.id}">
+      <b>${a.icon} ${tx(a.name)}${unlocks[a.id] ? ' ★' : ''}</b>
+      <span>${t('vertAssetStats', {
+        users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
+      })} · ${tx(a.synergyNote)}</span>
+    </button>`).join('');
+
+  const legacyLine = LEGACY_GAMES.map((g) => {
+    const a = assetById(g.assetId);
+    return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
+  }).join(' · ');
+
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
-    <p class="funding-note">${t('welcomeHint')}</p>
-    <div class="hint-box" style="margin-top:8px"><b>${t('welcomeAsset')}:</b>
-      ${asset.icon} ${tx(asset.name)} · ${t('vertAssetStats', {
-        users: compact(asset.users), arpu: num(asset.arpu), margin: pct(asset.margin, 0),
-      })}<br>${t('welcomeAssetNote')}</div>
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
+    <p class="funding-note">${t('welcomeAssetChoice')}</p>
+    <div class="event-options">${assetCards}</div>
+    <div class="hint-box" style="margin-top:8px">
+      <b>${t('welcomeLegacy')}:</b> ${legacyLine}<br>
+      ${t('welcomeLegacyNote')}
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
+          style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+        <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
+      </div>
+    </div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -1458,7 +1666,15 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+      const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
+      // Партия пересоздаётся, если поменяли сид или актив — или если это
+      // свежая партия (ход ещё не сделан): наследие должно примениться
+      if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
+        state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
+          assetWanted, legacyFor(assetWanted, legacyUnlocks()));
+        save();
+        renderAll();
+      }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен
@@ -1466,6 +1682,24 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-asset]').forEach((b) => {
+    b.addEventListener('click', () => {
+      assetWanted = b.dataset.asset;
+      el('modal-root').querySelectorAll('[data-asset]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.asset === assetWanted);
+      });
+    });
+  });
+  el('modal-root').querySelector('#legacy-add')?.addEventListener('click', () => {
+    const input = el('modal-root').querySelector('#legacy-line');
+    const res = addResultLine(input?.value ?? '');
+    if (res.ok) {
+      toast(t('welcomeLegacyAdded', { tag: res.parsed.tag }));
+      showWelcome();
+    } else {
+      toast(t('welcomeLegacyBad'));
+    }
+  });
 }
 
 function showHelp() {
@@ -1552,7 +1786,7 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt || leversBuiltTaxiOn !== state.taxi.on) buildLevers();
+  if (!leversBuilt || leversSignature !== versSignature()) buildLevers();
   renderChrome();
   syncLevers();
   renderLeverReadouts();

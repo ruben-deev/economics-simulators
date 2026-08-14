@@ -16,6 +16,7 @@ export default {
     '../../shared/clone.js',
     '../../shared/valuation.js',
     '../../shared/records.js',
+    '../../shared/meta.js',
     '../../shared/leaderboard.js',
     '../../shared/rng.js',
     'src/model/config.js',

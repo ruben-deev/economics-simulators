@@ -1051,6 +1051,10 @@ const STRINGS = {
     ru: 'Рычаги такси появятся после запуска вертикали — карточка «Такси» в панели «Вертикали».',
     en: 'Taxi levers appear once the vertical is launched — see the Taxi card in the Verticals panel.',
   },
+  leverGroupLockedEcom: {
+    ru: 'Рычаги е-кома появятся после запуска вертикали. Совет согласует третью ногу с 8-го месяца при прибыльном стартовом активе.',
+    en: 'E-commerce levers appear once the vertical is launched. The board approves a third leg from month 8, with the starting asset profitable.',
+  },
 
   // --- живые сводки групп рычагов ---
   readoutFood: {
@@ -1093,12 +1097,25 @@ const STRINGS = {
     ru: ' Сгорело о ёмкость канала: {wasted}.',
     en: ' Burned against the channel’s capacity: {wasted}.',
   },
+  readoutEcom: {
+    ru: 'Е-ком: <b>{users}</b> клиентов; отток ~{lost}/мес против притока ~<b class="{cls}">{gained}</b>.',
+    en: 'E-commerce: <b>{users}</b> customers; churn ~{lost}/mo against ~<b class="{cls}">{gained}</b> arriving.',
+  },
+  readoutEcomLogistics: {
+    ru: 'Общая логистика: курьеры хаба возят посылки в непик — маржа выше, но пиковые конфликты стоят еде качества.',
+    en: 'Shared logistics: the hub’s couriers carry parcels off-peak — higher margin, but peak conflicts cost food some quality.',
+  },
+  readoutPlus: {
+    ru: 'Plus: <b>{subs}</b> подписчиков из {multi} мульти-клиентов — подписка усиливает удержание всех сервисов.',
+    en: 'Plus: <b>{subs}</b> subscribers out of {multi} multi-service customers — the subscription hardens retention everywhere.',
+  },
 
   // --- бюджетная полоса ---
   budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
   budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
   budgetFood: { ru: 'еда', en: 'food' },
   budgetTaxi: { ru: 'такси', en: 'taxi' },
+  budgetEcom: { ru: 'е-ком', en: 'e-com' },
   budgetEco: { ru: 'экосистема', en: 'ecosystem' },
   budgetNet: {
     ru: 'Вклад прошлого месяца {contribution} → прибыль примерно <b class="{cls}">{net}</b>.',
@@ -1109,6 +1126,11 @@ const STRINGS = {
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
   mapFood: { ru: 'Еда', en: 'Food' },
+  mapHub: { ru: 'Хаб', en: 'Hub' },
+  mapEcom: { ru: 'Е-ком', en: 'E-com' },
+  mapEcomOff: { ru: 'е-ком не запущен', en: 'e-com not launched' },
+  mapPlus: { ru: 'Plus · {subs}', en: 'Plus · {subs}' },
+  mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
   mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
   mapBoth: { ru: 'оба сервиса', en: 'both services' },
@@ -1149,7 +1171,38 @@ const STRINGS = {
     ru: 'Запуск {cost} разово + {monthly}/мес фикса. «{incumbent}» ответит демпингом: {war} месяцев приток урезан и цены рынка продавлены.',
     en: 'Launch {cost} one-off + {monthly}/mo fixed. {incumbent} will answer with dumping: for {war} months your intake is cut and market fares are pushed down.',
   },
-  vertFuture: { ru: 'после одобрения прототипа', en: 'after the prototype is approved' },
+  vertFuture: { ru: 'следующая фаза', en: 'next phase' },
+  vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch {discount} cheaper.' },
+  vertEcomStats: { ru: '{users} клиентов · маржа {margin}', en: '{users} customers · margin {margin}' },
+  plusName: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },
+  plusHint: {
+    ru: 'Склейка экосистемы: подписчик пользуется всеми сервисами чаще и уходит реже. Выгоды стоят маржи — это покупка удержания. Дилемма Amazon Prime.',
+    en: 'The ecosystem’s glue: a subscriber uses every service more and churns less. The perks cost margin — you are buying retention. The Amazon Prime dilemma.',
+  },
+  plusStats: { ru: '{subs} подписчиков · {price} ₽/мес', en: '{subs} subscribers · ₽{price}/mo' },
+  plusNeedsVerticals: { ru: 'нужна вторая вертикаль', en: 'needs a second vertical' },
+  plusNeedsVerticalsToast: {
+    ru: 'Подписке нужно, что склеивать: сначала запустите хотя бы одну вертикаль рядом с хабом.',
+    en: 'The subscription needs something to glue: launch at least one vertical beside the hub first.',
+  },
+  partnerOwn: { ru: 'уже ваше', en: 'already yours' },
+  partnerJoin: { ru: 'включить · {fee}', en: 'enable · {fee}' },
+  partnerFree: { ru: 'бесплатно', en: 'free' },
+  perMonth: { ru: '{value}/мес', en: '{value}/mo' },
+  partnerCinema: { ru: 'Кино в подписке', en: 'Cinema in the subscription' },
+  partnerCinemaHint: {
+    ru: 'Лицензия стриминга в Plus: подписка конвертит лучше и держит крепче. Кино входит партнёрской вертикалью — микроменеджмент остался в КИНОРЕКЕ.',
+    en: 'A streaming licence inside Plus: the subscription converts better and holds tighter. Cinema joins as a partner vertical — the micromanagement stayed in KINOREKA.',
+  },
+  partnerCinemaNeedsPlus: {
+    ru: 'Лицензия кино живёт внутри подписки: сначала запустите «Новоград Plus».',
+    en: 'The cinema licence lives inside the subscription: launch Novograd Plus first.',
+  },
+  partnerTickets: { ru: 'Партнёрство по билетам', en: 'Ticketing partnership' },
+  partnerTicketsHint: {
+    ru: 'Афиши и события для мульти-клиентов: событийная выручка и чуть крепче подписка. Билеты входят партнёрством — микроменеджмент остался в БИЛЕТВИЛЕ.',
+    en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in BILETVILLE.',
+  },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (customers and fleet are released)' },
   vertLockedToast: {
     ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльная еда {n} месяца подряд. Заявка сохранена.',
@@ -1245,6 +1298,10 @@ const STRINGS = {
   statTaxi: { ru: 'Такси', en: 'Taxi' },
   statTaxiSub: { ru: '{drivers} водителей · подача {fill}', en: '{drivers} drivers · pickup fill {fill}' },
   statTaxiOff: { ru: 'не запущено', en: 'not launched' },
+  statEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  statEcomSub: { ru: 'маржа {margin} с общей логистикой', en: 'margin {margin} with shared logistics' },
+  statPlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
+  statPlusSub: { ru: '+{conv} / −{churned} за месяц', en: '+{conv} / −{churned} this month' },
   statCross: { ru: 'Кросс-селл за месяц', en: 'Cross-sell this month' },
   statCrossSub: { ru: 'клиент за {cac} против {cold} холодного', en: 'a customer for {cac} vs {cold} cold' },
   statCrossOff: { ru: 'канал не включён', en: 'channel not in use' },
@@ -1330,6 +1387,18 @@ const STRINGS = {
     ru: 'Спад ещё {months} мес.: фиксы срезаны на 25%, но исполнение страдает — отток выше обычного.',
     en: 'The downturn runs {months} more months: fixed costs are cut 25%, but execution suffers — churn is above normal.',
   },
+  alertEcomGateOpen: {
+    ru: 'Совет готов согласовать третью ногу: е-ком доступен к запуску — у вашей логистики здесь скидка.',
+    en: 'The board is ready to approve a third leg: e-commerce is available — your logistics earns a discount here.',
+  },
+  alertPlusReady: {
+    ru: 'У вас {multi} клиентов с двумя сервисами — подписке Plus уже есть что склеивать.',
+    en: 'You have {multi} customers on two services — Plus already has something to glue.',
+  },
+  alertPlusPricey: {
+    ru: 'Подписка почти не растёт: премиальная цена сужает круг желающих.',
+    en: 'The subscription is barely growing: the premium price narrows the audience.',
+  },
   jumpGo: { ru: 'показать →', en: 'show →' },
 
   // --- новости ---
@@ -1408,7 +1477,9 @@ const STRINGS = {
   },
   seriesFood: { ru: 'Еда', en: 'Food' },
   seriesTaxi: { ru: 'Такси', en: 'Taxi' },
-  seriesBoth: { ru: 'Оба сервиса', en: 'Both services' },
+  seriesEcom: { ru: 'Е-ком', en: 'E-com' },
+  seriesBoth: { ru: 'Мульти-клиенты', en: 'Multi-service' },
+  seriesPlus: { ru: 'Подписчики Plus', en: 'Plus subs' },
   seriesUnique: { ru: 'Уникальные', en: 'Unique' },
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
   seriesContribution: { ru: 'Вклад', en: 'Contribution' },
@@ -1416,12 +1487,15 @@ const STRINGS = {
   seriesArpu: { ru: 'ARPU, ₽/мес', en: 'ARPU, ₽/mo' },
   seriesValueFood: { ru: 'Оценка еды', en: 'Food value' },
   seriesValueTaxi: { ru: 'Оценка такси', en: 'Taxi value' },
+  seriesValueEcom: { ru: 'Оценка е-кома', en: 'E-com value' },
+  seriesValuePlus: { ru: 'Оценка подписки', en: 'Plus value' },
   seriesValueTotal: { ru: 'Оценка холдинга', en: 'Holding value' },
   seriesCrossAcq: { ru: 'Кросс-селл, чел/мес', en: 'Cross-sell, people/mo' },
   seriesColdAcq: { ru: 'Маркетинг, чел/мес', en: 'Marketing, people/mo' },
   chartChangesTitle: { ru: 'Решения:', en: 'Decisions:' },
   chartChangeItem: { ru: 'м{turn} — {what}', en: 'mo {turn} — {what}' },
   chartChangeVerticals: { ru: 'вертикали', en: 'verticals' },
+  chartChangePartners: { ru: 'партнёрства', en: 'partnerships' },
   pnlEmpty: { ru: 'Сыграйте первый месяц — появится динамика.', en: 'Play the first month and the trends will appear.' },
 
   // --- правая колонка: оценка (sum-of-parts) ---
@@ -1440,6 +1514,12 @@ const STRINGS = {
   sopColValue: { ru: 'Оценка', en: 'Value' },
   sopPartFood: { ru: 'Доставка еды', en: 'Food delivery' },
   sopPartTaxi: { ru: 'Такси', en: 'Taxi' },
+  sopPartEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  sopPartPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
+  sopThirdAct: {
+    ru: 'Третий акт: инвесторы требуют прибыльную экосистему, а не зоопарк — убыточные части в последний год дисконтируются жёстче.',
+    en: 'Act three: investors demand a profitable ecosystem, not a zoo — loss-making parts are discounted harder in the final year.',
+  },
   sopZoo: { ru: 'убыточна и не растёт — считается обязательством', en: 'loss-making and not growing — counted as a liability' },
   sopPremium: { ru: 'Премия за кросс-селл ({share} клиентов с 2+ сервисами)', en: 'Cross-sell premium ({share} customers on 2+ services)' },
   sopBonus: { ru: 'Репутация у совета и инвесторов', en: 'Standing with the board and investors' },
@@ -1452,12 +1532,18 @@ const STRINGS = {
   // --- правая колонка: P&L ---
   pnlRevenueFood: { ru: 'Выручка еды', en: 'Food revenue' },
   pnlRevenueTaxi: { ru: 'Выручка такси', en: 'Taxi revenue' },
+  pnlRevenueEcom: { ru: 'Выручка е-кома', en: 'E-commerce revenue' },
+  pnlRevenuePlus: { ru: 'Подписка Plus', en: 'Plus subscriptions' },
+  pnlRevenueTickets: { ru: 'Партнёрство по билетам', en: 'Ticketing partnership' },
   pnlRevenue: { ru: 'Выручка холдинга', en: 'Holding revenue' },
   pnlContribFood: { ru: 'Вклад еды', en: 'Food contribution' },
   pnlContribTaxi: { ru: 'Вклад такси', en: 'Taxi contribution' },
+  pnlContribEcom: { ru: 'Вклад е-кома', en: 'E-commerce contribution' },
+  pnlPlusNet: { ru: 'Подписка минус её выгоды', en: 'Subscription net of perks' },
   pnlContribution: { ru: 'Вклад', en: 'Contribution' },
   pnlFixedFood: { ru: 'Фикс еды', en: 'Food fixed costs' },
   pnlFixedTaxi: { ru: 'Фикс такси', en: 'Taxi fixed costs' },
+  pnlFixedEcom: { ru: 'Фикс е-кома', en: 'E-commerce fixed costs' },
   pnlHq: { ru: 'Управление холдинга', en: 'Holding HQ' },
   pnlMgmt: { ru: 'Управляющая компания', en: 'Management company' },
   pnlCrossSell: { ru: 'Кросс-селл', en: 'Cross-sell' },
@@ -1465,6 +1551,10 @@ const STRINGS = {
   pnlFoodMarketing: { ru: 'Возврат клиентов еды', en: 'Food win-back' },
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
+  pnlEcomOps: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+  pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
+  pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
+  pnlTicketsFee: { ru: 'Абонентка партнёрства по билетам', en: 'Ticketing partnership fee' },
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы', en: 'One-off costs' },
   pnlCashChange: { ru: 'Изменение кассы', en: 'Cash change' },
@@ -1482,7 +1572,9 @@ const STRINGS = {
   baseColCount: { ru: 'Людей', en: 'People' },
   baseFood: { ru: 'Клиенты еды', en: 'Food customers' },
   baseTaxi: { ru: 'Клиенты такси', en: 'Taxi customers' },
-  baseBoth: { ru: 'Оба сервиса', en: 'Both services' },
+  baseEcom: { ru: 'Клиенты е-кома', en: 'E-commerce customers' },
+  baseBoth: { ru: 'Два и более сервисов', en: 'Two or more services' },
+  basePlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   baseUnique: { ru: 'Уникальных клиентов', en: 'Unique customers' },
   baseMultiShare: { ru: 'Доля с двумя и более сервисами', en: 'Share on two or more services' },
   baseReturnPool: { ru: 'Пул возврата еды (недавно ушли)', en: 'Food win-back pool (recent leavers)' },
@@ -1490,8 +1582,10 @@ const STRINGS = {
   baseColChannel: { ru: 'Канал', en: 'Channel' },
   baseColPeople: { ru: 'Пришло', en: 'Arrived' },
   baseColCac: { ru: 'Цена клиента', en: 'Cost per customer' },
-  baseChCross: { ru: 'Кросс-селл (еда → такси)', en: 'Cross-sell (food → taxi)' },
-  baseChCrossBack: { ru: 'Кросс-селл (такси → еда)', en: 'Cross-sell (taxi → food)' },
+  baseChCross: { ru: 'Кросс-селл (хаб → такси)', en: 'Cross-sell (hub → taxi)' },
+  baseChCrossEcom: { ru: 'Кросс-селл (хаб → е-ком)', en: 'Cross-sell (hub → e-com)' },
+  baseChColdEcom: { ru: 'Маркетинг е-кома (холодный)', en: 'E-com marketing (cold)' },
+  baseChCrossBack: { ru: 'Кросс-селл (обратно в хаб)', en: 'Cross-sell (back to the hub)' },
   baseChCold: { ru: 'Маркетинг такси (холодный)', en: 'Taxi marketing (cold)' },
   baseChWinback: { ru: 'Возврат в еду', en: 'Food win-back' },
   baseChOrganic: { ru: 'Органика еды', en: 'Food organic' },
@@ -1512,8 +1606,8 @@ const STRINGS = {
   },
   helpAssetTitle: { ru: 'Стартовый актив — «класс персонажа»', en: 'The starting asset is your character class' },
   helpAssetText: {
-    ru: 'Стартовый актив задаёт форму экосистемы: у доставки дешёвая синергия с е-комом (курьеры уже ездят по городу), у стриминга была бы подписка, у билетов — партнёрская сеть. Amazon, Яндекс и Сбер построили разные экосистемы, потому что начинали с разного. В прототипе играбелен один старт; остальные добавятся.',
-    en: 'The starting asset dictates the ecosystem’s shape: delivery has cheap synergy with e-commerce (the couriers already roam the city), streaming would have subscriptions, ticketing a partner network. Amazon, Yandex and Sber built different ecosystems because they started from different assets. This prototype ships one start; the others follow.',
+    ru: 'Стартовый актив задаёт форму экосистемы: у доставки дешёвая синергия с е-комом (курьеры уже ездят по городу), у стриминга — подписка и свой контент, у билетов — партнёрская сеть, удешевляющая любое привлечение. Amazon, Яндекс и Сбер построили разные экосистемы, потому что начинали с разного. Все три старта играбельны; сыгранный финал соответствующей игры усиливает свой актив.',
+    en: 'The starting asset dictates the ecosystem’s shape: delivery has cheap synergy with e-commerce (the couriers already roam the city), streaming brings the subscription habit and its own content, ticketing a partner network that cheapens all acquisition. Amazon, Yandex and Sber built different ecosystems because they started from different assets. All three starts are playable; a finished endgame of the matching game boosts its asset.',
   },
   helpCrossTitle: { ru: 'Кросс-селл против маркетинга', en: 'Cross-sell versus marketing' },
   helpCrossFormula: {
@@ -1528,6 +1622,16 @@ const STRINGS = {
   helpWarText: {
     ru: 'В такси уже десять лет живёт «Таксоград». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
     en: 'Taxograd has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
+  },
+  helpPlusTitle: { ru: 'Подписка Plus и партнёрства', en: 'The Plus subscription and partnerships' },
+  helpPlusText: {
+    ru: 'Plus — покупка удержания за маржу: выгоды подписчику стоят примерно столько же, сколько он платит, а окупается подписка частотой и оттоком, который она режет во всех сервисах сразу. Кино и билеты входят в экосистему лицензией и партнёрством — играбельные версии остались в КИНОРЕКЕ и БИЛЕТВИЛЕ.',
+    en: 'Plus buys retention with margin: the perks cost roughly what the subscriber pays, and the subscription pays off through frequency and the churn it cuts across every service at once. Cinema and ticketing join via a licence and a partnership — their playable versions stayed in KINOREKA and BILETVILLE.',
+  },
+  helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
+  helpMetaText: {
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, лицензия, партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
+    en: 'The old games’ endgames unlock starting bonuses (asset, licence, partnership) — they stack, but are sized to be felt without deciding the game. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -1578,8 +1682,20 @@ const STRINGS = {
   welcomeStart: { ru: 'Начать партию', en: 'Start the game' },
   welcomeMore: { ru: 'Подробнее', en: 'More' },
   welcomeBest: { ru: 'Ваш рекорд на этом устройстве: {score}.', en: 'Your best on this device: {score}.' },
-  welcomeAsset: { ru: 'Стартовый актив', en: 'Starting asset' },
-  welcomeAssetNote: { ru: 'В прототипе один старт — доставка. Старты от КИНОРЕКИ и БИЛЕТВИЛЯ добавятся следующими фазами: форма экосистемы у них будет другой.', en: 'The prototype ships one start — delivery. Starts from KINOREKA and BILETVILLE arrive in later phases: their ecosystems will take different shapes.' },
+  welcomeAsset: { ru: 'Стартовый актив — класс персонажа', en: 'Starting asset — your character class' },
+  welcomeAssetChoice: {
+    ru: 'Форма экосистемы диктуется тем, с чего вы начинаете: у доставки дешёвый е-ком (курьеры), у стриминга — подписка, у билетов — партнёрская сеть. ★ — финал этой игры сыгран, актив усилен.',
+    en: 'The ecosystem’s shape follows what you start from: delivery gets cheap e-commerce (couriers), streaming gets the subscription, ticketing gets the partner network. ★ — that game’s endgame is played; the asset is boosted.',
+  },
+  welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
+  welcomeLegacyNote: {
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership. On this device endgames are picked up automatically; a result string works from any device.',
+  },
+  welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
+  welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },
+  welcomeLegacyAdded: { ru: 'Строка принята: {tag}. Наследие обновлено.', en: 'String accepted: {tag}. Legacy updated.' },
+  welcomeLegacyBad: { ru: 'Строка не прошла проверку контрольной суммы.', en: 'The string failed its checksum.' },
   welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
@@ -1617,6 +1733,11 @@ const STRINGS = {
     ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',
     en: 'Debrief questions: when did you launch taxi, and why then? What did a cross-sell customer cost versus cold? What would the valuation be had you simply milked food for all three years?',
   },
+  crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
+  crownText: {
+    ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
+    en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a rouble is added to the score — conglomerates are not built for multipliers.',
+  },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'See the charts' },
   deathTitle: { ru: 'Деньги на исходе', en: 'The money is running out' },
@@ -1651,6 +1772,7 @@ const STRINGS = {
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeConglomerate: { ru: '👑 конгломерат', en: '👑 conglomerate' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
 
@@ -1857,6 +1979,137 @@ function bestRecord(key) {
   const list = loadRecords(key);
   return list.length ? list[0] : null;
 }
+
+
+// ===== ../../shared/meta.js ========================================
+// ============================================================================
+// Мета-прогрессия набора: НОВОГРАД — «эндгейм», три игры — его пролог.
+//
+// Механизм — строки результата с контрольной суммой (shared/records.js)
+// плюс общий localStorage сайта. На том же устройстве финалы старых игр
+// видны автоматически (их локальные таблицы рекордов лежат рядом);
+// для другого устройства или офлайна строка результата вводится как код —
+// подделать счёт, не пересчитав сумму, не выйдет.
+//
+// Гейт мягкий: НОВОГРАД доступен всем сразу, заслуженный вход даёт
+// стартовое преимущество ВНУТРИ него:
+//   финал НОВОЕДЫ    -> «известный бренд еды»: дешевле возврат и органика;
+//   финал КИНОРЕКИ   -> скидка на лицензию стриминга в подписку Plus;
+//   финал БИЛЕТВИЛЯ  -> готовое партнёрство по билетам (без абонентки).
+// Бонусы ортогональны и складываются; их суммарный размер замерен по
+// правилу «чувствуется, но не решает партию» (~4–6% итога).
+//
+// Обратный бонус — строго неэкономический: успешный НОВОГРАД открывает
+// в старых играх бейдж и спец-сиды «городов-побратимов» на финальном
+// экране. Экономических бустов в зачётных партиях старых игр нет:
+// они сломали бы сравнимость лидерборда и калибровку целей совета.
+// ============================================================================
+
+
+// Лучший результат НОВОГРАДА на этом устройстве (для обратных бонусов)
+const META_BEST_KEY = 'novograd-meta';
+// Введённые вручную строки результата (офлайн-разблокировка)
+const META_LINES_KEY = 'novograd-meta-lines';
+
+// Порог «достойного финала» — грейд «крепкий» соответствующей игры
+const LEGACY_GAMES = [
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 3e10 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 4e9 },
+];
+
+// Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
+const NOVOGRAD_WORTHY = 2e9;
+
+const safeGetJson = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+};
+const safeSetJson = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
+};
+
+// Разбор строки результата: «ИГРА|vX.Y.Z|код|счёт|ходов|#СУММА»
+function parseResultLine(line) {
+  const text = String(line ?? '').trim();
+  if (!verifyResult(text)) return null;
+  const parts = text.split('|');
+  if (parts.length < 6) return null;
+  const score = Number(parts[3]);
+  if (!Number.isFinite(score)) return null;
+  return { tag: parts[0], version: parts[1], seed: parts[2], score, turns: Number(parts[4]) };
+}
+
+function savedLines() {
+  const list = safeGetJson(META_LINES_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+// Добавляет введённую строку; отвергает мусор и дубли.
+function addResultLine(line) {
+  const parsed = parseResultLine(line);
+  if (!parsed) return { ok: false };
+  const lines = savedLines();
+  if (!lines.includes(String(line).trim())) {
+    lines.push(String(line).trim());
+    safeSetJson(META_LINES_KEY, lines);
+  }
+  return { ok: true, parsed };
+}
+
+/**
+ * Что разблокировано на этом устройстве: локальные рекорды старых игр
+ * плюс введённые строки. { delivery: bool, streaming: bool, tickets: bool }
+ */
+function legacyUnlocks() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => l.tag === g.tag)
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine) >= g.threshold;
+  }
+  return out;
+}
+
+// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство
+function legacyFor(assetId, unlocks = legacyUnlocks()) {
+  return {
+    asset: Boolean(unlocks[assetId]),
+    cinema: Boolean(unlocks.streaming),
+    tickets: Boolean(unlocks.tickets),
+  };
+}
+
+function novogradBest() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  return Number(saved?.best) || 0;
+}
+
+// Запоминает лучший финал НОВОГРАДА — старые игры читают его для
+// неэкономических обратных бонусов (бейдж, спец-сиды).
+function rememberNovogradResult(score) {
+  const best = Math.max(novogradBest(), Number(score) || 0);
+  safeSetJson(META_BEST_KEY, { best });
+  return best;
+}
+
+// Открыт ли обратный бонус (бейдж конгломерата в старых играх)
+function conglomerateUnlocked() {
+  return novogradBest() >= NOVOGRAD_WORTHY;
+}
+
+// Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
+// Строго косметика — множителя к счёту нет и не будет.
+function tripleCrown(unlocks = legacyUnlocks()) {
+  return Boolean(unlocks.delivery && unlocks.streaming && unlocks.tickets);
+}
+
+// Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
+const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
 
 
 // ===== ../../shared/leaderboard.js =================================
@@ -2218,6 +2471,33 @@ const CONFIG = {
   boardCapMonths: 6,
   boardMarketingCap: 6_000_000,  // потолок на КАЖДЫЙ бюджет привлечения
   boardInjection: 250_000_000,
+
+  // --- Подписка «Новоград Plus» ---
+  // Дилемма Amazon Prime: подписка сама по себе почти не зарабатывает —
+  // выгоды подписчику стоят примерно столько же, сколько он платит.
+  // Окупается она частотой и удержанием во всех вертикалях сразу.
+  plus: {
+    launchCost: 40_000_000,      // разработка, биллинг, запуск
+    minVerticals: 2,             // подписке нужно, что склеивать
+    perkCostPerSub: 260,         // кешбэки и бесплатные доставки, ₽/мес на подписчика
+    baseConvShare: 0.06,         // доля мульти-клиентов, готовых подписаться за месяц
+    baseChurn: 0.06,             // месячный отток подписчиков
+    priceRef: 299,               // нейтральная цена
+    priceElasticity: 1.6,        // конверсия падает с ценой
+    churnReliefMax: 0.25,        // доп. усиление экосистемного удержания при полном покрытии
+    freqBoostFood: 0.12,         // прибавка частоты еды у подписчиков
+    freqBoostTaxi: 0.15,         // прибавка поездок у подписчиков
+    multiple: { base: 2.5, growthWeight: 4, marginWeight: 2, marginPenalty: 1, min: 0.5, max: 8 },
+  },
+
+  // --- Партнёрские вертикали (кино и билеты входят лицензиями, не играми) ---
+  partners: {
+    cinemaLicenseMonthly: 4_000_000,  // лицензия стриминга в подписку
+    cinemaConvBoost: 0.30,            // конверсия в Plus выше: есть за что платить
+    cinemaChurnRelief: 0.012,         // и отток подписчиков ниже
+    ticketsMonthly: 2_500_000,        // партнёрство с билетным сервисом
+    ticketsArpuPerMulti: 25,          // событийная выручка на мульти-клиента, ₽/мес
+  },
 };
 
 // ============================================================================
@@ -2259,6 +2539,7 @@ const START_ASSETS = [
     arpu: 290,               // выручка платформы на клиента, ₽/мес
     margin: 0.38,            // вклад вертикали (доля выручки платформы)
     fixedMonthly: 9_000_000, // фикс вертикали: районные операции, дарксторы, офис
+    startCash: 220_000_000,  // казна победителя своего рынка
     baseChurn: 0.018,        // месячный отток в насыщенном рынке
     returnPool: 30_000,      // недавно ушедшие — пул возврата
     reachableCap: 240_000,   // потолок базы: часть города к вам не придёт никогда
@@ -2275,8 +2556,61 @@ const START_ASSETS = [
       en: 'Delivery’s edge is its own courier logistics. Its cheapest synergy is e-commerce (phase 2): the couriers already criss-cross the city.',
     },
   },
-  // { id: 'streaming', ... }  — старт от КИНОРЕКИ, после одобрения прототипа
-  // { id: 'tickets', ... }    — старт от БИЛЕТВИЛЯ, после одобрения прототипа
+  {
+    id: 'streaming',
+    icon: '🎬',
+    fromGame: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
+    name: { ru: 'Стриминг «Кинорека»', en: 'Kinoreka streaming' },
+    hint: {
+      ru: 'Вы выиграли рынок стриминга. База меньше, чем у доставки, зато подписная: высокая маржа, низкий отток — и привычка платить каждый месяц.',
+      en: 'You won the streaming market. The base is smaller than delivery’s but subscription-based: high margin, low churn — and a habit of paying monthly.',
+    },
+    users: 150_000,
+    arpu: 330,
+    margin: 0.52,
+    fixedMonthly: 7_000_000,
+    startCash: 200_000_000,
+    baseChurn: 0.016,
+    returnPool: 18_000,
+    reachableCap: 175_000,
+    // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
+    synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
+    launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
+    // Привычка платить: Plus дешевле в запуске и конвертит лучше.
+    // Свой контент: лицензия кино не нужна — она уже ваша.
+    perks: ['subscription-habit', 'own-content'],
+    synergyNote: {
+      ru: 'Сильная сторона стриминга: привычка платить по подписке. «Новоград Plus» запускается дешевле и конвертит лучше, а лицензия кино не нужна — контент свой.',
+      en: 'Streaming’s edge is the habit of paying monthly. Novograd Plus launches cheaper and converts better, and no cinema licence is needed — the content is yours.',
+    },
+  },
+  {
+    id: 'tickets',
+    icon: '🎟️',
+    fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
+    name: { ru: 'Билетный сервис «Билетвиль»', en: 'Biletville ticketing' },
+    hint: {
+      ru: 'Вы выиграли рынок билетов. Самая маленькая база и казна из трёх стартов — зато партнёрская сеть организаторов, через которую дешевеет любое привлечение. Сложный класс.',
+      en: 'You won the ticketing market. The smallest base and treasury of the three starts — but a partner network of organisers that makes all acquisition cheaper. Hard mode.',
+    },
+    users: 95_000,
+    arpu: 190,
+    margin: 0.42,
+    fixedMonthly: 4_000_000,
+    baseChurn: 0.022,
+    returnPool: 14_000,
+    reachableCap: 125_000,
+    startCash: 160_000_000,
+    synergy: { taxi: 1.1, scooters: 1.0, ecom: 1.0, subscription: 0.9 },
+    launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
+    // Партнёрская сеть: афиши и кассы города — дешёвый канал привлечения,
+    // а партнёрство с билетами уже в кармане (это вы и есть)
+    perks: ['partner-network', 'own-tickets'],
+    synergyNote: {
+      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Кросс-селл дешевле через афиши, а партнёрство по билетам не нужно — оно уже ваше.',
+      en: 'Ticketing’s edge is the organiser partner network. Cross-sell is cheaper through listings, and no ticketing partnership is needed — it is already yours.',
+    },
+  },
 ];
 
 const assetById = (id) => START_ASSETS.find((a) => a.id === id) ?? START_ASSETS[0];
@@ -2313,6 +2647,36 @@ const VERTICALS = [
     warAcqCut: 0.45,         // демпинг перехватывает часть вашего притока
     warFareCut: 0.15,        // и продавливает цены рынка вниз
   },
+  {
+    id: 'ecom',
+    icon: '📦',
+    name: { ru: 'Маркет «Новоград»', en: 'Novograd market' },
+    hint: {
+      ru: 'Е-ком и дарксторы: у доставки еды здесь лучшая синергия — курьеры уже ездят по городу и возят посылки в непик. Но рынок наполовину заперт федеральными маркетплейсами.',
+      en: 'E-commerce and dark stores: food delivery’s best synergy — the couriers already roam the city and carry parcels off-peak. But half the market is locked by national marketplaces.',
+    },
+    potential: 380_000,
+    incumbentName: { ru: 'федеральные маркетплейсы', en: 'national marketplaces' },
+    incumbentLock: 0.45,
+    launchCost: 80_000_000,   // дарксторы, ассортимент, склад
+    fixedMonthly: 7_000_000,
+    // Портфельная модель как у еды: выручка на клиента и маржа
+    arpu: 340,
+    margin: 0.30,
+    baseChurn: 0.045,
+    churnQuality: 0.08,
+    marketingSaturation: 15_000_000,
+    marketingReach: 0.08,
+    crossReach: 0.05,         // доля пула хаба, готовая попробовать за месяц
+    // Ворота по метрикам, как гео-экспансия в НОВОЕДЕ: совет согласует
+    // третью вертикаль при управляемом стартовом активе
+    gate: { minMonth: 8, assetContributionMonths: 3 },
+    // Перк 'courier-logistics' стартового актива: маржа выше (общая
+    // логистика), но переиспользование мощности имеет цену — пиковые
+    // конфликты бьют по качеству еды (см. engine)
+    logisticsMarginBonus: 0.08,
+    logisticsPeakPenalty: 0.04,
+  },
 ];
 
 // Витрина будущих фаз: карточки видны, модель появится после одобрения.
@@ -2322,26 +2686,8 @@ const FUTURE_VERTICALS = [
     icon: '🛴',
     name: { ru: 'Самокаты', en: 'Scooters' },
     hint: {
-      ru: 'Фаза 2: короткие поездки, сезонность, парк как капитал.',
-      en: 'Phase 2: short rides, seasonality, the fleet as capital.',
-    },
-  },
-  {
-    id: 'ecom',
-    icon: '📦',
-    name: { ru: 'Е-ком и дарксторы', en: 'E-commerce and dark stores' },
-    hint: {
-      ru: 'Фаза 2: у доставки еды здесь лучшая синергия — общая курьерская логистика.',
-      en: 'Phase 2: food delivery’s best synergy — shared courier logistics.',
-    },
-  },
-  {
-    id: 'plus',
-    icon: '➕',
-    name: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },
-    hint: {
-      ru: 'Фаза 3: покупка удержания за маржу — дилемма Amazon Prime.',
-      en: 'Phase 3: buying retention with margin — the Amazon Prime dilemma.',
+      ru: 'Следующая фаза: короткие поездки, сезонность, парк как капитал.',
+      en: 'Next phase: short rides, seasonality, the fleet as capital.',
     },
   },
 ];
@@ -2357,7 +2703,7 @@ const LEVER_GROUPS = [
   {
     id: 'food',
     icon: '🛵',
-    label: { ru: 'Доставка еды — дойная корова', en: 'Food delivery — the cash cow' },
+    label: { ru: 'Стартовый актив — дойная корова', en: 'Starting asset — the cash cow' },
     desc: {
       ru: 'Насыщенный стартовый актив. Здесь не растут — здесь решают, сколько доить и сколько тратить на удержание.',
       en: 'The saturated starting asset. You do not grow here — you decide how hard to milk it and how much to spend on retention.',
@@ -2375,12 +2721,22 @@ const LEVER_GROUPS = [
     open: true,
   },
   {
+    id: 'ecom',
+    icon: '📦',
+    label: { ru: 'Е-ком — третья нога', en: 'E-commerce — the third leg' },
+    desc: {
+      ru: 'Дарксторы и посылки против федеральных маркетплейсов. Живёт кросс-селлом из вашей базы и общей логистикой.',
+      en: 'Dark stores and parcels against national marketplaces. Lives off cross-sell from your base and shared logistics.',
+    },
+    open: true,
+  },
+  {
     id: 'holding',
     icon: '🏙️',
     label: { ru: 'Экосистема — склейка', en: 'Ecosystem — the glue' },
     desc: {
-      ru: 'То, что превращает два бизнеса в холдинг: кросс-селл по общей базе и управляющая компания против размытого фокуса.',
-      en: 'What turns two businesses into a holding: cross-sell across the shared base, and the management company against diluted focus.',
+      ru: 'То, что превращает набор бизнесов в холдинг: кросс-селл по общей базе, подписка Plus и управляющая компания против размытого фокуса.',
+      en: 'What turns a set of businesses into a holding: cross-sell across the shared base, the Plus subscription, and the management company against diluted focus.',
     },
     open: true,
   },
@@ -2501,11 +2857,53 @@ const LEVERS = [
       en: 'Cold acquisition in a contested market: expensive, but scalable — and it brings people new to the holding, feeding the cross-sell pool both ways. Compare cost per customer with cross-sell in the report.',
     },
   },
+  {
+    key: 'ecomOps',
+    group: 'ecom',
+    label: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
+    tip: {
+      ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
+      en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+    },
+  },
+  {
+    key: 'ecomMarketing',
+    group: 'ecom',
+    label: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 25_000_000, step: 500_000, def: 0,
+    tip: {
+      ru: 'Холодное привлечение против маркетплейсов: дорого. Главный канал е-кома — кросс-селл из вашей же базы: сравнивайте цену клиента в отчёте.',
+      en: 'Cold acquisition against the marketplaces: expensive. E-commerce’s main channel is cross-sell from your own base — compare cost per customer in the report.',
+    },
+  },
+  {
+    key: 'plusPrice',
+    group: 'holding',
+    label: { ru: 'Цена «Новоград Plus»', en: 'Novograd Plus price' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 199, max: 399, step: 100, def: 299, scale: 1,
+    policy: [
+      { v: 199, label: { ru: '199 ₽ — массовая', en: '₽199 — mass' },
+        note: { ru: 'Подписка почти в убыток: выгоды стоят дороже цены. Ставка на массовость и удержание.', en: 'The subscription runs near a loss: perks cost more than the price. A bet on scale and retention.' } },
+      { v: 299, label: { ru: '299 ₽ — базовая', en: '₽299 — standard' },
+        note: { ru: 'Выгоды примерно окупаются: подписка зарабатывает на частоте и удержании, а не на цене.', en: 'Perks roughly break even: the subscription earns through frequency and retention, not price.' } },
+      { v: 399, label: { ru: '399 ₽ — премиум', en: '₽399 — premium' },
+        note: { ru: 'Подписка прибыльна сама по себе, но подписываются немногие — склейка растёт медленно.', en: 'Profitable on its own, but few subscribe — the glue grows slowly.' } },
+    ],
+    tip: {
+      ru: 'Цена подписки против её массовости. Подписчик пользуется всеми сервисами чаще и уходит реже — Plus покупает удержание за маржу. Дилемма Amazon Prime.',
+      en: 'Price versus reach. A subscriber uses every service more and churns less — Plus buys retention with margin. The Amazon Prime dilemma.',
+    },
+  },
 ];
 
 const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  verticals: [],   // какие вертикали игрок решил запустить (например ['taxi'])
+  verticals: [],   // какие вертикали и сервисы запущены: 'taxi' | 'ecom' | 'plus'
+  partners: [],    // включённые партнёрства: 'cinema' | 'tickets'
 };
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -2532,6 +2930,8 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 // ============================================================================
 
 
+const clampNum = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
 const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
   glue: 'glue',             // доля клиентов с двумя и более сервисами
@@ -2540,20 +2940,23 @@ const GOAL_TYPES = {
 
 function makeGoal(year, state, uniqueUsers) {
   if (year === 1) {
+    // Планка масштабируется базой стартового актива: у маленького хаба
+    // (билеты) пул кросс-селла меньше, и та же вторая нога растёт медленнее.
+    // Замер по доведённым опорам с доставкой (база 210 тыс): средняя даёт
+    // ~105 тыс, размашистая ~128 тыс, выжидательная с запуском на 8-м
+    // месяце — ~46 тыс и цель проваливает.
+    const asset = assetById(state.assetId);
+    const target = Math.round(clampNum(asset.users * 0.29, 28_000, 60_000) / 1000) * 1000;
     return {
       year,
       type: GOAL_TYPES.secondLeg,
-      // Клиентов такси к 12-му месяцу. Замер по доведённым опорам (запуск
-      // доступен с первого хода): средняя даёт ~105 тыс, размашистая
-      // ~128 тыс, бережливая с запуском на 8-м месяце — ~46 тыс и цель
-      // проваливает: «вторая нога» требует решительного входа, выжидание
-      // совет наказывает размытием.
-      target: 60_000,
+      target,
       reward: 0.10,
       penalty: 'dilution',
     };
   }
   if (year === 2) {
+    const asset = assetById(state.assetId);
     return {
       year,
       type: GOAL_TYPES.glue,
@@ -2563,12 +2966,14 @@ function makeGoal(year, state, uniqueUsers) {
       // кросс-селла — считаные проценты. Планка 20% отделяет работающую
       // склейку от двух бизнесов под одной вывеской.
       target: 0.20,
-      // И не ценой еды: сжать стартовый актив ради красивой доли нельзя.
-      uniqueFloor: Math.round(Math.max(180_000, uniqueUsers * 0.9)),
+      // И не ценой хаба: сжать стартовый актив ради красивой доли нельзя.
+      // Пол масштабируется базой актива — у билетов он в разы ниже.
+      uniqueFloor: Math.round(Math.max(asset.users * 0.85, uniqueUsers * 0.9)),
       reward: 0.13,
       penalty: 'marketingCap',
     };
   }
+  const asset = assetById(state.assetId);
   return {
     year,
     type: GOAL_TYPES.profit,
@@ -2578,7 +2983,7 @@ function makeGoal(year, state, uniqueUsers) {
     // Калибровать такие цели случайными стратегиями нельзя: прибыльность —
     // бинарный порог качества (см. HANDOFF).
     target: 7,
-    uniqueFloor: Math.round(Math.max(200_000, uniqueUsers * 0.95)),
+    uniqueFloor: Math.round(Math.max(asset.users * 0.9, uniqueUsers * 0.95)),
     reward: 0.18,
     penalty: 'valuation',
   };
@@ -3158,16 +3563,21 @@ function applyEvent(mods, event, optionIndex) {
 //
 // Смысловая структура модели (её же объясняем игроку):
 //
-//   стартовый актив (насыщен) --- вклад ---> касса холдинга
-//         |                                      |
-//         | общая база клиентов                  v
-//         +--- кросс-селл ---> новая вертикаль (растёт) ---> вклад завтра
-//                                   ^
-//                война хозяина рынка, водители, тарифы
+//   стартовый актив (хаб, насыщен) --- вклад ---> касса холдинга
+//        |            |                                |
+//        |            +-- кросс-селл --> такси --------+--> вклад завтра
+//        |            +-- кросс-селл --> е-ком --------+
+//        |                     |
+//   общая база клиентов    подписка Plus (склейка: частота и удержание)
 //
-// Ключевая петля: дожим стартового актива даёт деньги сейчас, но сжигает
-// базу — а base это ещё и пул кросс-селла новой вертикали. Форма экосистемы
-// диктуется стартовым активом: движок читает дескриптор из START_ASSETS.
+// Топология базы — «хаб и спицы»: пересечения считаются между стартовым
+// активом и каждой вертикалью (кросс-селл предлагает клиенту хаба ВТОРОЙ
+// сервис, а не третий — поэтому тройных пересечений в модели нет).
+// Форма экосистемы диктуется стартовым активом буквально: он — центр графа.
+//
+// Ключевая петля: дожим хаба даёт деньги сейчас, но сжигает базу — а база
+// это пул кросс-селла всех вертикалей и подписки. Дескриптор актива
+// (START_ASSETS) параметризует всё: синергии, перки, цену запусков.
 // ============================================================================
 
 
@@ -3179,22 +3589,34 @@ function seasonTaxi(month) {
   return 1 + CONFIG.taxiSeasonAmp * Math.cos((2 * Math.PI * (month - 1)) / 12);
 }
 
+const hasPerk = (asset, key) => Boolean(asset.perks?.includes(key));
+
 // ----------------------------------------------------------------------------
-// Начальное состояние. assetId — ссылка на дескриптор стартового актива:
-// сюда позже встанут старты от КИНОРЕКИ и БИЛЕТВИЛЯ (данными, не кодом).
+// Начальное состояние. assetId — дескриптор стартового актива («класс
+// персонажа»). legacy — бонусы наследия из мета-прогрессии витрины:
+//   { asset: bool, cinema: bool, tickets: bool }
+// asset  — сыгран финал игры-источника ЭТОГО актива («известный бренд»),
+// cinema — финал КИНОРЕКИ (скидка на лицензию в Plus),
+// tickets — финал БИЛЕТВИЛЯ (готовое партнёрство по билетам).
 // ----------------------------------------------------------------------------
-function createInitialState(seed = 'novograd', assetId = 'delivery') {
+function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
   const asset = assetById(assetId);
   const rng = createRng(seed);
   const state = {
     seed,
     rngState: rng.state(),
     month: 0,
-    cash: CONFIG.startCash,
+    cash: asset.startCash ?? CONFIG.startCash,
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
-    // Стартовый актив на портфельном уровне: агрегаты, не микроменеджмент
+    // Бонусы наследия: «чувствуются, но не решают партию» (замерено)
+    legacy: {
+      asset: Boolean(legacy.asset),
+      cinema: Boolean(legacy.cinema),
+      tickets: Boolean(legacy.tickets),
+    },
+    // Стартовый актив (хаб) на портфельном уровне
     food: {
       users: asset.users,
       returnPool: asset.returnPool,
@@ -3205,19 +3627,26 @@ function createInitialState(seed = 'novograd', assetId = 'delivery') {
       users: 0,
       drivers: 0,
       warUntil: 0,
-      lockAdd: 0,     // рынок, отданный конкуренту за перемирие
+      lockAdd: 0,
     },
-    both: 0,          // клиенты двух и более сервисов — сердце экосистемы
-    trustUntil: 0,    // до какого месяца подорвано доверие к единому аккаунту
-    // Сюжетные повороты: длящиеся и постоянные эффекты событий-арок
-    story: {},        // fedUntil/fedSoft, crisisUntil/crisisCut, tripsAdd, crossCacMult
-    seenEvents: [],   // сюжетные события не повторяются
-    // Пост-эндгейм: счёт фиксируется на последнем месяце (state.scored),
-    // после чего партия архитектурно может продолжаться (endless) —
-    // геймплей после победы появится следующими фазами.
+    ecom: {
+      on: false,
+      launchedMonth: null,
+      users: 0,
+    },
+    plus: {
+      on: false,
+      launchedMonth: null,
+      subs: 0,
+    },
+    both: 0,          // хаб ∩ такси
+    bothEcom: 0,      // хаб ∩ е-ком
+    trustUntil: 0,
+    story: {},
+    seenEvents: [],
     endless: false,
     scored: null,
-    decisions: { ...DEFAULT_DECISIONS, verticals: [] },
+    decisions: { ...DEFAULT_DECISIONS, verticals: [], partners: [] },
     flags: { valuationBonus: 0, regulationRisk: false },
     board: { goal: null, history: [], profitableMonths: 0 },
     restrictions: null,
@@ -3240,10 +3669,14 @@ function mgmtLevel(decisions) {
   return m / (m + CONFIG.mgmtSaturation);
 }
 
+function verticalsCount(state) {
+  return 1 + (state.taxi.on ? 1 : 0) + (state.ecom.on ? 1 : 0);
+}
+
 // Конгломератный штраф: каждая вертикаль сверх первой размывает фокус.
-// Управляющая компания выкупает штраф, но не бесплатно.
+// Подписка вертикалью не считается — это склейка, а не отдельный бизнес.
 function focusPenalty(state, decisions) {
-  const n = 1 + (state.taxi.on ? 1 : 0);
+  const n = verticalsCount(state);
   return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions));
 }
 
@@ -3257,13 +3690,24 @@ function taxiQuality(state, decisions) {
   return clamp(0.78 * (1 - focusPenalty(state, decisions)), 0.2, 1);
 }
 
-function uniqueUsers(state) {
-  return Math.max(0, state.food.users + state.taxi.users - state.both);
+function ecomQuality(state, decisions) {
+  const ops = decisions.ecomOps ?? 0;
+  const level = ops / (ops + 5_000_000);
+  return clamp((0.5 + 0.5 * level) * (1 - focusPenalty(state, decisions)), 0.2, 1.1);
 }
 
-// Ворота совета. У такси их нет (gate.minMonth = 1, историй не требуется):
-// первый ход партии — «что запускаем». Механика остаётся для вертикалей
-// следующих фаз: е-ком и подписка выйдут за воротами по метрикам.
+// Клиенты двух и более сервисов: пересечения хаба с вертикалями
+function multiUsers(state) {
+  return state.both + (state.bothEcom ?? 0);
+}
+
+function uniqueUsers(state) {
+  return Math.max(0,
+    state.food.users + state.taxi.users + (state.ecom?.users ?? 0)
+    - state.both - (state.bothEcom ?? 0));
+}
+
+// Ворота совета: у такси их нет, е-ком выходит за воротами по метрикам
 function expansionOpen(state, vertical) {
   const gate = vertical.gate;
   const nextMonth = state.month + 1;
@@ -3277,6 +3721,31 @@ function expansionOpen(state, vertical) {
   return true;
 }
 
+// Подписке нужно, что склеивать: хаб + хотя бы одна вертикаль
+function plusAvailable(state) {
+  return verticalsCount(state) >= CONFIG.plus.minVerticals;
+}
+
+// Цена запуска Plus: привычка платить (стриминговый хаб) удешевляет запуск
+function plusLaunchCost(state) {
+  const asset = assetById(state.assetId);
+  return CONFIG.plus.launchCost * (hasPerk(asset, 'subscription-habit') ? 0.6 : 1);
+}
+
+// Лицензия кино в подписку: со своим контентом не нужна, наследие даёт скидку
+function cinemaLicenseFee(state) {
+  const asset = assetById(state.assetId);
+  if (hasPerk(asset, 'own-content')) return 0;
+  return CONFIG.partners.cinemaLicenseMonthly * (state.legacy?.cinema ? 0.6 : 1);
+}
+
+// Партнёрство по билетам: своему билетному сервису и наследию — бесплатно
+function ticketsPartnerFee(state) {
+  const asset = assetById(state.assetId);
+  if (hasPerk(asset, 'own-tickets')) return 0;
+  return state.legacy?.tickets ? 0 : CONFIG.partners.ticketsMonthly;
+}
+
 // ----------------------------------------------------------------------------
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
@@ -3286,6 +3755,7 @@ function step(prevState, input = {}) {
 
   const asset = assetById(state.assetId);
   const taxiDef = verticalById('taxi');
+  const ecomDef = verticalById('ecom');
 
   const decisions = { ...state.decisions, ...(input.decisions ?? {}) };
   state.decisions = decisions;
@@ -3296,7 +3766,6 @@ function step(prevState, input = {}) {
   const month = state.month + 1;
 
   // --- 0. Ограничения совета ---
-  // Порезанные бюджеты режутся до того, как из них что-то посчитано.
   const restrictions = state.restrictions && month < state.restrictions.until
     ? state.restrictions : null;
   if (!restrictions) state.restrictions = null;
@@ -3309,16 +3778,17 @@ function step(prevState, input = {}) {
   };
   capBudget('foodMarketing');
   capBudget('taxiMarketing');
+  capBudget('ecomMarketing');
   capBudget('crossSell');
 
   // Размеры на начало месяца: поштучные цены событий считаются от того,
-  // что игрок видит на экране в момент выбора.
+  // что игрок видит на экране в момент выбора
   const driversAtStart = state.taxi.drivers;
   const foodUsersAtStart = state.food.users;
   const taxiUsersAtStart = state.taxi.users;
   const uniqueAtStart = uniqueUsers(state);
 
-  // --- 1. Событие месяца (объявлено в конце прошлого месяца) ---
+  // --- 1. Событие месяца ---
   const mods = neutralModifiers();
   const event = state.pendingEvent;
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
@@ -3326,9 +3796,8 @@ function step(prevState, input = {}) {
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
   if (mods.trustMonths) state.trustUntil = Math.max(state.trustUntil, month + mods.trustMonths);
-  if (mods.endWar) state.taxi.warUntil = month;   // перемирие: война кончается сейчас
+  if (mods.endWar) state.taxi.warUntil = month;
   if (mods.lockAdd) state.taxi.lockAdd += mods.lockAdd;
-  // Сюжетные повороты: набег федеральной экосистемы, спад, постоянные бусты
   state.story = state.story ?? {};
   if (mods.fedMonths) {
     state.story.fedUntil = month + mods.fedMonths - 1;
@@ -3351,30 +3820,29 @@ function step(prevState, input = {}) {
   const crisisActive = (state.story.crisisUntil ?? 0) >= month;
   const crisisFoodDemand = crisisActive ? 0.93 : 1;
   const crisisTaxiDemand = crisisActive ? 0.88 : 1;
+  const crisisEcomDemand = crisisActive ? 0.90 : 1;
   const crisisFixedMult = crisisActive && state.story.crisisCut ? 0.75 : 1;
   const crisisQualityMult = crisisActive && state.story.crisisCut ? 0.93 : 1;
 
-  // --- 2. Запуск вертикалей (ворота + разовая цена + ответ хозяина рынка) ---
+  // --- 2. Запуски: вертикали и подписка ---
   const wanted = new Set(decisions.verticals ?? []);
   let launchCost = 0;
   let taxiLaunched = false;
   let taxiClosed = false;
+  let ecomLaunched = false;
+  let plusLaunched = false;
+
   if (wanted.has('taxi') && !state.taxi.on) {
     if (expansionOpen(prevState, taxiDef)) {
       state.taxi.on = true;
       state.taxi.launchedMonth = month;
       state.taxi.warUntil = month + taxiDef.warMonths;
-      // Стартовый парк и ранние клиенты входят в цену запуска.
-      // Готовая инфраструктура актива удешевляет запуск — из дескриптора.
       state.taxi.drivers = 200;
       state.taxi.users = 3_000;
       launchCost += taxiDef.launchCost * (asset.launchCostMult?.taxi ?? 1);
       taxiLaunched = true;
     }
-    // ворота закрыты — заявка ждёт следующего месяца
   } else if (!wanted.has('taxi') && state.taxi.on) {
-    // Закрытие вертикали: бизнес останавливается, клиенты и парк распускаются.
-    // Повторный запуск снова платит цену запуска — юрлицо продали.
     state.taxi.on = false;
     state.taxi.users = 0;
     state.taxi.drivers = 0;
@@ -3382,28 +3850,70 @@ function step(prevState, input = {}) {
     taxiClosed = true;
   }
 
+  if (wanted.has('ecom') && !state.ecom.on) {
+    if (expansionOpen(prevState, ecomDef)) {
+      state.ecom.on = true;
+      state.ecom.launchedMonth = month;
+      state.ecom.users = 2_000;
+      // Готовая курьерская логистика хаба удешевляет запуск — из дескриптора
+      launchCost += ecomDef.launchCost * (asset.launchCostMult?.ecom ?? 1);
+      ecomLaunched = true;
+    }
+  } else if (!wanted.has('ecom') && state.ecom.on) {
+    state.ecom.on = false;
+    state.ecom.users = 0;
+    state.bothEcom = 0;
+  }
+
+  if (wanted.has('plus') && !state.plus.on && plusAvailable(state)) {
+    state.plus.on = true;
+    state.plus.launchedMonth = month;
+    launchCost += plusLaunchCost(state);
+    plusLaunched = true;
+  } else if (!wanted.has('plus') && state.plus.on) {
+    state.plus.on = false;
+    state.plus.subs = 0;
+  }
+
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const plusOn = state.plus.on;
   const atWar = taxiOn && state.taxi.warUntil > month;
   const trustBroken = state.trustUntil > month;
+  const partners = new Set(decisions.partners ?? []);
+  const cinemaOn = plusOn && (partners.has('cinema') || hasPerk(asset, 'own-content'));
+  const ticketsOn = partners.has('tickets') || hasPerk(asset, 'own-tickets');
 
-  // --- 3. Фокус и качество исполнения ---
-  // Срезанные в кризис фиксы — это уволенные люди: исполнение проседает
+  // --- 3. Фокус, качество, подписка как множитель удержания ---
   const penalty = focusPenalty(state, decisions);
-  const qFood = foodQuality(state, decisions) * crisisQualityMult;
+  let qFood = foodQuality(state, decisions) * crisisQualityMult;
   const qTaxi = taxiQuality(state, decisions) * crisisQualityMult;
+  const qEcom = ecomQuality(state, decisions) * crisisQualityMult;
+  // Общая логистика: курьеры хаба возят посылки в непик — е-ком маржинальнее,
+  // но переиспользование мощности имеет цену: пиковые конфликты бьют по еде
+  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn;
+  if (logistics && state.food.users > 0) {
+    qFood *= 1 - ecomDef.logisticsPeakPenalty * Math.min(1, state.ecom.users / state.food.users);
+  }
 
-  // --- 4. Еда: дожим, выручка, отток, возврат ---
+  const multiAtStart = multiUsers(state);
+  const subsShare = multiAtStart > 0 ? clamp(state.plus.subs / multiAtStart, 0, 1) : 0;
+  // Подписчик уходит реже: Plus усиливает экосистемное удержание
+  const reliefBoth = clamp(CONFIG.ecoChurnRelief + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6);
+
+  // --- 4. Хаб (стартовый актив): дожим, выручка, отток, возврат ---
   const takeIdx = clamp(decisions.foodTake ?? 1, 0.8, 1.3);
-  // Часть повышения монетизации съедает частота заказов
   const takeFreqFactor = Math.pow(takeIdx, -CONFIG.foodTakeElasticity);
   const foodSeason = seasonFood(month);
+  // Подписчики пользуются чаще: все они — клиенты хаба
+  const plusFoodBoost = state.food.users > 0
+    ? 1 + CONFIG.plus.freqBoostFood * (state.plus.subs / Math.max(1, state.food.users)) : 1;
   const arpuFood = asset.arpu * takeIdx * takeFreqFactor
-    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult * crisisFoodDemand;
+    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult * crisisFoodDemand
+    * plusFoodBoost;
   const revenueFood = state.food.users * arpuFood;
   const contribFood = revenueFood * asset.margin;
 
-  // Отток: базовый + жадность + качество. За порогом монетизации клиенты
-  // не «чуть недовольнее» — уходят к конкуренту ускоренно.
   const takePressure = CONFIG.foodTakePressure * Math.pow(Math.max(0, takeIdx - 1), 1.2)
     + CONFIG.foodTakeExodus * Math.pow(Math.max(0, takeIdx - CONFIG.foodTakeThreshold), 1.5);
   const churnFoodRate = clamp(
@@ -3414,22 +3924,22 @@ function step(prevState, input = {}) {
     + fedChurnAdd,
     0.005, 0.5,
   );
-  // Клиент двух сервисов уходит реже — экосистемная привычка
-  const foodOnly = Math.max(0, state.food.users - state.both);
-  const lostFoodOnly = foodOnly * churnFoodRate;
-  const lostFoodBoth = state.both * churnFoodRate * (1 - CONFIG.ecoChurnRelief);
-  const lostFood = lostFoodOnly + lostFoodBoth;
+  const hubOnly = Math.max(0, state.food.users - state.both - state.bothEcom);
+  const lostFoodOnly = hubOnly * churnFoodRate;
+  const lostFoodBoth = state.both * churnFoodRate * (1 - reliefBoth);
+  const lostFoodBothEcom = state.bothEcom * churnFoodRate * (1 - reliefBoth);
+  const lostFood = lostFoodOnly + lostFoodBoth + lostFoodBothEcom;
 
-  // Возврат ушедших: единственный «маркетинг» насыщенного рынка
+  // Возврат ушедших: «известный бренд» наследия удешевляет его
+  const winbackCac = CONFIG.foodWinbackCac * (state.legacy?.asset ? 0.85 : 1);
   const winbackBudget = decisions.foodMarketing ?? 0;
   const winbackCap = state.food.returnPool * CONFIG.foodWinbackReach * (0.5 + 0.5 * qFood);
-  const wonBack = Math.min(winbackBudget / CONFIG.foodWinbackCac, winbackCap);
-  const winbackWasted = Math.max(0, winbackBudget - wonBack * CONFIG.foodWinbackCac);
-  // Немного органики: город циркулирует, но насыщение оставляет крохи
+  const wonBack = Math.min(winbackBudget / winbackCac, winbackCap);
+  const winbackWasted = Math.max(0, winbackBudget - wonBack * winbackCac);
   const organicFood = Math.max(0, asset.reachableCap - state.food.users)
-    * CONFIG.foodOrganicShare * qFood;
+    * CONFIG.foodOrganicShare * qFood * (state.legacy?.asset ? 1.3 : 1);
 
-  // --- 5. Такси: спрос, парк, война ---
+  // --- 5. Такси ---
   let demandTrips = 0; let servedTrips = 0; let fill = 1; let utilDrivers = 0;
   let revenueTaxi = 0; let contribTaxi = 0; let fareEff = 0; let cmPerTrip = 0;
   let driverHires = 0; let driversLost = 0;
@@ -3443,24 +3953,23 @@ function step(prevState, input = {}) {
     taxiPool = Math.max(0, taxiDef.potential * (1 - lock) - state.taxi.users);
 
     fareEff = taxiDef.fare * priceIdx * (atWar ? 1 - taxiDef.warFareCut : 1);
-    // Частота поездок: базовая + постоянные контракты (аэропорт)
     const tripsPerUser = taxiDef.tripsPerUser + (state.story.tripsAdd ?? 0);
+    const subsInTaxi = multiAtStart > 0 ? state.plus.subs * (state.both / multiAtStart) : 0;
+    const plusTaxiBoost = state.taxi.users > 0
+      ? 1 + CONFIG.plus.freqBoostTaxi * (subsInTaxi / Math.max(1, state.taxi.users)) : 1;
     demandTrips = state.taxi.users * tripsPerUser * taxiPriceFactor
-      * seasonTaxi(month) * mods.taxiDemandMult * crisisTaxiDemand;
+      * seasonTaxi(month) * mods.taxiDemandMult * crisisTaxiDemand * plusTaxiBoost;
     const capacity = state.taxi.drivers * CONFIG.taxiTripsPerDriver * mods.taxiCapacityMult;
     servedTrips = Math.min(demandTrips, capacity);
     fill = demandTrips > 0 ? servedTrips / demandTrips : 1;
     utilDrivers = capacity > 0 ? servedTrips / capacity : 0;
 
-    // Скидка ниже рынка частично субсидируется платформой — демпинг платный
     const subsidyPerTrip = taxiDef.fare * Math.max(0, 1 - priceIdx) * CONFIG.taxiSubsidyShare;
     cmPerTrip = fareEff * taxiDef.takeRate
       - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd) - subsidyPerTrip;
     revenueTaxi = servedTrips * fareEff * taxiDef.takeRate;
     contribTaxi = servedTrips * cmPerTrip;
 
-    // Водители: найм из бюджета, отток от базы и от простоя.
-    // Водитель без поездок не ждёт лучших времён — уходит к конкуренту.
     driverHires = ((decisions.taxiSupply ?? 0) / CONFIG.taxiDriverOnboardCost)
       * mods.driverSupplyMult;
     const idle = Math.max(0, CONFIG.taxiDriverIdleFloor - utilDrivers) / CONFIG.taxiDriverIdleFloor;
@@ -3471,7 +3980,6 @@ function step(prevState, input = {}) {
     driversLost = state.taxi.drivers * driverChurn;
     state.taxi.drivers = Math.max(0, state.taxi.drivers - driversLost + driverHires);
 
-    // Отток клиентов: цена, качество, недовоз (долгая подача)
     churnTaxiRate = clamp(
       CONFIG.taxiBaseChurn
       + CONFIG.taxiChurnQuality * Math.max(0, 0.8 - qTaxi)
@@ -3483,10 +3991,9 @@ function step(prevState, input = {}) {
     );
     const taxiOnly = Math.max(0, state.taxi.users - state.both);
     const lostTaxiOnly = taxiOnly * churnTaxiRate;
-    const lostTaxiBoth = state.both * churnTaxiRate * (1 - CONFIG.ecoChurnRelief);
+    const lostTaxiBoth = state.both * churnTaxiRate * (1 - reliefBoth);
     lostTaxi = lostTaxiOnly + lostTaxiBoth;
 
-    // Холодное привлечение: дорого, в войну — вдвое дороже (демпинг перехватывает)
     const mBudget = decisions.taxiMarketing ?? 0;
     coldAcq = taxiPool * CONFIG.taxiMarketingReach
       * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation))
@@ -3494,82 +4001,191 @@ function step(prevState, input = {}) {
       * (atWar ? 1 - taxiDef.warAcqCut : 1)
       * fedAcqMult;
 
-    // Пересечение: ушедшие «оба» из такси остаются клиентами еды
     state.both = Math.max(0, state.both - lostTaxiBoth);
     state.taxi.users = Math.max(0, state.taxi.users - lostTaxi + coldAcq);
   }
 
-  // --- 6. Кросс-селл: общая база как канал --------------------------------
-  // Клиент соседней вертикали дешевле холодного, но канал имеет ёмкость
-  // и не спасает мёртвый продукт: конверсия зависит от принимающей стороны.
-  let crossConv = 0; let crossBackConv = 0; let crossSpent = 0; let crossWasted = 0;
-  let crossCac = 0;
-  const crossBudget = taxiOn ? (decisions.crossSell ?? 0) : 0;
-  if (taxiOn && crossBudget > 0) {
-    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
-    const synergy = asset.synergy?.taxi ?? 1;
-    // Цена кросс-селла: эталон / синергия актива x постоянные бусты (кобренд)
-    const storyCac = state.story.crossCacMult ?? 1;
-    const cacEff = (CONFIG.crossSellCac / synergy) * storyCac;
+  // --- 6. Е-ком: портфельная модель против маркетплейсов ---
+  let revenueEcom = 0; let contribEcom = 0; let arpuEcom = 0;
+  let ecomColdAcq = 0; let lostEcom = 0; let churnEcomRate = 0; let ecomPool = 0;
+  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0);
+  if (ecomOn) {
+    ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
+    const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
+    const plusEcomBoost = state.ecom.users > 0
+      ? 1 + CONFIG.plus.freqBoostFood * (subsInEcom / Math.max(1, state.ecom.users)) : 1;
+    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost;
+    revenueEcom = state.ecom.users * arpuEcom;
+    contribEcom = revenueEcom * marginEcom;
 
-    // еда -> такси: главное направление
-    const budgetF = crossBudget * (1 - CONFIG.crossBackShare);
-    const poolF = Math.max(0, state.food.users - state.both);
-    const attractTaxi = clamp(0.25 + 0.75 * qTaxi, 0, 1.1)
-      * clamp(taxiPriceFactor, 0.6, 1.15) * (0.5 + 0.5 * fill);
-    // Кобрендовая карта расширяет круг готовых попробовать второй сервис
-    const storyReach = state.story.crossReachMult ?? 1;
-    const capF = poolF * CONFIG.crossSellMonthlyReach * attractTaxi * trustMult * storyReach;
-    crossConv = Math.min(budgetF / cacEff, capF);
-    // такси -> еда: обратное направление, у него свой пул и своя цена
-    const budgetB = crossBudget * CONFIG.crossBackShare;
-    const poolB = Math.max(0, state.taxi.users - state.both);
-    const attractFood = clamp(0.25 + 0.75 * qFood, 0, 1.1);
-    const capB = Math.min(
-      poolB * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
-      Math.max(0, asset.reachableCap - state.food.users),
+    churnEcomRate = clamp(
+      ecomDef.baseChurn
+      + ecomDef.churnQuality * Math.max(0, 0.75 - qEcom)
+      + fedChurnAdd,
+      0.01, 0.5,
     );
-    const backCac = CONFIG.crossBackCac * storyCac;
-    crossBackConv = Math.min(budgetB / backCac, capB);
+    const ecomOnly = Math.max(0, state.ecom.users - state.bothEcom);
+    const lostEcomOnly = ecomOnly * churnEcomRate;
+    const lostEcomBoth = state.bothEcom * churnEcomRate * (1 - reliefBoth);
+    lostEcom = lostEcomOnly + lostEcomBoth;
 
-    crossSpent = crossConv * cacEff + crossBackConv * backCac;
-    // Перерасход сверх ёмкости канала сгорает — и виден в отчёте
-    crossWasted = Math.max(0, crossBudget - crossSpent);
-    crossCac = (crossConv + crossBackConv) > 0
-      ? crossBudget / (crossConv + crossBackConv) : 0;
+    const mBudget = decisions.ecomMarketing ?? 0;
+    ecomColdAcq = ecomPool * ecomDef.marketingReach
+      * (mBudget / (mBudget + ecomDef.marketingSaturation))
+      * fedAcqMult;
 
-    state.taxi.users += crossConv;
-    state.food.users += crossBackConv;
-    state.both += crossConv + crossBackConv;
+    state.bothEcom = Math.max(0, state.bothEcom - lostEcomBoth);
+    state.ecom.users = Math.max(0, state.ecom.users - lostEcom + ecomColdAcq);
   }
 
-  // Итог месяца по базе еды. Ушедший из еды клиент «двух сервисов»
-  // остаётся клиентом такси — пересечение сжимается вместе с ним.
+  // --- 7. Кросс-селл: хаб раздаёт вторые сервисы -----------------------------
+  // Канал имеет цену и ёмкость; перерасход сгорает. Прямые направления делят
+  // бюджет пропорционально ёмкостям, обратные возвращают клиентов в хаб.
+  let crossConv = 0; let crossEcomConv = 0; let crossBackConv = 0;
+  let crossSpent = 0; let crossWasted = 0; let crossCac = 0;
+  const anySpokeOn = taxiOn || ecomOn;
+  const crossBudget = anySpokeOn ? (decisions.crossSell ?? 0) : 0;
+  if (crossBudget > 0) {
+    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
+    const storyCac = (state.story.crossCacMult ?? 1)
+      * (hasPerk(asset, 'partner-network') ? 0.8 : 1);
+    const storyReach = state.story.crossReachMult ?? 1;
+    const hubFree = Math.max(0, state.food.users - state.both - state.bothEcom);
+
+    // Прямые направления: хаб -> вертикаль
+    const targets = [];
+    if (taxiOn) {
+      const attract = clamp(0.25 + 0.75 * qTaxi, 0, 1.1)
+        * clamp(taxiPriceFactor, 0.6, 1.15) * (0.5 + 0.5 * fill);
+      targets.push({
+        id: 'taxi',
+        cac: (CONFIG.crossSellCac / (asset.synergy?.taxi ?? 1)) * storyCac,
+        cap: hubFree * CONFIG.crossSellMonthlyReach * attract * trustMult * storyReach,
+      });
+    }
+    if (ecomOn) {
+      const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1);
+      targets.push({
+        id: 'ecom',
+        cac: (CONFIG.crossSellCac / (asset.synergy?.ecom ?? 1)) * storyCac,
+        cap: hubFree * ecomDef.crossReach * attract * trustMult * storyReach,
+      });
+    }
+    const capSum = targets.reduce((s, tgt) => s + tgt.cap, 0) || 1;
+    const budgetF = crossBudget * (1 - CONFIG.crossBackShare);
+    for (const tgt of targets) {
+      const share = budgetF * (tgt.cap / capSum);
+      const conv = Math.min(share / tgt.cac, tgt.cap);
+      crossSpent += conv * tgt.cac;
+      if (tgt.id === 'taxi') crossConv = conv;
+      else crossEcomConv = conv;
+    }
+
+    // Обратные направления: вертикаль -> хаб
+    const backCac = CONFIG.crossBackCac * storyCac;
+    const attractFood = clamp(0.25 + 0.75 * qFood, 0, 1.1);
+    const hubRoom = Math.max(0, asset.reachableCap - state.food.users);
+    const backs = [];
+    if (taxiOn) {
+      backs.push({
+        id: 'taxi',
+        cap: Math.max(0, state.taxi.users - state.both)
+          * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
+      });
+    }
+    if (ecomOn) {
+      backs.push({
+        id: 'ecom',
+        cap: Math.max(0, state.ecom.users - state.bothEcom)
+          * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
+      });
+    }
+    const backCapSum = backs.reduce((s, b) => s + b.cap, 0) || 1;
+    const budgetB = crossBudget * CONFIG.crossBackShare;
+    let roomLeft = hubRoom;
+    for (const b of backs) {
+      const share = budgetB * (b.cap / backCapSum);
+      const conv = Math.min(share / backCac, b.cap, roomLeft);
+      roomLeft -= conv;
+      crossSpent += conv * backCac;
+      crossBackConv += conv;
+      if (b.id === 'taxi') state.both += conv;
+      else state.bothEcom += conv;
+    }
+
+    crossWasted = Math.max(0, crossBudget - crossSpent);
+    const totalConv = crossConv + crossEcomConv + crossBackConv;
+    crossCac = totalConv > 0 ? crossBudget / totalConv : 0;
+
+    // Прямые конверсии: клиент хаба получает второй сервис
+    state.taxi.users += crossConv;
+    state.both += crossConv;
+    state.ecom.users += crossEcomConv;
+    state.bothEcom += crossEcomConv;
+    // Обратные: клиент вертикали становится клиентом хаба
+    state.food.users += crossBackConv;
+  }
+
+  // Итог месяца по базе хаба
   state.food.users = Math.max(0, state.food.users - lostFood + wonBack + organicFood);
   state.both = Math.max(0, state.both - lostFoodBoth);
+  state.bothEcom = Math.max(0, state.bothEcom - lostFoodBothEcom);
   state.food.returnPool = Math.max(0,
     state.food.returnPool * (1 - CONFIG.foodReturnPoolDecay)
     + lostFood * CONFIG.foodReturnShare
     - wonBack);
-  // Пересечение не может превышать ни одну из баз
   state.both = Math.min(state.both, state.food.users, state.taxi.users);
+  state.bothEcom = Math.min(state.bothEcom, state.food.users, state.ecom.users);
 
-  // --- 7. P&L холдинга ---
-  const revenue = revenueFood + revenueTaxi;
-  const contribution = contribFood + contribTaxi;
+  // --- 8. Подписка «Новоград Plus»: покупка удержания за маржу ---
+  let plusConv = 0; let plusChurned = 0; let revenuePlus = 0; let plusPerkCost = 0;
+  const plusPrice = clamp(decisions.plusPrice ?? CONFIG.plus.priceRef, 199, 399);
+  const multiNow = multiUsers(state);
+  if (plusOn) {
+    const priceAttract = Math.pow(CONFIG.plus.priceRef / plusPrice, CONFIG.plus.priceElasticity);
+    const habitMult = hasPerk(asset, 'subscription-habit') ? 1.25 : 1;
+    const cinemaBoost = cinemaOn ? 1 + CONFIG.partners.cinemaConvBoost : 1;
+    plusConv = Math.max(0, multiNow - state.plus.subs)
+      * CONFIG.plus.baseConvShare * priceAttract * habitMult * cinemaBoost
+      * (trustBroken ? 0.7 : 1);
+    const plusChurn = clamp(
+      CONFIG.plus.baseChurn
+      + 0.10 * Math.max(0, plusPrice / CONFIG.plus.priceRef - 1)
+      - (cinemaOn ? CONFIG.partners.cinemaChurnRelief : 0)
+      - (ticketsOn ? 0.008 : 0),
+      0.01, 0.4,
+    );
+    plusChurned = state.plus.subs * plusChurn;
+    state.plus.subs = clamp(state.plus.subs - plusChurned + plusConv, 0, multiNow);
+    revenuePlus = state.plus.subs * plusPrice;
+    plusPerkCost = state.plus.subs * CONFIG.plus.perkCostPerSub;
+  }
+
+  // Партнёрство по билетам: событийная выручка с мульти-клиентов
+  const revenueTickets = ticketsOn ? multiNow * CONFIG.partners.ticketsArpuPerMulti : 0;
+  const licenseFee = cinemaOn ? cinemaLicenseFee(state) : 0;
+  const ticketsFee = ticketsOn ? ticketsPartnerFee(state) : 0;
+
+  // --- 9. P&L холдинга ---
+  const revenue = revenueFood + revenueTaxi + revenueEcom + revenuePlus + revenueTickets;
+  const contribution = contribFood + contribTaxi + contribEcom
+    + (revenuePlus - plusPerkCost) + revenueTickets * 0.7;
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
+  const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
+  const ecomBudgets = ecomOn ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) : 0;
   const opex = CONFIG.hqMonthly + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
-    + fixedFood + fixedTaxi + taxiBudgets;
+    + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
+    + licenseFee + ticketsFee;
 
-  // Полный вклад вертикали (для оценки sum-of-parts и ворот экспансии):
-  // переменный вклад минус фиксы и бюджеты самой вертикали.
   const foodFullContribution = contribFood - fixedFood
     - (decisions.foodOps ?? 0) - (decisions.foodMarketing ?? 0);
-  const taxiFullContribution = taxiOn
-    ? contribTaxi - fixedTaxi - taxiBudgets : 0;
+  const taxiFullContribution = taxiOn ? contribTaxi - fixedTaxi - taxiBudgets : 0;
+  const ecomFullContribution = ecomOn ? contribEcom - fixedEcom - ecomBudgets : 0;
+  const plusFullContribution = plusOn
+    ? revenuePlus - plusPerkCost - licenseFee : 0;
 
   const profit = contribution - opex;
   const perUnitCost = (mods.oneOffCostPerDriver ?? 0) * driversAtStart
@@ -3579,13 +4195,15 @@ function step(prevState, input = {}) {
   const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost;
   state.cash += profit - oneOff;
 
-  // --- 8. Метрики ---
+  // --- 10. Метрики ---
   const unique = uniqueUsers(state);
-  const multiShare = unique > 0 ? state.both / unique : 0;
+  const multi = multiUsers(state);
+  const multiShare = unique > 0 ? multi / unique : 0;
   const arpuHolding = unique > 0 ? revenue / unique : 0;
   const cacCold = coldAcq > 0 ? (decisions.taxiMarketing ?? 0) / coldAcq : 0;
+  const cacColdEcom = ecomColdAcq > 0 ? (decisions.ecomMarketing ?? 0) / ecomColdAcq : 0;
 
-  // --- 9. Совет директоров ---
+  // --- 11. Совет директоров ---
   if (profit > 0) state.board.profitableMonths += 1;
   const progress = goalProgress(state.board.goal, {
     taxiUsers: state.taxi.users,
@@ -3602,7 +4220,6 @@ function step(prevState, input = {}) {
     state.board.goal = month < CONFIG.monthsTotal
       ? makeGoal(next, state, unique) : null;
   }
-  // Провал первого года: акционеры вводят деньги сами и на своих условиях
   let forcedDilution = 0;
   let boardInjection = 0;
   if (state.pendingDilution) {
@@ -3620,23 +4237,36 @@ function step(prevState, input = {}) {
     revenue,
     revenueFood,
     revenueTaxi,
+    revenueEcom,
+    revenuePlus,
+    revenueTickets,
     contribution,
     contribFood,
     contribTaxi,
+    contribEcom,
     foodFullContribution,
     taxiFullContribution,
+    ecomFullContribution,
+    plusFullContribution,
     opex,
     fixedFood,
     fixedTaxi,
+    fixedEcom,
+    licenseFee,
+    ticketsFee,
+    plusPerkCost,
     hqCost: CONFIG.hqMonthly,
     profit,
     oneOff,
     launchCost,
     cash: state.cash,
-    // --- база ---
+    // --- база (хаб и спицы) ---
     foodUsers: state.food.users,
     taxiUsers: state.taxi.users,
+    ecomUsers: state.ecom.users,
     bothUsers: state.both,
+    bothEcomUsers: state.bothEcom,
+    multiUsers: multi,
     uniqueUsers: unique,
     multiShare,
     arpuHolding,
@@ -3652,6 +4282,8 @@ function step(prevState, input = {}) {
     mgmtLevel: mgmtLevel(decisions),
     foodQuality: qFood,
     taxiQuality: qTaxi,
+    ecomQuality: qEcom,
+    logistics,
     // --- такси ---
     taxiOn,
     taxiLaunched,
@@ -3672,8 +4304,28 @@ function step(prevState, input = {}) {
     lostTaxi,
     coldAcq,
     cacCold,
+    // --- е-ком ---
+    ecomOn,
+    ecomLaunched,
+    arpuEcom,
+    marginEcom,
+    ecomPool,
+    churnEcomRate,
+    lostEcom,
+    ecomColdAcq,
+    cacColdEcom,
+    // --- подписка и партнёрства ---
+    plusOn,
+    plusLaunched,
+    plusSubs: state.plus.subs,
+    plusConv,
+    plusChurned,
+    plusPrice,
+    cinemaOn,
+    ticketsOn,
     // --- кросс-селл ---
     crossConv,
+    crossEcomConv,
     crossBackConv,
     crossCac,
     crossSpent,
@@ -3700,10 +4352,14 @@ function step(prevState, input = {}) {
     seasonFood: foodSeason,
     seasonTaxi: seasonTaxi(month),
 
-    decisions: deepClone({ ...decisions, verticals: [...(decisions.verticals ?? [])] }),
+    decisions: deepClone({
+      ...decisions,
+      verticals: [...(decisions.verticals ?? [])],
+      partners: [...(decisions.partners ?? [])],
+    }),
   };
 
-  // --- 10. Завершение месяца ---
+  // --- 12. Завершение месяца ---
   state.month = month;
   state.history.push(report);
   state.pendingChoice = null;
@@ -3725,12 +4381,13 @@ function step(prevState, input = {}) {
   const sop = sumOfParts(state);
   report.valuation = sop.total;
   report.equityValue = report.valuation * state.equity;
-  // Части оценки — в отчёт: график «Оценка» показывает их без пересчёта истории
   report.sopFoodValue = sop.parts.find((p) => p.id === 'food')?.value ?? 0;
   report.sopTaxiValue = sop.parts.find((p) => p.id === 'taxi')?.value ?? 0;
+  report.sopEcomValue = sop.parts.find((p) => p.id === 'ecom')?.value ?? 0;
+  report.sopPlusValue = sop.parts.find((p) => p.id === 'plus')?.value ?? 0;
 
-  // Зачётный счёт фиксируется в момент финиша: пост-эндгейм (следующие фазы)
-  // сможет продолжать партию, не трогая результат для таблиц и строки.
+  // Зачётный счёт фиксируется в момент финиша: пост-эндгейм сможет
+  // продолжать партию, не трогая результат для таблиц и строки.
   if (state.over === 'finished' && !state.scored) {
     state.scored = finalScore(state);
   }
@@ -3739,9 +4396,7 @@ function step(prevState, input = {}) {
 }
 
 // ----------------------------------------------------------------------------
-// Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован
-// в state.scored. Интерфейсная кнопка появится вместе с фазой пост-эндгейма;
-// движок готов уже сейчас (и это проверяется тестом).
+// Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован.
 // ----------------------------------------------------------------------------
 function enterEndless(state) {
   const next = deepClone(state);
@@ -3755,15 +4410,19 @@ function enterEndless(state) {
 // ----------------------------------------------------------------------------
 // Оценка холдинга: sum-of-parts.
 //
-// Каждая вертикаль оценивается своим окном выручки и своим множителем:
-// зрелая еда — как дойная корова, растущее такси — как история роста.
-// Убыточная вертикаль БЕЗ роста — «зоопарк»: она входит в сумму
-// отрицательным слагаемым (годовой burn с множителем). Премия — за
-// замеряемый кросс-селл: долю клиентов с двумя и более сервисами.
+// Каждая часть — своим окном выручки и своим множителем: зрелый хаб как
+// дойная корова, растущие вертикали как истории роста, подписка — дороже
+// всех (повторяющаяся выручка). Премия — за замеряемую склейку. Третий акт
+// (последний год): инвесторы требуют прибыльную экосистему, а не зоопарк —
+// убыточные части дисконтируются жёстче.
 // ----------------------------------------------------------------------------
 function sumOfParts(state) {
   const h = state.history;
   const parts = [];
+  const thirdAct = state.month >= CONFIG.monthsTotal - CONFIG.boardYearMonths - 1;
+  const zooMarginFloor = thirdAct ? -0.05 : -0.1;
+  const burnMult = CONFIG.lossBurnMultiple * (thirdAct ? 1.7 : 1);
+
   const mkPart = (id, pickRevenue, pickFull, k) => {
     const runRate = windowAvg(h, CONFIG.valuationWindow, pickRevenue) * 12;
     const growth = windowGrowth(h, CONFIG.growthWindow, pickRevenue, 0.05);
@@ -3772,12 +4431,9 @@ function sumOfParts(state) {
     const margin = revAvg > 0 ? fullAvg / revAvg : (fullAvg < 0 ? -1 : 0);
     let value;
     let zoo = false;
-    if (fullAvg < 0 && growth < 0.05 && fullAvg < -0.1 * Math.max(1, revAvg)) {
-      // Глубоко убыточное и не растущее — «зоопарк»: инвестор вычитает
-      // годовой burn как обязательство. Слегка убыточную зрелую вертикаль
-      // наказывает обычный множитель через маржу, не эта ветка.
+    if (fullAvg < 0 && growth < 0.05 && fullAvg < zooMarginFloor * Math.max(1, revAvg)) {
       zoo = true;
-      value = Math.max(fullAvg * 12 * CONFIG.lossBurnMultiple, -500_000_000);
+      value = Math.max(fullAvg * 12 * burnMult, -700_000_000);
     } else {
       const multiple = revenueMultiple(growth, margin, k);
       value = runRate * multiple;
@@ -3786,8 +4442,6 @@ function sumOfParts(state) {
   };
 
   if (!h.length) {
-    // До первого хода: стартовый актив по той же формуле, что и после, —
-    // чтобы оценка не прыгала между «до» и «после» первого месяца.
     const asset = assetById(state.assetId);
     const revMonthly = asset.users * asset.arpu;
     const fullMonthly = revMonthly * asset.margin - asset.fixedMonthly
@@ -3800,10 +4454,17 @@ function sumOfParts(state) {
     if (state.taxi.on || h.some((r) => r.taxiOn)) {
       mkPart('taxi', (r) => r.revenueTaxi, (r) => r.taxiFullContribution, CONFIG.multiples.taxi);
     }
+    if (state.ecom.on || h.some((r) => r.ecomOn)) {
+      mkPart('ecom', (r) => r.revenueEcom ?? 0, (r) => r.ecomFullContribution ?? 0, CONFIG.multiples.taxi);
+    }
+    if (state.plus.on || h.some((r) => r.plusOn)) {
+      mkPart('plus', (r) => r.revenuePlus ?? 0, (r) => r.plusFullContribution ?? 0, CONFIG.plus.multiple);
+    }
   }
 
   const unique = uniqueUsers(state);
-  const multiShare = unique > 0 ? state.both / unique : 0;
+  const multi = multiUsers(state);
+  const multiShare = unique > 0 ? multi / unique : 0;
   const crossPremium = Math.min(CONFIG.crossPremiumCap, CONFIG.crossPremiumPerShare * multiShare);
 
   const posSum = parts.filter((p) => p.value > 0).reduce((s, p) => s + p.value, 0);
@@ -3811,7 +4472,7 @@ function sumOfParts(state) {
   const beforeBonus = posSum * (1 + crossPremium) + negSum;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   const total = Math.max(200_000_000, beforeBonus * bonus);
-  return { parts, multiShare, crossPremium, bonus, total };
+  return { parts, multiShare, crossPremium, bonus, total, thirdAct };
 }
 
 function valuation(state) {
@@ -3834,8 +4495,7 @@ function raise(state, amount) {
 
 // ----------------------------------------------------------------------------
 // Разбор месяца: выручка холдинга = уникальные клиенты x ARPU.
-// Двухфакторное разложение точно по определению — и это и есть главный
-// урок игры: после насыщения растить можно только второй множитель.
+// Точно по определению — и это главный урок игры.
 // ----------------------------------------------------------------------------
 function explain(prev, cur) {
   if (!prev || !cur) return [];
@@ -3852,8 +4512,6 @@ function explain(prev, cur) {
 }
 
 // Итоговый счёт партии: стоимость доли = доля x (оценка + касса).
-// Кэш принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
-// а потраченный обязан вернуться ростом оценки.
 function finalScore(state) {
   const v = valuation(state);
   return {
@@ -4175,8 +4833,10 @@ let state = null;
 let chartTab = 'clients';
 let rightTab = 'sop';
 let leversBuilt = false;
-let leversBuiltTaxiOn = false;    // рычаги такси перестраиваются при запуске
+let leversSignature = '';         // группы перестраиваются при запусках
 let bound = false;                // обработчики уже навешаны
+
+const versSignature = () => `${state.taxi.on}|${state.ecom.on}|${state.plus.on}`;
 
 // ----------------------------------------------------------------------------
 // Сохранение
@@ -4321,7 +4981,7 @@ function renderKpis() {
 // Рычаги: три складных блока (как в БИЛЕТВИЛЕ) с описанием группы и живой
 // сводкой — по ней видно, что механика группы делает прямо сейчас.
 // ----------------------------------------------------------------------------
-const openGroups = { food: true, taxi: true, holding: true };
+const openGroups = { food: true, taxi: true, ecom: true, holding: true };
 
 function leverHtml(l) {
   // Политика — решение с именем, а не процент: сегментные режимы вместо
@@ -4345,12 +5005,15 @@ function leverHtml(l) {
 }
 
 function buildLevers() {
-  const taxiOn = state.taxi.on;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
-    const levers = LEVERS.filter((l) => l.group === g.id);
-    const locked = g.id === 'taxi' && !taxiOn;
+    // Цена Plus появляется вместе с подпиской
+    const levers = LEVERS.filter((l) => l.group === g.id
+      && !(l.key === 'plusPrice' && !state.plus.on));
+    const locked = (g.id === 'taxi' && !state.taxi.on)
+      || (g.id === 'ecom' && !state.ecom.on);
     const body = locked
-      ? `<div class="hint-box" style="margin:6px 0 12px">${t('leverGroupLockedTaxi')}
+      ? `<div class="hint-box" style="margin:6px 0 12px">${t(g.id === 'taxi'
+          ? 'leverGroupLockedTaxi' : 'leverGroupLockedEcom')}
           <a class="jump" data-jump="panel:verticals">${t('jumpGo')}</a></div>`
       : `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>
         <div id="readout-${g.id}"></div>
@@ -4400,7 +5063,7 @@ function buildLevers() {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
-  leversBuiltTaxiOn = taxiOn;
+  leversSignature = versSignature();
 }
 
 // Живые сводки групп: что механика делает при текущих ползунках.
@@ -4448,24 +5111,42 @@ function renderLeverReadouts() {
     </div>`;
   }
 
+  const ecomBox = el('readout-ecom');
+  if (ecomBox && state.ecom.on && r) {
+    ecomBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutEcom', {
+        users: compact(state.ecom.users),
+        lost: compact(r.lostEcom), gained: compact(r.ecomColdAcq + r.crossEcomConv),
+        cls: (r.ecomColdAcq + r.crossEcomConv) >= r.lostEcom ? 'pos' : 'neg',
+      })}</div>
+      ${r.logistics ? `<div class="pos">${t('readoutEcomLogistics')}</div>` : ''}
+    </div>`;
+  }
+
   const holdBox = el('readout-holding');
   if (holdBox) {
     const penalty = focusPenalty(state, d);
-    const focusLine = state.taxi.on
+    const anySpoke = state.taxi.on || state.ecom.on;
+    const focusLine = anySpoke
       ? t('readoutFocus', {
           penalty: pct(penalty, 0),
           cls: penalty > 0.05 ? 'neg' : 'pos',
         })
       : t('readoutFocusSingle');
-    const crossLine = r && state.taxi.on && (d.crossSell ?? 0) > 0
+    const crossLine = r && anySpoke && (d.crossSell ?? 0) > 0
       ? `<div>${t('readoutCross', {
-          conv: compact(r.crossConv + r.crossBackConv),
+          conv: compact(r.crossConv + r.crossEcomConv + r.crossBackConv),
           wasted: r.crossWasted > 0 ? t('readoutCrossWasted', { wasted: money(r.crossWasted) }) : '',
         })}</div>`
       : '';
+    const plusLine = state.plus.on && r
+      ? `<div>${t('readoutPlus', {
+          subs: compact(state.plus.subs), multi: compact(r.multiUsers),
+        })}</div>` : '';
     holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${focusLine}</div>
       ${crossLine}
+      ${plusLine}
     </div>`;
   }
 }
@@ -4512,6 +5193,7 @@ const BUDGET_COLORS = {
   fixed: '#64748b',
   food: PALETTE[1],
   taxi: PALETTE[2],
+  ecom: PALETTE[4],
   eco: PALETTE[0],
 };
 
@@ -4521,13 +5203,17 @@ function renderBudgetBar() {
   const d = state.decisions;
   const r = last();
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const anySpoke = taxiOn || ecomOn;
   const asset = assetById(state.assetId);
-  const fixed = (r ? r.fixedFood + r.fixedTaxi + r.hqCost
+  const fixed = (r ? r.fixedFood + r.fixedTaxi + (r.fixedEcom ?? 0) + r.hqCost
     : asset.fixedMonthly + CONFIG.hqMonthly);
   const food = (d.foodOps ?? 0) + (d.foodMarketing ?? 0);
   const taxi = taxiOn ? (d.taxiSupply ?? 0) + (d.taxiMarketing ?? 0) : 0;
-  const eco = taxiOn ? (d.crossSell ?? 0) + (d.mgmt ?? 0) : (d.mgmt ?? 0);
-  const total = fixed + food + taxi + eco;
+  const ecom = ecomOn ? (d.ecomOps ?? 0) + (d.ecomMarketing ?? 0) : 0;
+  const eco = (anySpoke ? (d.crossSell ?? 0) : 0) + (d.mgmt ?? 0)
+    + (r ? (r.licenseFee ?? 0) + (r.ticketsFee ?? 0) + (r.plusPerkCost ?? 0) : 0);
+  const total = fixed + food + taxi + ecom + eco;
   const contribution = r ? r.contribution : asset.users * asset.arpu * asset.margin;
   const net = contribution - total;
 
@@ -4538,12 +5224,13 @@ function renderBudgetBar() {
   box.innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>${t('budgetTitle', { total: money(total) })}</div>
     <div class="budget-bar">
-      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('eco', eco)}
+      ${seg('fixed', fixed)}${seg('food', food)}${seg('taxi', taxi)}${seg('ecom', ecom)}${seg('eco', eco)}
     </div>
     <div class="budget-legend">
       ${leg('fixed', t('budgetFixed'), fixed)}
       ${leg('food', t('budgetFood'), food)}
       ${leg('taxi', t('budgetTaxi'), taxi)}
+      ${leg('ecom', t('budgetEcom'), ecom)}
       ${leg('eco', t('budgetEco'), eco)}
     </div>
     <div class="funding-note" style="margin-top:4px">${t('budgetNet', {
@@ -4564,115 +5251,107 @@ function renderEcoMap() {
   const r = last();
   const asset = assetById(state.assetId);
   const taxi = verticalById('taxi');
+  const ecomDef = verticalById('ecom');
   const foodU = r ? r.foodUsers : asset.users;
   const taxiU = r ? r.taxiUsers : 0;
+  const ecomU = r ? r.ecomUsers : 0;
   const bothU = r ? r.bothUsers : 0;
+  const bothEcomU = r ? r.bothEcomUsers : 0;
   const unique = r ? r.uniqueUsers : asset.users;
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const plusOn = state.plus.on;
 
-  // Радиусы от численности. Пересечение — отдельный узел между кругами:
-  // его размер и есть склейка экосистемы
-  const rFood = 30 + 38 * Math.sqrt(foodU / 260_000);
-  const rTaxi = taxiOn ? 12 + 40 * Math.sqrt(taxiU / 300_000) : 16;
-  const rBoth = taxiOn && bothU > 500 ? 8 + 26 * Math.sqrt(bothU / 150_000) : 0;
-  const cx1 = 235;
-  const cx2 = 465;
-  const cxB = (cx1 + cx2) / 2;
-  const cy = 103;
+  // Хаб слева, спицы справа: топология экосистемы буквально на экране.
+  // Узлы пересечений — на связях; подписка — кольцо вокруг хаба.
+  const cx1 = 210;
+  const cy = 130;
+  const rFood = 28 + 36 * Math.sqrt(foodU / 260_000);
+  const tx2 = 500; const ty2 = 78;
+  const ex2 = 500; const ey2 = 192;
+  const rTaxi = taxiOn ? 10 + 36 * Math.sqrt(taxiU / 300_000) : 14;
+  const rEcom = ecomOn ? 10 + 34 * Math.sqrt(ecomU / 300_000) : 14;
+  const rBoth = taxiOn && bothU > 500 ? 6 + 20 * Math.sqrt(bothU / 150_000) : 0;
+  const rBothE = ecomOn && bothEcomU > 500 ? 6 + 20 * Math.sqrt(bothEcomU / 150_000) : 0;
+  const midT = { x: (cx1 + tx2) / 2, y: (cy + ty2) / 2 - 6 };
+  const midE = { x: (cx1 + ex2) / 2, y: (cy + ey2) / 2 + 6 };
 
-  const foodIn = r ? r.wonBack + r.organicFood : 0;
-  // Наконечник — цветная точка на конце пути: SVG-маркеры не наследуют
-  // цвет в старых Safari, а точка работает везде
-  const arrow = (path, ex, ey, color, label, x, y, anchor = 'middle') => `
-    <path class="flow" d="${path}" stroke="${color}"/>
-    <circle cx="${ex}" cy="${ey}" r="3" fill="${color}"/>
-    <text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted">${label}</text>`;
+  const link = (x1, y1, x2, y2, on) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+    stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
 
-  const flows = [];
-  if (r && taxiOn) {
-    if (r.crossConv > 0.5) {
-      flows.push(arrow(
-        `M ${cx1 + 20} ${cy - rFood + 6} C ${cx1 + 60} ${cy - rFood - 34}, ${cx2 - 50} ${cy - rTaxi - 34}, ${cx2 - 10} ${cy - rTaxi + 2}`,
-        cx2 - 10, cy - rTaxi + 2,
-        PALETTE[0], `${t('mapCross')} +${compact(r.crossConv)}`, (cx1 + cx2) / 2 + 10, cy - rFood - 26));
-    }
-    if (r.crossBackConv > 0.5) {
-      flows.push(arrow(
-        `M ${cx2 - 14} ${cy + rTaxi - 2} C ${cx2 - 50} ${cy + rTaxi + 30}, ${cx1 + 60} ${cy + rFood + 30}, ${cx1 + 24} ${cy + rFood - 4}`,
-        cx1 + 24, cy + rFood - 4,
-        PALETTE[0], `${t('mapCrossBack')} +${compact(r.crossBackConv)}`, (cx1 + cx2) / 2 + 10, cy + rFood + 34));
-    }
-    if (r.coldAcq > 0.5) {
-      flows.push(arrow(
-        `M 640 ${cy - 30} C 600 ${cy - 26}, ${cx2 + rTaxi + 40} ${cy - 14}, ${cx2 + rTaxi + 4} ${cy - 6}`,
-        cx2 + rTaxi + 4, cy - 6,
-        PALETTE[2], `${t('mapCold')} +${compact(r.coldAcq)}`, 640, cy - 40, 'end'));
-    }
-    if (r.lostTaxi > 0.5) {
-      flows.push(arrow(
-        `M ${cx2 + 8} ${cy + rTaxi + 2} L ${cx2 + 22} ${cy + rTaxi + 26}`,
-        cx2 + 22, cy + rTaxi + 26,
-        'var(--bad)', `−${compact(r.lostTaxi)}`, cx2 + 30, cy + rTaxi + 38));
-    }
-  }
-  if (r && foodIn > 0.5) {
-    flows.push(arrow(
-      `M 55 ${cy - 26} C 95 ${cy - 24}, ${cx1 - rFood - 36} ${cy - 12}, ${cx1 - rFood - 4} ${cy - 4}`,
-      cx1 - rFood - 4, cy - 4,
-      PALETTE[1], `${t('mapWinback')} +${compact(foodIn)}`, 57, cy - 36, 'start'));
-  }
-  if (r && r.lostFood > 0.5) {
-    flows.push(arrow(
-      `M ${cx1 - 10} ${cy + rFood + 2} L ${cx1 - 24} ${cy + rFood + 26}`,
-      cx1 - 24, cy + rFood + 26,
-      'var(--bad)', `−${compact(r.lostFood)}`, cx1 - 32, cy + rFood + 38));
-  }
-
-  // Значки состояния рынка
-  const badges = [];
-  if (r && r.warMonthsLeft > 0) {
-    badges.push(`<text x="${cx2 + rTaxi + 12}" y="${cy + 4}" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
-  }
-  if (r && r.fedMonthsLeft > 0) {
-    badges.push(`<text x="640" y="26" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
-  }
-
-  const taxiNode = taxiOn
-    ? `<g class="node" data-jump="group:taxi">
-        <circle cx="${cx2}" cy="${cy}" r="${rTaxi}" fill="rgba(244,114,182,0.14)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
-        <text x="${cx2}" y="${cy - 2}" text-anchor="middle">${taxi.icon} ${t('mapTaxi')}</text>
-        <text x="${cx2}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(taxiU)}</text>
+  const spoke = (on, cx, cyS, rr, icon, name, users, jump, offLabel) => (on
+    ? `<g class="node" data-jump="${jump}">
+        <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
+        <text x="${cx}" y="${cyS - 2}" text-anchor="middle">${icon} ${name}</text>
+        <text x="${cx}" y="${cyS + 13}" text-anchor="middle" class="m-num">${compact(users)}</text>
       </g>`
     : `<g class="node" data-jump="panel:verticals">
-        <circle cx="${cx2}" cy="${cy}" r="16" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
-        <text x="${cx2}" y="${cy - 26}" text-anchor="middle" class="m-muted">${taxi.icon} ${t('mapTaxiOff')}</text>
-      </g>`;
+        <circle cx="${cx}" cy="${cyS}" r="14" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+        <text x="${cx}" y="${cyS - 22}" text-anchor="middle" class="m-muted">${icon} ${offLabel}</text>
+      </g>`);
 
-  // Узел склейки: люди в двух сервисах — цветом серии «Оба сервиса» с графика
-  const bothLabel = rBoth > 0
+  const bothNode = (rr, mid, users, label) => (rr > 0
     ? `<g class="node" data-jump="lever:crossSell">
-        <line x1="${cx1 + rFood - 4}" y1="${cy}" x2="${cxB - rBoth}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
-        <line x1="${cxB + rBoth}" y1="${cy}" x2="${cx2 - rTaxi + 4}" y2="${cy}" stroke="${PALETTE[3]}" stroke-dasharray="3 3" opacity="0.6"/>
-        <circle cx="${cxB}" cy="${cy}" r="${rBoth}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.5"/>
-        <text x="${cxB}" y="${cy - rBoth - 8}" text-anchor="middle" class="m-muted">${t('mapBoth')}</text>
-        <text x="${cxB}" y="${cy + 4}" text-anchor="middle" class="m-num" style="font-size:11px">${compact(bothU)}</text>
-      </g>`
+        <circle cx="${mid.x}" cy="${mid.y}" r="${rr}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.4"/>
+        <text x="${mid.x}" y="${mid.y + 3}" text-anchor="middle" class="m-num" style="font-size:10px">${compact(users)}</text>
+        <text x="${mid.x}" y="${mid.y - rr - 6}" text-anchor="middle" class="m-muted">${label}</text>
+      </g>` : '');
+
+  // Потоки месяца: подписи на связях, отток — красным под кругами
+  const flowLabel = (x, y, text, color, anchor = 'middle') => (text
+    ? `<text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted" style="fill:${color}">${text}</text>` : '');
+
+  const plusRing = plusOn
+    ? `<circle cx="${cx1}" cy="${cy}" r="${rFood + 10}" fill="none" stroke="${PALETTE[0]}"
+        stroke-width="1.6" stroke-dasharray="6 4" opacity="0.8"/>
+      <text x="${cx1}" y="${cy - rFood - 16}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[0]}">➕ ${t('mapPlus', { subs: compact(state.plus.subs) })}</text>`
     : '';
+
+  const badges = [];
+  if (r && r.warMonthsLeft > 0) {
+    badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - 10}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
+  }
+  if (r && r.fedMonthsLeft > 0) {
+    badges.push(`<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
+  }
+  if (r && r.crisisMonthsLeft > 0) {
+    badges.push(`<text x="686" y="40" text-anchor="end" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`);
+  }
 
   box.innerHTML = `<div class="panel eco-map">
     <h2 class="panel-title">${t('mapTitle')}</h2>
-    <svg viewBox="0 0 700 248" role="img" aria-label="${t('mapTitle')}">
+    <svg viewBox="0 0 700 268" role="img" aria-label="${t('mapTitle')}">
       <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
+      ${link(cx1 + rFood - 4, cy - 14, tx2 - rTaxi + 4, ty2 + 6, bothU > 500)}
+      ${ecomOn || !taxiOn ? link(cx1 + rFood - 4, cy + 14, ex2 - rEcom + 4, ey2 - 6, bothEcomU > 500) : ''}
+      ${plusRing}
       <g class="node" data-jump="group:food">
         <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
-        <text x="${cx1 - 14}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapFood')}</text>
-        <text x="${cx1 - 14}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
+        <text x="${cx1}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapHub')}</text>
+        <text x="${cx1}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
       </g>
-      ${taxiNode}
-      ${bothLabel}
-      ${flows.join('')}
+      ${spoke(taxiOn, tx2, ty2, rTaxi, taxi.icon, t('mapTaxi'), taxiU, 'group:taxi', t('mapTaxiOff'))}
+      ${spoke(ecomOn, ex2, ey2, rEcom, ecomDef.icon, t('mapEcom'), ecomU, 'group:ecom', t('mapEcomOff'))}
+      ${bothNode(rBoth, midT, bothU, t('mapBoth'))}
+      ${bothNode(rBothE, midE, bothEcomU, t('mapBoth'))}
+      ${flowLabel(midT.x, midT.y + (rBoth || 8) + 14,
+        r && r.crossConv > 0.5 ? `${t('mapCross')} +${compact(r.crossConv)}` : '', PALETTE[0])}
+      ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
+        r && r.crossEcomConv > 0.5 ? `${t('mapCross')} +${compact(r.crossEcomConv)}` : '', PALETTE[0])}
+      ${flowLabel(tx2 + rTaxi + 8, ty2 + 4,
+        r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '', PALETTE[2], 'start')}
+      ${flowLabel(ex2 + rEcom + 8, ey2 + 4,
+        r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '', PALETTE[2], 'start')}
+      ${flowLabel(tx2, ty2 + rTaxi + 14,
+        r && taxiOn && r.lostTaxi > 0.5 ? `−${compact(r.lostTaxi)}` : '', 'var(--bad)')}
+      ${flowLabel(ex2, ey2 + rEcom + 14,
+        r && ecomOn && r.lostEcom > 0.5 ? `−${compact(r.lostEcom)}` : '', 'var(--bad)')}
+      ${flowLabel(cx1, cy + rFood + (plusOn ? 24 : 14),
+        r && r.lostFood > 0.5 ? `−${compact(r.lostFood)}` : '', 'var(--bad)')}
+      ${flowLabel(cx1 - rFood - 10, cy - 4,
+        r && (r.wonBack + r.organicFood) > 0.5 ? `+${compact(r.wonBack + r.organicFood)}` : '', PALETTE[1], 'end')}
       ${badges.join('')}
-      <text x="350" y="240" text-anchor="middle" class="m-muted">${t('mapUnique', {
+      <text x="350" y="260" text-anchor="middle" class="m-muted">${t('mapUnique', {
         unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
       })}</text>
     </svg>
@@ -4740,6 +5419,83 @@ function renderVerticals() {
     ${stats}
   </div>`;
 
+  // Е-ком: третья нога за воротами по метрикам
+  const ecomDef = verticalById('ecom');
+  const ecomOn = state.ecom.on;
+  const ecomPlanned = chosen.has('ecom') && !ecomOn;
+  const ecomGateOpen = expansionOpen(state, ecomDef);
+  const ecomCost = ecomDef.launchCost * (asset.launchCostMult?.ecom ?? 1);
+  const ecomBadge = ecomOn
+    ? `<span class="badge on">${t('vertLive')}</span>`
+    : ecomPlanned
+      ? `<span class="badge">${t('vertPlanned')}</span>`
+      : ecomGateOpen
+        ? `<span class="badge">${t('vertLaunch', { cost: money(ecomCost) })}</span>`
+        : `<span class="badge">${t('vertLocked', {
+            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
+          })}</span>`;
+  const logisticsNote = hasPerk(asset, 'courier-logistics')
+    ? `<div class="district-meta pos">${t('vertLogistics', {
+        discount: pct(1 - (asset.launchCostMult?.ecom ?? 1), 0) })}</div>` : '';
+  const ecomCard = `<div class="district ${ecomOn || ecomPlanned ? 'active' : ''}" data-vertical="ecom">
+    <div class="district-head">
+      <span class="district-name">${ecomDef.icon} ${tx(ecomDef.name)}</span>
+      ${ecomBadge}
+    </div>
+    <div class="district-meta">${tx(ecomDef.hint)}</div>
+    ${ecomOn ? `<div class="district-meta">${t('vertEcomStats', {
+      users: compact(state.ecom.users), margin: pct(r?.marginEcom ?? ecomDef.margin, 0),
+    })}</div>` : ''}
+    ${logisticsNote}
+  </div>`;
+
+  // Подписка Plus: склейка, а не вертикаль
+  const plusOn = state.plus.on;
+  const plusPlanned = chosen.has('plus') && !plusOn;
+  const plusOk = plusAvailable(state);
+  const plusBadge = plusOn
+    ? `<span class="badge on">${t('vertLive')}</span>`
+    : plusOk
+      ? `<span class="badge">${t('vertLaunch', { cost: money(plusLaunchCost(state)) })}</span>`
+      : `<span class="badge">${t('plusNeedsVerticals')}</span>`;
+  const plusCard = `<div class="district ${plusOn || plusPlanned ? 'active' : ''}" data-vertical="plus">
+    <div class="district-head">
+      <span class="district-name">➕ ${t('plusName')}</span>
+      ${plusBadge}
+    </div>
+    <div class="district-meta">${t('plusHint')}</div>
+    ${plusOn ? `<div class="district-meta">${t('plusStats', {
+      subs: compact(state.plus.subs), price: num(state.decisions.plusPrice ?? 299),
+    })}</div>` : ''}
+  </div>`;
+
+  // Партнёрства: кино и билеты входят лицензиями, а не играми
+  const partnersChosen = new Set(state.decisions.partners ?? []);
+  const ownContent = hasPerk(asset, 'own-content');
+  const ownTickets = hasPerk(asset, 'own-tickets');
+  const licenseFee = cinemaLicenseFee(state);
+  const ticketsFee = ticketsPartnerFee(state);
+  const partnerCard = (id, icon, name, hint, own, fee, feeNote, active) => `
+    <div class="district ${active ? 'active' : ''}" ${own ? '' : `data-partner="${id}"`}>
+      <div class="district-head">
+        <span class="district-name">${icon} ${name}</span>
+        <span class="badge ${active ? 'on' : ''}">${own ? t('partnerOwn')
+          : active ? feeNote : t('partnerJoin', { fee: feeNote })}</span>
+      </div>
+      <div class="district-meta">${hint}</div>
+    </div>`;
+  const cinemaActive = plusOn && (partnersChosen.has('cinema') || ownContent);
+  const ticketsActive = partnersChosen.has('tickets') || ownTickets;
+  const cinemaCard = partnerCard('cinema', '🎬', t('partnerCinema'),
+    plusOn ? t('partnerCinemaHint') : t('partnerCinemaNeedsPlus'),
+    ownContent, licenseFee,
+    licenseFee > 0 ? t('perMonth', { value: money(licenseFee) }) : t('partnerFree'),
+    cinemaActive);
+  const ticketsCard = partnerCard('tickets', '🎟️', t('partnerTickets'),
+    t('partnerTicketsHint'), ownTickets, ticketsFee,
+    ticketsFee > 0 ? t('perMonth', { value: money(ticketsFee) }) : t('partnerFree'),
+    ticketsActive);
+
   // Будущие фазы: видны, но заперты — дисциплина скоупа наглядно
   const future = FUTURE_VERTICALS.map((v) => `<div class="district" style="opacity:.55">
     <div class="district-head">
@@ -4749,21 +5505,40 @@ function renderVerticals() {
     <div class="district-meta">${tx(v.hint)}</div>
   </div>`).join('');
 
-  el('verticals').innerHTML = assetCard + taxiCard + future;
+  el('verticals').innerHTML = assetCard + taxiCard + ecomCard + plusCard
+    + cinemaCard + ticketsCard + future;
 
   el('verticals').querySelectorAll('[data-vertical]').forEach((node) => {
     node.addEventListener('click', () => {
       const id = node.dataset.vertical;
       const set = new Set(state.decisions.verticals ?? []);
-      if (!set.has(id) && !state.taxi.on && !gateOpen) {
-        toast(t('vertLockedToast', {
-          month: taxi.gate.minMonth, n: taxi.gate.assetContributionMonths,
-        }));
+      if (!set.has(id)) {
+        if (id === 'ecom' && !state.ecom.on && !ecomGateOpen) {
+          toast(t('vertLockedToast', {
+            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
+          }));
+        }
+        if (id === 'plus' && !state.plus.on && !plusOk) {
+          toast(t('plusNeedsVerticalsToast'));
+          return;
+        }
       }
       if (set.has(id)) set.delete(id); else set.add(id);
       state.decisions.verticals = [...set];
       renderVerticals();
       renderRightTab();
+      save();
+    });
+  });
+  el('verticals').querySelectorAll('[data-partner]').forEach((node) => {
+    node.addEventListener('click', () => {
+      const id = node.dataset.partner;
+      if (id === 'cinema' && !state.plus.on) { toast(t('partnerCinemaNeedsPlus')); return; }
+      const set = new Set(state.decisions.partners ?? []);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      state.decisions.partners = [...set];
+      renderVerticals();
+      renderBudgetBar();
       save();
     });
   });
@@ -4921,6 +5696,18 @@ function buildAlerts(r) {
   if (r.crossWasted > 0.2 * (r.decisions.crossSell ?? 0) && (r.decisions.crossSell ?? 0) > 0) {
     alerts.push(['warn', t('alertCrossWasted', { wasted: money(r.crossWasted) }), 'lever:crossSell']);
   }
+  if (!state.ecom.on && state.month >= 8 && expansionOpen(state, verticalById('ecom'))
+      && !(state.decisions.verticals ?? []).includes('ecom')) {
+    alerts.push(['good', t('alertEcomGateOpen'), 'panel:verticals']);
+  }
+  if (!state.plus.on && plusAvailable(state) && r.multiUsers > 30_000
+      && !(state.decisions.verticals ?? []).includes('plus')) {
+    alerts.push(['good', t('alertPlusReady', { multi: compact(r.multiUsers) }), 'panel:verticals']);
+  }
+  if (r.plusOn && r.plusSubs < r.multiUsers * 0.1 && r.plusSubs > 0
+      && (r.decisions.plusPrice ?? 299) > 299) {
+    alerts.push(['warn', t('alertPlusPricey'), 'lever:plusPrice']);
+  }
   if ((r.decisions.foodTake ?? 1) > CONFIG.foodTakeThreshold) {
     alerts.push(['bad', t('alertTakeExodus', {
       take: pct(r.decisions.foodTake, 0) }), 'lever:foodTake']);
@@ -5046,14 +5833,19 @@ function renderReport() {
         t('statProfitSub', { contribution: money(r.contribution), opex: money(r.opex) }))}
       ${stat(t('statUnique'), compact(r.uniqueUsers),
         t('statUniqueSub', {
-          food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.bothUsers),
+          food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.multiUsers),
         }))}
       ${stat(t('statArpu'), `${num(r.arpuHolding)} ₽`, t('statArpuSub'))}
       ${stat(t('statTaxi'), r.taxiOn ? compact(r.taxiUsers) : '—',
         r.taxiOn ? t('statTaxiSub', { drivers: num(r.drivers), fill: pct(r.fill, 0) }) : t('statTaxiOff'))}
-      ${stat(t('statCross'), r.crossConv + r.crossBackConv > 0
-          ? `+${compact(r.crossConv + r.crossBackConv)}` : '—',
-        r.crossConv + r.crossBackConv > 0
+      ${stat(t('statEcom'), r.ecomOn ? compact(r.ecomUsers) : '—',
+        r.ecomOn ? t('statEcomSub', { margin: pct(r.marginEcom, 0) }) : t('statTaxiOff'))}
+      ${stat(t('statPlus'), r.plusOn ? compact(r.plusSubs) : '—',
+        r.plusOn ? t('statPlusSub', {
+          conv: num(r.plusConv, 0), churned: num(r.plusChurned, 0) }) : t('statTaxiOff'))}
+      ${stat(t('statCross'), r.crossConv + r.crossEcomConv + r.crossBackConv > 0
+          ? `+${compact(r.crossConv + r.crossEcomConv + r.crossBackConv)}` : '—',
+        r.crossConv + r.crossEcomConv + r.crossBackConv > 0
           ? t('statCrossSub', {
               cac: `${num(r.crossCac)} ₽`,
               cold: r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—',
@@ -5156,7 +5948,9 @@ const CHART_TABS = {
       { label: t('seriesUnique'), data: h.map((r) => r.uniqueUsers), color: PALETTE[0] },
       { label: t('seriesFood'), data: h.map((r) => r.foodUsers), color: PALETTE[1] },
       { label: t('seriesTaxi'), data: h.map((r) => r.taxiUsers), color: PALETTE[2] },
-      { label: t('seriesBoth'), data: h.map((r) => r.bothUsers), color: PALETTE[3] },
+      { label: t('seriesEcom'), data: h.map((r) => r.ecomUsers ?? 0), color: PALETTE[4] },
+      { label: t('seriesBoth'), data: h.map((r) => r.multiUsers ?? r.bothUsers), color: PALETTE[3] },
+      { label: t('seriesPlus'), data: h.map((r) => r.plusSubs ?? 0), color: PALETTE[5] },
     ],
   },
   money: {
@@ -5182,14 +5976,16 @@ const CHART_TABS = {
       { label: t('seriesValueTotal'), data: h.map((r) => r.valuation ?? 0), color: PALETTE[0] },
       { label: t('seriesValueFood'), data: h.map((r) => r.sopFoodValue ?? 0), color: PALETTE[1] },
       { label: t('seriesValueTaxi'), data: h.map((r) => r.sopTaxiValue ?? 0), color: PALETTE[2] },
+      { label: t('seriesValueEcom'), data: h.map((r) => r.sopEcomValue ?? 0), color: PALETTE[4] },
+      { label: t('seriesValuePlus'), data: h.map((r) => r.sopPlusValue ?? 0), color: PALETTE[5] },
     ],
   },
   acq: {
     label: 'chartAcq', caption: 'chartAcqCaption',
     format: (v) => `${Math.round(v)}`,
     series: (h) => [
-      { label: t('seriesCrossAcq'), data: h.map((r) => r.crossConv + r.crossBackConv), color: PALETTE[0] },
-      { label: t('seriesColdAcq'), data: h.map((r) => r.coldAcq), color: PALETTE[2] },
+      { label: t('seriesCrossAcq'), data: h.map((r) => r.crossConv + (r.crossEcomConv ?? 0) + r.crossBackConv), color: PALETTE[0] },
+      { label: t('seriesColdAcq'), data: h.map((r) => r.coldAcq + (r.ecomColdAcq ?? 0)), color: PALETTE[2] },
     ],
   },
 };
@@ -5205,6 +6001,9 @@ function decisionChanges() {
     for (const l of LEVERS) if ((cur[l.key] ?? 0) !== (before[l.key] ?? 0)) names.push(tx(l.label));
     if ((cur.verticals ?? []).length !== (before.verticals ?? []).length) {
       names.push(t('chartChangeVerticals'));
+    }
+    if ((cur.partners ?? []).length !== (before.partners ?? []).length) {
+      names.push(t('chartChangePartners'));
     }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
   }
@@ -5249,7 +6048,9 @@ function renderChart() {
 // ----------------------------------------------------------------------------
 function renderSopTab() {
   const sop = sumOfParts(state);
-  const partName = (id) => (id === 'food' ? t('sopPartFood') : t('sopPartTaxi'));
+  const partName = (id) => t({
+    food: 'sopPartFood', taxi: 'sopPartTaxi', ecom: 'sopPartEcom', plus: 'sopPartPlus',
+  }[id] ?? 'sopPartFood');
   const rows = sop.parts.map((p) => `<tr>
     <td>${partName(p.id)}${p.zoo ? `<div class="funding-note neg">${t('sopZoo')}</div>` : ''}</td>
     <td>${money(p.runRate)}</td>
@@ -5271,6 +6072,7 @@ function renderSopTab() {
         <tr class="total"><td colspan="4">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
       </tbody>
     </table>
+    ${sop.thirdAct ? `<div class="alert warn" style="margin-top:8px">${t('sopThirdAct')}</div>` : ''}
     <p class="funding-note" style="margin-top:10px">${t('sopNote')}</p>`;
 }
 
@@ -5284,20 +6086,31 @@ function renderPnlTab() {
     <table class="data">
       <tbody>
         ${line(t('pnlRevenueFood'), r.revenueFood, 'pos', true)}
-        ${line(t('pnlRevenueTaxi'), r.revenueTaxi, 'pos', true)}
+        ${r.taxiOn ? line(t('pnlRevenueTaxi'), r.revenueTaxi, 'pos', true) : ''}
+        ${r.ecomOn ? line(t('pnlRevenueEcom'), r.revenueEcom, 'pos', true) : ''}
+        ${r.plusOn ? line(t('pnlRevenuePlus'), r.revenuePlus, 'pos', true) : ''}
+        ${r.revenueTickets > 0 ? line(t('pnlRevenueTickets'), r.revenueTickets, 'pos', true) : ''}
         <tr class="total"><td>${t('pnlRevenue')}</td><td class="pos">${moneyExact(r.revenue)}</td></tr>
         ${line(t('pnlContribFood'), r.contribFood, 'pos', true)}
-        ${line(t('pnlContribTaxi'), r.contribTaxi, r.contribTaxi >= 0 ? 'pos' : 'neg', true)}
+        ${r.taxiOn ? line(t('pnlContribTaxi'), r.contribTaxi, r.contribTaxi >= 0 ? 'pos' : 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlContribEcom'), r.contribEcom, r.contribEcom >= 0 ? 'pos' : 'neg', true) : ''}
+        ${r.plusOn ? line(t('pnlPlusNet'), r.revenuePlus - r.plusPerkCost,
+          (r.revenuePlus - r.plusPerkCost) >= 0 ? 'pos' : 'neg', true) : ''}
         <tr class="total"><td>${t('pnlContribution')}</td><td class="${r.contribution >= 0 ? 'pos' : 'neg'}">${moneyExact(r.contribution)}</td></tr>
         ${line(t('pnlFixedFood'), -r.fixedFood, 'neg', true)}
         ${r.taxiOn ? line(t('pnlFixedTaxi'), -r.fixedTaxi, 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlFixedEcom'), -r.fixedEcom, 'neg', true) : ''}
         ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
         ${line(t('pnlMgmt'), -(d.mgmt ?? 0), 'neg', true)}
-        ${r.taxiOn ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
+        ${(r.taxiOn || r.ecomOn) ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
         ${line(t('pnlFoodOps'), -(d.foodOps ?? 0), 'neg', true)}
         ${line(t('pnlFoodMarketing'), -(d.foodMarketing ?? 0), 'neg', true)}
         ${r.taxiOn ? line(t('pnlTaxiSupply'), -(d.taxiSupply ?? 0), 'neg', true) : ''}
         ${r.taxiOn ? line(t('pnlTaxiMarketing'), -(d.taxiMarketing ?? 0), 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlEcomOps'), -(d.ecomOps ?? 0), 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlEcomMarketing'), -(d.ecomMarketing ?? 0), 'neg', true) : ''}
+        ${r.licenseFee > 0 ? line(t('pnlLicense'), -r.licenseFee, 'neg', true) : ''}
+        ${r.ticketsFee > 0 ? line(t('pnlTicketsFee'), -r.ticketsFee, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -5311,7 +6124,9 @@ function renderBaseTab() {
   const asset = assetById(state.assetId);
   const foodU = r ? r.foodUsers : asset.users;
   const taxiU = r ? r.taxiUsers : 0;
-  const bothU = r ? r.bothUsers : 0;
+  const ecomU = r ? r.ecomUsers : 0;
+  const multiU = r ? r.multiUsers : 0;
+  const subs = r ? r.plusSubs : 0;
   const unique = r ? r.uniqueUsers : asset.users;
   const pool = r ? r.returnPool : asset.returnPool;
 
@@ -5321,27 +6136,28 @@ function renderBaseTab() {
       <tbody>
         <tr><td>${t('baseFood')}</td><td>${compact(foodU)}</td></tr>
         <tr><td>${t('baseTaxi')}</td><td>${compact(taxiU)}</td></tr>
-        <tr><td>${t('baseBoth')}</td><td>${compact(bothU)}</td></tr>
+        <tr><td>${t('baseEcom')}</td><td>${state.ecom.on ? compact(ecomU) : '—'}</td></tr>
+        <tr><td>${t('baseBoth')}</td><td>${compact(multiU)}</td></tr>
+        <tr><td>${t('basePlus')}</td><td>${state.plus.on ? compact(subs) : '—'}</td></tr>
         <tr class="total"><td>${t('baseUnique')}</td><td>${compact(unique)}</td></tr>
-        <tr class="sub"><td>${t('baseMultiShare')}</td><td>${pct(unique > 0 ? bothU / unique : 0, 1)}</td></tr>
+        <tr class="sub"><td>${t('baseMultiShare')}</td><td>${pct(unique > 0 ? multiU / unique : 0, 1)}</td></tr>
         <tr class="sub"><td>${t('baseReturnPool')}</td><td>${compact(pool)}</td></tr>
       </tbody>
     </table>`;
 
   let channels = '';
-  if (r && state.taxi.on) {
-    const cacOf = (spentPer, conv) => (conv > 0 ? `${num(spentPer / conv)} ₽` : '—');
-    const budgetF = (r.decisions.crossSell ?? 0) * (1 - CONFIG.crossBackShare);
-    const budgetB = (r.decisions.crossSell ?? 0) * CONFIG.crossBackShare;
+  if (r && (state.taxi.on || state.ecom.on)) {
     channels = `
       <h4 style="margin:14px 0 6px;font-size:13px">${t('baseAcqTitle')}</h4>
       <table class="data">
         <thead><tr><th>${t('baseColChannel')}</th><th>${t('baseColPeople')}</th><th>${t('baseColCac')}</th></tr></thead>
         <tbody>
-          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td>${cacOf(budgetF, r.crossConv)}</td></tr>
-          <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td><td>${cacOf(budgetB, r.crossBackConv)}</td></tr>
+          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${num(r.crossCac)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCrossEcom')}</td><td>${num(r.crossEcomConv, 0)}</td></tr>
+          <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td></tr>
           <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${cacOf(r.decisions.foodMarketing ?? 0, r.wonBack)}</td></tr>
+          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${num(r.cacColdEcom)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${num((r.decisions.foodMarketing ?? 0) / r.wonBack)} ₽` : '—'}</td></tr>
           <tr><td>${t('baseChOrganic')}</td><td>${num(r.organicFood, 0)}</td><td>—</td></tr>
         </tbody>
       </table>
@@ -5367,6 +6183,12 @@ function renderHelpTab() {
 
     <h4>${t('helpWarTitle')}</h4>
     <p>${t('helpWarText')}</p>
+
+    <h4>${t('helpPlusTitle')}</h4>
+    <p>${t('helpPlusText')}</p>
+
+    <h4>${t('helpMetaTitle')}</h4>
+    <p>${t('helpMetaText')}</p>
 
     <h4>${t('helpFocusTitle')}</h4>
     <p>${t('helpFocusText')}</p>
@@ -5484,7 +6306,9 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      // Титул «Конгломерат Новограда» остаётся в локальных рекордах
+      outcome: s.bankrupt ? 'bankrupt'
+        : (s.equityValue >= NOVOGRAD_WORTHY && tripleCrown() ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
     });
@@ -5494,7 +6318,9 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt'
+      : rec.outcome === 'conglomerate' ? 'recordsOutcomeConglomerate'
+      : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
@@ -5510,6 +6336,16 @@ function showGameOver() {
     : s.equityValue > 5e9 ? t('gradeExcellent')
     : s.equityValue > 2e9 ? t('gradeSolid')
     : s.equityValue > 8e8 ? t('gradeSurvived') : t('gradeModest');
+
+  // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
+  // бонусы в старых играх (бейдж и спец-сиды на их финальных экранах)
+  if (!s.bankrupt) rememberNovogradResult(s.equityValue);
+  // Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
+  // Строго косметика — никакого множителя к счёту.
+  const crown = !s.bankrupt && s.equityValue >= NOVOGRAD_WORTHY && tripleCrown();
+  const crownHtml = crown ? `
+    <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
+    ${t('crownText')}</div>` : '';
 
   const line = resultString({
     tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
@@ -5528,6 +6364,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2e9), c: money(8e8) })}</p>
+    ${crownHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       revenue: money(r.revenue), arpu: num(r.arpuHolding),
@@ -5562,21 +6399,44 @@ function showGameOver() {
   });
 }
 
-// Приветственный экран: куда человек попал и что от него хотят.
+// Приветственный экран: куда человек попал, выбор стартового актива
+// («класс персонажа») и наследие из трёх игр набора.
 function showWelcome() {
   let seedWanted = '';
+  let assetWanted = state.assetId;
   const best = bestRecord(RECORDS_KEY);
-  const asset = assetById(state.assetId);
+  const unlocks = legacyUnlocks();
+
+  const assetCards = START_ASSETS.map((a) => `
+    <button type="button" class="event-option ${a.id === assetWanted ? 'selected' : ''}" data-asset="${a.id}">
+      <b>${a.icon} ${tx(a.name)}${unlocks[a.id] ? ' ★' : ''}</b>
+      <span>${t('vertAssetStats', {
+        users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
+      })} · ${tx(a.synergyNote)}</span>
+    </button>`).join('');
+
+  const legacyLine = LEGACY_GAMES.map((g) => {
+    const a = assetById(g.assetId);
+    return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
+  }).join(' · ');
+
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
-    <p class="funding-note">${t('welcomeHint')}</p>
-    <div class="hint-box" style="margin-top:8px"><b>${t('welcomeAsset')}:</b>
-      ${asset.icon} ${tx(asset.name)} · ${t('vertAssetStats', {
-        users: compact(asset.users), arpu: num(asset.arpu), margin: pct(asset.margin, 0),
-      })}<br>${t('welcomeAssetNote')}</div>
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
+    <p class="funding-note">${t('welcomeAssetChoice')}</p>
+    <div class="event-options">${assetCards}</div>
+    <div class="hint-box" style="margin-top:8px">
+      <b>${t('welcomeLegacy')}:</b> ${legacyLine}<br>
+      ${t('welcomeLegacyNote')}
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
+          style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+        <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
+      </div>
+    </div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -5587,7 +6447,15 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+      const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
+      // Партия пересоздаётся, если поменяли сид или актив — или если это
+      // свежая партия (ход ещё не сделан): наследие должно примениться
+      if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
+        state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
+          assetWanted, legacyFor(assetWanted, legacyUnlocks()));
+        save();
+        renderAll();
+      }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен
@@ -5595,6 +6463,24 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-asset]').forEach((b) => {
+    b.addEventListener('click', () => {
+      assetWanted = b.dataset.asset;
+      el('modal-root').querySelectorAll('[data-asset]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.asset === assetWanted);
+      });
+    });
+  });
+  el('modal-root').querySelector('#legacy-add')?.addEventListener('click', () => {
+    const input = el('modal-root').querySelector('#legacy-line');
+    const res = addResultLine(input?.value ?? '');
+    if (res.ok) {
+      toast(t('welcomeLegacyAdded', { tag: res.parsed.tag }));
+      showWelcome();
+    } else {
+      toast(t('welcomeLegacyBad'));
+    }
+  });
 }
 
 function showHelp() {
@@ -5681,7 +6567,7 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt || leversBuiltTaxiOn !== state.taxi.on) buildLevers();
+  if (!leversBuilt || leversSignature !== versSignature()) buildLevers();
   renderChrome();
   syncLevers();
   renderLeverReadouts();

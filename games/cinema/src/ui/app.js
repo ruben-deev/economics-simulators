@@ -22,6 +22,7 @@ import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import { conglomerateUnlocked, TWIN_CITY_SEEDS } from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
@@ -1811,6 +1812,15 @@ function recordsBlockHtml(s) {
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и сувенирные сиды «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы сравнимость лидерборда и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
@@ -1848,6 +1858,7 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
     [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },

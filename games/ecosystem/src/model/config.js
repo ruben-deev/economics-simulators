@@ -119,6 +119,33 @@ export const CONFIG = {
   boardCapMonths: 6,
   boardMarketingCap: 6_000_000,  // потолок на КАЖДЫЙ бюджет привлечения
   boardInjection: 250_000_000,
+
+  // --- Подписка «Новоград Plus» ---
+  // Дилемма Amazon Prime: подписка сама по себе почти не зарабатывает —
+  // выгоды подписчику стоят примерно столько же, сколько он платит.
+  // Окупается она частотой и удержанием во всех вертикалях сразу.
+  plus: {
+    launchCost: 40_000_000,      // разработка, биллинг, запуск
+    minVerticals: 2,             // подписке нужно, что склеивать
+    perkCostPerSub: 260,         // кешбэки и бесплатные доставки, ₽/мес на подписчика
+    baseConvShare: 0.06,         // доля мульти-клиентов, готовых подписаться за месяц
+    baseChurn: 0.06,             // месячный отток подписчиков
+    priceRef: 299,               // нейтральная цена
+    priceElasticity: 1.6,        // конверсия падает с ценой
+    churnReliefMax: 0.25,        // доп. усиление экосистемного удержания при полном покрытии
+    freqBoostFood: 0.12,         // прибавка частоты еды у подписчиков
+    freqBoostTaxi: 0.15,         // прибавка поездок у подписчиков
+    multiple: { base: 2.5, growthWeight: 4, marginWeight: 2, marginPenalty: 1, min: 0.5, max: 8 },
+  },
+
+  // --- Партнёрские вертикали (кино и билеты входят лицензиями, не играми) ---
+  partners: {
+    cinemaLicenseMonthly: 4_000_000,  // лицензия стриминга в подписку
+    cinemaConvBoost: 0.30,            // конверсия в Plus выше: есть за что платить
+    cinemaChurnRelief: 0.012,         // и отток подписчиков ниже
+    ticketsMonthly: 2_500_000,        // партнёрство с билетным сервисом
+    ticketsArpuPerMulti: 25,          // событийная выручка на мульти-клиента, ₽/мес
+  },
 };
 
 // ============================================================================
@@ -160,6 +187,7 @@ export const START_ASSETS = [
     arpu: 290,               // выручка платформы на клиента, ₽/мес
     margin: 0.38,            // вклад вертикали (доля выручки платформы)
     fixedMonthly: 9_000_000, // фикс вертикали: районные операции, дарксторы, офис
+    startCash: 220_000_000,  // казна победителя своего рынка
     baseChurn: 0.018,        // месячный отток в насыщенном рынке
     returnPool: 30_000,      // недавно ушедшие — пул возврата
     reachableCap: 240_000,   // потолок базы: часть города к вам не придёт никогда
@@ -176,8 +204,61 @@ export const START_ASSETS = [
       en: 'Delivery’s edge is its own courier logistics. Its cheapest synergy is e-commerce (phase 2): the couriers already criss-cross the city.',
     },
   },
-  // { id: 'streaming', ... }  — старт от КИНОРЕКИ, после одобрения прототипа
-  // { id: 'tickets', ... }    — старт от БИЛЕТВИЛЯ, после одобрения прототипа
+  {
+    id: 'streaming',
+    icon: '🎬',
+    fromGame: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
+    name: { ru: 'Стриминг «Кинорека»', en: 'Kinoreka streaming' },
+    hint: {
+      ru: 'Вы выиграли рынок стриминга. База меньше, чем у доставки, зато подписная: высокая маржа, низкий отток — и привычка платить каждый месяц.',
+      en: 'You won the streaming market. The base is smaller than delivery’s but subscription-based: high margin, low churn — and a habit of paying monthly.',
+    },
+    users: 150_000,
+    arpu: 330,
+    margin: 0.52,
+    fixedMonthly: 7_000_000,
+    startCash: 200_000_000,
+    baseChurn: 0.016,
+    returnPool: 18_000,
+    reachableCap: 175_000,
+    // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
+    synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
+    launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
+    // Привычка платить: Plus дешевле в запуске и конвертит лучше.
+    // Свой контент: лицензия кино не нужна — она уже ваша.
+    perks: ['subscription-habit', 'own-content'],
+    synergyNote: {
+      ru: 'Сильная сторона стриминга: привычка платить по подписке. «Новоград Plus» запускается дешевле и конвертит лучше, а лицензия кино не нужна — контент свой.',
+      en: 'Streaming’s edge is the habit of paying monthly. Novograd Plus launches cheaper and converts better, and no cinema licence is needed — the content is yours.',
+    },
+  },
+  {
+    id: 'tickets',
+    icon: '🎟️',
+    fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
+    name: { ru: 'Билетный сервис «Билетвиль»', en: 'Biletville ticketing' },
+    hint: {
+      ru: 'Вы выиграли рынок билетов. Самая маленькая база и казна из трёх стартов — зато партнёрская сеть организаторов, через которую дешевеет любое привлечение. Сложный класс.',
+      en: 'You won the ticketing market. The smallest base and treasury of the three starts — but a partner network of organisers that makes all acquisition cheaper. Hard mode.',
+    },
+    users: 95_000,
+    arpu: 190,
+    margin: 0.42,
+    fixedMonthly: 4_000_000,
+    baseChurn: 0.022,
+    returnPool: 14_000,
+    reachableCap: 125_000,
+    startCash: 160_000_000,
+    synergy: { taxi: 1.1, scooters: 1.0, ecom: 1.0, subscription: 0.9 },
+    launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
+    // Партнёрская сеть: афиши и кассы города — дешёвый канал привлечения,
+    // а партнёрство с билетами уже в кармане (это вы и есть)
+    perks: ['partner-network', 'own-tickets'],
+    synergyNote: {
+      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Кросс-селл дешевле через афиши, а партнёрство по билетам не нужно — оно уже ваше.',
+      en: 'Ticketing’s edge is the organiser partner network. Cross-sell is cheaper through listings, and no ticketing partnership is needed — it is already yours.',
+    },
+  },
 ];
 
 export const assetById = (id) => START_ASSETS.find((a) => a.id === id) ?? START_ASSETS[0];
@@ -214,6 +295,36 @@ export const VERTICALS = [
     warAcqCut: 0.45,         // демпинг перехватывает часть вашего притока
     warFareCut: 0.15,        // и продавливает цены рынка вниз
   },
+  {
+    id: 'ecom',
+    icon: '📦',
+    name: { ru: 'Маркет «Новоград»', en: 'Novograd market' },
+    hint: {
+      ru: 'Е-ком и дарксторы: у доставки еды здесь лучшая синергия — курьеры уже ездят по городу и возят посылки в непик. Но рынок наполовину заперт федеральными маркетплейсами.',
+      en: 'E-commerce and dark stores: food delivery’s best synergy — the couriers already roam the city and carry parcels off-peak. But half the market is locked by national marketplaces.',
+    },
+    potential: 380_000,
+    incumbentName: { ru: 'федеральные маркетплейсы', en: 'national marketplaces' },
+    incumbentLock: 0.45,
+    launchCost: 80_000_000,   // дарксторы, ассортимент, склад
+    fixedMonthly: 7_000_000,
+    // Портфельная модель как у еды: выручка на клиента и маржа
+    arpu: 340,
+    margin: 0.30,
+    baseChurn: 0.045,
+    churnQuality: 0.08,
+    marketingSaturation: 15_000_000,
+    marketingReach: 0.08,
+    crossReach: 0.05,         // доля пула хаба, готовая попробовать за месяц
+    // Ворота по метрикам, как гео-экспансия в НОВОЕДЕ: совет согласует
+    // третью вертикаль при управляемом стартовом активе
+    gate: { minMonth: 8, assetContributionMonths: 3 },
+    // Перк 'courier-logistics' стартового актива: маржа выше (общая
+    // логистика), но переиспользование мощности имеет цену — пиковые
+    // конфликты бьют по качеству еды (см. engine)
+    logisticsMarginBonus: 0.08,
+    logisticsPeakPenalty: 0.04,
+  },
 ];
 
 // Витрина будущих фаз: карточки видны, модель появится после одобрения.
@@ -223,26 +334,8 @@ export const FUTURE_VERTICALS = [
     icon: '🛴',
     name: { ru: 'Самокаты', en: 'Scooters' },
     hint: {
-      ru: 'Фаза 2: короткие поездки, сезонность, парк как капитал.',
-      en: 'Phase 2: short rides, seasonality, the fleet as capital.',
-    },
-  },
-  {
-    id: 'ecom',
-    icon: '📦',
-    name: { ru: 'Е-ком и дарксторы', en: 'E-commerce and dark stores' },
-    hint: {
-      ru: 'Фаза 2: у доставки еды здесь лучшая синергия — общая курьерская логистика.',
-      en: 'Phase 2: food delivery’s best synergy — shared courier logistics.',
-    },
-  },
-  {
-    id: 'plus',
-    icon: '➕',
-    name: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },
-    hint: {
-      ru: 'Фаза 3: покупка удержания за маржу — дилемма Amazon Prime.',
-      en: 'Phase 3: buying retention with margin — the Amazon Prime dilemma.',
+      ru: 'Следующая фаза: короткие поездки, сезонность, парк как капитал.',
+      en: 'Next phase: short rides, seasonality, the fleet as capital.',
     },
   },
 ];
@@ -258,7 +351,7 @@ export const LEVER_GROUPS = [
   {
     id: 'food',
     icon: '🛵',
-    label: { ru: 'Доставка еды — дойная корова', en: 'Food delivery — the cash cow' },
+    label: { ru: 'Стартовый актив — дойная корова', en: 'Starting asset — the cash cow' },
     desc: {
       ru: 'Насыщенный стартовый актив. Здесь не растут — здесь решают, сколько доить и сколько тратить на удержание.',
       en: 'The saturated starting asset. You do not grow here — you decide how hard to milk it and how much to spend on retention.',
@@ -276,12 +369,22 @@ export const LEVER_GROUPS = [
     open: true,
   },
   {
+    id: 'ecom',
+    icon: '📦',
+    label: { ru: 'Е-ком — третья нога', en: 'E-commerce — the third leg' },
+    desc: {
+      ru: 'Дарксторы и посылки против федеральных маркетплейсов. Живёт кросс-селлом из вашей базы и общей логистикой.',
+      en: 'Dark stores and parcels against national marketplaces. Lives off cross-sell from your base and shared logistics.',
+    },
+    open: true,
+  },
+  {
     id: 'holding',
     icon: '🏙️',
     label: { ru: 'Экосистема — склейка', en: 'Ecosystem — the glue' },
     desc: {
-      ru: 'То, что превращает два бизнеса в холдинг: кросс-селл по общей базе и управляющая компания против размытого фокуса.',
-      en: 'What turns two businesses into a holding: cross-sell across the shared base, and the management company against diluted focus.',
+      ru: 'То, что превращает набор бизнесов в холдинг: кросс-селл по общей базе, подписка Plus и управляющая компания против размытого фокуса.',
+      en: 'What turns a set of businesses into a holding: cross-sell across the shared base, the Plus subscription, and the management company against diluted focus.',
     },
     open: true,
   },
@@ -402,11 +505,53 @@ export const LEVERS = [
       en: 'Cold acquisition in a contested market: expensive, but scalable — and it brings people new to the holding, feeding the cross-sell pool both ways. Compare cost per customer with cross-sell in the report.',
     },
   },
+  {
+    key: 'ecomOps',
+    group: 'ecom',
+    label: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
+    tip: {
+      ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
+      en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+    },
+  },
+  {
+    key: 'ecomMarketing',
+    group: 'ecom',
+    label: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 25_000_000, step: 500_000, def: 0,
+    tip: {
+      ru: 'Холодное привлечение против маркетплейсов: дорого. Главный канал е-кома — кросс-селл из вашей же базы: сравнивайте цену клиента в отчёте.',
+      en: 'Cold acquisition against the marketplaces: expensive. E-commerce’s main channel is cross-sell from your own base — compare cost per customer in the report.',
+    },
+  },
+  {
+    key: 'plusPrice',
+    group: 'holding',
+    label: { ru: 'Цена «Новоград Plus»', en: 'Novograd Plus price' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 199, max: 399, step: 100, def: 299, scale: 1,
+    policy: [
+      { v: 199, label: { ru: '199 ₽ — массовая', en: '₽199 — mass' },
+        note: { ru: 'Подписка почти в убыток: выгоды стоят дороже цены. Ставка на массовость и удержание.', en: 'The subscription runs near a loss: perks cost more than the price. A bet on scale and retention.' } },
+      { v: 299, label: { ru: '299 ₽ — базовая', en: '₽299 — standard' },
+        note: { ru: 'Выгоды примерно окупаются: подписка зарабатывает на частоте и удержании, а не на цене.', en: 'Perks roughly break even: the subscription earns through frequency and retention, not price.' } },
+      { v: 399, label: { ru: '399 ₽ — премиум', en: '₽399 — premium' },
+        note: { ru: 'Подписка прибыльна сама по себе, но подписываются немногие — склейка растёт медленно.', en: 'Profitable on its own, but few subscribe — the glue grows slowly.' } },
+    ],
+    tip: {
+      ru: 'Цена подписки против её массовости. Подписчик пользуется всеми сервисами чаще и уходит реже — Plus покупает удержание за маржу. Дилемма Amazon Prime.',
+      en: 'Price versus reach. A subscriber uses every service more and churns less — Plus buys retention with margin. The Amazon Prime dilemma.',
+    },
+  },
 ];
 
 export const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
-  verticals: [],   // какие вертикали игрок решил запустить (например ['taxi'])
+  verticals: [],   // какие вертикали и сервисы запущены: 'taxi' | 'ecom' | 'plus'
+  partners: [],    // включённые партнёрства: 'cinema' | 'tickets'
 };
 
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));

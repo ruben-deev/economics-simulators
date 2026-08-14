@@ -30,6 +30,7 @@ import { watchTables } from '../../../../shared/tables.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import { conglomerateUnlocked, TWIN_CITY_SEEDS } from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
 
@@ -1421,6 +1422,15 @@ function recordsBlockHtml(score) {
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и сувенирные сиды «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы сравнимость лидерборда и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
 function showGameOver() {
   const score = finalScore(state);
   const goals = (state.board?.history ?? [])
@@ -1448,6 +1458,7 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(score)}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },

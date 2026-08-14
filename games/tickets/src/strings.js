@@ -520,4 +520,9 @@ export const STRINGS = {
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
   unitOrgs: { ru: 'организаторов', en: 'organisers' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
+  metaConglomerateText: {
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
+  },
 };

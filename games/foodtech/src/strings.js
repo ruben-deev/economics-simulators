@@ -544,4 +544,9 @@ score = valuation × your stake`,
   restartText: { ru: 'Текущая партия будет потеряна, город сгенерируется с новым случайным набором событий.', en: 'The current game will be lost and the city will be regenerated with a new random run of events.' },
   restartYes: { ru: 'Да, заново', en: 'Yes, restart' },
   restartNo: { ru: 'Отмена', en: 'Cancel' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
+  metaConglomerateText: {
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
+  },
 };

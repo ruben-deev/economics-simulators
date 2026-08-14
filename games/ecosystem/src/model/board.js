@@ -17,7 +17,9 @@
 // прибыльность бинарный порог качества).
 // ============================================================================
 
-import { CONFIG } from './config.js';
+import { CONFIG, assetById } from './config.js';
+
+const clampNum = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 export const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
@@ -27,20 +29,23 @@ export const GOAL_TYPES = {
 
 export function makeGoal(year, state, uniqueUsers) {
   if (year === 1) {
+    // Планка масштабируется базой стартового актива: у маленького хаба
+    // (билеты) пул кросс-селла меньше, и та же вторая нога растёт медленнее.
+    // Замер по доведённым опорам с доставкой (база 210 тыс): средняя даёт
+    // ~105 тыс, размашистая ~128 тыс, выжидательная с запуском на 8-м
+    // месяце — ~46 тыс и цель проваливает.
+    const asset = assetById(state.assetId);
+    const target = Math.round(clampNum(asset.users * 0.29, 28_000, 60_000) / 1000) * 1000;
     return {
       year,
       type: GOAL_TYPES.secondLeg,
-      // Клиентов такси к 12-му месяцу. Замер по доведённым опорам (запуск
-      // доступен с первого хода): средняя даёт ~105 тыс, размашистая
-      // ~128 тыс, бережливая с запуском на 8-м месяце — ~46 тыс и цель
-      // проваливает: «вторая нога» требует решительного входа, выжидание
-      // совет наказывает размытием.
-      target: 60_000,
+      target,
       reward: 0.10,
       penalty: 'dilution',
     };
   }
   if (year === 2) {
+    const asset = assetById(state.assetId);
     return {
       year,
       type: GOAL_TYPES.glue,
@@ -50,12 +55,14 @@ export function makeGoal(year, state, uniqueUsers) {
       // кросс-селла — считаные проценты. Планка 20% отделяет работающую
       // склейку от двух бизнесов под одной вывеской.
       target: 0.20,
-      // И не ценой еды: сжать стартовый актив ради красивой доли нельзя.
-      uniqueFloor: Math.round(Math.max(180_000, uniqueUsers * 0.9)),
+      // И не ценой хаба: сжать стартовый актив ради красивой доли нельзя.
+      // Пол масштабируется базой актива — у билетов он в разы ниже.
+      uniqueFloor: Math.round(Math.max(asset.users * 0.85, uniqueUsers * 0.9)),
       reward: 0.13,
       penalty: 'marketingCap',
     };
   }
+  const asset = assetById(state.assetId);
   return {
     year,
     type: GOAL_TYPES.profit,
@@ -65,7 +72,7 @@ export function makeGoal(year, state, uniqueUsers) {
     // Калибровать такие цели случайными стратегиями нельзя: прибыльность —
     // бинарный порог качества (см. HANDOFF).
     target: 7,
-    uniqueFloor: Math.round(Math.max(200_000, uniqueUsers * 0.95)),
+    uniqueFloor: Math.round(Math.max(asset.users * 0.9, uniqueUsers * 0.95)),
     reward: 0.18,
     penalty: 'valuation',
   };

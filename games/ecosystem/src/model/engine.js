@@ -4,16 +4,21 @@
 //
 // Смысловая структура модели (её же объясняем игроку):
 //
-//   стартовый актив (насыщен) --- вклад ---> касса холдинга
-//         |                                      |
-//         | общая база клиентов                  v
-//         +--- кросс-селл ---> новая вертикаль (растёт) ---> вклад завтра
-//                                   ^
-//                война хозяина рынка, водители, тарифы
+//   стартовый актив (хаб, насыщен) --- вклад ---> касса холдинга
+//        |            |                                |
+//        |            +-- кросс-селл --> такси --------+--> вклад завтра
+//        |            +-- кросс-селл --> е-ком --------+
+//        |                     |
+//   общая база клиентов    подписка Plus (склейка: частота и удержание)
 //
-// Ключевая петля: дожим стартового актива даёт деньги сейчас, но сжигает
-// базу — а base это ещё и пул кросс-селла новой вертикали. Форма экосистемы
-// диктуется стартовым активом: движок читает дескриптор из START_ASSETS.
+// Топология базы — «хаб и спицы»: пересечения считаются между стартовым
+// активом и каждой вертикалью (кросс-селл предлагает клиенту хаба ВТОРОЙ
+// сервис, а не третий — поэтому тройных пересечений в модели нет).
+// Форма экосистемы диктуется стартовым активом буквально: он — центр графа.
+//
+// Ключевая петля: дожим хаба даёт деньги сейчас, но сжигает базу — а база
+// это пул кросс-селла всех вертикалей и подписки. Дескриптор актива
+// (START_ASSETS) параметризует всё: синергии, перки, цену запусков.
 // ============================================================================
 
 import { CONFIG, DEFAULT_DECISIONS, assetById, verticalById, clamp } from './config.js';
@@ -31,22 +36,34 @@ export function seasonTaxi(month) {
   return 1 + CONFIG.taxiSeasonAmp * Math.cos((2 * Math.PI * (month - 1)) / 12);
 }
 
+export const hasPerk = (asset, key) => Boolean(asset.perks?.includes(key));
+
 // ----------------------------------------------------------------------------
-// Начальное состояние. assetId — ссылка на дескриптор стартового актива:
-// сюда позже встанут старты от КИНОРЕКИ и БИЛЕТВИЛЯ (данными, не кодом).
+// Начальное состояние. assetId — дескриптор стартового актива («класс
+// персонажа»). legacy — бонусы наследия из мета-прогрессии витрины:
+//   { asset: bool, cinema: bool, tickets: bool }
+// asset  — сыгран финал игры-источника ЭТОГО актива («известный бренд»),
+// cinema — финал КИНОРЕКИ (скидка на лицензию в Plus),
+// tickets — финал БИЛЕТВИЛЯ (готовое партнёрство по билетам).
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'novograd', assetId = 'delivery') {
+export function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
   const asset = assetById(assetId);
   const rng = createRng(seed);
   const state = {
     seed,
     rngState: rng.state(),
     month: 0,
-    cash: CONFIG.startCash,
+    cash: asset.startCash ?? CONFIG.startCash,
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
-    // Стартовый актив на портфельном уровне: агрегаты, не микроменеджмент
+    // Бонусы наследия: «чувствуются, но не решают партию» (замерено)
+    legacy: {
+      asset: Boolean(legacy.asset),
+      cinema: Boolean(legacy.cinema),
+      tickets: Boolean(legacy.tickets),
+    },
+    // Стартовый актив (хаб) на портфельном уровне
     food: {
       users: asset.users,
       returnPool: asset.returnPool,
@@ -57,19 +74,26 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery') {
       users: 0,
       drivers: 0,
       warUntil: 0,
-      lockAdd: 0,     // рынок, отданный конкуренту за перемирие
+      lockAdd: 0,
     },
-    both: 0,          // клиенты двух и более сервисов — сердце экосистемы
-    trustUntil: 0,    // до какого месяца подорвано доверие к единому аккаунту
-    // Сюжетные повороты: длящиеся и постоянные эффекты событий-арок
-    story: {},        // fedUntil/fedSoft, crisisUntil/crisisCut, tripsAdd, crossCacMult
-    seenEvents: [],   // сюжетные события не повторяются
-    // Пост-эндгейм: счёт фиксируется на последнем месяце (state.scored),
-    // после чего партия архитектурно может продолжаться (endless) —
-    // геймплей после победы появится следующими фазами.
+    ecom: {
+      on: false,
+      launchedMonth: null,
+      users: 0,
+    },
+    plus: {
+      on: false,
+      launchedMonth: null,
+      subs: 0,
+    },
+    both: 0,          // хаб ∩ такси
+    bothEcom: 0,      // хаб ∩ е-ком
+    trustUntil: 0,
+    story: {},
+    seenEvents: [],
     endless: false,
     scored: null,
-    decisions: { ...DEFAULT_DECISIONS, verticals: [] },
+    decisions: { ...DEFAULT_DECISIONS, verticals: [], partners: [] },
     flags: { valuationBonus: 0, regulationRisk: false },
     board: { goal: null, history: [], profitableMonths: 0 },
     restrictions: null,
@@ -92,10 +116,14 @@ export function mgmtLevel(decisions) {
   return m / (m + CONFIG.mgmtSaturation);
 }
 
+export function verticalsCount(state) {
+  return 1 + (state.taxi.on ? 1 : 0) + (state.ecom.on ? 1 : 0);
+}
+
 // Конгломератный штраф: каждая вертикаль сверх первой размывает фокус.
-// Управляющая компания выкупает штраф, но не бесплатно.
+// Подписка вертикалью не считается — это склейка, а не отдельный бизнес.
 export function focusPenalty(state, decisions) {
-  const n = 1 + (state.taxi.on ? 1 : 0);
+  const n = verticalsCount(state);
   return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions));
 }
 
@@ -109,13 +137,24 @@ export function taxiQuality(state, decisions) {
   return clamp(0.78 * (1 - focusPenalty(state, decisions)), 0.2, 1);
 }
 
-export function uniqueUsers(state) {
-  return Math.max(0, state.food.users + state.taxi.users - state.both);
+export function ecomQuality(state, decisions) {
+  const ops = decisions.ecomOps ?? 0;
+  const level = ops / (ops + 5_000_000);
+  return clamp((0.5 + 0.5 * level) * (1 - focusPenalty(state, decisions)), 0.2, 1.1);
 }
 
-// Ворота совета. У такси их нет (gate.minMonth = 1, историй не требуется):
-// первый ход партии — «что запускаем». Механика остаётся для вертикалей
-// следующих фаз: е-ком и подписка выйдут за воротами по метрикам.
+// Клиенты двух и более сервисов: пересечения хаба с вертикалями
+export function multiUsers(state) {
+  return state.both + (state.bothEcom ?? 0);
+}
+
+export function uniqueUsers(state) {
+  return Math.max(0,
+    state.food.users + state.taxi.users + (state.ecom?.users ?? 0)
+    - state.both - (state.bothEcom ?? 0));
+}
+
+// Ворота совета: у такси их нет, е-ком выходит за воротами по метрикам
 export function expansionOpen(state, vertical) {
   const gate = vertical.gate;
   const nextMonth = state.month + 1;
@@ -129,6 +168,31 @@ export function expansionOpen(state, vertical) {
   return true;
 }
 
+// Подписке нужно, что склеивать: хаб + хотя бы одна вертикаль
+export function plusAvailable(state) {
+  return verticalsCount(state) >= CONFIG.plus.minVerticals;
+}
+
+// Цена запуска Plus: привычка платить (стриминговый хаб) удешевляет запуск
+export function plusLaunchCost(state) {
+  const asset = assetById(state.assetId);
+  return CONFIG.plus.launchCost * (hasPerk(asset, 'subscription-habit') ? 0.6 : 1);
+}
+
+// Лицензия кино в подписку: со своим контентом не нужна, наследие даёт скидку
+export function cinemaLicenseFee(state) {
+  const asset = assetById(state.assetId);
+  if (hasPerk(asset, 'own-content')) return 0;
+  return CONFIG.partners.cinemaLicenseMonthly * (state.legacy?.cinema ? 0.6 : 1);
+}
+
+// Партнёрство по билетам: своему билетному сервису и наследию — бесплатно
+export function ticketsPartnerFee(state) {
+  const asset = assetById(state.assetId);
+  if (hasPerk(asset, 'own-tickets')) return 0;
+  return state.legacy?.tickets ? 0 : CONFIG.partners.ticketsMonthly;
+}
+
 // ----------------------------------------------------------------------------
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
@@ -138,6 +202,7 @@ export function step(prevState, input = {}) {
 
   const asset = assetById(state.assetId);
   const taxiDef = verticalById('taxi');
+  const ecomDef = verticalById('ecom');
 
   const decisions = { ...state.decisions, ...(input.decisions ?? {}) };
   state.decisions = decisions;
@@ -148,7 +213,6 @@ export function step(prevState, input = {}) {
   const month = state.month + 1;
 
   // --- 0. Ограничения совета ---
-  // Порезанные бюджеты режутся до того, как из них что-то посчитано.
   const restrictions = state.restrictions && month < state.restrictions.until
     ? state.restrictions : null;
   if (!restrictions) state.restrictions = null;
@@ -161,16 +225,17 @@ export function step(prevState, input = {}) {
   };
   capBudget('foodMarketing');
   capBudget('taxiMarketing');
+  capBudget('ecomMarketing');
   capBudget('crossSell');
 
   // Размеры на начало месяца: поштучные цены событий считаются от того,
-  // что игрок видит на экране в момент выбора.
+  // что игрок видит на экране в момент выбора
   const driversAtStart = state.taxi.drivers;
   const foodUsersAtStart = state.food.users;
   const taxiUsersAtStart = state.taxi.users;
   const uniqueAtStart = uniqueUsers(state);
 
-  // --- 1. Событие месяца (объявлено в конце прошлого месяца) ---
+  // --- 1. Событие месяца ---
   const mods = neutralModifiers();
   const event = state.pendingEvent;
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
@@ -178,9 +243,8 @@ export function step(prevState, input = {}) {
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
   if (mods.trustMonths) state.trustUntil = Math.max(state.trustUntil, month + mods.trustMonths);
-  if (mods.endWar) state.taxi.warUntil = month;   // перемирие: война кончается сейчас
+  if (mods.endWar) state.taxi.warUntil = month;
   if (mods.lockAdd) state.taxi.lockAdd += mods.lockAdd;
-  // Сюжетные повороты: набег федеральной экосистемы, спад, постоянные бусты
   state.story = state.story ?? {};
   if (mods.fedMonths) {
     state.story.fedUntil = month + mods.fedMonths - 1;
@@ -203,30 +267,29 @@ export function step(prevState, input = {}) {
   const crisisActive = (state.story.crisisUntil ?? 0) >= month;
   const crisisFoodDemand = crisisActive ? 0.93 : 1;
   const crisisTaxiDemand = crisisActive ? 0.88 : 1;
+  const crisisEcomDemand = crisisActive ? 0.90 : 1;
   const crisisFixedMult = crisisActive && state.story.crisisCut ? 0.75 : 1;
   const crisisQualityMult = crisisActive && state.story.crisisCut ? 0.93 : 1;
 
-  // --- 2. Запуск вертикалей (ворота + разовая цена + ответ хозяина рынка) ---
+  // --- 2. Запуски: вертикали и подписка ---
   const wanted = new Set(decisions.verticals ?? []);
   let launchCost = 0;
   let taxiLaunched = false;
   let taxiClosed = false;
+  let ecomLaunched = false;
+  let plusLaunched = false;
+
   if (wanted.has('taxi') && !state.taxi.on) {
     if (expansionOpen(prevState, taxiDef)) {
       state.taxi.on = true;
       state.taxi.launchedMonth = month;
       state.taxi.warUntil = month + taxiDef.warMonths;
-      // Стартовый парк и ранние клиенты входят в цену запуска.
-      // Готовая инфраструктура актива удешевляет запуск — из дескриптора.
       state.taxi.drivers = 200;
       state.taxi.users = 3_000;
       launchCost += taxiDef.launchCost * (asset.launchCostMult?.taxi ?? 1);
       taxiLaunched = true;
     }
-    // ворота закрыты — заявка ждёт следующего месяца
   } else if (!wanted.has('taxi') && state.taxi.on) {
-    // Закрытие вертикали: бизнес останавливается, клиенты и парк распускаются.
-    // Повторный запуск снова платит цену запуска — юрлицо продали.
     state.taxi.on = false;
     state.taxi.users = 0;
     state.taxi.drivers = 0;
@@ -234,28 +297,70 @@ export function step(prevState, input = {}) {
     taxiClosed = true;
   }
 
+  if (wanted.has('ecom') && !state.ecom.on) {
+    if (expansionOpen(prevState, ecomDef)) {
+      state.ecom.on = true;
+      state.ecom.launchedMonth = month;
+      state.ecom.users = 2_000;
+      // Готовая курьерская логистика хаба удешевляет запуск — из дескриптора
+      launchCost += ecomDef.launchCost * (asset.launchCostMult?.ecom ?? 1);
+      ecomLaunched = true;
+    }
+  } else if (!wanted.has('ecom') && state.ecom.on) {
+    state.ecom.on = false;
+    state.ecom.users = 0;
+    state.bothEcom = 0;
+  }
+
+  if (wanted.has('plus') && !state.plus.on && plusAvailable(state)) {
+    state.plus.on = true;
+    state.plus.launchedMonth = month;
+    launchCost += plusLaunchCost(state);
+    plusLaunched = true;
+  } else if (!wanted.has('plus') && state.plus.on) {
+    state.plus.on = false;
+    state.plus.subs = 0;
+  }
+
   const taxiOn = state.taxi.on;
+  const ecomOn = state.ecom.on;
+  const plusOn = state.plus.on;
   const atWar = taxiOn && state.taxi.warUntil > month;
   const trustBroken = state.trustUntil > month;
+  const partners = new Set(decisions.partners ?? []);
+  const cinemaOn = plusOn && (partners.has('cinema') || hasPerk(asset, 'own-content'));
+  const ticketsOn = partners.has('tickets') || hasPerk(asset, 'own-tickets');
 
-  // --- 3. Фокус и качество исполнения ---
-  // Срезанные в кризис фиксы — это уволенные люди: исполнение проседает
+  // --- 3. Фокус, качество, подписка как множитель удержания ---
   const penalty = focusPenalty(state, decisions);
-  const qFood = foodQuality(state, decisions) * crisisQualityMult;
+  let qFood = foodQuality(state, decisions) * crisisQualityMult;
   const qTaxi = taxiQuality(state, decisions) * crisisQualityMult;
+  const qEcom = ecomQuality(state, decisions) * crisisQualityMult;
+  // Общая логистика: курьеры хаба возят посылки в непик — е-ком маржинальнее,
+  // но переиспользование мощности имеет цену: пиковые конфликты бьют по еде
+  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn;
+  if (logistics && state.food.users > 0) {
+    qFood *= 1 - ecomDef.logisticsPeakPenalty * Math.min(1, state.ecom.users / state.food.users);
+  }
 
-  // --- 4. Еда: дожим, выручка, отток, возврат ---
+  const multiAtStart = multiUsers(state);
+  const subsShare = multiAtStart > 0 ? clamp(state.plus.subs / multiAtStart, 0, 1) : 0;
+  // Подписчик уходит реже: Plus усиливает экосистемное удержание
+  const reliefBoth = clamp(CONFIG.ecoChurnRelief + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6);
+
+  // --- 4. Хаб (стартовый актив): дожим, выручка, отток, возврат ---
   const takeIdx = clamp(decisions.foodTake ?? 1, 0.8, 1.3);
-  // Часть повышения монетизации съедает частота заказов
   const takeFreqFactor = Math.pow(takeIdx, -CONFIG.foodTakeElasticity);
   const foodSeason = seasonFood(month);
+  // Подписчики пользуются чаще: все они — клиенты хаба
+  const plusFoodBoost = state.food.users > 0
+    ? 1 + CONFIG.plus.freqBoostFood * (state.plus.subs / Math.max(1, state.food.users)) : 1;
   const arpuFood = asset.arpu * takeIdx * takeFreqFactor
-    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult * crisisFoodDemand;
+    * (0.94 + 0.08 * qFood) * foodSeason * mods.foodDemandMult * crisisFoodDemand
+    * plusFoodBoost;
   const revenueFood = state.food.users * arpuFood;
   const contribFood = revenueFood * asset.margin;
 
-  // Отток: базовый + жадность + качество. За порогом монетизации клиенты
-  // не «чуть недовольнее» — уходят к конкуренту ускоренно.
   const takePressure = CONFIG.foodTakePressure * Math.pow(Math.max(0, takeIdx - 1), 1.2)
     + CONFIG.foodTakeExodus * Math.pow(Math.max(0, takeIdx - CONFIG.foodTakeThreshold), 1.5);
   const churnFoodRate = clamp(
@@ -266,22 +371,22 @@ export function step(prevState, input = {}) {
     + fedChurnAdd,
     0.005, 0.5,
   );
-  // Клиент двух сервисов уходит реже — экосистемная привычка
-  const foodOnly = Math.max(0, state.food.users - state.both);
-  const lostFoodOnly = foodOnly * churnFoodRate;
-  const lostFoodBoth = state.both * churnFoodRate * (1 - CONFIG.ecoChurnRelief);
-  const lostFood = lostFoodOnly + lostFoodBoth;
+  const hubOnly = Math.max(0, state.food.users - state.both - state.bothEcom);
+  const lostFoodOnly = hubOnly * churnFoodRate;
+  const lostFoodBoth = state.both * churnFoodRate * (1 - reliefBoth);
+  const lostFoodBothEcom = state.bothEcom * churnFoodRate * (1 - reliefBoth);
+  const lostFood = lostFoodOnly + lostFoodBoth + lostFoodBothEcom;
 
-  // Возврат ушедших: единственный «маркетинг» насыщенного рынка
+  // Возврат ушедших: «известный бренд» наследия удешевляет его
+  const winbackCac = CONFIG.foodWinbackCac * (state.legacy?.asset ? 0.85 : 1);
   const winbackBudget = decisions.foodMarketing ?? 0;
   const winbackCap = state.food.returnPool * CONFIG.foodWinbackReach * (0.5 + 0.5 * qFood);
-  const wonBack = Math.min(winbackBudget / CONFIG.foodWinbackCac, winbackCap);
-  const winbackWasted = Math.max(0, winbackBudget - wonBack * CONFIG.foodWinbackCac);
-  // Немного органики: город циркулирует, но насыщение оставляет крохи
+  const wonBack = Math.min(winbackBudget / winbackCac, winbackCap);
+  const winbackWasted = Math.max(0, winbackBudget - wonBack * winbackCac);
   const organicFood = Math.max(0, asset.reachableCap - state.food.users)
-    * CONFIG.foodOrganicShare * qFood;
+    * CONFIG.foodOrganicShare * qFood * (state.legacy?.asset ? 1.3 : 1);
 
-  // --- 5. Такси: спрос, парк, война ---
+  // --- 5. Такси ---
   let demandTrips = 0; let servedTrips = 0; let fill = 1; let utilDrivers = 0;
   let revenueTaxi = 0; let contribTaxi = 0; let fareEff = 0; let cmPerTrip = 0;
   let driverHires = 0; let driversLost = 0;
@@ -295,24 +400,23 @@ export function step(prevState, input = {}) {
     taxiPool = Math.max(0, taxiDef.potential * (1 - lock) - state.taxi.users);
 
     fareEff = taxiDef.fare * priceIdx * (atWar ? 1 - taxiDef.warFareCut : 1);
-    // Частота поездок: базовая + постоянные контракты (аэропорт)
     const tripsPerUser = taxiDef.tripsPerUser + (state.story.tripsAdd ?? 0);
+    const subsInTaxi = multiAtStart > 0 ? state.plus.subs * (state.both / multiAtStart) : 0;
+    const plusTaxiBoost = state.taxi.users > 0
+      ? 1 + CONFIG.plus.freqBoostTaxi * (subsInTaxi / Math.max(1, state.taxi.users)) : 1;
     demandTrips = state.taxi.users * tripsPerUser * taxiPriceFactor
-      * seasonTaxi(month) * mods.taxiDemandMult * crisisTaxiDemand;
+      * seasonTaxi(month) * mods.taxiDemandMult * crisisTaxiDemand * plusTaxiBoost;
     const capacity = state.taxi.drivers * CONFIG.taxiTripsPerDriver * mods.taxiCapacityMult;
     servedTrips = Math.min(demandTrips, capacity);
     fill = demandTrips > 0 ? servedTrips / demandTrips : 1;
     utilDrivers = capacity > 0 ? servedTrips / capacity : 0;
 
-    // Скидка ниже рынка частично субсидируется платформой — демпинг платный
     const subsidyPerTrip = taxiDef.fare * Math.max(0, 1 - priceIdx) * CONFIG.taxiSubsidyShare;
     cmPerTrip = fareEff * taxiDef.takeRate
       - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd) - subsidyPerTrip;
     revenueTaxi = servedTrips * fareEff * taxiDef.takeRate;
     contribTaxi = servedTrips * cmPerTrip;
 
-    // Водители: найм из бюджета, отток от базы и от простоя.
-    // Водитель без поездок не ждёт лучших времён — уходит к конкуренту.
     driverHires = ((decisions.taxiSupply ?? 0) / CONFIG.taxiDriverOnboardCost)
       * mods.driverSupplyMult;
     const idle = Math.max(0, CONFIG.taxiDriverIdleFloor - utilDrivers) / CONFIG.taxiDriverIdleFloor;
@@ -323,7 +427,6 @@ export function step(prevState, input = {}) {
     driversLost = state.taxi.drivers * driverChurn;
     state.taxi.drivers = Math.max(0, state.taxi.drivers - driversLost + driverHires);
 
-    // Отток клиентов: цена, качество, недовоз (долгая подача)
     churnTaxiRate = clamp(
       CONFIG.taxiBaseChurn
       + CONFIG.taxiChurnQuality * Math.max(0, 0.8 - qTaxi)
@@ -335,10 +438,9 @@ export function step(prevState, input = {}) {
     );
     const taxiOnly = Math.max(0, state.taxi.users - state.both);
     const lostTaxiOnly = taxiOnly * churnTaxiRate;
-    const lostTaxiBoth = state.both * churnTaxiRate * (1 - CONFIG.ecoChurnRelief);
+    const lostTaxiBoth = state.both * churnTaxiRate * (1 - reliefBoth);
     lostTaxi = lostTaxiOnly + lostTaxiBoth;
 
-    // Холодное привлечение: дорого, в войну — вдвое дороже (демпинг перехватывает)
     const mBudget = decisions.taxiMarketing ?? 0;
     coldAcq = taxiPool * CONFIG.taxiMarketingReach
       * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation))
@@ -346,82 +448,191 @@ export function step(prevState, input = {}) {
       * (atWar ? 1 - taxiDef.warAcqCut : 1)
       * fedAcqMult;
 
-    // Пересечение: ушедшие «оба» из такси остаются клиентами еды
     state.both = Math.max(0, state.both - lostTaxiBoth);
     state.taxi.users = Math.max(0, state.taxi.users - lostTaxi + coldAcq);
   }
 
-  // --- 6. Кросс-селл: общая база как канал --------------------------------
-  // Клиент соседней вертикали дешевле холодного, но канал имеет ёмкость
-  // и не спасает мёртвый продукт: конверсия зависит от принимающей стороны.
-  let crossConv = 0; let crossBackConv = 0; let crossSpent = 0; let crossWasted = 0;
-  let crossCac = 0;
-  const crossBudget = taxiOn ? (decisions.crossSell ?? 0) : 0;
-  if (taxiOn && crossBudget > 0) {
-    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
-    const synergy = asset.synergy?.taxi ?? 1;
-    // Цена кросс-селла: эталон / синергия актива x постоянные бусты (кобренд)
-    const storyCac = state.story.crossCacMult ?? 1;
-    const cacEff = (CONFIG.crossSellCac / synergy) * storyCac;
+  // --- 6. Е-ком: портфельная модель против маркетплейсов ---
+  let revenueEcom = 0; let contribEcom = 0; let arpuEcom = 0;
+  let ecomColdAcq = 0; let lostEcom = 0; let churnEcomRate = 0; let ecomPool = 0;
+  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0);
+  if (ecomOn) {
+    ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
+    const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
+    const plusEcomBoost = state.ecom.users > 0
+      ? 1 + CONFIG.plus.freqBoostFood * (subsInEcom / Math.max(1, state.ecom.users)) : 1;
+    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost;
+    revenueEcom = state.ecom.users * arpuEcom;
+    contribEcom = revenueEcom * marginEcom;
 
-    // еда -> такси: главное направление
-    const budgetF = crossBudget * (1 - CONFIG.crossBackShare);
-    const poolF = Math.max(0, state.food.users - state.both);
-    const attractTaxi = clamp(0.25 + 0.75 * qTaxi, 0, 1.1)
-      * clamp(taxiPriceFactor, 0.6, 1.15) * (0.5 + 0.5 * fill);
-    // Кобрендовая карта расширяет круг готовых попробовать второй сервис
-    const storyReach = state.story.crossReachMult ?? 1;
-    const capF = poolF * CONFIG.crossSellMonthlyReach * attractTaxi * trustMult * storyReach;
-    crossConv = Math.min(budgetF / cacEff, capF);
-    // такси -> еда: обратное направление, у него свой пул и своя цена
-    const budgetB = crossBudget * CONFIG.crossBackShare;
-    const poolB = Math.max(0, state.taxi.users - state.both);
-    const attractFood = clamp(0.25 + 0.75 * qFood, 0, 1.1);
-    const capB = Math.min(
-      poolB * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
-      Math.max(0, asset.reachableCap - state.food.users),
+    churnEcomRate = clamp(
+      ecomDef.baseChurn
+      + ecomDef.churnQuality * Math.max(0, 0.75 - qEcom)
+      + fedChurnAdd,
+      0.01, 0.5,
     );
-    const backCac = CONFIG.crossBackCac * storyCac;
-    crossBackConv = Math.min(budgetB / backCac, capB);
+    const ecomOnly = Math.max(0, state.ecom.users - state.bothEcom);
+    const lostEcomOnly = ecomOnly * churnEcomRate;
+    const lostEcomBoth = state.bothEcom * churnEcomRate * (1 - reliefBoth);
+    lostEcom = lostEcomOnly + lostEcomBoth;
 
-    crossSpent = crossConv * cacEff + crossBackConv * backCac;
-    // Перерасход сверх ёмкости канала сгорает — и виден в отчёте
-    crossWasted = Math.max(0, crossBudget - crossSpent);
-    crossCac = (crossConv + crossBackConv) > 0
-      ? crossBudget / (crossConv + crossBackConv) : 0;
+    const mBudget = decisions.ecomMarketing ?? 0;
+    ecomColdAcq = ecomPool * ecomDef.marketingReach
+      * (mBudget / (mBudget + ecomDef.marketingSaturation))
+      * fedAcqMult;
 
-    state.taxi.users += crossConv;
-    state.food.users += crossBackConv;
-    state.both += crossConv + crossBackConv;
+    state.bothEcom = Math.max(0, state.bothEcom - lostEcomBoth);
+    state.ecom.users = Math.max(0, state.ecom.users - lostEcom + ecomColdAcq);
   }
 
-  // Итог месяца по базе еды. Ушедший из еды клиент «двух сервисов»
-  // остаётся клиентом такси — пересечение сжимается вместе с ним.
+  // --- 7. Кросс-селл: хаб раздаёт вторые сервисы -----------------------------
+  // Канал имеет цену и ёмкость; перерасход сгорает. Прямые направления делят
+  // бюджет пропорционально ёмкостям, обратные возвращают клиентов в хаб.
+  let crossConv = 0; let crossEcomConv = 0; let crossBackConv = 0;
+  let crossSpent = 0; let crossWasted = 0; let crossCac = 0;
+  const anySpokeOn = taxiOn || ecomOn;
+  const crossBudget = anySpokeOn ? (decisions.crossSell ?? 0) : 0;
+  if (crossBudget > 0) {
+    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
+    const storyCac = (state.story.crossCacMult ?? 1)
+      * (hasPerk(asset, 'partner-network') ? 0.8 : 1);
+    const storyReach = state.story.crossReachMult ?? 1;
+    const hubFree = Math.max(0, state.food.users - state.both - state.bothEcom);
+
+    // Прямые направления: хаб -> вертикаль
+    const targets = [];
+    if (taxiOn) {
+      const attract = clamp(0.25 + 0.75 * qTaxi, 0, 1.1)
+        * clamp(taxiPriceFactor, 0.6, 1.15) * (0.5 + 0.5 * fill);
+      targets.push({
+        id: 'taxi',
+        cac: (CONFIG.crossSellCac / (asset.synergy?.taxi ?? 1)) * storyCac,
+        cap: hubFree * CONFIG.crossSellMonthlyReach * attract * trustMult * storyReach,
+      });
+    }
+    if (ecomOn) {
+      const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1);
+      targets.push({
+        id: 'ecom',
+        cac: (CONFIG.crossSellCac / (asset.synergy?.ecom ?? 1)) * storyCac,
+        cap: hubFree * ecomDef.crossReach * attract * trustMult * storyReach,
+      });
+    }
+    const capSum = targets.reduce((s, tgt) => s + tgt.cap, 0) || 1;
+    const budgetF = crossBudget * (1 - CONFIG.crossBackShare);
+    for (const tgt of targets) {
+      const share = budgetF * (tgt.cap / capSum);
+      const conv = Math.min(share / tgt.cac, tgt.cap);
+      crossSpent += conv * tgt.cac;
+      if (tgt.id === 'taxi') crossConv = conv;
+      else crossEcomConv = conv;
+    }
+
+    // Обратные направления: вертикаль -> хаб
+    const backCac = CONFIG.crossBackCac * storyCac;
+    const attractFood = clamp(0.25 + 0.75 * qFood, 0, 1.1);
+    const hubRoom = Math.max(0, asset.reachableCap - state.food.users);
+    const backs = [];
+    if (taxiOn) {
+      backs.push({
+        id: 'taxi',
+        cap: Math.max(0, state.taxi.users - state.both)
+          * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
+      });
+    }
+    if (ecomOn) {
+      backs.push({
+        id: 'ecom',
+        cap: Math.max(0, state.ecom.users - state.bothEcom)
+          * CONFIG.crossBackMonthlyReach * attractFood * trustMult * storyReach,
+      });
+    }
+    const backCapSum = backs.reduce((s, b) => s + b.cap, 0) || 1;
+    const budgetB = crossBudget * CONFIG.crossBackShare;
+    let roomLeft = hubRoom;
+    for (const b of backs) {
+      const share = budgetB * (b.cap / backCapSum);
+      const conv = Math.min(share / backCac, b.cap, roomLeft);
+      roomLeft -= conv;
+      crossSpent += conv * backCac;
+      crossBackConv += conv;
+      if (b.id === 'taxi') state.both += conv;
+      else state.bothEcom += conv;
+    }
+
+    crossWasted = Math.max(0, crossBudget - crossSpent);
+    const totalConv = crossConv + crossEcomConv + crossBackConv;
+    crossCac = totalConv > 0 ? crossBudget / totalConv : 0;
+
+    // Прямые конверсии: клиент хаба получает второй сервис
+    state.taxi.users += crossConv;
+    state.both += crossConv;
+    state.ecom.users += crossEcomConv;
+    state.bothEcom += crossEcomConv;
+    // Обратные: клиент вертикали становится клиентом хаба
+    state.food.users += crossBackConv;
+  }
+
+  // Итог месяца по базе хаба
   state.food.users = Math.max(0, state.food.users - lostFood + wonBack + organicFood);
   state.both = Math.max(0, state.both - lostFoodBoth);
+  state.bothEcom = Math.max(0, state.bothEcom - lostFoodBothEcom);
   state.food.returnPool = Math.max(0,
     state.food.returnPool * (1 - CONFIG.foodReturnPoolDecay)
     + lostFood * CONFIG.foodReturnShare
     - wonBack);
-  // Пересечение не может превышать ни одну из баз
   state.both = Math.min(state.both, state.food.users, state.taxi.users);
+  state.bothEcom = Math.min(state.bothEcom, state.food.users, state.ecom.users);
 
-  // --- 7. P&L холдинга ---
-  const revenue = revenueFood + revenueTaxi;
-  const contribution = contribFood + contribTaxi;
+  // --- 8. Подписка «Новоград Plus»: покупка удержания за маржу ---
+  let plusConv = 0; let plusChurned = 0; let revenuePlus = 0; let plusPerkCost = 0;
+  const plusPrice = clamp(decisions.plusPrice ?? CONFIG.plus.priceRef, 199, 399);
+  const multiNow = multiUsers(state);
+  if (plusOn) {
+    const priceAttract = Math.pow(CONFIG.plus.priceRef / plusPrice, CONFIG.plus.priceElasticity);
+    const habitMult = hasPerk(asset, 'subscription-habit') ? 1.25 : 1;
+    const cinemaBoost = cinemaOn ? 1 + CONFIG.partners.cinemaConvBoost : 1;
+    plusConv = Math.max(0, multiNow - state.plus.subs)
+      * CONFIG.plus.baseConvShare * priceAttract * habitMult * cinemaBoost
+      * (trustBroken ? 0.7 : 1);
+    const plusChurn = clamp(
+      CONFIG.plus.baseChurn
+      + 0.10 * Math.max(0, plusPrice / CONFIG.plus.priceRef - 1)
+      - (cinemaOn ? CONFIG.partners.cinemaChurnRelief : 0)
+      - (ticketsOn ? 0.008 : 0),
+      0.01, 0.4,
+    );
+    plusChurned = state.plus.subs * plusChurn;
+    state.plus.subs = clamp(state.plus.subs - plusChurned + plusConv, 0, multiNow);
+    revenuePlus = state.plus.subs * plusPrice;
+    plusPerkCost = state.plus.subs * CONFIG.plus.perkCostPerSub;
+  }
+
+  // Партнёрство по билетам: событийная выручка с мульти-клиентов
+  const revenueTickets = ticketsOn ? multiNow * CONFIG.partners.ticketsArpuPerMulti : 0;
+  const licenseFee = cinemaOn ? cinemaLicenseFee(state) : 0;
+  const ticketsFee = ticketsOn ? ticketsPartnerFee(state) : 0;
+
+  // --- 9. P&L холдинга ---
+  const revenue = revenueFood + revenueTaxi + revenueEcom + revenuePlus + revenueTickets;
+  const contribution = contribFood + contribTaxi + contribEcom
+    + (revenuePlus - plusPerkCost) + revenueTickets * 0.7;
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
+  const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
+  const ecomBudgets = ecomOn ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) : 0;
   const opex = CONFIG.hqMonthly + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
-    + fixedFood + fixedTaxi + taxiBudgets;
+    + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
+    + licenseFee + ticketsFee;
 
-  // Полный вклад вертикали (для оценки sum-of-parts и ворот экспансии):
-  // переменный вклад минус фиксы и бюджеты самой вертикали.
   const foodFullContribution = contribFood - fixedFood
     - (decisions.foodOps ?? 0) - (decisions.foodMarketing ?? 0);
-  const taxiFullContribution = taxiOn
-    ? contribTaxi - fixedTaxi - taxiBudgets : 0;
+  const taxiFullContribution = taxiOn ? contribTaxi - fixedTaxi - taxiBudgets : 0;
+  const ecomFullContribution = ecomOn ? contribEcom - fixedEcom - ecomBudgets : 0;
+  const plusFullContribution = plusOn
+    ? revenuePlus - plusPerkCost - licenseFee : 0;
 
   const profit = contribution - opex;
   const perUnitCost = (mods.oneOffCostPerDriver ?? 0) * driversAtStart
@@ -431,13 +642,15 @@ export function step(prevState, input = {}) {
   const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost;
   state.cash += profit - oneOff;
 
-  // --- 8. Метрики ---
+  // --- 10. Метрики ---
   const unique = uniqueUsers(state);
-  const multiShare = unique > 0 ? state.both / unique : 0;
+  const multi = multiUsers(state);
+  const multiShare = unique > 0 ? multi / unique : 0;
   const arpuHolding = unique > 0 ? revenue / unique : 0;
   const cacCold = coldAcq > 0 ? (decisions.taxiMarketing ?? 0) / coldAcq : 0;
+  const cacColdEcom = ecomColdAcq > 0 ? (decisions.ecomMarketing ?? 0) / ecomColdAcq : 0;
 
-  // --- 9. Совет директоров ---
+  // --- 11. Совет директоров ---
   if (profit > 0) state.board.profitableMonths += 1;
   const progress = goalProgress(state.board.goal, {
     taxiUsers: state.taxi.users,
@@ -454,7 +667,6 @@ export function step(prevState, input = {}) {
     state.board.goal = month < CONFIG.monthsTotal
       ? makeGoal(next, state, unique) : null;
   }
-  // Провал первого года: акционеры вводят деньги сами и на своих условиях
   let forcedDilution = 0;
   let boardInjection = 0;
   if (state.pendingDilution) {
@@ -472,23 +684,36 @@ export function step(prevState, input = {}) {
     revenue,
     revenueFood,
     revenueTaxi,
+    revenueEcom,
+    revenuePlus,
+    revenueTickets,
     contribution,
     contribFood,
     contribTaxi,
+    contribEcom,
     foodFullContribution,
     taxiFullContribution,
+    ecomFullContribution,
+    plusFullContribution,
     opex,
     fixedFood,
     fixedTaxi,
+    fixedEcom,
+    licenseFee,
+    ticketsFee,
+    plusPerkCost,
     hqCost: CONFIG.hqMonthly,
     profit,
     oneOff,
     launchCost,
     cash: state.cash,
-    // --- база ---
+    // --- база (хаб и спицы) ---
     foodUsers: state.food.users,
     taxiUsers: state.taxi.users,
+    ecomUsers: state.ecom.users,
     bothUsers: state.both,
+    bothEcomUsers: state.bothEcom,
+    multiUsers: multi,
     uniqueUsers: unique,
     multiShare,
     arpuHolding,
@@ -504,6 +729,8 @@ export function step(prevState, input = {}) {
     mgmtLevel: mgmtLevel(decisions),
     foodQuality: qFood,
     taxiQuality: qTaxi,
+    ecomQuality: qEcom,
+    logistics,
     // --- такси ---
     taxiOn,
     taxiLaunched,
@@ -524,8 +751,28 @@ export function step(prevState, input = {}) {
     lostTaxi,
     coldAcq,
     cacCold,
+    // --- е-ком ---
+    ecomOn,
+    ecomLaunched,
+    arpuEcom,
+    marginEcom,
+    ecomPool,
+    churnEcomRate,
+    lostEcom,
+    ecomColdAcq,
+    cacColdEcom,
+    // --- подписка и партнёрства ---
+    plusOn,
+    plusLaunched,
+    plusSubs: state.plus.subs,
+    plusConv,
+    plusChurned,
+    plusPrice,
+    cinemaOn,
+    ticketsOn,
     // --- кросс-селл ---
     crossConv,
+    crossEcomConv,
     crossBackConv,
     crossCac,
     crossSpent,
@@ -552,10 +799,14 @@ export function step(prevState, input = {}) {
     seasonFood: foodSeason,
     seasonTaxi: seasonTaxi(month),
 
-    decisions: deepClone({ ...decisions, verticals: [...(decisions.verticals ?? [])] }),
+    decisions: deepClone({
+      ...decisions,
+      verticals: [...(decisions.verticals ?? [])],
+      partners: [...(decisions.partners ?? [])],
+    }),
   };
 
-  // --- 10. Завершение месяца ---
+  // --- 12. Завершение месяца ---
   state.month = month;
   state.history.push(report);
   state.pendingChoice = null;
@@ -577,12 +828,13 @@ export function step(prevState, input = {}) {
   const sop = sumOfParts(state);
   report.valuation = sop.total;
   report.equityValue = report.valuation * state.equity;
-  // Части оценки — в отчёт: график «Оценка» показывает их без пересчёта истории
   report.sopFoodValue = sop.parts.find((p) => p.id === 'food')?.value ?? 0;
   report.sopTaxiValue = sop.parts.find((p) => p.id === 'taxi')?.value ?? 0;
+  report.sopEcomValue = sop.parts.find((p) => p.id === 'ecom')?.value ?? 0;
+  report.sopPlusValue = sop.parts.find((p) => p.id === 'plus')?.value ?? 0;
 
-  // Зачётный счёт фиксируется в момент финиша: пост-эндгейм (следующие фазы)
-  // сможет продолжать партию, не трогая результат для таблиц и строки.
+  // Зачётный счёт фиксируется в момент финиша: пост-эндгейм сможет
+  // продолжать партию, не трогая результат для таблиц и строки.
   if (state.over === 'finished' && !state.scored) {
     state.scored = finalScore(state);
   }
@@ -591,9 +843,7 @@ export function step(prevState, input = {}) {
 }
 
 // ----------------------------------------------------------------------------
-// Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован
-// в state.scored. Интерфейсная кнопка появится вместе с фазой пост-эндгейма;
-// движок готов уже сейчас (и это проверяется тестом).
+// Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован.
 // ----------------------------------------------------------------------------
 export function enterEndless(state) {
   const next = deepClone(state);
@@ -607,15 +857,19 @@ export function enterEndless(state) {
 // ----------------------------------------------------------------------------
 // Оценка холдинга: sum-of-parts.
 //
-// Каждая вертикаль оценивается своим окном выручки и своим множителем:
-// зрелая еда — как дойная корова, растущее такси — как история роста.
-// Убыточная вертикаль БЕЗ роста — «зоопарк»: она входит в сумму
-// отрицательным слагаемым (годовой burn с множителем). Премия — за
-// замеряемый кросс-селл: долю клиентов с двумя и более сервисами.
+// Каждая часть — своим окном выручки и своим множителем: зрелый хаб как
+// дойная корова, растущие вертикали как истории роста, подписка — дороже
+// всех (повторяющаяся выручка). Премия — за замеряемую склейку. Третий акт
+// (последний год): инвесторы требуют прибыльную экосистему, а не зоопарк —
+// убыточные части дисконтируются жёстче.
 // ----------------------------------------------------------------------------
 export function sumOfParts(state) {
   const h = state.history;
   const parts = [];
+  const thirdAct = state.month >= CONFIG.monthsTotal - CONFIG.boardYearMonths - 1;
+  const zooMarginFloor = thirdAct ? -0.05 : -0.1;
+  const burnMult = CONFIG.lossBurnMultiple * (thirdAct ? 1.7 : 1);
+
   const mkPart = (id, pickRevenue, pickFull, k) => {
     const runRate = windowAvg(h, CONFIG.valuationWindow, pickRevenue) * 12;
     const growth = windowGrowth(h, CONFIG.growthWindow, pickRevenue, 0.05);
@@ -624,12 +878,9 @@ export function sumOfParts(state) {
     const margin = revAvg > 0 ? fullAvg / revAvg : (fullAvg < 0 ? -1 : 0);
     let value;
     let zoo = false;
-    if (fullAvg < 0 && growth < 0.05 && fullAvg < -0.1 * Math.max(1, revAvg)) {
-      // Глубоко убыточное и не растущее — «зоопарк»: инвестор вычитает
-      // годовой burn как обязательство. Слегка убыточную зрелую вертикаль
-      // наказывает обычный множитель через маржу, не эта ветка.
+    if (fullAvg < 0 && growth < 0.05 && fullAvg < zooMarginFloor * Math.max(1, revAvg)) {
       zoo = true;
-      value = Math.max(fullAvg * 12 * CONFIG.lossBurnMultiple, -500_000_000);
+      value = Math.max(fullAvg * 12 * burnMult, -700_000_000);
     } else {
       const multiple = revenueMultiple(growth, margin, k);
       value = runRate * multiple;
@@ -638,8 +889,6 @@ export function sumOfParts(state) {
   };
 
   if (!h.length) {
-    // До первого хода: стартовый актив по той же формуле, что и после, —
-    // чтобы оценка не прыгала между «до» и «после» первого месяца.
     const asset = assetById(state.assetId);
     const revMonthly = asset.users * asset.arpu;
     const fullMonthly = revMonthly * asset.margin - asset.fixedMonthly
@@ -652,10 +901,17 @@ export function sumOfParts(state) {
     if (state.taxi.on || h.some((r) => r.taxiOn)) {
       mkPart('taxi', (r) => r.revenueTaxi, (r) => r.taxiFullContribution, CONFIG.multiples.taxi);
     }
+    if (state.ecom.on || h.some((r) => r.ecomOn)) {
+      mkPart('ecom', (r) => r.revenueEcom ?? 0, (r) => r.ecomFullContribution ?? 0, CONFIG.multiples.taxi);
+    }
+    if (state.plus.on || h.some((r) => r.plusOn)) {
+      mkPart('plus', (r) => r.revenuePlus ?? 0, (r) => r.plusFullContribution ?? 0, CONFIG.plus.multiple);
+    }
   }
 
   const unique = uniqueUsers(state);
-  const multiShare = unique > 0 ? state.both / unique : 0;
+  const multi = multiUsers(state);
+  const multiShare = unique > 0 ? multi / unique : 0;
   const crossPremium = Math.min(CONFIG.crossPremiumCap, CONFIG.crossPremiumPerShare * multiShare);
 
   const posSum = parts.filter((p) => p.value > 0).reduce((s, p) => s + p.value, 0);
@@ -663,7 +919,7 @@ export function sumOfParts(state) {
   const beforeBonus = posSum * (1 + crossPremium) + negSum;
   const bonus = 1 + clamp(state.flags.valuationBonus, -0.4, 0.6);
   const total = Math.max(200_000_000, beforeBonus * bonus);
-  return { parts, multiShare, crossPremium, bonus, total };
+  return { parts, multiShare, crossPremium, bonus, total, thirdAct };
 }
 
 export function valuation(state) {
@@ -686,8 +942,7 @@ export function raise(state, amount) {
 
 // ----------------------------------------------------------------------------
 // Разбор месяца: выручка холдинга = уникальные клиенты x ARPU.
-// Двухфакторное разложение точно по определению — и это и есть главный
-// урок игры: после насыщения растить можно только второй множитель.
+// Точно по определению — и это главный урок игры.
 // ----------------------------------------------------------------------------
 export function explain(prev, cur) {
   if (!prev || !cur) return [];
@@ -704,8 +959,6 @@ export function explain(prev, cur) {
 }
 
 // Итоговый счёт партии: стоимость доли = доля x (оценка + касса).
-// Кэш принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
-// а потраченный обязан вернуться ростом оценки.
 export function finalScore(state) {
   const v = valuation(state);
   return {

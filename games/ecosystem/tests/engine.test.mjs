@@ -7,7 +7,7 @@ import {
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
   finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
-  enterEndless,
+  enterEndless, multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
 } from '../src/model/engine.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
 import { EVENTS, eventById, neutralModifiers, applyEvent } from '../src/model/events.js';
@@ -674,4 +674,170 @@ test('пост-эндгейм: счёт фиксируется на финише
   const res = step(cont, { decisions: baseDecisions() });
   assert.equal(res.report.month, CONFIG.monthsTotal + 1, 'месяцы идут дальше');
   assert.equal(res.state.scored.equityValue, frozen, 'зачётный счёт не меняется');
+});
+
+// ----------------------------------------------------------------------------
+// Полная экосистема: е-ком, подписка Plus, партнёрства, активы, наследие
+// ----------------------------------------------------------------------------
+
+const ecomDef = verticalById('ecom');
+
+// Прогретая полная экосистема: такси с 1-го, е-ком с 8-го, Plus с 10-го
+function fullDecisions(s, over = {}) {
+  return baseDecisions({
+    verticals: ['taxi', ...(s.month + 1 >= 8 ? ['ecom'] : []),
+      ...(s.taxi.on && s.month + 1 >= 10 ? ['plus'] : [])],
+    partners: s.plus.on ? ['cinema', 'tickets'] : [],
+    foodOps: 5_000_000,
+    foodMarketing: 2_000_000,
+    crossSell: s.ecom.on ? 6_000_000 : (s.taxi.on ? 3_000_000 : 0),
+    mgmt: s.ecom.on ? 11_000_000 : (s.taxi.on ? 8_000_000 : 0),
+    taxiSupply: s.taxi.on ? 9_000_000 : 0,
+    taxiMarketing: s.taxi.on ? 14_000_000 : 0,
+    ecomOps: s.ecom.on ? 4_000_000 : 0,
+    ecomMarketing: s.ecom.on ? 8_000_000 : 0,
+    plusPrice: 299,
+    ...over,
+  });
+}
+
+function warmFull(seed = 'full', months = 20) {
+  return run(months, (s) => fullDecisions(s), seed);
+}
+
+test('е-ком выходит за воротами по метрикам и дешевле с логистикой хаба', () => {
+  const early = createInitialState('ecom-gate');
+  assert.equal(expansionOpen(early, ecomDef), false, 'до 8-го месяца ворота закрыты');
+  const { state } = warmFull('ecom-gate', 12);
+  assert.equal(state.ecom.on, true, 'е-ком запущен после ворот');
+  const launch = state.history.find((r) => r.ecomLaunched);
+  assert.ok(launch, 'запуск виден в отчёте');
+  const asset = assetById('delivery');
+  assert.ok(asset.launchCostMult.ecom < 1);
+  assert.ok(Math.abs(launch.launchCost - ecomDef.launchCost * asset.launchCostMult.ecom) < 1,
+    'скидка логистики применена к цене запуска');
+});
+
+test('общая логистика: маржа е-кома выше, но качество еды платит за пики', () => {
+  const { state } = warmFull('logi', 16);
+  assert.ok(state.ecom.on);
+  const r = step(state, { decisions: fullDecisions(state) }).report;
+  assert.ok(r.logistics, 'перк курьерской логистики активен');
+  assert.ok(r.marginEcom > ecomDef.margin, 'маржа выше базовой');
+  // Тот же холдинг без перка (стриминговый хаб): маржа ниже, еда целее
+  let sStream = createInitialState('logi-s', 'streaming');
+  for (let i = 0; i < 16 && !sStream.over; i++) {
+    if (sStream.month >= 2 && sStream.cash < 120_000_000) {
+      sStream = raise(sStream, CONFIG.fundingOptions[1]).state;
+    }
+    sStream = step(sStream, { decisions: fullDecisions(sStream), eventChoice: 0 }).state;
+  }
+  if (sStream.ecom.on) {
+    const rs = step(sStream, { decisions: fullDecisions(sStream) }).report;
+    assert.ok(!rs.logistics);
+    assert.ok(rs.marginEcom < r.marginEcom, 'без перка маржа ниже');
+  }
+});
+
+test('подписка Plus: конверсия из мульти-клиентов, цена против массовости', () => {
+  const { state } = warmFull('plus', 18);
+  assert.equal(state.plus.on, true);
+  assert.ok(state.plus.subs > 1000, 'подписчики копятся');
+  assert.ok(state.plus.subs <= multiUsers(state) + 1e-6, 'подписчики — подмножество мульти');
+
+  const cheap = step(state, { decisions: fullDecisions(state, { plusPrice: 199 }) }).report;
+  const dear = step(state, { decisions: fullDecisions(state, { plusPrice: 399 }) }).report;
+  assert.ok(cheap.plusConv > dear.plusConv, 'дешёвая подписка конвертит лучше');
+  assert.ok(dear.revenuePlus / Math.max(1, dear.plusSubs)
+    > cheap.revenuePlus / Math.max(1, cheap.plusSubs), 'дорогая берёт больше с подписчика');
+});
+
+test('Plus покупает удержание: отток мульти-клиентов ниже при подписке', () => {
+  const { state } = warmFull('plus-ret', 18);
+  const withSubs = step(state, { decisions: fullDecisions(state) }).report;
+  const noSubs = JSON.parse(JSON.stringify(state));
+  noSubs.plus.subs = 0;
+  const without = step(noSubs, { decisions: fullDecisions(noSubs) }).report;
+  assert.ok(withSubs.lostFood < without.lostFood, 'отток хаба ниже с подписчиками');
+  assert.ok(withSubs.lostTaxi < without.lostTaxi, 'и такси тоже');
+});
+
+test('подписка сама по себе почти не зарабатывает — дилемма Amazon Prime', () => {
+  const { state } = warmFull('plus-econ', 20);
+  const r = step(state, { decisions: fullDecisions(state, { plusPrice: 199 }) }).report;
+  const perSub = (r.revenuePlus - r.plusPerkCost) / Math.max(1, r.plusSubs);
+  assert.ok(perSub < 60, `на массовой цене подписка почти в ноль: ${perSub.toFixed(0)} ₽`);
+});
+
+test('партнёрства: лицензия кино усиливает Plus, билеты дают событийную выручку', () => {
+  const { state } = warmFull('partners', 18);
+  const withP = step(state, { decisions: fullDecisions(state) }).report;
+  const withoutP = step(state, { decisions: fullDecisions(state, { partners: [] }) }).report;
+  assert.ok(withP.licenseFee > 0, 'лицензия платная для доставки-хаба');
+  assert.ok(withP.plusConv > withoutP.plusConv, 'с кино подписка конвертит лучше');
+  assert.ok(withP.revenueTickets > 0 && withoutP.revenueTickets === 0);
+});
+
+test('стартовые активы — данными: у стриминга свой контент, у билетов партнёрство', () => {
+  const stream = createInitialState('a-s', 'streaming');
+  assert.equal(cinemaLicenseFee(stream), 0, 'своему контенту лицензия не нужна');
+  assert.ok(plusLaunchCost(stream) < CONFIG.plus.launchCost, 'привычка платить удешевляет Plus');
+  const tick = createInitialState('a-t', 'tickets');
+  assert.equal(ticketsPartnerFee(tick), 0, 'своим билетам абонентка не нужна');
+  assert.ok(tick.cash < stream.cash, 'у билетов казна меньше — сложный класс');
+});
+
+test('наследие: бонусы применяются и складываются, но не решают партию', () => {
+  const plain = createInitialState('legacy', 'delivery');
+  const blessed = createInitialState('legacy', 'delivery', { asset: true, cinema: true, tickets: true });
+  assert.equal(cinemaLicenseFee(blessed), CONFIG.partners.cinemaLicenseMonthly * 0.6);
+  assert.equal(ticketsPartnerFee(blessed), 0);
+  assert.equal(cinemaLicenseFee(plain), CONFIG.partners.cinemaLicenseMonthly);
+
+  const runLeg = (legacy) => {
+    let s = createInitialState('legacy-run', 'delivery', legacy);
+    for (let i = 0; i < 36 && !s.over; i++) {
+      // Подушка под события: раунд при тонкой кассе, а не только при убытке
+      if (s.month >= 2 && s.cash < 120_000_000) {
+        s = raise(s, CONFIG.fundingOptions[1]).state;
+      }
+      // Капитальные варианты событий — только при живой кассе:
+      // так их и задумано выбирать (см. аудит доминации в events.js)
+      const ev = s.pendingEvent?.id;
+      const choice = ev === 'truce_offer' ? 1
+        : (ev === 'fed_ecosystem' || ev === 'data_leak') && s.cash < 200_000_000 ? 1
+        : 0;
+      s = step(s, { decisions: fullDecisions(s), eventChoice: choice }).state;
+    }
+    const f = finalScore(s);
+    return f.bankrupt ? 0 : f.equityValue;
+  };
+  const base = runLeg({});
+  const full = runLeg({ asset: true, cinema: true, tickets: true });
+  const lift = full / base - 1;
+  assert.ok(lift > 0.005, `стак наследия должен чувствоваться: ${(lift * 100).toFixed(1)}%`);
+  assert.ok(lift < 0.20, `но не решать партию: ${(lift * 100).toFixed(1)}%`);
+});
+
+test('хаб-топология: уникальные и мульти согласованы при трёх вертикалях', () => {
+  const { reports } = warmFull('topo', 30);
+  for (const r of reports) {
+    assert.ok(Math.abs(r.uniqueUsers
+      - (r.foodUsers + r.taxiUsers + r.ecomUsers - r.bothUsers - r.bothEcomUsers)) < 1e-6,
+      `м${r.month}: уникальные = сумма − пересечения`);
+    assert.ok(r.multiUsers <= r.foodUsers + 1e-6, 'мульти — клиенты хаба');
+    assert.ok(r.plusSubs <= r.multiUsers + 1e-6, 'подписчики — подмножество мульти');
+    for (const [k, v] of Object.entries(r)) {
+      if (typeof v === 'number') assert.ok(Number.isFinite(v), `${k} м${r.month}`);
+    }
+  }
+});
+
+test('третий акт: в последний год убыточные части дисконтируются жёстче', () => {
+  const { state } = warmFull('act3', 30);
+  const sopNow = sumOfParts(state);
+  assert.equal(sopNow.thirdAct, true, 'третий акт активен');
+  const early = JSON.parse(JSON.stringify(state));
+  early.month = 12;
+  assert.equal(sumOfParts(early).thirdAct, false);
 });
