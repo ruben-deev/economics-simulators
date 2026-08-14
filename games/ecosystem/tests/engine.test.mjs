@@ -129,7 +129,8 @@ test('P&L сходится: выручка, вклад, прибыль и кас
     assert.ok(Math.abs((r.revenueFood + r.revenueTaxi) - r.revenue) < 1e-6);
     assert.ok(Math.abs((r.contribFood + r.contribTaxi) - r.contribution) < 1e-6);
     assert.ok(Math.abs((r.contribution - r.opex) - r.profit) < 1e-6);
-    assert.ok(Math.abs((before + r.profit - r.oneOff) - state.cash) < 1e-6,
+    // Инъекция совета (за провал годовой цели) — тоже строка кассы
+    assert.ok(Math.abs((before + r.profit - r.oneOff + r.boardInjection) - state.cash) < 1e-6,
       `касса в месяце ${r.month}`);
   }
 });

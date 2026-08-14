@@ -262,7 +262,10 @@ export function step(prevState, input = {}) {
     fill = demandTrips > 0 ? servedTrips / demandTrips : 1;
     utilDrivers = capacity > 0 ? servedTrips / capacity : 0;
 
-    cmPerTrip = fareEff * taxiDef.takeRate - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd);
+    // Скидка ниже рынка частично субсидируется платформой — демпинг платный
+    const subsidyPerTrip = taxiDef.fare * Math.max(0, 1 - priceIdx) * CONFIG.taxiSubsidyShare;
+    cmPerTrip = fareEff * taxiDef.takeRate
+      - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd) - subsidyPerTrip;
     revenueTaxi = servedTrips * fareEff * taxiDef.takeRate;
     contribTaxi = servedTrips * cmPerTrip;
 

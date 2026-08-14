@@ -142,12 +142,14 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать (120 ₽ на клиента базы)', en: 'Own it and compensate (₽120 per customer)' },
+        // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
+        // побеждало в 100% состояний — при дешёвом извинении это викторина.
+        label: { ru: 'Признать и компенсировать (250 ₽ на клиента базы)', en: 'Own it and compensate (₽250 per customer)' },
         detail: {
-          ru: 'Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          ru: 'Плюс 15 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
+          en: 'Plus ₽15M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
-        effects: { oneOffCostPerUniqueUser: 120, oneOffCost: 5_000_000 },
+        effects: { oneOffCostPerUniqueUser: 250, oneOffCost: 15_000_000 },
       },
       {
         label: { ru: 'Замять', en: 'Bury it' },
@@ -177,7 +179,10 @@ export const EVENTS = [
           ru: 'Война кончается сразу, но часть рынка закрепляется за конкурентом навсегда.',
           en: 'The war ends now, but part of the market is locked to the incumbent for good.',
         },
-        effects: { endWar: true, lockAdd: 0.08 },
+        // Снижено с 0.08 после аудита доминации: за 8% рынка перемирие
+        // не брал никто и никогда («воевать дальше» побеждало в 100%),
+        // на 0.04 — в 88%. При 0.03 выбор живой: 75/25 и зазор ~2%.
+        effects: { endWar: true, lockAdd: 0.03 },
       },
       {
         label: { ru: 'Воевать дальше', en: 'Fight on' },
@@ -202,12 +207,15 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Ответное промо (150 ₽ на клиента еды)', en: 'Counter-promo (₽150 per food customer)' },
+        // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
+        // защита базы должна стоить настолько дорого, чтобы дожатой или
+        // маленькой базе иногда было правильнее переждать.
+        label: { ru: 'Ответное промо (220 ₽ на клиента еды)', en: 'Counter-promo (₽220 per food customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
         },
-        effects: { oneOffCostPerFoodUser: 150, foodDemandMult: 0.98 },
+        effects: { oneOffCostPerFoodUser: 220, foodDemandMult: 0.98 },
       },
       {
         label: { ru: 'Держать маржу', en: 'Hold your margin' },

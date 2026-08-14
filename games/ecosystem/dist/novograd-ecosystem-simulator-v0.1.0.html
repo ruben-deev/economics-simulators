@@ -2035,6 +2035,11 @@ const CONFIG = {
   taxiDriverIdleFloor: 0.62,     // ниже этой загрузки водитель считает месяц пустым
   taxiCostPerTrip: 14,           // поддержка, эквайринг, карты и колл-центр
   taxiPriceElasticity: 1.2,
+  // Тариф ниже рынка — это не «дешёвый спрос», а скидки за счёт платформы:
+  // часть недобранной цены субсидируется из вашей маржи (остальное теряет
+  // водитель — и это уже учтено его оттоком). Без этой строки первый же
+  // замер показал упор ползунка на минимуме: демпинг был бесплатным.
+  taxiSubsidyShare: 0.35,
   taxiSeasonAmp: 0.06,
   taxiBaseChurn: 0.055,          // месячный отток клиентов такси
   taxiChurnQuality: 0.10,
@@ -2323,9 +2328,10 @@ function makeGoal(year, state, uniqueUsers) {
     return {
       year,
       type: GOAL_TYPES.secondLeg,
-      // Клиентов такси к 12-му месяцу. Замер по трём опорам: бережливая
-      // выходит на ~40 тыс, размашистая — на ~75 тыс; планка отделяет
-      // осознанный запуск от «посмотрим позже».
+      // Клиентов такси к 12-му месяцу. Замер по доведённым опорам:
+      // средняя даёт ~76 тыс, размашистая ~89 тыс, бережливая с запуском
+      // на 10-м месяце — ~27 тыс и цель проваливает: «вторая нога» требует
+      // решения в первый год, и совет наказывает выжидание размытием.
       target: 40_000,
       reward: 0.10,
       penalty: 'dilution',
@@ -2337,7 +2343,10 @@ function makeGoal(year, state, uniqueUsers) {
       type: GOAL_TYPES.glue,
       // Доля клиентов, пользующихся двумя и более сервисами холдинга.
       // Это и есть замеряемый кросс-селл — то, за что инвестор платит премию.
-      target: 0.16,
+      // Замер: доведённые опоры к 24-му месяцу дают 29–31%, стратегия без
+      // кросс-селла — считаные проценты. Планка 20% отделяет работающую
+      // склейку от двух бизнесов под одной вывеской.
+      target: 0.20,
       // И не ценой еды: сжать стартовый актив ради красивой доли нельзя.
       uniqueFloor: Math.round(Math.max(180_000, uniqueUsers * 0.9)),
       reward: 0.13,
@@ -2347,10 +2356,12 @@ function makeGoal(year, state, uniqueUsers) {
   return {
     year,
     type: GOAL_TYPES.profit,
-    // Прибыльных месяцев из двенадцати. Доведённая стратегия к третьему
-    // году закрывает в плюс почти все; планка отделяет работающую
-    // экосистему от вечно инвестирующей.
-    target: 6,
+    // Прибыльных месяцев из двенадцати. Замер: доведённые опоры закрывают
+    // в плюс все двенадцать; планка 7 оставляет буфер на событийные месяцы,
+    // но отделяет работающую экосистему от вечно инвестирующей.
+    // Калибровать такие цели случайными стратегиями нельзя: прибыльность —
+    // бинарный порог качества (см. HANDOFF).
+    target: 7,
     uniqueFloor: Math.round(Math.max(200_000, uniqueUsers * 0.95)),
     reward: 0.18,
     penalty: 'valuation',
@@ -2560,12 +2571,14 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать (120 ₽ на клиента базы)', en: 'Own it and compensate (₽120 per customer)' },
+        // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
+        // побеждало в 100% состояний — при дешёвом извинении это викторина.
+        label: { ru: 'Признать и компенсировать (250 ₽ на клиента базы)', en: 'Own it and compensate (₽250 per customer)' },
         detail: {
-          ru: 'Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          ru: 'Плюс 15 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
+          en: 'Plus ₽15M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
-        effects: { oneOffCostPerUniqueUser: 120, oneOffCost: 5_000_000 },
+        effects: { oneOffCostPerUniqueUser: 250, oneOffCost: 15_000_000 },
       },
       {
         label: { ru: 'Замять', en: 'Bury it' },
@@ -2595,7 +2608,10 @@ const EVENTS = [
           ru: 'Война кончается сразу, но часть рынка закрепляется за конкурентом навсегда.',
           en: 'The war ends now, but part of the market is locked to the incumbent for good.',
         },
-        effects: { endWar: true, lockAdd: 0.08 },
+        // Снижено с 0.08 после аудита доминации: за 8% рынка перемирие
+        // не брал никто и никогда («воевать дальше» побеждало в 100%),
+        // на 0.04 — в 88%. При 0.03 выбор живой: 75/25 и зазор ~2%.
+        effects: { endWar: true, lockAdd: 0.03 },
       },
       {
         label: { ru: 'Воевать дальше', en: 'Fight on' },
@@ -2620,12 +2636,15 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Ответное промо (150 ₽ на клиента еды)', en: 'Counter-promo (₽150 per food customer)' },
+        // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
+        // защита базы должна стоить настолько дорого, чтобы дожатой или
+        // маленькой базе иногда было правильнее переждать.
+        label: { ru: 'Ответное промо (220 ₽ на клиента еды)', en: 'Counter-promo (₽220 per food customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
         },
-        effects: { oneOffCostPerFoodUser: 150, foodDemandMult: 0.98 },
+        effects: { oneOffCostPerFoodUser: 220, foodDemandMult: 0.98 },
       },
       {
         label: { ru: 'Держать маржу', en: 'Hold your margin' },
@@ -2986,7 +3005,10 @@ function step(prevState, input = {}) {
     fill = demandTrips > 0 ? servedTrips / demandTrips : 1;
     utilDrivers = capacity > 0 ? servedTrips / capacity : 0;
 
-    cmPerTrip = fareEff * taxiDef.takeRate - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd);
+    // Скидка ниже рынка частично субсидируется платформой — демпинг платный
+    const subsidyPerTrip = taxiDef.fare * Math.max(0, 1 - priceIdx) * CONFIG.taxiSubsidyShare;
+    cmPerTrip = fareEff * taxiDef.takeRate
+      - (CONFIG.taxiCostPerTrip + mods.costPerTripAdd) - subsidyPerTrip;
     revenueTaxi = servedTrips * fareEff * taxiDef.takeRate;
     contribTaxi = servedTrips * cmPerTrip;
 
