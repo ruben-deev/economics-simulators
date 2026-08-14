@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.1.0" />
+  <meta name="app-version" content="1.2.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1403,6 +1403,18 @@ const STRINGS = {
     ru: 'Подписка почти не растёт: премиальная цена сужает круг желающих.',
     en: 'The subscription is barely growing: the premium price narrows the audience.',
   },
+  alertLegal: {
+    ru: 'Идёт антимонопольное дело: юристы {cost}/мес ещё {months} мес., а внимание прессы режет кросс-селл.',
+    en: 'The antitrust case is running: {cost}/mo of lawyers for {months} more months, and press attention is cutting cross-sell.',
+  },
+  alertSplit: {
+    ru: 'Логистика отделена: е-ком покупает доставку по рынку — его маржа ниже, чем была бы внутри холдинга.',
+    en: 'Logistics is split off: e-commerce buys delivery at market rates, so its margin is below what it would be inside the holding.',
+  },
+  alertSupervision: {
+    ru: 'Единый аккаунт под надзором: согласия собираются строже, ёмкость кросс-селла ниже до конца партии.',
+    en: 'The unified account is under supervision: consent is stricter and cross-sell capacity stays lower to the end of the game.',
+  },
   jumpGo: { ru: 'показать →', en: 'show →' },
 
   // --- новости ---
@@ -1549,6 +1561,7 @@ const STRINGS = {
   pnlFixedTaxi: { ru: 'Фикс такси', en: 'Taxi fixed costs' },
   pnlFixedEcom: { ru: 'Фикс е-кома', en: 'E-commerce fixed costs' },
   pnlHq: { ru: 'Управление холдинга', en: 'Holding HQ' },
+  pnlLegal: { ru: 'Юристы по антимонопольному делу', en: 'Antitrust lawyers' },
   pnlMgmt: { ru: 'Управляющая компания', en: 'Management company' },
   pnlCrossSell: { ru: 'Кросс-селл', en: 'Cross-sell' },
   pnlFoodOps: { ru: 'Сервис хаба', en: 'Hub service' },
@@ -2506,6 +2519,20 @@ const CONFIG = {
     multiple: { base: 2.5, growthWeight: 4, marginWeight: 2, marginPenalty: 1, min: 0.5, max: 8 },
   },
 
+  // --- Антимонопольное дело (кризис середины партии) ---
+  // Три исхода платятся разными валютами: структурой (отделённая логистика),
+  // продуктом (открытая подписка) или деньгами и временем (суд). Цены
+  // подобраны замером: ни один исход не берётся во всех прогонах.
+  antitrust: {
+    legalMonthly: 10_000_000,   // юристы и внешние консультанты, ₽/мес
+    legalCrossMult: 0.85,       // внимание прессы: пока идёт дело, кросс-селл хуже
+    // Отделённая логистика: е-ком покупает доставку по рынку — это минус
+    // маржа у всех, а не только у владельца курьерской сети
+    ecomMarginCut: 0.05,
+    // Надзор после суда: согласия на связывание аккаунтов собираются строже
+    supervisionReachMult: 0.92,
+  },
+
   // --- Партнёрские вертикали (кино и билеты входят лицензиями, не играми) ---
   partners: {
     cinemaLicenseMonthly: 4_000_000,  // лицензия стриминга в подписку
@@ -3122,6 +3149,13 @@ function neutralModifiers() {
     tripsPerUserAdd: 0,      // постоянная прибавка частоты поездок (аэропорт)
     crossCacMult: 1,         // постоянный множитель цены кросс-селла (кобренд)
     crossReachMult: 1,       // постоянный множитель ёмкости кросс-селла (кобренд)
+    // Антимонопольное дело: три исхода расходятся навсегда и в разных валютах
+    splitLogistics: false,   // логистика отделена: своя больше не возит дешевле рынка
+    plusConvMult: 1,         // постоянный множитель конверсии в подписку
+    plusChurnAdd: 0,         // постоянная прибавка к оттоку подписчиков
+    ecoReliefCut: 0,         // ослабление экосистемного удержания навсегда
+    legalMonths: 0,          // месяцы разбирательства: юристы каждый месяц
+    supervisionOn: false,    // надзор за единым аккаунтом остаётся навсегда
     notes: [],
   };
 }
@@ -3508,6 +3542,54 @@ const EVENTS = [
     ],
   },
   {
+    // Кризис середины партии: единственное событие, которое движок выдаёт
+    // принудительно (месяцы 16–22), потому что середина партии иначе
+    // проседает — решения кончаются после запусков и возвращаются только
+    // в третьем акте. Бьёт ровно по механике экосистемы: связывание
+    // сервисов — это и есть то, за что регулятор берётся в реальности.
+    // Три исхода расходятся навсегда и платятся разными валютами:
+    // маржа логистики / сила подписки / деньги и время.
+    id: 'antitrust', weight: 10, minMonth: 16, once: true, needsGlue: true,
+    title: { ru: 'Антимонопольное дело о связывании сервисов', en: 'An antitrust case over service tying' },
+    text: {
+      ru: 'Служба по конкуренции считает, что холдинг связывает сервисы: своя логистика достаётся своему же е-кому дешевле рынка, а подписка запирает клиента внутри экосистемы. Дело открыто, решение за вами.',
+      en: 'The competition authority argues the holding is tying its services: your own logistics serves your own e-commerce below market, and the subscription locks customers inside the ecosystem. The case is open; the move is yours.',
+    },
+    lesson: {
+      ru: 'Экосистема выгодна ровно тем, чем раздражает регулятора: преимущество внутри холдинга — это барьер снаружи. Платить придётся структурой, продуктом или временем.',
+      en: 'An ecosystem is valuable for exactly what irritates the regulator: an internal advantage is an external barrier. You pay with structure, with product, or with time.',
+    },
+    options: [
+      {
+        label: { ru: 'Отделить логистику', en: 'Split off logistics' },
+        detail: {
+          ru: 'Доставка становится отдельной компанией и возит всем по рынку. Дело закрыто сразу, разово — 60 ₽ на клиента холдинга за реорганизацию. Цена в другом: е-ком навсегда теряет часть маржи, свою логистику он теперь покупает как все.',
+          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off ₽60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
+        },
+        // Разделение — это ещё и разовая реорганизация: юристы, перевод
+        // договоров, новые контуры. Цена растёт с размером холдинга, поэтому
+        // «бесплатно» этот исход не бывает даже без е-кома.
+        effects: { splitLogistics: true, oneOffCostPerUniqueUser: 60 },
+      },
+      {
+        label: { ru: 'Открыть подписку конкурентам', en: 'Open the subscription to rivals' },
+        detail: {
+          ru: 'Выгоды Plus перестают быть эксклюзивом холдинга: те же кешбэки клиент получит у конкурента. Денег это не стоит и структуру не ломает — но бьёт по самой склейке: подписчики уходят заметно чаще, а клиент двух сервисов больше не держится за вас так крепко.',
+          en: 'Plus perks stop being exclusive: a customer gets the same cashback at a rival. It costs no money and breaks no structure — but it hits the glue itself: subscribers churn markedly more, and a two-service customer no longer holds on to you as tightly.',
+        },
+        effects: { plusChurnAdd: 0.05, plusConvMult: 0.85, ecoReliefCut: 0.12 },
+      },
+      {
+        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate (₽10M/mo for 6 months)' },
+        detail: {
+          ru: 'Структура холдинга остаётся как есть. Полгода юристов и внимания прессы, а единый аккаунт до конца партии остаётся под надзором: согласия собираются строже, и ёмкость кросс-селла ниже.',
+          en: 'The holding’s structure stays as it is. Six months of lawyers and press attention — and the unified account stays under supervision to the end: consent is collected more strictly and cross-sell capacity is lower.',
+        },
+        effects: { legalMonths: 6, supervisionOn: true },
+      },
+    ],
+  },
+  {
     id: 'taxi_outage', weight: 5, minMonth: 6, needsTaxi: true,
     title: { ru: 'Сбой в приложении такси', en: 'Taxi app outage' },
     text: {
@@ -3542,16 +3624,30 @@ function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
+// Месяц, к которому кризис середины партии приходит гарантированно, если
+// случай его не принёс: провал агентности в середине партии лечится не
+// вероятностью, а расписанием.
+const FORCED_CRISIS_ID = 'antitrust';
+const FORCED_CRISIS_MONTH = 22;
+
 // Выбирает событие месяца (или null). Вероятность события ~45%.
-// ctx: { taxiOn, atWar, seen, lastId } — контекст холдинга и история событий:
+// ctx: { taxiOn, atWar, glued, seen, lastId } — контекст холдинга и история:
 // сюжетные события (once) не повторяются, обычные не идут два месяца подряд.
 function rollEvent(rng, month, flags = {}, ctx = {}) {
   if (month < 2) return null;
-  if (rng() > 0.45) return null;
   const seen = new Set(ctx.seen ?? []);
+  // Кризис середины партии не отдан на волю случая: если к сроку он не
+  // выпал сам, а холдингу есть что делить, он приходит принудительно.
+  if (month >= FORCED_CRISIS_MONTH && ctx.glued && !seen.has(FORCED_CRISIS_ID)
+    && ctx.lastId !== FORCED_CRISIS_ID) {
+    const forced = EVENTS.find((e) => e.id === FORCED_CRISIS_ID);
+    if (forced) return { ...forced };
+  }
+  if (rng() > 0.45) return null;
   const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0)
     && (!e.needsTaxi || ctx.taxiOn)
     && (!e.needsWar || ctx.atWar)
+    && (!e.needsGlue || ctx.glued)
     && !(e.once && seen.has(e.id))
     && e.id !== ctx.lastId);
   if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {
@@ -3844,6 +3940,20 @@ function step(prevState, input = {}) {
   if (mods.crossReachMult !== 1) {
     state.story.crossReachMult = (state.story.crossReachMult ?? 1) * mods.crossReachMult;
   }
+  // Антимонопольное дело: исход остаётся с холдингом до конца партии
+  if (mods.splitLogistics) state.story.logisticsSplit = true;
+  if (mods.plusConvMult !== 1) {
+    state.story.plusConvMult = (state.story.plusConvMult ?? 1) * mods.plusConvMult;
+  }
+  if (mods.plusChurnAdd) {
+    state.story.plusChurnAdd = (state.story.plusChurnAdd ?? 0) + mods.plusChurnAdd;
+  }
+  if (mods.ecoReliefCut) {
+    state.story.ecoReliefCut = (state.story.ecoReliefCut ?? 0) + mods.ecoReliefCut;
+  }
+  if (mods.legalMonths) state.story.legalUntil = month + mods.legalMonths - 1;
+  if (mods.supervisionOn) state.story.supervision = true;
+  const legalActive = (state.story.legalUntil ?? 0) >= month;
   const fedActive = (state.story.fedUntil ?? 0) >= month;
   const fedChurnAdd = fedActive ? (state.story.fedSoft ? 0.004 : 0.008) : 0;
   const fedAcqMult = fedActive ? (state.story.fedSoft ? 0.85 : 0.75) : 1;
@@ -3921,7 +4031,8 @@ function step(prevState, input = {}) {
   const qEcom = ecomQuality(state, decisions) * crisisQualityMult;
   // Общая логистика: курьеры хаба возят посылки в непик — е-ком маржинальнее,
   // но переиспользование мощности имеет цену: пиковые конфликты бьют по еде
-  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn;
+  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn
+    && !state.story.logisticsSplit;
   if (logistics && state.food.users > 0) {
     qFood *= 1 - ecomDef.logisticsPeakPenalty * Math.min(1, state.ecom.users / state.food.users);
   }
@@ -3929,7 +4040,12 @@ function step(prevState, input = {}) {
   const multiAtStart = multiUsers(state);
   const subsShare = multiAtStart > 0 ? clamp(state.plus.subs / multiAtStart, 0, 1) : 0;
   // Подписчик уходит реже: Plus усиливает экосистемное удержание
-  const reliefBoth = clamp(CONFIG.ecoChurnRelief + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6);
+  // Открытая конкурентам подписка ослабляет саму склейку: клиент двух
+  // сервисов держится за холдинг слабее, чем держался бы за эксклюзив.
+  const reliefBoth = clamp(
+    CONFIG.ecoChurnRelief - (state.story.ecoReliefCut ?? 0)
+    + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6,
+  );
 
   // --- 4. Хаб (стартовый актив): дожим, выручка, отток, возврат ---
   const takeIdx = clamp(decisions.foodTake ?? 1, 0.8, 1.3);
@@ -4038,7 +4154,11 @@ function step(prevState, input = {}) {
   // --- 6. Е-ком: портфельная модель против маркетплейсов ---
   let revenueEcom = 0; let contribEcom = 0; let arpuEcom = 0;
   let ecomColdAcq = 0; let lostEcom = 0; let churnEcomRate = 0; let ecomPool = 0;
-  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0);
+  // Отделённая логистика: владелец курьерской сети теряет свой бонус маржи,
+  // остальные — рыночную наценку на чужую доставку. Наказание одно, не два.
+  const splitCut = state.story.logisticsSplit && !hasPerk(asset, 'courier-logistics')
+    ? CONFIG.antitrust.ecomMarginCut : 0;
+  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0) - splitCut;
   if (ecomOn) {
     ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
     const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
@@ -4076,10 +4196,12 @@ function step(prevState, input = {}) {
   const anySpokeOn = taxiOn || ecomOn;
   const crossBudget = anySpokeOn ? (decisions.crossSell ?? 0) : 0;
   if (crossBudget > 0) {
-    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
+    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult
+      * (legalActive ? CONFIG.antitrust.legalCrossMult : 1);
     const storyCac = (state.story.crossCacMult ?? 1)
       * (hasPerk(asset, 'partner-network') ? 0.8 : 1);
-    const storyReach = state.story.crossReachMult ?? 1;
+    const storyReach = (state.story.crossReachMult ?? 1)
+      * (state.story.supervision ? CONFIG.antitrust.supervisionReachMult : 1);
     const hubFree = Math.max(0, state.food.users - state.both - state.bothEcom);
 
     // Прямые направления: хаб -> вертикаль
@@ -4177,9 +4299,11 @@ function step(prevState, input = {}) {
     const cinemaBoost = cinemaOn ? 1 + CONFIG.partners.cinemaConvBoost : 1;
     plusConv = Math.max(0, multiNow - state.plus.subs)
       * CONFIG.plus.baseConvShare * priceAttract * habitMult * cinemaBoost
+      * (state.story.plusConvMult ?? 1)
       * (trustBroken ? 0.7 : 1);
     const plusChurn = clamp(
       CONFIG.plus.baseChurn
+      + (state.story.plusChurnAdd ?? 0)
       + 0.10 * Math.max(0, plusPrice / CONFIG.plus.priceRef - 1)
       - (cinemaOn ? CONFIG.partners.cinemaChurnRelief : 0)
       - (ticketsOn ? 0.008 : 0),
@@ -4205,7 +4329,9 @@ function step(prevState, input = {}) {
   const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
   const ecomBudgets = ecomOn ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) : 0;
-  const opex = CONFIG.hqMonthly + (decisions.mgmt ?? 0) + crossBudget
+  // Пока идёт антимонопольное дело, юристы — такой же фикс, как офис
+  const legalCost = legalActive ? CONFIG.antitrust.legalMonthly : 0;
+  const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
     + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
     + licenseFee + ticketsFee;
@@ -4283,6 +4409,11 @@ function step(prevState, input = {}) {
     fixedTaxi,
     fixedEcom,
     licenseFee,
+    legalCost,
+    legalMonthsLeft: legalActive ? state.story.legalUntil - month + 1 : 0,
+    logisticsSplit: Boolean(state.story.logisticsSplit),
+    supervision: Boolean(state.story.supervision),
+    plusConvStoryMult: state.story.plusConvMult ?? 1,
     ticketsFee,
     plusPerkCost,
     hqCost: CONFIG.hqMonthly,
@@ -4400,6 +4531,9 @@ function step(prevState, input = {}) {
   state.pendingEvent = rollEvent(rng, month + 1, state.flags, {
     taxiOn: state.taxi.on,
     atWar: state.taxi.on && state.taxi.warUntil > month + 1,
+    // «Связывать» регулятору есть что, только если работает подписка или
+    // общая логистика: иначе выбор в антимонопольном деле фиктивный.
+    glued: state.plus.on || (state.ecom.on && hasPerk(asset, 'courier-logistics')),
     seen: state.seenEvents ?? [],
     lastId: event?.id ?? null,
   });
@@ -5758,6 +5892,13 @@ function buildAlerts(r) {
     alerts.push(['warn', t(r.crisisCut ? 'alertCrisisCut' : 'alertCrisis', {
       months: r.crisisMonthsLeft })]);
   }
+  if (r.legalMonthsLeft > 0) {
+    alerts.push(['warn', t('alertLegal', {
+      months: r.legalMonthsLeft, cost: money(r.legalCost),
+    })]);
+  }
+  if (r.logisticsSplit && state.ecom.on) alerts.push(['warn', t('alertSplit')]);
+  if (r.supervision && r.legalMonthsLeft === 0) alerts.push(['warn', t('alertSupervision')]);
   if (state.taxi.on && r.fill < 0.9 && r.demandTrips > 0) {
     alerts.push(['bad', t('alertNoDrivers', { fill: pct(r.fill, 0) }), 'lever:taxiSupply']);
   } else if (state.taxi.on && r.utilDrivers > 0 && r.utilDrivers < 0.45 && r.drivers > 300) {
@@ -6173,6 +6314,7 @@ function renderPnlTab() {
         ${r.taxiOn ? line(t('pnlFixedTaxi'), -r.fixedTaxi, 'neg', true) : ''}
         ${r.ecomOn ? line(t('pnlFixedEcom'), -r.fixedEcom, 'neg', true) : ''}
         ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
+        ${r.legalCost ? line(t('pnlLegal'), -r.legalCost, 'neg', true) : ''}
         ${line(t('pnlMgmt'), -(d.mgmt ?? 0), 'neg', true)}
         ${(r.taxiOn || r.ecomOn) ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
         ${line(t('pnlFoodOps'), -(d.foodOps ?? 0), 'neg', true)}

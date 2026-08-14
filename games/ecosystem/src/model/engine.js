@@ -261,6 +261,20 @@ export function step(prevState, input = {}) {
   if (mods.crossReachMult !== 1) {
     state.story.crossReachMult = (state.story.crossReachMult ?? 1) * mods.crossReachMult;
   }
+  // Антимонопольное дело: исход остаётся с холдингом до конца партии
+  if (mods.splitLogistics) state.story.logisticsSplit = true;
+  if (mods.plusConvMult !== 1) {
+    state.story.plusConvMult = (state.story.plusConvMult ?? 1) * mods.plusConvMult;
+  }
+  if (mods.plusChurnAdd) {
+    state.story.plusChurnAdd = (state.story.plusChurnAdd ?? 0) + mods.plusChurnAdd;
+  }
+  if (mods.ecoReliefCut) {
+    state.story.ecoReliefCut = (state.story.ecoReliefCut ?? 0) + mods.ecoReliefCut;
+  }
+  if (mods.legalMonths) state.story.legalUntil = month + mods.legalMonths - 1;
+  if (mods.supervisionOn) state.story.supervision = true;
+  const legalActive = (state.story.legalUntil ?? 0) >= month;
   const fedActive = (state.story.fedUntil ?? 0) >= month;
   const fedChurnAdd = fedActive ? (state.story.fedSoft ? 0.004 : 0.008) : 0;
   const fedAcqMult = fedActive ? (state.story.fedSoft ? 0.85 : 0.75) : 1;
@@ -338,7 +352,8 @@ export function step(prevState, input = {}) {
   const qEcom = ecomQuality(state, decisions) * crisisQualityMult;
   // Общая логистика: курьеры хаба возят посылки в непик — е-ком маржинальнее,
   // но переиспользование мощности имеет цену: пиковые конфликты бьют по еде
-  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn;
+  const logistics = hasPerk(asset, 'courier-logistics') && ecomOn
+    && !state.story.logisticsSplit;
   if (logistics && state.food.users > 0) {
     qFood *= 1 - ecomDef.logisticsPeakPenalty * Math.min(1, state.ecom.users / state.food.users);
   }
@@ -346,7 +361,12 @@ export function step(prevState, input = {}) {
   const multiAtStart = multiUsers(state);
   const subsShare = multiAtStart > 0 ? clamp(state.plus.subs / multiAtStart, 0, 1) : 0;
   // Подписчик уходит реже: Plus усиливает экосистемное удержание
-  const reliefBoth = clamp(CONFIG.ecoChurnRelief + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6);
+  // Открытая конкурентам подписка ослабляет саму склейку: клиент двух
+  // сервисов держится за холдинг слабее, чем держался бы за эксклюзив.
+  const reliefBoth = clamp(
+    CONFIG.ecoChurnRelief - (state.story.ecoReliefCut ?? 0)
+    + CONFIG.plus.churnReliefMax * subsShare, 0, 0.6,
+  );
 
   // --- 4. Хаб (стартовый актив): дожим, выручка, отток, возврат ---
   const takeIdx = clamp(decisions.foodTake ?? 1, 0.8, 1.3);
@@ -455,7 +475,11 @@ export function step(prevState, input = {}) {
   // --- 6. Е-ком: портфельная модель против маркетплейсов ---
   let revenueEcom = 0; let contribEcom = 0; let arpuEcom = 0;
   let ecomColdAcq = 0; let lostEcom = 0; let churnEcomRate = 0; let ecomPool = 0;
-  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0);
+  // Отделённая логистика: владелец курьерской сети теряет свой бонус маржи,
+  // остальные — рыночную наценку на чужую доставку. Наказание одно, не два.
+  const splitCut = state.story.logisticsSplit && !hasPerk(asset, 'courier-logistics')
+    ? CONFIG.antitrust.ecomMarginCut : 0;
+  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0) - splitCut;
   if (ecomOn) {
     ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
     const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
@@ -493,10 +517,12 @@ export function step(prevState, input = {}) {
   const anySpokeOn = taxiOn || ecomOn;
   const crossBudget = anySpokeOn ? (decisions.crossSell ?? 0) : 0;
   if (crossBudget > 0) {
-    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult;
+    const trustMult = (trustBroken ? 0.55 : 1) * mods.crossSellMult
+      * (legalActive ? CONFIG.antitrust.legalCrossMult : 1);
     const storyCac = (state.story.crossCacMult ?? 1)
       * (hasPerk(asset, 'partner-network') ? 0.8 : 1);
-    const storyReach = state.story.crossReachMult ?? 1;
+    const storyReach = (state.story.crossReachMult ?? 1)
+      * (state.story.supervision ? CONFIG.antitrust.supervisionReachMult : 1);
     const hubFree = Math.max(0, state.food.users - state.both - state.bothEcom);
 
     // Прямые направления: хаб -> вертикаль
@@ -594,9 +620,11 @@ export function step(prevState, input = {}) {
     const cinemaBoost = cinemaOn ? 1 + CONFIG.partners.cinemaConvBoost : 1;
     plusConv = Math.max(0, multiNow - state.plus.subs)
       * CONFIG.plus.baseConvShare * priceAttract * habitMult * cinemaBoost
+      * (state.story.plusConvMult ?? 1)
       * (trustBroken ? 0.7 : 1);
     const plusChurn = clamp(
       CONFIG.plus.baseChurn
+      + (state.story.plusChurnAdd ?? 0)
       + 0.10 * Math.max(0, plusPrice / CONFIG.plus.priceRef - 1)
       - (cinemaOn ? CONFIG.partners.cinemaChurnRelief : 0)
       - (ticketsOn ? 0.008 : 0),
@@ -622,7 +650,9 @@ export function step(prevState, input = {}) {
   const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
   const ecomBudgets = ecomOn ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) : 0;
-  const opex = CONFIG.hqMonthly + (decisions.mgmt ?? 0) + crossBudget
+  // Пока идёт антимонопольное дело, юристы — такой же фикс, как офис
+  const legalCost = legalActive ? CONFIG.antitrust.legalMonthly : 0;
+  const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
     + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
     + licenseFee + ticketsFee;
@@ -700,6 +730,11 @@ export function step(prevState, input = {}) {
     fixedTaxi,
     fixedEcom,
     licenseFee,
+    legalCost,
+    legalMonthsLeft: legalActive ? state.story.legalUntil - month + 1 : 0,
+    logisticsSplit: Boolean(state.story.logisticsSplit),
+    supervision: Boolean(state.story.supervision),
+    plusConvStoryMult: state.story.plusConvMult ?? 1,
     ticketsFee,
     plusPerkCost,
     hqCost: CONFIG.hqMonthly,
@@ -817,6 +852,9 @@ export function step(prevState, input = {}) {
   state.pendingEvent = rollEvent(rng, month + 1, state.flags, {
     taxiOn: state.taxi.on,
     atWar: state.taxi.on && state.taxi.warUntil > month + 1,
+    // «Связывать» регулятору есть что, только если работает подписка или
+    // общая логистика: иначе выбор в антимонопольном деле фиктивный.
+    glued: state.plus.on || (state.ecom.on && hasPerk(asset, 'courier-logistics')),
     seen: state.seenEvents ?? [],
     lastId: event?.id ?? null,
   });

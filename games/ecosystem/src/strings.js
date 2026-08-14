@@ -396,6 +396,18 @@ export const STRINGS = {
     ru: 'Подписка почти не растёт: премиальная цена сужает круг желающих.',
     en: 'The subscription is barely growing: the premium price narrows the audience.',
   },
+  alertLegal: {
+    ru: 'Идёт антимонопольное дело: юристы {cost}/мес ещё {months} мес., а внимание прессы режет кросс-селл.',
+    en: 'The antitrust case is running: {cost}/mo of lawyers for {months} more months, and press attention is cutting cross-sell.',
+  },
+  alertSplit: {
+    ru: 'Логистика отделена: е-ком покупает доставку по рынку — его маржа ниже, чем была бы внутри холдинга.',
+    en: 'Logistics is split off: e-commerce buys delivery at market rates, so its margin is below what it would be inside the holding.',
+  },
+  alertSupervision: {
+    ru: 'Единый аккаунт под надзором: согласия собираются строже, ёмкость кросс-селла ниже до конца партии.',
+    en: 'The unified account is under supervision: consent is stricter and cross-sell capacity stays lower to the end of the game.',
+  },
   jumpGo: { ru: 'показать →', en: 'show →' },
 
   // --- новости ---
@@ -542,6 +554,7 @@ export const STRINGS = {
   pnlFixedTaxi: { ru: 'Фикс такси', en: 'Taxi fixed costs' },
   pnlFixedEcom: { ru: 'Фикс е-кома', en: 'E-commerce fixed costs' },
   pnlHq: { ru: 'Управление холдинга', en: 'Holding HQ' },
+  pnlLegal: { ru: 'Юристы по антимонопольному делу', en: 'Antitrust lawyers' },
   pnlMgmt: { ru: 'Управляющая компания', en: 'Management company' },
   pnlCrossSell: { ru: 'Кросс-селл', en: 'Cross-sell' },
   pnlFoodOps: { ru: 'Сервис хаба', en: 'Hub service' },

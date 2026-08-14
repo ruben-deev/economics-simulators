@@ -42,6 +42,13 @@ export function neutralModifiers() {
     tripsPerUserAdd: 0,      // постоянная прибавка частоты поездок (аэропорт)
     crossCacMult: 1,         // постоянный множитель цены кросс-селла (кобренд)
     crossReachMult: 1,       // постоянный множитель ёмкости кросс-селла (кобренд)
+    // Антимонопольное дело: три исхода расходятся навсегда и в разных валютах
+    splitLogistics: false,   // логистика отделена: своя больше не возит дешевле рынка
+    plusConvMult: 1,         // постоянный множитель конверсии в подписку
+    plusChurnAdd: 0,         // постоянная прибавка к оттоку подписчиков
+    ecoReliefCut: 0,         // ослабление экосистемного удержания навсегда
+    legalMonths: 0,          // месяцы разбирательства: юристы каждый месяц
+    supervisionOn: false,    // надзор за единым аккаунтом остаётся навсегда
     notes: [],
   };
 }
@@ -428,6 +435,54 @@ export const EVENTS = [
     ],
   },
   {
+    // Кризис середины партии: единственное событие, которое движок выдаёт
+    // принудительно (месяцы 16–22), потому что середина партии иначе
+    // проседает — решения кончаются после запусков и возвращаются только
+    // в третьем акте. Бьёт ровно по механике экосистемы: связывание
+    // сервисов — это и есть то, за что регулятор берётся в реальности.
+    // Три исхода расходятся навсегда и платятся разными валютами:
+    // маржа логистики / сила подписки / деньги и время.
+    id: 'antitrust', weight: 10, minMonth: 16, once: true, needsGlue: true,
+    title: { ru: 'Антимонопольное дело о связывании сервисов', en: 'An antitrust case over service tying' },
+    text: {
+      ru: 'Служба по конкуренции считает, что холдинг связывает сервисы: своя логистика достаётся своему же е-кому дешевле рынка, а подписка запирает клиента внутри экосистемы. Дело открыто, решение за вами.',
+      en: 'The competition authority argues the holding is tying its services: your own logistics serves your own e-commerce below market, and the subscription locks customers inside the ecosystem. The case is open; the move is yours.',
+    },
+    lesson: {
+      ru: 'Экосистема выгодна ровно тем, чем раздражает регулятора: преимущество внутри холдинга — это барьер снаружи. Платить придётся структурой, продуктом или временем.',
+      en: 'An ecosystem is valuable for exactly what irritates the regulator: an internal advantage is an external barrier. You pay with structure, with product, or with time.',
+    },
+    options: [
+      {
+        label: { ru: 'Отделить логистику', en: 'Split off logistics' },
+        detail: {
+          ru: 'Доставка становится отдельной компанией и возит всем по рынку. Дело закрыто сразу, разово — 60 ₽ на клиента холдинга за реорганизацию. Цена в другом: е-ком навсегда теряет часть маржи, свою логистику он теперь покупает как все.',
+          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off ₽60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
+        },
+        // Разделение — это ещё и разовая реорганизация: юристы, перевод
+        // договоров, новые контуры. Цена растёт с размером холдинга, поэтому
+        // «бесплатно» этот исход не бывает даже без е-кома.
+        effects: { splitLogistics: true, oneOffCostPerUniqueUser: 60 },
+      },
+      {
+        label: { ru: 'Открыть подписку конкурентам', en: 'Open the subscription to rivals' },
+        detail: {
+          ru: 'Выгоды Plus перестают быть эксклюзивом холдинга: те же кешбэки клиент получит у конкурента. Денег это не стоит и структуру не ломает — но бьёт по самой склейке: подписчики уходят заметно чаще, а клиент двух сервисов больше не держится за вас так крепко.',
+          en: 'Plus perks stop being exclusive: a customer gets the same cashback at a rival. It costs no money and breaks no structure — but it hits the glue itself: subscribers churn markedly more, and a two-service customer no longer holds on to you as tightly.',
+        },
+        effects: { plusChurnAdd: 0.05, plusConvMult: 0.85, ecoReliefCut: 0.12 },
+      },
+      {
+        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate (₽10M/mo for 6 months)' },
+        detail: {
+          ru: 'Структура холдинга остаётся как есть. Полгода юристов и внимания прессы, а единый аккаунт до конца партии остаётся под надзором: согласия собираются строже, и ёмкость кросс-селла ниже.',
+          en: 'The holding’s structure stays as it is. Six months of lawyers and press attention — and the unified account stays under supervision to the end: consent is collected more strictly and cross-sell capacity is lower.',
+        },
+        effects: { legalMonths: 6, supervisionOn: true },
+      },
+    ],
+  },
+  {
     id: 'taxi_outage', weight: 5, minMonth: 6, needsTaxi: true,
     title: { ru: 'Сбой в приложении такси', en: 'Taxi app outage' },
     text: {
@@ -462,16 +517,30 @@ export function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
+// Месяц, к которому кризис середины партии приходит гарантированно, если
+// случай его не принёс: провал агентности в середине партии лечится не
+// вероятностью, а расписанием.
+export const FORCED_CRISIS_ID = 'antitrust';
+export const FORCED_CRISIS_MONTH = 22;
+
 // Выбирает событие месяца (или null). Вероятность события ~45%.
-// ctx: { taxiOn, atWar, seen, lastId } — контекст холдинга и история событий:
+// ctx: { taxiOn, atWar, glued, seen, lastId } — контекст холдинга и история:
 // сюжетные события (once) не повторяются, обычные не идут два месяца подряд.
 export function rollEvent(rng, month, flags = {}, ctx = {}) {
   if (month < 2) return null;
-  if (rng() > 0.45) return null;
   const seen = new Set(ctx.seen ?? []);
+  // Кризис середины партии не отдан на волю случая: если к сроку он не
+  // выпал сам, а холдингу есть что делить, он приходит принудительно.
+  if (month >= FORCED_CRISIS_MONTH && ctx.glued && !seen.has(FORCED_CRISIS_ID)
+    && ctx.lastId !== FORCED_CRISIS_ID) {
+    const forced = EVENTS.find((e) => e.id === FORCED_CRISIS_ID);
+    if (forced) return { ...forced };
+  }
+  if (rng() > 0.45) return null;
   const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0)
     && (!e.needsTaxi || ctx.taxiOn)
     && (!e.needsWar || ctx.atWar)
+    && (!e.needsGlue || ctx.glued)
     && !(e.once && seen.has(e.id))
     && e.id !== ctx.lastId);
   if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {

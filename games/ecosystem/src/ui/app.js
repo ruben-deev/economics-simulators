@@ -947,6 +947,13 @@ function buildAlerts(r) {
     alerts.push(['warn', t(r.crisisCut ? 'alertCrisisCut' : 'alertCrisis', {
       months: r.crisisMonthsLeft })]);
   }
+  if (r.legalMonthsLeft > 0) {
+    alerts.push(['warn', t('alertLegal', {
+      months: r.legalMonthsLeft, cost: money(r.legalCost),
+    })]);
+  }
+  if (r.logisticsSplit && state.ecom.on) alerts.push(['warn', t('alertSplit')]);
+  if (r.supervision && r.legalMonthsLeft === 0) alerts.push(['warn', t('alertSupervision')]);
   if (state.taxi.on && r.fill < 0.9 && r.demandTrips > 0) {
     alerts.push(['bad', t('alertNoDrivers', { fill: pct(r.fill, 0) }), 'lever:taxiSupply']);
   } else if (state.taxi.on && r.utilDrivers > 0 && r.utilDrivers < 0.45 && r.drivers > 300) {
@@ -1362,6 +1369,7 @@ function renderPnlTab() {
         ${r.taxiOn ? line(t('pnlFixedTaxi'), -r.fixedTaxi, 'neg', true) : ''}
         ${r.ecomOn ? line(t('pnlFixedEcom'), -r.fixedEcom, 'neg', true) : ''}
         ${line(t('pnlHq'), -r.hqCost, 'neg', true)}
+        ${r.legalCost ? line(t('pnlLegal'), -r.legalCost, 'neg', true) : ''}
         ${line(t('pnlMgmt'), -(d.mgmt ?? 0), 'neg', true)}
         ${(r.taxiOn || r.ecomOn) ? line(t('pnlCrossSell'), -(d.crossSell ?? 0), 'neg', true) : ''}
         ${line(t('pnlFoodOps'), -(d.foodOps ?? 0), 'neg', true)}

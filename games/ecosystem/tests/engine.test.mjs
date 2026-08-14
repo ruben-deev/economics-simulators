@@ -858,3 +858,62 @@ test('шкала вердиктов у каждого актива своя и �
   assert.ok(byId.tickets.excellent < byId.delivery.excellent,
     'у сложного актива планка ниже: иначе она недостижима');
 });
+
+test('кризис середины партии приходит сам и его исход остаётся навсегда', () => {
+  // Середина партии проседала по решениям: запуски позади, третий акт впереди.
+  // Антимонопольное дело — единственное событие с расписанием, а не с костью.
+  const grown = (choice) => {
+    let s = createInitialState('дело', 'delivery', {});
+    for (let i = 0; i < 26 && !s.over; i++) {
+      if (s.month >= 2 && s.cash < 150e6) s = raise(s, CONFIG.fundingOptions[1]).state;
+      const m = s.month + 1;
+      const ev = s.pendingEvent?.id;
+      s = step(s, {
+        decisions: {
+          ...DEFAULT_DECISIONS,
+          verticals: [
+            ...(m >= 1 ? ['taxi'] : []), ...(m >= 8 ? ['ecom'] : []),
+            ...(m >= 10 && s.taxi.on ? ['plus'] : []),
+          ],
+          crossSell: 4e6, mgmt: 9e6, foodOps: 5e6, taxiSupply: 9e6,
+          taxiMarketing: 12e6, ecomOps: 2e6, ecomMarketing: 6e6,
+        },
+        eventChoice: ev === 'antitrust' ? choice : 0,
+      }).state;
+    }
+    return s;
+  };
+  const split = grown(0);
+  assert.ok(split.seenEvents.includes('antitrust'),
+    'к 26-му месяцу дело случилось: оно приходит принудительно, а не по кости');
+  assert.equal(split.story.logisticsSplit, true, 'исход «отделить логистику» закреплён');
+
+  const opened = grown(1);
+  assert.ok((opened.story.plusChurnAdd ?? 0) > 0, 'открытая подписка навсегда теряет удержание');
+  assert.ok((opened.story.ecoReliefCut ?? 0) > 0, 'и склейка экосистемы слабеет');
+
+  const sued = grown(2);
+  assert.equal(sued.story.supervision, true, 'после суда остаётся надзор');
+  const legalPaid = sued.history.some((r) => r.legalCost > 0);
+  assert.ok(legalPaid, 'юристы попали в расходы месяца');
+  const legalOver = sued.history[sued.history.length - 1].legalMonthsLeft;
+  assert.equal(legalOver, 0, 'дело конечно: юристы не платятся вечно');
+});
+
+test('дело не приходит, пока холдингу нечего связывать', () => {
+  // Без подписки и без общей логистики выбор в деле был бы фиктивным
+  let s = createInitialState('без-склейки', 'streaming', {});
+  for (let i = 0; i < 26 && !s.over; i++) {
+    if (s.month >= 2 && s.cash < 150e6) s = raise(s, CONFIG.fundingOptions[1]).state;
+    s = step(s, {
+      decisions: {
+        ...DEFAULT_DECISIONS,
+        verticals: s.month >= 0 ? ['taxi'] : [],
+        crossSell: 3e6, mgmt: 6e6, foodOps: 5e6, taxiSupply: 9e6, taxiMarketing: 12e6,
+      },
+      eventChoice: 0,
+    }).state;
+  }
+  assert.ok(!s.seenEvents.includes('antitrust'),
+    'без подписки и общей логистики связывать нечего — дела нет');
+});

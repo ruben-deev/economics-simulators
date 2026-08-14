@@ -78,6 +78,26 @@ so a single ruler would call an excellent ticketing game “a modest outcome”.
 Thresholds live in the asset descriptor at 80% / 45% / 15% of its measured
 optimum. The leaderboard stays shared: the score itself is not scaled.
 
+## The mid-game crisis: an antitrust case
+
+The only event on a schedule rather than a die roll: if it has not fired by
+month 22 it arrives forcibly — provided the holding has something to tie
+together (a live subscription or shared logistics). Otherwise the middle of
+the game sags: the launches are behind you and act three is ahead.
+
+Three outcomes diverge permanently and are paid in different currencies:
+
+| Outcome | The price | What stays intact |
+|---|---|---|
+| Split off logistics | a one-off ₽60 per customer plus a permanent e-commerce margin loss (the courier network’s owner loses its bonus; everyone else pays a market mark-up) | the subscription and the glue |
+| Open the subscription to rivals | +5 pp of subscriber churn and permanently weaker ecosystem retention | the structure and the cash |
+| Litigate | ₽10M a month for six months, worse cross-sell while the case runs, and supervision of the unified account to the end of the game | the structure and the subscription |
+
+Domination audit on a full build: 13/75/13 with cheap capital, 40/20/40 with
+expensive capital. On a build without e-commerce, splitting logistics is
+predictably the cheapest — that is not an imbalance but a property of
+structure: it is easy to concede what you do not have.
+
 ## The price of decisions (an extract from the measurements)
 
 | Decision | Shape of the answer |
