@@ -41,6 +41,14 @@
       background: var(--panel-2);
     }
     .card-actions a.primary { background: var(--accent); color: #06210f; border-color: transparent; }
+    .series-card:empty { display: none; }
+    .series-card { margin-top: 26px; gap: 6px; }
+    .series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .series-head span { color: var(--muted); font-size: 12px; }
+    .series-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
+    .series-name { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .series-bar { height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+    .series-bar i { display: block; height: 100%; background: var(--accent); }
     .top-block { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 4px; }
     .top-list { list-style: none; margin: 2px 0 0; padding: 0; }
     .top-list li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -141,6 +149,8 @@
       </section>
     </div>
 
+    <section class="card series-card" id="series-card"></section>
+
     <p class="eco-label" id="eco-label"></p>
     <section class="card eco-card">
       <div class="eco-head">
@@ -170,7 +180,7 @@
     // Витрина живёт по тем же правилам, что и игры: язык хранится в одном
     // ключе localStorage, поэтому выбор со стартовой страницы переносится внутрь.
     import { t, setLang, getLang, detectLang, setStrings } from './shared/i18n.js';
-    import { legacyUnlocks, conglomerateUnlocked } from './shared/meta.js';
+    import { legacyUnlocks, conglomerateUnlocked, seriesScorecard } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
 
     // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
@@ -202,6 +212,37 @@
             <ol class="top-list">${rows}${mineRow}</ol></div>`;
         }).catch(() => { node.textContent = ''; });
       }
+    }
+
+    // Табель серии: одна строка о том, где игрок на пути из четырёх игр.
+    // Прогресс каждой игры нормирован её «крепким» финалом, поэтому 100% —
+    // это «сыграно крепко всё», а не «набит рекорд в одной».
+    function renderSeries() {
+      const node = document.getElementById('series-card');
+      if (!node) return;
+      const ru = getLang() === 'ru';
+      let sc;
+      try { sc = seriesScorecard(); } catch { node.innerHTML = ''; return; }
+      if (!sc.games.some((g) => g.score > 0)) { node.innerHTML = ''; return; }
+      const cells = sc.games.map((g) => {
+        const p = Math.round(Math.min(1, g.ratio) * 100);
+        return `<div class="series-item">
+          <div class="series-name">${g.done ? '★' : '☆'} ${g.tag}</div>
+          <div class="series-bar"><i style="width:${p}%"></i></div>
+        </div>`;
+      }).join('');
+      const done = sc.missing.length === 0;
+      const tail = done
+        ? (ru ? 'Весь путь пройден: серия сыграна целиком.' : 'The whole path is walked: the series is complete.')
+        : (ru ? `Не хватает: ${sc.missing.join(', ')}.` : `Missing: ${sc.missing.join(', ')}.`);
+      node.innerHTML = `<div class="series-head">
+          <b>${ru ? 'Табель серии' : 'Series scorecard'}</b>
+          <span>${Math.round(sc.share * 100)}% · ${sc.filled}/${sc.total}</span>
+        </div>
+        <div class="series-grid">${cells}</div>
+        <p class="sub" style="margin-top:8px">${tail} ${ru
+          ? 'Полоса — прогресс до «крепкого» финала игры; выше шкала не растёт.'
+          : 'The bar is progress to that game’s solid finale; it does not grow beyond.'}</p>`;
     }
 
     function renderConglomeratePath() {
@@ -314,6 +355,7 @@
       set('eco-play', t('play'));
       renderConglomeratePath();
       renderTops();
+      renderSeries();
 
       set('tickets-title', t('ticketsTitle'));
       set('tickets-sub', t('ticketsSub'));

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.10.9" />
+  <meta name="app-version" content="1.10.10" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1560,6 +1560,15 @@ score = valuation × your stake`,
     ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
     en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
   },
+  metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
+  metaReturnText: {
+    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал сейчас — {ratio} «крепких». Следующая ступень наследия — {next}: для неё нужен итог от {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
+    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale is currently {ratio} “solid” finishes. The next legacy step is {next}, which needs a result of {target} or more. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+  },
+  metaReturnMaxed: {
+    ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
+    en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
+  },
   metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
   metaContinueText: {
     ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
@@ -1989,6 +1998,78 @@ function conglomerateUnlocked() {
 // Строго косметика — множителя к счёту нет и не будет.
 function tripleCrown(unlocks = legacyUnlocks()) {
   return Boolean(unlocks.delivery && unlocks.streaming && unlocks.tickets);
+}
+
+/**
+ * Табель серии: где игрок находится на пути из четырёх игр. Считается по
+ * локальным рекордам и введённым строкам, поэтому одинаково работает и на
+ * витрине, и внутри любой игры.
+ *
+ * Прогресс каждой игры нормируется её «крепким» порогом и срезается на
+ * LEGACY_RATIO_CAP — иначе одна рекордная партия делала бы табель бессмысленным.
+ * Возвращает { games: [...], filled, total, share, missing }.
+ */
+function seriesScorecard() {
+  const scores = legacyScores();
+  const best = novogradBest();
+  const games = LEGACY_GAMES.map((g) => {
+    const score = Number(scores[g.assetId]) || 0;
+    return {
+      assetId: g.assetId,
+      tag: g.tag,
+      score,
+      threshold: g.threshold,
+      ratio: Math.min(LEGACY_RATIO_CAP, g.threshold > 0 ? score / g.threshold : 0),
+      done: score >= g.threshold,
+    };
+  });
+  games.push({
+    assetId: 'ecosystem',
+    tag: 'НОВОГРАД',
+    score: best,
+    threshold: NOVOGRAD_WORTHY,
+    ratio: Math.min(LEGACY_RATIO_CAP, best / NOVOGRAD_WORTHY),
+    done: conglomerateUnlocked(),
+  });
+  const filled = games.filter((g) => g.done).length;
+  // Доля пути: у каждой игры равный вес, внутри игры — прогресс до «крепкого»
+  // финала. Сыграть все четыре крепко = 100%; дальше табель не растёт.
+  const share = games.reduce((a, g) => a + Math.min(1, g.ratio), 0) / games.length;
+  return {
+    games,
+    filled,
+    total: games.length,
+    share,
+    missing: games.filter((g) => !g.done).map((g) => g.tag),
+  };
+}
+
+/**
+ * Возвращение в базовую игру после экосистемы: что даст новый финал.
+ * Чисто справочный расчёт — экономику зачётной партии он не меняет
+ * (правило набора: обратные бонусы неэкономические). Нужен, чтобы у
+ * повторной партии была ясная цель, а не «сыграть ещё раз».
+ *
+ * Возвращает { played, best, ratio, nextRatio, target, maxed } или null,
+ * если НОВОГРАД ещё не открывали — тогда звать возвращаться не за чем.
+ */
+function returnTarget(assetId) {
+  if (!novogradBest()) return null;
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game) return null;
+  const best = Number(legacyScores()[assetId]) || 0;
+  const ratio = game.threshold > 0 ? best / game.threshold : 0;
+  const capped = Math.min(LEGACY_RATIO_CAP, ratio);
+  // Следующая ступень наследия — целое число «крепких финалов»
+  const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
+  return {
+    played: best > 0,
+    best,
+    ratio: capped,
+    nextRatio,
+    target: Math.round(game.threshold * nextRatio),
+    maxed: capped >= LEGACY_RATIO_CAP,
+  };
 }
 
 // Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
@@ -6164,6 +6245,24 @@ function conglomerateBadgeHtml() {
 // Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
 // актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
 // где у человека лежит соседняя игра.
+// Возвращение из экосистемы. Игрок, уже строивший НОВОГРАД, приходит сюда
+// не «сыграть ещё раз», а прокачать стартовый актив: его финал здесь —
+// это база, ARPU и казна холдинга там. Показываем следующую ступень
+// наследия числом. Строго справочно: экономика этой партии не меняется —
+// обратные бонусы набора неэкономические по правилу.
+function returnHtml() {
+  const r = returnTarget('delivery');
+  if (!r) return '';
+  const body = r.maxed
+    ? t('metaReturnMaxed')
+    : t('metaReturnText', {
+        ratio: r.ratio.toFixed(1),
+        next: String(r.nextRatio),
+        target: money(r.target),
+      });
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
+}
+
 function novogradInviteHtml() {
   const link = window.__homeUrl
     ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
@@ -6209,6 +6308,7 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
     </div>
     ${novogradInviteHtml()}
+    ${returnHtml()}
     ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
@@ -6249,6 +6349,7 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
+    ${returnHtml()}
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">

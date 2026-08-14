@@ -19,6 +19,7 @@ import {
 } from '../model/engine.js';
 import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
+  seriesScorecard,
   tripleCrown, NOVOGRAD_WORTHY, LEGACY_GAMES,
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
@@ -29,6 +30,9 @@ import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
+
+// Куда ведут ссылки обратного пути: имена папок игр набора
+const LEGACY_DIRS = { delivery: 'foodtech', streaming: 'cinema', tickets: 'tickets' };
 
 const SAVE_KEY = 'novograd-save-v1';
 const RECORDS_KEY = 'novograd-records';
@@ -1670,6 +1674,24 @@ function showGameOver() {
     <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
     ${t('crownText')}</div>` : '';
 
+  // Обратный путь: если до короны не хватает игр, называем их и даём ссылку.
+  // Раньше приглашение работало только в одну сторону — из старых игр сюда.
+  let backHtml = '';
+  if (!crown && !s.bankrupt) {
+    const sc = seriesScorecard();
+    const missing = sc.missing.filter((tag) => tag !== 'НОВОГРАД');
+    if (missing.length) {
+      const links = LEGACY_GAMES
+        .filter((g) => missing.includes(g.tag))
+        .map((g) => (window.__homeUrl
+          ? `<a class="jump" href="../${LEGACY_DIRS[g.assetId]}/index.html">${g.tag}</a>`
+          : g.tag))
+        .join(' · ');
+      backHtml = `<div class="hint-box" style="margin-top:10px">
+        <b>${t('backTitle')}</b> ${t('backText', { games: links })}</div>`;
+    }
+  }
+
   const line = resultString({
     tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
@@ -1691,6 +1713,7 @@ function showGameOver() {
       asset: tx(assetById(state.assetId).short),
     })}</p>
     ${crownHtml}
+    ${backHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       revenue: money(r.revenue), arpu: num(r.arpuHolding),

@@ -176,5 +176,77 @@ export function tripleCrown(unlocks = legacyUnlocks()) {
   return Boolean(unlocks.delivery && unlocks.streaming && unlocks.tickets);
 }
 
+/**
+ * Табель серии: где игрок находится на пути из четырёх игр. Считается по
+ * локальным рекордам и введённым строкам, поэтому одинаково работает и на
+ * витрине, и внутри любой игры.
+ *
+ * Прогресс каждой игры нормируется её «крепким» порогом и срезается на
+ * LEGACY_RATIO_CAP — иначе одна рекордная партия делала бы табель бессмысленным.
+ * Возвращает { games: [...], filled, total, share, missing }.
+ */
+export function seriesScorecard() {
+  const scores = legacyScores();
+  const best = novogradBest();
+  const games = LEGACY_GAMES.map((g) => {
+    const score = Number(scores[g.assetId]) || 0;
+    return {
+      assetId: g.assetId,
+      tag: g.tag,
+      score,
+      threshold: g.threshold,
+      ratio: Math.min(LEGACY_RATIO_CAP, g.threshold > 0 ? score / g.threshold : 0),
+      done: score >= g.threshold,
+    };
+  });
+  games.push({
+    assetId: 'ecosystem',
+    tag: 'НОВОГРАД',
+    score: best,
+    threshold: NOVOGRAD_WORTHY,
+    ratio: Math.min(LEGACY_RATIO_CAP, best / NOVOGRAD_WORTHY),
+    done: conglomerateUnlocked(),
+  });
+  const filled = games.filter((g) => g.done).length;
+  // Доля пути: у каждой игры равный вес, внутри игры — прогресс до «крепкого»
+  // финала. Сыграть все четыре крепко = 100%; дальше табель не растёт.
+  const share = games.reduce((a, g) => a + Math.min(1, g.ratio), 0) / games.length;
+  return {
+    games,
+    filled,
+    total: games.length,
+    share,
+    missing: games.filter((g) => !g.done).map((g) => g.tag),
+  };
+}
+
+/**
+ * Возвращение в базовую игру после экосистемы: что даст новый финал.
+ * Чисто справочный расчёт — экономику зачётной партии он не меняет
+ * (правило набора: обратные бонусы неэкономические). Нужен, чтобы у
+ * повторной партии была ясная цель, а не «сыграть ещё раз».
+ *
+ * Возвращает { played, best, ratio, nextRatio, target, maxed } или null,
+ * если НОВОГРАД ещё не открывали — тогда звать возвращаться не за чем.
+ */
+export function returnTarget(assetId) {
+  if (!novogradBest()) return null;
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game) return null;
+  const best = Number(legacyScores()[assetId]) || 0;
+  const ratio = game.threshold > 0 ? best / game.threshold : 0;
+  const capped = Math.min(LEGACY_RATIO_CAP, ratio);
+  // Следующая ступень наследия — целое число «крепких финалов»
+  const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
+  return {
+    played: best > 0,
+    best,
+    ratio: capped,
+    nextRatio,
+    target: Math.round(game.threshold * nextRatio),
+    maxed: capped >= LEGACY_RATIO_CAP,
+  };
+}
+
 // Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
 export const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];

@@ -799,6 +799,11 @@ export const STRINGS = {
     ru: 'Строка года конгломерата помечена тегом НОВОГРАД+ и идёт в отдельную таблицу: зачётный результат партии она не заменяет.',
     en: 'The conglomerate-year string carries the NOVOGRAD+ tag and goes to a separate table: it does not replace your scored result.',
   },
+  backTitle: { ru: 'До «Конгломерата Новограда» осталось немного.', en: 'The Novograd Conglomerate is within reach.' },
+  backText: {
+    ru: 'Секретную концовку открывают финалы всех трёх игр набора плюс достойный НОВОГРАД. Вам не хватает: {games}. Каждый выигранный там финал заодно усиливает старт здесь.',
+    en: 'The secret ending needs finales of all three games of the set plus a worthy NOVOGRAD. You are missing: {games}. Each finale you win there also strengthens your start here.',
+  },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'See the charts' },
   deathTitle: { ru: 'Деньги на исходе', en: 'The money is running out' },
