@@ -26,7 +26,7 @@ import { createRng } from '../../../../shared/rng.js';
 import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
-import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
+import { makeGoal, makeEndlessGoal, goalProgress, applyGoalOutcome } from './board.js';
 
 // Сезонность: такси зимой возит больше (пик в январе), еда колышется слабее
 export function seasonFood(month) {
@@ -738,15 +738,17 @@ export function step(prevState, input = {}) {
     multiShare,
     profitableMonths: state.board.profitableMonths,
     uniqueUsers: unique,
+    // Рост за пост-эндгейм считается от замороженного зачётного счёта
+    growth: endlessGrowth(state),
   });
   let goalOutcome = null;
-  if (state.board.goal && month % CONFIG.boardYearMonths === 0) {
+  if (state.board.goal && month % CONFIG.boardYearMonths === 0 && !state.endless) {
     goalOutcome = applyGoalOutcome(state, state.board.goal, progress, month);
     state.board.history.push(goalOutcome);
     state.board.profitableMonths = 0;
     const next = state.board.goal.year + 1;
-    state.board.goal = month < CONFIG.monthsTotal
-      ? makeGoal(next, state, unique) : null;
+    state.board.goal = state.endless ? state.board.goal
+      : (month < CONFIG.monthsTotal ? makeGoal(next, state, unique) : null);
   }
   let forcedDilution = 0;
   let boardInjection = 0;
@@ -913,6 +915,7 @@ export function step(prevState, input = {}) {
 
   if (state.cash < 0) state.over = 'bankrupt';
   else if (month >= CONFIG.monthsTotal && !state.endless) state.over = 'finished';
+  else if (state.endless && month >= (state.endlessUntil ?? Infinity)) state.over = 'endless-done';
 
   const sop = sumOfParts(state);
   report.valuation = sop.total;
@@ -934,13 +937,27 @@ export function step(prevState, input = {}) {
 // ----------------------------------------------------------------------------
 // Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован.
 // ----------------------------------------------------------------------------
+/**
+ * Пост-эндгейм — «год конгломерата». Партия уже зачтена (state.scored
+ * заморожен в момент финиша), поэтому счёт этим актом не переписывается:
+ * играют не за оценку, а за зрелость. Правило акта — чужих денег больше нет,
+ * раунды закрыты; совет ставит одну цель на двенадцать месяцев.
+ */
 export function enterEndless(state) {
   const next = deepClone(state);
-  if (next.over === 'finished') {
-    next.endless = true;
-    next.over = null;
-  }
+  if (next.over !== 'finished') return next;
+  next.endless = true;
+  next.over = null;
+  next.endlessUntil = CONFIG.monthsTotal + CONFIG.endless.months;
+  next.board.goal = makeEndlessGoal(next);
+  next.board.profitableMonths = 0;
+  next.restrictions = null;
   return next;
+}
+
+// Раунды в пост-эндгейме закрыты: это и есть его главное ограничение
+export function fundingOpen(state) {
+  return !state.endless && state.month >= CONFIG.minMonthForFunding;
 }
 
 // ----------------------------------------------------------------------------
@@ -1025,6 +1042,9 @@ export function fundingOffer(state, amount) {
 }
 
 export function raise(state, amount) {
+  // В «году конгломерата» раунды закрыты: акт про то, чтобы держаться
+  // без чужих денег. Отказ молчаливый — интерфейс кнопку и не показывает.
+  if (state.endless) return { state, offer: null };
   const offer = fundingOffer(state, amount);
   const next = deepClone(state);
   next.cash += amount;
@@ -1052,6 +1072,15 @@ export function explain(prev, cur) {
 }
 
 // Итоговый счёт партии: стоимость доли = доля x (оценка + касса).
+// Рост холдинга с момента заморозки зачётного счёта — мера «года
+// конгломерата»: выросли ли вы, когда чужие деньги кончились.
+export function endlessGrowth(state) {
+  const ranked = state.scored?.equityValue ?? 0;
+  if (!state.endless || ranked <= 0) return 0;
+  const now = (valuation(state) + Math.max(0, state.cash)) * state.equity;
+  return now / ranked - 1;
+}
+
 export function finalScore(state) {
   const v = valuation(state);
   return {
@@ -1062,5 +1091,36 @@ export function finalScore(state) {
     cash: state.cash,
     months: state.month,
     bankrupt: state.over === 'bankrupt',
+  };
+}
+
+/**
+ * Итог «года конгломерата». Зачётный счёт партии не переписывается —
+ * он заморожен на 36-м месяце (state.scored). Здесь считается отдельный
+ * итог акта: выполнена ли цель совета и во что вырос холдинг без раундов.
+ */
+export function endlessScore(state) {
+  const now = finalScore(state);
+  const ranked = state.scored ?? now;
+  const goal = state.board?.goal;
+  const unique = uniqueUsers(state);
+  const multiShare = unique > 0 ? multiUsers(state) / unique : 0;
+  const progress = goalProgress(goal, {
+    taxiUsers: state.taxi.users,
+    multiShare,
+    profitableMonths: state.board?.profitableMonths ?? 0,
+    uniqueUsers: unique,
+    growth: endlessGrowth(state),
+  });
+  return {
+    ...now,
+    rankedValue: ranked.equityValue,
+    // Рост за год конгломерата — то, ради чего этот акт и играют
+    growth: endlessGrowth(state),
+    multiShare,
+    profitableMonths: state.board?.profitableMonths ?? 0,
+    goalDone: Boolean(progress?.done),
+    progress,
+    raisedInAct: 0,
   };
 }

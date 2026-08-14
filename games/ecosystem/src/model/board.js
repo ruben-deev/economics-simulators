@@ -25,7 +25,22 @@ export const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
   glue: 'glue',             // доля клиентов с двумя и более сервисами
   profit: 'profit',         // прибыльные месяцы, база не сжимается
+  // Пост-эндгейм: зрелость вместо экспансии — склейка и прибыль
+  // одновременно, и всё это без единого раунда.
+  conglomerate: 'conglomerate',
 };
+
+// Цель «года конгломерата»: держать склейку и прибыль сразу, без чужих денег.
+// Провалить её нельзя «пережить» раундом — раунды в этом акте закрыты.
+export function makeEndlessGoal(state) {
+  return {
+    year: (state.board?.goal?.year ?? 3) + 1,
+    type: GOAL_TYPES.conglomerate,
+    target: CONFIG.endless.multiShareTarget,
+    growthTarget: CONFIG.endless.growthTarget,
+    endless: true,
+  };
+}
 
 export function makeGoal(year, state, uniqueUsers) {
   if (year === 1) {
@@ -84,6 +99,19 @@ export function goalProgress(goal, ctx) {
   const { taxiUsers, multiShare, profitableMonths, uniqueUsers } = ctx;
   if (goal.type === GOAL_TYPES.secondLeg) {
     return { value: taxiUsers, target: goal.target, done: taxiUsers >= goal.target };
+  }
+  if (goal.type === GOAL_TYPES.conglomerate) {
+    // Две планки сразу: склейка и рост холдинга. Ни одну нельзя купить
+    // раундом — в этом акте чужих денег нет. Прибыльность к 36-му месяцу
+    // есть у всех, поэтому планкой она быть перестала (замер).
+    const growth = ctx.growth ?? 0;
+    return {
+      value: multiShare,
+      target: goal.target,
+      growth,
+      growthTarget: goal.growthTarget,
+      done: multiShare >= goal.target && growth >= goal.growthTarget,
+    };
   }
   if (goal.type === GOAL_TYPES.glue) {
     return {

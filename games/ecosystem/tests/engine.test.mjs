@@ -6,9 +6,9 @@ import {
 } from '../src/model/config.js';
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
-  legacyValuationFloor,
+  legacyValuationFloor, enterEndless, endlessScore,
   finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
-  enterEndless, multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
+  multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
 } from '../src/model/engine.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
 import { EVENTS, eventById, neutralModifiers, applyEvent } from '../src/model/events.js';
@@ -958,4 +958,47 @@ test('касса и оценка прошлой игры переносятся 
   const offerCarried = fundingOffer(big, CONFIG.fundingOptions[1]);
   assert.ok(offerCarried.dilution < offerPlain.dilution,
     'та же сумма стоит меньшей доли: прошлая оценка работает');
+});
+
+test('год конгломерата: свой акт, свои правила, зачётный счёт заморожен', () => {
+  let s = createInitialState('пост', 'delivery', {});
+  const dec = (st) => ({
+    ...DEFAULT_DECISIONS,
+    verticals: [
+      ...(st.month >= 0 ? ['taxi'] : []), ...(st.month >= 8 ? ['ecom'] : []),
+      ...(st.month >= 10 && st.taxi.on ? ['plus'] : []),
+    ],
+    crossSell: 4e6, mgmt: 10e6, foodOps: 5e6, foodMarketing: 2e6,
+    taxiSupply: 9e6, taxiMarketing: 12e6, ecomOps: 2e6, ecomMarketing: 6e6,
+  });
+  while (!s.over) {
+    if (s.month >= 2 && s.cash < 120e6) s = raise(s, CONFIG.fundingOptions[1]).state;
+    s = step(s, { decisions: dec(s), eventChoice: 0 }).state;
+  }
+  assert.equal(s.over, 'finished');
+  const ranked = s.scored.equityValue;
+
+  s = enterEndless(s);
+  assert.equal(s.over, null, 'акт продолжает ту же партию');
+  assert.equal(s.board.goal.type, 'conglomerate', 'совет ставит цель акта');
+  assert.equal(s.endlessUntil, CONFIG.monthsTotal + CONFIG.endless.months);
+
+  // Раунды закрыты: главное ограничение акта
+  const before = s.equity;
+  const attempt = raise(s, CONFIG.fundingOptions[2]);
+  assert.equal(attempt.offer, null, 'раунд в акте не выдаётся');
+  assert.equal(attempt.state.equity, before, 'доля не размывается');
+  assert.equal(attempt.state.cash, s.cash, 'касса не пополняется');
+
+  while (!s.over) s = step(s, { decisions: dec(s), eventChoice: 0 }).state;
+  assert.equal(s.over, 'endless-done', 'акт конечен: год и не больше');
+  assert.equal(s.month, CONFIG.monthsTotal + CONFIG.endless.months);
+  assert.equal(s.scored.equityValue, ranked, 'зачётный счёт партии не переписан');
+
+  const e = endlessScore(s);
+  assert.equal(e.rankedValue, ranked);
+  assert.ok(Number.isFinite(e.growth) && Number.isFinite(e.multiShare));
+  assert.equal(typeof e.goalDone, 'boolean');
+  // Рост считается от замороженного счёта, а не от нуля
+  assert.ok(Math.abs(e.growth - (e.equityValue / ranked - 1)) < 1e-9);
 });

@@ -15,6 +15,7 @@ import {
   fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty,
   plusAvailable, plusLaunchCost, cinemaLicenseFee, ticketsPartnerFee, hasPerk,
   startingCash, legacyValuationFloor, legacyReputationMult,
+  enterEndless, endlessScore, endlessGrowth,
 } from '../model/engine.js';
 import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
@@ -808,6 +809,11 @@ function renderVerticals() {
 // Совет директоров: цель года
 // ----------------------------------------------------------------------------
 function goalText(goal) {
+  if (goal.type === 'conglomerate') {
+    return t('goalConglomerate', {
+      glue: pct(goal.target, 0), growth: pct(goal.growthTarget, 0),
+    });
+  }
   if (goal.type === 'secondLeg') return t('goalSecondLeg', { target: num(goal.target, 0) });
   if (goal.type === 'glue') {
     return t('goalGlue', { target: pct(goal.target, 0), floor: num(goal.uniqueFloor, 0) });
@@ -824,8 +830,11 @@ function renderBoard() {
     multiShare: r?.multiShare ?? 0,
     profitableMonths: state.board.profitableMonths,
     uniqueUsers: r?.uniqueUsers ?? uniqueUsers(state),
+    growth: endlessGrowth(state),
   });
-  const now = goal.type === 'secondLeg' ? num(p.value, 0)
+  const now = goal.type === 'conglomerate'
+    ? t('goalConglomerateNow', { glue: pct(p.value, 1), growth: signedPct(p.growth, 1) })
+    : goal.type === 'secondLeg' ? num(p.value, 0)
     : goal.type === 'glue' ? pct(p.value, 1)
     : `${p.value} / ${goal.target}`;
   const past = (state.board.history ?? []).map((h) =>
@@ -845,6 +854,11 @@ function renderBoard() {
 // Инвестиции
 // ----------------------------------------------------------------------------
 function renderFunding() {
+  // В «году конгломерата» раундов нет: акт про то, чтобы держаться сам
+  if (state.endless) {
+    el('funding').innerHTML = `<div class="hint-box">${t('fundingClosedEndless')}</div>`;
+    return;
+  }
   const canRaise = state.month >= CONFIG.minMonthForFunding && !state.over;
   const v = valuation(state);
   const rows = CONFIG.fundingOptions.map((amount) => {
@@ -1598,7 +1612,41 @@ function recordsBlockHtml(s) {
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Финал «года конгломерата»: зачётный счёт не переписывается, показываем
+// итог самого акта — выросли ли вы без чужих денег и удержали ли склейку.
+function showEndlessOver() {
+  const e = endlessScore(state);
+  const line = resultString({
+    tag: `${GAME_TAG}+`, version: APP_VERSION, seed: state.seed,
+    score: Math.round(e.equityValue), turns: e.months,
+  });
+  modal(`<h2>🏙️ ${t('endlessOverTitle')}</h2>
+    <p class="funding-note">${t(e.goalDone ? 'endlessWon' : 'endlessLost')}</p>
+    <div class="score-grid">
+      <div class="stat"><div class="s-label">${t('endlessRanked')}</div><div class="s-value">${money(e.rankedValue)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessNow')}</div><div class="s-value">${money(e.equityValue)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessGrowth')}</div><div class="s-value">${signedPct(e.growth, 1)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessGlue')}</div><div class="s-value">${pct(e.multiShare, 1)}</div></div>
+    </div>
+    <p class="funding-note">${t('endlessScaleNote', {
+      glue: pct(CONFIG.endless.multiShareTarget, 0),
+      growth: pct(CONFIG.endless.growthTarget, 0),
+    })}</p>
+    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
+    <p class="funding-note">${t('endlessResultNote')}</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+    </div>`,
+  [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
+   { label: t('gameOverCharts'), onClick: () => {} }]);
+  el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
+  });
+}
+
 function showGameOver() {
+  if (state.over === 'endless-done') { showEndlessOver(); return; }
   // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
@@ -1658,6 +1706,22 @@ function showGameOver() {
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
+    // Пост-эндгейм: партия зачтена, счёт заморожен — дальше играют за
+    // зрелость холдинга. Предлагаем только выжившим: продолжать банкротство
+    // нечем.
+    ...(s.bankrupt ? [] : [{ label: t('endlessStart'), onClick: () => {
+      state = enterEndless(state);
+      save();
+      renderAll();
+      modal(`<h2>🏙️ ${t('endlessTitle')}</h2>
+        <p class="funding-note">${t('endlessIntro', {
+          months: CONFIG.endless.months,
+          glue: pct(CONFIG.endless.multiShareTarget, 0),
+          growth: pct(CONFIG.endless.growthTarget, 0),
+        })}</p>
+        <p class="funding-note">${t('endlessRule')}</p>`,
+        [{ label: t('helpModalOk'), primary: true, onClick: () => {} }]);
+    } }]),
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
   ]);

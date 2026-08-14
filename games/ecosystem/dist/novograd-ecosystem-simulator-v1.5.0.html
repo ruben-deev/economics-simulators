@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.4.0" />
+  <meta name="app-version" content="1.5.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1765,6 +1765,47 @@ const STRINGS = {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
     en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a rouble is added to the score — conglomerates are not built for multipliers.',
   },
+  // --- пост-эндгейм: год конгломерата ---
+  endlessStart: { ru: 'Играть год конгломерата', en: 'Play the conglomerate year' },
+  endlessTitle: { ru: 'Год конгломерата', en: 'The conglomerate year' },
+  endlessIntro: {
+    ru: 'Партия зачтена, счёт в таблице заморожен. Дальше — ещё {months} месяцев, и играют уже не за оценку, а за зрелость: совет хочет видеть склейку не ниже {glue} и рост холдинга на {growth} за год.',
+    en: 'The game is scored and your table result is frozen. Ahead are {months} more months, played not for valuation but for maturity: the board wants glue at no less than {glue} and the holding to grow {growth} over the year.',
+  },
+  endlessRule: {
+    ru: 'Главное правило акта: чужих денег больше нет. Три года экспансия жила на раунды — теперь холдинг обязан расти сам, и привычный ход «поднять ещё раунд» закрыт.',
+    en: 'The rule of the act: there is no outside money left. For three years the expansion ran on rounds — now the holding has to grow on its own, and the familiar move of raising another round is closed.',
+  },
+  fundingClosedEndless: {
+    ru: 'Раунды закрыты: в год конгломерата холдинг живёт на свои. Касса пополняется только прибылью.',
+    en: 'Rounds are closed: in the conglomerate year the holding lives on its own. Cash comes from profit alone.',
+  },
+  goalConglomerate: {
+    ru: 'Год конгломерата: удержать склейку не ниже {glue} и вырастить холдинг на {growth} — без единого раунда.',
+    en: 'The conglomerate year: hold glue at {glue} or better and grow the holding {growth} — without a single round.',
+  },
+  goalConglomerateNow: { ru: 'склейка {glue}, рост {growth}', en: 'glue {glue}, growth {growth}' },
+  endlessOverTitle: { ru: 'Год конгломерата прожит', en: 'The conglomerate year is over' },
+  endlessWon: {
+    ru: 'Совет удовлетворён: холдинг вырос сам и склейка выдержала. Это и есть зрелая экосистема — она больше не нуждается в чужих деньгах, чтобы становиться дороже.',
+    en: 'The board is satisfied: the holding grew on its own and the glue held. That is a mature ecosystem — it no longer needs outside money to become more valuable.',
+  },
+  endlessLost: {
+    ru: 'Планку взять не удалось. Без раундов видно, чем экосистема держалась на самом деле: рост, купленный чужими деньгами, кончается вместе с ними.',
+    en: 'The bar was not cleared. Without rounds it becomes visible what the ecosystem actually ran on: growth bought with outside money ends when that money does.',
+  },
+  endlessRanked: { ru: 'Зачётный итог', en: 'Scored result' },
+  endlessNow: { ru: 'Сейчас', en: 'Now' },
+  endlessGrowth: { ru: 'Рост за год', en: 'Growth this year' },
+  endlessGlue: { ru: 'Склейка', en: 'Glue' },
+  endlessScaleNote: {
+    ru: 'Планка акта: склейка от {glue} и рост от {growth}. Замер: сильная сборка берёт её в половине партий, слабая — никогда.',
+    en: 'The act’s bar: glue from {glue} and growth from {growth}. Measured: a strong build clears it in about half its runs, a weak one never.',
+  },
+  endlessResultNote: {
+    ru: 'Строка года конгломерата помечена тегом НОВОГРАД+ и идёт в отдельную таблицу: зачётный результат партии она не заменяет.',
+    en: 'The conglomerate-year string carries the NOVOGRAD+ tag and goes to a separate table: it does not replace your scored result.',
+  },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'See the charts' },
   deathTitle: { ru: 'Деньги на исходе', en: 'The money is running out' },
@@ -2568,6 +2609,20 @@ const CONFIG = {
     multiple: { base: 2.5, growthWeight: 4, marginWeight: 2, marginPenalty: 1, min: 0.5, max: 8 },
   },
 
+  // --- Пост-эндгейм: «год конгломерата» ---
+  // Партия зачтена, счёт заморожен — дальше играют не за оценку, а за зрелость.
+  // Главное правило акта: чужих денег больше нет. Три года экспансия жила на
+  // раунды; теперь холдинг обязан держаться сам, и все привычные ходы
+  // («залить маркетингом», «поднять ещё раунд») закрыты.
+  endless: {
+    months: 12,              // ещё один год после финала
+    multiShareTarget: 0.38,  // склейка: доля клиентов двух и более сервисов
+    // Рост холдинга за год — но уже без чужих денег. Замер: сильная сборка
+    // даёт ~12% за год, средняя ~10%, слабая ~7.5%; прибыльность к этому
+    // моменту есть у всех и планкой быть перестала.
+    growthTarget: 0.11,
+  },
+
   // --- Перенос финала игры-источника ---
   // В НОВОГРАД переходят не только «да/нет», но и числа: касса победившей
   // компании и её оценка. Масштаб — отношение вашего счёта к «крепкому»
@@ -3062,7 +3117,22 @@ const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
   glue: 'glue',             // доля клиентов с двумя и более сервисами
   profit: 'profit',         // прибыльные месяцы, база не сжимается
+  // Пост-эндгейм: зрелость вместо экспансии — склейка и прибыль
+  // одновременно, и всё это без единого раунда.
+  conglomerate: 'conglomerate',
 };
+
+// Цель «года конгломерата»: держать склейку и прибыль сразу, без чужих денег.
+// Провалить её нельзя «пережить» раундом — раунды в этом акте закрыты.
+function makeEndlessGoal(state) {
+  return {
+    year: (state.board?.goal?.year ?? 3) + 1,
+    type: GOAL_TYPES.conglomerate,
+    target: CONFIG.endless.multiShareTarget,
+    growthTarget: CONFIG.endless.growthTarget,
+    endless: true,
+  };
+}
 
 function makeGoal(year, state, uniqueUsers) {
   if (year === 1) {
@@ -3121,6 +3191,19 @@ function goalProgress(goal, ctx) {
   const { taxiUsers, multiShare, profitableMonths, uniqueUsers } = ctx;
   if (goal.type === GOAL_TYPES.secondLeg) {
     return { value: taxiUsers, target: goal.target, done: taxiUsers >= goal.target };
+  }
+  if (goal.type === GOAL_TYPES.conglomerate) {
+    // Две планки сразу: склейка и рост холдинга. Ни одну нельзя купить
+    // раундом — в этом акте чужих денег нет. Прибыльность к 36-му месяцу
+    // есть у всех, поэтому планкой она быть перестала (замер).
+    const growth = ctx.growth ?? 0;
+    return {
+      value: multiShare,
+      target: goal.target,
+      growth,
+      growthTarget: goal.growthTarget,
+      done: multiShare >= goal.target && growth >= goal.growthTarget,
+    };
   }
   if (goal.type === GOAL_TYPES.glue) {
     return {
@@ -4486,15 +4569,17 @@ function step(prevState, input = {}) {
     multiShare,
     profitableMonths: state.board.profitableMonths,
     uniqueUsers: unique,
+    // Рост за пост-эндгейм считается от замороженного зачётного счёта
+    growth: endlessGrowth(state),
   });
   let goalOutcome = null;
-  if (state.board.goal && month % CONFIG.boardYearMonths === 0) {
+  if (state.board.goal && month % CONFIG.boardYearMonths === 0 && !state.endless) {
     goalOutcome = applyGoalOutcome(state, state.board.goal, progress, month);
     state.board.history.push(goalOutcome);
     state.board.profitableMonths = 0;
     const next = state.board.goal.year + 1;
-    state.board.goal = month < CONFIG.monthsTotal
-      ? makeGoal(next, state, unique) : null;
+    state.board.goal = state.endless ? state.board.goal
+      : (month < CONFIG.monthsTotal ? makeGoal(next, state, unique) : null);
   }
   let forcedDilution = 0;
   let boardInjection = 0;
@@ -4661,6 +4746,7 @@ function step(prevState, input = {}) {
 
   if (state.cash < 0) state.over = 'bankrupt';
   else if (month >= CONFIG.monthsTotal && !state.endless) state.over = 'finished';
+  else if (state.endless && month >= (state.endlessUntil ?? Infinity)) state.over = 'endless-done';
 
   const sop = sumOfParts(state);
   report.valuation = sop.total;
@@ -4682,13 +4768,27 @@ function step(prevState, input = {}) {
 // ----------------------------------------------------------------------------
 // Пост-эндгейм: партия продолжается после финиша, счёт уже зафиксирован.
 // ----------------------------------------------------------------------------
+/**
+ * Пост-эндгейм — «год конгломерата». Партия уже зачтена (state.scored
+ * заморожен в момент финиша), поэтому счёт этим актом не переписывается:
+ * играют не за оценку, а за зрелость. Правило акта — чужих денег больше нет,
+ * раунды закрыты; совет ставит одну цель на двенадцать месяцев.
+ */
 function enterEndless(state) {
   const next = deepClone(state);
-  if (next.over === 'finished') {
-    next.endless = true;
-    next.over = null;
-  }
+  if (next.over !== 'finished') return next;
+  next.endless = true;
+  next.over = null;
+  next.endlessUntil = CONFIG.monthsTotal + CONFIG.endless.months;
+  next.board.goal = makeEndlessGoal(next);
+  next.board.profitableMonths = 0;
+  next.restrictions = null;
   return next;
+}
+
+// Раунды в пост-эндгейме закрыты: это и есть его главное ограничение
+function fundingOpen(state) {
+  return !state.endless && state.month >= CONFIG.minMonthForFunding;
 }
 
 // ----------------------------------------------------------------------------
@@ -4773,6 +4873,9 @@ function fundingOffer(state, amount) {
 }
 
 function raise(state, amount) {
+  // В «году конгломерата» раунды закрыты: акт про то, чтобы держаться
+  // без чужих денег. Отказ молчаливый — интерфейс кнопку и не показывает.
+  if (state.endless) return { state, offer: null };
   const offer = fundingOffer(state, amount);
   const next = deepClone(state);
   next.cash += amount;
@@ -4800,6 +4903,15 @@ function explain(prev, cur) {
 }
 
 // Итоговый счёт партии: стоимость доли = доля x (оценка + касса).
+// Рост холдинга с момента заморозки зачётного счёта — мера «года
+// конгломерата»: выросли ли вы, когда чужие деньги кончились.
+function endlessGrowth(state) {
+  const ranked = state.scored?.equityValue ?? 0;
+  if (!state.endless || ranked <= 0) return 0;
+  const now = (valuation(state) + Math.max(0, state.cash)) * state.equity;
+  return now / ranked - 1;
+}
+
 function finalScore(state) {
   const v = valuation(state);
   return {
@@ -4810,6 +4922,37 @@ function finalScore(state) {
     cash: state.cash,
     months: state.month,
     bankrupt: state.over === 'bankrupt',
+  };
+}
+
+/**
+ * Итог «года конгломерата». Зачётный счёт партии не переписывается —
+ * он заморожен на 36-м месяце (state.scored). Здесь считается отдельный
+ * итог акта: выполнена ли цель совета и во что вырос холдинг без раундов.
+ */
+function endlessScore(state) {
+  const now = finalScore(state);
+  const ranked = state.scored ?? now;
+  const goal = state.board?.goal;
+  const unique = uniqueUsers(state);
+  const multiShare = unique > 0 ? multiUsers(state) / unique : 0;
+  const progress = goalProgress(goal, {
+    taxiUsers: state.taxi.users,
+    multiShare,
+    profitableMonths: state.board?.profitableMonths ?? 0,
+    uniqueUsers: unique,
+    growth: endlessGrowth(state),
+  });
+  return {
+    ...now,
+    rankedValue: ranked.equityValue,
+    // Рост за год конгломерата — то, ради чего этот акт и играют
+    growth: endlessGrowth(state),
+    multiShare,
+    profitableMonths: state.board?.profitableMonths ?? 0,
+    goalDone: Boolean(progress?.done),
+    progress,
+    raisedInAct: 0,
   };
 }
 
@@ -5876,6 +6019,11 @@ function renderVerticals() {
 // Совет директоров: цель года
 // ----------------------------------------------------------------------------
 function goalText(goal) {
+  if (goal.type === 'conglomerate') {
+    return t('goalConglomerate', {
+      glue: pct(goal.target, 0), growth: pct(goal.growthTarget, 0),
+    });
+  }
   if (goal.type === 'secondLeg') return t('goalSecondLeg', { target: num(goal.target, 0) });
   if (goal.type === 'glue') {
     return t('goalGlue', { target: pct(goal.target, 0), floor: num(goal.uniqueFloor, 0) });
@@ -5892,8 +6040,11 @@ function renderBoard() {
     multiShare: r?.multiShare ?? 0,
     profitableMonths: state.board.profitableMonths,
     uniqueUsers: r?.uniqueUsers ?? uniqueUsers(state),
+    growth: endlessGrowth(state),
   });
-  const now = goal.type === 'secondLeg' ? num(p.value, 0)
+  const now = goal.type === 'conglomerate'
+    ? t('goalConglomerateNow', { glue: pct(p.value, 1), growth: signedPct(p.growth, 1) })
+    : goal.type === 'secondLeg' ? num(p.value, 0)
     : goal.type === 'glue' ? pct(p.value, 1)
     : `${p.value} / ${goal.target}`;
   const past = (state.board.history ?? []).map((h) =>
@@ -5913,6 +6064,11 @@ function renderBoard() {
 // Инвестиции
 // ----------------------------------------------------------------------------
 function renderFunding() {
+  // В «году конгломерата» раундов нет: акт про то, чтобы держаться сам
+  if (state.endless) {
+    el('funding').innerHTML = `<div class="hint-box">${t('fundingClosedEndless')}</div>`;
+    return;
+  }
   const canRaise = state.month >= CONFIG.minMonthForFunding && !state.over;
   const v = valuation(state);
   const rows = CONFIG.fundingOptions.map((amount) => {
@@ -6666,7 +6822,41 @@ function recordsBlockHtml(s) {
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Финал «года конгломерата»: зачётный счёт не переписывается, показываем
+// итог самого акта — выросли ли вы без чужих денег и удержали ли склейку.
+function showEndlessOver() {
+  const e = endlessScore(state);
+  const line = resultString({
+    tag: `${GAME_TAG}+`, version: APP_VERSION, seed: state.seed,
+    score: Math.round(e.equityValue), turns: e.months,
+  });
+  modal(`<h2>🏙️ ${t('endlessOverTitle')}</h2>
+    <p class="funding-note">${t(e.goalDone ? 'endlessWon' : 'endlessLost')}</p>
+    <div class="score-grid">
+      <div class="stat"><div class="s-label">${t('endlessRanked')}</div><div class="s-value">${money(e.rankedValue)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessNow')}</div><div class="s-value">${money(e.equityValue)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessGrowth')}</div><div class="s-value">${signedPct(e.growth, 1)}</div></div>
+      <div class="stat"><div class="s-label">${t('endlessGlue')}</div><div class="s-value">${pct(e.multiShare, 1)}</div></div>
+    </div>
+    <p class="funding-note">${t('endlessScaleNote', {
+      glue: pct(CONFIG.endless.multiShareTarget, 0),
+      growth: pct(CONFIG.endless.growthTarget, 0),
+    })}</p>
+    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
+    <p class="funding-note">${t('endlessResultNote')}</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+    </div>`,
+  [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
+   { label: t('gameOverCharts'), onClick: () => {} }]);
+  el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
+  });
+}
+
 function showGameOver() {
+  if (state.over === 'endless-done') { showEndlessOver(); return; }
   // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
@@ -6726,6 +6916,22 @@ function showGameOver() {
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
+    // Пост-эндгейм: партия зачтена, счёт заморожен — дальше играют за
+    // зрелость холдинга. Предлагаем только выжившим: продолжать банкротство
+    // нечем.
+    ...(s.bankrupt ? [] : [{ label: t('endlessStart'), onClick: () => {
+      state = enterEndless(state);
+      save();
+      renderAll();
+      modal(`<h2>🏙️ ${t('endlessTitle')}</h2>
+        <p class="funding-note">${t('endlessIntro', {
+          months: CONFIG.endless.months,
+          glue: pct(CONFIG.endless.multiShareTarget, 0),
+          growth: pct(CONFIG.endless.growthTarget, 0),
+        })}</p>
+        <p class="funding-note">${t('endlessRule')}</p>`,
+        [{ label: t('helpModalOk'), primary: true, onClick: () => {} }]);
+    } }]),
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
   ]);

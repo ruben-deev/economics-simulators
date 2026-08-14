@@ -138,6 +138,28 @@ expensive capital. On a build without e-commerce, splitting logistics is
 predictably the cheapest — that is not an imbalance but a property of
 structure: it is easy to concede what you do not have.
 
+## The post-endgame: the conglomerate year
+
+The game is scored at month 36, the result is frozen and already submitted —
+after that you may play one more year, but it is played for maturity rather
+than valuation. The rule of the act: **there is no outside money left**. For
+three years the expansion ran on rounds; now that move is closed and cash
+comes from profit alone.
+
+The board sets a single goal for twelve months: hold glue at 38% or better
+and grow the holding by 11% — on your own. Profitability stopped being a bar:
+by month 36 nearly every build has it (measured), while growth without
+external capital does not come for free.
+
+Measured across three builds (6 games each): a strong build clears the goal
+in 3 runs out of 6, a medium one in 4, a weak one never (its glue sits at
+~25% against 44–50% for the others). Growth is measured against your own
+frozen score, so the bar is equally fair for a modest game and a record one.
+
+The act’s result goes out as a separate string tagged NOVOGRAD+ into a
+separate table: a 36-month game and a 48-month game are not comparable and
+must not share a ranking.
+
 ## The price of decisions (an extract from the measurements)
 
 | Decision | Shape of the answer |

@@ -758,6 +758,47 @@ export const STRINGS = {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
     en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a rouble is added to the score — conglomerates are not built for multipliers.',
   },
+  // --- пост-эндгейм: год конгломерата ---
+  endlessStart: { ru: 'Играть год конгломерата', en: 'Play the conglomerate year' },
+  endlessTitle: { ru: 'Год конгломерата', en: 'The conglomerate year' },
+  endlessIntro: {
+    ru: 'Партия зачтена, счёт в таблице заморожен. Дальше — ещё {months} месяцев, и играют уже не за оценку, а за зрелость: совет хочет видеть склейку не ниже {glue} и рост холдинга на {growth} за год.',
+    en: 'The game is scored and your table result is frozen. Ahead are {months} more months, played not for valuation but for maturity: the board wants glue at no less than {glue} and the holding to grow {growth} over the year.',
+  },
+  endlessRule: {
+    ru: 'Главное правило акта: чужих денег больше нет. Три года экспансия жила на раунды — теперь холдинг обязан расти сам, и привычный ход «поднять ещё раунд» закрыт.',
+    en: 'The rule of the act: there is no outside money left. For three years the expansion ran on rounds — now the holding has to grow on its own, and the familiar move of raising another round is closed.',
+  },
+  fundingClosedEndless: {
+    ru: 'Раунды закрыты: в год конгломерата холдинг живёт на свои. Касса пополняется только прибылью.',
+    en: 'Rounds are closed: in the conglomerate year the holding lives on its own. Cash comes from profit alone.',
+  },
+  goalConglomerate: {
+    ru: 'Год конгломерата: удержать склейку не ниже {glue} и вырастить холдинг на {growth} — без единого раунда.',
+    en: 'The conglomerate year: hold glue at {glue} or better and grow the holding {growth} — without a single round.',
+  },
+  goalConglomerateNow: { ru: 'склейка {glue}, рост {growth}', en: 'glue {glue}, growth {growth}' },
+  endlessOverTitle: { ru: 'Год конгломерата прожит', en: 'The conglomerate year is over' },
+  endlessWon: {
+    ru: 'Совет удовлетворён: холдинг вырос сам и склейка выдержала. Это и есть зрелая экосистема — она больше не нуждается в чужих деньгах, чтобы становиться дороже.',
+    en: 'The board is satisfied: the holding grew on its own and the glue held. That is a mature ecosystem — it no longer needs outside money to become more valuable.',
+  },
+  endlessLost: {
+    ru: 'Планку взять не удалось. Без раундов видно, чем экосистема держалась на самом деле: рост, купленный чужими деньгами, кончается вместе с ними.',
+    en: 'The bar was not cleared. Without rounds it becomes visible what the ecosystem actually ran on: growth bought with outside money ends when that money does.',
+  },
+  endlessRanked: { ru: 'Зачётный итог', en: 'Scored result' },
+  endlessNow: { ru: 'Сейчас', en: 'Now' },
+  endlessGrowth: { ru: 'Рост за год', en: 'Growth this year' },
+  endlessGlue: { ru: 'Склейка', en: 'Glue' },
+  endlessScaleNote: {
+    ru: 'Планка акта: склейка от {glue} и рост от {growth}. Замер: сильная сборка берёт её в половине партий, слабая — никогда.',
+    en: 'The act’s bar: glue from {glue} and growth from {growth}. Measured: a strong build clears it in about half its runs, a weak one never.',
+  },
+  endlessResultNote: {
+    ru: 'Строка года конгломерата помечена тегом НОВОГРАД+ и идёт в отдельную таблицу: зачётный результат партии она не заменяет.',
+    en: 'The conglomerate-year string carries the NOVOGRAD+ tag and goes to a separate table: it does not replace your scored result.',
+  },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'See the charts' },
   deathTitle: { ru: 'Деньги на исходе', en: 'The money is running out' },

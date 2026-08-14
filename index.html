@@ -41,6 +41,9 @@
       background: var(--panel-2);
     }
     .card-actions a.primary { background: var(--accent); color: #06210f; border-color: transparent; }
+    .top-block { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 4px; }
+    .top-list { list-style: none; margin: 2px 0 0; padding: 0; }
+    .top-list li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .home-foot { margin-top: 30px; color: var(--muted); font-size: 13px; line-height: 1.7; }
     .home-foot a { color: var(--accent-2); }
     .home-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -107,6 +110,7 @@
         <p class="sub" id="food-sub"></p>
         <p id="food-text"></p>
         <ul id="food-list"></ul>
+        <div id="food-top"></div>
         <div class="card-actions">
           <a class="primary" href="games/foodtech/index.html" id="food-play"></a>
         </div>
@@ -118,6 +122,7 @@
         <p class="sub" id="cinema-sub"></p>
         <p id="cinema-text"></p>
         <ul id="cinema-list"></ul>
+        <div id="cinema-top"></div>
         <div class="card-actions">
           <a class="primary" href="games/cinema/index.html" id="cinema-play"></a>
         </div>
@@ -129,6 +134,7 @@
         <p class="sub" id="tickets-sub"></p>
         <p id="tickets-text"></p>
         <ul id="tickets-list"></ul>
+        <div id="tickets-top"></div>
         <div class="card-actions">
           <a class="primary" href="games/tickets/index.html" id="tickets-play"></a>
         </div>
@@ -145,6 +151,7 @@
       <p class="sub" id="eco-sub"></p>
       <p id="eco-text"></p>
       <ul id="eco-list"></ul>
+      <div id="eco-top"></div>
       <p class="sub" id="eco-meta" style="margin-top:6px"></p>
       <div class="card-actions">
         <a class="primary" href="games/ecosystem/index.html" id="eco-play"></a>
@@ -154,15 +161,49 @@
     <p class="home-foot" id="home-foot"></p>
   </main>
 
+  <script>
+    // Адрес сервера мировой таблицы — тот же, что у игр. Витрина показывает
+    // с него только топ-3 (GET), ничего не отправляя.
+    window.__lbEndpoint = 'https://script.google.com/macros/s/AKfycbz47A5KW2B9i_Jwfd-rfH3Z2pC9OjH08mGlOCXxc2-RXTxISDg9bNsDWgajYswVnLvPyA/exec';
+  </script>
   <script type="module">
     // Витрина живёт по тем же правилам, что и игры: язык хранится в одном
     // ключе localStorage, поэтому выбор со стартовой страницы переносится внутрь.
     import { t, setLang, getLang, detectLang, setStrings } from './shared/i18n.js';
     import { legacyUnlocks, conglomerateUnlocked } from './shared/meta.js';
+    import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
 
     // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
     // Финалы старых игр (локальные рекорды этого устройства) отмечаются
     // звёздами; достойный НОВОГРАД зажигает корону.
+    // Мировая таблица прямо на витрине: три первых места и ваше, если оно
+    // есть. Раньше таблица жила только за финальным экраном — то есть её
+    // видел лишь тот, кто уже доиграл. Грузится лениво и молча: нет сервера
+    // или нет сети — карточка просто остаётся без блока.
+    function renderTops() {
+      if (!lbEndpoint()) return;
+      const ru = getLang() === 'ru';
+      for (const [id, game] of Object.entries({
+        food: 'НОВОЕДА', cinema: 'КИНОРЕКА', tickets: 'БИЛЕТВИЛЬ', eco: 'НОВОГРАД',
+      })) {
+        const node = document.getElementById(`${id}-top`);
+        if (!node) continue;
+        lbTop(game, 3).then((top) => {
+          if (!top || !top.length) { node.textContent = ''; return; }
+          const fmt = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} ${ru ? 'млрд' : 'bn'}`
+            : `${Math.round(n / 1e6)} ${ru ? 'млн' : 'M'}`);
+          const rows = top.map((r, i) => `<li>${['🥇', '🥈', '🥉'][i]} ${
+            String(r.name).replace(/[&<>]/g, '')} — ${fmt(r.score)}</li>`).join('');
+          const mine = lbMine(game);
+          const mineRow = mine
+            ? `<li>${ru ? 'вы' : 'you'}: ${fmt(mine.score)} · ${ru ? 'место' : 'rank'} ${mine.rank}</li>`
+            : '';
+          node.innerHTML = `<div class="top-block"><b>${ru ? 'Мировая таблица' : 'World leaderboard'}</b>
+            <ol class="top-list">${rows}${mineRow}</ol></div>`;
+        }).catch(() => { node.textContent = ''; });
+      }
+    }
+
     function renderConglomeratePath() {
       const node = document.getElementById('eco-meta');
       if (!node) return;
@@ -272,6 +313,7 @@
       list('eco-list', 'ecoList');
       set('eco-play', t('play'));
       renderConglomeratePath();
+      renderTops();
 
       set('tickets-title', t('ticketsTitle'));
       set('tickets-sub', t('ticketsSub'));
