@@ -4,20 +4,21 @@
 
 **▶ [Open the games index](https://ruben-deev.github.io/economics-simulators/)**
 
-Two browser games about running a business. Each is one turn per period, a dozen levers and
+Four browser games about running a business. Each is one turn per period, a dozen levers and
 a clear reason you can go bust. They exist first of all as **teaching tools**: the point is
 not to win but to see why decisions lead to exactly these consequences. That is why the
 interface carries a per-turn breakdown by factor, a unit economics table, a P&L report and
 an explanation of the formulas.
 
 The interface is bilingual — the **RU / EN** button in the header. The choice is remembered
-between sessions and shared by all three games.
+between sessions and shared by all four games.
 
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
 | [🛵 **NOVOEDA**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
 | [🎬 **KINOREKA**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
 | [🎟️ **BILETVILLE**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
+| [🏙️ **NOVOGRAD**](https://ruben-deev.github.io/economics-simulators/games/ecosystem/) | service ecosystem | month | 36 months | focus against expansion over a shared customer base |
 
 The games are built the same way but deliberately model **different** kinds of economics:
 in delivery, revenue per customer grows with their activity; in subscription it is fixed
@@ -37,7 +38,8 @@ Nothing to install.
 To hand games out offline, download the single-file build:
 [delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.10.6.html) ·
 [streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.12.2.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.3.html).
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.15.3.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.0.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **World leaderboard.** Each game's final screen keeps a local per-device record
@@ -51,7 +53,7 @@ Locally:
 
 ```
 npm start          # http://localhost:8080 — the games index
-npm test           # model and translation tests for all three games
+npm test           # model and translation tests for all four games
 npm run build      # rebuild the single-file builds in games/*/dist/
 ```
 
@@ -297,6 +299,32 @@ lifts conversion at the cost of trust.
 
 🎓 [Class sessions](docs/tickets/en/teacher-guide.md) ·
 📘 [Formula write-up](docs/tickets/en/economics.md)
+
+---
+
+# 🏙️ NOVOGRAD — service ecosystem
+
+The endgame of the series. You are the winner of one of the three games above: your
+business is compressed into a portfolio line, and the question is no longer "how do we
+deliver the order" but "where do we expand". Ride-hailing with a price war against an
+entrenched incumbent, e-commerce on shared logistics, the Plus subscription,
+partnerships — all over the **shared customer base** of one city. Every new vertical
+dilutes management focus, and the holding is valued as a sum of parts — a loss-making
+branch with no growth is priced as a liability, not as "an investment".
+
+You can start from any of the three legacy assets, and the ecosystem takes a different
+shape each time: delivery brings strong logistics synergy with ride-hailing and
+e-commerce, streaming brings the habit of paying by subscription, ticketing brings a
+small but monied base and a partner network.
+
+**Meta-progression.** A result string from the older games (the same one used for the
+leaderboard) can be entered on NOVOGRAD's welcome screen and grants a legacy: brand
+awareness and a launch discount on "your" vertical. Winning all three games unlocks the
+secret ending, the Novograd Conglomerate — strictly cosmetic: a badge on the final
+screens, no effect on the older games' economics or records.
+
+📘 [Formula write-up](docs/ecosystem/economics.md) ·
+🎓 [Lesson plans](docs/ecosystem/teacher-guide.md)
 
 ---
 
