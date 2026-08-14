@@ -71,7 +71,8 @@
         <p class="funding-note">
           <a href="games/foodtech/index.html">НОВОЕДА — доставка еды</a> ·
           <a href="games/cinema/index.html">КИНОРЕКА — онлайн-кинотеатр</a> ·
-          <a href="games/tickets/index.html">БИЛЕТВИЛЬ — билетный сервис</a></p>
+          <a href="games/tickets/index.html">БИЛЕТВИЛЬ — билетный сервис</a> ·
+          <a href="games/ecosystem/index.html">НОВОГРАД — экосистема (бета)</a></p>
       </div>
     </div>
   </noscript>
@@ -108,6 +109,18 @@
         </div>
       </section>
 
+      <section class="card" style="border-color: rgba(74, 222, 128, 0.35)">
+        <div class="card-icon">🏙️</div>
+        <h2 id="eco-title"></h2>
+        <p class="sub" id="eco-sub"></p>
+        <p id="eco-text"></p>
+        <ul id="eco-list"></ul>
+        <p class="sub" id="eco-meta" style="margin-top:6px"></p>
+        <div class="card-actions">
+          <a class="primary" href="games/ecosystem/index.html" id="eco-play"></a>
+        </div>
+      </section>
+
       <section class="card">
         <div class="card-icon">🎟️</div>
         <h2 id="tickets-title"></h2>
@@ -127,6 +140,23 @@
     // Витрина живёт по тем же правилам, что и игры: язык хранится в одном
     // ключе localStorage, поэтому выбор со стартовой страницы переносится внутрь.
     import { t, setLang, getLang, detectLang, setStrings } from './shared/i18n.js';
+    import { legacyUnlocks, conglomerateUnlocked } from './shared/meta.js';
+
+    // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
+    // Финалы старых игр (локальные рекорды этого устройства) отмечаются
+    // звёздами; достойный НОВОГРАД зажигает корону.
+    function renderConglomeratePath() {
+      const node = document.getElementById('eco-meta');
+      if (!node) return;
+      try {
+        const u = legacyUnlocks();
+        const star = (on) => (on ? '★' : '☆');
+        const crown = conglomerateUnlocked() ? ' · 👑' : '';
+        node.textContent = (getLang() === 'ru'
+          ? `Путь конгломерата: ${star(u.delivery)} НОВОЕДА · ${star(u.streaming)} КИНОРЕКА · ${star(u.tickets)} БИЛЕТВИЛЬ${crown}`
+          : `The conglomerate path: ${star(u.delivery)} NOVOEDA · ${star(u.streaming)} KINOREKA · ${star(u.tickets)} BILETVILLE${crown}`);
+      } catch { node.textContent = t('ecoMetaNone'); }
+    }
 
     const STRINGS = {
       homeTitle: {
@@ -167,6 +197,20 @@
         ru: 'Одна выручка, две стороны: сбор с покупателя против комиссии с организатора|Конфликт каналов: билетный виджет удерживает клиента и уводит продажи|Оборот и выручка — разные числа, и эквайринг вычитается из второго|Доверие: перекупщики наполняют оборот и опустошают репутацию',
         en: 'One revenue, two sides: buyer fee versus organiser commission|Channel conflict: a ticketing widget keeps the client and takes the sales|Turnover and revenue are different numbers, and acquiring comes out of the second|Trust: resellers fill the turnover and empty the reputation',
       },
+      ecoTitle: { ru: 'НОВОГРАД · бета', en: 'NOVOGRAD · beta' },
+      ecoSub: { ru: 'экосистема — эндгейм набора · ход = месяц · 36 месяцев', en: 'the ecosystem endgame · turn = month · 36 months' },
+      ecoText: {
+        ru: 'Вы выиграли одну из трёх игр — а рынок насыщен. Дальше растут не числом клиентов, а выручкой с каждого: такси, е-ком, подписка Plus, кросс-селл по общей базе и оценка холдинга по сумме частей.',
+        en: 'You have won one of the three games — and the market is saturated. From here you grow revenue per customer, not head count: taxi, e-commerce, the Plus subscription, cross-sell across a shared base, and a sum-of-parts valuation.',
+      },
+      ecoList: {
+        ru: 'Стартовый актив как класс персонажа: доставка, стриминг или билеты|Кросс-селл против холодного маркетинга|Подписка: покупка удержания за маржу|Финалы трёх игр усиливают старт — а достойный НОВОГРАД открывает бейджи в них',
+        en: 'Your starting asset is your character class: delivery, streaming or ticketing|Cross-sell versus cold marketing|A subscription buys retention with margin|Three endgames boost your start — and a worthy NOVOGRAD unlocks badges back in them',
+      },
+      ecoMetaNone: {
+        ru: 'Путь конгломерата: ☆ НОВОЕДА · ☆ КИНОРЕКА · ☆ БИЛЕТВИЛЬ — финалы старых игр усиливают старт.',
+        en: 'The conglomerate path: ☆ NOVOEDA · ☆ KINOREKA · ☆ BILETVILLE — the old games’ endgames boost your start.',
+      },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
         ru: 'Игры работают в браузере, без установки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.md">доставка</a> · <a href="docs/cinema/economics.md">кинотеатр</a> · <a href="docs/tickets/economics.md">билеты</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.',
@@ -200,6 +244,13 @@
       set('cinema-sub', t('cinemaSub'));
       set('cinema-text', t('cinemaText'));
       list('cinema-list', 'cinemaList');
+      set('eco-title', t('ecoTitle'));
+      set('eco-sub', t('ecoSub'));
+      set('eco-text', t('ecoText'));
+      list('eco-list', 'ecoList');
+      set('eco-play', t('play'));
+      renderConglomeratePath();
+
       set('tickets-title', t('ticketsTitle'));
       set('tickets-sub', t('ticketsSub'));
       set('tickets-text', t('ticketsText'));

@@ -52,7 +52,8 @@ jobs:
 
       - name: Проверить, что собранные файлы в репозитории не устарели
         run: |
-          if ! git diff --quiet -- 'games/*/dist/*.html'; then
+          # Дата сборки меняется каждый день — её отличие не «устаревший dist»
+          if ! git diff --quiet -I 'app-build-date' -- 'games/*/dist/*.html'; then
             echo "Собранные файлы отличаются от текущих исходников."
             echo "Запустите 'npm run build' и закоммитьте результат."
             git diff --stat -- 'games/*/dist/*.html'

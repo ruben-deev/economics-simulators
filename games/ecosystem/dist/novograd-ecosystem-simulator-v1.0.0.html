@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="0.1.0" />
+  <meta name="app-version" content="1.0.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2493,8 +2493,8 @@ const CONFIG = {
   // --- Партнёрские вертикали (кино и билеты входят лицензиями, не играми) ---
   partners: {
     cinemaLicenseMonthly: 4_000_000,  // лицензия стриминга в подписку
-    cinemaConvBoost: 0.30,            // конверсия в Plus выше: есть за что платить
-    cinemaChurnRelief: 0.012,         // и отток подписчиков ниже
+    cinemaConvBoost: 0.45,            // конверсия в Plus выше: есть за что платить
+    cinemaChurnRelief: 0.018,         // и отток подписчиков ниже
     ticketsMonthly: 2_500_000,        // партнёрство с билетным сервисом
     ticketsArpuPerMulti: 25,          // событийная выручка на мульти-клиента, ₽/мес
   },
@@ -2659,15 +2659,17 @@ const VERTICALS = [
     incumbentName: { ru: 'федеральные маркетплейсы', en: 'national marketplaces' },
     incumbentLock: 0.45,
     launchCost: 80_000_000,   // дарксторы, ассортимент, склад
-    fixedMonthly: 7_000_000,
-    // Портфельная модель как у еды: выручка на клиента и маржа
-    arpu: 340,
-    margin: 0.30,
-    baseChurn: 0.045,
+    fixedMonthly: 6_000_000,
+    // Портфельная модель как у еды: выручка на клиента и маржа.
+    // Числа подняты после первого замера: спуск выключал е-ком — третья
+    // нога не окупала фикс, и «третья вертикаль» была мёртвой механикой.
+    arpu: 385,
+    margin: 0.34,
+    baseChurn: 0.042,
     churnQuality: 0.08,
     marketingSaturation: 15_000_000,
-    marketingReach: 0.08,
-    crossReach: 0.05,         // доля пула хаба, готовая попробовать за месяц
+    marketingReach: 0.09,
+    crossReach: 0.065,        // доля пула хаба, готовая попробовать за месяц
     // Ворота по метрикам, как гео-экспансия в НОВОЕДЕ: совет согласует
     // третью вертикаль при управляемом стартовом активе
     gate: { minMonth: 8, assetContributionMonths: 3 },
