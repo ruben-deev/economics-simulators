@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.2.0" />
+  <meta name="app-version" content="1.3.0" />
   <meta name="app-build-date" content="2026-08-14" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1706,8 +1706,18 @@ const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+  },
+  welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
+  welcomeCarry: {
+    ru: 'Финал {game} на {score}. Касса на старте: <b>{cash}</b> ({bonus} к базовой) — это деньги, которые вы там не потратили. Прошлая оценка стала репутацией у инвесторов: раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю.',
+    en: 'A {game} finale worth {score}. Opening cash: <b>{cash}</b> ({bonus} over the base) — the money you did not spend there. The old valuation became your standing with investors: rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake.',
+  },
+  welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid finale' },
+  welcomeCarryEmpty: {
+    ru: 'Числа прошлой игры пока не перенесены: сыграйте одну из трёх игр на этом устройстве или введите строку результата выше — в НОВОГРАД перейдут ваша касса и оценка, а не только отметка «сыграно».',
+    en: 'No numbers carried over yet: play one of the three games on this device or paste a result string above — your cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
   },
   welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
   welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },
@@ -2092,12 +2102,51 @@ function legacyUnlocks() {
   return out;
 }
 
-// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство
-function legacyFor(assetId, unlocks = legacyUnlocks()) {
+/**
+ * Лучший счёт по каждой игре на этом устройстве (локальные рекорды плюс
+ * введённые строки). Нужен, чтобы в НОВОГРАД переносились не только «да/нет»,
+ * но и числа финала: касса победившей компании и её оценка.
+ * { delivery: number, streaming: number, tickets: number }
+ */
+function legacyScores() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => l.tag === g.tag)
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine);
+  }
+  return out;
+}
+
+/**
+ * Насколько крупным был финал игры-источника относительно её «крепкого»
+ * порога. 1.0 — крепкая победа, 2.0 — вдвое лучше. Сверху срезано: перенос
+ * обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ */
+const LEGACY_RATIO_CAP = 4;
+function legacyRatio(assetId, scores = legacyScores()) {
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game || !game.threshold) return 0;
+  const score = Number(scores[assetId]) || 0;
+  if (score <= 0) return 0;
+  return Math.min(LEGACY_RATIO_CAP, score / game.threshold);
+}
+
+// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
+// плюс перенесённые числа финала своей игры (касса и оценка).
+function legacyFor(assetId, unlocks = legacyUnlocks(), scores = legacyScores()) {
   return {
     asset: Boolean(unlocks[assetId]),
     cinema: Boolean(unlocks.streaming),
     tickets: Boolean(unlocks.tickets),
+    // Счёт финала своей игры и его отношение к «крепкому» порогу
+    assetScore: Number(scores[assetId]) || 0,
+    assetRatio: legacyRatio(assetId, scores),
   };
 }
 
@@ -2517,6 +2566,20 @@ const CONFIG = {
     freqBoostFood: 0.12,         // прибавка частоты еды у подписчиков
     freqBoostTaxi: 0.15,         // прибавка поездок у подписчиков
     multiple: { base: 2.5, growthWeight: 4, marginWeight: 2, marginPenalty: 1, min: 0.5, max: 8 },
+  },
+
+  // --- Перенос финала игры-источника ---
+  // В НОВОГРАД переходят не только «да/нет», но и числа: касса победившей
+  // компании и её оценка. Масштаб — отношение вашего счёта к «крепкому»
+  // порогу той игры (1.0 — крепкая победа). Сверху срезано: правило набора —
+  // заслуженный вход даёт преимущество, а не победу. Размер замерен.
+  legacyCarry: {
+    cashPerRatio: 0.02,   // +2% к стартовой казне за каждую «крепкую победу» сверх первой
+    cashCap: 0.06,        // но не больше +6%
+    roundPerRatio: 0.015, // репутация: раунд оценивают выше, доля тает медленнее
+    roundCap: 0.04,
+    floorPerRatio: 0.08,  // и пол оценки в раунде выше
+    floorCap: 0.15,
   },
 
   // --- Антимонопольное дело (кризис середины партии) ---
@@ -3725,6 +3788,40 @@ const hasPerk = (asset, key) => Boolean(asset.perks?.includes(key));
 // cinema — финал КИНОРЕКИ (скидка на лицензию в Plus),
 // tickets — финал БИЛЕТВИЛЯ (готовое партнёрство по билетам).
 // ----------------------------------------------------------------------------
+// Насколько крупнее «крепкой» победы был финал игры-источника. Всё, что
+// переносится числами, считается отсюда.
+function carryOver(legacy) {
+  const ratio = Math.max(0, Number(legacy?.assetRatio) || 0);
+  return ratio > 1 ? ratio - 1 : 0;
+}
+
+// Касса победителя: базовая казна актива плюс то, что вы реально скопили
+// в прошлой игре. Прибавка ограничена — иначе рекордная прошлая партия
+// решала бы новую до первого хода.
+function startingCash(asset, legacy = {}) {
+  const base = asset.startCash ?? CONFIG.startCash;
+  const over = carryOver(legacy);
+  const bonus = clamp(CONFIG.legacyCarry.cashPerRatio * over, 0, CONFIG.legacyCarry.cashCap);
+  return Math.round(base * (1 + bonus));
+}
+
+// Оценка прошлой компании переносится репутацией у инвесторов: она не
+// прибавляется к оценке холдинга (её считает рынок), но улучшает условия
+// раунда — за те же деньги вы отдаёте меньшую долю. Работает только если
+// вы действительно берёте раунд: это бонус к решению, а не к счёту.
+function legacyReputationMult(legacy = {}) {
+  const over = carryOver(legacy);
+  return 1 + clamp(CONFIG.legacyCarry.roundPerRatio * over, 0, CONFIG.legacyCarry.roundCap);
+}
+
+// Пол под оценкой в раунде: победителю рынка не выкручивают руки, даже
+// если холдинг в моменте выглядит слабо.
+function legacyValuationFloor(legacy = {}) {
+  const over = carryOver(legacy);
+  const bonus = clamp(CONFIG.legacyCarry.floorPerRatio * over, 0, CONFIG.legacyCarry.floorCap);
+  return Math.round(CONFIG.valuationFloor * (1 + bonus));
+}
+
 function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
   const asset = assetById(assetId);
   const rng = createRng(seed);
@@ -3732,7 +3829,7 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
     seed,
     rngState: rng.state(),
     month: 0,
-    cash: asset.startCash ?? CONFIG.startCash,
+    cash: startingCash(asset, legacy),
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
@@ -3741,6 +3838,10 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
       asset: Boolean(legacy.asset),
       cinema: Boolean(legacy.cinema),
       tickets: Boolean(legacy.tickets),
+      // Числа финала игры-источника: во сколько раз он крупнее «крепкого»
+      // порога той игры. Отсюда растут касса и пол оценки — см. ниже.
+      assetScore: Number(legacy.assetScore) || 0,
+      assetRatio: Math.max(0, Number(legacy.assetRatio) || 0),
     },
     // Стартовый актив (хаб) на портфельном уровне
     food: {
@@ -4644,7 +4745,11 @@ function valuation(state) {
 }
 
 function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(
+    valuation(state) * legacyReputationMult(state.legacy),
+    amount,
+    { floor: legacyValuationFloor(state.legacy) },
+  );
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -6642,6 +6747,25 @@ function showWelcome() {
     return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
   }).join(' · ');
 
+  // Что переносится числами: касса победившей компании и её репутация
+  // у инвесторов. Показываем до старта, чтобы перенос был виден, а не
+  // угадывался по цифре в шапке.
+  const carry = legacyFor(assetWanted, unlocks, legacyScores());
+  const carryAsset = assetById(assetWanted);
+  const carryCash = startingCash(carryAsset, carry);
+  const baseCash = carryAsset.startCash ?? CONFIG.startCash;
+  const carryHtml = carry.assetScore > 0
+    ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
+        ${t('welcomeCarry', {
+          game: tx(carryAsset.fromGame),
+          score: money(carry.assetScore),
+          cash: money(carryCash),
+          bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
+          floor: money(legacyValuationFloor(carry)),
+          round: pct(legacyReputationMult(carry) - 1, 0),
+        })}</div>`
+    : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
+
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
@@ -6659,6 +6783,7 @@ function showWelcome() {
         <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
       </div>
     </div>
+    ${carryHtml}
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -6674,7 +6799,7 @@ function showWelcome() {
       // свежая партия (ход ещё не сделан): наследие должно примениться
       if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
         state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-          assetWanted, legacyFor(assetWanted, legacyUnlocks()));
+          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
         save();
         renderAll();
       }

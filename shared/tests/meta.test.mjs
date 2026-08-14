@@ -16,7 +16,7 @@ globalThis.localStorage = {
 const {
   parseResultLine, addResultLine, savedLines, legacyUnlocks, legacyFor,
   rememberNovogradResult, novogradBest, conglomerateUnlocked, tripleCrown,
-  LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY,
+  LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY, legacyRatio, LEGACY_RATIO_CAP,
 } = await import('../meta.js');
 const { resultString } = await import('../records.js');
 
@@ -66,9 +66,32 @@ test('legacyFor: свой актив — только от своей игры, 
   store.clear();
   addResultLine(line('КИНОРЕКА', 4e10));
   const forDelivery = legacyFor('delivery');
-  assert.deepEqual(forDelivery, { asset: false, cinema: true, tickets: false });
+  assert.equal(forDelivery.asset, false, 'финал КИНОРЕКИ не делает своим актив доставки');
+  assert.equal(forDelivery.cinema, true, 'лицензия кино — от финала КИНОРЕКИ');
+  assert.equal(forDelivery.tickets, false);
+  assert.equal(forDelivery.assetScore, 0, 'чужой финал не переносит числа в ваш актив');
   const forStreaming = legacyFor('streaming');
   assert.equal(forStreaming.asset, true, 'стриминговому активу финал КИНОРЕКИ — свой');
+});
+
+test('в НОВОГРАД переносятся числа финала, а не только отметка «сыграно»', () => {
+  store.clear();
+  const g = LEGACY_GAMES.find((x) => x.assetId === 'delivery');
+  // Крепкая победа — ровно порог: перенос по числам ещё нулевой
+  addResultLine(line(g.tag, g.threshold));
+  assert.equal(legacyRatio('delivery'), 1, 'крепкая победа — единица шкалы');
+  assert.equal(legacyFor('delivery').assetScore, g.threshold, 'счёт финала доступен движку');
+
+  // Победа вдвое крупнее порога переносит вдвое больше
+  addResultLine(line(g.tag, g.threshold * 2));
+  assert.equal(legacyRatio('delivery'), 2);
+
+  // Сверху шкала срезана: рекордная прошлая партия не решает новую
+  addResultLine(line(g.tag, g.threshold * 50));
+  assert.equal(legacyRatio('delivery'), LEGACY_RATIO_CAP, 'перенос ограничен потолком');
+
+  // Числа чужой игры в ваш актив не текут
+  assert.equal(legacyRatio('tickets'), 0);
 });
 
 test('обратный бонус открывается достойным финалом НОВОГРАДА', () => {

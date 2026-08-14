@@ -14,9 +14,10 @@ import {
   createInitialState, step, explain, valuation, sumOfParts,
   fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty,
   plusAvailable, plusLaunchCost, cinemaLicenseFee, ticketsPartnerFee, hasPerk,
+  startingCash, legacyValuationFloor, legacyReputationMult,
 } from '../model/engine.js';
 import {
-  legacyUnlocks, legacyFor, addResultLine, rememberNovogradResult,
+  legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
   tripleCrown, NOVOGRAD_WORTHY, LEGACY_GAMES,
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
@@ -1697,6 +1698,25 @@ function showWelcome() {
     return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
   }).join(' · ');
 
+  // Что переносится числами: касса победившей компании и её репутация
+  // у инвесторов. Показываем до старта, чтобы перенос был виден, а не
+  // угадывался по цифре в шапке.
+  const carry = legacyFor(assetWanted, unlocks, legacyScores());
+  const carryAsset = assetById(assetWanted);
+  const carryCash = startingCash(carryAsset, carry);
+  const baseCash = carryAsset.startCash ?? CONFIG.startCash;
+  const carryHtml = carry.assetScore > 0
+    ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
+        ${t('welcomeCarry', {
+          game: tx(carryAsset.fromGame),
+          score: money(carry.assetScore),
+          cash: money(carryCash),
+          bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
+          floor: money(legacyValuationFloor(carry)),
+          round: pct(legacyReputationMult(carry) - 1, 0),
+        })}</div>`
+    : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
+
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
@@ -1714,6 +1734,7 @@ function showWelcome() {
         <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
       </div>
     </div>
+    ${carryHtml}
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -1729,7 +1750,7 @@ function showWelcome() {
       // свежая партия (ход ещё не сделан): наследие должно примениться
       if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
         state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-          assetWanted, legacyFor(assetWanted, legacyUnlocks()));
+          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
         save();
         renderAll();
       }

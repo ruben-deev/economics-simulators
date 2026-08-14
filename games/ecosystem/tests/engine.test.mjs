@@ -6,6 +6,7 @@ import {
 } from '../src/model/config.js';
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
+  legacyValuationFloor,
   finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
   enterEndless, multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
 } from '../src/model/engine.js';
@@ -916,4 +917,34 @@ test('дело не приходит, пока холдингу нечего с�
   }
   assert.ok(!s.seenEvents.includes('antitrust'),
     'без подписки и общей логистики связывать нечего — дела нет');
+});
+
+test('касса и оценка прошлой игры переносятся в старт, но с потолком', () => {
+  const asset = assetById('delivery');
+  const base = createInitialState('перенос', 'delivery', {});
+  assert.equal(base.cash, asset.startCash, 'без наследия — базовая казна актива');
+
+  // Крепкая победа (ровно порог) ничего не добавляет: прибавка растёт
+  // с того, что вы заработали СВЕРХ крепкого финала
+  const solid = createInitialState('перенос', 'delivery', { asset: true, assetRatio: 1 });
+  assert.equal(solid.cash, asset.startCash);
+
+  const big = createInitialState('перенос', 'delivery', { asset: true, assetRatio: 3 });
+  assert.ok(big.cash > solid.cash, 'крупный финал приносит кассу в новую партию');
+  const huge = createInitialState('перенос', 'delivery', { asset: true, assetRatio: 40 });
+  assert.ok(huge.cash / asset.startCash <= 1 + CONFIG.legacyCarry.cashCap + 1e-9,
+    'перенос кассы ограничен: рекорд прошлой партии не решает новую');
+
+  // Оценка прошлой компании — репутация у инвесторов: растёт пол оценки
+  assert.ok(legacyValuationFloor({ assetRatio: 3 }) > legacyValuationFloor({}),
+    'крупный финал поднимает пол оценки в раунде');
+  assert.ok(legacyValuationFloor({ assetRatio: 40 })
+    <= CONFIG.valuationFloor * (1 + CONFIG.legacyCarry.floorCap) + 1,
+    'пол оценки тоже ограничен');
+
+  // Раунд на старте по перенесённой репутации дороже для инвестора
+  const offerPlain = fundingOffer(base, CONFIG.fundingOptions[1]);
+  const offerCarried = fundingOffer(big, CONFIG.fundingOptions[1]);
+  assert.ok(offerCarried.dilution < offerPlain.dilution,
+    'та же сумма стоит меньшей доли: прошлая оценка работает');
 });

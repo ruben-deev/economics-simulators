@@ -92,12 +92,51 @@ export function legacyUnlocks() {
   return out;
 }
 
-// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство
-export function legacyFor(assetId, unlocks = legacyUnlocks()) {
+/**
+ * Лучший счёт по каждой игре на этом устройстве (локальные рекорды плюс
+ * введённые строки). Нужен, чтобы в НОВОГРАД переносились не только «да/нет»,
+ * но и числа финала: касса победившей компании и её оценка.
+ * { delivery: number, streaming: number, tickets: number }
+ */
+export function legacyScores() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => l.tag === g.tag)
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine);
+  }
+  return out;
+}
+
+/**
+ * Насколько крупным был финал игры-источника относительно её «крепкого»
+ * порога. 1.0 — крепкая победа, 2.0 — вдвое лучше. Сверху срезано: перенос
+ * обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ */
+export const LEGACY_RATIO_CAP = 4;
+export function legacyRatio(assetId, scores = legacyScores()) {
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game || !game.threshold) return 0;
+  const score = Number(scores[assetId]) || 0;
+  if (score <= 0) return 0;
+  return Math.min(LEGACY_RATIO_CAP, score / game.threshold);
+}
+
+// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
+// плюс перенесённые числа финала своей игры (касса и оценка).
+export function legacyFor(assetId, unlocks = legacyUnlocks(), scores = legacyScores()) {
   return {
     asset: Boolean(unlocks[assetId]),
     cinema: Boolean(unlocks.streaming),
     tickets: Boolean(unlocks.tickets),
+    // Счёт финала своей игры и его отношение к «крепкому» порогу
+    assetScore: Number(scores[assetId]) || 0,
+    assetRatio: legacyRatio(assetId, scores),
   };
 }
 

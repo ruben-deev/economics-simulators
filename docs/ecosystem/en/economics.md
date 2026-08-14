@@ -78,6 +78,31 @@ so a single ruler would call an excellent ticketing game “a modest outcome”.
 Thresholds live in the asset descriptor at 80% / 45% / 15% of its measured
 optimum. The leaderboard stays shared: the score itself is not scaled.
 
+## What carries over from the previous game
+
+NOVOGRAD inherits more than a “played” mark: the numbers of your own game’s
+finale carry over — cash and valuation.
+
+* **Cash** — the asset’s base treasury plus up to +6% for what you earned
+  above a “solid” finale (the scale is your score over that game’s
+  threshold, capped at four).
+* **Valuation** — your standing with investors: rounds are priced up to +4%
+  higher and never below a raised floor, so the same money costs you a
+  smaller stake. It is a bonus to a decision, not to the score: it only
+  works if you actually raise.
+
+Measured increment from the numbers (on top of the legacy flags), on tuned
+anchors: delivery +0.4…+1.0 pp, streaming −0.1…+0.6 pp, ticketing
++3.7…+7.3 pp. In roubles the effect is comparable for all three (~0.2 bn);
+it shows up larger on ticketing because capital is the binding constraint
+there and the base of comparison is smaller.
+
+**An open balance question.** The same measurement showed that the legacy
+*flags* themselves (own asset + cinema licence + ticketing partnership) have
+grown to +21% for delivery and +12% for ticketing against the documented
++4–6%. That exceeds the “felt but not decisive” rule; the flags need to be
+re-measured and trimmed (logged in the roadmap).
+
 ## The mid-game crisis: an antitrust case
 
 The only event on a schedule rather than a die roll: if it has not fired by

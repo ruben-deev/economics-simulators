@@ -46,6 +46,40 @@ export const hasPerk = (asset, key) => Boolean(asset.perks?.includes(key));
 // cinema — финал КИНОРЕКИ (скидка на лицензию в Plus),
 // tickets — финал БИЛЕТВИЛЯ (готовое партнёрство по билетам).
 // ----------------------------------------------------------------------------
+// Насколько крупнее «крепкой» победы был финал игры-источника. Всё, что
+// переносится числами, считается отсюда.
+function carryOver(legacy) {
+  const ratio = Math.max(0, Number(legacy?.assetRatio) || 0);
+  return ratio > 1 ? ratio - 1 : 0;
+}
+
+// Касса победителя: базовая казна актива плюс то, что вы реально скопили
+// в прошлой игре. Прибавка ограничена — иначе рекордная прошлая партия
+// решала бы новую до первого хода.
+export function startingCash(asset, legacy = {}) {
+  const base = asset.startCash ?? CONFIG.startCash;
+  const over = carryOver(legacy);
+  const bonus = clamp(CONFIG.legacyCarry.cashPerRatio * over, 0, CONFIG.legacyCarry.cashCap);
+  return Math.round(base * (1 + bonus));
+}
+
+// Оценка прошлой компании переносится репутацией у инвесторов: она не
+// прибавляется к оценке холдинга (её считает рынок), но улучшает условия
+// раунда — за те же деньги вы отдаёте меньшую долю. Работает только если
+// вы действительно берёте раунд: это бонус к решению, а не к счёту.
+export function legacyReputationMult(legacy = {}) {
+  const over = carryOver(legacy);
+  return 1 + clamp(CONFIG.legacyCarry.roundPerRatio * over, 0, CONFIG.legacyCarry.roundCap);
+}
+
+// Пол под оценкой в раунде: победителю рынка не выкручивают руки, даже
+// если холдинг в моменте выглядит слабо.
+export function legacyValuationFloor(legacy = {}) {
+  const over = carryOver(legacy);
+  const bonus = clamp(CONFIG.legacyCarry.floorPerRatio * over, 0, CONFIG.legacyCarry.floorCap);
+  return Math.round(CONFIG.valuationFloor * (1 + bonus));
+}
+
 export function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
   const asset = assetById(assetId);
   const rng = createRng(seed);
@@ -53,7 +87,7 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
     seed,
     rngState: rng.state(),
     month: 0,
-    cash: asset.startCash ?? CONFIG.startCash,
+    cash: startingCash(asset, legacy),
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
@@ -62,6 +96,10 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
       asset: Boolean(legacy.asset),
       cinema: Boolean(legacy.cinema),
       tickets: Boolean(legacy.tickets),
+      // Числа финала игры-источника: во сколько раз он крупнее «крепкого»
+      // порога той игры. Отсюда растут касса и пол оценки — см. ниже.
+      assetScore: Number(legacy.assetScore) || 0,
+      assetRatio: Math.max(0, Number(legacy.assetRatio) || 0),
     },
     // Стартовый актив (хаб) на портфельном уровне
     food: {
@@ -965,7 +1003,11 @@ export function valuation(state) {
 }
 
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(
+    valuation(state) * legacyReputationMult(state.legacy),
+    amount,
+    { floor: legacyValuationFloor(state.legacy) },
+  );
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 

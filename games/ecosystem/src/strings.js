@@ -699,8 +699,18 @@ export const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, скидка на лицензию кино, готовое партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a cinema licence discount, a ready ticketing partnership — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+  },
+  welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
+  welcomeCarry: {
+    ru: 'Финал {game} на {score}. Касса на старте: <b>{cash}</b> ({bonus} к базовой) — это деньги, которые вы там не потратили. Прошлая оценка стала репутацией у инвесторов: раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю.',
+    en: 'A {game} finale worth {score}. Opening cash: <b>{cash}</b> ({bonus} over the base) — the money you did not spend there. The old valuation became your standing with investors: rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake.',
+  },
+  welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid finale' },
+  welcomeCarryEmpty: {
+    ru: 'Числа прошлой игры пока не перенесены: сыграйте одну из трёх игр на этом устройстве или введите строку результата выше — в НОВОГРАД перейдут ваша касса и оценка, а не только отметка «сыграно».',
+    en: 'No numbers carried over yet: play one of the three games on this device or paste a result string above — your cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
   },
   welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
   welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },
