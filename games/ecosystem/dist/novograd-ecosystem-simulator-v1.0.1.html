@@ -821,10 +821,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
 .budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
 
-/* На телефоне карта не ужимается до нечитаемости, а прокручивается вбок —
-   как таблицы. Минимальная ширина держит текст в читаемом масштабе. */
-.eco-map .map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.eco-map svg { width: 100%; min-width: 620px; height: auto; display: block; }
+/* Карта адаптивная: на узком контейнере она перестраивается вертикально
+   (класс map-v ставит рендер), поэтому ни прокрутки, ни ужатия текста нет. */
+.eco-map svg { width: 100%; height: auto; display: block; }
+.eco-map svg.map-v { max-width: 430px; margin: 0 auto; }
 .eco-map .node { cursor: pointer; }
 .eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
 .eco-map text { font-size: 12px; fill: var(--text); }
@@ -5268,22 +5268,35 @@ function renderEcoMap() {
   const ecomOn = state.ecom.on;
   const plusOn = state.plus.on;
 
-  // Хаб слева, спицы справа: топология экосистемы буквально на экране.
-  // Узлы пересечений — на связях; подписка — кольцо вокруг хаба.
-  const cx1 = 210;
-  const cy = 130;
+  // Два расклада одной карты. Широкий: хаб слева, спицы справа. Узкий
+  // (телефон): хаб сверху, спицы снизу — карта перестраивается, а не
+  // ужимается и не прокручивается: на телефоне она должна читаться целиком.
+  const narrow = (box.clientWidth || window.innerWidth) < 600;
   const rFood = 28 + 36 * Math.sqrt(foodU / 260_000);
-  const tx2 = 500; const ty2 = 78;
-  const ex2 = 500; const ey2 = 192;
+  const cx1 = narrow ? 180 : 210;
+  const cy = narrow ? 158 : 130;
+  // Пока спицы не запущены, их пунктирные кружки маленькие — подтягиваем их
+  // ближе к хабу, чтобы карта на телефоне не держала пустоту.
+  const spokeY = (taxiOn || ecomOn) ? 352 : 296;
+  const tx2 = narrow ? 92 : 500; const ty2 = narrow ? spokeY : 78;
+  const ex2 = narrow ? 268 : 500; const ey2 = narrow ? spokeY : 192;
+  const viewBox = narrow ? `0 0 360 ${(taxiOn || ecomOn) ? 448 : 330}` : '0 0 700 268';
   const rTaxi = taxiOn ? 10 + 36 * Math.sqrt(taxiU / 300_000) : 14;
   const rEcom = ecomOn ? 10 + 34 * Math.sqrt(ecomU / 300_000) : 14;
   const rBoth = taxiOn && bothU > 500 ? 6 + 20 * Math.sqrt(bothU / 150_000) : 0;
   const rBothE = ecomOn && bothEcomU > 500 ? 6 + 20 * Math.sqrt(bothEcomU / 150_000) : 0;
-  const midT = { x: (cx1 + tx2) / 2, y: (cy + ty2) / 2 - 6 };
-  const midE = { x: (cx1 + ex2) / 2, y: (cy + ey2) / 2 + 6 };
+  const midT = { x: (cx1 + tx2) / 2 + (narrow ? -8 : 0), y: (cy + ty2) / 2 + (narrow ? 0 : -6) };
+  const midE = { x: (cx1 + ex2) / 2 + (narrow ? 8 : 0), y: (cy + ey2) / 2 + (narrow ? 0 : 6) };
 
-  const link = (x1, y1, x2, y2, on) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-    stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
+  // Связь между краями кругов (не между центрами): точки на окружностях
+  const link = (x1, y1, r1, x2, y2, r2, on) => {
+    const dx = x2 - x1; const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ax = x1 + (dx / len) * (r1 + 2); const ay = y1 + (dy / len) * (r1 + 2);
+    const bx = x2 - (dx / len) * (r2 + 2); const by = y2 - (dy / len) * (r2 + 2);
+    return `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}"
+      stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
+  };
 
   // Пока сервис маленький, подписи в круг не помещаются — выносим их наружу:
   // имя над кругом, число под ним. С ростом круга подписи переезжают внутрь.
@@ -5318,6 +5331,12 @@ function renderEcoMap() {
   const flowLabel = (x, y, text, color, anchor = 'middle') => (text
     ? `<text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted" style="fill:${color}">${text}</text>` : '');
 
+  // Холодное привлечение: на широкой карте — справа от круга, на узкой —
+  // в столбик под оттоком, чтобы ничего не вылезало за край экрана.
+  const coldLabel = (x, y, rr, text) => (narrow
+    ? flowLabel(x, y + churnY(rr) + 14, text, PALETTE[5])
+    : flowLabel(x + rr + 8, y + 4, text, PALETTE[5], 'start'));
+
   const plusRing = plusOn
     ? `<circle cx="${cx1}" cy="${cy}" r="${rFood + 10}" fill="none" stroke="${PALETTE[0]}"
         stroke-width="1.6" stroke-dasharray="6 4" opacity="0.8"/>
@@ -5330,19 +5349,22 @@ function renderEcoMap() {
     badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - (rTaxi >= 26 ? 10 : 24)}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
   }
   if (r && r.fedMonthsLeft > 0) {
-    badges.push(`<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
+    badges.push(narrow
+      ? `<text x="12" y="38" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`
+      : `<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
   }
   if (r && r.crisisMonthsLeft > 0) {
-    badges.push(`<text x="686" y="40" text-anchor="end" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`);
+    badges.push(narrow
+      ? `<text x="12" y="54" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`
+      : `<text x="686" y="40" text-anchor="end" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`);
   }
 
   box.innerHTML = `<div class="panel eco-map">
     <h2 class="panel-title">${t('mapTitle')}</h2>
-    <div class="map-scroll">
-    <svg viewBox="0 0 700 268" role="img" aria-label="${t('mapTitle')}">
-      <text x="14" y="22" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
-      ${link(cx1 + rFood - 4, cy - 14, tx2 - rTaxi + 4, ty2 + 6, bothU > 500)}
-      ${ecomOn || !taxiOn ? link(cx1 + rFood - 4, cy + 14, ex2 - rEcom + 4, ey2 - 6, bothEcomU > 500) : ''}
+    <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('mapTitle')}">
+      <text x="${narrow ? 12 : 14}" y="${narrow ? 20 : 22}" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
+      ${link(cx1, cy, rFood, tx2, ty2, taxiOn ? rTaxi : 14, bothU > 500)}
+      ${ecomOn || !taxiOn ? link(cx1, cy, rFood, ex2, ey2, ecomOn ? rEcom : 14, bothEcomU > 500) : ''}
       ${plusRing}
       <g class="node" data-jump="group:food">
         <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
@@ -5357,27 +5379,31 @@ function renderEcoMap() {
         r && r.crossConv > 0.5 ? `${t('mapCross')} +${compact(r.crossConv)}` : '', PALETTE[0])}
       ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
         r && r.crossEcomConv > 0.5 ? `${t('mapCross')} +${compact(r.crossEcomConv)}` : '', PALETTE[0])}
-      ${flowLabel(tx2 + rTaxi + 8, ty2 + 4,
-        r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '', PALETTE[5], 'start')}
-      ${flowLabel(ex2 + rEcom + 8, ey2 + 4,
-        r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '', PALETTE[5], 'start')}
+      ${coldLabel(tx2, ty2, rTaxi, r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '')}
+      ${coldLabel(ex2, ey2, rEcom, r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '')}
       ${flowLabel(tx2, ty2 + churnY(rTaxi),
         r && taxiOn && r.lostTaxi > 0.5 ? `−${compact(r.lostTaxi)}` : '', 'var(--bad)')}
       ${flowLabel(ex2, ey2 + churnY(rEcom),
         r && ecomOn && r.lostEcom > 0.5 ? `−${compact(r.lostEcom)}` : '', 'var(--bad)')}
       ${flowLabel(cx1, cy + rFood + (plusOn ? 24 : 14),
         r && r.lostFood > 0.5 ? `−${compact(r.lostFood)}` : '', 'var(--bad)')}
-      ${flowLabel(cx1 - rFood - 10, cy - 4,
+      ${flowLabel(cx1 - rFood - (plusOn ? 22 : 10), cy - 4,
         r && (r.wonBack + r.organicFood) > 0.5 ? `+${compact(r.wonBack + r.organicFood)}` : '', PALETTE[1], 'end')}
       ${badges.join('')}
-      <text x="350" y="260" text-anchor="middle" class="m-muted">${t('mapUnique', {
-        unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
-      })}</text>
     </svg>
-    </div>
+    <div class="chart-caption">${t('mapUnique', {
+      unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
+    })}</div>
     <div class="chart-caption">${t('mapCaption')}</div>
   </div>`;
 }
+
+// Поворот телефона или изменение окна меняет расклад карты — перерисуем её.
+let mapResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(mapResizeTimer);
+  mapResizeTimer = setTimeout(() => { if (state && !state.over) renderEcoMap(); }, 150);
+});
 
 // ----------------------------------------------------------------------------
 // Вертикали: стартовый актив, такси, будущие фазы

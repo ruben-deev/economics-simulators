@@ -821,10 +821,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
 .budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
 
-/* На телефоне карта не ужимается до нечитаемости, а прокручивается вбок —
-   как таблицы. Минимальная ширина держит текст в читаемом масштабе. */
-.eco-map .map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.eco-map svg { width: 100%; min-width: 620px; height: auto; display: block; }
+/* Карта адаптивная: на узком контейнере она перестраивается вертикально
+   (класс map-v ставит рендер), поэтому ни прокрутки, ни ужатия текста нет. */
+.eco-map svg { width: 100%; height: auto; display: block; }
+.eco-map svg.map-v { max-width: 430px; margin: 0 auto; }
 .eco-map .node { cursor: pointer; }
 .eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
 .eco-map text { font-size: 12px; fill: var(--text); }
