@@ -1,13 +1,19 @@
 # Публикация игр на GitHub Pages.
 #
-# На сайт выкладываются:
-#   /                                — витрина со списком игр
-#   /games/<игра>/                   — игра (модульная версия, работает в браузере)
-#   /games/<игра>/dist/<имя>.html    — та же игра одним файлом, для раздачи офлайн
-#   /docs/                           — разбор моделей и сценарии занятий
+# Сайт собирается из ДВУХ веток и живёт по двум адресам:
+#   /       — прежняя версия целиком (эта ветка, claude/delivery-simulator-prototype-qy5zst):
+#             витрина с тремя играми, их проверенные сборки. Старые ссылки не меняются.
+#   /next/  — новая версия целиком (ветка claude/novograd-ecosystem-game-bnenng):
+#             витрина с НОВОГРАДОМ и обновлённые игры.
+# Когда новая версия принята, её вливают в эту ветку — тогда она становится
+# корнем, а /next/ продолжает показывать вершину новой ветки.
 #
-# Перед публикацией прогоняются тесты и пересобираются одиночные файлы,
-# поэтому на сайт физически не может попасть версия, не прошедшая проверки.
+# Внутри каждой версии раскладка прежняя:
+#   витрина в корне, /games/<игра>/ — модульная версия,
+#   /games/<игра>/dist/<имя>.html — один файл для раздачи офлайн, /docs/ — разборы.
+#
+# Перед публикацией прогоняются тесты обеих версий, поэтому на сайт физически
+# не может попасть версия, не прошедшая проверки.
 #
 # ВАЖНО: один раз нужно включить Pages вручную —
 #   Settings → Pages → Build and deployment → Source: GitHub Actions
@@ -21,6 +27,7 @@ on:
     branches:
       - main
       - claude/delivery-simulator-prototype-qy5zst
+      - claude/novograd-ecosystem-game-bnenng
   workflow_dispatch:
 
 permissions:
@@ -38,39 +45,57 @@ jobs:
     name: Тесты и сборка
     runs-on: ubuntu-latest
     steps:
+      # Корень сайта всегда берётся из ветки прежней версии — какая бы ветка
+      # ни запустила workflow. Поэтому пуш в новую ветку обновляет только /next/.
       - uses: actions/checkout@v4
+        with:
+          ref: claude/delivery-simulator-prototype-qy5zst
+
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/novograd-ecosystem-game-bnenng
+          path: _next
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Тесты моделей и перевода
+      - name: Тесты прежней версии
         run: npm test
 
-      - name: Сборка одного файла для каждой игры
-        run: npm run build
+      - name: Тесты новой версии
+        run: npm test
+        working-directory: _next
 
-      - name: Проверить, что собранные файлы в репозитории не устарели
+      # Тесты пересобирают одиночные файлы — дата сборки в них меняется каждый
+      # день, поэтому её отличие не «устаревший dist». На сайт идут файлы из
+      # репозитория: рабочее дерево возвращается к закоммиченному состоянию.
+      - name: Проверить, что собранные файлы новой версии не устарели
         run: |
-          # Дата сборки меняется каждый день — её отличие не «устаревший dist»
           if ! git diff --quiet -I 'app-build-date' -- 'games/*/dist/*.html'; then
             echo "Собранные файлы отличаются от текущих исходников."
             echo "Запустите 'npm run build' и закоммитьте результат."
             git diff --stat -- 'games/*/dist/*.html'
             exit 1
           fi
+          git checkout -- .
+        working-directory: _next
+
+      - name: Вернуть собранные файлы прежней версии из репозитория
+        run: git checkout -- .
 
       - name: Собрать содержимое сайта
         run: |
-          mkdir -p _site
+          mkdir -p _site/next
           cp index.html _site/
-          cp -r shared _site/
-          cp -r docs _site/
-          cp -r games _site/
+          cp -r shared docs games _site/
+          cp _next/index.html _site/next/
+          cp -r _next/shared _next/docs _next/games _site/next/
           rm -rf _site/shared/tools _site/games/*/tests
+          rm -rf _site/next/shared/tools _site/next/games/*/tests
           find _site -name 'build.manifest.js' -delete
           echo "--- содержимое сайта ---"
-          find _site -maxdepth 3 -type d | sort
+          find _site -maxdepth 4 -type d | sort
 
       # Требует, чтобы Pages были включены в настройках репозитория
       # с источником «GitHub Actions» (см. комментарий вверху файла).
