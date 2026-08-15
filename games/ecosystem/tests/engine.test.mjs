@@ -841,8 +841,10 @@ test('наследие: бонусы применяются и складыва�
   assert.equal(ticketsPartnerFee(later), CONFIG.partners.ticketsMonthly,
     'льгота на партнёрство кончается через год');
 
-  const runLeg = (legacy) => {
-    let s = createInitialState('legacy-run', 'delivery', legacy);
+  // По одному сиду наследие не мерят: разница попадает в шум событий и
+  // таймингов раундов. Усредняем по нескольким партиям — как в замерах.
+  const runLeg = (legacy, seed = 'legacy-run') => {
+    let s = createInitialState(seed, 'delivery', legacy);
     for (let i = 0; i < 36 && !s.over; i++) {
       // Подушка под события: раунд при тонкой кассе, а не только при убытке
       if (s.month >= 2 && s.cash < 120_000_000) {
@@ -859,8 +861,10 @@ test('наследие: бонусы применяются и складыва�
     const f = finalScore(s);
     return f.bankrupt ? 0 : f.equityValue;
   };
-  const base = runLeg({});
-  const full = runLeg({ asset: true, cinema: true, tickets: true });
+  const seeds = ['legacy-run', 'legacy-2', 'legacy-3', 'legacy-4', 'legacy-5', 'legacy-6'];
+  const avg = (legacy) => seeds.reduce((a, seed) => a + runLeg(legacy, seed), 0) / seeds.length;
+  const base = avg({});
+  const full = avg({ asset: true, cinema: true, tickets: true });
   const lift = full / base - 1;
   assert.ok(lift > 0.005, `стак наследия должен чувствоваться: ${(lift * 100).toFixed(1)}%`);
   assert.ok(lift < 0.20, `но не решать партию: ${(lift * 100).toFixed(1)}%`);
@@ -1103,4 +1107,30 @@ test('финансовая команда улучшает условия рау
     'за те же деньги отдаёте меньшую долю');
   // Оценку холдинга рынок считает сам — упаковка на неё не влияет
   assert.equal(valuation(strong), valuation(weak));
+});
+
+test('модель торговли: площадка дешевле в фиксе и капитале, склад — жирнее с клиента', () => {
+  const { state } = warmFull('model', 14);
+  assert.ok(state.ecom.on);
+  const at = (own) => step(state, {
+    decisions: fullDecisions(state, { ecomOwnShare: own, ecomLogistics: 3_000_000 }),
+  }).report;
+  const platform = at(0);
+  const own = at(1);
+
+  assert.ok(own.arpuEcom > platform.arpuEcom, 'у своего склада весь чек — выручка');
+  assert.ok(own.marginEcom < platform.marginEcom, 'зато маржа товарная, а не комиссионная');
+  assert.ok(own.contribEcom > platform.contribEcom, 'вклад с клиента у склада больше');
+  assert.ok(own.fixedEcom > platform.fixedEcom, 'фикс е-кома — это склады');
+  assert.ok(own.ecomWorkingCapital > 0 && platform.ecomWorkingCapital === 0,
+    'товар покупают заранее — но только свой');
+  assert.ok(platform.churnEcomRate > own.churnEcomRate,
+    'качество чужого продавца вы не контролируете');
+  assert.ok(platform.crossEcomConv > own.crossEcomConv,
+    'чужие продавцы наполняют витрину быстрее');
+
+  // Смешанная модель лежит между крайностями по всем осям
+  const mixed = at(0.5);
+  assert.ok(mixed.arpuEcom > platform.arpuEcom && mixed.arpuEcom < own.arpuEcom);
+  assert.ok(mixed.fixedEcom > platform.fixedEcom && mixed.fixedEcom < own.fixedEcom);
 });

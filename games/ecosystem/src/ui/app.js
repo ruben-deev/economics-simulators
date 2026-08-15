@@ -354,6 +354,11 @@ function renderLeverReadouts() {
         lost: compact(r.lostEcom), gained: compact(r.ecomColdAcq + r.crossEcomConv),
         cls: (r.ecomColdAcq + r.crossEcomConv) >= r.lostEcom ? 'pos' : 'neg',
       })}</div>
+      <div>${t('readoutEcomModel', {
+        model: t(r.ecomOwnShare >= 0.99 ? 'readoutEcomModelOwn'
+          : (r.ecomOwnShare <= 0.01 ? 'readoutEcomModelPlatform' : 'readoutEcomModelMixed')),
+        wc: money(r.ecomWorkingCapital ?? 0),
+      })}</div>
       <div>${t('readoutEcomCapacity', {
         level: pct(r.ecomCapacity ?? 0, 0),
         cls: (r.ecomCapacity ?? 0) > 0.2 ? 'pos' : 'neg',
@@ -1516,7 +1521,9 @@ function renderPnlTab() {
         ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
         ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
-        ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
+        ${r.ecomWorkingCapital > 0 ? line(t('pnlWorkingCapital'), -r.ecomWorkingCapital, 'neg', true) : ''}
+        ${r.oneOff - (r.ecomWorkingCapital ?? 0) > 0
+          ? line(t('pnlOneOff'), -(r.oneOff - (r.ecomWorkingCapital ?? 0)), 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table>

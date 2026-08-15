@@ -486,6 +486,26 @@ export const VERTICALS = [
     // Общий парк курьеров конечен: чем больше мощности уходит в посылки,
     // тем хуже пики у стартового актива. Только для курьерского актива.
     logisticsHubPenalty: 0.10,
+    // --- Модель торговли: свой склад (1P) против площадки (3P) ---
+    // Второе решение е-кома, и оно не про деньги, а про то, чей товар вы
+    // продаёте. Свой склад: весь чек — ваша выручка, но маржа товарная и
+    // каждый новый клиент замораживает оборотный капитал. Площадка: выручка
+    // только комиссионная, зато маржа комиссии высокая, склад чужой, а
+    // ассортимент приносят продавцы — быстрее и без капитала. Цена площадки
+    // в том, что качество чужого продавца вы не контролируете.
+    // Числа откалиброваны так, что «свой склад» = прежняя модель е-кома.
+    ownArpuBase: 0.44,        // доля чека, видимая как выручка у чистой площадки
+    ownArpuGain: 0.56,        // ...и добор до полного чека у своего склада
+    ownMarginBase: 0.66,      // маржа комиссии площадки
+    ownMarginCut: 0.32,       // ...против товарной маржи своего склада (0.34)
+    // Склады — это и есть фикс е-кома: у площадки его почти нет. Отсюда
+    // перелом: площадка выгоднее, пока база мала, свой склад — когда объём
+    // вырос настолько, что товарная маржа перекрывает содержание складов.
+    ownFixedBase: 0.55,       // доля фикса у чистой площадки
+    ownFixedGain: 0.45,       // ...и добор до полного у своего склада
+    platformAttractGain: 0.30, // чужие продавцы наполняют витрину быстрее
+    platformChurnAdd: 0.012,   // и роняют качество, которого вы не видите
+    workingCapitalPerUser: 900, // ₽ оборотного капитала на нового клиента 1P
   },
 ];
 
@@ -687,6 +707,25 @@ export const LEVERS = [
     tip: {
       ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
       en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+    },
+  },
+  {
+    key: 'ecomOwnShare',
+    group: 'ecom',
+    label: { ru: 'Модель торговли', en: 'Trading model' },
+    unit: { ru: '%', en: '%' },
+    min: 0, max: 100, step: 50, def: 100, scale: 0.01,
+    policy: [
+      { v: 0, label: { ru: 'Площадка', en: 'Marketplace' },
+        note: { ru: 'Товар чужой: вы берёте комиссию. Капитала не нужно, ассортимент наполняют продавцы — зато качество их работы вы не контролируете.', en: 'The goods are not yours: you take a commission. No capital needed and sellers fill the catalogue — but you do not control the quality of their work.' } },
+      { v: 50, label: { ru: 'Смешанная', en: 'Mixed' },
+        note: { ru: 'Ходовое — своё, длинный хвост — от продавцов. Половина капитала, половина контроля.', en: 'Fast movers in-house, the long tail from sellers. Half the capital, half the control.' } },
+      { v: 100, label: { ru: 'Свой склад', en: 'Own inventory' },
+        note: { ru: 'Товар ваш: весь чек — ваша выручка, но маржа товарная, а каждый новый клиент замораживает оборотный капитал.', en: 'The goods are yours: the whole basket is your revenue, but the margin is a retail margin and every new customer freezes working capital.' } },
+    ],
+    tip: {
+      ru: 'Чей товар вы продаёте. Свой склад даёт больше вклада с клиента, но требует денег заранее: закупленный товар лежит на складе до продажи. Площадка растёт без капитала и быстрее набирает ассортимент, но с чека вам достаётся только комиссия.',
+      en: 'Whose goods you sell. Own inventory yields more contribution per customer but demands money upfront: purchased stock sits in the warehouse until sold. A marketplace grows without capital and builds range faster, but you only keep a commission on each basket.',
     },
   },
   {

@@ -336,6 +336,7 @@ export function step(prevState, input = {}) {
   const driversAtStart = state.taxi.drivers;
   const foodUsersAtStart = state.food.users;
   const taxiUsersAtStart = state.taxi.users;
+  const ecomUsersAtStart = state.ecom.users;
   const uniqueAtStart = uniqueUsers(state);
 
   // --- 1. Событие месяца ---
@@ -590,14 +591,20 @@ export function step(prevState, input = {}) {
     ? CONFIG.antitrust.ecomMarginCut : 0;
   // Своя мощность дешевле подряда: маржа растёт с уровнем логистики, а не
   // выдаётся за перк. Перк курьерского актива остаётся стартовым преимуществом.
-  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0)
+  // Модель торговли: 1 — свой склад, 0 — чистая площадка
+  const ownShare = ecomOn ? clamp(decisions.ecomOwnShare ?? 1, 0, 1) : 1;
+  const modelMargin = ecomDef.ownMarginBase - ecomDef.ownMarginCut * ownShare;
+  const marginEcom = modelMargin + (logistics ? ecomDef.logisticsMarginBonus : 0)
     + ecomDef.logisticsMarginGain * logisticsLevel - splitCut;
   if (ecomOn) {
     ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
     const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
     const plusEcomBoost = state.ecom.users > 0
       ? 1 + CONFIG.plus.freqBoostFood * (subsInEcom / Math.max(1, state.ecom.users)) : 1;
-    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost
+    // У площадки выручкой считается только комиссия — чек тот же, но ваш
+    // из него лишь кусок. Поэтому 3P дешевле в капитале и тоньше в выручке.
+    arpuEcom = ecomDef.arpu * (ecomDef.ownArpuBase + ecomDef.ownArpuGain * ownShare)
+      * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost
       * (1 + ecomDef.logisticsArpuGain * logisticsLevel);
     revenueEcom = state.ecom.users * arpuEcom;
     contribEcom = revenueEcom * marginEcom;
@@ -606,6 +613,7 @@ export function step(prevState, input = {}) {
       ecomDef.baseChurn
       + ecomDef.churnQuality * Math.max(0, 0.75 - qEcom)
       - ecomDef.logisticsChurnCut * logisticsLevel
+      + ecomDef.platformChurnAdd * (1 - ownShare)
       + fedChurnAdd,
       0.01, 0.5,
     );
@@ -654,7 +662,8 @@ export function step(prevState, input = {}) {
       // Мощность логистики расширяет ёмкость канала: клиенту хаба легче
       // попробовать посылки, когда их привозят те же курьеры и в тот же день.
       const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1)
-        * (1 + ecomDef.logisticsCrossGain * logisticsLevel);
+        * (1 + ecomDef.logisticsCrossGain * logisticsLevel)
+        * (1 + ecomDef.platformAttractGain * (1 - ownShare));
       targets.push({
         id: 'ecom',
         cac: (CONFIG.crossSellCac / (asset.synergy?.ecom ?? 1)) * storyCac,
@@ -764,7 +773,10 @@ export function step(prevState, input = {}) {
     + (revenuePlus - plusPerkCost) + revenueTickets * 0.7;
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
-  const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
+  // Фикс е-кома — это склады: у площадки их нет, товар лежит у продавца
+  const fixedEcom = (ecomOn
+    ? ecomDef.fixedMonthly * (ecomDef.ownFixedBase + ecomDef.ownFixedGain * ownShare)
+    : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
   const ecomBudgets = ecomOn
     ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) + (decisions.ecomLogistics ?? 0) : 0;
@@ -794,7 +806,13 @@ export function step(prevState, input = {}) {
     + (mods.oneOffCostPerFoodUser ?? 0) * foodUsersAtStart
     + (mods.oneOffCostPerTaxiUser ?? 0) * taxiUsersAtStart
     + (mods.oneOffCostPerUniqueUser ?? 0) * uniqueAtStart;
-  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost;
+  // Оборотный капитал своего склада: товар покупают до того, как продадут.
+  // Растущий 1P-е-ком ест кассу вперёд выручки — это и есть его настоящая
+  // цена, и в отчёте она стоит рядом с разовыми, а не прячется в марже.
+  const ecomGrowthUsers = Math.max(0, state.ecom.users - ecomUsersAtStart);
+  const workingCapital = ecomOn
+    ? ecomGrowthUsers * ecomDef.workingCapitalPerUser * ownShare : 0;
+  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost + workingCapital;
   state.cash += profit - oneOff;
 
   // --- 10. Метрики ---
@@ -852,6 +870,8 @@ export function step(prevState, input = {}) {
     taxiFullContribution,
     ecomFullContribution,
     ecomCapacity: logisticsLevel,
+    ecomOwnShare: ownShare,
+    ecomWorkingCapital: workingCapital,
     financeLevel: financeLevel(state, decisions),
     financeCost: financeBudget,
     miscRate: rateMisc,

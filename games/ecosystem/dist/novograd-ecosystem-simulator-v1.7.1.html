@@ -1574,6 +1574,14 @@ const STRINGS = {
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
   pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+  pnlWorkingCapital: { ru: 'Оборотный капитал склада', en: 'Warehouse working capital' },
+  readoutEcomModel: {
+    ru: 'Модель торговли: <b>{model}</b>. Оборотный капитал в этом месяце — {wc}.',
+    en: 'Trading model: <b>{model}</b>. Working capital this month: {wc}.',
+  },
+  readoutEcomModelOwn: { ru: 'свой склад', en: 'own inventory' },
+  readoutEcomModelMixed: { ru: 'смешанная', en: 'mixed' },
+  readoutEcomModelPlatform: { ru: 'площадка', en: 'marketplace' },
   pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
   pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
   sopColMultiple: { ru: 'Множитель', en: 'Multiple' },
@@ -3131,6 +3139,26 @@ const VERTICALS = [
     // Общий парк курьеров конечен: чем больше мощности уходит в посылки,
     // тем хуже пики у стартового актива. Только для курьерского актива.
     logisticsHubPenalty: 0.10,
+    // --- Модель торговли: свой склад (1P) против площадки (3P) ---
+    // Второе решение е-кома, и оно не про деньги, а про то, чей товар вы
+    // продаёте. Свой склад: весь чек — ваша выручка, но маржа товарная и
+    // каждый новый клиент замораживает оборотный капитал. Площадка: выручка
+    // только комиссионная, зато маржа комиссии высокая, склад чужой, а
+    // ассортимент приносят продавцы — быстрее и без капитала. Цена площадки
+    // в том, что качество чужого продавца вы не контролируете.
+    // Числа откалиброваны так, что «свой склад» = прежняя модель е-кома.
+    ownArpuBase: 0.44,        // доля чека, видимая как выручка у чистой площадки
+    ownArpuGain: 0.56,        // ...и добор до полного чека у своего склада
+    ownMarginBase: 0.66,      // маржа комиссии площадки
+    ownMarginCut: 0.32,       // ...против товарной маржи своего склада (0.34)
+    // Склады — это и есть фикс е-кома: у площадки его почти нет. Отсюда
+    // перелом: площадка выгоднее, пока база мала, свой склад — когда объём
+    // вырос настолько, что товарная маржа перекрывает содержание складов.
+    ownFixedBase: 0.55,       // доля фикса у чистой площадки
+    ownFixedGain: 0.45,       // ...и добор до полного у своего склада
+    platformAttractGain: 0.30, // чужие продавцы наполняют витрину быстрее
+    platformChurnAdd: 0.012,   // и роняют качество, которого вы не видите
+    workingCapitalPerUser: 900, // ₽ оборотного капитала на нового клиента 1P
   },
 ];
 
@@ -3332,6 +3360,25 @@ const LEVERS = [
     tip: {
       ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
       en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+    },
+  },
+  {
+    key: 'ecomOwnShare',
+    group: 'ecom',
+    label: { ru: 'Модель торговли', en: 'Trading model' },
+    unit: { ru: '%', en: '%' },
+    min: 0, max: 100, step: 50, def: 100, scale: 0.01,
+    policy: [
+      { v: 0, label: { ru: 'Площадка', en: 'Marketplace' },
+        note: { ru: 'Товар чужой: вы берёте комиссию. Капитала не нужно, ассортимент наполняют продавцы — зато качество их работы вы не контролируете.', en: 'The goods are not yours: you take a commission. No capital needed and sellers fill the catalogue — but you do not control the quality of their work.' } },
+      { v: 50, label: { ru: 'Смешанная', en: 'Mixed' },
+        note: { ru: 'Ходовое — своё, длинный хвост — от продавцов. Половина капитала, половина контроля.', en: 'Fast movers in-house, the long tail from sellers. Half the capital, half the control.' } },
+      { v: 100, label: { ru: 'Свой склад', en: 'Own inventory' },
+        note: { ru: 'Товар ваш: весь чек — ваша выручка, но маржа товарная, а каждый новый клиент замораживает оборотный капитал.', en: 'The goods are yours: the whole basket is your revenue, but the margin is a retail margin and every new customer freezes working capital.' } },
+    ],
+    tip: {
+      ru: 'Чей товар вы продаёте. Свой склад даёт больше вклада с клиента, но требует денег заранее: закупленный товар лежит на складе до продажи. Площадка растёт без капитала и быстрее набирает ассортимент, но с чека вам достаётся только комиссия.',
+      en: 'Whose goods you sell. Own inventory yields more contribution per customer but demands money upfront: purchased stock sits in the warehouse until sold. A marketplace grows without capital and builds range faster, but you only keep a commission on each basket.',
     },
   },
   {
@@ -4461,6 +4508,7 @@ function step(prevState, input = {}) {
   const driversAtStart = state.taxi.drivers;
   const foodUsersAtStart = state.food.users;
   const taxiUsersAtStart = state.taxi.users;
+  const ecomUsersAtStart = state.ecom.users;
   const uniqueAtStart = uniqueUsers(state);
 
   // --- 1. Событие месяца ---
@@ -4715,14 +4763,20 @@ function step(prevState, input = {}) {
     ? CONFIG.antitrust.ecomMarginCut : 0;
   // Своя мощность дешевле подряда: маржа растёт с уровнем логистики, а не
   // выдаётся за перк. Перк курьерского актива остаётся стартовым преимуществом.
-  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0)
+  // Модель торговли: 1 — свой склад, 0 — чистая площадка
+  const ownShare = ecomOn ? clamp(decisions.ecomOwnShare ?? 1, 0, 1) : 1;
+  const modelMargin = ecomDef.ownMarginBase - ecomDef.ownMarginCut * ownShare;
+  const marginEcom = modelMargin + (logistics ? ecomDef.logisticsMarginBonus : 0)
     + ecomDef.logisticsMarginGain * logisticsLevel - splitCut;
   if (ecomOn) {
     ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
     const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
     const plusEcomBoost = state.ecom.users > 0
       ? 1 + CONFIG.plus.freqBoostFood * (subsInEcom / Math.max(1, state.ecom.users)) : 1;
-    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost
+    // У площадки выручкой считается только комиссия — чек тот же, но ваш
+    // из него лишь кусок. Поэтому 3P дешевле в капитале и тоньше в выручке.
+    arpuEcom = ecomDef.arpu * (ecomDef.ownArpuBase + ecomDef.ownArpuGain * ownShare)
+      * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost
       * (1 + ecomDef.logisticsArpuGain * logisticsLevel);
     revenueEcom = state.ecom.users * arpuEcom;
     contribEcom = revenueEcom * marginEcom;
@@ -4731,6 +4785,7 @@ function step(prevState, input = {}) {
       ecomDef.baseChurn
       + ecomDef.churnQuality * Math.max(0, 0.75 - qEcom)
       - ecomDef.logisticsChurnCut * logisticsLevel
+      + ecomDef.platformChurnAdd * (1 - ownShare)
       + fedChurnAdd,
       0.01, 0.5,
     );
@@ -4779,7 +4834,8 @@ function step(prevState, input = {}) {
       // Мощность логистики расширяет ёмкость канала: клиенту хаба легче
       // попробовать посылки, когда их привозят те же курьеры и в тот же день.
       const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1)
-        * (1 + ecomDef.logisticsCrossGain * logisticsLevel);
+        * (1 + ecomDef.logisticsCrossGain * logisticsLevel)
+        * (1 + ecomDef.platformAttractGain * (1 - ownShare));
       targets.push({
         id: 'ecom',
         cac: (CONFIG.crossSellCac / (asset.synergy?.ecom ?? 1)) * storyCac,
@@ -4889,7 +4945,10 @@ function step(prevState, input = {}) {
     + (revenuePlus - plusPerkCost) + revenueTickets * 0.7;
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
-  const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
+  // Фикс е-кома — это склады: у площадки их нет, товар лежит у продавца
+  const fixedEcom = (ecomOn
+    ? ecomDef.fixedMonthly * (ecomDef.ownFixedBase + ecomDef.ownFixedGain * ownShare)
+    : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
   const ecomBudgets = ecomOn
     ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) + (decisions.ecomLogistics ?? 0) : 0;
@@ -4919,7 +4978,13 @@ function step(prevState, input = {}) {
     + (mods.oneOffCostPerFoodUser ?? 0) * foodUsersAtStart
     + (mods.oneOffCostPerTaxiUser ?? 0) * taxiUsersAtStart
     + (mods.oneOffCostPerUniqueUser ?? 0) * uniqueAtStart;
-  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost;
+  // Оборотный капитал своего склада: товар покупают до того, как продадут.
+  // Растущий 1P-е-ком ест кассу вперёд выручки — это и есть его настоящая
+  // цена, и в отчёте она стоит рядом с разовыми, а не прячется в марже.
+  const ecomGrowthUsers = Math.max(0, state.ecom.users - ecomUsersAtStart);
+  const workingCapital = ecomOn
+    ? ecomGrowthUsers * ecomDef.workingCapitalPerUser * ownShare : 0;
+  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost + workingCapital;
   state.cash += profit - oneOff;
 
   // --- 10. Метрики ---
@@ -4977,6 +5042,8 @@ function step(prevState, input = {}) {
     taxiFullContribution,
     ecomFullContribution,
     ecomCapacity: logisticsLevel,
+    ecomOwnShare: ownShare,
+    ecomWorkingCapital: workingCapital,
     financeLevel: financeLevel(state, decisions),
     financeCost: financeBudget,
     miscRate: rateMisc,
@@ -5943,6 +6010,11 @@ function renderLeverReadouts() {
         users: compact(state.ecom.users),
         lost: compact(r.lostEcom), gained: compact(r.ecomColdAcq + r.crossEcomConv),
         cls: (r.ecomColdAcq + r.crossEcomConv) >= r.lostEcom ? 'pos' : 'neg',
+      })}</div>
+      <div>${t('readoutEcomModel', {
+        model: t(r.ecomOwnShare >= 0.99 ? 'readoutEcomModelOwn'
+          : (r.ecomOwnShare <= 0.01 ? 'readoutEcomModelPlatform' : 'readoutEcomModelMixed')),
+        wc: money(r.ecomWorkingCapital ?? 0),
       })}</div>
       <div>${t('readoutEcomCapacity', {
         level: pct(r.ecomCapacity ?? 0, 0),
@@ -7106,7 +7178,9 @@ function renderPnlTab() {
         ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
         ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
-        ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
+        ${r.ecomWorkingCapital > 0 ? line(t('pnlWorkingCapital'), -r.ecomWorkingCapital, 'neg', true) : ''}
+        ${r.oneOff - (r.ecomWorkingCapital ?? 0) > 0
+          ? line(t('pnlOneOff'), -(r.oneOff - (r.ecomWorkingCapital ?? 0)), 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table>
