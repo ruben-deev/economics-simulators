@@ -262,6 +262,100 @@ const BUDGET_COLORS = {
   fixed: '#64748b',
 };
 
+// ----------------------------------------------------------------------------
+// Схема двустороннего рынка — главный орган БИЛЕТВИЛЯ.
+//
+// Игра объясняет двусторонний рынок, а показывала его таблицей. Здесь он
+// нарисован: организаторы слева, зрители справа, между ними два ваших
+// канала — афиша и виджет — и третий, мимо вас: организатор продал сам.
+// Толщина полосы — билеты, подпись — оборот. Сверху и снизу то, что этот
+// рынок ломает: перекупщики и потерянная заполняемость.
+// ----------------------------------------------------------------------------
+function renderMarketMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const narrow = (box.clientWidth || window.innerWidth) < 600;
+
+  const orgs = Math.round(orgTotal(state));
+  const reach = totalReach(state);
+  const market = r?.marketTickets ?? 0;
+  const platform = r?.platformTickets ?? 0;
+  const past = r?.lostTickets ?? 0;
+  const maxLane = Math.max(1, market, platform, past);
+  const laneW = (v) => Math.max(1.5, 14 * (v / maxLane));
+
+  const lx = narrow ? 180 : 96;
+  const ly = narrow ? 56 : 126;
+  const rx = narrow ? 180 : 604;
+  const ry = narrow ? 316 : 126;
+  const rOrg = 26 + 16 * Math.sqrt(Math.min(1, orgs / 400));
+  const rAud = 26 + 16 * Math.sqrt(Math.min(1, reach / 3_000_000));
+
+  // Полосы каналов: на широком экране горизонтальные, на узком вертикальные
+  const lanes = [
+    { key: 'market', label: t('mapLaneMarket'), tickets: market, gmv: r?.gmvMarket ?? 0, color: PALETTE[1], off: -44 },
+    { key: 'platform', label: t('mapLanePlatform'), tickets: platform, gmv: r?.gmvPlatform ?? 0, color: PALETTE[2], off: 0 },
+    { key: 'past', label: t('mapLanePast'), tickets: past, gmv: 0, color: '#64748b', off: 44, dashed: true },
+  ];
+
+  // Подписи на узком экране ложатся прямо на полосу — обводка цветом панели
+  // отделяет текст от заливки, иначе светлое на светлом не читается
+  const halo = 'paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round;';
+  const lane = (l) => {
+    if (narrow) {
+      const x = 180 + l.off * 2.4;
+      return `<line x1="${x}" y1="${ly + rOrg + 6}" x2="${x}" y2="${ry - rAud - 6}"
+          stroke="${l.color}" stroke-width="${laneW(l.tickets)}" opacity="0.75"
+          stroke-dasharray="${l.dashed ? '6 5' : '0'}"/>
+        <text x="${x}" y="${(ly + ry) / 2 - 6}" text-anchor="middle" class="m-muted" style="${halo}fill:${l.color}">${l.label}</text>
+        <text x="${x}" y="${(ly + ry) / 2 + 10}" text-anchor="middle" class="m-num" style="${halo}">${compact(l.tickets)}</text>`;
+    }
+    const y = ly + l.off;
+    return `<line x1="${lx + rOrg + 6}" y1="${y}" x2="${rx - rAud - 6}" y2="${y}"
+        stroke="${l.color}" stroke-width="${laneW(l.tickets)}" opacity="0.75"
+        stroke-dasharray="${l.dashed ? '6 5' : '0'}"/>
+      <text x="${(lx + rx) / 2}" y="${y - 14}" text-anchor="middle" class="m-muted" style="fill:${l.color}">${l.label}</text>
+      <text x="${(lx + rx) / 2}" y="${y + 18}" text-anchor="middle" class="m-muted">${
+        t('mapLaneNumbers', { tickets: compact(l.tickets), gmv: l.gmv > 0 ? money(l.gmv) : '—' })}</text>`;
+  };
+
+  const node = (x, y, rr, icon, title, value, sub, color) => `
+    <g>
+      <circle cx="${x}" cy="${y}" r="${rr}" fill="rgba(96,165,250,0.12)" stroke="${color}" stroke-width="1.5"/>
+      <text x="${x}" y="${y - 2}" text-anchor="middle">${icon}</text>
+      <text x="${x}" y="${y + 14}" text-anchor="middle" class="m-num">${value}</text>
+      <text x="${x}" y="${y + rr + 16}" text-anchor="middle" class="m-muted">${title}</text>
+      ${sub ? `<text x="${x}" y="${y + rr + 30}" text-anchor="middle" class="m-muted">${sub}</text>` : ''}
+    </g>`;
+
+  const flows = r ? `
+    <text x="${lx}" y="${ly - rOrg - 10}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[1]}">+${num(Math.round(r.orgJoined ?? 0))}</text>
+    <text x="${lx}" y="${ly + rOrg + (narrow ? 46 : 44)}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">−${num(Math.round((r.orgLeft ?? 0) + (r.orgSwitchedOut ?? 0)))}</text>` : '';
+
+  const badges = r ? `
+    <text x="${narrow ? 12 : 14}" y="20" class="m-muted"
+      style="fill:${(r.fill ?? 0) >= 0.7 ? 'var(--good)' : 'var(--bad)'}">${
+      t('mapFillBadge', { fill: pct(r.fill ?? 0, 0) })}</text>
+    ${(r.botShare ?? 0) > 0.001 ? `<text x="${narrow ? 12 : 14}" y="38" class="m-muted" style="fill:var(--bad)">🎫 ${
+      t('mapBotsBadge', { share: pct(r.botShare, 0) })}</text>` : ''}` : '';
+
+  const viewBox = narrow ? '0 0 360 400' : '0 0 700 250';
+  box.innerHTML = `<div class="panel eco-map">
+    <h2 class="panel-title">${t('marketMapTitle')}</h2>
+    <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('marketMapTitle')}">
+      ${badges}
+      ${lanes.map(lane).join('')}
+      ${node(lx, ly, rOrg, '🎪', t('mapOrgs'), num(orgs),
+        t('mapOrgsSub', { connected: num(r?.connectedCount ?? 0) }), PALETTE[2])}
+      ${node(rx, ry, rAud, '👥', t('mapBuyers'), compact(reach),
+        t('mapBuyersSub', { share: pct(r?.orgShare ?? 0, 0) }), PALETTE[1])}
+      ${flows}
+    </svg>
+    <div class="chart-caption">${t('marketMapCaption')}</div>
+  </div>`;
+}
+
 // Живые сводки групп: что механика группы делает прямо сейчас. Считаются от
 // последнего отчёта — тех же чисел, что игрок видит в центре экрана.
 function renderGroupReadouts() {
@@ -386,6 +480,7 @@ function buildLevers() {
       renderChannels();
       renderBudget();
       renderGroupReadouts();
+      renderMarketMap();
       renderRightTab();
       save();
     });
@@ -403,6 +498,7 @@ function buildLevers() {
       renderChannels();
       renderBudget();
       renderGroupReadouts();
+      renderMarketMap();
       renderRightTab();
     });
     el('levers').querySelector(`[data-why="${l.key}"]`).addEventListener('click', (e) => {
@@ -936,6 +1032,7 @@ function renderChannels() {
       renderChannels();
       renderBudget();
       renderGroupReadouts();
+      renderMarketMap();
       renderTurn();
       renderRightTab();
     });
@@ -1763,6 +1860,7 @@ function renderAll() {
   renderChannels();
   renderBudget();
   renderGroupReadouts();
+  renderMarketMap();
   renderSupply();
   renderRival();
   renderChart();

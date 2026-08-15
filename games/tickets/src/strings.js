@@ -5,6 +5,23 @@
 // ============================================================================
 
 export const STRINGS = {
+  marketMapTitle: { ru: 'Двусторонний рынок', en: 'The two-sided market' },
+  mapOrgs: { ru: 'организаторы', en: 'organisers' },
+  mapOrgsSub: { ru: 'с виджетом {connected}', en: '{connected} with the widget' },
+  mapBuyers: { ru: 'зрители', en: 'buyers' },
+  mapBuyersSub: { ru: 'ваша доля рынка {share}', en: 'your market share {share}' },
+  mapLaneMarket: { ru: 'афиша', en: 'listings' },
+  mapLanePlatform: { ru: 'виджет', en: 'widget' },
+  mapLanePast: { ru: 'мимо вас', en: 'past you' },
+  mapLaneNumbers: { ru: '{tickets} билетов · {gmv}', en: '{tickets} tickets · {gmv}' },
+  // Внутри SVG нельзя HTML-теги: <b> выбрасывает парсер из режима SVG,
+  // и вся схема разваливается в строку текста (проверено вживую).
+  mapFillBadge: { ru: 'Заполняемость залов {fill}', en: 'Hall fill rate {fill}' },
+  mapBotsBadge: { ru: 'перекупщики забрали {share} билетов', en: 'resellers took {share} of tickets' },
+  marketMapCaption: {
+    ru: 'Толщина полосы — сколько билетов прошло каналом за месяц. «Мимо вас» — то, что организатор продал сам: этих денег вы не видите совсем. Рынок растёт только с обоих концов: зрители приходят за афишей, организаторы — за зрителями, и потерять можно любую сторону.',
+    en: 'The thickness of a lane is how many tickets went through that channel this month. “Past you” is what the organiser sold on their own: you never see that money. The market only grows from both ends — buyers come for the listings, organisers come for the buyers — and either side can be lost.',
+  },
   readoutTake: {
     ru: 'Вы забираете <b>{rate}</b> оборота — {perTicket} с билета. Эквайринг съедает {acquiring} оборота, и берётся он до вас.',
     en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card processing eats {acquiring} of turnover, and it is charged before you.',

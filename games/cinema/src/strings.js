@@ -4,6 +4,18 @@
 // ============================================================================
 
 export const STRINGS = {
+  studioMapTitle: { ru: 'Полка и конвейер', en: 'The shelf and the pipeline' },
+  studioShelf: { ru: 'Каталог, часов', en: 'Catalogue, hours' },
+  studioLicensed: { ru: 'лицензии', en: 'licensed' },
+  studioOriginal: { ru: 'своё', en: 'original' },
+  studioPerMonth: { ru: 'в месяц', en: 'a month' },
+  studioFresh: { ru: 'Свежесть ×{fresh}', en: 'Freshness ×{fresh}' },
+  studioCalendar: { ru: 'Календарь премьер: ваши сверху, конкурента снизу', en: 'Premiere calendar: yours above, the rival’s below' },
+  studioMapPipeline: { ru: 'В производстве {producing} · готово и ждёт выхода {ready}', en: 'In production {producing} · finished and waiting {ready}' },
+  studioMapCaption: {
+    ru: '🎬 — ваша премьера, 📦 — готовое в запасе, которое можно выпустить прямо сейчас. Лицензии тают каждый месяц, своё производство остаётся навсегда. Вперёд вы знаете свой график — проекты в производстве выйдут в отмеченные месяцы; про конкурента известен только анонс на следующий месяц, дальше стоит вопрос. Выйти в один месяц с его премьерой — значит поделить с ним внимание города.',
+    en: '🎬 is your premiere, 📦 is a finished project waiting in the vault that you can release right now. Licences melt away every month; your own production stays for good. You know your own schedule ahead — projects in production land in the marked months; of the rival you only know next month’s announcement, and beyond it there is a question mark. Releasing in the same month as their premiere means splitting the city’s attention with them.',
+  },
   budgetTitle: { ru: 'Расходы этого месяца при текущих настройках: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
   budgetContent: { ru: 'контент', en: 'content' },
   budgetStudio: { ru: 'студия', en: 'studio' },
