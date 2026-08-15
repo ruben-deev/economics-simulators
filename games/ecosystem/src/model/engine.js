@@ -181,6 +181,17 @@ export function ecomQuality(state, decisions) {
   return clamp((0.5 + 0.5 * level) * (1 - focusPenalty(state, decisions)), 0.2, 1.1);
 }
 
+/**
+ * Мощность логистики е-кома: 0…1 от месячного бюджета на склады, машины и
+ * слоты доставки. Отдельно от ecomQuality нарочно: ассортимент и обработка
+ * заказов — это «что продаём», логистика — «чем везём». Первое упирается в
+ * федеральные маркетплейсы, второе — единственное, чем город их обходит.
+ */
+export function ecomCapacity(decisions) {
+  const b = decisions.ecomLogistics ?? 0;
+  return b > 0 ? b / (b + verticalById('ecom').logisticsSaturation) : 0;
+}
+
 // Клиенты двух и более сервисов: пересечения хаба с вертикалями
 export function multiUsers(state) {
   return state.both + (state.bothEcom ?? 0);
@@ -405,8 +416,14 @@ export function step(prevState, input = {}) {
   // но переиспользование мощности имеет цену: пиковые конфликты бьют по еде
   const logistics = hasPerk(asset, 'courier-logistics') && ecomOn
     && !state.story.logisticsSplit;
+  // Мощность логистики: главный рычаг е-кома. Уровень 0…1 — сколько складов,
+  // машин и слотов доставки куплено на месяц.
+  const logisticsLevel = ecomOn ? ecomCapacity(decisions) : 0;
   if (logistics && state.food.users > 0) {
-    qFood *= 1 - ecomDef.logisticsPeakPenalty * Math.min(1, state.ecom.users / state.food.users);
+    const share = Math.min(1, state.ecom.users / state.food.users);
+    // Общий парк: базовый конфликт пиков плюс мощность, уведённая в посылки
+    qFood *= 1 - (ecomDef.logisticsPeakPenalty
+      + ecomDef.logisticsHubPenalty * logisticsLevel) * share;
   }
 
   const multiAtStart = multiUsers(state);
@@ -530,19 +547,24 @@ export function step(prevState, input = {}) {
   // остальные — рыночную наценку на чужую доставку. Наказание одно, не два.
   const splitCut = state.story.logisticsSplit && !hasPerk(asset, 'courier-logistics')
     ? CONFIG.antitrust.ecomMarginCut : 0;
-  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0) - splitCut;
+  // Своя мощность дешевле подряда: маржа растёт с уровнем логистики, а не
+  // выдаётся за перк. Перк курьерского актива остаётся стартовым преимуществом.
+  const marginEcom = ecomDef.margin + (logistics ? ecomDef.logisticsMarginBonus : 0)
+    + ecomDef.logisticsMarginGain * logisticsLevel - splitCut;
   if (ecomOn) {
     ecomPool = Math.max(0, ecomDef.potential * (1 - ecomDef.incumbentLock) - state.ecom.users);
     const subsInEcom = multiAtStart > 0 ? state.plus.subs * (state.bothEcom / multiAtStart) : 0;
     const plusEcomBoost = state.ecom.users > 0
       ? 1 + CONFIG.plus.freqBoostFood * (subsInEcom / Math.max(1, state.ecom.users)) : 1;
-    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost;
+    arpuEcom = ecomDef.arpu * (0.9 + 0.12 * qEcom) * crisisEcomDemand * plusEcomBoost
+      * (1 + ecomDef.logisticsArpuGain * logisticsLevel);
     revenueEcom = state.ecom.users * arpuEcom;
     contribEcom = revenueEcom * marginEcom;
 
     churnEcomRate = clamp(
       ecomDef.baseChurn
       + ecomDef.churnQuality * Math.max(0, 0.75 - qEcom)
+      - ecomDef.logisticsChurnCut * logisticsLevel
       + fedChurnAdd,
       0.01, 0.5,
     );
@@ -588,7 +610,10 @@ export function step(prevState, input = {}) {
       });
     }
     if (ecomOn) {
-      const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1);
+      // Мощность логистики расширяет ёмкость канала: клиенту хаба легче
+      // попробовать посылки, когда их привозят те же курьеры и в тот же день.
+      const attract = clamp(0.25 + 0.75 * qEcom, 0, 1.1)
+        * (1 + ecomDef.logisticsCrossGain * logisticsLevel);
       targets.push({
         id: 'ecom',
         cac: (CONFIG.crossSellCac / (asset.synergy?.ecom ?? 1)) * storyCac,
@@ -700,7 +725,8 @@ export function step(prevState, input = {}) {
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
   const fixedEcom = (ecomOn ? ecomDef.fixedMonthly : 0) * crisisFixedMult;
   const taxiBudgets = taxiOn ? (decisions.taxiSupply ?? 0) + (decisions.taxiMarketing ?? 0) : 0;
-  const ecomBudgets = ecomOn ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) : 0;
+  const ecomBudgets = ecomOn
+    ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) + (decisions.ecomLogistics ?? 0) : 0;
   // Пока идёт антимонопольное дело, юристы — такой же фикс, как офис
   const legalCost = legalActive ? CONFIG.antitrust.legalMonthly : 0;
   const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
@@ -777,6 +803,7 @@ export function step(prevState, input = {}) {
     foodFullContribution,
     taxiFullContribution,
     ecomFullContribution,
+    ecomCapacity: logisticsLevel,
     plusFullContribution,
     opex,
     fixedFood,

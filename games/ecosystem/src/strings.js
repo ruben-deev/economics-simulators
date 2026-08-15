@@ -98,6 +98,8 @@ export const STRINGS = {
     ru: 'Е-ком: <b>{users}</b> клиентов; отток ~{lost}/мес против притока ~<b class="{cls}">{gained}</b>.',
     en: 'E-commerce: <b>{users}</b> customers; churn ~{lost}/mo against ~<b class="{cls}">{gained}</b> arriving.',
   },
+  readoutEcomCapacity: { ru: 'Мощность логистики: <b class="{cls}">{level}</b> от предела — от неё зависят чек, отток и готовность базы пробовать посылки.', en: 'Logistics capacity: <b class="{cls}">{level}</b> of the ceiling — it drives basket size, churn and the base’s readiness to try parcels.' },
+  readoutEcomUnit: { ru: 'Устойчивая экономика ноги: <b class="{cls}">{steady}</b> в месяц (вклад с клиентов минус фикс и ассортимент). Сверху вы платите за рост: {growth} на маркетинг и мощность.', en: 'The leg’s steady economics: <b class="{cls}">{steady}</b> a month (customer contribution less fixed costs and range). On top of that you pay for growth: {growth} on marketing and capacity.' },
   readoutEcomLogistics: {
     ru: 'Общая логистика: курьеры хаба возят посылки в непик — маржа выше, но пиковые конфликты стоят еде качества.',
     en: 'Shared logistics: the hub’s couriers carry parcels off-peak — higher margin, but peak conflicts cost food some quality.',
@@ -562,6 +564,7 @@ export const STRINGS = {
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
   pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+  pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
   pnlTicketsFee: { ru: 'Абонентка партнёрства по билетам', en: 'Ticketing partnership fee' },

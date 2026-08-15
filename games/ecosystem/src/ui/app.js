@@ -344,6 +344,22 @@ function renderLeverReadouts() {
         lost: compact(r.lostEcom), gained: compact(r.ecomColdAcq + r.crossEcomConv),
         cls: (r.ecomColdAcq + r.crossEcomConv) >= r.lostEcom ? 'pos' : 'neg',
       })}</div>
+      <div>${t('readoutEcomCapacity', {
+        level: pct(r.ecomCapacity ?? 0, 0),
+        cls: (r.ecomCapacity ?? 0) > 0.2 ? 'pos' : 'neg',
+      })}</div>
+      ${(() => {
+        // Почему «маржа не сходится»: вклад с клиентов минус фикс — это
+        // устойчивая экономика ноги, а маркетинг и логистика роста платятся
+        // сверху. Разделяем явно, иначе растущая нога выглядит убыточной.
+        const steady = (r.contribEcom ?? 0) - (r.fixedEcom ?? 0) - (d.ecomOps ?? 0);
+        const growth = (d.ecomMarketing ?? 0) + (d.ecomLogistics ?? 0);
+        return `<div>${t('readoutEcomUnit', {
+          steady: (steady >= 0 ? '+' : '') + money(steady),
+          growth: money(growth),
+          cls: steady >= 0 ? 'pos' : 'neg',
+        })}</div>`;
+      })()}
       ${r.logistics ? `<div class="pos">${t('readoutEcomLogistics')}</div>` : ''}
     </div>`;
   }
@@ -435,7 +451,8 @@ function renderBudgetBar() {
     : asset.fixedMonthly + CONFIG.hqMonthly);
   const food = (d.foodOps ?? 0) + (d.foodMarketing ?? 0);
   const taxi = taxiOn ? (d.taxiSupply ?? 0) + (d.taxiMarketing ?? 0) : 0;
-  const ecom = ecomOn ? (d.ecomOps ?? 0) + (d.ecomMarketing ?? 0) : 0;
+  const ecom = ecomOn
+    ? (d.ecomOps ?? 0) + (d.ecomMarketing ?? 0) + (d.ecomLogistics ?? 0) : 0;
   const eco = (anySpoke ? (d.crossSell ?? 0) : 0) + (d.mgmt ?? 0)
     + (r ? (r.licenseFee ?? 0) + (r.ticketsFee ?? 0) + (r.plusPerkCost ?? 0) : 0);
   const total = fixed + food + taxi + ecom + eco;
@@ -1396,6 +1413,7 @@ function renderPnlTab() {
         ${r.taxiOn ? line(t('pnlTaxiSupply'), -(d.taxiSupply ?? 0), 'neg', true) : ''}
         ${r.taxiOn ? line(t('pnlTaxiMarketing'), -(d.taxiMarketing ?? 0), 'neg', true) : ''}
         ${r.ecomOn ? line(t('pnlEcomOps'), -(d.ecomOps ?? 0), 'neg', true) : ''}
+        ${r.ecomOn ? line(t('pnlEcomLogistics'), -(d.ecomLogistics ?? 0), 'neg', true) : ''}
         ${r.ecomOn ? line(t('pnlEcomMarketing'), -(d.ecomMarketing ?? 0), 'neg', true) : ''}
         ${r.licenseFee > 0 ? line(t('pnlLicense'), -r.licenseFee, 'neg', true) : ''}
         ${r.ticketsFee > 0 ? line(t('pnlTicketsFee'), -r.ticketsFee, 'neg', true) : ''}

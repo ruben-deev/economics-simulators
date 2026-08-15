@@ -719,6 +719,34 @@ test('е-ком выходит за воротами по метрикам и д
     'скидка логистики применена к цене запуска');
 });
 
+test('мощность логистики: чек, отток и кросс-селл против общего парка', () => {
+  const { state } = warmFull('logi-cap', 14);
+  assert.ok(state.ecom.on, 'е-ком запущен');
+  const at = (budget) => step(state, {
+    decisions: fullDecisions(state, { ecomLogistics: budget }),
+  }).report;
+  const zero = at(0);
+  const mid = at(3_000_000);
+  const high = at(12_000_000);
+
+  assert.equal(zero.ecomCapacity, 0, 'без бюджета мощности нет');
+  assert.ok(mid.ecomCapacity > 0 && high.ecomCapacity > mid.ecomCapacity, 'мощность растёт с бюджетом');
+  assert.ok(high.ecomCapacity < 1, 'предел не достигается — насыщение');
+
+  assert.ok(mid.arpuEcom > zero.arpuEcom, 'привезли вовремя — корзина крупнее');
+  assert.ok(mid.churnEcomRate < zero.churnEcomRate, 'и отток ниже');
+  assert.ok(mid.marginEcom > zero.marginEcom, 'своя мощность дешевле подряда');
+  assert.ok(mid.crossEcomConv > zero.crossEcomConv, 'база охотнее пробует посылки');
+
+  // Общий парк курьеров: мощность, ушедшая в посылки, снимается с пиков хаба
+  assert.ok(high.logistics, 'актив с курьерами');
+  assert.ok(high.foodQuality < zero.foodQuality, 'качество стартового сервиса платит за мощность');
+
+  // Рычаг обязан быть решением, а не кнопкой «лучше»: максимум разоряет
+  assert.ok(high.ecomFullContribution < mid.ecomFullContribution,
+    'предельная мощность не окупается — у рычага есть внутренний оптимум');
+});
+
 test('общая логистика: маржа е-кома выше, но качество еды платит за пики', () => {
   const { state } = warmFull('logi', 16);
   assert.ok(state.ecom.on);

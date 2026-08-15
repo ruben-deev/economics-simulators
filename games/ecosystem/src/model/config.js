@@ -386,6 +386,20 @@ export const VERTICALS = [
     // конфликты бьют по качеству еды (см. engine)
     logisticsMarginBonus: 0.08,
     logisticsPeakPenalty: 0.04,
+    // --- Мощность логистики: главный рычаг е-кома ---
+    // Замер показал мёртвую механику: при любом месяце запуска е-ком
+    // проигрывал «не запускать» — вклад с клиента (385 ₽ × 34% ≈ 131 ₽)
+    // не окупал ни фикс, ни размытие фокуса третьей вертикалью. Причина
+    // была не в числах, а в отсутствии решения: у е-кома не было рычага,
+    // которым его чинят в жизни, — склады, машины, слоты доставки.
+    logisticsSaturation: 6_000_000,  // бюджет половины эффекта
+    logisticsArpuGain: 0.30,   // быстрые слоты и полки — крупнее и чаще корзина
+    logisticsChurnCut: 0.018,  // привезли вовремя — клиент остался
+    logisticsCrossGain: 0.40,  // готовность базы попробовать посылки
+    logisticsMarginGain: 0.05, // масштаб склада: своя мощность дешевле подряда
+    // Общий парк курьеров конечен: чем больше мощности уходит в посылки,
+    // тем хуже пики у стартового актива. Только для курьерского актива.
+    logisticsHubPenalty: 0.10,
   },
 ];
 
@@ -576,6 +590,17 @@ export const LEVERS = [
     tip: {
       ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
       en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+    },
+  },
+  {
+    key: 'ecomLogistics',
+    group: 'ecom',
+    label: { ru: 'Мощность логистики', en: 'Logistics capacity' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 15_000_000, step: 500_000, def: 0,
+    tip: {
+      ru: 'Склады, машины, слоты доставки. Дорого и постоянно — зато привезли вовремя: корзина крупнее, отток ниже, база охотнее пробует посылки. У актива с собственными курьерами парк общий: мощность, ушедшая в посылки, снимается с пиков стартового сервиса.',
+      en: 'Warehouses, vans, delivery slots. Expensive and permanent — but on-time delivery means bigger baskets, lower churn and a base that is readier to try parcels. If your starting asset owns the couriers, the fleet is shared: capacity moved to parcels is taken off the peaks of the starting service.',
     },
   },
   {
