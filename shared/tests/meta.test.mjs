@@ -78,20 +78,40 @@ test('legacyFor: свой актив — только от своей игры, 
 test('в НОВОГРАД переносятся числа финала, а не только отметка «сыграно»', () => {
   store.clear();
   const g = LEGACY_GAMES.find((x) => x.assetId === 'delivery');
-  // Крепкая победа — ровно порог: перенос по числам ещё нулевой
-  addResultLine(line(g.tag, g.threshold));
-  assert.equal(legacyRatio('delivery'), 1, 'крепкая победа — единица шкалы');
-  assert.equal(legacyFor('delivery').assetScore, g.threshold, 'счёт финала доступен движку');
+  // Единица переноса — «крепкий финал», а не входной порог: открыть актив
+  // легко, набрать полный перенос — нет.
+  addResultLine(line(g.tag, g.solid));
+  assert.equal(legacyRatio('delivery'), 1, 'крепкий финал — единица шкалы');
+  assert.equal(legacyFor('delivery').assetScore, g.solid, 'счёт финала доступен движку');
 
-  // Победа вдвое крупнее порога переносит вдвое больше
-  addResultLine(line(g.tag, g.threshold * 2));
+  // Вход открыт задолго до крепкого финала, но чисел ещё не переносит
+  store.clear();
+  addResultLine(line(g.tag, g.threshold));
+  assert.equal(legacyFor('delivery').asset, true, 'входной порог открывает актив');
+  assert.ok(legacyRatio('delivery') < 1, 'но перенос по числам ещё неполный');
+
+  // Победа вдвое крупнее крепкой переносит вдвое больше — и это потолок
+  addResultLine(line(g.tag, g.solid * 2));
   assert.equal(legacyRatio('delivery'), 2);
 
   // Сверху шкала срезана: рекордная прошлая партия не решает новую
-  addResultLine(line(g.tag, g.threshold * 50));
+  addResultLine(line(g.tag, g.solid * 50));
   assert.equal(legacyRatio('delivery'), LEGACY_RATIO_CAP, 'перенос ограничен потолком');
 
   // Числа чужой игры в ваш актив не текут
+  assert.equal(legacyRatio('tickets'), 0);
+});
+
+test('строка с уровнем сложности открывает наследие так же, как обычная', () => {
+  store.clear();
+  const g = LEGACY_GAMES.find((x) => x.assetId === 'delivery');
+  // Метка партии несёт уровень: «НОВОЕДА·сложный». Наследие смотрит на игру,
+  // а не на уровень — иначе перенос молча пропадал бы у всех, кто играл
+  // не на обычном.
+  addResultLine(line(`${g.tag}·сложный`, g.solid * 2));
+  assert.equal(legacyFor('delivery').asset, true, 'актив открыт');
+  assert.equal(legacyRatio('delivery'), 2, 'и числа финала перенеслись полностью');
+  // Чужая игра из-за общего префикса не подхватывается
   assert.equal(legacyRatio('tickets'), 0);
 });
 

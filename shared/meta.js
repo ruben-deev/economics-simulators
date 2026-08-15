@@ -28,11 +28,29 @@ export const META_BEST_KEY = 'novograd-meta';
 // Введённые вручную строки результата (офлайн-разблокировка)
 export const META_LINES_KEY = 'novograd-meta-lines';
 
-// Порог «достойного финала» — грейд «крепкий» соответствующей игры
+// Две разные планки, и путать их нельзя:
+//
+//   threshold — ВХОД: игра пройдена прилично, актив в НОВОГРАДЕ открыт (★).
+//               Стоит ниже осторожной опоры каждой игры — это ворота, а не
+//               достижение.
+//   solid     — ЕДИНИЦА ПЕРЕНОСА: «крепкий финал» той игры. Отсюда считается
+//               ratio, то есть сколько клиентов, кассы и оценки перейдёт в
+//               НОВОГРАД. Замер опорных стратегий (6 сидов, банкротство = 0):
+//
+//     игра        осторожная  средняя  размашистая  доведённая
+//     НОВОЕДА       3.90        5.57      9.87         8.30   млрд
+//     КИНОРЕКА     15.29       15.49    банкрот       35.80   млрд
+//     БИЛЕТВИЛЬ     0.84        2.13      5.01         5.58   млрд
+//
+//   Правило шкалы: solid — средняя опора, потолок переноса (ratio 2) —
+//   доведённая. Тогда одинаково сыгранная партия даёт одинаковый перенос
+//   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
+//   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
+//   ничего (порог 30 млрд при средней игре 15.5).
 export const LEGACY_GAMES = [
-  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 3e10 },
-  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 2.8e9 },
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
 ];
 
 // Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
@@ -73,6 +91,14 @@ export function addResultLine(line) {
   return { ok: true, parsed };
 }
 
+// Метка игры в строке результата несёт уровень сложности: «НОВОЕДА·сложный».
+// Наследие смотрит на игру, а не на уровень: партия на сложном открывает
+// актив ровно так же, как на обычном. Локальные таблицы рекордов лежат в
+// одном ключе на игру и уже смешаны по уровням — строки должны вести себя
+// так же, иначе перенос молча пропадал бы у всех, кто играл не на обычном.
+const sameGame = (lineTag, gameTag) => lineTag === gameTag
+  || String(lineTag ?? '').startsWith(`${gameTag}·`);
+
 /**
  * Что разблокировано на этом устройстве: локальные рекорды старых игр
  * плюс введённые строки. { delivery: bool, streaming: bool, tickets: bool }
@@ -85,7 +111,7 @@ export function legacyUnlocks() {
     const bestLocal = Array.isArray(records)
       ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
     const bestLine = lines
-      .filter((l) => l.tag === g.tag)
+      .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
     out[g.assetId] = Math.max(bestLocal, bestLine) >= g.threshold;
   }
@@ -106,7 +132,7 @@ export function legacyScores() {
     const bestLocal = Array.isArray(records)
       ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
     const bestLine = lines
-      .filter((l) => l.tag === g.tag)
+      .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
     out[g.assetId] = Math.max(bestLocal, bestLine);
   }
@@ -115,16 +141,18 @@ export function legacyScores() {
 
 /**
  * Насколько крупным был финал игры-источника относительно её «крепкого»
- * порога. 1.0 — крепкая победа, 2.0 — вдвое лучше. Сверху срезано: перенос
- * обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ * финала. 1.0 — крепкая победа, 2.0 — вдвое лучше и потолок переноса:
+ * доведённая партия как раз туда и приходит. Сверху срезано, потому что
+ * перенос обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
  */
-export const LEGACY_RATIO_CAP = 4;
+export const LEGACY_RATIO_CAP = 2;
 export function legacyRatio(assetId, scores = legacyScores()) {
   const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
-  if (!game || !game.threshold) return 0;
+  const unit = game?.solid ?? game?.threshold ?? 0;
+  if (!unit) return 0;
   const score = Number(scores[assetId]) || 0;
   if (score <= 0) return 0;
-  return Math.min(LEGACY_RATIO_CAP, score / game.threshold);
+  return Math.min(LEGACY_RATIO_CAP, score / unit);
 }
 
 // Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
@@ -195,7 +223,10 @@ export function seriesScorecard() {
       tag: g.tag,
       score,
       threshold: g.threshold,
-      ratio: Math.min(LEGACY_RATIO_CAP, g.threshold > 0 ? score / g.threshold : 0),
+      solid: g.solid,
+      // Прогресс меряется «крепким финалом», а ворота — входным порогом:
+      // открыть актив легко, набрать полный перенос — нет.
+      ratio: legacyRatio(g.assetId, scores),
       done: score >= g.threshold,
     };
   });
@@ -234,8 +265,8 @@ export function returnTarget(assetId) {
   const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
   if (!game) return null;
   const best = Number(legacyScores()[assetId]) || 0;
-  const ratio = game.threshold > 0 ? best / game.threshold : 0;
-  const capped = Math.min(LEGACY_RATIO_CAP, ratio);
+  const unit = game.solid ?? game.threshold;
+  const capped = legacyRatio(assetId);
   // Следующая ступень наследия — целое число «крепких финалов»
   const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
   return {
@@ -243,7 +274,7 @@ export function returnTarget(assetId) {
     best,
     ratio: capped,
     nextRatio,
-    target: Math.round(game.threshold * nextRatio),
+    target: Math.round(unit * nextRatio),
     maxed: capped >= LEGACY_RATIO_CAP,
   };
 }

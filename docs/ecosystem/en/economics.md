@@ -80,43 +80,107 @@ optimum. The leaderboard stays shared: the score itself is not scaled.
 
 ## What carries over from the previous game
 
-NOVOGRAD inherits more than a “played” mark: the numbers of your own game’s
-finale carry over — cash and valuation.
+Three **currencies of the finale** and three **flags** carry over. The
+currencies are what the company actually was: customers, cash, valuation.
+The flags are the fact that you played it: your own asset (cheaper win-backs
+and more organic growth), a cinema licence and a ticketing partnership,
+both discounted for the first year.
 
-* **Cash** — the asset’s base treasury plus up to +6% for what you earned
-  above a “solid” finale (the scale is your score over that game’s
-  threshold, capped at four).
-* **Valuation** — your standing with investors: rounds are priced up to +4%
-  higher and never below a raised floor, so the same money costs you a
-  smaller stake. It is a bonus to a decision, not to the score: it only
-  works if you actually raise.
+The unit of the scale is the source game’s **solid finale** (`solid` in
+`shared/meta.js`); the ceiling is twice that, i.e. a polished run. An exactly
+solid finale carries no numbers at all: what carries is what you did *above*
+a solid game.
 
-Measured increment from the numbers (on top of the legacy flags), on tuned
-anchors: delivery +0.4…+1.0 pp, streaming −0.1…+0.6 pp, ticketing
-+3.7…+7.3 pp. In roubles the effect is comparable for all three (~0.2 bn);
-it shows up larger on ticketing because capital is the binding constraint
-there and the base of comparison is smaller.
+| Channel | What it carries | At the ceiling (×2) |
+|---|---|---|
+| Own-asset flag | whether that game’s endgame was played | +2.0% of the median score |
+| Customers | the base and the pool of lapsed users | +12% base → **+10.3% of the score** |
+| Cash | the money you did not spend there | +18% treasury → +2.5% |
+| Valuation | your standing with investors (round terms and floor) | +15% / +30% → +3.3% |
+| All three currencies | | **+14.8% of the score** |
 
-**A legacy is a head start, not a rent.** The first per-flag measurement
-exposed a skew: permanently waived monthly fees (the free ticketing
-partnership, the cinema licence discount) were worth +11.5% and +8.0% of the
-final score, and the whole stack +21% for delivery. The cause was
-structural: saving ₽2.5M a month compounds across all 36 months. The fix is
-not a tweak to the numbers but a term: legacy discounts now last the first
-year, after which everyone pays the same.
+Measured over 8 game codes, one policy, bankruptcy = 0, medians compared
+(averages lie near bankruptcy — see below). At a ×1.5 finale the whole carry
+is worth +8.1%.
+
+Customers are the strongest and the most non-linear channel: +6% of the base
+gives +2.5% of the score, +12% gives +10.3%, and +21% gives +33%. An extra
+customer drags cross-sell, glue and the valuation multiple along. Hence +12%
+at the ceiling and not a percent more.
+
+**The carry-over does not bypass the board.** Yearly targets scale with the
+carried base, not with the asset descriptor: bring a bigger company and you
+must build a bigger second leg.
+
+**Averages lie near bankruptcy.** On some game codes the legacy flips a
+seed: a run that went bankrupt without it survives with it — and the average
+jumps 20–36% where the median moves 8–15%. The cushion decides where the run
+was on the edge anyway.
+
+### Why the thresholds were reset
+
+The audit showed the carry-over was not the same for the three games.
+Measured anchor strategies (6 codes, bankruptcy = 0):
+
+| Game | cautious | middling | sweeping | polished |
+|---|---|---|---|---|
+| NOVOYEDA | 3.90 | 5.57 | 9.87 | 8.30 bn |
+| KINOREKA | 15.29 | 15.49 | bankrupt | 35.80 bn |
+| BILETVILLE | 0.84 | 2.13 | 5.01 | 5.58 bn |
+
+The old thresholds were ₽1bn / ₽30bn / ₽2.8bn. Any NOVOYEDA finale therefore
+hit the carry ceiling (even a cautious run scored four times the threshold),
+while KINOREKA carried almost nothing — its middling run is half its own
+threshold. Two different bars are now separate:
+
+* **entry** (`threshold`) — the asset is unlocked, ★ on the card. It sits
+  below each game’s cautious anchor: ₽1bn / ₽12bn / ₽1.2bn. A gate, not an
+  achievement;
+* **the unit of carry** (`solid`) — a solid finale: ₽5.5bn / ₽16bn / ₽2.5bn,
+  the middling anchor of each game. The ceiling (×2) is a polished run.
+
+The games’ own verdict scales were re-measured the same way: NOVOYEDA put
+“excellent” at ₽3bn while a cautious run scores 3.9 (everyone got it), and
+KINOREKA put it at ₽80bn, which no anchor reaches. Now: NOVOYEDA 10 / 5.5 / 2,
+KINOREKA 32 / 16 / 8, BILETVILLE “solid” ₽2.5bn (was 4).
+
+## A legacy is a head start, not a rent
+
+The first per-flag measurement exposed a skew: permanently waived monthly
+fees (the free ticketing partnership, the cinema licence discount) were worth
++11.5% and +8.0% of the final score, and the whole stack +21% for delivery.
+The cause was structural: saving ₽2.5M a month compounds across all 36
+months. The fix is not a tweak to the numbers but a term: legacy discounts
+now last the first year, after which everyone pays the same.
 
 Measured after the fix (share of the final score, on tuned anchors):
 
-| Asset | own asset | licence | partnership | flag stack | + numbers ×2 | + numbers ×4 |
-|---|---|---|---|---|---|---|
-| delivery | +3.5% | +0.2% | +0.8% | **+4.5%** | +4.8% | +5.4% |
-| streaming | +0.7% | 0.0% | +0.3% | **+2.5%** | +2.9% | +3.4% |
-| ticketing | +2.2% | +0.5% | 0.0% | **+2.7%** | +5.7% | +9.3% |
+| Asset | own asset | licence | partnership | flag stack |
+|---|---|---|---|---|
+| delivery | +3.5% | +0.2% | +0.8% | **+4.5%** |
+| streaming | +0.7% | 0.0% | +0.3% | **+2.5%** |
+| ticketing | +2.2% | +0.5% | 0.0% | **+2.7%** |
 
 The zeros are not errors: your own content needs no cinema licence, your own
-ticketing needs no partnership. The extreme +9.3% for ticketing corresponds
-to a BILETVILLE finale four times its solid threshold (₽16bn) — a rare case,
-and it does not lift a verdict grade on its own.
+ticketing needs no partnership.
+
+## Are the three starts equal?
+
+Compare each finale with its own “solid” threshold under one policy
+(12 codes, medians):
+
+| Start | ×1 (solid finale) | ×1.5 | ×2 (ceiling) |
+|---|---|---|---|
+| NOVOYEDA (delivery) | 1.72× | 1.87× | 2.24× |
+| KINOREKA (streaming) | 1.48× | 1.59× | 1.66× |
+| BILETVILLE (ticketing) | 1.51× | 1.73× | 1.92× |
+
+The carry-over does not break the balance: the spread holds at 1.16–1.17×
+at ×1 and ×1.5, so all three starts get roughly the same relative boost. At
+the very ceiling delivery pulls ahead (1.35×), but it cannot get there: ×2
+for NOVOYEDA means ₽11bn against a polished anchor of 8.3. At realistically
+reachable levels (delivery ×1.5, streaming and ticketing ×2) the numbers are
+1.87 / 1.66 / 1.92 — a 1.16× spread, exactly as without any carry-over.
 
 ## The mid-game crisis: an antitrust case
 

@@ -976,10 +976,27 @@ test('дело не приходит, пока холдингу нечего с�
     'без подписки и общей логистики связывать нечего — дела нет');
 });
 
-test('касса и оценка прошлой игры переносятся в старт, но с потолком', () => {
+test('клиенты, касса и оценка прошлой игры переносятся в старт, но с потолком', () => {
   const asset = assetById('delivery');
   const base = createInitialState('перенос', 'delivery', {});
   assert.equal(base.cash, asset.startCash, 'без наследия — базовая казна актива');
+  assert.equal(base.food.users, asset.users, 'без наследия — база дескриптора');
+
+  // Клиенты: компанию вы приводите с собой, вместе с пулом ушедших
+  const carried = createInitialState('перенос', 'delivery', { asset: true, assetRatio: 2 });
+  assert.ok(carried.food.users > asset.users, 'крупный финал приводит клиентов');
+  assert.ok(carried.food.returnPool > asset.returnPool, 'и пул возврата вместе с ними');
+  assert.ok(carried.food.users / asset.users <= 1 + CONFIG.legacyCarry.usersCap + 1e-9,
+    'перенос базы ограничен');
+  const beyond = createInitialState('перенос', 'delivery', { asset: true, assetRatio: 40 });
+  assert.equal(beyond.food.users, carried.food.users, 'за потолком шкалы прибавки нет');
+
+  // Планки правления считаются от ПЕРЕНЕСЁННОЙ базы: большая компания
+  // обязана и вторую ногу построить большую — иначе перенос обходил бы цели
+  const goalPlain = makeGoal(2, base, base.food.users);
+  const goalCarried = makeGoal(2, carried, carried.food.users);
+  assert.ok(goalCarried.uniqueFloor > goalPlain.uniqueFloor,
+    'перенос поднимает и требования совета, а не только возможности');
 
   // Крепкая победа (ровно порог) ничего не добавляет: прибавка растёт
   // с того, что вы заработали СВЕРХ крепкого финала

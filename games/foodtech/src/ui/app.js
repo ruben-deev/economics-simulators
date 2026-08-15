@@ -1517,9 +1517,12 @@ function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.equityValue > 3e9 ? t('gradeExcellent')
-    : s.equityValue > 1e9 ? t('gradeSolid')
-    : s.equityValue > 3e8 ? t('gradeSurvived') : t('gradeModest');
+    // Шкала выставлена замером опорных стратегий (6 сидов): осторожная даёт
+    // 3.9 млрд, средняя 5.6, размашистая 9.9, доведённая 8.3. Старая шкала
+    // (3/1/0.3 млрд) ставила «отлично» даже осторожной игре.
+    : s.equityValue > 10e9 ? t('gradeExcellent')
+    : s.equityValue > 5.5e9 ? t('gradeSolid')
+    : s.equityValue > 2e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -1537,7 +1540,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(3e9), b: money(1e9), c: money(3e8) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(10e9), b: money(5.5e9), c: money(2e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),

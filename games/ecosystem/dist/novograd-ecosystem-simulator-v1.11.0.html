@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.10.0" />
+  <meta name="app-version" content="1.11.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1807,18 +1807,22 @@ const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, льготные первый год лицензия кино и партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше касса на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a discounted cinema licence and ticketing partnership for the first year — and the numbers of your finale: the more you earned there, the more cash you start with and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, льготные первый год лицензия кино и партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше клиентов и кассы на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
+    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a discounted cinema licence and ticketing partnership for the first year — and the numbers of your finale: the more you earned there, the bigger your customer base and cash at the start and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
-    ru: 'Финал {game} на {score}. Касса на старте: <b>{cash}</b> ({bonus} к базовой) — это деньги, которые вы там не потратили. Прошлая оценка стала репутацией у инвесторов: раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю.',
-    en: 'A {game} finale worth {score}. Opening cash: <b>{cash}</b> ({bonus} over the base) — the money you did not spend there. The old valuation became your standing with investors: rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake.',
+    ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} к дескриптору) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и вторую ногу построить большую.',
+    en: 'A {game} finale worth {score} — that is {ratio} of that game’s solid finale. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} over the descriptor) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
   },
   welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid finale' },
+  welcomeCarryUnit: {
+    ru: 'Единица переноса — «крепкий финал» игры-источника; потолок — финал вдвое крупнее.',
+    en: 'The unit of carry-over is the source game’s solid finale; the ceiling is twice that.',
+  },
   welcomeCarryEmpty: {
-    ru: 'Числа прошлой игры пока не перенесены: сыграйте одну из трёх игр на этом устройстве или введите строку результата выше — в НОВОГРАД перейдут ваша касса и оценка, а не только отметка «сыграно».',
-    en: 'No numbers carried over yet: play one of the three games on this device or paste a result string above — your cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
+    ru: 'Числа прошлой игры пока не перенесены: сыграйте одну из трёх игр на этом устройстве или введите строку результата выше — в НОВОГРАД перейдут ваши клиенты, касса и оценка, а не только отметка «сыграно».',
+    en: 'No numbers carried over yet: play one of the three games on this device or paste a result string above — your customers, cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
   },
   welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
   welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },
@@ -2352,11 +2356,29 @@ const META_BEST_KEY = 'novograd-meta';
 // Введённые вручную строки результата (офлайн-разблокировка)
 const META_LINES_KEY = 'novograd-meta-lines';
 
-// Порог «достойного финала» — грейд «крепкий» соответствующей игры
+// Две разные планки, и путать их нельзя:
+//
+//   threshold — ВХОД: игра пройдена прилично, актив в НОВОГРАДЕ открыт (★).
+//               Стоит ниже осторожной опоры каждой игры — это ворота, а не
+//               достижение.
+//   solid     — ЕДИНИЦА ПЕРЕНОСА: «крепкий финал» той игры. Отсюда считается
+//               ratio, то есть сколько клиентов, кассы и оценки перейдёт в
+//               НОВОГРАД. Замер опорных стратегий (6 сидов, банкротство = 0):
+//
+//     игра        осторожная  средняя  размашистая  доведённая
+//     НОВОЕДА       3.90        5.57      9.87         8.30   млрд
+//     КИНОРЕКА     15.29       15.49    банкрот       35.80   млрд
+//     БИЛЕТВИЛЬ     0.84        2.13      5.01         5.58   млрд
+//
+//   Правило шкалы: solid — средняя опора, потолок переноса (ratio 2) —
+//   доведённая. Тогда одинаково сыгранная партия даёт одинаковый перенос
+//   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
+//   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
+//   ничего (порог 30 млрд при средней игре 15.5).
 const LEGACY_GAMES = [
-  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 3e10 },
-  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 2.8e9 },
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
 ];
 
 // Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
@@ -2397,6 +2419,14 @@ function addResultLine(line) {
   return { ok: true, parsed };
 }
 
+// Метка игры в строке результата несёт уровень сложности: «НОВОЕДА·сложный».
+// Наследие смотрит на игру, а не на уровень: партия на сложном открывает
+// актив ровно так же, как на обычном. Локальные таблицы рекордов лежат в
+// одном ключе на игру и уже смешаны по уровням — строки должны вести себя
+// так же, иначе перенос молча пропадал бы у всех, кто играл не на обычном.
+const sameGame = (lineTag, gameTag) => lineTag === gameTag
+  || String(lineTag ?? '').startsWith(`${gameTag}·`);
+
 /**
  * Что разблокировано на этом устройстве: локальные рекорды старых игр
  * плюс введённые строки. { delivery: bool, streaming: bool, tickets: bool }
@@ -2409,7 +2439,7 @@ function legacyUnlocks() {
     const bestLocal = Array.isArray(records)
       ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
     const bestLine = lines
-      .filter((l) => l.tag === g.tag)
+      .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
     out[g.assetId] = Math.max(bestLocal, bestLine) >= g.threshold;
   }
@@ -2430,7 +2460,7 @@ function legacyScores() {
     const bestLocal = Array.isArray(records)
       ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
     const bestLine = lines
-      .filter((l) => l.tag === g.tag)
+      .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
     out[g.assetId] = Math.max(bestLocal, bestLine);
   }
@@ -2439,16 +2469,18 @@ function legacyScores() {
 
 /**
  * Насколько крупным был финал игры-источника относительно её «крепкого»
- * порога. 1.0 — крепкая победа, 2.0 — вдвое лучше. Сверху срезано: перенос
- * обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ * финала. 1.0 — крепкая победа, 2.0 — вдвое лучше и потолок переноса:
+ * доведённая партия как раз туда и приходит. Сверху срезано, потому что
+ * перенос обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
  */
-const LEGACY_RATIO_CAP = 4;
+const LEGACY_RATIO_CAP = 2;
 function legacyRatio(assetId, scores = legacyScores()) {
   const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
-  if (!game || !game.threshold) return 0;
+  const unit = game?.solid ?? game?.threshold ?? 0;
+  if (!unit) return 0;
   const score = Number(scores[assetId]) || 0;
   if (score <= 0) return 0;
-  return Math.min(LEGACY_RATIO_CAP, score / game.threshold);
+  return Math.min(LEGACY_RATIO_CAP, score / unit);
 }
 
 // Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
@@ -2519,7 +2551,10 @@ function seriesScorecard() {
       tag: g.tag,
       score,
       threshold: g.threshold,
-      ratio: Math.min(LEGACY_RATIO_CAP, g.threshold > 0 ? score / g.threshold : 0),
+      solid: g.solid,
+      // Прогресс меряется «крепким финалом», а ворота — входным порогом:
+      // открыть актив легко, набрать полный перенос — нет.
+      ratio: legacyRatio(g.assetId, scores),
       done: score >= g.threshold,
     };
   });
@@ -2558,8 +2593,8 @@ function returnTarget(assetId) {
   const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
   if (!game) return null;
   const best = Number(legacyScores()[assetId]) || 0;
-  const ratio = game.threshold > 0 ? best / game.threshold : 0;
-  const capped = Math.min(LEGACY_RATIO_CAP, ratio);
+  const unit = game.solid ?? game.threshold;
+  const capped = legacyRatio(assetId);
   // Следующая ступень наследия — целое число «крепких финалов»
   const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
   return {
@@ -2567,7 +2602,7 @@ function returnTarget(assetId) {
     best,
     ratio: capped,
     nextRatio,
-    target: Math.round(game.threshold * nextRatio),
+    target: Math.round(unit * nextRatio),
     maxed: capped >= LEGACY_RATIO_CAP,
   };
 }
@@ -2992,23 +3027,38 @@ const CONFIG = {
   },
 
   // --- Перенос финала игры-источника ---
-  // В НОВОГРАД переходят не только «да/нет», но и числа: касса победившей
-  // компании и её оценка. Масштаб — отношение вашего счёта к «крепкому»
-  // порогу той игры (1.0 — крепкая победа). Сверху срезано: правило набора —
-  // заслуженный вход даёт преимущество, а не победу. Размер замерен.
+  // Из прошлой игры в НОВОГРАД переходят три валюты финала: КЛИЕНТЫ (база,
+  // которую вы вырастили), КАССА (деньги, которые вы там не потратили) и
+  // ОЦЕНКА (репутация у инвесторов). Масштаб — отношение вашего счёта к
+  // «крепкому» порогу той игры: дескриптор стартового актива и есть крепкий
+  // финал (1.0), всё сверх него приходит числами. Сверху срезано: правило
+  // набора — заслуженный вход даёт преимущество, а не победу. Размер замерен.
   legacyCarry: {
-    cashPerRatio: 0.02,   // +2% к стартовой казне за каждую «крепкую победу» сверх первой
-    cashCap: 0.05,        // но не больше +5%
+    // Клиенты: база и пул возврата растут вместе. Планки правления считаются
+    // от ПЕРЕНЕСЁННОЙ базы, а не от дескриптора: большая компания обязана
+    // и вторую ногу построить большую — иначе перенос обходил бы цели.
+    // Потолок переноса — финал вдвое крупнее крепкого (LEGACY_RATIO_CAP = 2),
+    // то есть доведённая партия игры-источника. Срез по силе переноса
+    // клиентов (8 сидов, медиана к «только флаг»): +6% базы даёт +2.5%
+    // итога, +12% — +10.3%, +21% — уже +33%: база нелинейна, лишний клиент
+    // тянет за собой кросс-селл и мультипликатор оценки. Взято +12% на
+    // потолке — заметно, но партию не решает.
+    usersPerRatio: 0.12,  // столько базы прибавляет финал вдвое крупнее крепкого
+    usersCap: 0.12,
+    cashPerRatio: 0.18,   // и столько казны (+2.5% итога)
+    cashCap: 0.18,
     // Наследие — фора на старте, а не рента на всю партию. Льготы по
     // абоненткам действуют первый год: снятая навсегда абонентка давала
     // +11.5% к итогу (замер), потому что экономия компаундится 36 месяцев.
     graceMonths: 12,
     cinemaFeeMult: 0.5,   // лицензия кино в льготный период
     ticketsFeeMult: 0.4,  // партнёрство по билетам в льготный период
-    roundPerRatio: 0.015, // репутация: раунд оценивают выше, доля тает медленнее
-    roundCap: 0.03,
-    floorPerRatio: 0.08,  // и пол оценки в раунде выше
-    floorCap: 0.15,
+    // Оценка прошлой компании — репутация у инвесторов: раунд оценивают
+    // выше и не роняют ниже пола. Вместе +3.3% итога на потолке.
+    roundPerRatio: 0.15,
+    roundCap: 0.15,
+    floorPerRatio: 0.30,
+    floorCap: 0.30,
   },
 
   // --- Антимонопольное дело (кризис середины партии) ---
@@ -3585,6 +3635,12 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 const clampNum = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
+// База, от которой правление считает планки. Это не дескриптор актива, а
+// то, с чем вы РЕАЛЬНО начали: перенесённая из прошлой игры база больше —
+// значит и требования выше. Иначе крупный финал не давал бы форы, а
+// обходил бы цели года.
+const baseUsers = (state) => state.food?.startUsers ?? assetById(state.assetId).users;
+
 const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
   glue: 'glue',             // доля клиентов с двумя и более сервисами
@@ -3613,8 +3669,7 @@ function makeGoal(year, state, uniqueUsers) {
     // Замер по доведённым опорам с доставкой (база 210 тыс): средняя даёт
     // ~105 тыс, размашистая ~128 тыс, выжидательная с запуском на 8-м
     // месяце — ~46 тыс и цель проваливает.
-    const asset = assetById(state.assetId);
-    const target = Math.round(clampNum(asset.users * 0.29, 28_000, 60_000) / 1000) * 1000;
+    const target = Math.round(clampNum(baseUsers(state) * 0.29, 28_000, 60_000) / 1000) * 1000;
     return {
       year,
       type: GOAL_TYPES.secondLeg,
@@ -3624,7 +3679,6 @@ function makeGoal(year, state, uniqueUsers) {
     };
   }
   if (year === 2) {
-    const asset = assetById(state.assetId);
     return {
       year,
       type: GOAL_TYPES.glue,
@@ -3636,12 +3690,11 @@ function makeGoal(year, state, uniqueUsers) {
       target: 0.20,
       // И не ценой хаба: сжать стартовый актив ради красивой доли нельзя.
       // Пол масштабируется базой актива — у билетов он в разы ниже.
-      uniqueFloor: Math.round(Math.max(asset.users * 0.85, uniqueUsers * 0.9)),
+      uniqueFloor: Math.round(Math.max(baseUsers(state) * 0.85, uniqueUsers * 0.9)),
       reward: 0.13,
       penalty: 'marketingCap',
     };
   }
-  const asset = assetById(state.assetId);
   return {
     year,
     type: GOAL_TYPES.profit,
@@ -3651,7 +3704,7 @@ function makeGoal(year, state, uniqueUsers) {
     // Калибровать такие цели случайными стратегиями нельзя: прибыльность —
     // бинарный порог качества (см. HANDOFF).
     target: 7,
-    uniqueFloor: Math.round(Math.max(asset.users * 0.9, uniqueUsers * 0.95)),
+    uniqueFloor: Math.round(Math.max(baseUsers(state) * 0.9, uniqueUsers * 0.95)),
     reward: 0.18,
     penalty: 'valuation',
   };
@@ -4459,6 +4512,21 @@ function carryOver(legacy) {
 // Касса победителя: базовая казна актива плюс то, что вы реально скопили
 // в прошлой игре. Прибавка ограничена — иначе рекордная прошлая партия
 // решала бы новую до первого хода.
+// Клиенты победителя: дескриптор актива — это КРЕПКИЙ финал игры-источника.
+// Если вы там сделали больше, база и пул возврата приходят больше — вместе,
+// потому что это одна и та же компания. Планки правления считаются от этой
+// же базы (см. board.makeGoal): большой холдинг обязан и вторую ногу
+// построить большую.
+function startingUsers(asset, legacy = {}) {
+  const over = carryOver(legacy);
+  const mult = 1 + clamp(CONFIG.legacyCarry.usersPerRatio * over, 0, CONFIG.legacyCarry.usersCap);
+  return {
+    users: Math.round(asset.users * mult),
+    returnPool: Math.round(asset.returnPool * mult),
+    mult,
+  };
+}
+
 function startingCash(asset, legacy = {}) {
   const base = asset.startCash ?? CONFIG.startCash;
   const over = carryOver(legacy);
@@ -4486,6 +4554,7 @@ function legacyValuationFloor(legacy = {}) {
 function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}, difficulty = 'normal') {
   const asset = assetById(assetId);
   const rng = createRng(seed);
+  const carried = startingUsers(asset, legacy);
   const state = {
     seed,
     rngState: rng.state(),
@@ -4508,8 +4577,10 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
     },
     // Стартовый актив (хаб) на портфельном уровне
     food: {
-      users: asset.users,
-      returnPool: asset.returnPool,
+      users: carried.users,
+      returnPool: carried.returnPool,
+      // База на старте: от неё считает планки правление
+      startUsers: carried.users,
     },
     taxi: {
       on: false,
@@ -4546,7 +4617,7 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
     history: [],
     over: null,   // 'bankrupt' | 'finished'
   };
-  state.board.goal = makeGoal(1, state, asset.users);
+  state.board.goal = makeGoal(1, state, carried.users);
   return state;
 }
 
@@ -7804,23 +7875,29 @@ function showWelcome() {
     return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
   }).join(' · ');
 
-  // Что переносится числами: касса победившей компании и её репутация
-  // у инвесторов. Показываем до старта, чтобы перенос был виден, а не
-  // угадывался по цифре в шапке.
+  // Что переносится числами: клиенты, касса и репутация у инвесторов.
+  // Показываем до старта, чтобы перенос был виден, а не угадывался по
+  // цифре в шапке.
   const carry = legacyFor(assetWanted, unlocks, legacyScores());
   const carryAsset = assetById(assetWanted);
   const carryCash = startingCash(carryAsset, carry);
   const baseCash = carryAsset.startCash ?? CONFIG.startCash;
+  const carryUsers = startingUsers(carryAsset, carry);
   const carryHtml = carry.assetScore > 0
     ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
         ${t('welcomeCarry', {
           game: tx(carryAsset.fromGame),
           score: money(carry.assetScore),
+          ratio: `${carry.assetRatio.toFixed(2)}×`,
+          users: compact(carryUsers.users),
+          usersBonus: carryUsers.users > carryAsset.users
+            ? `+${compact(carryUsers.users - carryAsset.users)}` : t('welcomeCarryNone'),
           cash: money(carryCash),
           bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
           floor: money(legacyValuationFloor(carry)),
           round: pct(legacyReputationMult(carry) - 1, 0),
-        })}</div>`
+        })}
+        <div class="funding-note" style="margin-top:4px">${t('welcomeCarryUnit')}</div></div>`
     : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
 
   modal(`<h2>${t('welcomeTitle')}</h2>

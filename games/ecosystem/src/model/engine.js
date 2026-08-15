@@ -62,6 +62,21 @@ function carryOver(legacy) {
 // Касса победителя: базовая казна актива плюс то, что вы реально скопили
 // в прошлой игре. Прибавка ограничена — иначе рекордная прошлая партия
 // решала бы новую до первого хода.
+// Клиенты победителя: дескриптор актива — это КРЕПКИЙ финал игры-источника.
+// Если вы там сделали больше, база и пул возврата приходят больше — вместе,
+// потому что это одна и та же компания. Планки правления считаются от этой
+// же базы (см. board.makeGoal): большой холдинг обязан и вторую ногу
+// построить большую.
+export function startingUsers(asset, legacy = {}) {
+  const over = carryOver(legacy);
+  const mult = 1 + clamp(CONFIG.legacyCarry.usersPerRatio * over, 0, CONFIG.legacyCarry.usersCap);
+  return {
+    users: Math.round(asset.users * mult),
+    returnPool: Math.round(asset.returnPool * mult),
+    mult,
+  };
+}
+
 export function startingCash(asset, legacy = {}) {
   const base = asset.startCash ?? CONFIG.startCash;
   const over = carryOver(legacy);
@@ -89,6 +104,7 @@ export function legacyValuationFloor(legacy = {}) {
 export function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}, difficulty = 'normal') {
   const asset = assetById(assetId);
   const rng = createRng(seed);
+  const carried = startingUsers(asset, legacy);
   const state = {
     seed,
     rngState: rng.state(),
@@ -111,8 +127,10 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
     },
     // Стартовый актив (хаб) на портфельном уровне
     food: {
-      users: asset.users,
-      returnPool: asset.returnPool,
+      users: carried.users,
+      returnPool: carried.returnPool,
+      // База на старте: от неё считает планки правление
+      startUsers: carried.users,
     },
     taxi: {
       on: false,
@@ -149,7 +167,7 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
     history: [],
     over: null,   // 'bankrupt' | 'finished'
   };
-  state.board.goal = makeGoal(1, state, asset.users);
+  state.board.goal = makeGoal(1, state, carried.users);
   return state;
 }
 

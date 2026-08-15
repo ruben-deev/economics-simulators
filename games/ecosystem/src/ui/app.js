@@ -17,7 +17,7 @@ import {
   createInitialState, step, explain, valuation, sumOfParts,
   fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty,
   plusAvailable, plusLaunchCost, cinemaLicenseFee, ticketsPartnerFee, hasPerk,
-  startingCash, legacyValuationFloor, legacyReputationMult,
+  startingCash, startingUsers, legacyValuationFloor, legacyReputationMult,
   enterEndless, endlessScore, endlessGrowth,
   financeLevel, financeSaturation, miscRate,
 } from '../model/engine.js';
@@ -1924,23 +1924,29 @@ function showWelcome() {
     return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
   }).join(' · ');
 
-  // Что переносится числами: касса победившей компании и её репутация
-  // у инвесторов. Показываем до старта, чтобы перенос был виден, а не
-  // угадывался по цифре в шапке.
+  // Что переносится числами: клиенты, касса и репутация у инвесторов.
+  // Показываем до старта, чтобы перенос был виден, а не угадывался по
+  // цифре в шапке.
   const carry = legacyFor(assetWanted, unlocks, legacyScores());
   const carryAsset = assetById(assetWanted);
   const carryCash = startingCash(carryAsset, carry);
   const baseCash = carryAsset.startCash ?? CONFIG.startCash;
+  const carryUsers = startingUsers(carryAsset, carry);
   const carryHtml = carry.assetScore > 0
     ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
         ${t('welcomeCarry', {
           game: tx(carryAsset.fromGame),
           score: money(carry.assetScore),
+          ratio: `${carry.assetRatio.toFixed(2)}×`,
+          users: compact(carryUsers.users),
+          usersBonus: carryUsers.users > carryAsset.users
+            ? `+${compact(carryUsers.users - carryAsset.users)}` : t('welcomeCarryNone'),
           cash: money(carryCash),
           bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
           floor: money(legacyValuationFloor(carry)),
           round: pct(legacyReputationMult(carry) - 1, 0),
-        })}</div>`
+        })}
+        <div class="funding-note" style="margin-top:4px">${t('welcomeCarryUnit')}</div></div>`
     : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
 
   modal(`<h2>${t('welcomeTitle')}</h2>

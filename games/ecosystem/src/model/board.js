@@ -21,6 +21,12 @@ import { CONFIG, assetById } from './config.js';
 
 const clampNum = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
+// База, от которой правление считает планки. Это не дескриптор актива, а
+// то, с чем вы РЕАЛЬНО начали: перенесённая из прошлой игры база больше —
+// значит и требования выше. Иначе крупный финал не давал бы форы, а
+// обходил бы цели года.
+const baseUsers = (state) => state.food?.startUsers ?? assetById(state.assetId).users;
+
 export const GOAL_TYPES = {
   secondLeg: 'secondLeg',   // клиенты новой вертикали к концу года
   glue: 'glue',             // доля клиентов с двумя и более сервисами
@@ -49,8 +55,7 @@ export function makeGoal(year, state, uniqueUsers) {
     // Замер по доведённым опорам с доставкой (база 210 тыс): средняя даёт
     // ~105 тыс, размашистая ~128 тыс, выжидательная с запуском на 8-м
     // месяце — ~46 тыс и цель проваливает.
-    const asset = assetById(state.assetId);
-    const target = Math.round(clampNum(asset.users * 0.29, 28_000, 60_000) / 1000) * 1000;
+    const target = Math.round(clampNum(baseUsers(state) * 0.29, 28_000, 60_000) / 1000) * 1000;
     return {
       year,
       type: GOAL_TYPES.secondLeg,
@@ -60,7 +65,6 @@ export function makeGoal(year, state, uniqueUsers) {
     };
   }
   if (year === 2) {
-    const asset = assetById(state.assetId);
     return {
       year,
       type: GOAL_TYPES.glue,
@@ -72,12 +76,11 @@ export function makeGoal(year, state, uniqueUsers) {
       target: 0.20,
       // И не ценой хаба: сжать стартовый актив ради красивой доли нельзя.
       // Пол масштабируется базой актива — у билетов он в разы ниже.
-      uniqueFloor: Math.round(Math.max(asset.users * 0.85, uniqueUsers * 0.9)),
+      uniqueFloor: Math.round(Math.max(baseUsers(state) * 0.85, uniqueUsers * 0.9)),
       reward: 0.13,
       penalty: 'marketingCap',
     };
   }
-  const asset = assetById(state.assetId);
   return {
     year,
     type: GOAL_TYPES.profit,
@@ -87,7 +90,7 @@ export function makeGoal(year, state, uniqueUsers) {
     // Калибровать такие цели случайными стратегиями нельзя: прибыльность —
     // бинарный порог качества (см. HANDOFF).
     target: 7,
-    uniqueFloor: Math.round(Math.max(asset.users * 0.9, uniqueUsers * 0.95)),
+    uniqueFloor: Math.round(Math.max(baseUsers(state) * 0.9, uniqueUsers * 0.95)),
     reward: 0.18,
     penalty: 'valuation',
   };

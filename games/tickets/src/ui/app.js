@@ -1631,7 +1631,9 @@ function waterfallHtml(rows) {
 function gradeOf(score) {
   if (score.bankrupt) return t('gradeBankrupt');
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return t('gradeExcellent');
-  if (score.equityValue >= 4_000_000_000) return t('gradeSolid');
+  // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
+  // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
+  if (score.equityValue >= 2_500_000_000) return t('gradeSolid');
   if (score.orgShare < 0.25) return t('gradeModest');
   return t('gradeSurvived');
 }
@@ -1718,7 +1720,7 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
-    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
