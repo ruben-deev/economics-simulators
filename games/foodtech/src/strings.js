@@ -177,7 +177,7 @@ export const STRINGS = {
   mapKmShort: { ru: 'км', en: 'km' },
   mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
   mapPerOrderTag: { ru: '/заказ', en: '/order' },
-  mapRefRing: { ru: 'Граница нормы сейчас на {km} км: дальше заказ не укладывается в {min} минут.', en: 'The norm now ends at {km} km: beyond that an order no longer fits {min} minutes.' },
+  mapRefRing: { ru: 'Норма держится до плеча {km} км: дальше заказ перестаёт укладываться в {min} минут.', en: 'The norm holds up to a {km} km leg: beyond that an order stops fitting {min} minutes.' },
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
   mapLiveMeta: { ru: 'клиентов {customers} · ресторанов {restaurants}', en: '{customers} customers · {restaurants} restaurants' },
@@ -187,8 +187,8 @@ export const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Нажмите на квартал, чтобы открыть район или убрать его из плана. Зелёный приносит с заказа, красный съедает, пунктирный меняется в конце недели.',
-    en: 'Click a block to open the district or drop it from the plan. Green earns per order, red eats, and a dashed one changes at the end of the week.',
+    ru: 'Ниточка в квартале — плечо доставки: заказ едет от ресторана района к его же клиенту, и чем плечо длиннее, тем меньше заказов успевает курьер. Красная — район не укладывается в эталонные минуты. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
+    en: 'The thread inside a block is the delivery leg: an order travels from a restaurant in the district to a customer in the same district, and the longer the leg, the fewer orders a courier completes. A red thread means the district misses the reference time. Click a block to open the district or drop it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
