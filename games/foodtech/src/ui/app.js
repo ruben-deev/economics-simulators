@@ -1466,7 +1466,7 @@ function recordsBlockHtml(s) {
 // Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
 // открывает бейдж и сувенирные сиды «городов-побратимов». Строго
 // косметика: экономика зачётных партий не меняется — экономический буст
-// сломал бы сравнимость лидерборда и калибровку целей совета.
+// сломал бы честность общей таблицы и калибровку целей совета.
 function conglomerateBadgeHtml() {
   if (!conglomerateUnlocked()) return '';
   return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;

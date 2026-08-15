@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.6.0" />
-  <meta name="app-build-date" content="2026-08-14" />
+  <meta name="app-version" content="1.7.0" />
+  <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОГРАД · ecosystem economics simulator</title>
@@ -1016,7 +1016,7 @@ function t(key, vars) {
 const STRINGS = {
   // --- шапка ---
   brandTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
-  brandSub: { ru: 'экосистемный симулятор · эндгейм набора', en: 'ecosystem simulator · the endgame of the set' },
+  brandSub: { ru: 'симулятор экосистемы · финал серии', en: 'ecosystem simulator · the finale of the series' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
@@ -1120,9 +1120,9 @@ const STRINGS = {
   // --- бюджетная полоса ---
   budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
   budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
-  budgetFood: { ru: 'хаб', en: 'hub' },
+  budgetFood: { ru: 'ядро', en: 'core' },
   budgetTaxi: { ru: 'такси', en: 'taxi' },
-  budgetEcom: { ru: 'е-ком', en: 'e-com' },
+  budgetEcom: { ru: 'торговля', en: 'retail' },
   budgetEco: { ru: 'экосистема', en: 'ecosystem' },
   budgetNet: {
     ru: 'Вклад прошлого месяца {contribution} → прибыль примерно <b class="{cls}">{net}</b>.',
@@ -1133,9 +1133,9 @@ const STRINGS = {
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
   mapFood: { ru: 'Еда', en: 'Food' },
-  mapHub: { ru: 'Хаб', en: 'Hub' },
-  mapEcom: { ru: 'Е-ком', en: 'E-com' },
-  mapEcomOff: { ru: 'е-ком не запущен', en: 'e-com not launched' },
+  mapHub: { ru: 'Ядро', en: 'Core' },
+  mapEcom: { ru: 'Торговля', en: 'Retail' },
+  mapEcomOff: { ru: 'торговля не запущена', en: 'retail not launched' },
   mapPlus: { ru: 'Plus · {subs}', en: 'Plus · {subs}' },
   mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
@@ -1305,7 +1305,7 @@ const STRINGS = {
   statTaxi: { ru: 'Такси', en: 'Taxi' },
   statTaxiSub: { ru: '{drivers} водителей · подача {fill}', en: '{drivers} drivers · pickup fill {fill}' },
   statTaxiOff: { ru: 'не запущено', en: 'not launched' },
-  statEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  statEcom: { ru: 'Онлайн-торговля', en: 'Online retail' },
   statEcomSub: { ru: 'маржа {margin} с общей логистикой', en: 'margin {margin} with shared logistics' },
   statPlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   statPlusSub: { ru: '+{conv} / −{churned} за месяц', en: '+{conv} / −{churned} this month' },
@@ -1494,9 +1494,9 @@ const STRINGS = {
     ru: 'Два канала роста такси: кросс-селл из своей базы и холодный маркетинг. У кросс-селла ниже цена, у маркетинга — выше потолок.',
     en: 'Taxi’s two growth channels: cross-sell from your own base and cold marketing. Cross-sell is cheaper; marketing scales higher.',
   },
-  seriesFood: { ru: 'Хаб', en: 'Hub' },
+  seriesFood: { ru: 'Ядро', en: 'Core' },
   seriesTaxi: { ru: 'Такси', en: 'Taxi' },
-  seriesEcom: { ru: 'Е-ком', en: 'E-com' },
+  seriesEcom: { ru: 'Торговля', en: 'Retail' },
   seriesBoth: { ru: 'Мульти-клиенты', en: 'Multi-service' },
   seriesPlus: { ru: 'Подписчики Plus', en: 'Plus subs' },
   seriesUnique: { ru: 'Уникальные', en: 'Unique' },
@@ -1533,7 +1533,7 @@ const STRINGS = {
   sopColValue: { ru: 'Оценка', en: 'Value' },
   sopPartFood: { ru: 'Стартовый актив', en: 'Starting asset' },
   sopPartTaxi: { ru: 'Такси', en: 'Taxi' },
-  sopPartEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  sopPartEcom: { ru: 'Онлайн-торговля', en: 'Online retail' },
   sopPartPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
   sopThirdAct: {
     ru: 'Третий акт: инвесторы требуют прибыльную экосистему, а не зоопарк — убыточные части в последний год дисконтируются жёстче.',
@@ -1571,7 +1571,7 @@ const STRINGS = {
   pnlFoodMarketing: { ru: 'Возврат клиентов хаба', en: 'Hub win-back' },
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
-  pnlEcomOps: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+  pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
   pnlTicketsFee: { ru: 'Абонентка партнёрства по билетам', en: 'Ticketing partnership fee' },
@@ -1592,7 +1592,7 @@ const STRINGS = {
   baseColCount: { ru: 'Людей', en: 'People' },
   baseFood: { ru: 'Клиенты хаба', en: 'Hub customers' },
   baseTaxi: { ru: 'Клиенты такси', en: 'Taxi customers' },
-  baseEcom: { ru: 'Клиенты е-кома', en: 'E-commerce customers' },
+  baseEcom: { ru: 'Покупатели', en: 'Retail customers' },
   baseBoth: { ru: 'Два и более сервисов', en: 'Two or more services' },
   basePlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   baseUnique: { ru: 'Уникальных клиентов', en: 'Unique customers' },
@@ -1650,8 +1650,8 @@ const STRINGS = {
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
-    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и спец-сиды: экономических бустов в их зачётных партиях нет — они сломали бы лидерборд.',
-    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and special seeds in the old games: no economic boosts in their ranked runs — that would break the leaderboard.',
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, оставляет в старых играх памятный знак и сувенирные коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
+    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn leaves a keepsake mark and souvenir game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -1724,6 +1724,12 @@ const STRINGS = {
   },
   welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
   welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },
+  welcomeLegacyReset: { ru: 'Сбросить путь', en: 'Reset path' },
+  welcomeLegacyResetAsk: {
+    ru: 'Пройти путь набора заново? Забудутся введённые строки результатов, лучший финал НОВОГРАДА и текущая партия. Таблицы рекордов всех игр останутся на месте.',
+    en: 'Start the set’s path over? This forgets entered result strings, your best NOVOGRAD finale and the current game. Every game’s record table stays.',
+  },
+  welcomeLegacyResetDone: { ru: 'Путь набора сброшен. Рекорды игр не тронуты.', en: 'The set’s path is reset. Game records are untouched.' },
   welcomeLegacyAdded: { ru: 'Строка принята: {tag}. Наследие обновлено.', en: 'String accepted: {tag}. Legacy updated.' },
   welcomeLegacyBad: { ru: 'Строка не прошла проверку контрольной суммы.', en: 'The string failed its checksum.' },
   welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
@@ -1768,7 +1774,7 @@ const STRINGS = {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
     en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a rouble is added to the score — conglomerates are not built for multipliers.',
   },
-  // --- пост-эндгейм: год конгломерата ---
+  // --- после финала: год конгломерата ---
   endlessStart: { ru: 'Играть год конгломерата', en: 'Play the conglomerate year' },
   endlessTitle: { ru: 'Год конгломерата', en: 'The conglomerate year' },
   endlessIntro: {
@@ -2305,6 +2311,28 @@ function returnTarget(assetId) {
     target: Math.round(game.threshold * nextRatio),
     maxed: capped >= LEGACY_RATIO_CAP,
   };
+}
+
+// Сохранение партии НОВОГРАДА — сбрасывается вместе с прогрессом набора
+const NOVOGRAD_SAVE_KEY = 'novograd-save-v1';
+
+/**
+ * Сброс экосистемного прогресса: введённые строки наследия, лучший финал
+ * НОВОГРАДА и его незаконченная партия. Нужен, чтобы пройти путь заново
+ * с чистого листа — например, показать группе игру «как в первый раз».
+ *
+ * Таблицы рекордов игр НЕ трогаются: они заработаны и остаются. По той же
+ * причине не трогается и мировая таблица — там результаты уже на сервере.
+ */
+function resetEcosystemProgress() {
+  const cleared = [];
+  for (const key of [META_BEST_KEY, META_LINES_KEY, NOVOGRAD_SAVE_KEY]) {
+    try {
+      if (localStorage.getItem(key) !== null) cleared.push(key);
+      localStorage.removeItem(key);
+    } catch { /* приватный режим */ }
+  }
+  return cleared;
 }
 
 // Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
@@ -3121,7 +3149,7 @@ const LEVERS = [
   {
     key: 'ecomOps',
     group: 'ecom',
-    label: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+    label: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
     tip: {
@@ -7108,6 +7136,7 @@ function showWelcome() {
         <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
           style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
         <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
+        <button class="btn small" id="legacy-reset" type="button">${t('welcomeLegacyReset')}</button>
       </div>
     </div>
     ${carryHtml}
@@ -7154,6 +7183,17 @@ function showWelcome() {
     } else {
       toast(t('welcomeLegacyBad'));
     }
+  });
+  // Сброс пути набора: забываются строки наследия, лучший финал и эта партия.
+  // Таблицы рекордов игр не трогаются — они заработаны и остаются.
+  el('modal-root').querySelector('#legacy-reset')?.addEventListener('click', () => {
+    if (!window.confirm(t('welcomeLegacyResetAsk'))) return;
+    resetEcosystemProgress();
+    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+    save();
+    renderAll();
+    showWelcome();
+    toast(t('welcomeLegacyResetDone'));
   });
 }
 

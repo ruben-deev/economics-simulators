@@ -570,7 +570,7 @@ export const LEVERS = [
   {
     key: 'ecomOps',
     group: 'ecom',
-    label: { ru: 'Ассортимент и фулфилмент', en: 'Range and fulfilment' },
+    label: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
     tip: {

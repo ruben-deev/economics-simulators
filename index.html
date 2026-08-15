@@ -183,7 +183,9 @@
     // Витрина живёт по тем же правилам, что и игры: язык хранится в одном
     // ключе localStorage, поэтому выбор со стартовой страницы переносится внутрь.
     import { t, setLang, getLang, detectLang, setStrings } from './shared/i18n.js';
-    import { legacyUnlocks, conglomerateUnlocked, seriesScorecard } from './shared/meta.js';
+    import {
+      legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
+    } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
 
     // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
@@ -244,8 +246,23 @@
         </div>
         <div class="series-grid">${cells}</div>
         <p class="sub" style="margin-top:8px">${tail} ${ru
-          ? 'Полоса — прогресс до «крепкого» финала игры; выше шкала не растёт.'
-          : 'The bar is progress to that game’s solid finale; it does not grow beyond.'}</p>`;
+          ? 'Полоса — насколько близко вы к уверенной победе в игре; выше шкала не растёт.'
+          : 'The bar shows how close you are to a confident win in that game; it does not grow beyond.'}</p>
+        <div class="card-actions" style="padding-top:4px">
+          <a href="#" id="series-reset" style="flex:0 0 auto;padding:8px 14px;font-size:13px">${
+            ru ? 'Пройти путь заново' : 'Start the path over'}</a>
+        </div>`;
+      // Сброс пути: забываются введённые строки, лучший финал экосистемы и
+      // её незаконченная партия. Таблицы рекордов игр остаются — они заработаны.
+      document.getElementById('series-reset')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const ask = ru
+          ? 'Пройти путь заново? Забудутся: введённые строки результатов, лучший финал НОВОГРАДА и его незаконченная партия. Таблицы рекордов всех игр останутся на месте.'
+          : 'Start the path over? This forgets: entered result strings, your best NOVOGRAD finale and its unfinished game. Every game’s record table stays.';
+        if (!window.confirm(ask)) return;
+        resetEcosystemProgress();
+        render();
+      });
     }
 
     function renderConglomeratePath() {

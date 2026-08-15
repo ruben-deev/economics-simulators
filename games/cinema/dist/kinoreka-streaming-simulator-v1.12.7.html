@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.12.6" />
-  <meta name="app-build-date" content="2026-08-14" />
+  <meta name="app-version" content="1.12.7" />
+  <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>КИНОРЕКА · streaming economics simulator</title>
@@ -1653,13 +1653,13 @@ score = valuation × your stake`,
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
   metaConglomerateText: {
-    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
-    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте памятную партию с одним из кодов: {seeds}. Награда чисто символическая: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a commemorative game with one of these codes: {seeds}. The reward is purely symbolic: ranked games’ economics stay untouched.',
   },
   metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
   metaReturnText: {
-    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал сейчас — {ratio} «крепких». Следующая ступень наследия — {next}: для неё нужен итог от {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
-    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale is currently {ratio} “solid” finishes. The next legacy step is {next}, which needs a result of {target} or more. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал здесь — {best}. Следующая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
+    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
   },
   metaReturnMaxed: {
     ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
@@ -2166,6 +2166,28 @@ function returnTarget(assetId) {
     target: Math.round(game.threshold * nextRatio),
     maxed: capped >= LEGACY_RATIO_CAP,
   };
+}
+
+// Сохранение партии НОВОГРАДА — сбрасывается вместе с прогрессом набора
+const NOVOGRAD_SAVE_KEY = 'novograd-save-v1';
+
+/**
+ * Сброс экосистемного прогресса: введённые строки наследия, лучший финал
+ * НОВОГРАДА и его незаконченная партия. Нужен, чтобы пройти путь заново
+ * с чистого листа — например, показать группе игру «как в первый раз».
+ *
+ * Таблицы рекордов игр НЕ трогаются: они заработаны и остаются. По той же
+ * причине не трогается и мировая таблица — там результаты уже на сервере.
+ */
+function resetEcosystemProgress() {
+  const cleared = [];
+  for (const key of [META_BEST_KEY, META_LINES_KEY, NOVOGRAD_SAVE_KEY]) {
+    try {
+      if (localStorage.getItem(key) !== null) cleared.push(key);
+      localStorage.removeItem(key);
+    } catch { /* приватный режим */ }
+  }
+  return cleared;
 }
 
 // Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
@@ -7916,7 +7938,7 @@ function recordsBlockHtml(s) {
 // Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
 // открывает бейдж и сувенирные сиды «городов-побратимов». Строго
 // косметика: экономика зачётных партий не меняется — экономический буст
-// сломал бы сравнимость лидерборда и калибровку целей совета.
+// сломал бы честность общей таблицы и калибровку целей совета.
 function conglomerateBadgeHtml() {
   if (!conglomerateUnlocked()) return '';
   return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;

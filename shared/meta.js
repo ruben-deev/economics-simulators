@@ -248,5 +248,27 @@ export function returnTarget(assetId) {
   };
 }
 
+// Сохранение партии НОВОГРАДА — сбрасывается вместе с прогрессом набора
+export const NOVOGRAD_SAVE_KEY = 'novograd-save-v1';
+
+/**
+ * Сброс экосистемного прогресса: введённые строки наследия, лучший финал
+ * НОВОГРАДА и его незаконченная партия. Нужен, чтобы пройти путь заново
+ * с чистого листа — например, показать группе игру «как в первый раз».
+ *
+ * Таблицы рекордов игр НЕ трогаются: они заработаны и остаются. По той же
+ * причине не трогается и мировая таблица — там результаты уже на сервере.
+ */
+export function resetEcosystemProgress() {
+  const cleared = [];
+  for (const key of [META_BEST_KEY, META_LINES_KEY, NOVOGRAD_SAVE_KEY]) {
+    try {
+      if (localStorage.getItem(key) !== null) cleared.push(key);
+      localStorage.removeItem(key);
+    } catch { /* приватный режим */ }
+  }
+  return cleared;
+}
+
 // Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
 export const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];

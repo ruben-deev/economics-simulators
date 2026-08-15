@@ -17,6 +17,7 @@ const {
   parseResultLine, addResultLine, savedLines, legacyUnlocks, legacyFor,
   rememberNovogradResult, novogradBest, conglomerateUnlocked, tripleCrown,
   LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY, legacyRatio, LEGACY_RATIO_CAP,
+  resetEcosystemProgress, NOVOGRAD_SAVE_KEY,
 } = await import('../meta.js');
 const { resultString } = await import('../records.js');
 
@@ -121,4 +122,27 @@ test('порог достойного финала приходит от акт�
   store.clear();
   localStorage.setItem(META_BEST_KEY, JSON.stringify({ best: NOVOGRAD_WORTHY + 1 }));
   assert.equal(conglomerateUnlocked(), true, 'старая запись читается по общему порогу');
+});
+
+test('сброс экосистемного прогресса не трогает таблицы рекордов', () => {
+  store.clear();
+  const g = LEGACY_GAMES[0];
+  // Заработанные рекорды игр и строка наследия, плюс сохранение НОВОГРАДА
+  localStorage.setItem(g.recordsKey, JSON.stringify([{ score: g.threshold * 2 }]));
+  addResultLine(line(g.tag, g.threshold * 2));
+  rememberNovogradResult(5e9);
+  localStorage.setItem(NOVOGRAD_SAVE_KEY, '{"state":{}}');
+  assert.equal(legacyUnlocks().delivery, true);
+
+  const cleared = resetEcosystemProgress();
+  assert.ok(cleared.length >= 2, 'сброшены строки, лучший финал и сохранение');
+  assert.equal(novogradBest(), 0, 'лучший финал НОВОГРАДА забыт');
+  assert.equal(savedLines().length, 0, 'введённые строки наследия забыты');
+  assert.equal(localStorage.getItem(NOVOGRAD_SAVE_KEY), null, 'партия НОВОГРАДА сброшена');
+  assert.equal(conglomerateUnlocked(), false, 'обратный бонус закрыт заново');
+
+  // А вот заработанное в самих играх остаётся
+  assert.ok(localStorage.getItem(g.recordsKey), 'таблица рекордов игры цела');
+  assert.equal(legacyUnlocks().delivery, true,
+    'наследие из локального рекорда остаётся: игра-то сыграна');
 });

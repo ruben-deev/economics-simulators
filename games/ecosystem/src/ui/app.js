@@ -19,7 +19,7 @@ import {
 } from '../model/engine.js';
 import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
-  seriesScorecard,
+  seriesScorecard, resetEcosystemProgress,
   tripleCrown, NOVOGRAD_WORTHY, LEGACY_GAMES,
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
@@ -1819,6 +1819,7 @@ function showWelcome() {
         <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
           style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
         <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
+        <button class="btn small" id="legacy-reset" type="button">${t('welcomeLegacyReset')}</button>
       </div>
     </div>
     ${carryHtml}
@@ -1865,6 +1866,17 @@ function showWelcome() {
     } else {
       toast(t('welcomeLegacyBad'));
     }
+  });
+  // Сброс пути набора: забываются строки наследия, лучший финал и эта партия.
+  // Таблицы рекордов игр не трогаются — они заработаны и остаются.
+  el('modal-root').querySelector('#legacy-reset')?.addEventListener('click', () => {
+    if (!window.confirm(t('welcomeLegacyResetAsk'))) return;
+    resetEcosystemProgress();
+    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+    save();
+    renderAll();
+    showWelcome();
+    toast(t('welcomeLegacyResetDone'));
   });
 }
 

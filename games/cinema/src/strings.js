@@ -639,13 +639,13 @@ score = valuation × your stake`,
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
   metaConglomerateText: {
-    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте сувенирную партию с кодом: {seeds}. Бонус косметический: экономика зачётных партий не меняется.',
-    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a souvenir game with one of these codes: {seeds}. A cosmetic bonus: ranked games’ economics stay untouched.',
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте памятную партию с одним из кодов: {seeds}. Награда чисто символическая: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a commemorative game with one of these codes: {seeds}. The reward is purely symbolic: ranked games’ economics stay untouched.',
   },
   metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
   metaReturnText: {
-    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал сейчас — {ratio} «крепких». Следующая ступень наследия — {next}: для неё нужен итог от {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
-    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale is currently {ratio} “solid” finishes. The next legacy step is {next}, which needs a result of {target} or more. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал здесь — {best}. Следующая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
+    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
   },
   metaReturnMaxed: {
     ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
