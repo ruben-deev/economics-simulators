@@ -124,7 +124,6 @@ export const STRINGS = {
   // --- карта экосистемы ---
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
-  mapFood: { ru: 'Еда', en: 'Food' },
   mapHub: { ru: 'Ядро', en: 'Core' },
   mapEcom: { ru: 'Торговля', en: 'Retail' },
   mapEcomOff: { ru: 'торговля не запущена', en: 'retail not launched' },
@@ -132,20 +131,18 @@ export const STRINGS = {
   mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
   mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
-  mapBoth: { ru: 'оба сервиса', en: 'both services' },
-  mapCross: { ru: 'кросс-селл', en: 'cross-sell' },
-  mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
-  mapCold: { ru: 'маркетинг', en: 'marketing' },
-  mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
   mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
   mapUnique: {
-    ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, их пересечение — люди в двух сервисах.',
-    en: 'Unique holding customers: {unique} — {share} of the city. Circles are service bases; their overlap is people on both.',
+    ru: 'Значок — {person} взрослых горожан. Ваших клиентов {unique} — {share} города.',
+    en: 'One figure is {person} adult residents. You have {unique} customers — {share} of the city.',
   },
-  mapCaption: {
-    ru: 'Подписи — потоки клиентов за прошлый месяц: зелёное — пришли по кросс-селлу из общей базы, бирюзовое — приведены холодным маркетингом, синее — возврат и органика хаба, красное — ушли. Чем больше пересечение кругов, тем крепче экосистема.',
-    en: 'Labels are last month’s customer flows: green joined via cross-sell from the shared base, teal was brought in by cold marketing, blue is the hub’s win-back and organic inflow, red left. The bigger the circle overlap, the stronger the ecosystem.',
+  mapFlows: {
+    ru: 'Под зданиями — приток и отток за месяц.',
+    en: 'Under each building are the month’s inflow and outflow.',
   },
+  mapMulti: { ru: 'два сервиса и больше: {n}', en: 'two services or more: {n}' },
+  mapOne: { ru: 'один сервис: {n}', en: 'one service: {n}' },
+  mapNotYours: { ru: 'не ваши', en: 'not yours' },
 
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },

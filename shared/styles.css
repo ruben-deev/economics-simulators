@@ -889,6 +889,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
 .flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 
+/* Город Новоград (НОВОГРАД): здания сервисов и горожане */
+.crowd .c-house path, .crowd .c-house rect { fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2; }
+.crowd .c-house.on path, .crowd .c-house.on rect { fill: var(--house); fill-opacity: 0.16; stroke: var(--house); }
+.crowd .c-house { cursor: pointer; }
+.crowd .c-house.on text { fill: var(--text); }
+.crowd .c-person circle, .crowd .c-person path { fill: var(--muted); fill-opacity: 0.22; }
+.crowd .p-one circle, .crowd .p-one path { fill: #60a5fa; fill-opacity: 0.95; }
+.crowd .p-multi circle, .crowd .p-multi path { fill: #fbbf24; fill-opacity: 0.95; }
+.crowd .c-street { stroke: var(--line); stroke-width: 1; }
+.flow-key i.k-none { background: var(--muted); opacity: 0.3; }
+
 /* Городская афиша (БИЛЕТВИЛЬ): площадки, потоки билетов, касса */
 .venues .v-house path, .venues .v-house rect, .venues .v-house ellipse {
   fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2;

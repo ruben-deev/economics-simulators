@@ -902,6 +902,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
 .flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 
+/* Город Новоград (НОВОГРАД): здания сервисов и горожане */
+.crowd .c-house path, .crowd .c-house rect { fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2; }
+.crowd .c-house.on path, .crowd .c-house.on rect { fill: var(--house); fill-opacity: 0.16; stroke: var(--house); }
+.crowd .c-house { cursor: pointer; }
+.crowd .c-house.on text { fill: var(--text); }
+.crowd .c-person circle, .crowd .c-person path { fill: var(--muted); fill-opacity: 0.22; }
+.crowd .p-one circle, .crowd .p-one path { fill: #60a5fa; fill-opacity: 0.95; }
+.crowd .p-multi circle, .crowd .p-multi path { fill: #fbbf24; fill-opacity: 0.95; }
+.crowd .c-street { stroke: var(--line); stroke-width: 1; }
+.flow-key i.k-none { background: var(--muted); opacity: 0.3; }
+
 /* Городская афиша (БИЛЕТВИЛЬ): площадки, потоки билетов, касса */
 .venues .v-house path, .venues .v-house rect, .venues .v-house ellipse {
   fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2;
@@ -1259,7 +1270,6 @@ const STRINGS = {
   // --- карта экосистемы ---
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
-  mapFood: { ru: 'Еда', en: 'Food' },
   mapHub: { ru: 'Ядро', en: 'Core' },
   mapEcom: { ru: 'Торговля', en: 'Retail' },
   mapEcomOff: { ru: 'торговля не запущена', en: 'retail not launched' },
@@ -1267,20 +1277,18 @@ const STRINGS = {
   mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
   mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
-  mapBoth: { ru: 'оба сервиса', en: 'both services' },
-  mapCross: { ru: 'кросс-селл', en: 'cross-sell' },
-  mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
-  mapCold: { ru: 'маркетинг', en: 'marketing' },
-  mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
   mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
   mapUnique: {
-    ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, их пересечение — люди в двух сервисах.',
-    en: 'Unique holding customers: {unique} — {share} of the city. Circles are service bases; their overlap is people on both.',
+    ru: 'Значок — {person} взрослых горожан. Ваших клиентов {unique} — {share} города.',
+    en: 'One figure is {person} adult residents. You have {unique} customers — {share} of the city.',
   },
-  mapCaption: {
-    ru: 'Подписи — потоки клиентов за прошлый месяц: зелёное — пришли по кросс-селлу из общей базы, бирюзовое — приведены холодным маркетингом, синее — возврат и органика хаба, красное — ушли. Чем больше пересечение кругов, тем крепче экосистема.',
-    en: 'Labels are last month’s customer flows: green joined via cross-sell from the shared base, teal was brought in by cold marketing, blue is the hub’s win-back and organic inflow, red left. The bigger the circle overlap, the stronger the ecosystem.',
+  mapFlows: {
+    ru: 'Под зданиями — приток и отток за месяц.',
+    en: 'Under each building are the month’s inflow and outflow.',
   },
+  mapMulti: { ru: 'два сервиса и больше: {n}', en: 'two services or more: {n}' },
+  mapOne: { ru: 'один сервис: {n}', en: 'one service: {n}' },
+  mapNotYours: { ru: 'не ваши', en: 'not yours' },
 
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
@@ -6708,11 +6716,22 @@ function renderBudgetBar() {
     })}</div>
   </div>${adviceHtml()}`;
 }
+// ----------------------------------------------------------------------------
+// Город Новоград
+//
+// Первая версия рисовала круги Венна: базы сервисов и их пересечение. Схема
+// была верной, но пустой первые десять месяцев — один круг и два призрака с
+// подписью «такси не запущено», — и читалась диаграммой, а не городом.
+//
+// Здесь то же самое нарисовано городом: сверху сервисы зданиями с потоками
+// месяца, снизу горожане. Значок — фиксированное число взрослых, и толпа не
+// меняется в размере всю партию: меняется её цвет. Серый горожанин не ваш,
+// синий пользуется одним вашим сервисом, золотой — двумя и более. Золото и
+// есть то, за что инвестор платит премию за склейку, поэтому его видно
+// глазом, а не только строкой в оценке.
+// ----------------------------------------------------------------------------
+const CROWD_UNITS = [500, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4];
 
-// ----------------------------------------------------------------------------
-// Карта экосистемы: круги баз с пересечением и потоки месяца.
-// Это главный «прибор» игры: склейка видна геометрией, а не строкой в таблице.
-// ----------------------------------------------------------------------------
 function renderEcoMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -6723,140 +6742,101 @@ function renderEcoMap() {
   const foodU = r ? r.foodUsers : asset.users;
   const taxiU = r ? r.taxiUsers : 0;
   const ecomU = r ? r.ecomUsers : 0;
-  const bothU = r ? r.bothUsers : 0;
-  const bothEcomU = r ? r.bothEcomUsers : 0;
   const unique = r ? r.uniqueUsers : asset.users;
+  const multi = r ? (r.multiUsers ?? 0) : 0;
   const taxiOn = state.taxi.on;
   const ecomOn = state.ecom.on;
   const plusOn = state.plus.on;
-
-  // Два расклада одной карты. Широкий: хаб слева, спицы справа. Узкий
-  // (телефон): хаб сверху, спицы снизу — карта перестраивается, а не
-  // ужимается и не прокручивается: на телефоне она должна читаться целиком.
   const narrow = (box.clientWidth || window.innerWidth) < 600;
-  const rFood = 28 + 36 * Math.sqrt(foodU / 260_000);
-  const cx1 = narrow ? 180 : 210;
-  const cy = narrow ? 158 : 130;
-  // Пока спицы не запущены, их пунктирные кружки маленькие — подтягиваем их
-  // ближе к хабу, чтобы карта на телефоне не держала пустоту.
-  const spokeY = (taxiOn || ecomOn) ? 352 : 296;
-  const tx2 = narrow ? 92 : 500; const ty2 = narrow ? spokeY : 78;
-  const ex2 = narrow ? 268 : 500; const ey2 = narrow ? spokeY : 192;
-  const viewBox = narrow ? `0 0 360 ${(taxiOn || ecomOn) ? 448 : 330}` : '0 0 700 268';
-  const rTaxi = taxiOn ? 10 + 36 * Math.sqrt(taxiU / 300_000) : 14;
-  const rEcom = ecomOn ? 10 + 34 * Math.sqrt(ecomU / 300_000) : 14;
-  const rBoth = taxiOn && bothU > 500 ? 6 + 20 * Math.sqrt(bothU / 150_000) : 0;
-  const rBothE = ecomOn && bothEcomU > 500 ? 6 + 20 * Math.sqrt(bothEcomU / 150_000) : 0;
-  const midT = { x: (cx1 + tx2) / 2 + (narrow ? -8 : 0), y: (cy + ty2) / 2 + (narrow ? 0 : -6) };
-  const midE = { x: (cx1 + ex2) / 2 + (narrow ? 8 : 0), y: (cy + ey2) / 2 + (narrow ? 0 : 6) };
 
-  // Связь между краями кругов (не между центрами): точки на окружностях
-  const link = (x1, y1, r1, x2, y2, r2, on) => {
-    const dx = x2 - x1; const dy = y2 - y1;
-    const len = Math.hypot(dx, dy) || 1;
-    const ax = x1 + (dx / len) * (r1 + 2); const ay = y1 + (dy / len) * (r1 + 2);
-    const bx = x2 - (dx / len) * (r2 + 2); const by = y2 - (dy / len) * (r2 + 2);
-    return `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}"
-      stroke="${on ? PALETTE[3] : 'var(--line)'}" stroke-dasharray="3 3" opacity="0.55"/>`;
+  const W = narrow ? 360 : 700;
+  const perRow = narrow ? 13 : 26;
+  const rowsMax = narrow ? 12 : 6;
+  const unit = CROWD_UNITS.find((u) => CONFIG.cityAdults / u <= perRow * rowsMax)
+    ?? CROWD_UNITS[CROWD_UNITS.length - 1];
+  const dots = Math.round(CONFIG.cityAdults / unit);
+  // Клиент двух сервисов занимает один значок, а не два: в толпе стоят люди,
+  // а не подписки, поэтому шкала — уникальные клиенты
+  const goldDots = Math.min(dots, Math.round(multi / unit));
+  const blueDots = Math.min(dots - goldDots, Math.round(Math.max(0, unique - multi) / unit));
+
+  const sw = narrow ? 26 : 25;
+  const sh = narrow ? 26 : 26;
+  const headY = narrow ? 126 : 120;
+  const x0 = (W - perRow * sw) / 2 + sw / 2;
+  const rows = Math.ceil(dots / perRow);
+  const H = headY + rows * sh + 12;
+
+  // Горожанин: голова и плечи. Мельче уже не человек, крупнее не помещается
+  // город целиком, а он должен читаться одним взглядом.
+  const person = (i) => {
+    const x = x0 + (i % perRow) * sw;
+    const y = headY + Math.floor(i / perRow) * sh;
+    const cls = i < goldDots ? 'p-multi' : (i < goldDots + blueDots ? 'p-one' : 'p-none');
+    return `<g class="c-person ${cls}">
+      <circle cx="${x}" cy="${y}" r="3.4"></circle>
+      <path d="M ${x - 5.4} ${y + 12} C ${x - 5.4} ${y + 4.4}, ${x + 5.4} ${y + 4.4}, ${x + 5.4} ${y + 12} Z"></path>
+    </g>`;
   };
 
-  // Пока сервис маленький, подписи в круг не помещаются — выносим их наружу:
-  // имя над кругом, число под ним. С ростом круга подписи переезжают внутрь.
-  const spoke = (on, cx, cyS, rr, icon, name, users, jump, offLabel) => (on
-    ? (rr >= 26
-      ? `<g class="node" data-jump="${jump}">
-          <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
-          <text x="${cx}" y="${cyS - 2}" text-anchor="middle">${icon} ${name}</text>
-          <text x="${cx}" y="${cyS + 13}" text-anchor="middle" class="m-num">${compact(users)}</text>
-        </g>`
-      : `<g class="node" data-jump="${jump}">
-          <circle cx="${cx}" cy="${cyS}" r="${rr}" fill="rgba(244,114,182,0.12)" stroke="${PALETTE[2]}" stroke-width="1.5"/>
-          <text x="${cx}" y="${cyS - rr - 8}" text-anchor="middle">${icon} ${name}</text>
-          <text x="${cx}" y="${cyS + rr + 14}" text-anchor="middle" class="m-num">${compact(users)}</text>
-        </g>`)
-    : `<g class="node" data-jump="panel:verticals">
-        <circle cx="${cx}" cy="${cyS}" r="14" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
-        <text x="${cx}" y="${cyS - 22}" text-anchor="middle" class="m-muted">${icon} ${offLabel}</text>
-      </g>`);
-  // Отток пишется под числом сервиса; для маленьких кругов число стоит ниже —
-  // сдвигаем и отток, чтобы подписи не легли друг на друга.
-  const churnY = (rr) => (rr >= 26 ? rr + 14 : rr + 28);
-
-  const bothNode = (rr, mid, users, label) => (rr > 0
-    ? `<g class="node" data-jump="lever:crossSell">
-        <circle cx="${mid.x}" cy="${mid.y}" r="${rr}" fill="rgba(250,204,21,0.13)" stroke="${PALETTE[3]}" stroke-width="1.4"/>
-        <text x="${mid.x}" y="${mid.y + 3}" text-anchor="middle" class="m-num" style="font-size:10px">${compact(users)}</text>
-        <text x="${mid.x}" y="${mid.y - rr - 6}" text-anchor="middle" class="m-muted">${label}</text>
-      </g>` : '');
-
-  // Потоки месяца: подписи на связях, отток — красным под кругами
-  const flowLabel = (x, y, text, color, anchor = 'middle') => (text
-    ? `<text x="${x}" y="${y}" text-anchor="${anchor}" class="m-muted" style="fill:${color}">${text}</text>` : '');
-
-  // Холодное привлечение: на широкой карте — справа от круга, на узкой —
-  // в столбик под оттоком, чтобы ничего не вылезало за край экрана.
-  const coldLabel = (x, y, rr, text) => (narrow
-    ? flowLabel(x, y + churnY(rr) + 14, text, PALETTE[5])
-    : flowLabel(x + rr + 8, y + 4, text, PALETTE[5], 'start'));
-
-  const plusRing = plusOn
-    ? `<circle cx="${cx1}" cy="${cy}" r="${rFood + 10}" fill="none" stroke="${PALETTE[0]}"
-        stroke-width="1.6" stroke-dasharray="6 4" opacity="0.8"/>
-      <text x="${cx1}" y="${cy - rFood - 16}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[0]}">➕ ${t('mapPlus', { subs: compact(state.plus.subs) })}</text>`
-    : '';
+  // Здание сервиса: тёмное и пунктирное, пока сервис не запущен. Клик по нему
+  // ведёт к рычагам этого сервиса — как и раньше у кругов.
+  const house = (i, on, icon, name, users, jump, offLabel, inflow, outflow, color) => {
+    const bw = narrow ? 104 : 200;
+    const bh = narrow ? 54 : 62;
+    const bx = narrow ? 8 + i * (bw + 12) : 24 + i * (bw + 26);
+    const by = narrow ? 30 : 22;
+    return `<g class="c-house${on ? ' on' : ''}" data-jump="${on ? jump : 'panel:verticals'}"
+      style="--house:${color}">
+      <path d="M ${bx} ${by + 14} L ${bx + bw / 2} ${by} L ${bx + bw} ${by + 14} Z"></path>
+      <rect x="${bx + 6}" y="${by + 14}" width="${bw - 12}" height="${bh - 14}" rx="3"
+        ${on ? '' : 'stroke-dasharray="5 4"'}></rect>
+      <text x="${bx + bw / 2}" y="${by + 30}" text-anchor="middle" class="m-name">${icon} ${
+        on ? name : offLabel}</text>
+      ${on ? `<text x="${bx + bw / 2}" y="${by + 46}" text-anchor="middle" class="m-num">${
+        compact(users)}</text>` : ''}
+      ${!narrow && on && (inflow > 0.5 || outflow > 0.5) ? `<text x="${bx + bw / 2}" y="${by + bh + 12}"
+        text-anchor="middle" class="m-muted">${inflow > 0.5 ? `<tspan class="pos">+${
+        compact(inflow)}</tspan>` : ''}${inflow > 0.5 && outflow > 0.5 ? ' · ' : ''}${
+        outflow > 0.5 ? `<tspan class="neg">−${compact(outflow)}</tspan>` : ''}</text>` : ''}
+    </g>`;
+  };
 
   const badges = [];
-  if (r && r.warMonthsLeft > 0) {
-    // У маленького круга имя сервиса стоит над ним — бейдж войны поднимается выше
-    badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - (rTaxi >= 26 ? 10 : 24)}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);
-  }
-  if (r && r.fedMonthsLeft > 0) {
-    badges.push(narrow
-      ? `<text x="12" y="38" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`
-      : `<text x="686" y="24" text-anchor="end" class="m-muted">🏴 ${t('mapFed', { months: r.fedMonthsLeft })}</text>`);
-  }
-  if (r && r.crisisMonthsLeft > 0) {
-    badges.push(narrow
-      ? `<text x="12" y="54" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`
-      : `<text x="686" y="40" text-anchor="end" class="m-muted">📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}</text>`);
-  }
+  if (r && r.warMonthsLeft > 0) badges.push(`⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}`);
+  if (r && r.fedMonthsLeft > 0) badges.push(`🏴 ${t('mapFed', { months: r.fedMonthsLeft })}`);
+  if (r && r.crisisMonthsLeft > 0) badges.push(`📉 ${t('mapCrisis', { months: r.crisisMonthsLeft })}`);
 
-  box.innerHTML = `<div class="panel eco-map">
+  const dotsMarkup = Array.from({ length: dots }, (_, i) => person(i)).join('');
+
+  box.innerHTML = `<div class="panel eco-map crowd">
     <h2 class="panel-title">${t('mapTitle')}</h2>
-    <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('mapTitle')}">
-      <text x="${narrow ? 12 : 14}" y="${narrow ? 20 : 22}" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
-      ${link(cx1, cy, rFood, tx2, ty2, taxiOn ? rTaxi : 14, bothU > 500)}
-      ${ecomOn || !taxiOn ? link(cx1, cy, rFood, ex2, ey2, ecomOn ? rEcom : 14, bothEcomU > 500) : ''}
-      ${plusRing}
-      <g class="node" data-jump="group:food">
-        <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="rgba(96,165,250,0.14)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
-        <text x="${cx1}" y="${cy - 2}" text-anchor="middle">${asset.icon} ${t('mapHub')}</text>
-        <text x="${cx1}" y="${cy + 14}" text-anchor="middle" class="m-num">${compact(foodU)}</text>
-      </g>
-      ${spoke(taxiOn, tx2, ty2, rTaxi, taxi.icon, t('mapTaxi'), taxiU, 'group:taxi', t('mapTaxiOff'))}
-      ${spoke(ecomOn, ex2, ey2, rEcom, ecomDef.icon, t('mapEcom'), ecomU, 'group:ecom', t('mapEcomOff'))}
-      ${bothNode(rBoth, midT, bothU, t('mapBoth'))}
-      ${bothNode(rBothE, midE, bothEcomU, t('mapBoth'))}
-      ${flowLabel(midT.x, midT.y + (rBoth || 8) + 14,
-        r && r.crossConv > 0.5 ? `${t('mapCross')} +${compact(r.crossConv)}` : '', PALETTE[0])}
-      ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
-        r && r.crossEcomConv > 0.5 ? `${t('mapCross')} +${compact(r.crossEcomConv)}` : '', PALETTE[0])}
-      ${coldLabel(tx2, ty2, rTaxi, r && taxiOn && r.coldAcq > 0.5 ? `+${compact(r.coldAcq)}` : '')}
-      ${coldLabel(ex2, ey2, rEcom, r && ecomOn && r.ecomColdAcq > 0.5 ? `+${compact(r.ecomColdAcq)}` : '')}
-      ${flowLabel(tx2, ty2 + churnY(rTaxi),
-        r && taxiOn && r.lostTaxi > 0.5 ? `−${compact(r.lostTaxi)}` : '', 'var(--bad)')}
-      ${flowLabel(ex2, ey2 + churnY(rEcom),
-        r && ecomOn && r.lostEcom > 0.5 ? `−${compact(r.lostEcom)}` : '', 'var(--bad)')}
-      ${flowLabel(cx1, cy + rFood + (plusOn ? 24 : 14),
-        r && r.lostFood > 0.5 ? `−${compact(r.lostFood)}` : '', 'var(--bad)')}
-      ${flowLabel(cx1 - rFood - (plusOn ? 22 : 10), cy - 4,
-        r && (r.wonBack + r.organicFood) > 0.5 ? `+${compact(r.wonBack + r.organicFood)}` : '', PALETTE[1], 'end')}
-      ${badges.join('')}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle')}">
+      <text x="14" y="${narrow ? 18 : 14}" class="m-muted">${t('mapCity', {
+        adults: compact(CONFIG.cityAdults) })}</text>
+      ${house(0, true, asset.icon, t('mapHub'), foodU, 'group:food', '',
+        r ? (r.wonBack ?? 0) + (r.organicFood ?? 0) : 0, r ? (r.lostFood ?? 0) : 0, PALETTE[1])}
+      ${house(1, taxiOn, taxi.icon, t('mapTaxi'), taxiU, 'group:taxi', t('mapTaxiOff'),
+        r ? (r.coldAcq ?? 0) + (r.crossConv ?? 0) : 0, r ? (r.lostTaxi ?? 0) : 0, PALETTE[2])}
+      ${house(2, ecomOn, ecomDef.icon, t('mapEcom'), ecomU, 'group:ecom', t('mapEcomOff'),
+        r ? (r.ecomColdAcq ?? 0) + (r.crossEcomConv ?? 0) : 0, r ? (r.lostEcom ?? 0) : 0, PALETTE[4])}
+      <line x1="10" y1="${headY - 16}" x2="${W - 10}" y2="${headY - 16}" class="c-street"></line>
+      ${dotsMarkup}
     </svg>
+    <div class="flow-legend">
+      <span class="flow-key"><i style="background:${PALETTE[3]}"></i>${t('mapMulti', {
+        n: compact(multi) })}</span>
+      <span class="flow-key"><i style="background:${PALETTE[1]}"></i>${t('mapOne', {
+        n: compact(Math.max(0, unique - multi)) })}</span>
+      <span class="flow-key"><i class="k-none"></i>${t('mapNotYours')}</span>
+      ${plusOn ? `<span class="flow-key">➕ ${
+        t('mapPlus', { subs: compact(state.plus.subs) })}</span>` : ''}
+      ${badges.map((b) => `<span class="flow-key">${b}</span>`).join('')}
+    </div>
     <div class="chart-caption">${t('mapUnique', {
       unique: compact(unique), share: pct(unique / CONFIG.cityAdults, 0),
-    })}</div>
-    <div class="chart-caption">${t('mapCaption')}</div>
+      person: compact(unit),
+    })}${narrow ? '' : ` ${t('mapFlows')}`}</div>
   </div>`;
 }
 
