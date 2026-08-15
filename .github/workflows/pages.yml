@@ -96,8 +96,8 @@ jobs:
           cp -r shared docs games _site/
           cp _next/index.html _site/next/
           cp -r _next/shared _next/docs _next/games _site/next/
-          rm -rf _site/shared/tools _site/games/*/tests
-          rm -rf _site/next/shared/tools _site/next/games/*/tests
+          rm -rf _site/shared/tools _site/games/*/tests _site/games/*/tools
+          rm -rf _site/next/shared/tools _site/next/games/*/tests _site/next/games/*/tools
           find _site -name 'build.manifest.js' -delete
           echo "--- содержимое сайта ---"
           find _site -maxdepth 4 -type d | sort
