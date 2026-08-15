@@ -193,7 +193,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 11,
     seats: 380,
     avgPrice: 1600,
-    commissionSensitivity: 1.5, // насколько больно берут комиссию
+    commissionSensitivity: 1.25, // насколько больно берут комиссию
     feeAwareness: 0.9,          // насколько организатор замечает ваш сбор с покупателя
     loyalty: 0.55,              // множитель оттока: меньше — консервативнее
     platformNeed: 0.55,         // насколько ему нужен билетный виджет
@@ -212,7 +212,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 2_600,
     avgPrice: 3_800,
-    commissionSensitivity: 2.4,
+    commissionSensitivity: 2.0,
     feeAwareness: 1.3,
     loyalty: 1.7,
     platformNeed: 0.30,
@@ -231,7 +231,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 6,
     seats: 150,
     avgPrice: 1_400,
-    commissionSensitivity: 0.85,
+    commissionSensitivity: 0.7,
     feeAwareness: 0.6,
     loyalty: 1.25,
     platformNeed: 1.75,
@@ -250,7 +250,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 7_000,
     avgPrice: 1_100,
-    commissionSensitivity: 3.1,
+    commissionSensitivity: 2.6,
     feeAwareness: 1.5,
     loyalty: 0.75,
     platformNeed: 1.40,
@@ -275,7 +275,7 @@ export const AUDIENCES = [
     id: 'regulars',
     name: { ru: 'Театралы', en: 'Theatre regulars' },
     potential: 3_400_000,
-    feeElasticity: 0.8,        // насколько больно бьёт сервисный сбор
+    feeElasticity: 1.5,        // насколько больно бьёт сервисный сбор
     trustWeight: 1.4,          // насколько важна репутация сервиса
     discovery: 0.45,           // насколько зависит от рекомендаций и подборок
     affinity: { theatre: 2.3, concert: 0.6, club: 0.5, sport: 0.15 },
@@ -288,7 +288,7 @@ export const AUDIENCES = [
     id: 'music',
     name: { ru: 'Меломаны', en: 'Music fans' },
     potential: 6_000_000,
-    feeElasticity: 1.7,
+    feeElasticity: 3.0,
     trustWeight: 0.9,
     discovery: 0.75,
     affinity: { theatre: 0.35, concert: 2.5, club: 1.7, sport: 0.25 },
@@ -301,7 +301,7 @@ export const AUDIENCES = [
     id: 'fans',
     name: { ru: 'Болельщики', en: 'Sports fans' },
     potential: 4_200_000,
-    feeElasticity: 2.1,
+    feeElasticity: 3.7,
     trustWeight: 1.1,
     discovery: 0.20,
     affinity: { theatre: 0.1, concert: 0.45, club: 0.2, sport: 3.0 },
@@ -314,7 +314,7 @@ export const AUDIENCES = [
     id: 'casual',
     name: { ru: 'За компанию', en: 'Casual buyers' },
     potential: 8_000_000,
-    feeElasticity: 2.6,
+    feeElasticity: 4.5,
     trustWeight: 1.0,
     discovery: 1.35,
     affinity: { theatre: 0.9, concert: 1.0, club: 0.85, sport: 0.8 },

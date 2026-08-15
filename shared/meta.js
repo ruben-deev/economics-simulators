@@ -32,7 +32,7 @@ export const META_LINES_KEY = 'novograd-meta-lines';
 export const LEGACY_GAMES = [
   { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9 },
   { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 3e10 },
-  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 4e9 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 2.8e9 },
 ];
 
 // Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки

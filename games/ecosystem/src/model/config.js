@@ -304,13 +304,13 @@ export const START_ASSETS = [
     users: 150_000,
     arpu: 330,
     margin: 0.52,
-    fixedMonthly: 7_000_000,
+    fixedMonthly: 10_000_000,
     startCash: 200_000_000,
     baseChurn: 0.016,
     returnPool: 18_000,
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
-    grades: { excellent: 10e9, solid: 5.7e9, survived: 1.9e9, worthy: 5.7e9 },
+    grades: { excellent: 11.2e9, solid: 6.4e9, survived: 2.1e9, worthy: 6.4e9 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
