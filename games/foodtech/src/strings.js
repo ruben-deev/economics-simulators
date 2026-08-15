@@ -161,6 +161,8 @@ export const STRINGS = {
   algoPending: { ru: 'Будет внедрён при переходе к следующей неделе: разовые {cost}.', en: 'Will be rolled out when you run the next week: a one-off {cost}.' },
 
   // --- районы ---
+  districtClosing: { ru: 'закроется', en: 'closing' },
+  districtCloseToast: { ru: '{name} закроется в конце недели: клиенты и рестораны района обнулятся. Нажмите ещё раз, чтобы оставить район.', en: '{name} closes at the end of the week: its customers and restaurants are wiped. Click again to keep the district.' },
   districtLive: { ru: 'работает', en: 'live' },
   districtLaunch: { ru: 'запуск {cost}', en: 'launch {cost}' },
   // --- Экспансия во второй город ---
@@ -178,6 +180,7 @@ export const STRINGS = {
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
   mapPlanned: { ru: 'откроется на этой неделе', en: 'opens this week' },
+  mapClosing: { ru: 'закроется в конце недели', en: 'closes at the end of the week' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {

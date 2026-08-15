@@ -737,9 +737,16 @@ function renderCityMap() {
   };
 
   const chosen = new Set(state.decisions.districts ?? []);
+  // Четыре состояния, а не два. Снятый с плана работающий район — самое
+  // важное из них: модель закроет его в конце недели и обнулит клиентов с
+  // ресторанами, а на карте он до сих пор выглядел работающим, и нажатие
+  // казалось не сработавшим.
   const quarter = (p, i) => {
     const planned = !p.live && chosen.has(p.d.id);
-    const cls = p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad') : (planned ? 'm-plan' : 'm-off');
+    const closing = p.live && !chosen.has(p.d.id);
+    const cls = closing ? 'm-closing'
+      : p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad')
+        : (planned ? 'm-plan' : 'm-off');
     const bad = p.time > CONFIG.refDeliveryTime;
     // Квартал — не круг, а скруглённый многоугольник: так он читается
     // застройкой, а не точкой на графике
@@ -752,9 +759,11 @@ function renderCityMap() {
     // в кварталах остаются только имена, числа уходят в список под картой.
     const ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
     const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
-        class="${p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted'}">${p.live
-        ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
-        : (planned ? t('mapPlanned') : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</text>`;
+        class="${closing ? 'm-small neg' : (p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted')}">${
+        closing ? t('mapClosing')
+          : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
+            : (planned ? t('mapPlanned')
+              : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</text>`;
     return `<g class="m-hit" data-id="${p.d.id}">
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) : ''}
@@ -772,9 +781,10 @@ function renderCityMap() {
   // кварталов мельчают, а числа терять нельзя
   const list = placed.map((p, i) => `<li data-id="${p.d.id}"><b>${i + 1}. ${tx(p.d.name)}</b> · ${
     p.d.distanceKm} ${t('mapKmShort')} · ${
-    p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')}`
-      : (chosen.has(p.d.id) ? t('mapPlanned')
-        : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</li>`).join('');
+    p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
+      : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')}`
+        : (chosen.has(p.d.id) ? t('mapPlanned')
+          : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</li>`).join('');
 
   box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
@@ -822,8 +832,9 @@ function renderDistricts() {
     return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
       <div class="district-head">
         <span class="district-name">${tx(d.name)}</span>
-        <span class="badge ${live ? 'on' : ''}">${live
-          ? t('districtLive') : t('districtLaunch', { cost: money(d.launchCost) })}</span>
+        <span class="badge ${live && on ? 'on' : ''}">${live
+          ? (on ? t('districtLive') : t('districtClosing'))
+          : t('districtLaunch', { cost: money(d.launchCost) })}</span>
       </div>
       <div class="district-meta">${stats}</div>
       <div class="district-meta">${tx(d.hint)}</div>
@@ -886,7 +897,12 @@ function toggleDistrict(id) {
     }));
     return;
   }
-  if (chosen.has(id)) chosen.delete(id); else chosen.add(id);
+  if (chosen.has(id)) {
+    chosen.delete(id);
+    // Снять работающий район с плана — значит закрыть его в конце недели:
+    // клиенты и рестораны обнулятся. Молча такое не делается.
+    if (state.districts[id]?.active) toast(t('districtCloseToast', { name: tx(def.name) }));
+  } else chosen.add(id);
   state.decisions.districts = [...chosen];
   renderDistricts();
   renderCityMap();
