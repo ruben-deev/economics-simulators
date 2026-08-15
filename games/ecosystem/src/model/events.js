@@ -514,12 +514,108 @@ const REGULATION_FINE = {
 
 export function eventById(id) {
   if (id === REGULATION_FINE.id) return REGULATION_FINE;
-  return EVENTS.find((e) => e.id === id) ?? null;
+  return EVENTS.find((e) => e.id === id)
+    ?? VANITY_EVENTS.find((e) => e.id === id) ?? null;
 }
 
 // Месяц, к которому кризис середины партии приходит гарантированно, если
 // случай его не принёс: провал агентности в середине партии лечится не
 // вероятностью, а расписанием.
+// ============================================================================
+// Престижные траты. Единственное семейство событий, где «правильный ответ»
+// известен заранее — и в этом весь смысл.
+//
+// Такое предложение приходит к каждой выросшей компании: титульное
+// спонсорство, ребрендинг, собственный форум. Подача приятная, слова
+// красивые, эффект — есть, но однократный и мизерный против цены, а цена
+// растёт вместе с вашим размером. Всё, что нужно, чтобы отказаться, лежит
+// в самом предложении: разделите цену на измеримую отдачу.
+//
+// Это осознанное исключение из правила «нет доминируемых решений»: набор
+// учит считать, а считать имеет смысл ровно там, где ответ не очевиден до
+// подсчёта. Какое именно предложение придёт — случайно, поэтому запомнить
+// «всегда отказывайся от стадиона» нельзя: узнавать нужно не название,
+// а признак — трату, которую не к чему привязать.
+// ============================================================================
+export const VANITY_FAMILY = 'vanity';
+
+const vanityDecline = {
+  label: { ru: 'Вежливо отказаться', en: 'Politely decline' },
+  detail: {
+    ru: 'Ничего не происходит. Совсем ничего: ни расходов, ни последствий.',
+    en: 'Nothing happens. Nothing at all: no spending, no consequences.',
+  },
+  effects: {},
+};
+
+const vanityLesson = {
+  ru: 'Признак престижной траты — её не к чему привязать: нет метрики, которая изменится настолько, чтобы окупить чек. Считается это до покупки, а не после: цена известна, отдача обещана словами. Такие расходы окупаются только в презентации — и растут вместе с компанией, потому что просят у того, у кого есть.',
+  en: 'The mark of a vanity spend is that there is nothing to tie it to: no metric moves enough to repay the cheque. The arithmetic is available before you buy, not after: the price is known, the return is promised in adjectives. Spending like this pays off only in a presentation — and it scales with the company, because they ask those who have.',
+};
+
+export const VANITY_EVENTS = [
+  {
+    id: 'vanity_stadium', family: VANITY_FAMILY, weight: 4, minMonth: 10, once: true,
+    title: { ru: 'Титульное спонсорство стадиона', en: 'Naming rights for the stadium' },
+    text: {
+      ru: 'Городской стадион ищет титульного спонсора. «Арена Новоград» — имя холдинга на трибунах, в трансляциях и на всех афишах города. Отдел продаж клуба говорит о «десятках миллионов контактов» и «эмоциональной связи с брендом».',
+      en: 'The city stadium is looking for a title sponsor. “Novograd Arena” — the holding’s name on the stands, in broadcasts and on every poster in town. The club’s sales team talks about “tens of millions of impressions” and “an emotional bond with the brand”.',
+    },
+    lesson: vanityLesson,
+    options: [
+      {
+        label: { ru: 'Купить имя стадиона', en: 'Buy the naming rights' },
+        detail: {
+          ru: 'Разово 520 ₽ на каждого клиента холдинга. Измеримая отдача — внимание одного месяца: кросс-селл в этом месяце сработает на 12% лучше. Дальше имя просто висит.',
+          en: 'A one-off ₽520 per holding customer. The measurable return is one month of attention: cross-sell works 12% better this month. After that the name just hangs there.',
+        },
+        effects: { oneOffCostPerUniqueUser: 520, crossSellMult: 1.12 },
+      },
+      vanityDecline,
+    ],
+  },
+  {
+    id: 'vanity_rebrand', family: VANITY_FAMILY, weight: 4, minMonth: 12, once: true,
+    title: { ru: 'Агентство предлагает ребрендинг', en: 'An agency pitches a rebrand' },
+    text: {
+      ru: 'Известное агентство показало презентацию: новый логотип, новая палитра, «единый визуальный язык экосистемы». Половина слайдов — про то, как холдинг будет выглядеть в подборках дизайнерских премий.',
+      en: 'A famous agency presented: a new logo, a new palette, “a unified visual language for the ecosystem”. Half the slides are about how the holding will look in design-award roundups.',
+    },
+    lesson: vanityLesson,
+    options: [
+      {
+        label: { ru: 'Заказать ребрендинг', en: 'Commission the rebrand' },
+        detail: {
+          ru: 'Разово 400 ₽ на каждого клиента холдинга: сам проект, перекраска приложений, вывесок и машин. Измеримая отдача — месяц свежести: отток в этом месяце ниже на 0.4 п.п.',
+          en: 'A one-off ₽400 per holding customer: the project itself plus repainting the apps, signage and vehicles. The measurable return is a month of novelty: churn is 0.4pp lower this month.',
+        },
+        effects: { oneOffCostPerUniqueUser: 400, foodChurnAdd: -0.004, taxiChurnAdd: -0.004 },
+      },
+      vanityDecline,
+    ],
+  },
+  {
+    id: 'vanity_forum', family: VANITY_FAMILY, weight: 4, minMonth: 14, once: true,
+    title: { ru: 'Свой форум для города', en: 'Your own city forum' },
+    text: {
+      ru: 'Команда предлагает сделать «Новоград Форум»: сцена, приглашённые спикеры, гости из отрасли, пресса. Аргумент — «мы станем компанией, которая задаёт повестку города».',
+      en: 'The team proposes a “Novograd Forum”: a stage, guest speakers, industry visitors, press. The argument is that “we become the company that sets the city’s agenda”.',
+    },
+    lesson: vanityLesson,
+    options: [
+      {
+        label: { ru: 'Провести форум', en: 'Hold the forum' },
+        detail: {
+          ru: 'Разово 320 ₽ на каждого клиента холдинга: площадка, продакшн, гости. Измеримая отдача — месяц публикаций: спрос стартового сервиса в этом месяце выше на 2%.',
+          en: 'A one-off ₽320 per holding customer: venue, production, guests. The measurable return is a month of coverage: demand for the starting service is 2% higher this month.',
+        },
+        effects: { oneOffCostPerUniqueUser: 320, foodDemandMult: 1.02 },
+      },
+      vanityDecline,
+    ],
+  },
+];
+
 export const FORCED_CRISIS_ID = 'antitrust';
 export const FORCED_CRISIS_MONTH = 22;
 
@@ -537,7 +633,11 @@ export function rollEvent(rng, month, flags = {}, ctx = {}) {
     if (forced) return { ...forced };
   }
   if (rng() > 0.45) return null;
-  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0)
+  // Престижная трата приходит не больше одной за партию: их урок один,
+  // и повторять его дороже, чем он стоит.
+  const vanitySeen = VANITY_EVENTS.some((e) => seen.has(e.id));
+  const pool = [...EVENTS, ...(vanitySeen ? [] : VANITY_EVENTS)]
+    .filter((e) => month >= (e.minMonth ?? 0)
     && (!e.needsTaxi || ctx.taxiOn)
     && (!e.needsWar || ctx.atWar)
     && (!e.needsGlue || ctx.glued)

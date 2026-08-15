@@ -13,7 +13,9 @@ import {
   multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
 } from '../src/model/engine.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from '../src/model/board.js';
-import { EVENTS, eventById, neutralModifiers, applyEvent } from '../src/model/events.js';
+import {
+  EVENTS, VANITY_EVENTS, eventById, neutralModifiers, applyEvent, rollEvent,
+} from '../src/model/events.js';
 
 const taxiDef = verticalById('taxi');
 
@@ -45,8 +47,12 @@ function run(months, decide, seed = 'test', { rounds = true } = {}) {
     }
     const d = typeof decide === 'function' ? decide(state) : decide;
     // Перемирие не принимается автоматически: иначе прогоны «случайно»
-    // заканчивают войну, и тесты войны меряют выбор события, а не модель
-    const choice = state.pendingEvent?.id === 'truce_offer' ? 1 : 0;
+    // заканчивают войну, и тесты войны меряют выбор события, а не модель.
+    // Престижные траты прогон не покупает: разумный игрок от них отказывается,
+    // а прогон изображает разумного игрока (см. тест про престижные траты)
+    const evId = state.pendingEvent?.id;
+    const choice = evId === 'truce_offer' ? 1
+      : (VANITY_EVENTS.some((e) => e.id === evId) ? 1 : 0);
     const res = step(state, { decisions: d, eventChoice: choice });
     state = res.state;
     reports.push(res.report);
@@ -1134,3 +1140,68 @@ test('модель торговли: площадка дешевле в фикс
   assert.ok(mixed.arpuEcom > platform.arpuEcom && mixed.arpuEcom < own.arpuEcom);
   assert.ok(mixed.fixedEcom > platform.fixedEcom && mixed.fixedEcom < own.fixedEcom);
 });
+
+test('престижная трата: считается заранее и не окупается никогда', () => {
+  // Форма предложения: платная опция и бесплатный отказ, эффект — на месяц
+  const permanent = ['splitLogistics', 'supervisionOn', 'legalMonths', 'plusChurnAdd',
+    'ecoReliefCut', 'crossCacMult', 'crossReachMult', 'tripsPerUserAdd', 'lockAdd',
+    'valuationBonus', 'trustMonths', 'fedMonths', 'crisisMonths'];
+  for (const ev of VANITY_EVENTS) {
+    assert.equal(ev.options.length, 2, `${ev.id}: купить или отказаться`);
+    const buy = ev.options[0].effects;
+    const skip = ev.options[1].effects;
+    assert.ok(buy.oneOffCostPerUniqueUser > 0, `${ev.id}: цена растёт с размером холдинга`);
+    assert.deepEqual(skip, {}, `${ev.id}: отказ не стоит ничего и ничем не грозит`);
+    for (const key of permanent) {
+      assert.ok(!(key in buy), `${ev.id}: у престижной траты нет постоянных эффектов (${key})`);
+    }
+    assert.ok(eventById(ev.id), `${ev.id}: событие находится по идентификатору`);
+  }
+
+  // За партию приходит не больше одной: урок один
+  const rng = createRngLike();
+  const seen = VANITY_EVENTS.map((e) => e.id).slice(0, 1);
+  for (let i = 0; i < 200; i++) {
+    const picked = rollEvent(rng, 20, {}, { taxiOn: true, glued: true, seen, lastId: null });
+    if (picked) {
+      assert.ok(!VANITY_EVENTS.some((e) => e.id === picked.id),
+        'вторая престижная трата за партию не приходит');
+    }
+  }
+
+  // И главное: купить хуже, чем отказаться, — на всех сидах
+  const play = (choice) => {
+    const seeds = ['в-1', 'в-2', 'в-4', 'в-6', 'в-9', 'в-10'];
+    let sum = 0;
+    for (const seed of seeds) {
+      let st = createInitialState(seed, 'delivery', {}, 'normal');
+      for (let i = 0; i < CONFIG.monthsTotal && !st.over; i++) {
+        if (st.month >= 2 && st.cash < 120_000_000) {
+          st = raise(st, CONFIG.fundingOptions[1]).state;
+        }
+        const ev = st.pendingEvent?.id;
+        const vanity = VANITY_EVENTS.some((e) => e.id === ev);
+        st = step(st, {
+          decisions: fullDecisions(st),
+          eventChoice: vanity ? choice : (ev === 'truce_offer' ? 1 : 0),
+        }).state;
+      }
+      const f = finalScore(st);
+      sum += f.bankrupt ? 0 : f.equityValue;
+    }
+    return sum / seeds.length;
+  };
+  const bought = play(0);
+  const declined = play(1);
+  assert.ok(bought < declined,
+    `купленная престижная трата обязана быть хуже отказа: ${(bought / declined - 1) * 100}%`);
+});
+
+// Простейший детерминированный генератор для проверки пула событий
+function createRngLike() {
+  let x = 12345;
+  return () => {
+    x = (x * 1103515245 + 12345) % 2147483648;
+    return x / 2147483648;
+  };
+}
