@@ -926,6 +926,14 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
 .city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
+.city-map .m-quarter.m-plan { fill: var(--accent); fill-opacity: 0.1; stroke: var(--accent); }
+/* Квартал — орган управления: нажатие открывает район */
+/* pointer-events: all — иначе незакрашенный квартал (закрытый район) не
+   ловит нажатие вовсе: по спецификации SVG прозрачная заливка не цель */
+.city-map .m-hit { cursor: pointer; }
+.city-map .m-hit polygon { pointer-events: all; }
+.city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
+.map-list li { cursor: pointer; }
 .city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
 .city-map .m-core { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.85; }
 .city-map .m-core-dot { fill: var(--accent); }

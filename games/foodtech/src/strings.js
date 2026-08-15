@@ -174,14 +174,15 @@ export const STRINGS = {
   mapTitle: { ru: 'Карта города: {city}', en: 'City map: {city}' },
   mapKmShort: { ru: 'км', en: 'km' },
   mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
-  mapRefRing: { ru: '{min} мин пути — это {km} км', en: '{min} min of travel is {km} km' },
+  mapRefRing: { ru: 'Граница нормы сейчас на {km} км: дальше заказ не укладывается в {min} минут.', en: 'The norm now ends at {km} km: beyond that an order no longer fits {min} minutes.' },
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
+  mapPlanned: { ru: 'откроется на этой неделе', en: 'opens this week' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Кварталы — районы: дальше от центра на карте — дальше и плечо доставки, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
-    en: 'The blocks are districts: the further from the centre on the map, the longer the delivery leg; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
+    ru: 'Квартал — район, нажмите на него, чтобы открыть или убрать из плана. Место на карте — плечо доставки: чем дальше от центра, тем длиннее плечо и тем меньше заказов успевает курьер. Домиков внутри столько, сколько в районе ресторанов, по одному на три десятка. Цвет — вклад с заказа. Пунктирный круг — граница нормы: за ним доставка перестаёт укладываться в 35 минут. Он посчитан по вашим же районам и двигается вместе с игрой.',
+    en: 'A block is a district — click it to open the district or drop it from the plan. Its place on the map is the delivery leg: the further from the centre, the longer the leg and the fewer orders a courier completes. It holds one house per thirty restaurants signed in the district. Colour is contribution per order. The dashed ring is where the norm ends: beyond it delivery stops fitting the 35-minute reference. It is computed from your own districts and moves with the game.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 

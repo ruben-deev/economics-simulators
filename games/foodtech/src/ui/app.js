@@ -717,20 +717,29 @@ function renderCityMap() {
 
   // Домики внутри квартала: их столько, сколько ресторанов на районе, но не
   // больше девяти — застройка, а не гистограмма
+  // Домиков внутри квартала ровно столько, сколько в районе ресторанов, по
+  // одному на три десятка. Считать их долей от пула было бы враньём: район
+  // с двумя сотнями ресторанов из восьмисот выглядел бы реже, чем район с
+  // тремя десятками из шестидесяти.
+  // Двенадцати домиков хватает на самый большой пул района (340), поэтому
+  // счёт нигде не упирается в потолок и подпись под картой не врёт.
+  const PER_HOUSE = 30;
   const blocks = (p) => {
-    const share = (state.districts[p.d.id]?.restaurants ?? 0) / (p.d.restaurantPool || 1);
-    const cnt = Math.min(9, Math.max(2, Math.round(2 + 7 * Math.sqrt(share))));
+    const cnt = Math.min(12, Math.round((state.districts[p.d.id]?.restaurants ?? 0) / PER_HOUSE));
     const k = p.rr;
     // Домики стоят по краю квартала: середину занимает подпись
     const spots = [[-0.55, 0.45], [0.45, 0.5], [-0.7, -0.32], [0.6, -0.38], [0, 0.62],
-      [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06]];
+      [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06],
+      [-0.12, -0.86], [0.62, 0.72], [-0.62, 0.74]];
     return spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
       y="${(p.y + ay * k - 4).toFixed(1)}" width="${i % 3 === 0 ? 12 : 9}" height="8"
       rx="1.5" class="m-block"></rect>`).join('');
   };
 
+  const chosen = new Set(state.decisions.districts ?? []);
   const quarter = (p, i) => {
-    const cls = p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
+    const planned = !p.live && chosen.has(p.d.id);
+    const cls = p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad') : (planned ? 'm-plan' : 'm-off');
     const bad = p.time > CONFIG.refDeliveryTime;
     // Квартал — не круг, а скруглённый многоугольник: так он читается
     // застройкой, а не точкой на графике
@@ -745,8 +754,8 @@ function renderCityMap() {
     const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
         class="${p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted'}">${p.live
         ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
-        : t('mapOpenFor', { cost: money(p.d.launchCost) })}</text>`;
-    return `<g>
+        : (planned ? t('mapPlanned') : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</text>`;
+    return `<g class="m-hit" data-id="${p.d.id}">
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) : ''}
       <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
@@ -761,17 +770,17 @@ function renderCityMap() {
 
   // Список под картой нужен узкому экрану: на телефоне подписи внутри
   // кварталов мельчают, а числа терять нельзя
-  const list = placed.map((p, i) => `<li><b>${i + 1}. ${tx(p.d.name)}</b> · ${p.d.distanceKm} ${t('mapKmShort')} · ${
+  const list = placed.map((p, i) => `<li data-id="${p.d.id}"><b>${i + 1}. ${tx(p.d.name)}</b> · ${
+    p.d.distanceKm} ${t('mapKmShort')} · ${
     p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')}`
-      : t('mapOpenFor', { cost: money(p.d.launchCost) })}</li>`).join('');
+      : (chosen.has(p.d.id) ? t('mapPlanned')
+        : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</li>`).join('');
 
   box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
       ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
-      ${refR ? `<circle cx="${cx}" cy="${cy}" r="${refR}" class="m-ref"></circle>
-        <text x="${cx}" y="${cy - refR - 8}" text-anchor="middle" class="m-muted">${
-          t('mapRefRing', { min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</text>` : ''}
+      ${refR ? `<circle cx="${cx}" cy="${cy}" r="${refR}" class="m-ref"></circle>` : ''}
       ${placed.map((p, i) => quarter(p, i)).join('')}
       <circle cx="${cx}" cy="${cy}" r="9" class="m-core"></circle>
       <circle cx="${cx}" cy="${cy}" r="3.5" class="m-core-dot"></circle>
@@ -782,9 +791,17 @@ function renderCityMap() {
       <span class="${undelivered > 0.06 ? 'neg' : ''}">${t('mapUndelivered', {
         share: pct(Math.max(0, undelivered), 0) })}</span>
     </div>
+    ${refR ? `<div class="funding-note">${t('mapRefRing', {
+      min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</div>` : ''}
     ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
     <div class="funding-note">${t('mapLegend')}</div>
   </div>`;
+
+  // Карта — не картинка, а панель управления: район открывается нажатием
+  // прямо на квартал, как и на карточку в левой колонке.
+  box.querySelectorAll('[data-id]').forEach((node) => {
+    node.addEventListener('click', () => toggleDistrict(node.dataset.id));
+  });
 }
 
 function renderDistricts() {
@@ -845,26 +862,37 @@ function renderDistricts() {
 
   el('districts').querySelectorAll('.district').forEach((node) => {
     node.addEventListener('click', () => {
-      const id = node.dataset.id;
-      const def = districtById(id);
-      const set = new Set(state.decisions.districts ?? []);
-      // В закрытый город заявку не принимаем: молча ждущая галочка, которая
-      // сама срабатывает через несколько недель, хуже честного отказа.
-      if (!set.has(id) && def && !entered[def.city] && !gateOpen) {
-        toast(t('cityLockedToast', {
-          week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
-        }));
-        return;
-      }
-      if (set.has(id)) set.delete(id); else set.add(id);
-      state.decisions.districts = [...set];
-      renderDistricts();
-      renderCityMap();
-      renderOpsReadout();
-      renderRightTab();
-      save();
+      toggleDistrict(node.dataset.id);
     });
   });
+}
+
+// Выбор района. Живёт отдельно от отрисовки, потому что нажать район можно
+// в двух местах: на карточке в панели и прямо на карте.
+function toggleDistrict(id) {
+  const def = districtById(id);
+  if (!def) return;
+  const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
+  const homeChosen = DISTRICTS
+    .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
+  const gateOpen = state.week + 1 >= CONFIG.expansion.minWeek
+    && homeChosen >= CONFIG.expansion.minHomeDistricts;
+  // В закрытый город заявку не принимаем: молча ждущая галочка, которая
+  // сама срабатывает через несколько недель, хуже честного отказа.
+  if (!chosen.has(id) && !entered[def.city] && !gateOpen) {
+    toast(t('cityLockedToast', {
+      week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+    }));
+    return;
+  }
+  if (chosen.has(id)) chosen.delete(id); else chosen.add(id);
+  state.decisions.districts = [...chosen];
+  renderDistricts();
+  renderCityMap();
+  renderOpsReadout();
+  renderRightTab();
+  save();
 }
 
 // ----------------------------------------------------------------------------
