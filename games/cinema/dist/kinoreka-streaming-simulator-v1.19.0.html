@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.18.0" />
+  <meta name="app-version" content="1.19.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -901,6 +901,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   font-size: 12px; margin-top: 6px;
 }
 
+/* Легенда сегментов под схемой месяца (КИНОРЕКА) */
+.flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
+.flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -1118,6 +1123,20 @@ const STRINGS = {
   studioPerMonth: { ru: 'в месяц', en: 'a month' },
   studioFresh: { ru: 'Свежесть ×{fresh}', en: 'Freshness ×{fresh}' },
   studioCalendar: { ru: 'Календарь премьер: ваши сверху, конкурента снизу', en: 'Premiere calendar: yours above, the rival’s below' },
+  flowTitle: { ru: 'Месяц подписчиков: кто пришёл и кто ушёл', en: 'The subscriber month: who arrived and who left' },
+  flowColWas: { ru: 'было', en: 'before' },
+  flowColIn: { ru: 'пришли', en: 'joined' },
+  flowColOut: { ru: 'ушли', en: 'left' },
+  flowColNow: { ru: 'стало', en: 'after' },
+  flowColRival: { ru: 'конкурент', en: 'rival' },
+  flowShare: {
+    ru: 'Полоса рынка: у вас {you} подписчиков ({share}), у конкурента {rival}. Отток {churn} в месяц.',
+    en: 'The market bar: you have {you} subscribers ({share}), the rival {rival}. Churn {churn} a month.',
+  },
+  flowLegend: {
+    ru: 'Второй и третий столбики — не итог, а его причина: приток и отток разложены по сегментам зрителей, и цвет показывает, кто именно пришёл и кто именно ушёл. Массовый зритель приходит на громкую премьеру и уходит, когда досмотрел; киноман приходит за глубиной каталога и уходит от рекламы. Полоса под столбиками — рынок целиком: ваша доля и доля конкурента. Она отдельно, потому что его база бывает в десятки раз больше вашей, и на одной шкале со столбиками месяца ваш приток превратился бы в ниточку.',
+    en: 'The second and third bars are not the result but its cause: inflow and outflow are broken down by audience segment, and the colour shows exactly who arrived and who left. The mainstream viewer comes for a loud premiere and leaves once it is finished; the cinephile comes for catalogue depth and leaves because of ads. The bar underneath is the whole market: your share and the rival’s. It is separate because their base can be tens of times yours, and on the same scale as the monthly columns your inflow would shrink to a thread.',
+  },
   studioMapPipeline: { ru: 'В производстве {producing} · готово и ждёт выхода {ready}', en: 'In production {producing} · finished and waiting {ready}' },
   studioMapCaption: {
     ru: '🎬 — ваша премьера, 📦 — готовое в запасе, которое можно выпустить прямо сейчас. Лицензии тают каждый месяц, своё производство остаётся навсегда. Вперёд вы знаете свой график — проекты в производстве выйдут в отмеченные месяцы; про конкурента известен только анонс на следующий месяц, дальше стоит вопрос. Выйти в один месяц с его премьерой — значит поделить с ним внимание города.',
@@ -6300,6 +6319,10 @@ function step(prevState, input = {}) {
     segments: perSegment.map((p) => ({
       id: p.def.id,
       subs: p.subs,
+      // Приток и отток по сегментам: без них схема месяца показывает итог,
+      // но не отвечает на вопрос «кто пришёл и кто ушёл»
+      joined: p.converted,
+      left: p.leaving,
       premium: p.seg.premium,
       ads: p.seg.ads,
       adShare: p.adShare,
@@ -6991,143 +7014,105 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-// Схема «Полка и конвейер» — главный орган КИНОРЕКИ.
+// Месяц подписчиков
 //
-// Отвечает на её собственный вопрос: чем наполнена полка и что выйдет
-// дальше. Три вещи в одной картинке:
-//   полка   — лицензии тают каждый месяц, оригиналы остаются навсегда;
-//   конвейер— что снимается сейчас и когда выйдет;
-//   календарь — ваши премьеры против премьер конкурента.
+// Первая версия рисовала механизм: полка, календарь, слоты конвейера. Она
+// показывала устройство игры, но не её ход — при коротком каталоге и без
+// премьер это были подписи над пустотой, а подписи ещё и налезали друг на
+// друга. Теперь схема отвечает на вопрос, который игрок задаёт каждый месяц:
+// почему подписчиков стало столько. Было, кто пришёл, кто ушёл, стало — и
+// рядом то же число у конкурента, потому что рынок один на двоих.
 //
-// Про календарь честно: вперёд вы знаете СВОЙ график (проекты в
-// производстве и готовое в запасе), а про конкурента — только анонс на
-// следующий месяц. Ровно так устроена и модель, и рынок.
+// Приток и отток разложены по сегментам зрителей: в этой игре важно не
+// «сколько», а «кто». Массовый приходит на премьеру и уходит, досмотрев;
+// киноман приходит за глубиной каталога и уходит от рекламы.
 // ----------------------------------------------------------------------------
 function renderStudioMap() {
   const box = el('map-slot');
   if (!box) return;
-  const h = state.history ?? [];
   const r = last();
-  const narrow = (box.clientWidth || window.innerWidth) < 600;
+  if (!r) { box.innerHTML = ''; return; }
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
 
-  const licensed = state.catalogLicensed ?? 0;
-  const original = state.catalogOriginal ?? 0;
-  const decay = licensed * CONFIG.licenseDecay;
-  const fresh = catalogFreshness(state.freshHours ?? 0);
-  const slate = state.slate ?? [];
-  const producing = slate.filter((p) => p.status === 'production');
-  const ready = slate.filter((p) => p.status === 'ready');
+  const joined = r.newSubs ?? 0;
+  const left = r.lostSubs ?? 0;
+  const after = r.subs ?? 0;
+  const before = Math.max(0, after - joined + left);
+  const rival = r.rivalSubs ?? 0;
+  const segs = (r.segments ?? []).filter((x) => (x.joined ?? 0) + (x.left ?? 0) > 0);
+  const colorOf = (i) => PALETTE[(i + 1) % PALETTE.length];
 
-  // Полка: высота столбика — часы каталога. Опора шкалы растёт вместе с
-  // библиотекой, иначе крупный каталог упирается в потолок и перестаёт расти.
-  const maxHours = Math.max(800, licensed + original);
-  const barH = (v) => Math.max(2, Math.round(110 * (v / maxHours)));
-  const baseY = narrow ? 148 : 158;
-  const shelfX = narrow ? 34 : 46;
-  const barW = narrow ? 46 : 54;
-  const gap = narrow ? 66 : 78;
+  const W = narrow ? 360 : 700;
+  const baseY = narrow ? 132 : 140;
+  const H = baseY + 66;
+  // Шкала считается по СВОЕЙ базе: у конкурента она может быть в десятки раз
+  // больше, и на общей шкале ваши столбики превращались в ниточки. Конкурент
+  // показан отдельной полосой доли рынка — там сравнение и уместно.
+  const maxV = Math.max(1, before, after);
+  const hOf = (v) => (narrow ? 84 : 96) * (v / maxV);
 
-  const bar = (x, value, color, label, sub) => `
-    <rect x="${x}" y="${baseY - barH(value)}" width="${barW}" height="${barH(value)}"
-      rx="3" fill="${color}" opacity="0.75"/>
-    <text x="${x + barW / 2}" y="${baseY + 16}" text-anchor="middle" class="m-muted">${label}</text>
-    <text x="${x + barW / 2}" y="${baseY - barH(value) - 6}" text-anchor="middle" class="m-num">${compact(value)}</text>
-    ${sub ? `<text x="${x + barW / 2}" y="${baseY + 30}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">${sub}</text>` : ''}`;
+  const colW = narrow ? 62 : 104;
+  const gap = narrow ? 20 : 52;
+  const x0 = narrow ? 22 : 74;
+  // Водопад: приток и отток висят между «было» и «стало», поэтому
+  // арифметика месяца видна глазами, а не пересчитывается в уме.
+  const steps = [
+    { key: 'Was', from: 0, to: before, color: 'var(--muted)', op: 0.55 },
+    { key: 'In', from: before, to: before + joined, color: 'var(--pos)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.joined ?? 0, c: colorOf(i) })), sum: joined },
+    { key: 'Out', from: before + joined - left, to: before + joined, color: 'var(--neg)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.left ?? 0, c: colorOf(i) })), sum: left },
+    { key: 'Now', from: 0, to: after, color: 'var(--accent)', op: 0.7 },
+  ];
 
-  // Календарь: несколько месяцев назад (что уже вышло) и вперёд (что выйдет).
-  // На узком экране окно короче — читаемость важнее охвата.
-  // Окно вперёд подстраивается под конвейер: у сезона пять-шесть месяцев
-  // производства, и при коротком окне премьеры оказывались за краем карты —
-  // то есть ровно то, ради чего календарь и рисуется, было не видно.
-  const maxLeft = producing.reduce((a, p) => Math.max(a, p.monthsLeft), 0);
-  const back = narrow ? 1 : 3;
-  const fwd = Math.min(narrow ? 5 : 7, Math.max(narrow ? 3 : 4, maxLeft));
-  const now = state.month;
-  const months = [];
-  for (let m = now - back; m <= now + fwd; m++) if (m >= 1) months.push(m);
-
-  const tlX = narrow ? 18 : 250;
-  const tlY = narrow ? 268 : 124;
-  const slotW = narrow ? Math.floor(324 / months.length) : Math.floor(436 / months.length);
-
-  // Свои премьеры: в прошлом — из отчётов, в будущем — из конвейера и запаса
-  const ownAt = (m) => {
-    if (m <= now) return (h.find((x) => x.month === m)?.premieres ?? 0);
-    return producing.filter((p) => now + p.monthsLeft === m).length;
+  const bar = (st, i) => {
+    const x = x0 + i * (colW + gap);
+    const yTop = baseY - hOf(st.to);
+    const h = Math.max(2, hOf(st.to) - hOf(st.from));
+    const stack = [];
+    if (st.parts && st.sum > 0) {
+      let acc = 0;
+      for (const part of st.parts) {
+        const ph = h * (part.v / st.sum);
+        stack.push(`<rect x="${x}" y="${yTop + acc}" width="${colW}" height="${Math.max(0.4, ph)}"
+          fill="${part.c}" opacity="0.9"></rect>`);
+        acc += ph;
+      }
+    }
+    const label = st.key === 'In' ? `+${compact(joined)}`
+      : st.key === 'Out' ? `−${compact(left)}` : compact(st.to);
+    return `<g>
+      <rect x="${x}" y="${yTop}" width="${colW}" height="${h}" rx="3" fill="${st.color}"
+        opacity="${st.parts ? 0.2 : st.op}"></rect>
+      ${stack.join('')}
+      <text x="${x + colW / 2}" y="${yTop - 7}" text-anchor="middle" class="m-name">${label}</text>
+      <text x="${x + colW / 2}" y="${baseY + 16}" text-anchor="middle" class="m-muted">${t(`flowCol${st.key}`)}</text>
+      ${i < 3 ? `<line x1="${x + colW}" y1="${yTop}" x2="${x + colW + gap}" y2="${yTop}"
+        class="m-axis" stroke-dasharray="3 3" opacity="0.7"></line>` : ''}
+    </g>`;
   };
-  const rivalAt = (m) => {
-    if (m < now) return h.find((x) => x.month === m)?.rival ?? 'none';
-    if (m === now) return r?.rival ?? 'none';
-    if (m === now + 1) return state.rivalNext ?? 'none';
-    return null;   // дальше следующего месяца конкурент не анонсирует
-  };
 
-  const cells = months.map((m, i) => {
-    const x = tlX + i * slotW + slotW / 2;
-    const own = ownAt(m);
-    const riv = rivalAt(m);
-    const rivIcon = riv === null ? '?' : (RIVAL_RELEASES[riv]?.icon ?? '·');
-    const future = m > now;
-    return `
-      <text x="${x}" y="${tlY - 26}" text-anchor="middle" class="${own > 0 ? 'm-num' : 'm-muted'}"
-        style="fill:${own > 0 ? PALETTE[1] : 'var(--muted)'}">${own > 0 ? `🎬${own > 1 ? `×${own}` : ''}` : '·'}</text>
-      ${m === now && ready.length ? `<text x="${x}" y="${tlY - 44}" text-anchor="middle" class="m-muted"
-        style="fill:${PALETTE[4]}">📦${ready.length}</text>` : ''}
-      <rect x="${tlX + i * slotW + 2}" y="${tlY - 12}" width="${slotW - 4}" height="24" rx="4"
-        fill="${m === now ? 'rgba(96,165,250,0.16)' : 'transparent'}"
-        stroke="${m === now ? PALETTE[1] : 'var(--line)'}" stroke-width="1"
-        stroke-dasharray="${future ? '4 3' : '0'}"/>
-      <text x="${x}" y="${tlY + 5}" text-anchor="middle" class="m-muted">${m}</text>
-      <text x="${x}" y="${tlY + 34}" text-anchor="middle" class="m-muted"
-        style="fill:${riv && riv !== 'none' && riv !== null ? PALETTE[3] : 'var(--muted)'}">${rivIcon}</text>`;
-  }).join('');
+  // Полоса рынка: вы и конкурент в одной строке — здесь разница в порядок
+  // величин не мешает, а наоборот, и есть содержание
+  const share = after + rival > 0 ? after / (after + rival) : 0;
+  const shareY = baseY + 40;
+  const shareW = W - 16;
+  const mineW = Math.max(2, shareW * share);
+  const legend = segs.map((sg, i) => `<span class="flow-key"><i style="background:${colorOf(i)}"></i>${
+    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('');
 
-  // Конвейер: слоты студии как ячейки. Занятый показывает жанр и месяцы до
-  // премьеры, пустой — что слот простаивает и всё равно стоит денег. Строкой
-  // текста это читалось как сноска, а это половина игры.
-  const slots = Math.max(1, Math.round(state.decisions.studioSlots ?? 1));
-  // Конвейер стоит под календарём, а не под полкой: у полки свои подписи
-  // (истечение лицензий и свежесть), и ячейки на них наезжали
-  const cellW = narrow ? 104 : 82;
-  const cellH = 30;
-  const pipeX = narrow ? 18 : tlX;
-  const pipeY = narrow ? 312 : 190;
-  const cells2 = [];
-  for (let i = 0; i < Math.min(slots, narrow ? 3 : 4); i++) {
-    const p = producing[i];
-    const x = pipeX + i * (cellW + 6);
-    const g = p ? (genreById(p.genre)?.icon ?? '🎬') : '';
-    cells2.push(`
-      <rect x="${x}" y="${pipeY}" width="${cellW}" height="${cellH}" rx="5"
-        fill="${p ? 'rgba(96,165,250,0.12)' : 'transparent'}"
-        stroke="${p ? PALETTE[1] : 'var(--line)'}" stroke-width="1"
-        stroke-dasharray="${p ? '0' : '5 4'}"/>
-      <text x="${x + cellW / 2}" y="${pipeY + 19}" text-anchor="middle" class="m-muted"
-        style="fill:${p ? 'var(--text)' : 'var(--muted)'}">${p
-          ? `${g} ${t('studioSlotMonths', { months: p.monthsLeft })}`
-          : t('studioSlotIdle')}</text>`);
-  }
-  const pipeline = `
-    <text x="${pipeX}" y="${pipeY - 10}" class="m-muted">${t('studioPipeTitle', {
-      producing: producing.length, ready: ready.length,
-    })}</text>
-    ${cells2.join('')}`;
-
-  const viewBox = narrow ? '0 0 360 366' : '0 0 700 236';
   box.innerHTML = `<div class="panel eco-map">
-    <h2 class="panel-title">${t('studioMapTitle')}</h2>
-    <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('studioMapTitle')}">
-      <text x="${narrow ? 12 : 14}" y="${baseY - 124}" class="m-muted">${t('studioShelf')}</text>
-      <line x1="${shelfX - 12}" y1="${baseY + 1}" x2="${shelfX + gap + barW + 12}" y2="${baseY + 1}"
-        stroke="var(--line)" stroke-width="1"/>
-      ${bar(shelfX, licensed, PALETTE[3], t('studioLicensed'), decay > 1 ? `−${compact(decay)} ${t('studioPerMonth')}` : '')}
-      ${bar(shelfX + gap, original, PALETTE[1], t('studioOriginal'), '')}
-      <text x="${shelfX - 12}" y="${baseY + 48}" class="m-muted">${t('studioFresh', { fresh: fresh.toFixed(2) })}</text>
-      <text x="${tlX}" y="${tlY - 60}" class="m-muted">${t('studioCalendar')}</text>
-      ${cells}
-      ${pipeline}
+    <h2 class="panel-title">${t('flowTitle')}</h2>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
+      <line x1="8" y1="${baseY}" x2="${W - 8}" y2="${baseY}" class="m-axis"></line>
+      ${steps.map(bar).join('')}
+      <rect x="8" y="${shareY}" width="${shareW}" height="14" rx="7" fill="var(--line)"></rect>
+      <rect x="8" y="${shareY}" width="${mineW}" height="14" rx="7" fill="var(--accent)"
+        opacity="0.85"></rect>
     </svg>
-    <div class="chart-caption">${t('studioMapCaption')}</div>
+    <div class="funding-note">${t('flowShare', {
+      share: pct(share, 0), you: compact(after), rival: compact(rival),
+      churn: pct(r.churnRate ?? 0, 1) })}</div>
+    <div class="flow-legend">${legend}</div>
+    <div class="chart-caption">${t('flowLegend')}</div>
   </div>`;
 }
 

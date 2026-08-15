@@ -1318,6 +1318,10 @@ export function step(prevState, input = {}) {
     segments: perSegment.map((p) => ({
       id: p.def.id,
       subs: p.subs,
+      // Приток и отток по сегментам: без них схема месяца показывает итог,
+      // но не отвечает на вопрос «кто пришёл и кто ушёл»
+      joined: p.converted,
+      left: p.leaving,
       premium: p.seg.premium,
       ads: p.seg.ads,
       adShare: p.adShare,

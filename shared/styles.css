@@ -887,3 +887,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
   font-size: 12px; margin-top: 6px;
 }
+
+/* Легенда сегментов под схемой месяца (КИНОРЕКА) */
+.flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
+.flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }

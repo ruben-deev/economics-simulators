@@ -22,6 +22,20 @@ export const STRINGS = {
   studioPerMonth: { ru: 'в месяц', en: 'a month' },
   studioFresh: { ru: 'Свежесть ×{fresh}', en: 'Freshness ×{fresh}' },
   studioCalendar: { ru: 'Календарь премьер: ваши сверху, конкурента снизу', en: 'Premiere calendar: yours above, the rival’s below' },
+  flowTitle: { ru: 'Месяц подписчиков: кто пришёл и кто ушёл', en: 'The subscriber month: who arrived and who left' },
+  flowColWas: { ru: 'было', en: 'before' },
+  flowColIn: { ru: 'пришли', en: 'joined' },
+  flowColOut: { ru: 'ушли', en: 'left' },
+  flowColNow: { ru: 'стало', en: 'after' },
+  flowColRival: { ru: 'конкурент', en: 'rival' },
+  flowShare: {
+    ru: 'Полоса рынка: у вас {you} подписчиков ({share}), у конкурента {rival}. Отток {churn} в месяц.',
+    en: 'The market bar: you have {you} subscribers ({share}), the rival {rival}. Churn {churn} a month.',
+  },
+  flowLegend: {
+    ru: 'Второй и третий столбики — не итог, а его причина: приток и отток разложены по сегментам зрителей, и цвет показывает, кто именно пришёл и кто именно ушёл. Массовый зритель приходит на громкую премьеру и уходит, когда досмотрел; киноман приходит за глубиной каталога и уходит от рекламы. Полоса под столбиками — рынок целиком: ваша доля и доля конкурента. Она отдельно, потому что его база бывает в десятки раз больше вашей, и на одной шкале со столбиками месяца ваш приток превратился бы в ниточку.',
+    en: 'The second and third bars are not the result but its cause: inflow and outflow are broken down by audience segment, and the colour shows exactly who arrived and who left. The mainstream viewer comes for a loud premiere and leaves once it is finished; the cinephile comes for catalogue depth and leaves because of ads. The bar underneath is the whole market: your share and the rival’s. It is separate because their base can be tens of times yours, and on the same scale as the monthly columns your inflow would shrink to a thread.',
+  },
   studioMapPipeline: { ru: 'В производстве {producing} · готово и ждёт выхода {ready}', en: 'In production {producing} · finished and waiting {ready}' },
   studioMapCaption: {
     ru: '🎬 — ваша премьера, 📦 — готовое в запасе, которое можно выпустить прямо сейчас. Лицензии тают каждый месяц, своё производство остаётся навсегда. Вперёд вы знаете свой график — проекты в производстве выйдут в отмеченные месяцы; про конкурента известен только анонс на следующий месяц, дальше стоит вопрос. Выйти в один месяц с его премьерой — значит поделить с ним внимание города.',

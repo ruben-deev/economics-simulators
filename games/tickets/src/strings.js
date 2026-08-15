@@ -239,6 +239,12 @@ export const STRINGS = {
   todoFeeText: { ru: 'Зритель сравнивает итоговую цену и уходит туда, где дешевле.', en: 'Buyers compare the final price and go where it is cheaper.' },
 
   // --- Каналы и платформа ---
+  mapTitle: { ru: 'Куда ушли билеты этого месяца', en: "Where this month's tickets went" },
+  mapAxis: { ru: 'Весь спрос по типам организаторов: через афишу, через виджет и мимо вас', en: "All demand by organiser type: via listings, via the widget, and past you" },
+  mapNoOrgs: { ru: 'вы с ними не работаете', en: 'you do not work with them' },
+  mapOrgsShort: { ru: 'орг.', en: "orgs" },
+  mapFillShort: { ru: 'заполняемость {fill}', en: "{fill} filled" },
+  mapCaption: { ru: 'Длина полосы — весь спрос на события этого типа, а не только ваши продажи. Синее — то, что прошло через вашу афишу, зелёное — через виджет на сайте организатора, пунктирное — то, что организатор продал сам: этих денег вы не видите совсем. Полоса «мимо вас» и есть главное, за что идёт игра: организатор может обойтись без вас, и чем выше ваш сбор, тем охотнее он это делает.', en: "The bar length is all demand for that type of event, not just your sales. Blue went through your listings, green through the widget on the organiser's own site, and the dashed part is what the organiser sold themselves: money you never see. That dashed part is what the game is really about — an organiser can do without you, and the higher your fee, the more willingly they do." },
   channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {
     ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. На своей афише цену для покупателя назначаете вы и берёте с неё и сбор, и комиссию. На чужом сайте цену назначает хозяин сайта: сервисного сбора там нет, вам достаётся только ставка платформы — в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.<br><br><b>Кнопка не ставит виджет, а запускает переезд.</b> У каждого организатора уже что-то стоит — своё самописное или платформа конкурента, — и переезд стоит денег и месяцев: интеграция, перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс под мероприятия. Скорость покупается <a class="jump" data-jump="lever:onboarding">бюджетом на подключения</a>, а тех, кто уже сидит у конкурента, переманить не выйдет вовсе.',

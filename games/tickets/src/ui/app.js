@@ -271,96 +271,89 @@ const BUDGET_COLORS = {
 // Толщина полосы — билеты, подпись — оборот. Сверху и снизу то, что этот
 // рынок ломает: перекупщики и потерянная заполняемость.
 // ----------------------------------------------------------------------------
+// Куда ушли билеты этого месяца
+//
+// Первая версия рисовала устройство двустороннего рынка: два круга и полосы
+// между ними. Устройство она объясняла, а месяц — нет: пока виджет не
+// подключён, половина схемы стояла с нулями, подписи налезали на полосы, и
+// картинка выглядела сломанной ровно тогда, когда игрок только начинает.
+//
+// Теперь схема отвечает на вопрос месяца: сколько билетов прошло мимо вас и
+// почему. Ряд слева направо — весь спрос типа организатора, разложенный на
+// три части: через вашу афишу, через ваш виджет и мимо вас. Последняя часть
+// и есть главный урок игры: организатор всегда может продать сам.
+// ----------------------------------------------------------------------------
 function renderMarketMap() {
   const box = el('map-slot');
   if (!box) return;
   const r = last();
-  const narrow = (box.clientWidth || window.innerWidth) < 600;
+  if (!r) { box.innerHTML = ''; return; }
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
 
-  const orgs = Math.round(orgTotal(state));
-  const reach = totalReach(state);
-  const market = r?.marketTickets ?? 0;
-  const platform = r?.platformTickets ?? 0;
-  const past = r?.lostTickets ?? 0;
-  const maxLane = Math.max(1, market, platform, past);
-  const laneW = (v) => Math.max(1.5, 14 * (v / maxLane));
+  const rows = ORGANIZERS.map((def) => {
+    const row = (r.organizers ?? []).find((o) => o.id === def.id);
+    const market = row?.marketSold ?? 0;
+    const platform = row?.platformSold ?? 0;
+    // «Мимо вас» модель считает сама (ownSold): выводить это вычитанием из
+    // спроса нельзя — спрос там свой у каждой стороны, и разность врала нулём
+    const own = row?.lostSold ?? 0;
+    return { def, market, platform, own, total: market + platform + own, fill: row?.fill ?? 0,
+      count: row?.count ?? 0 };
+  });
+  // Типы, с которыми вы не работаете, из схемы не убираются: пустая строка —
+  // это и есть ответ на вопрос «а что я не беру», а он в этой игре главный.
 
-  const lx = narrow ? 180 : 96;
-  const ly = narrow ? 56 : 126;
-  const rx = narrow ? 180 : 604;
-  const ry = narrow ? 316 : 126;
-  const rOrg = 26 + 16 * Math.sqrt(Math.min(1, orgs / 400));
-  const rAud = 26 + 16 * Math.sqrt(Math.min(1, reach / 3_000_000));
+  const maxTotal = Math.max(1, ...rows.map((x) => x.total));
+  const W = narrow ? 360 : 700;
+  // На телефоне полоса уходит под подпись: рядом они не помещаются, и
+  // название типа наезжало на полосу, а итог уезжал за край
+  const rowH = narrow ? 62 : 46;
+  const labelW = narrow ? 0 : 150;
+  const barW = W - labelW - (narrow ? 66 : 40);
+  const H = 34 + rows.length * rowH + 16;
 
-  // Полосы каналов: на широком экране горизонтальные, на узком вертикальные
-  const lanes = [
-    { key: 'market', label: t('mapLaneMarket'), tickets: market, gmv: r?.gmvMarket ?? 0, color: PALETTE[1], off: -44 },
-    { key: 'platform', label: t('mapLanePlatform'), tickets: platform, gmv: r?.gmvPlatform ?? 0, color: PALETTE[2], off: 0 },
-    { key: 'past', label: t('mapLanePast'), tickets: past, gmv: 0, color: '#64748b', off: 44, dashed: true },
-  ];
+  const seg = (x, w, color, op) => (w > 0.5
+    ? `<rect x="${x}" y="0" width="${w}" height="16" fill="${color}" opacity="${op}"></rect>` : '');
 
-  // Подписи на узком экране ложатся прямо на полосу — обводка цветом панели
-  // отделяет текст от заливки, иначе светлое на светлом не читается
-  const halo = 'paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round;';
-  const lane = (l) => {
-    if (narrow) {
-      const x = 180 + l.off * 2.4;
-      return `<line x1="${x}" y1="${ly + rOrg + 6}" x2="${x}" y2="${ry - rAud - 6}"
-          stroke="${l.color}" stroke-width="${laneW(l.tickets)}" opacity="0.75"
-          stroke-dasharray="${l.dashed ? '6 5' : '0'}"/>
-        <text x="${x}" y="${(ly + ry) / 2 - 6}" text-anchor="middle" class="m-muted" style="${halo}fill:${l.color}">${l.label}</text>
-        <text x="${x}" y="${(ly + ry) / 2 + 10}" text-anchor="middle" class="m-num" style="${halo}">${compact(l.tickets)}</text>`;
-    }
-    const y = ly + l.off;
-    return `<line x1="${lx + rOrg + 6}" y1="${y}" x2="${rx - rAud - 6}" y2="${y}"
-        stroke="${l.color}" stroke-width="${laneW(l.tickets)}" opacity="0.75"
-        stroke-dasharray="${l.dashed ? '6 5' : '0'}"/>
-      <text x="${(lx + rx) / 2}" y="${y - 14}" text-anchor="middle" class="m-muted" style="fill:${l.color}">${l.label}</text>
-      <text x="${(lx + rx) / 2}" y="${y + 18}" text-anchor="middle" class="m-muted">${
-        t('mapLaneNumbers', { tickets: compact(l.tickets), gmv: l.gmv > 0 ? money(l.gmv) : '—' })}</text>`;
+  const line = (row, i) => {
+    const y = 10 + i * rowH;
+    const w = (v) => barW * (v / maxTotal);
+    const wm = w(row.market);
+    const wp = w(row.platform);
+    const wo = w(row.own);
+    return `<g transform="translate(0 ${y})">
+      <text x="6" y="12" class="m-name">${tx(row.def.name)}</text>
+      <text x="6" y="26" class="m-muted">${row.count > 0
+        ? `${compact(row.count)} ${t('mapOrgsShort')} · ${t('mapFillShort', { fill: pct(row.fill, 0) })}`
+        : t('mapNoOrgs')}</text>
+      <g transform="translate(${narrow ? 6 : labelW} ${narrow ? 32 : 4})">
+        ${seg(0, wm, PALETTE[1], 0.9)}
+        ${seg(wm, wp, PALETTE[2], 0.9)}
+        ${seg(wm + wp, wo, 'var(--muted)', 0.35)}
+        <rect x="${wm + wp}" y="0" width="${Math.max(0, wo)}" height="16"
+          fill="none" stroke="var(--line)" stroke-dasharray="3 3"></rect>
+        <text x="${barW + 6}" y="13" class="m-small">${compact(row.total)}</text>
+      </g>
+    </g>`;
   };
 
-  const node = (x, y, rr, icon, title, value, sub, color) => `
-    <g>
-      <circle cx="${x}" cy="${y}" r="${rr}" fill="rgba(96,165,250,0.12)" stroke="${color}" stroke-width="1.5"/>
-      <text x="${x}" y="${y - 2}" text-anchor="middle">${icon}</text>
-      <text x="${x}" y="${y + 14}" text-anchor="middle" class="m-num">${value}</text>
-      <text x="${x}" y="${y + rr + 16}" text-anchor="middle" class="m-muted">${title}</text>
-      ${sub ? `<text x="${x}" y="${y + rr + 30}" text-anchor="middle" class="m-muted">${sub}</text>` : ''}
-    </g>`;
+  const sum = rows.reduce((acc, x) => ({
+    market: acc.market + x.market, platform: acc.platform + x.platform, own: acc.own + x.own,
+  }), { market: 0, platform: 0, own: 0 });
+  const all = Math.max(1, sum.market + sum.platform + sum.own);
 
-  // Потоки организаторов разведены: ушедшие совсем и перебежавшие к
-  // конкуренту — это разные истории, и лечатся они разным.
-  const switched = Math.round((r?.orgSwitchedOut ?? 0) - (r?.orgSwitchedIn ?? 0));
-  const flows = r ? `
-    <text x="${lx}" y="${ly - rOrg - 10}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[1]}">+${num(Math.round(r.orgJoined ?? 0))}</text>
-    <text x="${lx}" y="${ly + rOrg + (narrow ? 46 : 44)}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">−${num(Math.round(r.orgLeft ?? 0))}</text>
-    ${switched !== 0 ? `<text x="${lx}" y="${ly + rOrg + (narrow ? 60 : 58)}" text-anchor="middle" class="m-muted"
-      style="fill:${switched > 0 ? 'var(--bad)' : 'var(--good)'}">${switched > 0 ? '⇄ −' : '⇄ +'}${num(Math.abs(switched))} ${t('mapSwitched')}</text>` : ''}
-    ${(r.outageLoss ?? 0) > 0.005 ? `<text x="${narrow ? 348 : 694}" y="${narrow ? 38 : ry - rAud - 12}"
-      text-anchor="end" class="m-muted" style="fill:var(--bad)">${
-      t('mapOutage', { share: pct(r.outageLoss, 0) })}</text>` : ''}` : '';
-
-  const badges = r ? `
-    <text x="${narrow ? 12 : 14}" y="20" class="m-muted"
-      style="fill:${(r.fill ?? 0) >= 0.7 ? 'var(--good)' : 'var(--bad)'}">${
-      t('mapFillBadge', { fill: pct(r.fill ?? 0, 0) })}</text>
-    ${(r.botShare ?? 0) > 0.001 ? `<text x="${narrow ? 12 : 14}" y="38" class="m-muted" style="fill:var(--bad)">🎫 ${
-      t('mapBotsBadge', { share: pct(r.botShare, 0) })}</text>` : ''}` : '';
-
-  const viewBox = narrow ? '0 0 360 400' : '0 0 700 250';
   box.innerHTML = `<div class="panel eco-map">
-    <h2 class="panel-title">${t('marketMapTitle')}</h2>
-    <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('marketMapTitle')}">
-      ${badges}
-      ${lanes.map(lane).join('')}
-      ${node(lx, ly, rOrg, '🎪', t('mapOrgs'), num(orgs),
-        t('mapOrgsSub', { connected: num(r?.connectedCount ?? 0) }), PALETTE[2])}
-      ${node(rx, ry, rAud, '👥', t('mapBuyers'), compact(reach),
-        t('mapBuyersSub', { share: pct(r?.orgShare ?? 0, 0) }), PALETTE[1])}
-      ${flows}
+    <h2 class="panel-title">${t('mapTitle')}</h2>
+    <div class="funding-note" style="margin-bottom:4px">${t('mapAxis')}</div>
+    <svg viewBox="0 0 ${W} ${H - 24}" role="img" aria-label="${t('mapTitle')}">
+      ${rows.map(line).join('')}
     </svg>
-    <div class="chart-caption">${t('marketMapCaption')}</div>
+    <div class="flow-legend">
+      <span class="flow-key"><i style="background:${PALETTE[1]}"></i>${t('mapLaneMarket')} ${pct(sum.market / all, 0)}</span>
+      <span class="flow-key"><i style="background:${PALETTE[2]}"></i>${t('mapLanePlatform')} ${pct(sum.platform / all, 0)}</span>
+      <span class="flow-key"><i style="background:var(--muted)"></i>${t('mapLanePast')} ${pct(sum.own / all, 0)}</span>
+    </div>
+    <div class="chart-caption">${t('mapCaption')}</div>
   </div>`;
 }
 
