@@ -16,28 +16,32 @@ import { SEEDS, runPolicy, line } from '../../../shared/tools/measure.js';
 const home = DISTRICTS.filter((d) => d.city === 'novograd').map((d) => d.id);
 
 export const ANCHORS = {
-  // Осторожная: два района, курьеров под спрос, маркетинг щадящий
+  // Осторожная: два района, курьеров под спрос, но подключение ресторанов
+  // оплачено — без него маркетплейс пуст, и любая опора вырождается
   осторожная: (s) => ({
     ...DEFAULT_DECISIONS,
     districts: home.slice(0, 2),
-    deliveryFee: 169, commissionRate: 0.22, courierPay: 170,
-    targetCouriers: 220, marketing: 400_000, tech: 300_000,
+    deliveryFee: 169, commissionRate: 0.22, courierPay: 175,
+    targetCouriers: s.week >= 8 ? 320 : 200,
+    marketing: 500_000, sales: 250_000, tech: 300_000,
   }),
-  // Сбалансированная: домашний город целиком, курьеров с запасом
+  // Сбалансированная: домашний город наполовину, курьеров с запасом
   сбалансированная: (s) => ({
     ...DEFAULT_DECISIONS,
     districts: home.slice(0, 4),
-    deliveryFee: 149, commissionRate: 0.20, courierPay: 190,
-    targetCouriers: s.week >= 10 ? 620 : 380,
-    marketing: 900_000, tech: 700_000, rnd: 300_000,
+    deliveryFee: 129, commissionRate: 0.20, courierPay: 195,
+    targetCouriers: s.week >= 8 ? 800 : 450,
+    marketing: 1_400_000, sales: 450_000, tech: 800_000,
   }),
-  // Агрессивная: весь город, дешёвая доставка, много курьеров и рекламы
+  // Агрессивная: весь город, дешёвая доставка, много курьеров и рекламы.
+  // Это настоящая стратегия, а не самоубийство: банкротства редки, но есть —
+  // на том и стоит риск.
   агрессивная: (s) => ({
     ...DEFAULT_DECISIONS,
     districts: home,
-    deliveryFee: 99, commissionRate: 0.17, courierPay: 210,
-    targetCouriers: s.week >= 8 ? 1100 : 600,
-    marketing: 2_200_000, promo: 900_000, tech: 1_200_000, rnd: 600_000,
+    deliveryFee: 119, commissionRate: 0.19, courierPay: 200,
+    targetCouriers: s.week >= 8 ? 900 : 500,
+    marketing: 1_600_000, sales: 500_000, tech: 900_000,
   }),
 };
 
