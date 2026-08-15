@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.13.0" />
+  <meta name="app-version" content="1.14.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1020,6 +1020,14 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
+  leverInertAds: {
+    ru: 'На рекламном тарифе пока никого нет: цена рекламы начнёт работать, когда на него кто-то перейдёт.',
+    en: 'Nobody is on the ad-supported tier yet: its price starts working once someone switches to it.',
+  },
+  leverInertAnnual: {
+    ru: 'Годовых подписок пока нет: скидка начнёт работать с первого, кто заплатит за год вперёд.',
+    en: 'There are no annual plans yet: the discount starts working with the first person who pays a year upfront.',
+  },
   studioMapTitle: { ru: 'Полка и конвейер', en: 'The shelf and the pipeline' },
   studioShelf: { ru: 'Каталог, часов', en: 'Catalogue, hours' },
   studioLicensed: { ru: 'лицензии', en: 'licensed' },
@@ -6842,6 +6850,19 @@ function renderBudget() {
   });
 }
 
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения.
+function inertNote(l) {
+  const r = last();
+  if (l.key === 'priceAds' && (r?.adSubs ?? 0) === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertAds')}</div>`;
+  }
+  if (l.key === 'annualDiscount' && (r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertAnnual')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
   // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
@@ -6864,6 +6885,7 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>

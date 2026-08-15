@@ -5,6 +5,10 @@
 // ============================================================================
 
 export const STRINGS = {
+  leverInertPlatform: {
+    ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
+    en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',
+  },
   marketMapTitle: { ru: 'Двусторонний рынок', en: 'The two-sided market' },
   mapOrgs: { ru: 'организаторы', en: 'organisers' },
   mapOrgsSub: { ru: 'с виджетом {connected}', en: '{connected} with the widget' },

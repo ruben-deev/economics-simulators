@@ -4,6 +4,14 @@
 // ============================================================================
 
 export const STRINGS = {
+  leverInertAds: {
+    ru: 'На рекламном тарифе пока никого нет: цена рекламы начнёт работать, когда на него кто-то перейдёт.',
+    en: 'Nobody is on the ad-supported tier yet: its price starts working once someone switches to it.',
+  },
+  leverInertAnnual: {
+    ru: 'Годовых подписок пока нет: скидка начнёт работать с первого, кто заплатит за год вперёд.',
+    en: 'There are no annual plans yet: the discount starts working with the first person who pays a year upfront.',
+  },
   studioMapTitle: { ru: 'Полка и конвейер', en: 'The shelf and the pipeline' },
   studioShelf: { ru: 'Каталог, часов', en: 'Catalogue, hours' },
   studioLicensed: { ru: 'лицензии', en: 'licensed' },

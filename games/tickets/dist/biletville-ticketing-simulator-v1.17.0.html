@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.16.0" />
+  <meta name="app-version" content="1.17.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1018,6 +1018,10 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
+  leverInertPlatform: {
+    ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
+    en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',
+  },
   marketMapTitle: { ru: 'Двусторонний рынок', en: 'The two-sided market' },
   mapOrgs: { ru: 'организаторы', en: 'organisers' },
   mapOrgsSub: { ru: 'с виджетом {connected}', en: '{connected} with the widget' },
@@ -6473,6 +6477,17 @@ function renderBudget() {
   });
 }
 
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения: игрок двигает его и
+// не понимает, почему ничего не происходит.
+function inertNote(l) {
+  const connected = last()?.connectedCount ?? 0;
+  if ((l.key === 'platformRate' || l.key === 'platformFee') && connected === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertPlatform')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
   // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
   // команды нет — она уже оплачена
@@ -6495,6 +6510,7 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>

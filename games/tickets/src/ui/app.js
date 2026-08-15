@@ -428,6 +428,17 @@ function renderBudget() {
   });
 }
 
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения: игрок двигает его и
+// не понимает, почему ничего не происходит.
+function inertNote(l) {
+  const connected = last()?.connectedCount ?? 0;
+  if ((l.key === 'platformRate' || l.key === 'platformFee') && connected === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertPlatform')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
   // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
   // команды нет — она уже оплачена
@@ -450,6 +461,7 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>

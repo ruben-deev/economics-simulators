@@ -309,6 +309,19 @@ function renderBudget() {
   });
 }
 
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения.
+function inertNote(l) {
+  const r = last();
+  if (l.key === 'priceAds' && (r?.adSubs ?? 0) === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertAds')}</div>`;
+  }
+  if (l.key === 'annualDiscount' && (r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertAnnual')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
   // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
@@ -331,6 +344,7 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>
