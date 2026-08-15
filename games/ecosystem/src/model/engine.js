@@ -580,6 +580,13 @@ export function step(prevState, input = {}) {
       0.01, 0.6,
     );
     driversLost = state.taxi.drivers * driverChurn;
+    // Единовременный исход парка: событие может увести долю водителей разом,
+    // а не поднять месячный отток. Прибавка к оттоку в модели слишком мягкая —
+    // бюджет предложения восстанавливает парк за месяц, и «не ввязываться»
+    // становилось бесплатным (замер: платный вариант выигрывал 4–7% партий).
+    if (mods.driverLossShare) {
+      driversLost += (state.taxi.drivers - driversLost) * mods.driverLossShare;
+    }
     state.taxi.drivers = Math.max(0, state.taxi.drivers - driversLost + driverHires);
 
     churnTaxiRate = clamp(

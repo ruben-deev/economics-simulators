@@ -20,6 +20,7 @@ export function neutralModifiers() {
     foodChurnAdd: 0,         // прибавка к оттоку клиентов еды
     taxiChurnAdd: 0,         // прибавка к оттоку клиентов такси
     driverChurnAdd: 0,       // прибавка к оттоку водителей
+    driverLossShare: 0,      // разовый уход доли парка (событие, а не ставка оттока)
     driverSupplyMult: 1,     // множитель притока водителей
     crossSellMult: 1,        // множитель конверсии кросс-селла
     costPerTripAdd: 0,       // прибавка к себестоимости поездки, ₽
@@ -117,10 +118,10 @@ export const EVENTS = [
       {
         label: { ru: 'Проигнорировать', en: 'Ignore it' },
         detail: {
-          ru: 'Дёшево, пока водителей избыток. Дорого, когда каждая машина на счету.',
-          en: 'Cheap while drivers are plentiful. Expensive when every car counts.',
+          ru: 'Забастовка уводит почти треть парка разом. Дёшево, пока водителей избыток; дорого, когда каждая машина на счету.',
+          en: 'The strike takes almost a third of the fleet at once. Cheap while drivers are plentiful; expensive when every car counts.',
         },
-        effects: { driverChurnAdd: 0.08, taxiCapacityMult: 0.93 },
+        effects: { driverLossShare: 0.29, taxiCapacityMult: 0.93 },
       },
     ],
   },
@@ -297,12 +298,12 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить промо (250 ₽ на клиента такси)', en: 'Flood promos ($2.50 per taxi customer)' },
+        label: { ru: 'Залить промо (420 ₽ на клиента такси)', en: 'Flood promos ($4.20 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
         },
-        effects: { oneOffCostPerTaxiUser: 250, taxiDemandMult: 1.12, valuationBonus: 0.004 },
+        effects: { oneOffCostPerTaxiUser: 420, taxiDemandMult: 1.12, valuationBonus: 0.004 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -399,10 +400,10 @@ export const EVENTS = [
       {
         label: { ru: 'Не ввязываться', en: 'Sit it out' },
         detail: {
-          ru: 'Бесплатно, но часть парка уедет к конкуренту, и подача просядет.',
-          en: 'Free — but part of the fleet drives off, and pickups sag.',
+          ru: 'Бесплатно, но к конкуренту разом уедет почти треть парка, и подача просядет.',
+          en: 'Free — but almost a third of the fleet drives off to the rival at once, and pickups sag.',
         },
-        effects: { driverChurnAdd: 0.12, taxiCapacityMult: 0.95 },
+        effects: { driverLossShare: 0.30, taxiCapacityMult: 0.95 },
       },
     ],
   },
