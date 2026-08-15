@@ -738,6 +738,40 @@ function renderCityMap() {
       rx="1.5" class="m-block"></rect>`).join('');
   };
 
+  // Городская черта: замкнутая линия вокруг всех кварталов города. Она не
+  // условная граница чего-нибудь посчитанного, а просто край города — и
+  // именно поэтому нарисована как на карте, штрихпунктиром. Форма считается
+  // опорной функцией: по каждому направлению берётся самый дальний край
+  // квартала, плюс поле. Город растёт вместе с открытыми районами.
+  const cityEdge = () => {
+    const mx = placed.reduce((a, p) => a + p.x, 0) / placed.length;
+    const my = placed.reduce((a, p) => a + p.y, 0) / placed.length;
+    const pad = 30;
+    const N = 32;
+    const pts = [];
+    for (let k = 0; k < N; k++) {
+      const a = (2 * Math.PI * k) / N;
+      const ca = Math.cos(a); const sa = Math.sin(a);
+      // Опорная функция объединения кварталов: по направлению берётся самый
+      // дальний край. Так черта получается выпуклой — город с ровным краем,
+      // а не облако с вырезами между районами.
+      let R = 70;
+      for (const p of placed) {
+        R = Math.max(R, (p.x - mx) * ca + (p.y - my) * sa + p.rr + pad);
+      }
+      pts.push([mx + R * ca, my + R * sa]);
+    }
+    // Замкнутая кривая через точки: без сглаживания черта выглядит гайкой
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let k = 0; k < N; k++) {
+      const cur = pts[k]; const nxt = pts[(k + 1) % N];
+      const mid = [(cur[0] + nxt[0]) / 2, (cur[1] + nxt[1]) / 2];
+      d += ` Q ${cur[0].toFixed(1)} ${cur[1].toFixed(1)} ${mid[0].toFixed(1)} ${mid[1].toFixed(1)}`;
+    }
+    return { d: `${d} Z`, bottom: Math.max(...pts.map((q) => q[1])) };
+  };
+  const edge = cityEdge();
+
   // Плечо доставки рисуется ВНУТРИ квартала: заказ едет от ресторана к
   // клиенту того же района, а не из какой-то общей точки в центре карты.
   // Длина ниточки — плечо в общем для всех районов масштабе, цвет — успевает
@@ -803,7 +837,8 @@ function renderCityMap() {
   }
   // Высота карты подстраивается под самую нижнюю подпись: иначе разведённая
   // подпись срезалась бы краем viewBox
-  const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14);
+  const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14,
+    edge.bottom + 12);
 
   const quarter = (p, i) => {
     const planned = !p.live && chosen.has(p.d.id);
@@ -852,6 +887,7 @@ function renderCityMap() {
   box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
+      <path d="${edge.d}" class="m-border"></path>
       ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
 
       ${placed.map((p, i) => quarter(p, i)).join('')}
@@ -876,26 +912,8 @@ function renderCityMap() {
 }
 
 function renderDistricts() {
-  // Плечо доставки рисуется ВНУТРИ квартала: заказ едет от ресторана к
-  // клиенту того же района, а не из какой-то общей точки в центре карты.
-  // Длина ниточки — плечо в общем для всех районов масштабе, цвет — успевает
-  // ли район в эталонные минуты.
-  const legLine = (p) => {
-    const len = 6 + 38 * (p.d.distanceKm / maxKm);
-    // Верхняя половина квартала: снизу стоят числа района. У центрального
-    // квартала имя стоит вверху, поэтому его ниточка живёт под именем.
-    const y = p.d.id.endsWith('center') ? p.y + 8 : p.y - p.rr * 0.52;
-    const x1 = p.x - len / 2;
-    const late = p.time > CONFIG.refDeliveryTime;
-    return `<g class="m-leg${late ? ' late' : ''}">
-      <rect x="${x1 - 4}" y="${y - 4}" width="8" height="8" rx="1.5"></rect>
-      <line x1="${x1 + 5}" y1="${y}" x2="${x1 + len - 4}" y2="${y}"></line>
-      <circle cx="${x1 + len}" cy="${y}" r="2.6"></circle>
-    </g>`;
-  };
-
-  const chosen = new Set(state.decisions.districts ?? []);
   const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
   const card = (d) => {
     const ds = state.districts[d.id] ?? { active: false, deliveryTime: d.baseTime };
     const on = chosen.has(d.id);
@@ -963,24 +981,6 @@ function toggleDistrict(id) {
   const def = districtById(id);
   if (!def) return;
   const entered = state.cityEntered ?? { novograd: true };
-  // Плечо доставки рисуется ВНУТРИ квартала: заказ едет от ресторана к
-  // клиенту того же района, а не из какой-то общей точки в центре карты.
-  // Длина ниточки — плечо в общем для всех районов масштабе, цвет — успевает
-  // ли район в эталонные минуты.
-  const legLine = (p) => {
-    const len = 6 + 38 * (p.d.distanceKm / maxKm);
-    // Верхняя половина квартала: снизу стоят числа района. У центрального
-    // квартала имя стоит вверху, поэтому его ниточка живёт под именем.
-    const y = p.d.id.endsWith('center') ? p.y + 8 : p.y - p.rr * 0.52;
-    const x1 = p.x - len / 2;
-    const late = p.time > CONFIG.refDeliveryTime;
-    return `<g class="m-leg${late ? ' late' : ''}">
-      <rect x="${x1 - 4}" y="${y - 4}" width="8" height="8" rx="1.5"></rect>
-      <line x1="${x1 + 5}" y1="${y}" x2="${x1 + len - 4}" y2="${y}"></line>
-      <circle cx="${x1 + len}" cy="${y}" r="2.6"></circle>
-    </g>`;
-  };
-
   const chosen = new Set(state.decisions.districts ?? []);
   const homeChosen = DISTRICTS
     .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
