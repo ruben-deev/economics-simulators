@@ -5913,6 +5913,7 @@ let state = null;
 let chartTab = 'market';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;
 let openGroups = { take: true, growth: true, infra: false };
 let pendingExclusive = null;   // 'accept' | 'decline'
@@ -6097,7 +6098,9 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 function buildLevers() {
-  if (leversBuilt) return;
+  // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
+  // команды нет — она уже оплачена
+  if (leversBuilt && leversDiff === state.difficulty) return;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     const items = LEVERS.filter((l) => l.group === g.id
       && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
@@ -6131,7 +6134,10 @@ function buildLevers() {
     });
   });
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (на лёгком уровне финансовой команды
+    // нет — она уже оплачена), тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       const raw = Number(input.value);
       state.decisions[l.key] = raw * (l.scale ?? 1);
@@ -6145,6 +6151,7 @@ function buildLevers() {
     });
   }
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverText(l, value) {

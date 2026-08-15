@@ -5097,6 +5097,7 @@ let state = null;
 let chartTab = 'orders';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;                // обработчики уже навешаны
 
 // ----------------------------------------------------------------------------
@@ -5265,7 +5266,9 @@ function buildLevers() {
   `).join('');
 
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
@@ -5279,6 +5282,7 @@ function buildLevers() {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverDisplay(l, raw) {
@@ -6761,7 +6765,9 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt) buildLevers();
+  // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
+  // нет — она уже оплачена), поэтому смена уровня пересобирает панель
+  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
   renderChrome();
   syncLevers();
   renderAlgos();

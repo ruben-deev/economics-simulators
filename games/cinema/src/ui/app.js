@@ -58,6 +58,7 @@ let state = null;
 let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
 let pendingRelease = {};          // id готового проекта -> бюджет кампании
@@ -187,7 +188,11 @@ function buildLevers() {
   }).join('');
 
   for (const l of LEVERS) {
-    el(`in-${l.key}`).addEventListener('input', (e) => {
+    // Рычага может не быть в панели (на лёгком уровне финансовой команды
+    // нет — она уже оплачена), тогда и слушать нечего
+    const input = el(`in-${l.key}`);
+    if (!input) continue;
+    input.addEventListener('input', (e) => {
       state.decisions[l.key] = Number(e.target.value) * (l.scale ?? 1);
       syncLevers();
       renderPriceGap();
@@ -210,6 +215,7 @@ function buildLevers() {
     });
   });
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
@@ -2062,7 +2068,9 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt) buildLevers();
+  // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
+  // нет — она уже оплачена), поэтому смена уровня пересобирает панель
+  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
   renderChrome();
   syncLevers();
   renderPriceGap();

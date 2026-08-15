@@ -5927,7 +5927,9 @@ let leversBuilt = false;
 let leversSignature = '';         // группы перестраиваются при запусках
 let bound = false;                // обработчики уже навешаны
 
-const versSignature = () => `${state.taxi.on}|${state.ecom.on}|${state.plus.on}`;
+// В подпись входит и уровень сложности: на лёгком финансовой команды в
+// панели нет — она уже оплачена, и ползунок там был бы декорацией
+const versSignature = () => `${state.taxi.on}|${state.ecom.on}|${state.plus.on}|${state.difficulty}`;
 
 // ----------------------------------------------------------------------------
 // Сохранение
