@@ -261,28 +261,36 @@ const BUDGET_COLORS = {
   tech: PALETTE[0],
   fixed: '#64748b',
 };
+// ----------------------------------------------------------------------------
+// Городская афиша
+//
+// Схема отвечает на вопрос «куда ушли билеты этого месяца», и раньше отвечала
+// полосами — то есть таблицей, набранной прямоугольниками. Здесь тот же ответ
+// нарисован городом: сверху площадки по типам организаторов, снизу ваша
+// афиша, между ними потоки билетов. Толщина потока — билеты; синий идёт через
+// афишу, зелёный — через виджет на сайте организатора, серый пунктирный
+// сворачивает в его собственную кассу и до вас не доходит вовсе.
+// ----------------------------------------------------------------------------
+const VENUE_ICON = {
+  // Театр: фронтон и колонны
+  theatre: (x, y, w, h) => `<path d="M ${x} ${y + 12} L ${x + w / 2} ${y} L ${x + w} ${y + 12} Z"></path>
+    <rect x="${x + 2}" y="${y + 12}" width="${w - 4}" height="${h - 12}" rx="2"></rect>
+    <g class="v-cut">${[0.22, 0.5, 0.78].map((k) => `<rect x="${x + w * k - 2.5}"
+      y="${y + 17}" width="5" height="${h - 21}"></rect>`).join('')}</g>`,
+  // Концерты: сцена-раковина
+  concert: (x, y, w, h) => `<path d="M ${x} ${y + h} L ${x} ${y + h * 0.55}
+    A ${w / 2} ${h * 0.55} 0 0 1 ${x + w} ${y + h * 0.55} L ${x + w} ${y + h} Z"></path>
+    <g class="v-cut"><rect x="${x + w / 2 - 9}" y="${y + h - 13}" width="18" height="13" rx="2"></rect></g>`,
+  // Клуб: коробка с вывеской
+  club: (x, y, w, h) => `<rect x="${x}" y="${y + 10}" width="${w}" height="${h - 10}" rx="3"></rect>
+    <rect x="${x + w * 0.16}" y="${y}" width="${w * 0.68}" height="9" rx="3"></rect>
+    <g class="v-cut">${[0.3, 0.62].map((k) => `<rect x="${x + w * k}" y="${y + 20}"
+      width="${w * 0.14}" height="${h - 26}"></rect>`).join('')}</g>`,
+  // Спорт: чаша стадиона
+  sport: (x, y, w, h) => `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}"></ellipse>
+    <g class="v-cut"><ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 3.2}" ry="${h / 3.4}"></ellipse></g>`,
+};
 
-// ----------------------------------------------------------------------------
-// Схема двустороннего рынка — главный орган БИЛЕТВИЛЯ.
-//
-// Игра объясняет двусторонний рынок, а показывала его таблицей. Здесь он
-// нарисован: организаторы слева, зрители справа, между ними два ваших
-// канала — афиша и виджет — и третий, мимо вас: организатор продал сам.
-// Толщина полосы — билеты, подпись — оборот. Сверху и снизу то, что этот
-// рынок ломает: перекупщики и потерянная заполняемость.
-// ----------------------------------------------------------------------------
-// Куда ушли билеты этого месяца
-//
-// Первая версия рисовала устройство двустороннего рынка: два круга и полосы
-// между ними. Устройство она объясняла, а месяц — нет: пока виджет не
-// подключён, половина схемы стояла с нулями, подписи налезали на полосы, и
-// картинка выглядела сломанной ровно тогда, когда игрок только начинает.
-//
-// Теперь схема отвечает на вопрос месяца: сколько билетов прошло мимо вас и
-// почему. Ряд слева направо — весь спрос типа организатора, разложенный на
-// три части: через вашу афишу, через ваш виджет и мимо вас. Последняя часть
-// и есть главный урок игры: организатор всегда может продать сам.
-// ----------------------------------------------------------------------------
 function renderMarketMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -300,40 +308,53 @@ function renderMarketMap() {
     return { def, market, platform, own, total: market + platform + own, fill: row?.fill ?? 0,
       count: row?.count ?? 0 };
   });
-  // Типы, с которыми вы не работаете, из схемы не убираются: пустая строка —
+  // Типы, с которыми вы не работаете, из схемы не убираются: пустая площадка —
   // это и есть ответ на вопрос «а что я не беру», а он в этой игре главный.
 
   const maxTotal = Math.max(1, ...rows.map((x) => x.total));
   const W = narrow ? 360 : 700;
-  // На телефоне полоса уходит под подпись: рядом они не помещаются, и
-  // название типа наезжало на полосу, а итог уезжал за край
-  const rowH = narrow ? 62 : 46;
-  const labelW = narrow ? 0 : 150;
-  const barW = W - labelW - (narrow ? 66 : 40);
-  const H = 34 + rows.length * rowH + 16;
+  const H = narrow ? 300 : 330;
+  const vw = narrow ? 56 : 96;          // ширина площадки
+  const vh = narrow ? 40 : 54;
+  const vy = narrow ? 32 : 34;
+  const gap = (W - 24 - rows.length * vw) / (rows.length - 1 || 1);
+  const kioskY = H - (narrow ? 76 : 84);
+  const kioskW = narrow ? 150 : 250;
+  const kioskX = (W - kioskW) / 2;
 
-  const seg = (x, w, color, op) => (w > 0.5
-    ? `<rect x="${x}" y="0" width="${w}" height="16" fill="${color}" opacity="${op}"></rect>` : '');
+  // Толщина потока — билеты: одна и та же шкала на все площадки, иначе
+  // сравнивать типы было бы нельзя
+  const thick = (v) => (v > 0 ? Math.max(1.5, (narrow ? 26 : 34) * (v / maxTotal)) : 0);
 
-  const line = (row, i) => {
-    const y = 10 + i * rowH;
-    const w = (v) => barW * (v / maxTotal);
-    const wm = w(row.market);
-    const wp = w(row.platform);
-    const wo = w(row.own);
-    return `<g transform="translate(0 ${y})">
-      <text x="6" y="12" class="m-name">${tx(row.def.name)}</text>
-      <text x="6" y="26" class="m-muted">${row.count > 0
-        ? `${compact(row.count)} ${t('mapOrgsShort')} · ${t('mapFillShort', { fill: pct(row.fill, 0) })}`
-        : t('mapNoOrgs')}</text>
-      <g transform="translate(${narrow ? 6 : labelW} ${narrow ? 32 : 4})">
-        ${seg(0, wm, PALETTE[1], 0.9)}
-        ${seg(wm, wp, PALETTE[2], 0.9)}
-        ${seg(wm + wp, wo, 'var(--muted)', 0.35)}
-        <rect x="${wm + wp}" y="0" width="${Math.max(0, wo)}" height="16"
-          fill="none" stroke="var(--line)" stroke-dasharray="3 3"></rect>
-        <text x="${barW + 6}" y="13" class="m-small">${compact(row.total)}</text>
-      </g>
+  const venue = (row, i) => {
+    const vx = 12 + i * (vw + gap);
+    const cxv = vx + vw / 2;
+    const icon = VENUE_ICON[row.def.id] ?? VENUE_ICON.club;
+    const live = row.count > 0;
+    const wm = thick(row.market);
+    const wp = thick(row.platform);
+    const wo = thick(row.own);
+    // Потоки к афише: две дуги от площадки вниз к кассе, каждая своей толщины
+    const toKiosk = (w, dx, cls) => (w > 0 ? `<path d="M ${cxv + dx} ${vy + vh}
+      C ${cxv + dx} ${vy + vh + 60}, ${W / 2 + dx * 1.6} ${kioskY - 60}, ${W / 2 + dx * 1.6} ${kioskY}"
+      class="${cls}" stroke-width="${w.toFixed(1)}"></path>` : '');
+    // Поток мимо вас уходит вбок, в собственную кассу организатора
+    const side = i < rows.length / 2 ? -1 : 1;
+    const ox = Math.min(W - 14, Math.max(14, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
+    const past = wo > 0 ? `<path d="M ${cxv} ${vy + vh} C ${cxv} ${vy + vh + 26},
+      ${ox} ${vy + vh + 20}, ${ox} ${vy + vh + 46}" class="v-past" stroke-width="${wo.toFixed(1)}"></path>
+      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>` : '';
+    return `<g>
+      ${past}
+      ${toKiosk(wm, narrow ? -7 : -11, 'v-market')}
+      ${toKiosk(wp, narrow ? 7 : 11, 'v-widget')}
+      <g class="v-house${live ? ' on' : ''}">${icon(vx, vy, vw, vh)}</g>
+      <text x="${cxv}" y="${vy - 12}" text-anchor="middle" class="m-name">${
+        tx(narrow ? row.def.short : row.def.name)}</text>
+      <text x="${cxv}" y="${vy - 2}" text-anchor="middle" class="m-muted">${narrow
+        ? compact(row.total)
+        : (live ? `${compact(row.count)} ${t('mapOrgsShort')} · ${compact(row.total)}`
+          : t('mapNoOrgs'))}</text>
     </g>`;
   };
 
@@ -341,17 +362,29 @@ function renderMarketMap() {
     market: acc.market + x.market, platform: acc.platform + x.platform, own: acc.own + x.own,
   }), { market: 0, platform: 0, own: 0 });
   const all = Math.max(1, sum.market + sum.platform + sum.own);
+  const mine = sum.market + sum.platform;
 
-  box.innerHTML = `<div class="panel eco-map">
+  box.innerHTML = `<div class="panel eco-map venues">
     <h2 class="panel-title">${t('mapTitle')}</h2>
-    <div class="funding-note" style="margin-bottom:4px">${t('mapAxis')}</div>
-    <svg viewBox="0 0 ${W} ${H - 24}" role="img" aria-label="${t('mapTitle')}">
-      ${rows.map(line).join('')}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle')}">
+      ${rows.map(venue).join('')}
+      <!-- ваша афиша: сюда стекается всё, что вы не отдали -->
+      <g class="v-kiosk">
+        <rect x="${kioskX}" y="${kioskY}" width="${kioskW}" height="${narrow ? 50 : 52}" rx="6"></rect>
+        <line x1="${kioskX + 16}" y1="${kioskY + (narrow ? 50 : 52)}" x2="${kioskX + 16}"
+          y2="${kioskY + (narrow ? 58 : 68)}"></line>
+        <line x1="${kioskX + kioskW - 16}" y1="${kioskY + (narrow ? 50 : 52)}"
+          x2="${kioskX + kioskW - 16}" y2="${kioskY + (narrow ? 58 : 68)}"></line>
+      </g>
+      <text x="${W / 2}" y="${kioskY + (narrow ? 20 : 24)}" text-anchor="middle"
+        class="m-name">${t('mapKiosk')}</text>
+      <text x="${W / 2}" y="${kioskY + (narrow ? 36 : 42)}" text-anchor="middle"
+        class="m-small">${t('mapKioskSold', { tickets: compact(mine), gmv: money(r.gmv ?? 0) })}</text>
     </svg>
     <div class="flow-legend">
       <span class="flow-key"><i style="background:${PALETTE[1]}"></i>${t('mapLaneMarket')} ${pct(sum.market / all, 0)}</span>
-      <span class="flow-key"><i style="background:${PALETTE[2]}"></i>${t('mapLanePlatform')} ${pct(sum.platform / all, 0)}</span>
-      <span class="flow-key"><i style="background:var(--muted)"></i>${t('mapLanePast')} ${pct(sum.own / all, 0)}</span>
+      <span class="flow-key"><i style="background:${PALETTE[0]}"></i>${t('mapLanePlatform')} ${pct(sum.platform / all, 0)}</span>
+      <span class="flow-key"><i class="k-past"></i>${t('mapLanePast')} ${pct(sum.own / all, 0)}</span>
     </div>
     <div class="chart-caption">${t('mapCaption')}</div>
   </div>`;

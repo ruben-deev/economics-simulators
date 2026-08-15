@@ -19,7 +19,6 @@ export const STRINGS = {
   mapLaneMarket: { ru: 'афиша', en: 'listings' },
   mapLanePlatform: { ru: 'виджет', en: 'widget' },
   mapLanePast: { ru: 'мимо вас', en: 'past you' },
-  mapLaneNumbers: { ru: '{tickets} билетов · {gmv}', en: '{tickets} tickets · {gmv}' },
   // Внутри SVG нельзя HTML-теги: <b> выбрасывает парсер из режима SVG,
   // и вся схема разваливается в строку текста (проверено вживую).
   mapFillBadge: { ru: 'Заполняемость залов {fill}', en: 'Hall fill rate {fill}' },
@@ -240,11 +239,11 @@ export const STRINGS = {
 
   // --- Каналы и платформа ---
   mapTitle: { ru: 'Куда ушли билеты этого месяца', en: "Where this month's tickets went" },
-  mapAxis: { ru: 'Весь спрос по типам организаторов: через афишу, через виджет и мимо вас', en: "All demand by organiser type: via listings, via the widget, and past you" },
+  mapKiosk: { ru: 'АФИША БИЛЕТВИЛЬ', en: 'BILETVILLE LISTINGS' },
+  mapKioskSold: { ru: '{tickets} билетов · {gmv}', en: '{tickets} tickets · {gmv}' },
   mapNoOrgs: { ru: 'вы с ними не работаете', en: 'you do not work with them' },
   mapOrgsShort: { ru: 'орг.', en: "orgs" },
-  mapFillShort: { ru: 'заполняемость {fill}', en: "{fill} filled" },
-  mapCaption: { ru: 'Длина полосы — весь спрос на события этого типа, а не только ваши продажи. Синее — то, что прошло через вашу афишу, зелёное — через виджет на сайте организатора, пунктирное — то, что организатор продал сам: этих денег вы не видите совсем. Полоса «мимо вас» и есть главное, за что идёт игра: организатор может обойтись без вас, и чем выше ваш сбор, тем охотнее он это делает.', en: "The bar length is all demand for that type of event, not just your sales. Blue went through your listings, green through the widget on the organiser's own site, and the dashed part is what the organiser sold themselves: money you never see. That dashed part is what the game is really about — an organiser can do without you, and the higher your fee, the more willingly they do." },
+  mapCaption: { ru: 'Сверху площадки по типам организаторов, снизу ваша афиша, между ними — весь спрос на события этого месяца, а не только ваши продажи. Толщина потока — билеты: синий прошёл через вашу афишу, зелёный — через виджет на сайте организатора, серый сворачивает в его собственную кассу, и этих денег вы не видите совсем. Тёмная площадка — тип, с которым вы не работаете. Поток мимо вас и есть главное, за что идёт игра: организатор может обойтись без вас, и чем выше ваш сбор, тем охотнее он это делает.', en: "Above are the venues by organiser type, below is your listings desk, and between them runs all demand for this month's events, not just your sales. Stream thickness is tickets: blue went through your listings, green through the widget on the organiser's own site, and grey turns aside into their own box office — money you never see. A dark venue is a type you do not work with. That stream past you is what the game is really about: an organiser can do without you, and the higher your fee, the more willingly they do." },
   channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {
     ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. На своей афише цену для покупателя назначаете вы и берёте с неё и сбор, и комиссию. На чужом сайте цену назначает хозяин сайта: сервисного сбора там нет, вам достаётся только ставка платформы — в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.<br><br><b>Кнопка не ставит виджет, а запускает переезд.</b> У каждого организатора уже что-то стоит — своё самописное или платформа конкурента, — и переезд стоит денег и месяцев: интеграция, перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс под мероприятия. Скорость покупается <a class="jump" data-jump="lever:onboarding">бюджетом на подключения</a>, а тех, кто уже сидит у конкурента, переманить не выйдет вовсе.',

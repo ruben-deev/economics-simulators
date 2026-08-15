@@ -164,19 +164,19 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-// Месяц подписчиков
+// Зал КИНОРЕКИ
 //
-// Первая версия рисовала механизм: полка, календарь, слоты конвейера. Она
-// показывала устройство игры, но не её ход — при коротком каталоге и без
-// премьер это были подписи над пустотой, а подписи ещё и налезали друг на
-// друга. Теперь схема отвечает на вопрос, который игрок задаёт каждый месяц:
-// почему подписчиков стало столько. Было, кто пришёл, кто ушёл, стало — и
-// рядом то же число у конкурента, потому что рынок один на двоих.
-//
-// Приток и отток разложены по сегментам зрителей: в этой игре важно не
-// «сколько», а «кто». Массовый приходит на премьеру и уходит, досмотрев;
-// киноман приходит за глубиной каталога и уходит от рекламы.
+// Первая версия рисовала механизм (полка, календарь, слоты), вторая —
+// водопад из четырёх столбиков. Столбики честно считали месяц, но читались
+// как таблица, набранная прямоугольниками. Здесь то же самое нарисовано
+// картинкой: зал, в котором одно кресло — фиксированное число подписчиков.
+// База растёт — зал заполняется рядами; кресло красят в цвет сегмента, у
+// пришедших в этом месяце светлая обводка, ушедшие остаются пустыми
+// креслами. Цену деления выбирает сама схема, поэтому зал не переполняется
+// ни на первом месяце, ни на последнем.
 // ----------------------------------------------------------------------------
+const SEAT_UNITS = [100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
+
 function renderStudioMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -187,81 +187,93 @@ function renderStudioMap() {
   const joined = r.newSubs ?? 0;
   const left = r.lostSubs ?? 0;
   const after = r.subs ?? 0;
-  const before = Math.max(0, after - joined + left);
   const rival = r.rivalSubs ?? 0;
-  const segs = (r.segments ?? []).filter((x) => (x.joined ?? 0) + (x.left ?? 0) > 0);
+  const segs = (r.segments ?? []).filter((x) => (x.subs ?? 0) > 0);
   const colorOf = (i) => PALETTE[(i + 1) % PALETTE.length];
 
+  const perRow = narrow ? 10 : 20;
+  const rowsMax = narrow ? 7 : 7;
+  const capacity = perRow * rowsMax;
+  // Цена кресла подбирается так, чтобы зал вмещал и базу, и тех, кто ушёл
+  const unit = SEAT_UNITS.find((u) => (after + left) / u <= capacity)
+    ?? SEAT_UNITS[SEAT_UNITS.length - 1];
+  const filled = Math.max(1, Math.min(capacity, Math.round(after / unit)));
+  const ghosts = Math.min(capacity - filled, Math.round(left / unit));
+  const freshSeats = Math.min(filled, Math.round(joined / unit));
+
+  // Кресла раздаются сегментам по их доле в базе — цвет ряда показывает,
+  // из кого зал состоит на самом деле
+  const total = segs.reduce((a, x) => a + x.subs, 0) || 1;
+  const seatSeg = [];
+  let acc = 0;
+  segs.forEach((sg, i) => {
+    const n = i === segs.length - 1 ? filled - acc : Math.round(filled * (sg.subs / total));
+    for (let k = 0; k < n; k++) seatSeg.push(colorOf(i));
+    acc += n;
+  });
+  while (seatSeg.length < filled) seatSeg.push(colorOf(0));
+
   const W = narrow ? 360 : 700;
-  const baseY = narrow ? 132 : 140;
-  const H = baseY + 66;
-  // Шкала считается по СВОЕЙ базе: у конкурента она может быть в десятки раз
-  // больше, и на общей шкале ваши столбики превращались в ниточки. Конкурент
-  // показан отдельной полосой доли рынка — там сравнение и уместно.
-  const maxV = Math.max(1, before, after);
-  const hOf = (v) => (narrow ? 84 : 96) * (v / maxV);
+  const sw = narrow ? 26 : 28;      // шаг кресла
+  const sh = narrow ? 22 : 22;      // шаг ряда
+  const rowW = perRow * sw;
+  const x0 = (W - rowW) / 2 + 3;
+  const y0 = narrow ? 74 : 78;
+  const H = y0 + rowsMax * sh + (narrow ? 42 : 46);
 
-  const colW = narrow ? 62 : 104;
-  const gap = narrow ? 20 : 52;
-  const x0 = narrow ? 22 : 74;
-  // Водопад: приток и отток висят между «было» и «стало», поэтому
-  // арифметика месяца видна глазами, а не пересчитывается в уме.
-  const steps = [
-    { key: 'Was', from: 0, to: before, color: 'var(--muted)', op: 0.55 },
-    { key: 'In', from: before, to: before + joined, color: 'var(--pos)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.joined ?? 0, c: colorOf(i) })), sum: joined },
-    { key: 'Out', from: before + joined - left, to: before + joined, color: 'var(--neg)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.left ?? 0, c: colorOf(i) })), sum: left },
-    { key: 'Now', from: 0, to: after, color: 'var(--accent)', op: 0.7 },
-  ];
+  // Ряд выгибается дугой к экрану: без этого сетка кресел снова читается
+  // таблицей, а не залом
+  const bow = (col) => {
+    const t2 = (col - (perRow - 1) / 2) / ((perRow - 1) / 2);
+    return -t2 * t2 * (narrow ? 10 : 14);
+  };
 
-  const bar = (st, i) => {
-    const x = x0 + i * (colW + gap);
-    const yTop = baseY - hOf(st.to);
-    const h = Math.max(2, hOf(st.to) - hOf(st.from));
-    const stack = [];
-    if (st.parts && st.sum > 0) {
-      let acc = 0;
-      for (const part of st.parts) {
-        const ph = h * (part.v / st.sum);
-        stack.push(`<rect x="${x}" y="${yTop + acc}" width="${colW}" height="${Math.max(0.4, ph)}"
-          fill="${part.c}" opacity="0.9"></rect>`);
-        acc += ph;
-      }
-    }
-    const label = st.key === 'In' ? `+${compact(joined)}`
-      : st.key === 'Out' ? `−${compact(left)}` : compact(st.to);
-    return `<g>
-      <rect x="${x}" y="${yTop}" width="${colW}" height="${h}" rx="3" fill="${st.color}"
-        opacity="${st.parts ? 0.2 : st.op}"></rect>
-      ${stack.join('')}
-      <text x="${x + colW / 2}" y="${yTop - 7}" text-anchor="middle" class="m-name">${label}</text>
-      <text x="${x + colW / 2}" y="${baseY + 16}" text-anchor="middle" class="m-muted">${t(`flowCol${st.key}`)}</text>
-      ${i < 3 ? `<line x1="${x + colW}" y1="${yTop}" x2="${x + colW + gap}" y2="${yTop}"
-        class="m-axis" stroke-dasharray="3 3" opacity="0.7"></line>` : ''}
+  const seat = (i, kind) => {
+    const row = Math.floor(i / perRow);
+    const col = i % perRow;
+    const x = x0 + col * sw;
+    const y = y0 + row * sh - bow(col);
+    const fresh = kind === 'fill' && i >= filled - freshSeats;
+    const cls = kind === 'fill' ? `s-seat${fresh ? ' s-fresh' : ''}` : 's-seat s-empty';
+    // Цвет сегмента идёт стилем, а не атрибутом: атрибут проиграл бы правилу
+    // из таблицы, и весь зал остался бы серым
+    const fill = kind === 'fill' ? ` style="fill:${seatSeg[i] ?? colorOf(0)}"` : '';
+    // Кресло: спинка и подлокотники — мелочь, но именно она делает картинку
+    return `<g class="${cls}">
+      <rect x="${x}" y="${y}" width="${sw - 8}" height="${sh - 9}" rx="3"${fill}></rect>
+      <rect x="${x - 2}" y="${y + sh - 13}" width="${sw - 4}" height="4" rx="2"${fill}></rect>
     </g>`;
   };
 
-  // Полоса рынка: вы и конкурент в одной строке — здесь разница в порядок
-  // величин не мешает, а наоборот, и есть содержание
+  const seats = [];
+  for (let i = 0; i < filled; i++) seats.push(seat(i, 'fill'));
+  for (let i = filled; i < filled + ghosts; i++) seats.push(seat(i, 'ghost'));
+
   const share = after + rival > 0 ? after / (after + rival) : 0;
-  const shareY = baseY + 40;
+  const shareY = H - (narrow ? 22 : 24);
   const shareW = W - 16;
   const mineW = Math.max(2, shareW * share);
   const legend = segs.map((sg, i) => `<span class="flow-key"><i style="background:${colorOf(i)}"></i>${
-    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('');
+    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('')
+    + `<span class="flow-key"><i class="k-fresh"></i>${t('hallFresh', { n: compact(joined) })}</span>`
+    + `<span class="flow-key"><i class="k-empty"></i>${t('hallLeft', { n: compact(left) })}</span>`;
 
-  box.innerHTML = `<div class="panel eco-map">
+  box.innerHTML = `<div class="panel eco-map hall${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('flowTitle')}</h2>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
-      <line x1="8" y1="${baseY}" x2="${W - 8}" y2="${baseY}" class="m-axis"></line>
-      ${steps.map(bar).join('')}
-      <rect x="8" y="${shareY}" width="${shareW}" height="14" rx="7" fill="var(--line)"></rect>
-      <rect x="8" y="${shareY}" width="${mineW}" height="14" rx="7" fill="var(--accent)"
+      <!-- экран: он же причина, по которой зал сидит дугой -->
+      <path d="M ${x0 - 6} 36 Q ${W / 2} 6 ${x0 + rowW - 2} 36" class="s-screen"></path>
+      <text x="${W / 2}" y="48" text-anchor="middle" class="m-muted">${t('hallScreen')}</text>
+      ${seats.join('')}
+      <rect x="8" y="${shareY}" width="${shareW}" height="12" rx="6" fill="var(--line)"></rect>
+      <rect x="8" y="${shareY}" width="${mineW}" height="12" rx="6" fill="var(--accent)"
         opacity="0.85"></rect>
     </svg>
+    <div class="funding-note">${t('hallSeat', { seat: compact(unit), subs: compact(after) })}</div>
+    <div class="flow-legend">${legend}</div>
     <div class="funding-note">${t('flowShare', {
       share: pct(share, 0), you: compact(after), rival: compact(rival),
       churn: pct(r.churnRate ?? 0, 1) })}</div>
-    <div class="flow-legend">${legend}</div>
     <div class="chart-caption">${t('flowLegend')}</div>
   </div>`;
 }

@@ -884,14 +884,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .org-card .btn { margin-top: auto; }
 
 /* Карта города (НОВОЕДА): плитки районов по оси расстояния */
-.eco-map .m-tile { fill: var(--panel-2, #1b2333); stroke: var(--line); }
 /* Заливка полупрозрачностью, а не смешиванием цветов средствами CSS:
    планка совместимости — Safari 14.1, а функция смешивания появилась только
    в 16.2. Проверка сборок ловит её по имени, включая упоминание в
    комментарии, — поэтому здесь оно и не написано. */
-.eco-map .m-tile.m-good { fill: var(--pos); fill-opacity: 0.16; stroke: var(--pos); }
-.eco-map .m-tile.m-bad { fill: var(--neg); fill-opacity: 0.14; stroke: var(--neg); }
-.eco-map .m-tile.m-off { fill: transparent; stroke: var(--line); }
 .eco-map .m-name { fill: var(--text); font-size: 12px; font-weight: 600; }
 .eco-map .m-small { fill: var(--text); font-size: 11px; }
 .eco-map .m-axis { stroke: var(--line); }
@@ -905,6 +901,51 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
 .flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
 .flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* Городская афиша (БИЛЕТВИЛЬ): площадки, потоки билетов, касса */
+.venues .v-house path, .venues .v-house rect, .venues .v-house ellipse {
+  fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2;
+}
+.venues .v-house.on path, .venues .v-house.on rect, .venues .v-house.on ellipse {
+  fill: #24334f; stroke: rgba(148, 163, 184, 0.45);
+}
+.venues .v-house .v-cut rect, .venues .v-house .v-cut ellipse { fill: var(--bg); stroke: none; }
+.venues .v-market { fill: none; stroke: #60a5fa; opacity: 0.8; }
+.venues .v-widget { fill: none; stroke: #4ade80; opacity: 0.8; }
+.venues .v-past { fill: none; stroke: var(--muted); opacity: 0.45; stroke-dasharray: 5 4; }
+.venues .v-till { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: 0.6; }
+.venues .v-kiosk rect { fill: var(--panel-2, #16213a); stroke: var(--accent); stroke-width: 1.6; }
+.venues .v-kiosk line { stroke: var(--line); stroke-width: 3; }
+.flow-key i.k-past { background: transparent; border: 1.5px dashed var(--muted); }
+
+/* Зал КИНОРЕКИ: кресла, экран, обводка новичков */
+.hall .s-seat rect { fill: var(--muted); fill-opacity: 0.85; }
+.hall .s-seat.s-fresh rect { stroke: #fff; stroke-width: 1.4; }
+.hall .s-seat.s-empty rect { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.hall .s-screen { fill: none; stroke: var(--text); stroke-opacity: 0.45; stroke-width: 6; stroke-linecap: round; }
+.flow-key i.k-fresh { background: var(--muted); border: 1.5px solid #fff; }
+.flow-key i.k-empty { background: transparent; border: 1.5px solid var(--line); }
+
+/* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
+.city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
+.city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
+.city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
+.city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
+.city-map .m-road { stroke: var(--line); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
+.city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
+.city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
+.city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
+.city-map .m-bridge { fill: var(--panel-2, #1b2333); stroke: none; }
+.city-map .m-rail { stroke: var(--muted); stroke-width: 1.5; }
+.city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
+/* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
+.city-map .m-name, .city-map .m-small, .city-map .m-muted {
+  paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.city-map.narrow .m-name { font-size: 26px; font-weight: 800; }
+.city-map.narrow .m-muted { font-size: 18px; }
+.map-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
+.map-list li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+.map-list li:last-child { border-bottom: 0; }
 
 </style>
   <script id="js-flag">
@@ -1124,18 +1165,17 @@ const STRINGS = {
   studioFresh: { ru: 'Свежесть ×{fresh}', en: 'Freshness ×{fresh}' },
   studioCalendar: { ru: 'Календарь премьер: ваши сверху, конкурента снизу', en: 'Premiere calendar: yours above, the rival’s below' },
   flowTitle: { ru: 'Месяц подписчиков: кто пришёл и кто ушёл', en: 'The subscriber month: who arrived and who left' },
-  flowColWas: { ru: 'было', en: 'before' },
-  flowColIn: { ru: 'пришли', en: 'joined' },
-  flowColOut: { ru: 'ушли', en: 'left' },
-  flowColNow: { ru: 'стало', en: 'after' },
-  flowColRival: { ru: 'конкурент', en: 'rival' },
+  hallScreen: { ru: 'ЭКРАН', en: 'SCREEN' },
+  hallSeat: { ru: 'Одно кресло — {seat} подписчиков; в зале {subs}.', en: 'One seat is {seat} subscribers; {subs} in the hall.' },
+  hallFresh: { ru: 'пришли: {n}', en: 'joined: {n}' },
+  hallLeft: { ru: 'ушли: {n}', en: 'left: {n}' },
   flowShare: {
     ru: 'Полоса рынка: у вас {you} подписчиков ({share}), у конкурента {rival}. Отток {churn} в месяц.',
     en: 'The market bar: you have {you} subscribers ({share}), the rival {rival}. Churn {churn} a month.',
   },
   flowLegend: {
-    ru: 'Второй и третий столбики — не итог, а его причина: приток и отток разложены по сегментам зрителей, и цвет показывает, кто именно пришёл и кто именно ушёл. Массовый зритель приходит на громкую премьеру и уходит, когда досмотрел; киноман приходит за глубиной каталога и уходит от рекламы. Полоса под столбиками — рынок целиком: ваша доля и доля конкурента. Она отдельно, потому что его база бывает в десятки раз больше вашей, и на одной шкале со столбиками месяца ваш приток превратился бы в ниточку.',
-    en: 'The second and third bars are not the result but its cause: inflow and outflow are broken down by audience segment, and the colour shows exactly who arrived and who left. The mainstream viewer comes for a loud premiere and leaves once it is finished; the cinephile comes for catalogue depth and leaves because of ads. The bar underneath is the whole market: your share and the rival’s. It is separate because their base can be tens of times yours, and on the same scale as the monthly columns your inflow would shrink to a thread.',
+    ru: 'Зал — ваша база подписчиков: цена кресла подписана, ряды заполняются по мере роста. Цвет кресла — сегмент зрителя, и в этой игре важно не «сколько», а «кто»: массовый приходит на громкую премьеру и уходит, когда досмотрел; киноман приходит за глубиной каталога и уходит от рекламы. Светлая обводка — кресла этого месяца, пустые — те, кто ушёл. Полоса под залом — рынок целиком: ваша доля и доля конкурента. Она отдельно, потому что его база бывает в десятки раз больше вашей, и в одном зале ваши ряды превратились бы в точку.',
+    en: 'The hall is your subscriber base: the price of a seat is written below, and the rows fill up as you grow. Seat colour is the audience segment, and in this game what matters is not «how many» but «who»: the mainstream viewer comes for a loud premiere and leaves once it is finished; the cinephile comes for catalogue depth and leaves because of ads. A light outline marks this month’s arrivals, empty seats those who left. The bar under the hall is the whole market: your share and the rival’s. It is separate because their base can be tens of times yours, and inside one hall your rows would shrink to a dot.',
   },
   studioMapPipeline: { ru: 'В производстве {producing} · готово и ждёт выхода {ready}', en: 'In production {producing} · finished and waiting {ready}' },
   studioMapCaption: {
@@ -7014,19 +7054,19 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-// Месяц подписчиков
+// Зал КИНОРЕКИ
 //
-// Первая версия рисовала механизм: полка, календарь, слоты конвейера. Она
-// показывала устройство игры, но не её ход — при коротком каталоге и без
-// премьер это были подписи над пустотой, а подписи ещё и налезали друг на
-// друга. Теперь схема отвечает на вопрос, который игрок задаёт каждый месяц:
-// почему подписчиков стало столько. Было, кто пришёл, кто ушёл, стало — и
-// рядом то же число у конкурента, потому что рынок один на двоих.
-//
-// Приток и отток разложены по сегментам зрителей: в этой игре важно не
-// «сколько», а «кто». Массовый приходит на премьеру и уходит, досмотрев;
-// киноман приходит за глубиной каталога и уходит от рекламы.
+// Первая версия рисовала механизм (полка, календарь, слоты), вторая —
+// водопад из четырёх столбиков. Столбики честно считали месяц, но читались
+// как таблица, набранная прямоугольниками. Здесь то же самое нарисовано
+// картинкой: зал, в котором одно кресло — фиксированное число подписчиков.
+// База растёт — зал заполняется рядами; кресло красят в цвет сегмента, у
+// пришедших в этом месяце светлая обводка, ушедшие остаются пустыми
+// креслами. Цену деления выбирает сама схема, поэтому зал не переполняется
+// ни на первом месяце, ни на последнем.
 // ----------------------------------------------------------------------------
+const SEAT_UNITS = [100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
+
 function renderStudioMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -7037,81 +7077,93 @@ function renderStudioMap() {
   const joined = r.newSubs ?? 0;
   const left = r.lostSubs ?? 0;
   const after = r.subs ?? 0;
-  const before = Math.max(0, after - joined + left);
   const rival = r.rivalSubs ?? 0;
-  const segs = (r.segments ?? []).filter((x) => (x.joined ?? 0) + (x.left ?? 0) > 0);
+  const segs = (r.segments ?? []).filter((x) => (x.subs ?? 0) > 0);
   const colorOf = (i) => PALETTE[(i + 1) % PALETTE.length];
 
+  const perRow = narrow ? 10 : 20;
+  const rowsMax = narrow ? 7 : 7;
+  const capacity = perRow * rowsMax;
+  // Цена кресла подбирается так, чтобы зал вмещал и базу, и тех, кто ушёл
+  const unit = SEAT_UNITS.find((u) => (after + left) / u <= capacity)
+    ?? SEAT_UNITS[SEAT_UNITS.length - 1];
+  const filled = Math.max(1, Math.min(capacity, Math.round(after / unit)));
+  const ghosts = Math.min(capacity - filled, Math.round(left / unit));
+  const freshSeats = Math.min(filled, Math.round(joined / unit));
+
+  // Кресла раздаются сегментам по их доле в базе — цвет ряда показывает,
+  // из кого зал состоит на самом деле
+  const total = segs.reduce((a, x) => a + x.subs, 0) || 1;
+  const seatSeg = [];
+  let acc = 0;
+  segs.forEach((sg, i) => {
+    const n = i === segs.length - 1 ? filled - acc : Math.round(filled * (sg.subs / total));
+    for (let k = 0; k < n; k++) seatSeg.push(colorOf(i));
+    acc += n;
+  });
+  while (seatSeg.length < filled) seatSeg.push(colorOf(0));
+
   const W = narrow ? 360 : 700;
-  const baseY = narrow ? 132 : 140;
-  const H = baseY + 66;
-  // Шкала считается по СВОЕЙ базе: у конкурента она может быть в десятки раз
-  // больше, и на общей шкале ваши столбики превращались в ниточки. Конкурент
-  // показан отдельной полосой доли рынка — там сравнение и уместно.
-  const maxV = Math.max(1, before, after);
-  const hOf = (v) => (narrow ? 84 : 96) * (v / maxV);
+  const sw = narrow ? 26 : 28;      // шаг кресла
+  const sh = narrow ? 22 : 22;      // шаг ряда
+  const rowW = perRow * sw;
+  const x0 = (W - rowW) / 2 + 3;
+  const y0 = narrow ? 74 : 78;
+  const H = y0 + rowsMax * sh + (narrow ? 42 : 46);
 
-  const colW = narrow ? 62 : 104;
-  const gap = narrow ? 20 : 52;
-  const x0 = narrow ? 22 : 74;
-  // Водопад: приток и отток висят между «было» и «стало», поэтому
-  // арифметика месяца видна глазами, а не пересчитывается в уме.
-  const steps = [
-    { key: 'Was', from: 0, to: before, color: 'var(--muted)', op: 0.55 },
-    { key: 'In', from: before, to: before + joined, color: 'var(--pos)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.joined ?? 0, c: colorOf(i) })), sum: joined },
-    { key: 'Out', from: before + joined - left, to: before + joined, color: 'var(--neg)', op: 0.75, parts: segs.map((sg, i) => ({ v: sg.left ?? 0, c: colorOf(i) })), sum: left },
-    { key: 'Now', from: 0, to: after, color: 'var(--accent)', op: 0.7 },
-  ];
+  // Ряд выгибается дугой к экрану: без этого сетка кресел снова читается
+  // таблицей, а не залом
+  const bow = (col) => {
+    const t2 = (col - (perRow - 1) / 2) / ((perRow - 1) / 2);
+    return -t2 * t2 * (narrow ? 10 : 14);
+  };
 
-  const bar = (st, i) => {
-    const x = x0 + i * (colW + gap);
-    const yTop = baseY - hOf(st.to);
-    const h = Math.max(2, hOf(st.to) - hOf(st.from));
-    const stack = [];
-    if (st.parts && st.sum > 0) {
-      let acc = 0;
-      for (const part of st.parts) {
-        const ph = h * (part.v / st.sum);
-        stack.push(`<rect x="${x}" y="${yTop + acc}" width="${colW}" height="${Math.max(0.4, ph)}"
-          fill="${part.c}" opacity="0.9"></rect>`);
-        acc += ph;
-      }
-    }
-    const label = st.key === 'In' ? `+${compact(joined)}`
-      : st.key === 'Out' ? `−${compact(left)}` : compact(st.to);
-    return `<g>
-      <rect x="${x}" y="${yTop}" width="${colW}" height="${h}" rx="3" fill="${st.color}"
-        opacity="${st.parts ? 0.2 : st.op}"></rect>
-      ${stack.join('')}
-      <text x="${x + colW / 2}" y="${yTop - 7}" text-anchor="middle" class="m-name">${label}</text>
-      <text x="${x + colW / 2}" y="${baseY + 16}" text-anchor="middle" class="m-muted">${t(`flowCol${st.key}`)}</text>
-      ${i < 3 ? `<line x1="${x + colW}" y1="${yTop}" x2="${x + colW + gap}" y2="${yTop}"
-        class="m-axis" stroke-dasharray="3 3" opacity="0.7"></line>` : ''}
+  const seat = (i, kind) => {
+    const row = Math.floor(i / perRow);
+    const col = i % perRow;
+    const x = x0 + col * sw;
+    const y = y0 + row * sh - bow(col);
+    const fresh = kind === 'fill' && i >= filled - freshSeats;
+    const cls = kind === 'fill' ? `s-seat${fresh ? ' s-fresh' : ''}` : 's-seat s-empty';
+    // Цвет сегмента идёт стилем, а не атрибутом: атрибут проиграл бы правилу
+    // из таблицы, и весь зал остался бы серым
+    const fill = kind === 'fill' ? ` style="fill:${seatSeg[i] ?? colorOf(0)}"` : '';
+    // Кресло: спинка и подлокотники — мелочь, но именно она делает картинку
+    return `<g class="${cls}">
+      <rect x="${x}" y="${y}" width="${sw - 8}" height="${sh - 9}" rx="3"${fill}></rect>
+      <rect x="${x - 2}" y="${y + sh - 13}" width="${sw - 4}" height="4" rx="2"${fill}></rect>
     </g>`;
   };
 
-  // Полоса рынка: вы и конкурент в одной строке — здесь разница в порядок
-  // величин не мешает, а наоборот, и есть содержание
+  const seats = [];
+  for (let i = 0; i < filled; i++) seats.push(seat(i, 'fill'));
+  for (let i = filled; i < filled + ghosts; i++) seats.push(seat(i, 'ghost'));
+
   const share = after + rival > 0 ? after / (after + rival) : 0;
-  const shareY = baseY + 40;
+  const shareY = H - (narrow ? 22 : 24);
   const shareW = W - 16;
   const mineW = Math.max(2, shareW * share);
   const legend = segs.map((sg, i) => `<span class="flow-key"><i style="background:${colorOf(i)}"></i>${
-    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('');
+    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('')
+    + `<span class="flow-key"><i class="k-fresh"></i>${t('hallFresh', { n: compact(joined) })}</span>`
+    + `<span class="flow-key"><i class="k-empty"></i>${t('hallLeft', { n: compact(left) })}</span>`;
 
-  box.innerHTML = `<div class="panel eco-map">
+  box.innerHTML = `<div class="panel eco-map hall${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('flowTitle')}</h2>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
-      <line x1="8" y1="${baseY}" x2="${W - 8}" y2="${baseY}" class="m-axis"></line>
-      ${steps.map(bar).join('')}
-      <rect x="8" y="${shareY}" width="${shareW}" height="14" rx="7" fill="var(--line)"></rect>
-      <rect x="8" y="${shareY}" width="${mineW}" height="14" rx="7" fill="var(--accent)"
+      <!-- экран: он же причина, по которой зал сидит дугой -->
+      <path d="M ${x0 - 6} 36 Q ${W / 2} 6 ${x0 + rowW - 2} 36" class="s-screen"></path>
+      <text x="${W / 2}" y="48" text-anchor="middle" class="m-muted">${t('hallScreen')}</text>
+      ${seats.join('')}
+      <rect x="8" y="${shareY}" width="${shareW}" height="12" rx="6" fill="var(--line)"></rect>
+      <rect x="8" y="${shareY}" width="${mineW}" height="12" rx="6" fill="var(--accent)"
         opacity="0.85"></rect>
     </svg>
+    <div class="funding-note">${t('hallSeat', { seat: compact(unit), subs: compact(after) })}</div>
+    <div class="flow-legend">${legend}</div>
     <div class="funding-note">${t('flowShare', {
       share: pct(share, 0), you: compact(after), rival: compact(rival),
       churn: pct(r.churnRate ?? 0, 1) })}</div>
-    <div class="flow-legend">${legend}</div>
     <div class="chart-caption">${t('flowLegend')}</div>
   </div>`;
 }

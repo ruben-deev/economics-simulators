@@ -871,14 +871,10 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .org-card .btn { margin-top: auto; }
 
 /* Карта города (НОВОЕДА): плитки районов по оси расстояния */
-.eco-map .m-tile { fill: var(--panel-2, #1b2333); stroke: var(--line); }
 /* Заливка полупрозрачностью, а не смешиванием цветов средствами CSS:
    планка совместимости — Safari 14.1, а функция смешивания появилась только
    в 16.2. Проверка сборок ловит её по имени, включая упоминание в
    комментарии, — поэтому здесь оно и не написано. */
-.eco-map .m-tile.m-good { fill: var(--pos); fill-opacity: 0.16; stroke: var(--pos); }
-.eco-map .m-tile.m-bad { fill: var(--neg); fill-opacity: 0.14; stroke: var(--neg); }
-.eco-map .m-tile.m-off { fill: transparent; stroke: var(--line); }
 .eco-map .m-name { fill: var(--text); font-size: 12px; font-weight: 600; }
 .eco-map .m-small { fill: var(--text); font-size: 11px; }
 .eco-map .m-axis { stroke: var(--line); }
@@ -892,3 +888,48 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
 .flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
 .flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* Городская афиша (БИЛЕТВИЛЬ): площадки, потоки билетов, касса */
+.venues .v-house path, .venues .v-house rect, .venues .v-house ellipse {
+  fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2;
+}
+.venues .v-house.on path, .venues .v-house.on rect, .venues .v-house.on ellipse {
+  fill: #24334f; stroke: rgba(148, 163, 184, 0.45);
+}
+.venues .v-house .v-cut rect, .venues .v-house .v-cut ellipse { fill: var(--bg); stroke: none; }
+.venues .v-market { fill: none; stroke: #60a5fa; opacity: 0.8; }
+.venues .v-widget { fill: none; stroke: #4ade80; opacity: 0.8; }
+.venues .v-past { fill: none; stroke: var(--muted); opacity: 0.45; stroke-dasharray: 5 4; }
+.venues .v-till { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: 0.6; }
+.venues .v-kiosk rect { fill: var(--panel-2, #16213a); stroke: var(--accent); stroke-width: 1.6; }
+.venues .v-kiosk line { stroke: var(--line); stroke-width: 3; }
+.flow-key i.k-past { background: transparent; border: 1.5px dashed var(--muted); }
+
+/* Зал КИНОРЕКИ: кресла, экран, обводка новичков */
+.hall .s-seat rect { fill: var(--muted); fill-opacity: 0.85; }
+.hall .s-seat.s-fresh rect { stroke: #fff; stroke-width: 1.4; }
+.hall .s-seat.s-empty rect { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.hall .s-screen { fill: none; stroke: var(--text); stroke-opacity: 0.45; stroke-width: 6; stroke-linecap: round; }
+.flow-key i.k-fresh { background: var(--muted); border: 1.5px solid #fff; }
+.flow-key i.k-empty { background: transparent; border: 1.5px solid var(--line); }
+
+/* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
+.city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
+.city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
+.city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
+.city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
+.city-map .m-road { stroke: var(--line); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
+.city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
+.city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
+.city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
+.city-map .m-bridge { fill: var(--panel-2, #1b2333); stroke: none; }
+.city-map .m-rail { stroke: var(--muted); stroke-width: 1.5; }
+.city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
+/* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
+.city-map .m-name, .city-map .m-small, .city-map .m-muted {
+  paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.city-map.narrow .m-name { font-size: 26px; font-weight: 800; }
+.city-map.narrow .m-muted { font-size: 18px; }
+.map-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
+.map-list li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+.map-list li:last-child { border-bottom: 0; }

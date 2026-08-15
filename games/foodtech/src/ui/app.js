@@ -624,12 +624,17 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 // Карта города
 //
-// Главный компромисс НОВОЕДЫ — расстояние. Дальний район больше и дешевле в
-// запуске, но курьер там успевает меньше заказов, время доставки растёт, а с
-// ним растёт и отток. В списке районов это была строчка «плечо 5 км», то есть
-// цифра рядом с другими цифрами. На карте расстояние — ось, и компромисс
-// виден до того, как игрок откроет район: чем правее плитка, тем длиннее
-// столбик времени над ней.
+// Первая версия была диаграммой: плитки в ряд и ось расстояний под ними.
+// Читалась она правильно, но выглядела таблицей, а не городом. Теперь это
+// карта: склад в центре, кварталы вокруг него, дороги и река. Расстояние
+// перестало быть подписью и стало геометрией — район, до которого дальше
+// ехать, и на карте дальше от центра.
+//
+// Главный смысловой элемент — пунктирный круг: граница, за которой доставка
+// перестаёт укладываться в эталонные 35 минут. Она не нарисована на глаз, а
+// посчитана по вашим же районам (линейная зависимость времени от плеча), и
+// потому двигается вместе с игрой: наняли курьеров — круг раздался, зажали
+// ставку и открыли дальний район — сжался.
 // ----------------------------------------------------------------------------
 function renderCityMap() {
   const box = el('map-slot');
@@ -639,8 +644,7 @@ function renderCityMap() {
   const entered = state.cityEntered ?? { novograd: true };
   const city = CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
     ?? CITIES.find((c) => entered[c.id]) ?? CITIES[0];
-  const defs = DISTRICTS.filter((d) => d.city === city.id)
-    .slice().sort((a, b) => a.distanceKm - b.distanceKm);
+  const defs = DISTRICTS.filter((d) => d.city === city.id);
   const byId = Object.fromEntries((r?.districts ?? []).map((d) => [d.id, d]));
 
   const rows = defs.map((d) => {
@@ -652,123 +656,157 @@ function renderCityMap() {
       time: rep?.deliveryTime ?? ds.deliveryTime ?? d.baseTime,
       cm: rep?.cmPerOrder ?? 0,
       orders: rep?.orders ?? 0,
-      customers: ds.customers ?? 0,
     };
   });
-  const maxKm = Math.max(...rows.map((x) => x.d.distanceKm));
-  const maxTime = Math.max(CONFIG.refDeliveryTime * 1.2, ...rows.map((x) => x.time));
-  const maxPot = Math.max(...rows.map((x) => x.d.potential));
 
-  // Колонки ровные, а расстояние показывает выноска к оси: плитки, стоящие
-  // по километрам, налезали друг на друга и текст в них не читался. Ось при
-  // этом никуда не делась — линия от плитки к засечке и есть «сколько ехать».
-  const W = narrow ? 380 : 700;
-  const padX = 10;
-  const colW = (W - padX * 2) / rows.length;
-  const tileW = Math.min(narrow ? 108 : 118, colW - 8);
-  const barH = 46;
-  const barTop = 26;
-  const tileY = barTop + barH + 30;
-  const tileH = 60;
-  const axisY = tileY + tileH + 26;
-  const cx = (i) => padX + colW * (i + 0.5);
-  const xKm = (km) => padX + 14 + (W - padX * 2 - 28) * (km / (maxKm || 1));
+  // Стороны света у кварталов свои: «Северный» обязан быть севернее, а
+  // «Заречье» — за рекой. Незнакомый район раскладывается по кругу.
+  const DIR = {
+    center: -90, sever: -90, univer: 190, zarechie: 15, promzona: 65, zagorod: 130,
+    'st-center': -90, 'st-vostok': 20, 'st-port': 110, 'st-sloboda': 205,
+  };
+  const W = 700;
+  const H = 400;
+  const cx = 300;
+  const cy = 205;
+  const maxKm = Math.max(...defs.map((d) => d.distanceKm));
+  const maxPot = Math.max(...defs.map((d) => d.potential));
+  // Радиус на карте пропорционален корню расстояния: иначе загородный район
+  // на девяти километрах уносит все остальные в кучу у центра.
+  const rad = (km) => 34 + 150 * Math.sqrt(km / maxKm);
+  const size = (pot) => 26 + 26 * Math.sqrt(pot / maxPot);
 
-  const cell = (row, i) => {
-    const x = cx(i);
-    const hh = Math.max(4, barH * (row.time / maxTime));
-    const bad = row.time > CONFIG.refDeliveryTime;
-    const left = x - tileW / 2;
-    const cls = row.live ? (row.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
-    // Высота плитки одинаковая: размер района показывает полоска населения
-    // внутри неё — так подписи всегда помещаются.
-    const potW = (tileW - 16) * (row.d.potential / maxPot);
+  const placed = rows.map((row, i) => {
+    const ang = ((DIR[row.d.id] ?? (-90 + (360 / rows.length) * i)) * Math.PI) / 180;
+    const R = row.d.id === 'center' || row.d.id === 'st-center' ? 0 : rad(row.d.distanceKm);
+    return { ...row, x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) * 0.78, rr: size(row.d.potential) };
+  });
+
+  // Река рисуется не «где-нибудь справа», а между складом и Заречьем: иначе
+  // название района ничем не объясняется. В Старогорске воду держит порт.
+  const across = placed.find((p) => p.d.id.endsWith('zarechie'));
+  const port = placed.find((p) => p.d.id.endsWith('port'));
+  const riverX = across ? (cx + across.x) / 2 : (port ? port.x + port.rr * 1.15 : null);
+  if (riverX !== null) {
+    // Вода не должна накрывать кварталы: заречный уезжает за берег, остальные
+    // сдвигаются на ближний. Расстояния при этом не меняются — они в числах.
+    for (const p of placed) {
+      if (p === port) continue;
+      const clear = p.rr + 34;
+      if (p === across) p.x = Math.max(p.x, riverX + clear);
+      else if (Math.abs(p.x - riverX) < clear) p.x = riverX - clear;
+    }
+  }
+  const riverPath = (x) => `M ${x - 20} 0 C ${x - 38} 90, ${x + 6} 150, ${x - 22} 205
+    C ${x - 48} 258, ${x + 10} 320, ${x - 12} 400 L ${x + 30} 400
+    C ${x + 50} 318, ${x - 4} 258, ${x + 22} 205 C ${x + 48} 150, ${x + 6} 92, ${x + 22} 0 Z`;
+
+  // Мост там, где дорога в Заречье пересекает воду: без него карта врёт —
+  // курьеры ездят туда каждый день.
+  const bridge = () => {
+    if (!across || riverX === null) return '';
+    const k = (riverX - cx) / (across.x - cx || 1);
+    const by = cy + k * (across.y - cy);
+    const deg = (Math.atan2(across.y - cy, across.x - cx) * 180) / Math.PI;
+    return `<g transform="translate(${riverX} ${by}) rotate(${deg.toFixed(1)})">
+      <rect x="-34" y="-11" width="68" height="22" class="m-bridge"></rect>
+      <line x1="-34" y1="-11" x2="34" y2="-11" class="m-rail"></line>
+      <line x1="-34" y1="11" x2="34" y2="11" class="m-rail"></line>
+    </g>`;
+  };
+
+  // Где кончается норма: время линейно растёт с плечом (по вашим же районам),
+  // и мы решаем уравнение «время = эталон» относительно километров
+  const live = placed.filter((p) => p.live);
+  const pts = (live.length >= 2 ? live : placed).map((p) => [p.d.distanceKm, p.time]);
+  const n = pts.length;
+  const sx = pts.reduce((a, [x]) => a + x, 0) / n;
+  const sy = pts.reduce((a, [, y]) => a + y, 0) / n;
+  const denom = pts.reduce((a, [x]) => a + (x - sx) ** 2, 0);
+  const slope = denom > 0 ? pts.reduce((a, [x, y]) => a + (x - sx) * (y - sy), 0) / denom : 0;
+  const intercept = sy - slope * sx;
+  const kmAtRef = slope > 0.01 ? (CONFIG.refDeliveryTime - intercept) / slope : null;
+  const refR = kmAtRef !== null && kmAtRef > 0 && kmAtRef <= maxKm * 1.35 ? rad(kmAtRef) : null;
+
+  // Домики внутри квартала: их столько, сколько ресторанов на районе, но не
+  // больше девяти — застройка, а не гистограмма
+  const blocks = (p) => {
+    const share = (state.districts[p.d.id]?.restaurants ?? 0) / (p.d.restaurantPool || 1);
+    const cnt = Math.min(9, Math.max(2, Math.round(2 + 7 * Math.sqrt(share))));
+    const k = p.rr;
+    // Домики стоят по краю квартала: середину занимает подпись
+    const spots = [[-0.55, 0.45], [0.45, 0.5], [-0.7, -0.32], [0.6, -0.38], [0, 0.62],
+      [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06]];
+    return spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
+      y="${(p.y + ay * k - 4).toFixed(1)}" width="${i % 3 === 0 ? 12 : 9}" height="8"
+      rx="1.5" class="m-block"></rect>`).join('');
+  };
+
+  const quarter = (p, i) => {
+    const cls = p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
+    const bad = p.time > CONFIG.refDeliveryTime;
+    // Квартал — не круг, а скруглённый многоугольник: так он читается
+    // застройкой, а не точкой на графике
+    const k = p.rr;
+    const shape = `${p.x - k},${p.y - k * 0.62} ${p.x - k * 0.35},${p.y - k * 0.92} `
+      + `${p.x + k * 0.72},${p.y - k * 0.78} ${p.x + k},${p.y - k * 0.1} `
+      + `${p.x + k * 0.62},${p.y + k * 0.86} ${p.x - k * 0.55},${p.y + k * 0.92} `
+      + `${p.x - k * 0.98},${p.y + k * 0.3}`;
+    // На телефоне карта ужимается втрое, и мелкие подписи превращаются в шум:
+    // в кварталах остаются только имена, числа уходят в список под картой.
+    // У центра середину занимает склад, поэтому его цифры уходят под здание
+    const ly = p.d.id.endsWith('center') ? p.y + 34 : p.y + 12;
+    const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
+        class="${p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted'}">${p.live
+        ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
+        : t('mapOpenFor', { cost: money(p.d.launchCost) })}</text>`;
     return `<g>
-      <rect x="${x - 6}" y="${barTop + barH - hh}" width="12" height="${hh}" rx="2"
-        fill="${bad ? 'var(--neg)' : 'var(--accent)'}" opacity="${row.live ? 0.95 : 0.3}"></rect>
-      <text x="${x}" y="${barTop + barH - hh - 5}" text-anchor="middle" class="m-small"
-        opacity="${row.live ? 1 : 0.55}">${num(row.time)}</text>
-
-      <rect x="${left}" y="${tileY}" width="${tileW}" height="${tileH}" rx="8"
-        class="m-tile ${cls}"${row.live ? '' : ' stroke-dasharray="4 3"'}></rect>
-      <text x="${x}" y="${tileY + 16}" text-anchor="middle" class="m-name">${tx(row.d.name)}</text>
-      <text x="${x}" y="${tileY + 31}" text-anchor="middle" class="m-small">${row.live
-        ? `${compact(row.orders)} ${t('mapPerWeek')}`
-        : t('mapClosedShort', { cost: money(row.d.launchCost) })}</text>
-      <text x="${x}" y="${tileY + 44}" text-anchor="middle" class="${row.live
-        ? (row.cm >= 0 ? 'm-small pos' : 'm-small neg') : 'm-muted'}">${row.live
-        ? t('mapPerOrder', { cm: amount(row.cm) })
-        : t('mapOpenFor', { cost: money(row.d.launchCost) })}</text>
-      <rect x="${left + 8}" y="${tileY + tileH - 9}" width="${tileW - 16}" height="4" rx="2"
-        fill="var(--line)"></rect>
-      <rect x="${left + 8}" y="${tileY + tileH - 9}" width="${potW}" height="4" rx="2"
-        fill="var(--muted)"></rect>
-
-      <line x1="${x}" y1="${tileY + tileH}" x2="${xKm(row.d.distanceKm)}" y2="${axisY}"
-        class="m-axis" opacity="0.5"></line>
-      <circle cx="${xKm(row.d.distanceKm)}" cy="${axisY}" r="3" fill="var(--accent)"
-        opacity="${row.live ? 1 : 0.4}"></circle>
-      <text x="${xKm(row.d.distanceKm)}" y="${axisY + 16}" text-anchor="middle"
-        class="m-muted">${num(row.d.distanceKm, 1)}</text>
+      <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
+      ${p.live ? blocks(p) : ''}
+      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.55 : p.y + (narrow ? 6 : -4)}"
+        text-anchor="middle" class="m-name">${narrow ? i + 1 : tx(p.d.name)}</text>
+      ${label}
     </g>`;
   };
 
   const couriers = r?.couriers ?? state.couriers ?? 0;
   const util = r?.utilization ?? 0;
   const undelivered = r && r.demand > 0 ? 1 - r.orders / r.demand : 0;
-  const H = axisY + 34;
 
-  // На телефоне колонки не помещаются: шесть названий в 380 пикселях
-  // налезают друг на друга. Раскладка становится вертикальной, но ось
-  // расстояния никуда не девается — она живёт внутри каждой строки, и
-  // главный урок («дальше — дольше») читается так же.
-  const rowH = 42;
-  const vRow = (row, i) => {
-    const y = 26 + i * rowH;
-    const ax = 168;
-    const aw = W - ax - 58;
-    const x = ax + aw * (row.d.distanceKm / (maxKm || 1));
-    const bad = row.time > CONFIG.refDeliveryTime;
-    const cls = row.live ? (row.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
-    return `<g>
-      <rect x="6" y="${y}" width="156" height="${rowH - 8}" rx="7"
-        class="m-tile ${cls}"${row.live ? '' : ' stroke-dasharray="4 3"'}></rect>
-      <text x="14" y="${y + 15}" class="m-name">${tx(row.d.name)}</text>
-      <text x="14" y="${y + 28}" class="${row.live
-        ? (row.cm >= 0 ? 'm-small pos' : 'm-small neg') : 'm-muted'}">${row.live
-        ? `${compact(row.orders)} ${t('mapPerWeek')} · ${amount(row.cm)}`
-        : `${t('mapClosedShort')} · ${t('mapOpenFor', { cost: money(row.d.launchCost) })}`}</text>
-      <line x1="${ax}" y1="${y + 17}" x2="${W - 40}" y2="${y + 17}" class="m-axis" opacity="0.6"></line>
-      <circle cx="${x}" cy="${y + 17}" r="4" fill="${bad ? 'var(--neg)' : 'var(--accent)'}"
-        opacity="${row.live ? 1 : 0.4}"></circle>
-      <text x="${x}" y="${y + 10}" text-anchor="middle" class="m-muted">${num(row.d.distanceKm, 1)}</text>
-      <text x="${W - 6}" y="${y + 21}" text-anchor="end" class="${bad ? 'm-small neg' : 'm-small'}"
-        opacity="${row.live ? 1 : 0.55}">${num(row.time)}${t('mapMin')}</text>
-    </g>`;
-  };
-  const svg = narrow
-    ? `<svg viewBox="0 0 ${W} ${26 + rows.length * rowH + 8}" class="map-v" role="img"
-        aria-label="${t('mapTitle', { city: tx(city.name) })}">
-        <text x="6" y="16" class="m-muted">${t('mapNarrowAxis')}</text>
-        ${rows.map(vRow).join('')}
-      </svg>`
-    : `<svg viewBox="0 0 ${W} ${H}" role="img"
-        aria-label="${t('mapTitle', { city: tx(city.name) })}">
-        <text x="${padX}" y="14" class="m-muted">${t('mapTimeAxis')}</text>
-        <line x1="${padX}" y1="${axisY}" x2="${W - padX}" y2="${axisY}" class="m-axis"></line>
-        <text x="${padX}" y="${axisY + 16}" class="m-muted">${t('mapKm')}</text>
-        ${rows.map(cell).join('')}
-      </svg>`;
+  // Список под картой нужен узкому экрану: на телефоне подписи внутри
+  // кварталов мельчают, а числа терять нельзя
+  const list = placed.map((p, i) => `<li><b>${i + 1}. ${tx(p.d.name)}</b> · ${p.d.distanceKm} ${t('mapKmShort')} · ${
+    p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')}`
+      : t('mapOpenFor', { cost: money(p.d.launchCost) })}</li>`).join('');
 
-  box.innerHTML = `<div class="panel eco-map">
+  box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
-    ${svg}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
+      ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
+      ${refR ? `<circle cx="${cx}" cy="${cy}" r="${refR}" class="m-ref"></circle>
+        <text x="${cx}" y="${cy - refR - 8}" text-anchor="middle" class="m-muted">${
+          t('mapRefRing', { min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</text>` : ''}
+      ${placed.filter((p) => !p.d.id.endsWith('center')).map((p) => {
+        const L = Math.hypot(p.x - cx, p.y - cy) || 1;
+        return `<line x1="${(cx + ((p.x - cx) / L) * 52).toFixed(1)}"
+          y1="${(cy + ((p.y - cy) / L) * 52).toFixed(1)}" x2="${p.x}" y2="${p.y}"
+          class="m-road"></line>`;
+      }).join('')}
+      ${bridge()}
+      ${placed.map((p, i) => quarter(p, i)).join('')}
+      <g class="m-hub">
+        <title>${t('mapHub')}</title>
+        <rect x="${cx - 13}" y="${cy + 2}" width="26" height="20" rx="3"></rect>
+        <path d="M ${cx - 17} ${cy + 2} L ${cx} ${cy - 9} L ${cx + 17} ${cy + 2} Z"></path>
+      </g>
+    </svg>
     <div class="map-foot">
       <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
         couriers: num(couriers), util: pct(util, 0) })}</span>
       <span class="${undelivered > 0.06 ? 'neg' : ''}">${t('mapUndelivered', {
         share: pct(Math.max(0, undelivered), 0) })}</span>
     </div>
+    ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
     <div class="funding-note">${t('mapLegend')}</div>
   </div>`;
 }
