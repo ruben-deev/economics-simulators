@@ -32,8 +32,8 @@ export const STRINGS = {
     en: 'The market bar: you have {you} subscribers ({share}), the rival {rival}. Churn {churn} a month.',
   },
   flowLegend: {
-    ru: 'Зал — ваша база подписчиков: цена кресла подписана, ряды заполняются по мере роста. Цвет кресла — сегмент зрителя, и в этой игре важно не «сколько», а «кто»: массовый приходит на громкую премьеру и уходит, когда досмотрел; киноман приходит за глубиной каталога и уходит от рекламы. Светлая обводка — кресла этого месяца, пустые — те, кто ушёл. Полоса под залом — рынок целиком: ваша доля и доля конкурента. Она отдельно, потому что его база бывает в десятки раз больше вашей, и в одном зале ваши ряды превратились бы в точку.',
-    en: 'The hall is your subscriber base: the price of a seat is written below, and the rows fill up as you grow. Seat colour is the audience segment, and in this game what matters is not «how many» but «who»: the mainstream viewer comes for a loud premiere and leaves once it is finished; the cinephile comes for catalogue depth and leaves because of ads. A light outline marks this month’s arrivals, empty seats those who left. The bar under the hall is the whole market: your share and the rival’s. It is separate because their base can be tens of times yours, and inside one hall your rows would shrink to a dot.',
+    ru: 'Зал — ваша база: кресло равно подписанному числу подписчиков, цвет — сегмент зрителя, светлая обводка — пришли в этом месяце, пустые кресла — ушли. Полоса под залом — доля рынка: у конкурента база бывает в десятки раз больше.',
+    en: 'The hall is your base: a seat equals the number of subscribers written below, colour is the audience segment, a light outline marks this month’s arrivals and empty seats those who left. The bar under the hall is market share: the rival’s base can be tens of times yours.',
   },
   studioMapPipeline: { ru: 'В производстве {producing} · готово и ждёт выхода {ready}', en: 'In production {producing} · finished and waiting {ready}' },
   studioMapCaption: {

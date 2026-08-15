@@ -174,15 +174,14 @@ export const STRINGS = {
   mapTitle: { ru: 'Карта города: {city}', en: 'City map: {city}' },
   mapKmShort: { ru: 'км', en: 'km' },
   mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
-  mapHub: { ru: 'склад и диспетчерская', en: 'the depot and dispatch' },
   mapRefRing: { ru: '{min} мин пути — это {km} км', en: '{min} min of travel is {km} km' },
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Домик в центре — склад и диспетчерская, от него расходятся дороги. Квартал — район: чем он дальше от склада на карте, тем дальше и в городе, а застройка внутри гуще там, где больше подключённых ресторанов. Цвет — вклад с заказа: зелёный приносит, красный съедает, у закрытого пунктиром стоит цена входа. Река отделяет Заречье, и дорога туда идёт через мост. Пунктирный круг — граница нормы: за ним доставка перестаёт укладываться в эталонные 35 минут. Он не нарисован для красоты, а посчитан по вашим же районам, поэтому двигается вместе с игрой — наняли курьеров, и круг раздался; зажали ставку и открыли дальнюю окраину, и он сжался.',
-    en: 'The house in the middle is the depot and dispatch; the roads run out from it. A block is a district: the further it sits from the depot on the map, the further it is in the city, and the denser its buildings, the more restaurants you have signed there. Colour is contribution per order: green earns, red eats, and a dashed block shows its entry price. The river cuts off Riverside, and the road there crosses a bridge. The dashed ring is where the norm ends: beyond it delivery no longer fits the 35-minute reference. It is not drawn for looks but computed from your own districts, so it moves with the game — hire couriers and the ring widens; squeeze the rate and open a far suburb, and it shrinks.',
+    ru: 'Кварталы — районы: дальше от центра на карте — дальше в городе, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
+    en: 'The blocks are districts: the further from the centre on the map, the further in the city; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 

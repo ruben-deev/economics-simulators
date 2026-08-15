@@ -754,8 +754,7 @@ function renderCityMap() {
       + `${p.x - k * 0.98},${p.y + k * 0.3}`;
     // На телефоне карта ужимается втрое, и мелкие подписи превращаются в шум:
     // в кварталах остаются только имена, числа уходят в список под картой.
-    // У центра середину занимает склад, поэтому его цифры уходят под здание
-    const ly = p.d.id.endsWith('center') ? p.y + 34 : p.y + 12;
+    const ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
     const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
         class="${p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted'}">${p.live
         ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
@@ -763,7 +762,7 @@ function renderCityMap() {
     return `<g>
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) : ''}
-      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.55 : p.y + (narrow ? 6 : -4)}"
+      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
         text-anchor="middle" class="m-name">${narrow ? i + 1 : tx(p.d.name)}</text>
       ${label}
     </g>`;
@@ -794,11 +793,8 @@ function renderCityMap() {
       }).join('')}
       ${bridge()}
       ${placed.map((p, i) => quarter(p, i)).join('')}
-      <g class="m-hub">
-        <title>${t('mapHub')}</title>
-        <rect x="${cx - 13}" y="${cy + 2}" width="26" height="20" rx="3"></rect>
-        <path d="M ${cx - 17} ${cy + 2} L ${cx} ${cy - 9} L ${cx + 17} ${cy + 2} Z"></path>
-      </g>
+      <circle cx="${cx}" cy="${cy}" r="9" class="m-core"></circle>
+      <circle cx="${cx}" cy="${cy}" r="3.5" class="m-core-dot"></circle>
     </svg>
     <div class="map-foot">
       <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {

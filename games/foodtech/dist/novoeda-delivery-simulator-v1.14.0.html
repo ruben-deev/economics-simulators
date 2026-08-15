@@ -933,6 +933,8 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
 .city-map .m-road { stroke: var(--line); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
 .city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
+.city-map .m-core { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.85; }
+.city-map .m-core-dot { fill: var(--accent); }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
 .city-map .m-bridge { fill: var(--panel-2, #1b2333); stroke: none; }
@@ -1317,15 +1319,14 @@ const STRINGS = {
   mapTitle: { ru: 'Карта города: {city}', en: 'City map: {city}' },
   mapKmShort: { ru: 'км', en: 'km' },
   mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
-  mapHub: { ru: 'склад и диспетчерская', en: 'the depot and dispatch' },
   mapRefRing: { ru: '{min} мин пути — это {km} км', en: '{min} min of travel is {km} km' },
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Домик в центре — склад и диспетчерская, от него расходятся дороги. Квартал — район: чем он дальше от склада на карте, тем дальше и в городе, а застройка внутри гуще там, где больше подключённых ресторанов. Цвет — вклад с заказа: зелёный приносит, красный съедает, у закрытого пунктиром стоит цена входа. Река отделяет Заречье, и дорога туда идёт через мост. Пунктирный круг — граница нормы: за ним доставка перестаёт укладываться в эталонные 35 минут. Он не нарисован для красоты, а посчитан по вашим же районам, поэтому двигается вместе с игрой — наняли курьеров, и круг раздался; зажали ставку и открыли дальнюю окраину, и он сжался.',
-    en: 'The house in the middle is the depot and dispatch; the roads run out from it. A block is a district: the further it sits from the depot on the map, the further it is in the city, and the denser its buildings, the more restaurants you have signed there. Colour is contribution per order: green earns, red eats, and a dashed block shows its entry price. The river cuts off Riverside, and the road there crosses a bridge. The dashed ring is where the norm ends: beyond it delivery no longer fits the 35-minute reference. It is not drawn for looks but computed from your own districts, so it moves with the game — hire couriers and the ring widens; squeeze the rate and open a far suburb, and it shrinks.',
+    ru: 'Кварталы — районы: дальше от центра на карте — дальше в городе, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
+    en: 'The blocks are districts: the further from the centre on the map, the further in the city; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
@@ -6016,8 +6017,7 @@ function renderCityMap() {
       + `${p.x - k * 0.98},${p.y + k * 0.3}`;
     // На телефоне карта ужимается втрое, и мелкие подписи превращаются в шум:
     // в кварталах остаются только имена, числа уходят в список под картой.
-    // У центра середину занимает склад, поэтому его цифры уходят под здание
-    const ly = p.d.id.endsWith('center') ? p.y + 34 : p.y + 12;
+    const ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
     const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
         class="${p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted'}">${p.live
         ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
@@ -6025,7 +6025,7 @@ function renderCityMap() {
     return `<g>
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) : ''}
-      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.55 : p.y + (narrow ? 6 : -4)}"
+      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
         text-anchor="middle" class="m-name">${narrow ? i + 1 : tx(p.d.name)}</text>
       ${label}
     </g>`;
@@ -6056,11 +6056,8 @@ function renderCityMap() {
       }).join('')}
       ${bridge()}
       ${placed.map((p, i) => quarter(p, i)).join('')}
-      <g class="m-hub">
-        <title>${t('mapHub')}</title>
-        <rect x="${cx - 13}" y="${cy + 2}" width="26" height="20" rx="3"></rect>
-        <path d="M ${cx - 17} ${cy + 2} L ${cx} ${cy - 9} L ${cx + 17} ${cy + 2} Z"></path>
-      </g>
+      <circle cx="${cx}" cy="${cy}" r="9" class="m-core"></circle>
+      <circle cx="${cx}" cy="${cy}" r="3.5" class="m-core-dot"></circle>
     </svg>
     <div class="map-foot">
       <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
