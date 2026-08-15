@@ -329,9 +329,16 @@ function renderMarketMap() {
       ${sub ? `<text x="${x}" y="${y + rr + 30}" text-anchor="middle" class="m-muted">${sub}</text>` : ''}
     </g>`;
 
+  // Потоки организаторов разведены: ушедшие совсем и перебежавшие к
+  // конкуренту — это разные истории, и лечатся они разным.
+  const switched = Math.round((r?.orgSwitchedOut ?? 0) - (r?.orgSwitchedIn ?? 0));
   const flows = r ? `
     <text x="${lx}" y="${ly - rOrg - 10}" text-anchor="middle" class="m-muted" style="fill:${PALETTE[1]}">+${num(Math.round(r.orgJoined ?? 0))}</text>
-    <text x="${lx}" y="${ly + rOrg + (narrow ? 46 : 44)}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">−${num(Math.round((r.orgLeft ?? 0) + (r.orgSwitchedOut ?? 0)))}</text>` : '';
+    <text x="${lx}" y="${ly + rOrg + (narrow ? 46 : 44)}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">−${num(Math.round(r.orgLeft ?? 0))}</text>
+    ${switched !== 0 ? `<text x="${lx}" y="${ly + rOrg + (narrow ? 60 : 58)}" text-anchor="middle" class="m-muted"
+      style="fill:${switched > 0 ? 'var(--bad)' : 'var(--good)'}">${switched > 0 ? '⇄ −' : '⇄ +'}${num(Math.abs(switched))} ${t('mapSwitched')}</text>` : ''}
+    ${(r.outageLoss ?? 0) > 0.005 ? `<text x="${rx}" y="${ry - rAud - 10}" text-anchor="middle" class="m-muted"
+      style="fill:var(--bad)">${t('mapOutage', { share: pct(r.outageLoss, 0) })}</text>` : ''}` : '';
 
   const badges = r ? `
     <text x="${narrow ? 12 : 14}" y="20" class="m-muted"

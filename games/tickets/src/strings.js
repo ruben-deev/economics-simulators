@@ -5,6 +5,8 @@
 // ============================================================================
 
 export const STRINGS = {
+  mapSwitched: { ru: 'к конкуренту', en: 'to the rival' },
+  mapOutage: { ru: '{share} спроса не поместилось на он-сейле', en: '{share} of demand did not fit at on-sale' },
   leverInertPlatform: {
     ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
     en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',

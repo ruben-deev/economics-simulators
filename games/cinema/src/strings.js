@@ -4,6 +4,9 @@
 // ============================================================================
 
 export const STRINGS = {
+  studioPipeTitle: { ru: 'Конвейер студии: снимается {producing}, готово и ждёт {ready}', en: 'Studio pipeline: {producing} shooting, {ready} finished and waiting' },
+  studioSlotMonths: { ru: '{months} мес.', en: '{months} mo.' },
+  studioSlotIdle: { ru: 'слот простаивает', en: 'idle slot' },
   leverInertAds: {
     ru: 'На рекламном тарифе пока никого нет: цена рекламы начнёт работать, когда на него кто-то перейдёт.',
     en: 'Nobody is on the ad-supported tier yet: its price starts working once someone switches to it.',

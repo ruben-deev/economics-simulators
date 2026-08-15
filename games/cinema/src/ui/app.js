@@ -251,7 +251,38 @@ function renderStudioMap() {
         style="fill:${riv && riv !== 'none' && riv !== null ? PALETTE[3] : 'var(--muted)'}">${rivIcon}</text>`;
   }).join('');
 
-  const viewBox = narrow ? '0 0 360 340' : '0 0 700 232';
+  // Конвейер: слоты студии как ячейки. Занятый показывает жанр и месяцы до
+  // премьеры, пустой — что слот простаивает и всё равно стоит денег. Строкой
+  // текста это читалось как сноска, а это половина игры.
+  const slots = Math.max(1, Math.round(state.decisions.studioSlots ?? 1));
+  // Конвейер стоит под календарём, а не под полкой: у полки свои подписи
+  // (истечение лицензий и свежесть), и ячейки на них наезжали
+  const cellW = narrow ? 104 : 82;
+  const cellH = 30;
+  const pipeX = narrow ? 18 : tlX;
+  const pipeY = narrow ? 312 : 190;
+  const cells2 = [];
+  for (let i = 0; i < Math.min(slots, narrow ? 3 : 4); i++) {
+    const p = producing[i];
+    const x = pipeX + i * (cellW + 6);
+    const g = p ? (genreById(p.genre)?.icon ?? '🎬') : '';
+    cells2.push(`
+      <rect x="${x}" y="${pipeY}" width="${cellW}" height="${cellH}" rx="5"
+        fill="${p ? 'rgba(96,165,250,0.12)' : 'transparent'}"
+        stroke="${p ? PALETTE[1] : 'var(--line)'}" stroke-width="1"
+        stroke-dasharray="${p ? '0' : '5 4'}"/>
+      <text x="${x + cellW / 2}" y="${pipeY + 19}" text-anchor="middle" class="m-muted"
+        style="fill:${p ? 'var(--text)' : 'var(--muted)'}">${p
+          ? `${g} ${t('studioSlotMonths', { months: p.monthsLeft })}`
+          : t('studioSlotIdle')}</text>`);
+  }
+  const pipeline = `
+    <text x="${pipeX}" y="${pipeY - 10}" class="m-muted">${t('studioPipeTitle', {
+      producing: producing.length, ready: ready.length,
+    })}</text>
+    ${cells2.join('')}`;
+
+  const viewBox = narrow ? '0 0 360 366' : '0 0 700 236';
   box.innerHTML = `<div class="panel eco-map">
     <h2 class="panel-title">${t('studioMapTitle')}</h2>
     <svg viewBox="${viewBox}" class="${narrow ? 'map-v' : ''}" role="img" aria-label="${t('studioMapTitle')}">
@@ -263,9 +294,7 @@ function renderStudioMap() {
       <text x="${shelfX - 12}" y="${baseY + 48}" class="m-muted">${t('studioFresh', { fresh: fresh.toFixed(2) })}</text>
       <text x="${tlX}" y="${tlY - 60}" class="m-muted">${t('studioCalendar')}</text>
       ${cells}
-      <text x="${tlX}" y="${tlY + 56}" class="m-muted">${t('studioMapPipeline', {
-        producing: producing.length, ready: ready.length,
-      })}</text>
+      ${pipeline}
     </svg>
     <div class="chart-caption">${t('studioMapCaption')}</div>
   </div>`;
