@@ -883,6 +883,24 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .org-rows b { text-align: right; font-variant-numeric: tabular-nums; }
 .org-card .btn { margin-top: auto; }
 
+/* Карта города (НОВОЕДА): плитки районов по оси расстояния */
+.eco-map .m-tile { fill: var(--panel-2, #1b2333); stroke: var(--line); }
+/* Заливка полупрозрачностью, а не смешиванием цветов средствами CSS:
+   планка совместимости — Safari 14.1, а функция смешивания появилась только
+   в 16.2. Проверка сборок ловит её по имени, включая упоминание в
+   комментарии, — поэтому здесь оно и не написано. */
+.eco-map .m-tile.m-good { fill: var(--pos); fill-opacity: 0.16; stroke: var(--pos); }
+.eco-map .m-tile.m-bad { fill: var(--neg); fill-opacity: 0.14; stroke: var(--neg); }
+.eco-map .m-tile.m-off { fill: transparent; stroke: var(--line); }
+.eco-map .m-name { fill: var(--text); font-size: 12px; font-weight: 600; }
+.eco-map .m-small { fill: var(--text); font-size: 11px; }
+.eco-map .m-axis { stroke: var(--line); }
+.map-scroll { overflow-x: auto; }
+.map-foot {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; margin-top: 6px;
+}
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу

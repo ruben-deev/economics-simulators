@@ -206,6 +206,24 @@ ticketing by 1.07; hard lowers them by 0.97 / 0.92 / 0.99. A player on easy
 is judged against an easy bar — exactly as each level already has its own
 leaderboard.
 
+**The second half of the question: does the start depend on which game you
+played first?** The carry is computed as "score / solid finale", and the solid
+threshold is the same on every level. So if a level lifted the three source
+games unequally, the carry would differ too — within one level. Measured
+typical finale of each source game by level:
+
+| game | normal | easy | hard |
+|---|---|---|---|
+| NOVOYEDA | ₽8.30bn | ×1.062 | ×0.963 |
+| KINOREKA | ₽35.80bn | ×1.036 | ×0.977 |
+| BILETVILLE | ₽5.58bn | ×1.052 | ×0.984 |
+
+The multipliers spread by 1.03× on easy and 1.02× on hard. A player who
+finished any of the three games on the same level brings essentially the same
+carry into NOVOGRAD: the choice of first game does not shape the endgame's
+start. Levels may and should differ from each other — that is what difficulty
+is.
+
 The remaining 1.15× is delivery's innate edge under this anchor policy; the
 asset thresholds were derived from each asset's own optimum rather than from
 one anchor, so forcing that number to 1.00 would tune the scale to a single

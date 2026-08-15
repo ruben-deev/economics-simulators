@@ -171,6 +171,21 @@ export const STRINGS = {
   cityFixedNote: { ru: 'Вход {entry} платится с первым районом, офис города — {weekly}/нед, пока открыт хоть один район. После входа доля рынка считается по обоим городам, а хозяин ответит промо-войной.', en: 'The {entry} entry fee is paid with your first district; the city office costs {weekly}/wk while at least one district is open. After entry your market share covers both cities — and the incumbent will fight back.' },
   alertCityWar: { ru: '«СтароЕд» отвечает промо-войной: приток новых клиентов в Старгороде урезан, отток выше. Ещё {weeks} нед.', en: 'The local incumbent is fighting back: new-customer inflow in Stargorod is cut and churn is up. {weeks} more weeks.' },
   districtStatsLive: { ru: '{customers} клиентов · {restaurants} ресторанов · {time} мин · охват {reach}', en: '{customers} customers · {restaurants} restaurants · {time} min · reach {reach}' },
+  mapTitle: { ru: 'Карта города: {city}', en: 'City map: {city}' },
+  mapKm: { ru: 'км от центра', en: 'km from centre' },
+  mapTimeAxis: { ru: 'Время доставки, мин — столбик над районом', en: 'Delivery time, min — the bar above each district' },
+  mapMin: { ru: ' мин', en: ' min' },
+  mapNarrowAxis: { ru: 'Точка на линии — расстояние от центра, справа — время доставки', en: 'The dot on the line is the distance from the centre; delivery time on the right' },
+  mapPerWeek: { ru: 'зак/нед', en: 'ord/wk' },
+  mapClosedShort: { ru: 'закрыт', en: 'closed' },
+  mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
+  mapPerOrder: { ru: '{cm} с заказа', en: '{cm} per order' },
+  mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
+  mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
+  mapLegend: {
+    ru: 'Плитка — район, её цвет — вклад с заказа: зелёный приносит, красный съедает; у закрытого стоит цена входа. Каждый район привязан к точке на оси расстояний, и это не подпись, а причина: чем дальше от центра, тем больше времени уходит на заказ, тем меньше их успевает курьер за смену и тем выше должна быть его ставка. Рядом — фактическое время доставки; красным оно горит, когда перевалило за эталонные 35 минут и клиенты это уже чувствуют.',
+    en: 'A tile is a district; the strip under its name is how many people live there. The thread below leads to a tick on the axis: the distance from the centre — not a caption but a cause. The further out, the longer an order takes, the fewer a courier completes and the higher their rate has to be. The bar above is the actual delivery time; red means it has passed the 35-minute reference and customers already feel it. Tile colour is contribution per order: green earns, red eats.',
+  },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
   // --- финансирование ---

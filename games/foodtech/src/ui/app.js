@@ -621,6 +621,158 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 // Районы
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Карта города
+//
+// Главный компромисс НОВОЕДЫ — расстояние. Дальний район больше и дешевле в
+// запуске, но курьер там успевает меньше заказов, время доставки растёт, а с
+// ним растёт и отток. В списке районов это была строчка «плечо 5 км», то есть
+// цифра рядом с другими цифрами. На карте расстояние — ось, и компромисс
+// виден до того, как игрок откроет район: чем правее плитка, тем длиннее
+// столбик времени над ней.
+// ----------------------------------------------------------------------------
+function renderCityMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
+  const entered = state.cityEntered ?? { novograd: true };
+  const city = CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
+    ?? CITIES.find((c) => entered[c.id]) ?? CITIES[0];
+  const defs = DISTRICTS.filter((d) => d.city === city.id)
+    .slice().sort((a, b) => a.distanceKm - b.distanceKm);
+  const byId = Object.fromEntries((r?.districts ?? []).map((d) => [d.id, d]));
+
+  const rows = defs.map((d) => {
+    const ds = state.districts[d.id] ?? {};
+    const rep = byId[d.id];
+    return {
+      d,
+      live: Boolean(ds.active),
+      time: rep?.deliveryTime ?? ds.deliveryTime ?? d.baseTime,
+      cm: rep?.cmPerOrder ?? 0,
+      orders: rep?.orders ?? 0,
+      customers: ds.customers ?? 0,
+    };
+  });
+  const maxKm = Math.max(...rows.map((x) => x.d.distanceKm));
+  const maxTime = Math.max(CONFIG.refDeliveryTime * 1.2, ...rows.map((x) => x.time));
+  const maxPot = Math.max(...rows.map((x) => x.d.potential));
+
+  // Колонки ровные, а расстояние показывает выноска к оси: плитки, стоящие
+  // по километрам, налезали друг на друга и текст в них не читался. Ось при
+  // этом никуда не делась — линия от плитки к засечке и есть «сколько ехать».
+  const W = narrow ? 380 : 700;
+  const padX = 10;
+  const colW = (W - padX * 2) / rows.length;
+  const tileW = Math.min(narrow ? 108 : 118, colW - 8);
+  const barH = 46;
+  const barTop = 26;
+  const tileY = barTop + barH + 30;
+  const tileH = 60;
+  const axisY = tileY + tileH + 26;
+  const cx = (i) => padX + colW * (i + 0.5);
+  const xKm = (km) => padX + 14 + (W - padX * 2 - 28) * (km / (maxKm || 1));
+
+  const cell = (row, i) => {
+    const x = cx(i);
+    const hh = Math.max(4, barH * (row.time / maxTime));
+    const bad = row.time > CONFIG.refDeliveryTime;
+    const left = x - tileW / 2;
+    const cls = row.live ? (row.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
+    // Высота плитки одинаковая: размер района показывает полоска населения
+    // внутри неё — так подписи всегда помещаются.
+    const potW = (tileW - 16) * (row.d.potential / maxPot);
+    return `<g>
+      <rect x="${x - 6}" y="${barTop + barH - hh}" width="12" height="${hh}" rx="2"
+        fill="${bad ? 'var(--neg)' : 'var(--accent)'}" opacity="${row.live ? 0.95 : 0.3}"></rect>
+      <text x="${x}" y="${barTop + barH - hh - 5}" text-anchor="middle" class="m-small"
+        opacity="${row.live ? 1 : 0.55}">${num(row.time)}</text>
+
+      <rect x="${left}" y="${tileY}" width="${tileW}" height="${tileH}" rx="8"
+        class="m-tile ${cls}"${row.live ? '' : ' stroke-dasharray="4 3"'}></rect>
+      <text x="${x}" y="${tileY + 16}" text-anchor="middle" class="m-name">${tx(row.d.name)}</text>
+      <text x="${x}" y="${tileY + 31}" text-anchor="middle" class="m-small">${row.live
+        ? `${compact(row.orders)} ${t('mapPerWeek')}`
+        : t('mapClosedShort', { cost: money(row.d.launchCost) })}</text>
+      <text x="${x}" y="${tileY + 44}" text-anchor="middle" class="${row.live
+        ? (row.cm >= 0 ? 'm-small pos' : 'm-small neg') : 'm-muted'}">${row.live
+        ? t('mapPerOrder', { cm: amount(row.cm) })
+        : t('mapOpenFor', { cost: money(row.d.launchCost) })}</text>
+      <rect x="${left + 8}" y="${tileY + tileH - 9}" width="${tileW - 16}" height="4" rx="2"
+        fill="var(--line)"></rect>
+      <rect x="${left + 8}" y="${tileY + tileH - 9}" width="${potW}" height="4" rx="2"
+        fill="var(--muted)"></rect>
+
+      <line x1="${x}" y1="${tileY + tileH}" x2="${xKm(row.d.distanceKm)}" y2="${axisY}"
+        class="m-axis" opacity="0.5"></line>
+      <circle cx="${xKm(row.d.distanceKm)}" cy="${axisY}" r="3" fill="var(--accent)"
+        opacity="${row.live ? 1 : 0.4}"></circle>
+      <text x="${xKm(row.d.distanceKm)}" y="${axisY + 16}" text-anchor="middle"
+        class="m-muted">${num(row.d.distanceKm, 1)}</text>
+    </g>`;
+  };
+
+  const couriers = r?.couriers ?? state.couriers ?? 0;
+  const util = r?.utilization ?? 0;
+  const undelivered = r && r.demand > 0 ? 1 - r.orders / r.demand : 0;
+  const H = axisY + 34;
+
+  // На телефоне колонки не помещаются: шесть названий в 380 пикселях
+  // налезают друг на друга. Раскладка становится вертикальной, но ось
+  // расстояния никуда не девается — она живёт внутри каждой строки, и
+  // главный урок («дальше — дольше») читается так же.
+  const rowH = 42;
+  const vRow = (row, i) => {
+    const y = 26 + i * rowH;
+    const ax = 168;
+    const aw = W - ax - 58;
+    const x = ax + aw * (row.d.distanceKm / (maxKm || 1));
+    const bad = row.time > CONFIG.refDeliveryTime;
+    const cls = row.live ? (row.cm >= 0 ? 'm-good' : 'm-bad') : 'm-off';
+    return `<g>
+      <rect x="6" y="${y}" width="156" height="${rowH - 8}" rx="7"
+        class="m-tile ${cls}"${row.live ? '' : ' stroke-dasharray="4 3"'}></rect>
+      <text x="14" y="${y + 15}" class="m-name">${tx(row.d.name)}</text>
+      <text x="14" y="${y + 28}" class="${row.live
+        ? (row.cm >= 0 ? 'm-small pos' : 'm-small neg') : 'm-muted'}">${row.live
+        ? `${compact(row.orders)} ${t('mapPerWeek')} · ${amount(row.cm)}`
+        : `${t('mapClosedShort')} · ${t('mapOpenFor', { cost: money(row.d.launchCost) })}`}</text>
+      <line x1="${ax}" y1="${y + 17}" x2="${W - 40}" y2="${y + 17}" class="m-axis" opacity="0.6"></line>
+      <circle cx="${x}" cy="${y + 17}" r="4" fill="${bad ? 'var(--neg)' : 'var(--accent)'}"
+        opacity="${row.live ? 1 : 0.4}"></circle>
+      <text x="${x}" y="${y + 10}" text-anchor="middle" class="m-muted">${num(row.d.distanceKm, 1)}</text>
+      <text x="${W - 6}" y="${y + 21}" text-anchor="end" class="${bad ? 'm-small neg' : 'm-small'}"
+        opacity="${row.live ? 1 : 0.55}">${num(row.time)}${t('mapMin')}</text>
+    </g>`;
+  };
+  const svg = narrow
+    ? `<svg viewBox="0 0 ${W} ${26 + rows.length * rowH + 8}" class="map-v" role="img"
+        aria-label="${t('mapTitle', { city: tx(city.name) })}">
+        <text x="6" y="16" class="m-muted">${t('mapNarrowAxis')}</text>
+        ${rows.map(vRow).join('')}
+      </svg>`
+    : `<svg viewBox="0 0 ${W} ${H}" role="img"
+        aria-label="${t('mapTitle', { city: tx(city.name) })}">
+        <text x="${padX}" y="14" class="m-muted">${t('mapTimeAxis')}</text>
+        <line x1="${padX}" y1="${axisY}" x2="${W - padX}" y2="${axisY}" class="m-axis"></line>
+        <text x="${padX}" y="${axisY + 16}" class="m-muted">${t('mapKm')}</text>
+        ${rows.map(cell).join('')}
+      </svg>`;
+
+  box.innerHTML = `<div class="panel eco-map">
+    <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
+    ${svg}
+    <div class="map-foot">
+      <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
+        couriers: num(couriers), util: pct(util, 0) })}</span>
+      <span class="${undelivered > 0.06 ? 'neg' : ''}">${t('mapUndelivered', {
+        share: pct(Math.max(0, undelivered), 0) })}</span>
+    </div>
+    <div class="funding-note">${t('mapLegend')}</div>
+  </div>`;
+}
+
 function renderDistricts() {
   const chosen = new Set(state.decisions.districts ?? []);
   const entered = state.cityEntered ?? { novograd: true };
@@ -693,6 +845,7 @@ function renderDistricts() {
       if (set.has(id)) set.delete(id); else set.add(id);
       state.decisions.districts = [...set];
       renderDistricts();
+      renderCityMap();
       renderOpsReadout();
       renderRightTab();
       save();
@@ -1738,6 +1891,7 @@ function renderAll() {
   renderOpsReadout();
   renderKpis();
   renderDistricts();
+  renderCityMap();
   renderBoard();
   renderFunding();
   renderWeather();
