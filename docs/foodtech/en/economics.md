@@ -58,6 +58,33 @@ This is a ceiling on reach. Downtown has a competitor strength of 0.5, so at mos
 its 130,000 residents can ever be yours, no matter what you spend on marketing. The lesson:
 market share is limited not only by your budget but by the structure of the market.
 
+### The far districts: geography is bought with speed
+
+The Industrial district (a 6 km leg) and the Suburbs (9 km) are built so that
+ordinary play loses money on them — and that is by design, not an oversight.
+The Suburbs' base 38 minutes are already past the 35-minute reference: the
+district misses the norm before the first traffic jam.
+
+Measured over 24 codes, with four near districts as the base:
+
+| what was added | ordinary fee, little technology | high fee, technology invested |
+|---|---|---|
+| nothing (base) | ₽3.41B | ₽4.09B |
+| + Industrial | ₽2.11B · 46 min · ₽80 per order | ₽4.02B · 34 min · ₽131 |
+| + Suburbs | ₽2.24B · 56 min · ₽174 per order | ₽3.98B · 41 min · ₽225 |
+
+Note the third figure in each cell: contribution per order is positive in every
+case. What loses money is not the district itself but what it does to the whole
+company's speed — delivery time rises, satisfaction falls, churn grows, and the
+valuation multiple, computed from margin and growth, drags the entire holding
+down rather than a single line of it.
+
+Hence the rule: **a far district is a late purchase.** First the technology that
+cuts time and the fee that pays for the leg, then the geography. Since this is
+by design, it must be visible before the click: both districts' hints name the
+leg and the order of moves, and on the map the leg is drawn as a thread from a
+restaurant to a customer and turns red when the district misses the reference.
+
 ### The second city: Stargorod
 
 When Novograd approaches saturation (around week 20–25 for a played-in strategy),

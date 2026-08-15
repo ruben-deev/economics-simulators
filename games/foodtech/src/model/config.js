@@ -252,8 +252,8 @@ export const DISTRICTS = [
     elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
     restaurantPool: 90, launchCost: 1_000_000, weeklyFixed: 200_000,
     hint: {
-      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота.',
-      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency.',
+      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота. Плечо 6 км: пока не вложились в технологии и не подняли сбор, район съедает итог, а не добавляет.',
+      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency. A 6 km leg: until you have invested in technology and raised the fee, this district eats into the result rather than adding to it.',
     },
   },
   {
@@ -264,8 +264,8 @@ export const DISTRICTS = [
     elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
     restaurantPool: 70, launchCost: 1_600_000, weeklyFixed: 240_000,
     hint: {
-      ru: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
-      en: 'Wealthy houses that never look at the price — but the delivery legs are enormous and couriers barely complete a shift.',
+      ru: 'Богатые коттеджи. Цену не замечают, но плечо 9 км — курьер делает мало заказов, а базовые 38 минут уже за эталоном. Это район поздней игры: сначала технологии и цена, потом сюда.',
+      en: 'Wealthy houses that never look at the price — but the leg is 9 km: a courier completes few orders, and the base 38 minutes are already past the reference. A late-game district: technology and pricing first, this place second.',
     },
   },
 
