@@ -72,7 +72,7 @@ Entry is a project, not a checkbox:
   Novograd districts running;
 * **a one-off entry fee** — ₽30M (legal entity, local team, logistics launch),
   paid together with the first district launch; never charged twice;
-* **a city office** — ₽1.2M/wk while at least one district is open;
+* **a city office** — ₽0.6M/wk while at least one district is open;
 * **a promo war** — for 16 weeks after entry the incumbent fights back:
   new-customer inflow in its city is cut by 55% and weekly churn is 3 pp higher;
 * **awareness starts at zero**, and the marketing budget is shared: every rouble
@@ -81,11 +81,37 @@ Entry is a project, not a checkbox:
   dilutes your share, which makes the fourth-quarter goal (45% share) noticeably
   harder after expansion.
 
-Measured on polished reference strategies (8 seeds, taking rounds): entering with
-all four districts on weeks 14–20 adds +28–34% to the mid base's final score and
-+30–36% to the wide base; Eastside alone adds +11–12%; entering on week 34 cannot
-pay back the war and the ramp-up (−11% to +5%). The narrow single-district
-strategy cannot expand at all — the gate demands home coverage.
+**A measurement that overturned the previous one.** This paragraph used to say
+«+28–34% to the mid base's final score» — a conclusion drawn from eight seeds,
+and it turned out to be noise. Over twenty-four game codes, entering Stargorod
+NEVER paid off: 82% of the home-only game when entering on week 16 and 78% on
+week 22, and no entry date or policy changed that.
+
+The decomposition showed where the value went. Revenue from the second city did
+grow (+31% a week), but the margin fell from 9.0% to 3.3% — and the valuation
+multiple is computed from margin and growth, so the falling multiple ate the
+added revenue. The two fixed costs together — the ₽1.2M/wk city office and the
+₽1.25M/wk of district weekly fixed costs — accounted for exactly the 6 pp of
+margin that was missing.
+
+So the fixed costs were cut: the office from ₽1.2M to ₽0.6M a week, and the
+Stargorod districts' weekly fixed costs by 40%. One-off payments were left
+alone: paying once to enter a city is an honest price for the decision, while
+paying for it every week to the end of the game was a death sentence. After the
+change (24 codes, both strategies polished over a grid of staffing, marketing
+and the delivery fee):
+
+| strategy | median | vs home-only |
+|---|---|---|
+| home, four districts | ₽4.24B | 100% |
+| all of Stargorod, entering week 16 | ₽4.18B | 99% |
+| Stargorod downtown only, week 16 | ₽3.56B | 88% |
+| all of Stargorod, entering week 26 | ₽3.63B | 90% |
+
+Expansion has stopped being a mistake and become a bet: on the median it equals
+the home game but with a higher ceiling (upper quartile ₽4.85B against ₽4.45B) —
+and it punishes half-measures and lateness. The narrow single-district strategy
+still cannot expand: the gate demands home coverage.
 
 ---
 

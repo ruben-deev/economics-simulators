@@ -2892,7 +2892,11 @@ const CITIES = [
     name: { ru: 'Старгород', en: 'Stargorod' },
     home: false,
     entryCost: 30_000_000,
-    weeklyFixed: 1_200_000,
+    // Офис города: был 1.2 млн/нед. Замер показал, что второй город не
+    // окупался НИКОГДА — ни при каком сроке входа и ни при какой политике:
+    // 82% от домашней партии при входе на 16-й неделе и 78% на 22-й. Половина
+    // провала приходилась ровно на этот офис.
+    weeklyFixed: 600_000,
     hint: {
       ru: 'Соседний город-миллионник. Рынок больше половины новоградского, но там уже пять лет работает местный сервис «СтароЕд» — часть города вы не получите никогда, а каждого клиента придётся отбивать.',
       en: 'A neighbouring city of a million people. The market is more than half the size of Novograd — but a local service has been running there for five years: part of the city will never be yours, and every customer has to be won over.',
@@ -2986,13 +2990,20 @@ const DISTRICTS = [
   // Рынок в сумме ~55% новоградского, но конкурент здесь не «один из», а
   // хозяин: у него выше доля запертых клиентов, и каждый район стартует
   // с нулевой узнаваемости — маркетинг придётся делить на два города.
+  //
+  // Недельные фиксы районов урезаны на 40% вместе с офисом города: замер
+  // показал, что расширение не окупалось ни при каком сроке входа, и оба
+  // фикса вместе съедали ровно ту маржу, на которую падал множитель оценки
+  // (9.0% -> 3.3% при выручке +31%). Разовые запуски не трогали: платить за
+  // вход в город один раз — честная цена решения, а вот платить за него
+  // каждую неделю до конца партии было приговором.
   {
     id: 'st-center',
     city: 'stargorod',
     name: { ru: 'Старгород · Центр', en: 'Stargorod · Downtown' },
     potential: 90_000, income: 1.25, distanceKm: 2.6, baseTime: 20,
     elasticity: 1.1, baseFreq: 0.55, competitor: 0.80,
-    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 400_000,
+    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 240_000,
     hint: {
       ru: 'Витрина чужого города: экономика заказа хорошая, но «СтароЕд» держит центр крепче всего.',
       en: 'The rival’s shop window: order economics are good, but the local incumbent holds downtown hardest.',
@@ -3004,7 +3015,7 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Восточный', en: 'Stargorod · Eastside' },
     potential: 140_000, income: 0.95, distanceKm: 3.8, baseTime: 24,
     elasticity: 1.5, baseFreq: 0.42, competitor: 0.55,
-    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 320_000,
+    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 190_000,
     hint: {
       ru: 'Главный спальный массив Старгорода — основной объём второго города, если сумеете его разбудить.',
       en: 'Stargorod’s main residential belt — the second city’s volume, if you can wake it up.',
@@ -3016,7 +3027,7 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Портовый', en: 'Stargorod · Harbour' },
     potential: 80_000, income: 0.85, distanceKm: 5.5, baseTime: 29,
     elasticity: 1.7, baseFreq: 0.33, competitor: 0.35,
-    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 260_000,
+    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 155_000,
     hint: {
       ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
       en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
@@ -3028,7 +3039,7 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Слобода', en: 'Stargorod · Old Quarter' },
     potential: 60_000, income: 1.30, distanceKm: 7.5, baseTime: 34,
     elasticity: 0.95, baseFreq: 0.32, competitor: 0.28,
-    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 270_000,
+    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 160_000,
     hint: {
       ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
       en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
