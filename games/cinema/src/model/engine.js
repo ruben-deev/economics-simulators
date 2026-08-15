@@ -54,6 +54,10 @@ import {
 import {
   PARTNERS, partnerById, rollPartnerOffer, partnerInflow, partnerRevenue, partnerTotals,
 } from './partners.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 // Справочники и clamp живут в config.js; здесь они переэкспортируются,
 // чтобы у интерфейса и тестов была одна точка входа в модель.
@@ -97,13 +101,41 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'kinoreka') {
+/**
+ * Финансовая команда: сила и цена. Цена — доля месячной выручки: служба
+ * растёт вместе с компанией (см. shared/finance.js).
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].revenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
   const rng = createRng(seed);
   resetProjectIds(1);
   const rival = createRival(rng);
   const state = {
     seed,
     rngState: rng.state(),
+    // Уровень сложности — общая настройка набора (shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     month: 0,
     cash: CONFIG.startCash,
     equity: 1,
@@ -951,8 +983,15 @@ export function step(prevState, input = {}) {
   // Ползунки технологий можно увести в ноль, но команду, обслуживающую
   // миллионы подписчиков, в ноль не уведёшь — это фикс-кост масштаба.
   const staffCost = subsAtStart * CONFIG.staffPerSub;
+  // Прочие расходы: комиссии платёжных систем, списания, штрафы,
+  // неразнесённая административка. Растёт сама вместе с выручкой; режет её
+  // не бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const fixed = CONFIG.hqMonthly + staffCost + contentSpend + slotCost
-    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
+    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep
+    + financeBudget + miscCost;
   // Поштучные расходы событий: компенсации «каждому подписчику» считаются
   // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
   const perUnitCost = (mods.oneOffCostPerSub ?? 0) * subsAtStart
@@ -1070,6 +1109,10 @@ export function step(prevState, input = {}) {
     freshness,
 
     revenue,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
     subscriptionRevenue,
     adRevenue,
     arpu,
@@ -1360,8 +1403,16 @@ export function valuation(state) {
   return Math.max(300_000_000, base * bonus);
 }
 
+// Упаковка к раунду: оценку считает рынок, финансовая команда меняет
+// только долю, которую вы отдаёте за те же деньги.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 

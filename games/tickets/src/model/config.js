@@ -14,6 +14,18 @@
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 export const CONFIG = {
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // У билетного маркетплейса выручка — тонкий take rate поверх крупного GMV,
+  // поэтому команда здесь чинит в первую очередь эквайринг: он снимается
+  // с оборота, а не с вашей комиссии.
+  finance: {
+    saturationShare: 0.03,       // выручки в месяц до «половины» силы
+    saturationFloor: 300_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,
+    acquiringCut: 0.005,         // насколько сбивается ставка эквайринга с GMV
+    roundGain: 0.20,
+  },
   monthsTotal: 36,        // партия — три года
   startCash: 1_500_000_000, // деньги инвестора на старте
 
@@ -326,6 +338,17 @@ export const LEVER_GROUPS = [
 ];
 
 export const LEVERS = [
+  {
+    key: 'finance',
+    group: 'infra',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 12_000_000, step: 250_000, def: 0,
+    tip: {
+      ru: 'Казначейство, переговоры с банком, контроль расходов. Здесь она важнее, чем кажется: эквайринг снимается с оборота, а зарабатываете вы тонкий процент — сбитая ставка бьёт прямо в вашу маржу. Плюс режет «прочие расходы» и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, bank negotiations, cost control. It matters more here than it looks: card processing is charged on turnover while you earn a thin percentage — a lower rate goes straight into your margin. It also cuts “miscellaneous” and packages the company better for a round. The series difficulty changes only its price.',
+    },
+  },
   {
     key: 'buyerFee',
     group: 'take',

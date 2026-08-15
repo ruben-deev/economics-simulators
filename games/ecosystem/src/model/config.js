@@ -14,6 +14,8 @@
 // Текстовые поля двуязычны: { ru, en }. Разворачивает их i18n.tx().
 // ============================================================================
 
+import { difficultyById } from '../../../../shared/difficulty.js';
+
 export const CONFIG = {
   monthsTotal: 36,          // партия — три года жизни холдинга
   startCash: 220_000_000,   // казна компании-победителя после насыщения рынка
@@ -221,66 +223,9 @@ export const CONFIG = {
   },
 };
 
-// ============================================================================
-// Уровни сложности. Механики игры на всех уровнях одни и те же — меняется
-// только одно: сколько стоит финансовая команда и насколько быстро деньги
-// в неё превращаются в силу.
-//
-//   лёгкий  — команда уже есть и не стоит ничего: новичок получает
-//             читаемую оценку, разбор решений и низкие «прочие» даром;
-//   обычный — команду покупают, но она дешёвая: половина силы за 3.3 млн;
-//   сложный — та же команда стоит втрое дороже, и её приходится взвешивать
-//             против маркетинга, мощности и удержания.
-//
-// Ранжируются в мировой таблице обычный и сложный — разными таблицами.
-// Лёгкий тренировочный: бесплатная помощь несравнима с купленной.
-// ============================================================================
-export const DIFFICULTIES = [
-  {
-    id: 'easy',
-    label: { ru: 'Лёгкий', en: 'Easy' },
-    short: { ru: 'тренировка', en: 'training' },
-    financeFree: true,
-    saturationMult: 1,
-    miscMult: 0.8,
-    ranked: false,
-    tagSuffix: '',
-    note: {
-      ru: 'Финансовая команда уже собрана и не стоит ничего: оценка разложена по полкам, «прочие расходы» минимальны, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию. В мировую таблицу не идёт: бесплатная помощь несравнима с купленной.',
-      en: 'The finance team is already in place and costs nothing: the valuation is broken down, miscellaneous costs are minimal, and the team comments on your decisions. This shows you the game rather than its bookkeeping. Not submitted to the world table: free help is not comparable with bought help.',
-    },
-  },
-  {
-    id: 'normal',
-    label: { ru: 'Обычный', en: 'Normal' },
-    short: { ru: 'зачётный', en: 'ranked' },
-    financeFree: false,
-    saturationMult: 0.55,
-    miscMult: 1,
-    ranked: true,
-    tagSuffix: '',
-    note: {
-      ru: 'Финансовую команду нанимаете вы, но она недорогая: половина силы за 3.3 млн ₽ в месяц. Это зачётный уровень — мировая таблица считает его.',
-      en: 'You hire the finance team yourself, but it is cheap: half its strength for ₽3.3M a month. This is the ranked level — the world table counts it.',
-    },
-  },
-  {
-    id: 'hard',
-    label: { ru: 'Сложный', en: 'Hard' },
-    short: { ru: 'вызов', en: 'challenge' },
-    financeFree: false,
-    saturationMult: 2.2,
-    miscMult: 1.35,
-    ranked: true,
-    tagSuffix: '·сложный',
-    note: {
-      ru: 'Та же команда стоит вчетверо дороже: половина силы за 13 млн ₽ в месяц. Каждый рубль в финансы — это рубль, не ушедший в мощность, маркетинг и удержание. Своя таблица рекордов.',
-      en: 'The same team costs four times as much: half its strength for ₽13M a month. Every rouble spent on finance is a rouble not spent on capacity, marketing and retention. Its own record table.',
-    },
-  },
-];
-
-export const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
+// Уровни сложности живут в shared/difficulty.js: это настройка НАБОРА, а не
+// одной игры. Здесь остаются только числа финансового блока — они у каждой
+// игры свои, потому что и выручка, и маржа у них разные.
 
 // ============================================================================
 // Стартовые активы — «классы персонажа». Дескриптор сжимает победившую

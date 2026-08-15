@@ -22,8 +22,12 @@
 // ============================================================================
 
 import {
-  CONFIG, DEFAULT_DECISIONS, assetById, verticalById, difficultyById, clamp,
+  CONFIG, DEFAULT_DECISIONS, assetById, verticalById, clamp,
 } from './config.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 import { createRng } from '../../../../shared/rng.js';
 import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
@@ -159,35 +163,32 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
  * остальных её покупают, и разница уровней ровно одна: насколько быстро
  * деньги превращаются в силу.
  */
-export function financeSaturation(state) {
-  const diff = difficultyById(state.difficulty);
+// Выручка прошлого месяца — от неё считается цена команды. До первого
+// отчёта берём выручку стартового актива: холдинг не начинается с нуля.
+function financeRevenue(state) {
   const h = state.history ?? [];
   const asset = assetById(state.assetId);
-  const revenue = h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
-  return Math.max(
-    CONFIG.finance.saturationFloor,
-    revenue * CONFIG.finance.saturationShare,
-  ) * diff.saturationMult;
+  return h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
+}
+
+export function financeSaturation(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
 }
 
 export function financeLevel(state, decisions) {
-  const diff = difficultyById(state.difficulty);
-  if (diff.financeFree) return 1;
-  const b = decisions.finance ?? 0;
-  return b > 0 ? b / (b + financeSaturation(state)) : 0;
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions.finance ?? 0);
 }
 
 // Во что обходится месяц слабой финансовой службы: доля выручки, которая
 // уходит эквайрингом, комиссиями, списаниями и штрафами.
 export function miscRate(state, decisions) {
-  const diff = difficultyById(state.difficulty);
-  return Math.max(0.005, CONFIG.finance.miscRateBase * (diff.miscMult ?? 1)
-    - CONFIG.finance.miscRateCut * financeLevel(state, decisions));
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
 }
 
 // Бюджет команды: на лёгком уровне её содержит не игрок
 export function financeCost(state, decisions) {
-  return difficultyById(state.difficulty).financeFree ? 0 : (decisions.finance ?? 0);
+  return financeSpend(state.difficulty, decisions.finance ?? 0);
 }
 
 export function mgmtLevel(decisions) {
@@ -1136,8 +1137,8 @@ export function valuation(state) {
 // для инвестора дороже. На счёт это не влияет — рынок считает оценку сам;
 // влияет только на цену денег, то есть на долю, которую вы отдаёте.
 export function financeRoundMult(state) {
-  const level = financeLevel(state, state.decisions ?? DEFAULT_DECISIONS);
-  return 1 + CONFIG.finance.roundGain * level;
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
 }
 
 export function fundingOffer(state, amount) {

@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS, DIFFICULTIES,
-  assetById, verticalById, difficultyById,
+  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS,
+  assetById, verticalById,
 } from '../src/model/config.js';
+import { DIFFICULTIES, difficultyById, taggedGame } from '../../../shared/difficulty.js';
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
   legacyValuationFloor, enterEndless, endlessScore,
@@ -1094,11 +1095,13 @@ test('уровни сложности: одни механики, разная �
   assert.equal(rEasy.financeCost, 0, 'на лёгком команду содержит не игрок');
   assert.equal(rEasy.financeLevel, 1);
 
-  // Ранжируются обычный и сложный, и разными таблицами
-  assert.equal(difficultyById('easy').ranked, false);
-  assert.equal(difficultyById('normal').ranked, true);
-  assert.equal(difficultyById('hard').ranked, true);
-  assert.notEqual(difficultyById('hard').tagSuffix, difficultyById('normal').tagSuffix);
+  // У каждого уровня своя таблица рекордов: партии с разной ценой денег
+  // несравнимы. У зачётного суффикса нет — прежние рекорды остаются на месте.
+  const suffixes = DIFFICULTIES.map((d) => d.tagSuffix);
+  assert.equal(new Set(suffixes).size, DIFFICULTIES.length, 'суффиксы уровней различны');
+  assert.equal(difficultyById('normal').tagSuffix, '');
+  assert.equal(taggedGame('НОВОГРАД', 'hard'), 'НОВОГРАД·сложный');
+  assert.equal(taggedGame('НОВОГРАД', 'normal'), 'НОВОГРАД');
   assert.equal(difficultyById('чужое').id, 'normal', 'неизвестный уровень — зачётный');
 });
 

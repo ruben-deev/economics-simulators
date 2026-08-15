@@ -626,15 +626,14 @@ export const STRINGS = {
   },
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
   welcomeDifficultyNote: {
-    ru: 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», объясняет вашу оценку и разбирает решения месяца.',
-    en: 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, explains your valuation and reads your monthly decisions.',
+    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level has its own record table.',
   },
   gameOverDifficulty: {
     ru: 'Уровень: <b>{level}</b>. {note}',
     en: 'Level: <b>{level}</b>. {note}',
   },
-  gameOverRanked: { ru: 'Результат идёт в мировую таблицу этого уровня.', en: 'The result goes to this level’s world table.' },
-  gameOverUnranked: { ru: 'Тренировочный уровень: в мировую таблицу результат не идёт.', en: 'Training level: the result is not submitted to the world table.' },
+  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level has its own record table: games played at a different price of money are not comparable.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },

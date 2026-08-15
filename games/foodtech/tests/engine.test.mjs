@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { CONFIG, DEFAULT_DECISIONS, DISTRICTS, CITIES } from '../src/model/config.js';
+import { DIFFICULTIES } from '../../../shared/difficulty.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise, explain, finalScore,
   ordersPerCourier, techLevel, reachableOf, aovOf,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
+  financeLevel, financeHalf, miscRate,
 } from '../src/model/engine.js';
 import { rollWeather, seasonOf, weatherEffect, bonusHabitStep, WEATHER } from '../src/model/weather.js';
 const weatherApi = { bonusHabitStep, weatherEffect };
@@ -874,4 +876,49 @@ test('старое сохранение без Старгорода не лом�
   assert.ok(res.report.orders >= 0, 'ход считается');
   assert.equal(res.state.cityEntered.stargorod, true, 'город дописан и вход учтён');
   assert.ok(res.state.districts['st-port'].active, 'новый район открыт');
+});
+
+// ----------------------------------------------------------------------------
+// Финансовая команда и уровни сложности набора
+// ----------------------------------------------------------------------------
+
+test('финансовая команда: цена растёт с выручкой, а чинит эквайринг и «прочие»', () => {
+  const warm = run(20, baseDecisions({ sales: 400_000, marketing: 2_000_000, targetCouriers: 400 }), 'fin');
+  const st = warm.state;
+  assert.equal(financeLevel(st, baseDecisions()), 0, 'без бюджета команды нет');
+  const half = financeHalf(st);
+  assert.ok(Math.abs(financeLevel(st, baseDecisions({ finance: half })) - 0.5) < 1e-9,
+    'на насыщении ровно половина силы');
+  assert.ok(half > CONFIG.finance.saturationFloor, 'выросшей компании нужна служба дороже');
+
+  const weak = step(st, { decisions: baseDecisions({ finance: 0, sales: 400_000, marketing: 2_000_000, targetCouriers: 400 }), eventChoice: 0 }).report;
+  const strong = step(st, { decisions: baseDecisions({ finance: 800_000, sales: 400_000, marketing: 2_000_000, targetCouriers: 400 }), eventChoice: 0 }).report;
+  assert.ok(strong.miscRate < weak.miscRate, 'сильная служба режет «прочие расходы»');
+  assert.ok(strong.paymentRate < weak.paymentRate, 'и выторговывает ставку эквайринга');
+  assert.ok(Math.abs(weak.miscCost - weak.netRevenue * weak.miscRate) < 1,
+    'строка считается от выручки');
+  assert.equal(weak.financeCost, 0);
+  assert.equal(strong.financeCost, 800_000);
+});
+
+test('уровни сложности: одни механики, разная цена команды', () => {
+  const d = baseDecisions({ finance: 300_000 });
+  const level = {}; const misc = {};
+  for (const dd of DIFFICULTIES) {
+    const s = createInitialState('diff', dd.id);
+    assert.equal(s.difficulty, dd.id);
+    level[dd.id] = financeLevel(s, d);
+    misc[dd.id] = miscRate(s, d);
+  }
+  assert.equal(level.easy, 1, 'на лёгком команда уже собрана');
+  assert.ok(level.normal > level.hard, 'за те же деньги на сложном покупается меньше');
+  assert.ok(misc.easy < misc.normal && misc.normal < misc.hard);
+  const easy = step(createInitialState('diff', 'easy'), { decisions: d, eventChoice: 0 }).report;
+  assert.equal(easy.financeCost, 0, 'на лёгком команду содержит не игрок');
+  assert.equal(easy.financeLevel, 1);
+  // Уровень не подменяет мир: тот же код партии — тот же город и погода
+  const a = createInitialState('одинаково', 'easy');
+  const b = createInitialState('одинаково', 'hard');
+  assert.deepEqual(a.weather, b.weather);
+  assert.deepEqual(Object.keys(a.districts), Object.keys(b.districts));
 });

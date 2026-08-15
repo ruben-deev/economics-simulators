@@ -10,6 +10,15 @@
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 export const CONFIG = {
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // Числа свои: у стриминга крупная выручка и месячный шаг.
+  finance: {
+    saturationShare: 0.02,       // выручки в месяц до «половины» силы
+    saturationFloor: 1_000_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,          // сколько снимает полная команда
+    roundGain: 0.20,
+  },
   monthsTotal: 36,          // партия — три года
   startCash: 4_000_000_000, // деньги инвестора на старте
 
@@ -360,6 +369,17 @@ export const GENRES = [
 // ============================================================================
 
 export const LEVERS = [
+  {
+    key: 'finance',
+    group: 'money',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 40_000_000, step: 1_000_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: комиссии платёжных систем, списания, штрафы, неразнесённая административка — всё это уходит в «прочие расходы». Сильная режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: payment commissions, write-offs, penalties, unallocated admin — all of it lands in “miscellaneous”. A strong one cuts that line and packages the company better for a round. The series difficulty changes only its price.',
+    },
+  },
   {
     key: 'priceNew',
     group: 'money',

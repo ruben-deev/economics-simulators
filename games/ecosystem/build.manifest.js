@@ -3,7 +3,7 @@
 
 export default {
   name: 'ecosystem',
-  version: '1.8.0',
+  version: '1.9.0',
   title: 'НОВОГРАД · ecosystem economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки». {version} подставляется из поля version:
@@ -16,6 +16,8 @@ export default {
     '../../shared/clone.js',
     '../../shared/valuation.js',
     '../../shared/records.js',
+    '../../shared/difficulty.js',
+    '../../shared/finance.js',
     '../../shared/meta.js',
     '../../shared/leaderboard.js',
     '../../shared/rng.js',

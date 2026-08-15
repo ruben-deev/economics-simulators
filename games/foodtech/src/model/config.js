@@ -73,6 +73,18 @@ export const CONFIG = {
 
   // --- Операционные издержки ---
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // Числа свои: у доставки тонкая маржа и недельный шаг, поэтому строка
+  // «прочих» здесь меньше, чем у холдинга в НОВОГРАДЕ.
+  finance: {
+    saturationShare: 0.02,       // выручки в неделю до «половины» силы
+    saturationFloor: 60_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,          // сколько снимает полная команда
+    paymentCut: 0.006,           // и насколько сбивает ставку эквайринга
+    roundGain: 0.20,             // упаковка компании к раунду
+    adviceAt: 0.55,
+  },
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
   supportTechDiscount: 9,      // на сколько ₽ снижает поддержку максимальный уровень техно
   // Офис и менеджмент. Разработка и серверы вынесены отдельными статьями:
@@ -410,6 +422,16 @@ export const LEVERS = [
     tip: {
       ru: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
       en: 'The team that builds your algorithms: surge pricing, targeted discounts, demand forecasting. Useless without data — and data only accumulates from completed orders.',
+    },
+  },
+  {
+    key: 'finance',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/нед', en: '₽/wk' },
+    min: 0, max: 1_500_000, step: 50_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, переговоры с банком. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная сбивает ставку эквайринга, режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, cost control, talking to the bank. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one negotiates the processing rate down, cuts that line and packages the company better for a funding round. The series difficulty changes only its price.',
     },
   },
 ];

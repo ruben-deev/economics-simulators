@@ -26,6 +26,10 @@ import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, bonusHabitStep, seasonOf } from './weather.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
@@ -52,7 +56,39 @@ export function reachableOf(district) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'novograd') {
+/**
+ * Финансовая команда: сила, цена и то, что она чинит. Цена считается долей
+ * недельной выручки — служба растёт вместе с компанией.
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].netRevenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка
+export function paymentRate(state, decisions) {
+  return Math.max(0.004,
+    CONFIG.paymentFeeRate - CONFIG.finance.paymentCut * financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'novograd', difficulty = 'normal') {
   const rng = createRng(seed);
   // Погода первой недели и публичный прогноз на вторую
   const weather = rollWeather(rng, 1);
@@ -60,6 +96,9 @@ export function createInitialState(seed = 'novograd') {
   const state = {
     seed,
     rngState: rng.state(),
+    // Уровень сложности — общая настройка набора: меняет только цену
+    // финансовой команды (см. shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     weather,
     weatherNext,
     week: 0,
@@ -454,7 +493,8 @@ export function step(prevState, input = {}) {
 
   const courierCost = orders * courierPayEff;
   const promoCost = orders * promoCostPerOrder;
-  const paymentCost = Math.max(0, paymentBase) * CONFIG.paymentFeeRate;
+  const payRate = paymentRate(state, decisions);
+  const paymentCost = Math.max(0, paymentBase) * payRate;
   const supportCost = orders * Math.max(2,
     CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state) + mods.variableCostAdd);
   const variableCost = courierCost + promoCost + paymentCost + supportCost;
@@ -650,8 +690,14 @@ export function step(prevState, input = {}) {
   }
 
   // --- 9. Деньги ---
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая административка.
+  // Единственная строка, которая растёт сама — вместе с выручкой, — и
+  // единственная, которую режет не бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = netRevenue * rateMisc;
   const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
-    + decisions.tech + (decisions.rnd ?? 0);
+    + decisions.tech + (decisions.rnd ?? 0) + financeBudget + miscCost;
   // Поштучные разовые расходы событий: «доплата всем курьерам» стоит по штату
   // на начало недели, «раздача по базе» — по числу клиентов. Цена решения
   // растёт вместе с компанией — это и делает выбор состояние-зависимым.
@@ -748,6 +794,11 @@ export function step(prevState, input = {}) {
     opex,
     districtFixed,
     hqCost,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    paymentRate: payRate,
     techUpkeep,
     serverCost,
     oneOff,
@@ -940,8 +991,17 @@ export function valuation(state) {
   return Math.max(40_000_000, base * bonus);
 }
 
+// Насколько лучше компания упакована к раунду: та же выручка, но с внятной
+// отчётностью и чистой юнит-экономикой стоит для инвестора дороже. На счёт
+// это не влияет — оценку считает рынок; влияет на отдаваемую долю.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 

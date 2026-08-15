@@ -6,9 +6,12 @@
 // ============================================================================
 
 import {
-  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS, DIFFICULTIES,
-  assetById, verticalById, difficultyById,
+  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS,
+  assetById, verticalById,
 } from '../model/config.js';
+import {
+  DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
+} from '../../../../shared/difficulty.js';
 import { eventById } from '../model/events.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
@@ -43,9 +46,8 @@ const GAME_TAG = 'НОВОГРАД';
 // игры по цене денег. Лёгкий не ранжируется вовсе — бесплатная финансовая
 // команда несравнима с купленной, и таблицу это сломало бы.
 function gameTag(base = GAME_TAG) {
-  return `${base}${difficultyById(state.difficulty).tagSuffix}`;
+  return taggedGame(base, state.difficulty);
 }
-const rankedNow = () => difficultyById(state.difficulty).ranked;
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'ecosystem-1';
@@ -1826,7 +1828,7 @@ function showGameOver() {
       ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
     <p class="funding-note">${t('gameOverDifficulty', {
       level: tx(diffNow.label),
-      note: t(diffNow.ranked ? 'gameOverRanked' : 'gameOverUnranked'),
+      note: t('gameOverOwnTable'),
     })}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
@@ -1883,8 +1885,6 @@ function showGameOver() {
     money,
     game: gameTag(),
     line,
-    // Лёгкий уровень в мировую таблицу не идёт: смотреть можно, отправлять нечего
-    viewOnly: !rankedNow(),
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
     onSubmitted: () => { state.lbSent = true; save(); },
@@ -1899,7 +1899,7 @@ function showGameOver() {
 function showWelcome() {
   let seedWanted = '';
   let assetWanted = state.assetId;
-  let diffWanted = state.difficulty ?? 'normal';
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
 
@@ -1913,7 +1913,7 @@ function showWelcome() {
 
   const diffCards = () => DIFFICULTIES.map((dd) => `
     <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
-      <b>${tx(dd.label)}${dd.ranked ? '' : ' ·'}</b>
+      <b>${tx(dd.label)}</b>
       <span>${tx(dd.note)}</span>
     </button>`).join('');
 
@@ -2000,7 +2000,8 @@ function showWelcome() {
   });
   el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
     b.addEventListener('click', () => {
-      diffWanted = b.dataset.diff;
+      // Сложность — настройка набора: выбор здесь меняет её во всех играх
+      diffWanted = setDifficulty(b.dataset.diff);
       el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
         x.classList.toggle('selected', x.dataset.diff === diffWanted);
       });

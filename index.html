@@ -45,6 +45,12 @@
     }
     .card-actions a.primary { background: var(--accent); color: #06210f; border-color: transparent; }
     .series-card:empty { display: none; }
+    .diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+    .diff-btn { text-align: left; padding: 10px 12px; border: 1px solid var(--line);
+      border-radius: 10px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+    .diff-btn b { display: block; margin-bottom: 3px; }
+    .diff-btn span { display: block; font-size: 12px; opacity: .75; line-height: 1.35; }
+    .diff-btn.on { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
     .series-card { margin-top: 26px; gap: 6px; }
     .series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
     .series-head span { color: var(--muted); font-size: 12px; }
@@ -153,6 +159,7 @@
     </div>
 
     <section class="card series-card" id="series-card"></section>
+    <section class="card series-card" id="difficulty-card"></section>
 
     <p class="eco-label" id="eco-label"></p>
     <section class="card eco-card">
@@ -187,6 +194,9 @@
       legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
     } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
+    import {
+      DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
+    } from './shared/difficulty.js';
 
     // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
     // Финалы старых игр (локальные рекорды этого устройства) отмечаются
@@ -203,13 +213,13 @@
       })) {
         const node = document.getElementById(`${id}-top`);
         if (!node) continue;
-        lbTop(game, 3).then((top) => {
+        lbTop(taggedGame(game), 3).then((top) => {
           if (!top || !top.length) { node.textContent = ''; return; }
           const fmt = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} ${ru ? 'млрд' : 'bn'}`
             : `${Math.round(n / 1e6)} ${ru ? 'млн' : 'M'}`);
           const rows = top.map((r, i) => `<li>${['🥇', '🥈', '🥉'][i]} ${
             String(r.name).replace(/[&<>]/g, '')} — ${fmt(r.score)}</li>`).join('');
-          const mine = lbMine(game);
+          const mine = lbMine(taggedGame(game));
           const mineRow = mine
             ? `<li>${ru ? 'вы' : 'you'}: ${fmt(mine.score)} · ${ru ? 'место' : 'rank'} ${mine.rank}</li>`
             : '';
@@ -217,6 +227,38 @@
             <ol class="top-list">${rows}${mineRow}</ol></div>`;
         }).catch(() => { node.textContent = ''; });
       }
+    }
+
+    // Уровень сложности — настройка всего набора, поэтому её место здесь, на
+    // витрине, а не в одной игре. Меняет она ровно одно: сколько стоит
+    // финансовая команда во всех четырёх симуляторах. Таблицы рекордов у
+    // каждого уровня свои — переключение перерисовывает их.
+    function renderDifficulty() {
+      const node = document.getElementById('difficulty-card');
+      if (!node) return;
+      const ru = getLang() === 'ru';
+      const now = currentDifficulty();
+      const cells = DIFFICULTIES.map((d) => `
+        <button type="button" class="diff-btn${d.id === now ? ' on' : ''}" data-diff="${d.id}">
+          <b>${ru ? d.label.ru : d.label.en}</b>
+          <span>${ru ? d.note.ru : d.note.en}</span>
+        </button>`).join('');
+      node.innerHTML = `<div class="series-head">
+          <b>${ru ? 'Уровень сложности' : 'Difficulty'}</b>
+          <span>${ru ? 'общий для всех игр' : 'shared across all games'}</span>
+        </div>
+        <div class="diff-grid">${cells}</div>
+        <p class="sub" style="margin-top:8px">${ru
+          ? 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», сбивает эквайринг и лучше упаковывает компанию к раунду. У каждого уровня своя таблица рекордов.'
+          : 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, negotiates card processing down and packages the company better for a funding round. Each level has its own record table.'}</p>`;
+      node.querySelectorAll('[data-diff]').forEach((b) => {
+        b.addEventListener('click', () => {
+          setDifficulty(b.dataset.diff);
+          renderDifficulty();
+          renderTops();
+      renderDifficulty();
+        });
+      });
     }
 
     // Табель серии: одна строка о том, где игрок на пути из четырёх игр.

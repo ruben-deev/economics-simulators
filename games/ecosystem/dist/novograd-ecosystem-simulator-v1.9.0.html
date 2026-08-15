@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.8.0" />
+  <meta name="app-version" content="1.9.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1636,15 +1636,14 @@ const STRINGS = {
   },
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
   welcomeDifficultyNote: {
-    ru: 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», объясняет вашу оценку и разбирает решения месяца.',
-    en: 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, explains your valuation and reads your monthly decisions.',
+    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level has its own record table.',
   },
   gameOverDifficulty: {
     ru: 'Уровень: <b>{level}</b>. {note}',
     en: 'Level: <b>{level}</b>. {note}',
   },
-  gameOverRanked: { ru: 'Результат идёт в мировую таблицу этого уровня.', en: 'The result goes to this level’s world table.' },
-  gameOverUnranked: { ru: 'Тренировочный уровень: в мировую таблицу результат не идёт.', en: 'Training level: the result is not submitted to the world table.' },
+  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level has its own record table: games played at a different price of money are not comparable.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
@@ -2134,6 +2133,167 @@ function addRecord(key, record, max = 10) {
 function bestRecord(key) {
   const list = loadRecords(key);
   return list.length ? list[0] : null;
+}
+
+
+// ===== ../../shared/difficulty.js ==================================
+// ============================================================================
+// Уровень сложности — настройка НАБОРА, а не отдельной игры.
+//
+// Выбранный уровень лежит в общем localStorage сайта и действует во всех
+// четырёх симуляторах сразу: играть НОВОЕДУ на лёгком, а НОВОГРАД на сложном
+// бессмысленно — это один курс, а не четыре разные игры.
+//
+// Механики на всех уровнях одинаковые. Меняется ровно одно: сколько стоит
+// финансовая команда — та, что режет строку «прочие расходы», лучше
+// упаковывает компанию к раунду и разбирает решения месяца. Всё остальное
+// (город, рынок, события, цели совета) не подменяется: сложность меняет
+// цену денег, а не правила.
+//
+//   лёгкий  — команда уже собрана и не стоит ничего: новичок видит игру,
+//             а не её бухгалтерию;
+//   обычный — команду покупают, и она дешёвая;
+//   сложный — та же команда стоит вчетверо дороже, и её приходится
+//             взвешивать против всего остального.
+//
+// Таблицы рекордов у каждого уровня свои: результаты, снятые при разной
+// цене денег, несравнимы. Тег партии получает суффикс уровня (у обычного
+// суффикса нет — так прежние рекорды остаются в своей таблице).
+// ============================================================================
+
+const DIFFICULTY_KEY = 'series-difficulty';
+
+const DIFFICULTIES = [
+  {
+    id: 'easy',
+    label: { ru: 'Лёгкий', en: 'Easy' },
+    short: { ru: 'тренировка', en: 'training' },
+    // Финансовая команда уже собрана и оплачена не игроком
+    financeFree: true,
+    // Множитель цены команды (см. финансовый блок конфига каждой игры)
+    saturationMult: 1,
+    // Множитель базовой ставки «прочих расходов»
+    miscMult: 0.8,
+    tagSuffix: '·лёгкий',
+    note: {
+      ru: 'Финансовая команда уже собрана и не стоит ничего: «прочие расходы» минимальны, отчётность полная, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию.',
+      en: 'The finance team is already in place and costs nothing: miscellaneous expenses are minimal, the reporting is complete and the team comments on your decisions. This shows you the game rather than its bookkeeping.',
+    },
+  },
+  {
+    id: 'normal',
+    label: { ru: 'Обычный', en: 'Normal' },
+    short: { ru: 'зачётный', en: 'ranked' },
+    financeFree: false,
+    saturationMult: 0.55,
+    miscMult: 1,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Это уровень, на котором игра откалибрована.',
+      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. This is the level the game is calibrated on.',
+    },
+  },
+  {
+    id: 'hard',
+    label: { ru: 'Сложный', en: 'Hard' },
+    short: { ru: 'вызов', en: 'challenge' },
+    financeFree: false,
+    saturationMult: 2.2,
+    miscMult: 1.35,
+    tagSuffix: '·сложный',
+    note: {
+      ru: 'Та же команда стоит вчетверо дороже, а «прочие расходы» выше на треть. Каждый рубль в финансы — рубль, не ушедший в маркетинг, качество и удержание.',
+      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every rouble spent on finance is a rouble not spent on marketing, quality and retention.',
+    },
+  },
+];
+
+const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
+
+// Текущий уровень набора. Значение по умолчанию — зачётный: на нём игра
+// откалибрована, и в него попадает всякий, кто ничего не выбирал.
+function currentDifficulty() {
+  try {
+    const saved = localStorage.getItem(DIFFICULTY_KEY);
+    return saved ? difficultyById(saved).id : 'normal';
+  } catch {
+    return 'normal';
+  }
+}
+
+function setDifficulty(id) {
+  const level = difficultyById(id).id;
+  try { localStorage.setItem(DIFFICULTY_KEY, level); } catch { /* приватный режим */ }
+  return level;
+}
+
+/**
+ * Тег партии для строки результата и мировой таблицы: у каждого уровня своя
+ * таблица. У обычного суффикса нет — прежние рекорды остаются на месте.
+ */
+function taggedGame(base, id = currentDifficulty()) {
+  return `${base}${difficultyById(id).tagSuffix}`;
+}
+
+
+// ===== ../../shared/finance.js =====================================
+// ============================================================================
+// Финансовая команда — общая механика набора.
+//
+// Единственный рычаг всех четырёх игр, который управляет не бизнесом, а тем,
+// как бизнес считают и показывают. Слабая финансовая служба стоит денег
+// молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы,
+// неразнесённая административка. Это строка «прочие расходы» — она растёт
+// сама, вместе с выручкой, и её режет не бизнес-решение, а служба.
+//
+// Сильная команда, помимо этой строки: лучше упаковывает компанию к раунду
+// (оценку считает рынок — упаковка меняет только отдаваемую долю), делает
+// читаемым разбор оценки и разбирает решения периода.
+//
+// Цена команды считается ДОЛЕЙ выручки, а не абсолютом: финансовая служба
+// растёт вместе с компанией. Первый замер с фиксированной ценой показал
+// мёртвый рычаг у маленького бизнеса — его не окупало ничто.
+//
+// Числа (доля выручки, ставка «прочих») у каждой игры свои и живут в её
+// конфиге: у доставки, стриминга и билетов разные выручки и маржи. Общей
+// остаётся форма механики и множители уровня сложности.
+//
+// conf = { saturationShare, saturationFloor, miscRateBase, miscRateCut,
+//          roundGain?, transparencyAt?, adviceAt? }
+// ============================================================================
+
+
+// Сколько стоит «половина силы» при текущем размере бизнеса
+function financeHalfCost(conf, difficulty, revenue) {
+  const d = difficultyById(difficulty);
+  return Math.max(conf.saturationFloor, (Number(revenue) || 0) * conf.saturationShare)
+    * d.saturationMult;
+}
+
+// Сила команды, 0…1. На лёгком уровне команда уже собрана и стоит ноль.
+function financeStrength(conf, difficulty, revenue, budget) {
+  if (difficultyById(difficulty).financeFree) return 1;
+  const b = Number(budget) || 0;
+  return b > 0 ? b / (b + financeHalfCost(conf, difficulty, revenue)) : 0;
+}
+
+// Доля выручки, уходящая «прочими расходами» при такой силе команды
+function financeMiscRate(conf, difficulty, strength) {
+  const d = difficultyById(difficulty);
+  return Math.max(
+    conf.miscFloor ?? 0.005,
+    conf.miscRateBase * (d.miscMult ?? 1) - conf.miscRateCut * strength,
+  );
+}
+
+// Что за команду платит игрок: на лёгком уровне её содержит не он
+function financeSpend(difficulty, budget) {
+  return difficultyById(difficulty).financeFree ? 0 : (Number(budget) || 0);
+}
+
+// Насколько лучше компания упакована к раунду
+function financeRoundGain(conf, strength) {
+  return 1 + (conf.roundGain ?? 0) * strength;
 }
 
 
@@ -2667,6 +2827,7 @@ function weightedPick(rng, items) {
 // Текстовые поля двуязычны: { ru, en }. Разворачивает их i18n.tx().
 // ============================================================================
 
+
 const CONFIG = {
   monthsTotal: 36,          // партия — три года жизни холдинга
   startCash: 220_000_000,   // казна компании-победителя после насыщения рынка
@@ -2874,66 +3035,9 @@ const CONFIG = {
   },
 };
 
-// ============================================================================
-// Уровни сложности. Механики игры на всех уровнях одни и те же — меняется
-// только одно: сколько стоит финансовая команда и насколько быстро деньги
-// в неё превращаются в силу.
-//
-//   лёгкий  — команда уже есть и не стоит ничего: новичок получает
-//             читаемую оценку, разбор решений и низкие «прочие» даром;
-//   обычный — команду покупают, но она дешёвая: половина силы за 3.3 млн;
-//   сложный — та же команда стоит втрое дороже, и её приходится взвешивать
-//             против маркетинга, мощности и удержания.
-//
-// Ранжируются в мировой таблице обычный и сложный — разными таблицами.
-// Лёгкий тренировочный: бесплатная помощь несравнима с купленной.
-// ============================================================================
-const DIFFICULTIES = [
-  {
-    id: 'easy',
-    label: { ru: 'Лёгкий', en: 'Easy' },
-    short: { ru: 'тренировка', en: 'training' },
-    financeFree: true,
-    saturationMult: 1,
-    miscMult: 0.8,
-    ranked: false,
-    tagSuffix: '',
-    note: {
-      ru: 'Финансовая команда уже собрана и не стоит ничего: оценка разложена по полкам, «прочие расходы» минимальны, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию. В мировую таблицу не идёт: бесплатная помощь несравнима с купленной.',
-      en: 'The finance team is already in place and costs nothing: the valuation is broken down, miscellaneous costs are minimal, and the team comments on your decisions. This shows you the game rather than its bookkeeping. Not submitted to the world table: free help is not comparable with bought help.',
-    },
-  },
-  {
-    id: 'normal',
-    label: { ru: 'Обычный', en: 'Normal' },
-    short: { ru: 'зачётный', en: 'ranked' },
-    financeFree: false,
-    saturationMult: 0.55,
-    miscMult: 1,
-    ranked: true,
-    tagSuffix: '',
-    note: {
-      ru: 'Финансовую команду нанимаете вы, но она недорогая: половина силы за 3.3 млн ₽ в месяц. Это зачётный уровень — мировая таблица считает его.',
-      en: 'You hire the finance team yourself, but it is cheap: half its strength for ₽3.3M a month. This is the ranked level — the world table counts it.',
-    },
-  },
-  {
-    id: 'hard',
-    label: { ru: 'Сложный', en: 'Hard' },
-    short: { ru: 'вызов', en: 'challenge' },
-    financeFree: false,
-    saturationMult: 2.2,
-    miscMult: 1.35,
-    ranked: true,
-    tagSuffix: '·сложный',
-    note: {
-      ru: 'Та же команда стоит вчетверо дороже: половина силы за 13 млн ₽ в месяц. Каждый рубль в финансы — это рубль, не ушедший в мощность, маркетинг и удержание. Своя таблица рекордов.',
-      en: 'The same team costs four times as much: half its strength for ₽13M a month. Every rouble spent on finance is a rouble not spent on capacity, marketing and retention. Its own record table.',
-    },
-  },
-];
-
-const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
+// Уровни сложности живут в shared/difficulty.js: это настройка НАБОРА, а не
+// одной игры. Здесь остаются только числа финансового блока — они у каждой
+// игры свои, потому что и выручка, и маржа у них разные.
 
 // ============================================================================
 // Стартовые активы — «классы персонажа». Дескриптор сжимает победившую
@@ -4431,35 +4535,32 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
  * остальных её покупают, и разница уровней ровно одна: насколько быстро
  * деньги превращаются в силу.
  */
-function financeSaturation(state) {
-  const diff = difficultyById(state.difficulty);
+// Выручка прошлого месяца — от неё считается цена команды. До первого
+// отчёта берём выручку стартового актива: холдинг не начинается с нуля.
+function financeRevenue(state) {
   const h = state.history ?? [];
   const asset = assetById(state.assetId);
-  const revenue = h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
-  return Math.max(
-    CONFIG.finance.saturationFloor,
-    revenue * CONFIG.finance.saturationShare,
-  ) * diff.saturationMult;
+  return h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
+}
+
+function financeSaturation(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
 }
 
 function financeLevel(state, decisions) {
-  const diff = difficultyById(state.difficulty);
-  if (diff.financeFree) return 1;
-  const b = decisions.finance ?? 0;
-  return b > 0 ? b / (b + financeSaturation(state)) : 0;
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions.finance ?? 0);
 }
 
 // Во что обходится месяц слабой финансовой службы: доля выручки, которая
 // уходит эквайрингом, комиссиями, списаниями и штрафами.
 function miscRate(state, decisions) {
-  const diff = difficultyById(state.difficulty);
-  return Math.max(0.005, CONFIG.finance.miscRateBase * (diff.miscMult ?? 1)
-    - CONFIG.finance.miscRateCut * financeLevel(state, decisions));
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
 }
 
 // Бюджет команды: на лёгком уровне её содержит не игрок
 function financeCost(state, decisions) {
-  return difficultyById(state.difficulty).financeFree ? 0 : (decisions.finance ?? 0);
+  return financeSpend(state.difficulty, decisions.finance ?? 0);
 }
 
 function mgmtLevel(decisions) {
@@ -5408,8 +5509,8 @@ function valuation(state) {
 // для инвестора дороже. На счёт это не влияет — рынок считает оценку сам;
 // влияет только на цену денег, то есть на долю, которую вы отдаёте.
 function financeRoundMult(state) {
-  const level = financeLevel(state, state.decisions ?? DEFAULT_DECISIONS);
-  return 1 + CONFIG.finance.roundGain * level;
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
 }
 
 function fundingOffer(state, amount) {
@@ -5800,9 +5901,8 @@ const GAME_TAG = 'НОВОГРАД';
 // игры по цене денег. Лёгкий не ранжируется вовсе — бесплатная финансовая
 // команда несравнима с купленной, и таблицу это сломало бы.
 function gameTag(base = GAME_TAG) {
-  return `${base}${difficultyById(state.difficulty).tagSuffix}`;
+  return taggedGame(base, state.difficulty);
 }
-const rankedNow = () => difficultyById(state.difficulty).ranked;
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'ecosystem-1';
@@ -7583,7 +7683,7 @@ function showGameOver() {
       ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
     <p class="funding-note">${t('gameOverDifficulty', {
       level: tx(diffNow.label),
-      note: t(diffNow.ranked ? 'gameOverRanked' : 'gameOverUnranked'),
+      note: t('gameOverOwnTable'),
     })}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
@@ -7640,8 +7740,6 @@ function showGameOver() {
     money,
     game: gameTag(),
     line,
-    // Лёгкий уровень в мировую таблицу не идёт: смотреть можно, отправлять нечего
-    viewOnly: !rankedNow(),
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
     onSubmitted: () => { state.lbSent = true; save(); },
@@ -7656,7 +7754,7 @@ function showGameOver() {
 function showWelcome() {
   let seedWanted = '';
   let assetWanted = state.assetId;
-  let diffWanted = state.difficulty ?? 'normal';
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
 
@@ -7670,7 +7768,7 @@ function showWelcome() {
 
   const diffCards = () => DIFFICULTIES.map((dd) => `
     <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
-      <b>${tx(dd.label)}${dd.ranked ? '' : ' ·'}</b>
+      <b>${tx(dd.label)}</b>
       <span>${tx(dd.note)}</span>
     </button>`).join('');
 
@@ -7757,7 +7855,8 @@ function showWelcome() {
   });
   el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
     b.addEventListener('click', () => {
-      diffWanted = b.dataset.diff;
+      // Сложность — настройка набора: выбор здесь меняет её во всех играх
+      diffWanted = setDifficulty(b.dataset.diff);
       el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
         x.classList.toggle('selected', x.dataset.diff === diffWanted);
       });

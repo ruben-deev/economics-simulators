@@ -53,16 +53,55 @@ import {
   crisisById, crisisEffects, resolutionCost, rollCrisis, CRISIS_COOLDOWN,
 } from './crises.js';
 import { neutralModifiers, applyEvent, rollEvent, eventById } from './events.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 export { clamp, organizerById, audienceById };
 
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'biletville') {
+/**
+ * Финансовая команда: сила и цена. Цена — доля месячной выручки: служба
+ * растёт вместе с компанией (см. shared/finance.js).
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].revenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка. С оборота
+// она снимается целиком, поэтому десятые доли процента здесь — деньги.
+export function acquiringRate(state, decisions) {
+  return Math.max(0.008,
+    CONFIG.acquiringRate - CONFIG.finance.acquiringCut * financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'biletville', difficulty = 'normal') {
   const rng = createRng(seed);
   const state = {
     seed,
+    // Уровень сложности — общая настройка набора (shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     month: 0,
     cash: CONFIG.startCash,
     equity: 1,
@@ -602,7 +641,8 @@ export function step(prevState, input = {}) {
   const subscriptionRevenue = connectedCount * decisions.platformFee;
   const revenue = marketplaceRevenue + platformRevenue + subscriptionRevenue;
 
-  const acquiring = gmv * CONFIG.acquiringRate;
+  const acqRate = acquiringRate(state, decisions);
+  const acquiring = gmv * acqRate;
   const supportLoad = ticketsTotal * CONFIG.supportPerTicket
     * clamp(CONFIG.refSupport / Math.max(1, decisions.support), 0.35, 2.4);
   const variableCost = acquiring + supportLoad;
@@ -619,10 +659,16 @@ export function step(prevState, input = {}) {
   // вторая линия поддержки. Аккаунт-менеджеры — отдельный ползунок и другая
   // работа; этот штат в ноль не уведёшь — фикс-кост масштаба.
   const staffCost = orgTotal(state) * CONFIG.staffPerOrg;
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая
+  // административка. Растёт сама вместе с выручкой; режет её не
+  // бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const fixed = CONFIG.hqMonthly + staffCost + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
-    + onboardingSpend + techUpkeep + serverCost;
+    + onboardingSpend + techUpkeep + serverCost + financeBudget + miscCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -827,6 +873,11 @@ export function step(prevState, input = {}) {
     gmvPlatform,
     marketplaceShareOfGmv,
     revenue,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    acquiringRate: acqRate,
     marketplaceRevenue,
     platformRevenue,
     subscriptionRevenue,
@@ -1035,8 +1086,16 @@ export function valuation(state) {
     * (1 + (state.flags?.valuationBonus ?? 0)));
 }
 
+// Упаковка к раунду: оценку считает рынок, финансовая команда меняет
+// только долю, которую вы отдаёте за те же деньги.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, valuation: terms.pre, newEquity: state.equity * (1 - terms.dilution) };
 }
 
