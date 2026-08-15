@@ -772,7 +772,7 @@ function renderVerticals() {
       ? `<span class="badge">${t('vertPlanned')}</span>`
       : gateOpen
         ? `<span class="badge">${t('vertLaunch', { cost: money(taxi.launchCost) })}</span>`
-        : `<span class="badge">${t('vertLocked', {
+        : `<span class="badge wrap">${t('vertLocked', {
             month: taxi.gate.minMonth, n: taxi.gate.assetContributionMonths,
           })}</span>`;
   const stats = on
@@ -809,7 +809,7 @@ function renderVerticals() {
       ? `<span class="badge">${t('vertPlanned')}</span>`
       : ecomGateOpen
         ? `<span class="badge">${t('vertLaunch', { cost: money(ecomCost) })}</span>`
-        : `<span class="badge">${t('vertLocked', {
+        : `<span class="badge wrap">${t('vertLocked', {
             month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
           })}</span>`;
   const logisticsNote = hasPerk(asset, 'courier-logistics')
@@ -835,7 +835,7 @@ function renderVerticals() {
     ? `<span class="badge on">${t('vertLive')}</span>`
     : plusOk
       ? `<span class="badge">${t('vertLaunch', { cost: money(plusLaunchCost(state)) })}</span>`
-      : `<span class="badge">${t('plusNeedsVerticals')}</span>`;
+      : `<span class="badge wrap">${t('plusNeedsVerticals')}</span>`;
   const plusCard = `<div class="district ${plusOn || plusPlanned ? 'active' : ''}" data-vertical="plus">
     <div class="district-head">
       <span class="district-name">➕ ${t('plusName')}</span>

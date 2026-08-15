@@ -337,8 +337,9 @@ function renderMarketMap() {
     <text x="${lx}" y="${ly + rOrg + (narrow ? 46 : 44)}" text-anchor="middle" class="m-muted" style="fill:var(--bad)">−${num(Math.round(r.orgLeft ?? 0))}</text>
     ${switched !== 0 ? `<text x="${lx}" y="${ly + rOrg + (narrow ? 60 : 58)}" text-anchor="middle" class="m-muted"
       style="fill:${switched > 0 ? 'var(--bad)' : 'var(--good)'}">${switched > 0 ? '⇄ −' : '⇄ +'}${num(Math.abs(switched))} ${t('mapSwitched')}</text>` : ''}
-    ${(r.outageLoss ?? 0) > 0.005 ? `<text x="${rx}" y="${ry - rAud - 10}" text-anchor="middle" class="m-muted"
-      style="fill:var(--bad)">${t('mapOutage', { share: pct(r.outageLoss, 0) })}</text>` : ''}` : '';
+    ${(r.outageLoss ?? 0) > 0.005 ? `<text x="${narrow ? 348 : 694}" y="${narrow ? 38 : ry - rAud - 12}"
+      text-anchor="end" class="m-muted" style="fill:var(--bad)">${
+      t('mapOutage', { share: pct(r.outageLoss, 0) })}</text>` : ''}` : '';
 
   const badges = r ? `
     <text x="${narrow ? 12 : 14}" y="20" class="m-muted"
