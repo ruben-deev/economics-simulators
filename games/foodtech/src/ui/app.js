@@ -656,6 +656,9 @@ function renderCityMap() {
       time: rep?.deliveryTime ?? ds.deliveryTime ?? d.baseTime,
       cm: rep?.cmPerOrder ?? 0,
       orders: rep?.orders ?? 0,
+      customers: rep?.customers ?? ds.customers ?? 0,
+      restaurants: rep?.restaurants ?? ds.restaurants ?? 0,
+      reach: rep?.penetration ?? 0,
     };
   });
 
@@ -665,21 +668,20 @@ function renderCityMap() {
     center: -90, sever: -90, univer: 190, zarechie: 15, promzona: 65, zagorod: 130,
     'st-center': -90, 'st-vostok': 20, 'st-port': 110, 'st-sloboda': 205,
   };
-  const W = 700;
-  const H = 400;
+  const W = 720;
   const cx = 300;
-  const cy = 205;
+  const cy = 226;
   const maxKm = Math.max(...defs.map((d) => d.distanceKm));
   const maxPot = Math.max(...defs.map((d) => d.potential));
   // Радиус на карте пропорционален корню расстояния: иначе загородный район
   // на девяти километрах уносит все остальные в кучу у центра.
-  const rad = (km) => 34 + 150 * Math.sqrt(km / maxKm);
+  const rad = (km) => 40 + 178 * Math.sqrt(km / maxKm);
   const size = (pot) => 26 + 26 * Math.sqrt(pot / maxPot);
 
   const placed = rows.map((row, i) => {
     const ang = ((DIR[row.d.id] ?? (-90 + (360 / rows.length) * i)) * Math.PI) / 180;
     const R = row.d.id === 'center' || row.d.id === 'st-center' ? 0 : rad(row.d.distanceKm);
-    return { ...row, x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) * 0.78, rr: size(row.d.potential) };
+    return { ...row, x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) * 0.92, rr: size(row.d.potential) };
   });
 
   // Река рисуется не «где-нибудь справа», а между складом и Заречьем: иначе
@@ -741,13 +743,56 @@ function renderCityMap() {
   // важное из них: модель закроет его в конце недели и обнулит клиентов с
   // ресторанами, а на карте он до сих пор выглядел работающим, и нажатие
   // казалось не сработавшим.
+  // Подписи считаются заранее и разводятся по вертикали: строк у квартала
+  // теперь две-три, и соседние районы налезали друг на друга подписями, а не
+  // кварталами. Простая раскладка сверху вниз: следующая подпись уезжает
+  // ниже, если попала в уже занятое место.
+  const boxes = [];
+  const estWidth = (text) => text.length * 5.4;
+  for (const p of [...placed].sort((a, b) => a.y - b.y)) {
+    const planned = !p.live && chosen.has(p.d.id);
+    const closing = p.live && !chosen.has(p.d.id);
+    const bad = p.time > CONFIG.refDeliveryTime;
+    p.lines = closing ? [{ text: t('mapClosing'), cls: 'm-small neg' }]
+      : p.live
+        ? [
+          { text: `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}${t('mapPerOrderTag')}`,
+            cls: bad ? 'm-small neg' : 'm-small' },
+          { text: t('mapLiveMeta', {
+            customers: compact(p.customers), restaurants: num(Math.round(p.restaurants)),
+          }), cls: 'm-muted' },
+        ]
+        : planned
+          ? [{ text: t('mapPlanned'), cls: 'm-small' }]
+          : [
+            { text: t('mapOpenFor', { cost: money(p.d.launchCost) }), cls: 'm-muted' },
+            { text: t('mapIdleMeta', {
+              potential: compact(p.d.potential), km: p.d.distanceKm,
+            }), cls: 'm-muted' },
+          ];
+    const w = Math.max(...p.lines.map((l) => estWidth(l.text)));
+    const h = p.lines.length * 14;
+    let ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
+    for (let guard = 0; guard < 8; guard++) {
+      const hit = boxes.find((b) => Math.abs(b.x - p.x) < (b.w + w) / 2 - 6
+        && ly - 12 < b.y + b.h && ly + h > b.y - 12);
+      if (!hit) break;
+      ly = hit.y + hit.h + 8;
+    }
+    boxes.push({ x: p.x, y: ly, w, h });
+    p.ly = ly;
+    p.leader = ly > p.y + 30;   // подпись уехала — нужна ниточка к кварталу
+  }
+  // Высота карты подстраивается под самую нижнюю подпись: иначе разведённая
+  // подпись срезалась бы краем viewBox
+  const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14);
+
   const quarter = (p, i) => {
     const planned = !p.live && chosen.has(p.d.id);
     const closing = p.live && !chosen.has(p.d.id);
     const cls = closing ? 'm-closing'
       : p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad')
         : (planned ? 'm-plan' : 'm-off');
-    const bad = p.time > CONFIG.refDeliveryTime;
     // Квартал — не круг, а скруглённый многоугольник: так он читается
     // застройкой, а не точкой на графике
     const k = p.rr;
@@ -756,15 +801,12 @@ function renderCityMap() {
       + `${p.x + k * 0.62},${p.y + k * 0.86} ${p.x - k * 0.55},${p.y + k * 0.92} `
       + `${p.x - k * 0.98},${p.y + k * 0.3}`;
     // На телефоне карта ужимается втрое, и мелкие подписи превращаются в шум:
-    // в кварталах остаются только имена, числа уходят в список под картой.
-    const ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
-    const label = narrow ? '' : `<text x="${p.x}" y="${ly}" text-anchor="middle"
-        class="${closing ? 'm-small neg' : (p.live ? (bad ? 'm-small neg' : 'm-small') : 'm-muted')}">${
-        closing ? t('mapClosing')
-          : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}`
-            : (planned ? t('mapPlanned')
-              : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</text>`;
+    // в кварталах остаются только номера, числа уходят в список под картой.
+    const label = narrow ? '' : p.lines.map((l, k) => `<text x="${p.x}" y="${p.ly + k * 14}"
+        text-anchor="middle" class="${l.cls}">${l.text}</text>`).join('');
     return `<g class="m-hit" data-id="${p.d.id}">
+      ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
+        y2="${p.ly - 10}" class="m-leader"></line>` : ''}
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) : ''}
       <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
@@ -782,9 +824,12 @@ function renderCityMap() {
   const list = placed.map((p, i) => `<li data-id="${p.d.id}"><b>${i + 1}. ${tx(p.d.name)}</b> · ${
     p.d.distanceKm} ${t('mapKmShort')} · ${
     p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
-      : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')}`
+      : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')} · ${
+        t('mapLiveMeta', { customers: compact(p.customers),
+          restaurants: num(Math.round(p.restaurants)) })}`
         : (chosen.has(p.d.id) ? t('mapPlanned')
-          : t('mapOpenFor', { cost: money(p.d.launchCost) }))}</li>`).join('');
+          : `${t('mapOpenFor', { cost: money(p.d.launchCost) })} · ${
+            t('mapIdleMeta', { potential: compact(p.d.potential), km: p.d.distanceKm })}`)}</li>`).join('');
 
   box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>

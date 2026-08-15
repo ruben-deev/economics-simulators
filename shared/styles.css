@@ -931,6 +931,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 /* Квартал — орган управления: нажатие открывает район */
 /* pointer-events: all — иначе незакрашенный квартал (закрытый район) не
    ловит нажатие вовсе: по спецификации SVG прозрачная заливка не цель */
+.city-map .m-leader { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
 .city-map .m-hit { cursor: pointer; }
 .city-map .m-hit polygon { pointer-events: all; }
 .city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
