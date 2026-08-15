@@ -21,7 +21,9 @@
 // (START_ASSETS) параметризует всё: синергии, перки, цену запусков.
 // ============================================================================
 
-import { CONFIG, DEFAULT_DECISIONS, assetById, verticalById, clamp } from './config.js';
+import {
+  CONFIG, DEFAULT_DECISIONS, assetById, verticalById, difficultyById, clamp,
+} from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
@@ -80,7 +82,7 @@ export function legacyValuationFloor(legacy = {}) {
   return Math.round(CONFIG.valuationFloor * (1 + bonus));
 }
 
-export function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
+export function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}, difficulty = 'normal') {
   const asset = assetById(assetId);
   const rng = createRng(seed);
   const state = {
@@ -91,6 +93,8 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
+    // Уровень сложности: меняет только цену финансовой команды (см. financeLevel)
+    difficulty: difficultyById(difficulty).id,
     // Бонусы наследия: «чувствуются, но не решают партию» (замерено)
     legacy: {
       asset: Boolean(legacy.asset),
@@ -148,6 +152,43 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
 // ----------------------------------------------------------------------------
 // Производные показатели
 // ----------------------------------------------------------------------------
+
+/**
+ * Сила финансовой команды, 0…1. На лёгком уровне команда уже собрана и
+ * стоит ноль — новичку нужна читаемая игра, а не её бухгалтерия. На
+ * остальных её покупают, и разница уровней ровно одна: насколько быстро
+ * деньги превращаются в силу.
+ */
+export function financeSaturation(state) {
+  const diff = difficultyById(state.difficulty);
+  const h = state.history ?? [];
+  const asset = assetById(state.assetId);
+  const revenue = h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
+  return Math.max(
+    CONFIG.finance.saturationFloor,
+    revenue * CONFIG.finance.saturationShare,
+  ) * diff.saturationMult;
+}
+
+export function financeLevel(state, decisions) {
+  const diff = difficultyById(state.difficulty);
+  if (diff.financeFree) return 1;
+  const b = decisions.finance ?? 0;
+  return b > 0 ? b / (b + financeSaturation(state)) : 0;
+}
+
+// Во что обходится месяц слабой финансовой службы: доля выручки, которая
+// уходит эквайрингом, комиссиями, списаниями и штрафами.
+export function miscRate(state, decisions) {
+  const diff = difficultyById(state.difficulty);
+  return Math.max(0.005, CONFIG.finance.miscRateBase * (diff.miscMult ?? 1)
+    - CONFIG.finance.miscRateCut * financeLevel(state, decisions));
+}
+
+// Бюджет команды: на лёгком уровне её содержит не игрок
+export function financeCost(state, decisions) {
+  return difficultyById(state.difficulty).financeFree ? 0 : (decisions.finance ?? 0);
+}
 
 export function mgmtLevel(decisions) {
   const m = decisions.mgmt ?? 0;
@@ -729,10 +770,17 @@ export function step(prevState, input = {}) {
     ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) + (decisions.ecomLogistics ?? 0) : 0;
   // Пока идёт антимонопольное дело, юристы — такой же фикс, как офис
   const legalCost = legalActive ? CONFIG.antitrust.legalMonthly : 0;
+  // Прочие расходы: эквайринг, комиссии, списания, штрафы, неразнесённая
+  // административка. Единственная строка, которая растёт сама по себе —
+  // вместе с выручкой, — и единственная, которую режет не бизнес-решение,
+  // а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
     + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
-    + licenseFee + ticketsFee;
+    + licenseFee + ticketsFee + financeBudget + miscCost;
 
   const foodFullContribution = contribFood - fixedFood
     - (decisions.foodOps ?? 0) - (decisions.foodMarketing ?? 0);
@@ -804,6 +852,10 @@ export function step(prevState, input = {}) {
     taxiFullContribution,
     ecomFullContribution,
     ecomCapacity: logisticsLevel,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
     plusFullContribution,
     opex,
     fixedFood,
@@ -1059,9 +1111,18 @@ export function valuation(state) {
   return sumOfParts(state).total;
 }
 
+// Насколько лучше холдинг упакован к раунду: та же компания, но с внятной
+// отчётностью, чистой юнит-экономикой и подготовленной презентацией стоит
+// для инвестора дороже. На счёт это не влияет — рынок считает оценку сам;
+// влияет только на цену денег, то есть на долю, которую вы отдаёте.
+export function financeRoundMult(state) {
+  const level = financeLevel(state, state.decisions ?? DEFAULT_DECISIONS);
+  return 1 + CONFIG.finance.roundGain * level;
+}
+
 export function fundingOffer(state, amount) {
   const terms = roundTerms(
-    valuation(state) * legacyReputationMult(state.legacy),
+    valuation(state) * legacyReputationMult(state.legacy) * financeRoundMult(state),
     amount,
     { floor: legacyValuationFloor(state.legacy) },
   );

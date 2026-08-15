@@ -1574,6 +1574,69 @@ const STRINGS = {
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
   pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+  pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
+  pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
+  sopColMultiple: { ru: 'Множитель', en: 'Multiple' },
+  sopMultipleNote: {
+    ru: 'Множитель к годовой выручке рынок даёт за темп роста и маржу: растущая прибыльная часть стоит несколько выручек, зрелая — около одной, убыточная не стоит ничего и вычитается как обязательство. Колонку показывает финансовая команда — без неё видно, сколько стоит часть, но не почему столько.',
+    en: 'The market applies a multiple to annual revenue based on growth and margin: a growing profitable part is worth several revenues, a mature one about one, a loss-making one is worth nothing and is subtracted as a liability. The column is supplied by your finance team — without one you see what a part is worth, but not why.',
+  },
+  sopMultipleLocked: {
+    ru: 'Как именно рынок превращает выручку и маржу в оценку, разбирает финансовая команда — сейчас она для этого слишком слаба.',
+    en: 'Exactly how the market turns revenue and margin into a valuation is your finance team’s job to explain — right now it is too weak for that.',
+  },
+  readoutFinance: {
+    ru: 'Финансовая команда: сила <b class="{cls}">{level}</b>. Прочие расходы — {misc} выручки, условия раунда лучше на {round}.',
+    en: 'Finance team: strength <b class="{cls}">{level}</b>. Miscellaneous costs run at {misc} of revenue; round terms improve by {round}.',
+  },
+  readoutFinanceFree: {
+    ru: 'На лёгком уровне команда уже собрана и вам ничего не стоит.',
+    en: 'On the easy level the team is already in place and costs you nothing.',
+  },
+  readoutFinanceHalf: {
+    ru: 'Половина силы стоит {half} в месяц — цена растёт вместе с выручкой холдинга.',
+    en: 'Half its strength costs {half} a month — the price grows with the holding’s revenue.',
+  },
+  adviceTitle: { ru: 'Разбор месяца от финансовой команды', en: 'The finance team’s read on the month' },
+  adviceCac: {
+    ru: 'Холодный клиент обходится в {cac}, а приносит около {value} за год. Канал не окупается — либо дешевле, либо меньше.',
+    en: 'A cold customer costs {cac} and brings about {value} a year. The channel does not pay for itself — make it cheaper or smaller.',
+  },
+  adviceCrossWaste: {
+    ru: 'Кросс-селл сжёг {wasted} впустую: денег больше, чем людей, готовых попробовать второй сервис в этом месяце.',
+    en: 'Cross-sell burned {wasted} for nothing: more money than people ready to try a second service this month.',
+  },
+  adviceRunway: {
+    ru: 'Кассы хватит примерно на {months} мес. при текущем сжигании {burn} в месяц. Раунд берут заранее, а не в последний месяц: слабый холдинг отдаёт больше доли.',
+    en: 'Cash lasts about {months} months at the current burn of {burn} a month. Rounds are raised early, not in the final month: a weak holding gives away more equity.',
+  },
+  adviceFocus: {
+    ru: 'Фокус размыт на {penalty}: исполнение проседает во всех сервисах сразу. Либо управляющая компания, либо на одну вертикаль меньше.',
+    en: 'Focus is diluted by {penalty}: execution sags across every service at once. Either a management company or one vertical fewer.',
+  },
+  adviceTake: {
+    ru: 'Монетизация за порогом терпения: деньги приходят сейчас, а уходящие клиенты уносят с собой будущий кросс-селл.',
+    en: 'Monetisation is past the tolerance threshold: the money comes now, and the leavers take your future cross-sell with them.',
+  },
+  adviceEcomThin: {
+    ru: 'Е-ком убыточен при почти нулевой мощности логистики: так эта нога не сходится никогда — либо мощность, либо закрывать.',
+    en: 'E-commerce is loss-making with almost no logistics capacity: that leg never adds up this way — either fund the capacity or close it.',
+  },
+  advicePlusThin: {
+    ru: 'Подписка стоит дороже, чем приносит, и охватывает мало кого: Plus окупается массовостью, а не ценой.',
+    en: 'The subscription costs more than it earns and reaches too few people: Plus pays off through scale, not price.',
+  },
+  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
+  welcomeDifficultyNote: {
+    ru: 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», объясняет вашу оценку и разбирает решения месяца.',
+    en: 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, explains your valuation and reads your monthly decisions.',
+  },
+  gameOverDifficulty: {
+    ru: 'Уровень: <b>{level}</b>. {note}',
+    en: 'Level: <b>{level}</b>. {note}',
+  },
+  gameOverRanked: { ru: 'Результат идёт в мировую таблицу этого уровня.', en: 'The result goes to this level’s world table.' },
+  gameOverUnranked: { ru: 'Тренировочный уровень: в мировую таблицу результат не идёт.', en: 'Training level: the result is not submitted to the world table.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
@@ -2776,7 +2839,93 @@ const CONFIG = {
     ticketsMonthly: 2_500_000,        // партнёрство с билетным сервисом
     ticketsArpuPerMulti: 25,          // событийная выручка на мульти-клиента, ₽/мес
   },
+
+  // --- Финансовая команда ---
+  // Единственный рычаг, который управляет не бизнесом, а тем, как бизнес
+  // считают и показывают. Слабая финансовая служба стоит денег молча:
+  // эквайринг по невыгодной ставке, комиссии, списания, штрафы, неразнесённая
+  // административка — всё это живёт строкой «прочие расходы» и не спрашивает
+  // разрешения. Сильная — режет эту строку, лучше упаковывает компанию к
+  // раунду и делает оценку читаемой.
+  finance: {
+    // Цена команды считается долей выручки, а не абсолютом: финансовая
+    // служба растёт вместе с компанией. Иначе рычаг живёт только у крупного
+    // холдинга — замер это и показал: у билетного актива при фиксированной
+    // цене команду не окупало ничто.
+    saturationShare: 0.05,   // выручки в месяц до «половины» силы
+    saturationFloor: 1_500_000,  // ниже этого команда не бывает даже у малыша
+    // 3% выручки — та величина, при которой строка ощутима, но не убивает
+    // дойную корову без единого решения: замер показал, что при 5% пассивная
+    // партия («ничего не делаю») уходит в банкротство, а это ломает саму
+    // предпосылку игры — вы начинаете с прибыльного насыщенного актива.
+    miscRateBase: 0.030,     // прочие расходы без финансовой службы, доля выручки
+    miscRateCut: 0.020,      // сколько снимает полная команда (остаётся 1.0%)
+    roundGain: 0.25,         // насколько лучше упакована компания к раунду
+    transparencyAt: 0.30,    // с этой силы видно, как собирается оценка
+    adviceAt: 0.55,          // с этой — команда разбирает решения месяца
+  },
 };
+
+// ============================================================================
+// Уровни сложности. Механики игры на всех уровнях одни и те же — меняется
+// только одно: сколько стоит финансовая команда и насколько быстро деньги
+// в неё превращаются в силу.
+//
+//   лёгкий  — команда уже есть и не стоит ничего: новичок получает
+//             читаемую оценку, разбор решений и низкие «прочие» даром;
+//   обычный — команду покупают, но она дешёвая: половина силы за 3.3 млн;
+//   сложный — та же команда стоит втрое дороже, и её приходится взвешивать
+//             против маркетинга, мощности и удержания.
+//
+// Ранжируются в мировой таблице обычный и сложный — разными таблицами.
+// Лёгкий тренировочный: бесплатная помощь несравнима с купленной.
+// ============================================================================
+const DIFFICULTIES = [
+  {
+    id: 'easy',
+    label: { ru: 'Лёгкий', en: 'Easy' },
+    short: { ru: 'тренировка', en: 'training' },
+    financeFree: true,
+    saturationMult: 1,
+    miscMult: 0.8,
+    ranked: false,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовая команда уже собрана и не стоит ничего: оценка разложена по полкам, «прочие расходы» минимальны, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию. В мировую таблицу не идёт: бесплатная помощь несравнима с купленной.',
+      en: 'The finance team is already in place and costs nothing: the valuation is broken down, miscellaneous costs are minimal, and the team comments on your decisions. This shows you the game rather than its bookkeeping. Not submitted to the world table: free help is not comparable with bought help.',
+    },
+  },
+  {
+    id: 'normal',
+    label: { ru: 'Обычный', en: 'Normal' },
+    short: { ru: 'зачётный', en: 'ranked' },
+    financeFree: false,
+    saturationMult: 0.55,
+    miscMult: 1,
+    ranked: true,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовую команду нанимаете вы, но она недорогая: половина силы за 3.3 млн ₽ в месяц. Это зачётный уровень — мировая таблица считает его.',
+      en: 'You hire the finance team yourself, but it is cheap: half its strength for ₽3.3M a month. This is the ranked level — the world table counts it.',
+    },
+  },
+  {
+    id: 'hard',
+    label: { ru: 'Сложный', en: 'Hard' },
+    short: { ru: 'вызов', en: 'challenge' },
+    financeFree: false,
+    saturationMult: 2.2,
+    miscMult: 1.35,
+    ranked: true,
+    tagSuffix: '·сложный',
+    note: {
+      ru: 'Та же команда стоит вчетверо дороже: половина силы за 13 млн ₽ в месяц. Каждый рубль в финансы — это рубль, не ушедший в мощность, маркетинг и удержание. Своя таблица рекордов.',
+      en: 'The same team costs four times as much: half its strength for ₽13M a month. Every rouble spent on finance is a rouble not spent on capacity, marketing and retention. Its own record table.',
+    },
+  },
+];
+
+const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
 
 // ============================================================================
 // Стартовые активы — «классы персонажа». Дескриптор сжимает победившую
@@ -2831,7 +2980,7 @@ const START_ASSETS = [
     // билеты 3.4 млрд), и общая шкала объявляла бы отличную партию за билеты
     // «скромным итогом». Пороги — доли от оптимума актива: 80% / 45% / 15%.
     // worthy (обратные бонусы и секретная концовка) равен «крепкому» порогу.
-    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
+    grades: { excellent: 9.5e9, solid: 5.5e9, survived: 1.8e9, worthy: 5.5e9 },
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
     // Готовая инфраструктура удешевляет запуск родственной вертикали
     launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
@@ -2861,7 +3010,7 @@ const START_ASSETS = [
     returnPool: 18_000,
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
-    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
+    grades: { excellent: 10e9, solid: 5.7e9, survived: 1.9e9, worthy: 5.7e9 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
@@ -3069,6 +3218,17 @@ const LEVERS = [
     tip: {
       ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Сильная управляющая компания выкупает этот штраф. Пока вертикаль одна, она почти не нужна.',
       en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A strong management company buys that penalty back. With a single vertical you barely need it.',
+    },
+  },
+  {
+    key: 'finance',
+    group: 'holding',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 20_000_000, step: 500_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная режет эту строку, лучше упаковывает холдинг к раунду и объясняет, из чего собирается ваша оценка.',
+      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one cuts that line, packages the holding better for a round, and explains what your valuation is actually built from.',
     },
   },
   {
@@ -4047,7 +4207,7 @@ function legacyValuationFloor(legacy = {}) {
   return Math.round(CONFIG.valuationFloor * (1 + bonus));
 }
 
-function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}) {
+function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}, difficulty = 'normal') {
   const asset = assetById(assetId);
   const rng = createRng(seed);
   const state = {
@@ -4058,6 +4218,8 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
     equity: 1,
     raisedTotal: 0,
     assetId: asset.id,
+    // Уровень сложности: меняет только цену финансовой команды (см. financeLevel)
+    difficulty: difficultyById(difficulty).id,
     // Бонусы наследия: «чувствуются, но не решают партию» (замерено)
     legacy: {
       asset: Boolean(legacy.asset),
@@ -4115,6 +4277,43 @@ function createInitialState(seed = 'novograd', assetId = 'delivery', legacy = {}
 // ----------------------------------------------------------------------------
 // Производные показатели
 // ----------------------------------------------------------------------------
+
+/**
+ * Сила финансовой команды, 0…1. На лёгком уровне команда уже собрана и
+ * стоит ноль — новичку нужна читаемая игра, а не её бухгалтерия. На
+ * остальных её покупают, и разница уровней ровно одна: насколько быстро
+ * деньги превращаются в силу.
+ */
+function financeSaturation(state) {
+  const diff = difficultyById(state.difficulty);
+  const h = state.history ?? [];
+  const asset = assetById(state.assetId);
+  const revenue = h.length ? h[h.length - 1].revenue : asset.users * asset.arpu;
+  return Math.max(
+    CONFIG.finance.saturationFloor,
+    revenue * CONFIG.finance.saturationShare,
+  ) * diff.saturationMult;
+}
+
+function financeLevel(state, decisions) {
+  const diff = difficultyById(state.difficulty);
+  if (diff.financeFree) return 1;
+  const b = decisions.finance ?? 0;
+  return b > 0 ? b / (b + financeSaturation(state)) : 0;
+}
+
+// Во что обходится месяц слабой финансовой службы: доля выручки, которая
+// уходит эквайрингом, комиссиями, списаниями и штрафами.
+function miscRate(state, decisions) {
+  const diff = difficultyById(state.difficulty);
+  return Math.max(0.005, CONFIG.finance.miscRateBase * (diff.miscMult ?? 1)
+    - CONFIG.finance.miscRateCut * financeLevel(state, decisions));
+}
+
+// Бюджет команды: на лёгком уровне её содержит не игрок
+function financeCost(state, decisions) {
+  return difficultyById(state.difficulty).financeFree ? 0 : (decisions.finance ?? 0);
+}
 
 function mgmtLevel(decisions) {
   const m = decisions.mgmt ?? 0;
@@ -4696,10 +4895,17 @@ function step(prevState, input = {}) {
     ? (decisions.ecomOps ?? 0) + (decisions.ecomMarketing ?? 0) + (decisions.ecomLogistics ?? 0) : 0;
   // Пока идёт антимонопольное дело, юристы — такой же фикс, как офис
   const legalCost = legalActive ? CONFIG.antitrust.legalMonthly : 0;
+  // Прочие расходы: эквайринг, комиссии, списания, штрафы, неразнесённая
+  // административка. Единственная строка, которая растёт сама по себе —
+  // вместе с выручкой, — и единственная, которую режет не бизнес-решение,
+  // а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
     + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
-    + licenseFee + ticketsFee;
+    + licenseFee + ticketsFee + financeBudget + miscCost;
 
   const foodFullContribution = contribFood - fixedFood
     - (decisions.foodOps ?? 0) - (decisions.foodMarketing ?? 0);
@@ -4771,6 +4977,10 @@ function step(prevState, input = {}) {
     taxiFullContribution,
     ecomFullContribution,
     ecomCapacity: logisticsLevel,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
     plusFullContribution,
     opex,
     fixedFood,
@@ -5026,9 +5236,18 @@ function valuation(state) {
   return sumOfParts(state).total;
 }
 
+// Насколько лучше холдинг упакован к раунду: та же компания, но с внятной
+// отчётностью, чистой юнит-экономикой и подготовленной презентацией стоит
+// для инвестора дороже. На счёт это не влияет — рынок считает оценку сам;
+// влияет только на цену денег, то есть на долю, которую вы отдаёте.
+function financeRoundMult(state) {
+  const level = financeLevel(state, state.decisions ?? DEFAULT_DECISIONS);
+  return 1 + CONFIG.finance.roundGain * level;
+}
+
 function fundingOffer(state, amount) {
   const terms = roundTerms(
-    valuation(state) * legacyReputationMult(state.legacy),
+    valuation(state) * legacyReputationMult(state.legacy) * financeRoundMult(state),
     amount,
     { floor: legacyValuationFloor(state.legacy) },
   );
@@ -5409,6 +5628,14 @@ const LEGACY_DIRS = { delivery: 'foodtech', streaming: 'cinema', tickets: 'ticke
 const SAVE_KEY = 'novograd-save-v1';
 const RECORDS_KEY = 'novograd-records';
 const GAME_TAG = 'НОВОГРАД';
+// Тег партии в строке результата и в мировой таблице. Уровень сложности —
+// часть тега: обычный и сложный ранжируются раздельно, потому что это разные
+// игры по цене денег. Лёгкий не ранжируется вовсе — бесплатная финансовая
+// команда несравнима с купленной, и таблицу это сломало бы.
+function gameTag(base = GAME_TAG) {
+  return `${base}${difficultyById(state.difficulty).tagSuffix}`;
+}
+const rankedNow = () => difficultyById(state.difficulty).ranked;
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'ecosystem-1';
@@ -5605,7 +5832,8 @@ function buildLevers() {
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     // Цена Plus появляется вместе с подпиской
     const levers = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'plusPrice' && !state.plus.on));
+      && !(l.key === 'plusPrice' && !state.plus.on)
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
     const locked = (g.id === 'taxi' && !state.taxi.on)
       || (g.id === 'ecom' && !state.ecom.on);
     const body = locked
@@ -5756,10 +5984,25 @@ function renderLeverReadouts() {
       ? `<div>${t('readoutPlus', {
           subs: compact(state.plus.subs), multi: compact(r.multiUsers),
         })}</div>` : '';
+    // Финансовая команда: сила, цена «прочих расходов» и условия раунда.
+    // Показывается всегда — на лёгком уровне как факт, на остальных как
+    // отдача от денег, которые вы в неё кладёте.
+    const diff = difficultyById(state.difficulty);
+    const fin = financeLevel(state, d);
+    const half = financeSaturation(state);
+    const financeLine = `<div>${t('readoutFinance', {
+      level: pct(fin, 0),
+      misc: pct(miscRate(state, d), 1),
+      round: pct(CONFIG.finance.roundGain * fin, 0),
+      cls: fin >= CONFIG.finance.transparencyAt ? 'pos' : 'neg',
+    })}</div>${diff.financeFree
+      ? `<div class="funding-note">${t('readoutFinanceFree')}</div>`
+      : `<div class="funding-note">${t('readoutFinanceHalf', { half: money(half) })}</div>`}`;
     holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${focusLine}</div>
       ${crossLine}
       ${plusLine}
+      ${financeLine}
     </div>`;
   }
 }
@@ -5810,6 +6053,68 @@ const BUDGET_COLORS = {
   eco: PALETTE[0],
 };
 
+/**
+ * Разбор месяца от финансовой команды. Не подсказки «как выиграть», а то,
+ * что видно в цифрах и чего игрок обычно не замечает: канал, который не
+ * окупается, бюджет, который сгорает, касса, которая кончится. Появляется
+ * только у сильной команды — это и есть смысл в неё вкладываться.
+ *
+ * Каждое наблюдение считается из последнего отчёта, поэтому советовать
+ * несуществующее команда не может.
+ */
+function financeAdvice() {
+  const r = last();
+  if (!r) return [];
+  const d = state.decisions;
+  const asset = assetById(state.assetId);
+  const out = [];
+
+  // Холодный клиент дороже, чем приносит за год
+  const yearValue = asset.arpu * asset.margin * 12;
+  if (r.cacCold > 0 && r.cacCold > yearValue) {
+    out.push({ sev: 3, text: t('adviceCac', { cac: money(r.cacCold), value: money(yearValue) }) });
+  }
+  // Бюджет кросс-селла сгорает: ёмкость канала меньше денег
+  if (r.crossWasted > 0 && r.crossWasted > (d.crossSell ?? 0) * 0.15) {
+    out.push({ sev: 3, text: t('adviceCrossWaste', { wasted: money(r.crossWasted) }) });
+  }
+  // Касса: сколько месяцев осталось при текущем сжигании
+  const burn = r.oneOff > 0 ? r.profit : r.profit;
+  if (burn < 0) {
+    const months = Math.floor(state.cash / -burn);
+    if (months <= 6) out.push({ sev: 4, text: t('adviceRunway', { months, burn: money(-burn) }) });
+  }
+  // Размытый фокус: управляющая компания не выкупает штраф
+  const penalty = focusPenalty(state, d);
+  if (penalty > 0.06) {
+    out.push({ sev: 2, text: t('adviceFocus', { penalty: pct(penalty, 0) }) });
+  }
+  // Дожим за порогом терпения
+  if ((d.foodTake ?? 1) > CONFIG.foodTakeThreshold) {
+    out.push({ sev: 2, text: t('adviceTake') });
+  }
+  // Нога, которая покупает рост дороже, чем этот рост стоит
+  if (r.ecomOn && (r.ecomFullContribution ?? 0) < 0 && (r.ecomCapacity ?? 0) < 0.2) {
+    out.push({ sev: 2, text: t('adviceEcomThin') });
+  }
+  // Подписка стоит дороже, чем приносит, и не растёт
+  if (r.plusOn && (r.plusFullContribution ?? 0) < 0 && r.plusSubs < r.multiUsers * 0.25) {
+    out.push({ sev: 1, text: t('advicePlusThin') });
+  }
+  return out.sort((a, b) => b.sev - a.sev).slice(0, 3);
+}
+
+function adviceHtml() {
+  const fin = financeLevel(state, state.decisions);
+  if (fin < CONFIG.finance.adviceAt) return '';
+  const items = financeAdvice();
+  if (!items.length) return '';
+  return `<div class="hint-box" style="margin-bottom:12px">
+    <div><b>${t('adviceTitle')}</b></div>
+    ${items.map((i) => `<div>• ${i.text}</div>`).join('')}
+  </div>`;
+}
+
 function renderBudgetBar() {
   const box = el('budget-slot');
   if (!box) return;
@@ -5852,7 +6157,7 @@ function renderBudgetBar() {
       net: (net >= 0 ? '+' : '') + money(net),
       cls: net >= 0 ? 'pos' : 'neg',
     })}</div>
-  </div>`;
+  </div>${adviceHtml()}`;
 }
 
 // ----------------------------------------------------------------------------
@@ -6724,6 +7029,11 @@ function renderChart() {
 // ----------------------------------------------------------------------------
 function renderSopTab() {
   const sop = sumOfParts(state);
+  // Прозрачность оценки — работа финансовой команды. Без неё видно, СКОЛЬКО
+  // стоит каждая часть; с ней — ПОЧЕМУ столько: какой множитель к выручке
+  // дал рынок за этот темп роста и эту маржу.
+  const fin = financeLevel(state, state.decisions);
+  const openMultiple = fin >= CONFIG.finance.transparencyAt;
   const partName = (id) => t({
     food: 'sopPartFood', taxi: 'sopPartTaxi', ecom: 'sopPartEcom', plus: 'sopPartPlus',
   }[id] ?? 'sopPartFood');
@@ -6732,22 +7042,26 @@ function renderSopTab() {
     <td>${money(p.runRate)}</td>
     <td class="${p.growth >= 0 ? 'pos' : 'neg'}">${signedPct(p.growth, 0)}</td>
     <td class="${p.margin >= 0 ? 'pos' : 'neg'}">${pct(p.margin, 0)}</td>
+    ${openMultiple ? `<td>${p.zoo ? '—' : `×${(p.runRate > 0 ? p.value / p.runRate : 0).toFixed(1)}`}</td>` : ''}
     <td class="${p.value >= 0 ? 'pos' : 'neg'}">${money(p.value)}</td>
   </tr>`).join('');
 
   return `
     <p class="funding-note">${t('sopIntro')}</p>
     <table class="data">
-      <thead><tr><th>${t('sopColPart')}</th><th>${t('sopColRunRate')}</th><th>${t('sopColGrowth')}</th><th>${t('sopColMargin')}</th><th>${t('sopColValue')}</th></tr></thead>
+      <thead><tr><th>${t('sopColPart')}</th><th>${t('sopColRunRate')}</th><th>${t('sopColGrowth')}</th><th>${t('sopColMargin')}</th>${openMultiple ? `<th>${t('sopColMultiple')}</th>` : ''}<th>${t('sopColValue')}</th></tr></thead>
       <tbody>
         ${rows}
-        <tr class="sub"><td colspan="4">${t('sopPremium', { share: pct(sop.multiShare, 1) })}</td>
+        <tr class="sub"><td colspan="${openMultiple ? 5 : 4}">${t('sopPremium', { share: pct(sop.multiShare, 1) })}</td>
           <td class="pos">+${pct(sop.crossPremium, 0)}</td></tr>
-        <tr class="sub"><td colspan="4">${t('sopBonus')}</td>
+        <tr class="sub"><td colspan="${openMultiple ? 5 : 4}">${t('sopBonus')}</td>
           <td class="${sop.bonus >= 1 ? 'pos' : 'neg'}">×${sop.bonus.toFixed(2)}</td></tr>
-        <tr class="total"><td colspan="4">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
+        <tr class="total"><td colspan="${openMultiple ? 5 : 4}">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
       </tbody>
     </table>
+    ${openMultiple
+      ? `<p class="funding-note">${t('sopMultipleNote')}</p>`
+      : `<div class="hint-box" style="margin-top:8px">${t('sopMultipleLocked')}</div>`}
     ${sop.thirdAct ? `<div class="alert warn" style="margin-top:8px">${t('sopThirdAct')}</div>` : ''}
     <p class="funding-note" style="margin-top:10px">${t('sopNote')}</p>`;
 }
@@ -6789,6 +7103,8 @@ function renderPnlTab() {
         ${r.ecomOn ? line(t('pnlEcomMarketing'), -(d.ecomMarketing ?? 0), 'neg', true) : ''}
         ${r.licenseFee > 0 ? line(t('pnlLicense'), -r.licenseFee, 'neg', true) : ''}
         ${r.ticketsFee > 0 ? line(t('pnlTicketsFee'), -r.ticketsFee, 'neg', true) : ''}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -7011,7 +7327,7 @@ function recordsBlockHtml(s) {
 function showEndlessOver() {
   const e = endlessScore(state);
   const line = resultString({
-    tag: `${GAME_TAG}+`, version: APP_VERSION, seed: state.seed,
+    tag: gameTag(`${GAME_TAG}+`), version: APP_VERSION, seed: state.seed,
     score: Math.round(e.equityValue), turns: e.months,
   });
   modal(`<h2>🏙️ ${t('endlessOverTitle')}</h2>
@@ -7083,13 +7399,18 @@ function showGameOver() {
   }
 
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: gameTag(), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
   });
+  const diffNow = difficultyById(state.difficulty);
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
       ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+    <p class="funding-note">${t('gameOverDifficulty', {
+      level: tx(diffNow.label),
+      note: t(diffNow.ranked ? 'gameOverRanked' : 'gameOverUnranked'),
+    })}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -7143,8 +7464,10 @@ function showGameOver() {
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: gameTag(),
     line,
+    // Лёгкий уровень в мировую таблицу не идёт: смотреть можно, отправлять нечего
+    viewOnly: !rankedNow(),
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
     onSubmitted: () => { state.lbSent = true; save(); },
@@ -7159,6 +7482,7 @@ function showGameOver() {
 function showWelcome() {
   let seedWanted = '';
   let assetWanted = state.assetId;
+  let diffWanted = state.difficulty ?? 'normal';
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
 
@@ -7168,6 +7492,12 @@ function showWelcome() {
       <span>${t('vertAssetStats', {
         users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
       })} · ${tx(a.synergyNote)}</span>
+    </button>`).join('');
+
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}${dd.ranked ? '' : ' ·'}</b>
+      <span>${tx(dd.note)}</span>
     </button>`).join('');
 
   const legacyLine = LEGACY_GAMES.map((g) => {
@@ -7202,6 +7532,9 @@ function showWelcome() {
     <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
     <p class="funding-note">${t('welcomeAssetChoice')}</p>
     <div class="event-options">${assetCards}</div>
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <div class="hint-box" style="margin-top:8px">
       <b>${t('welcomeLegacy')}:</b> ${legacyLine}<br>
       ${t('welcomeLegacyNote')}
@@ -7226,9 +7559,10 @@ function showWelcome() {
       const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
       // Партия пересоздаётся, если поменяли сид или актив — или если это
       // свежая партия (ход ещё не сделан): наследие должно примениться
-      if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
+      if (v !== state.seed || assetWanted !== state.assetId
+        || diffWanted !== state.difficulty || state.month === 0) {
         state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
         save();
         renderAll();
       }
@@ -7247,6 +7581,14 @@ function showWelcome() {
       });
     });
   });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = b.dataset.diff;
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
   el('modal-root').querySelector('#legacy-add')?.addEventListener('click', () => {
     const input = el('modal-root').querySelector('#legacy-line');
     const res = addResultLine(input?.value ?? '');
@@ -7262,7 +7604,7 @@ function showWelcome() {
   el('modal-root').querySelector('#legacy-reset')?.addEventListener('click', () => {
     if (!window.confirm(t('welcomeLegacyResetAsk'))) return;
     resetEcosystemProgress();
-    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
     save();
     renderAll();
     showWelcome();
@@ -7313,7 +7655,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: gameTag(), viewOnly: true,
   });
 }
 

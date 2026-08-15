@@ -6,8 +6,8 @@
 // ============================================================================
 
 import {
-  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS,
-  assetById, verticalById,
+  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS, DIFFICULTIES,
+  assetById, verticalById, difficultyById,
 } from '../model/config.js';
 import { eventById } from '../model/events.js';
 import {
@@ -16,6 +16,7 @@ import {
   plusAvailable, plusLaunchCost, cinemaLicenseFee, ticketsPartnerFee, hasPerk,
   startingCash, legacyValuationFloor, legacyReputationMult,
   enterEndless, endlessScore, endlessGrowth,
+  financeLevel, financeSaturation, miscRate,
 } from '../model/engine.js';
 import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
@@ -37,6 +38,14 @@ const LEGACY_DIRS = { delivery: 'foodtech', streaming: 'cinema', tickets: 'ticke
 const SAVE_KEY = 'novograd-save-v1';
 const RECORDS_KEY = 'novograd-records';
 const GAME_TAG = 'НОВОГРАД';
+// Тег партии в строке результата и в мировой таблице. Уровень сложности —
+// часть тега: обычный и сложный ранжируются раздельно, потому что это разные
+// игры по цене денег. Лёгкий не ранжируется вовсе — бесплатная финансовая
+// команда несравнима с купленной, и таблицу это сломало бы.
+function gameTag(base = GAME_TAG) {
+  return `${base}${difficultyById(state.difficulty).tagSuffix}`;
+}
+const rankedNow = () => difficultyById(state.difficulty).ranked;
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
 const BUILD = 'ecosystem-1';
@@ -233,7 +242,8 @@ function buildLevers() {
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     // Цена Plus появляется вместе с подпиской
     const levers = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'plusPrice' && !state.plus.on));
+      && !(l.key === 'plusPrice' && !state.plus.on)
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
     const locked = (g.id === 'taxi' && !state.taxi.on)
       || (g.id === 'ecom' && !state.ecom.on);
     const body = locked
@@ -384,10 +394,25 @@ function renderLeverReadouts() {
       ? `<div>${t('readoutPlus', {
           subs: compact(state.plus.subs), multi: compact(r.multiUsers),
         })}</div>` : '';
+    // Финансовая команда: сила, цена «прочих расходов» и условия раунда.
+    // Показывается всегда — на лёгком уровне как факт, на остальных как
+    // отдача от денег, которые вы в неё кладёте.
+    const diff = difficultyById(state.difficulty);
+    const fin = financeLevel(state, d);
+    const half = financeSaturation(state);
+    const financeLine = `<div>${t('readoutFinance', {
+      level: pct(fin, 0),
+      misc: pct(miscRate(state, d), 1),
+      round: pct(CONFIG.finance.roundGain * fin, 0),
+      cls: fin >= CONFIG.finance.transparencyAt ? 'pos' : 'neg',
+    })}</div>${diff.financeFree
+      ? `<div class="funding-note">${t('readoutFinanceFree')}</div>`
+      : `<div class="funding-note">${t('readoutFinanceHalf', { half: money(half) })}</div>`}`;
     holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${focusLine}</div>
       ${crossLine}
       ${plusLine}
+      ${financeLine}
     </div>`;
   }
 }
@@ -438,6 +463,68 @@ const BUDGET_COLORS = {
   eco: PALETTE[0],
 };
 
+/**
+ * Разбор месяца от финансовой команды. Не подсказки «как выиграть», а то,
+ * что видно в цифрах и чего игрок обычно не замечает: канал, который не
+ * окупается, бюджет, который сгорает, касса, которая кончится. Появляется
+ * только у сильной команды — это и есть смысл в неё вкладываться.
+ *
+ * Каждое наблюдение считается из последнего отчёта, поэтому советовать
+ * несуществующее команда не может.
+ */
+function financeAdvice() {
+  const r = last();
+  if (!r) return [];
+  const d = state.decisions;
+  const asset = assetById(state.assetId);
+  const out = [];
+
+  // Холодный клиент дороже, чем приносит за год
+  const yearValue = asset.arpu * asset.margin * 12;
+  if (r.cacCold > 0 && r.cacCold > yearValue) {
+    out.push({ sev: 3, text: t('adviceCac', { cac: money(r.cacCold), value: money(yearValue) }) });
+  }
+  // Бюджет кросс-селла сгорает: ёмкость канала меньше денег
+  if (r.crossWasted > 0 && r.crossWasted > (d.crossSell ?? 0) * 0.15) {
+    out.push({ sev: 3, text: t('adviceCrossWaste', { wasted: money(r.crossWasted) }) });
+  }
+  // Касса: сколько месяцев осталось при текущем сжигании
+  const burn = r.oneOff > 0 ? r.profit : r.profit;
+  if (burn < 0) {
+    const months = Math.floor(state.cash / -burn);
+    if (months <= 6) out.push({ sev: 4, text: t('adviceRunway', { months, burn: money(-burn) }) });
+  }
+  // Размытый фокус: управляющая компания не выкупает штраф
+  const penalty = focusPenalty(state, d);
+  if (penalty > 0.06) {
+    out.push({ sev: 2, text: t('adviceFocus', { penalty: pct(penalty, 0) }) });
+  }
+  // Дожим за порогом терпения
+  if ((d.foodTake ?? 1) > CONFIG.foodTakeThreshold) {
+    out.push({ sev: 2, text: t('adviceTake') });
+  }
+  // Нога, которая покупает рост дороже, чем этот рост стоит
+  if (r.ecomOn && (r.ecomFullContribution ?? 0) < 0 && (r.ecomCapacity ?? 0) < 0.2) {
+    out.push({ sev: 2, text: t('adviceEcomThin') });
+  }
+  // Подписка стоит дороже, чем приносит, и не растёт
+  if (r.plusOn && (r.plusFullContribution ?? 0) < 0 && r.plusSubs < r.multiUsers * 0.25) {
+    out.push({ sev: 1, text: t('advicePlusThin') });
+  }
+  return out.sort((a, b) => b.sev - a.sev).slice(0, 3);
+}
+
+function adviceHtml() {
+  const fin = financeLevel(state, state.decisions);
+  if (fin < CONFIG.finance.adviceAt) return '';
+  const items = financeAdvice();
+  if (!items.length) return '';
+  return `<div class="hint-box" style="margin-bottom:12px">
+    <div><b>${t('adviceTitle')}</b></div>
+    ${items.map((i) => `<div>• ${i.text}</div>`).join('')}
+  </div>`;
+}
+
 function renderBudgetBar() {
   const box = el('budget-slot');
   if (!box) return;
@@ -480,7 +567,7 @@ function renderBudgetBar() {
       net: (net >= 0 ? '+' : '') + money(net),
       cls: net >= 0 ? 'pos' : 'neg',
     })}</div>
-  </div>`;
+  </div>${adviceHtml()}`;
 }
 
 // ----------------------------------------------------------------------------
@@ -1352,6 +1439,11 @@ function renderChart() {
 // ----------------------------------------------------------------------------
 function renderSopTab() {
   const sop = sumOfParts(state);
+  // Прозрачность оценки — работа финансовой команды. Без неё видно, СКОЛЬКО
+  // стоит каждая часть; с ней — ПОЧЕМУ столько: какой множитель к выручке
+  // дал рынок за этот темп роста и эту маржу.
+  const fin = financeLevel(state, state.decisions);
+  const openMultiple = fin >= CONFIG.finance.transparencyAt;
   const partName = (id) => t({
     food: 'sopPartFood', taxi: 'sopPartTaxi', ecom: 'sopPartEcom', plus: 'sopPartPlus',
   }[id] ?? 'sopPartFood');
@@ -1360,22 +1452,26 @@ function renderSopTab() {
     <td>${money(p.runRate)}</td>
     <td class="${p.growth >= 0 ? 'pos' : 'neg'}">${signedPct(p.growth, 0)}</td>
     <td class="${p.margin >= 0 ? 'pos' : 'neg'}">${pct(p.margin, 0)}</td>
+    ${openMultiple ? `<td>${p.zoo ? '—' : `×${(p.runRate > 0 ? p.value / p.runRate : 0).toFixed(1)}`}</td>` : ''}
     <td class="${p.value >= 0 ? 'pos' : 'neg'}">${money(p.value)}</td>
   </tr>`).join('');
 
   return `
     <p class="funding-note">${t('sopIntro')}</p>
     <table class="data">
-      <thead><tr><th>${t('sopColPart')}</th><th>${t('sopColRunRate')}</th><th>${t('sopColGrowth')}</th><th>${t('sopColMargin')}</th><th>${t('sopColValue')}</th></tr></thead>
+      <thead><tr><th>${t('sopColPart')}</th><th>${t('sopColRunRate')}</th><th>${t('sopColGrowth')}</th><th>${t('sopColMargin')}</th>${openMultiple ? `<th>${t('sopColMultiple')}</th>` : ''}<th>${t('sopColValue')}</th></tr></thead>
       <tbody>
         ${rows}
-        <tr class="sub"><td colspan="4">${t('sopPremium', { share: pct(sop.multiShare, 1) })}</td>
+        <tr class="sub"><td colspan="${openMultiple ? 5 : 4}">${t('sopPremium', { share: pct(sop.multiShare, 1) })}</td>
           <td class="pos">+${pct(sop.crossPremium, 0)}</td></tr>
-        <tr class="sub"><td colspan="4">${t('sopBonus')}</td>
+        <tr class="sub"><td colspan="${openMultiple ? 5 : 4}">${t('sopBonus')}</td>
           <td class="${sop.bonus >= 1 ? 'pos' : 'neg'}">×${sop.bonus.toFixed(2)}</td></tr>
-        <tr class="total"><td colspan="4">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
+        <tr class="total"><td colspan="${openMultiple ? 5 : 4}">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
       </tbody>
     </table>
+    ${openMultiple
+      ? `<p class="funding-note">${t('sopMultipleNote')}</p>`
+      : `<div class="hint-box" style="margin-top:8px">${t('sopMultipleLocked')}</div>`}
     ${sop.thirdAct ? `<div class="alert warn" style="margin-top:8px">${t('sopThirdAct')}</div>` : ''}
     <p class="funding-note" style="margin-top:10px">${t('sopNote')}</p>`;
 }
@@ -1417,6 +1513,8 @@ function renderPnlTab() {
         ${r.ecomOn ? line(t('pnlEcomMarketing'), -(d.ecomMarketing ?? 0), 'neg', true) : ''}
         ${r.licenseFee > 0 ? line(t('pnlLicense'), -r.licenseFee, 'neg', true) : ''}
         ${r.ticketsFee > 0 ? line(t('pnlTicketsFee'), -r.ticketsFee, 'neg', true) : ''}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -1639,7 +1737,7 @@ function recordsBlockHtml(s) {
 function showEndlessOver() {
   const e = endlessScore(state);
   const line = resultString({
-    tag: `${GAME_TAG}+`, version: APP_VERSION, seed: state.seed,
+    tag: gameTag(`${GAME_TAG}+`), version: APP_VERSION, seed: state.seed,
     score: Math.round(e.equityValue), turns: e.months,
   });
   modal(`<h2>🏙️ ${t('endlessOverTitle')}</h2>
@@ -1711,13 +1809,18 @@ function showGameOver() {
   }
 
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: gameTag(), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
   });
+  const diffNow = difficultyById(state.difficulty);
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
       ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+    <p class="funding-note">${t('gameOverDifficulty', {
+      level: tx(diffNow.label),
+      note: t(diffNow.ranked ? 'gameOverRanked' : 'gameOverUnranked'),
+    })}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -1771,8 +1874,10 @@ function showGameOver() {
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: gameTag(),
     line,
+    // Лёгкий уровень в мировую таблицу не идёт: смотреть можно, отправлять нечего
+    viewOnly: !rankedNow(),
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
     onSubmitted: () => { state.lbSent = true; save(); },
@@ -1787,6 +1892,7 @@ function showGameOver() {
 function showWelcome() {
   let seedWanted = '';
   let assetWanted = state.assetId;
+  let diffWanted = state.difficulty ?? 'normal';
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
 
@@ -1796,6 +1902,12 @@ function showWelcome() {
       <span>${t('vertAssetStats', {
         users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
       })} · ${tx(a.synergyNote)}</span>
+    </button>`).join('');
+
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}${dd.ranked ? '' : ' ·'}</b>
+      <span>${tx(dd.note)}</span>
     </button>`).join('');
 
   const legacyLine = LEGACY_GAMES.map((g) => {
@@ -1830,6 +1942,9 @@ function showWelcome() {
     <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
     <p class="funding-note">${t('welcomeAssetChoice')}</p>
     <div class="event-options">${assetCards}</div>
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <div class="hint-box" style="margin-top:8px">
       <b>${t('welcomeLegacy')}:</b> ${legacyLine}<br>
       ${t('welcomeLegacyNote')}
@@ -1854,9 +1969,10 @@ function showWelcome() {
       const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
       // Партия пересоздаётся, если поменяли сид или актив — или если это
       // свежая партия (ход ещё не сделан): наследие должно примениться
-      if (v !== state.seed || assetWanted !== state.assetId || state.month === 0) {
+      if (v !== state.seed || assetWanted !== state.assetId
+        || diffWanted !== state.difficulty || state.month === 0) {
         state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
         save();
         renderAll();
       }
@@ -1875,6 +1991,14 @@ function showWelcome() {
       });
     });
   });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = b.dataset.diff;
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
   el('modal-root').querySelector('#legacy-add')?.addEventListener('click', () => {
     const input = el('modal-root').querySelector('#legacy-line');
     const res = addResultLine(input?.value ?? '');
@@ -1890,7 +2014,7 @@ function showWelcome() {
   el('modal-root').querySelector('#legacy-reset')?.addEventListener('click', () => {
     if (!window.confirm(t('welcomeLegacyResetAsk'))) return;
     resetEcosystemProgress();
-    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
+    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
     save();
     renderAll();
     showWelcome();
@@ -1941,7 +2065,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: gameTag(), viewOnly: true,
   });
 }
 

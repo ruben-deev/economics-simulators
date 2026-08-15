@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS, assetById, verticalById,
+  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS, DIFFICULTIES,
+  assetById, verticalById, difficultyById,
 } from '../src/model/config.js';
 import {
   createInitialState, step, valuation, sumOfParts, fundingOffer, raise,
   legacyValuationFloor, enterEndless, endlessScore,
+  financeLevel, financeSaturation, miscRate, financeRoundMult,
   finalScore, explain, expansionOpen, uniqueUsers, focusPenalty, foodQuality,
   multiUsers, cinemaLicenseFee, ticketsPartnerFee, plusLaunchCost,
 } from '../src/model/engine.js';
@@ -665,14 +667,16 @@ test('дескриптор актива управляет ценой запус
 });
 
 test('пост-эндгейм: счёт фиксируется на финише, партия может продолжаться', () => {
-  const { state } = run(40, baseDecisions(), 'endless');
+  // Политика осмысленная, а не пустая: тест про фиксацию счёта, и партия
+  // должна дожить до финиша, а не проверять выживаемость безучастного игрока
+  const { state } = run(40, (s) => expansionDecisions(s, { finance: 3_000_000 }), 'endless');
   assert.equal(state.over, 'finished');
   assert.ok(state.scored, 'зачётный счёт зафиксирован');
   const frozen = state.scored.equityValue;
 
   const cont = enterEndless(state);
   assert.equal(cont.over, null, 'партия продолжается');
-  const res = step(cont, { decisions: baseDecisions() });
+  const res = step(cont, { decisions: baseDecisions({ finance: 3_000_000 }) });
   assert.equal(res.report.month, CONFIG.monthsTotal + 1, 'месяцы идут дальше');
   assert.equal(res.state.scored.equityValue, frozen, 'зачётный счёт не меняется');
 });
@@ -697,6 +701,9 @@ function fullDecisions(s, over = {}) {
     taxiMarketing: s.taxi.on ? 14_000_000 : 0,
     ecomOps: s.ecom.on ? 4_000_000 : 0,
     ecomMarketing: s.ecom.on ? 8_000_000 : 0,
+    // Разумная политика на зачётном уровне включает финансовую команду:
+    // замер даёт оптимум около 3 млн ₽/мес (см. docs/ecosystem/economics.md)
+    finance: 3_000_000,
     plusPrice: 299,
     ...over,
   });
@@ -998,6 +1005,7 @@ test('год конгломерата: свой акт, свои правила,
     ],
     crossSell: 4e6, mgmt: 10e6, foodOps: 5e6, foodMarketing: 2e6,
     taxiSupply: 9e6, taxiMarketing: 12e6, ecomOps: 2e6, ecomMarketing: 6e6,
+    ecomLogistics: 3e6, finance: 3e6,
   });
   while (!s.over) {
     if (s.month >= 2 && s.cash < 120e6) s = raise(s, CONFIG.fundingOptions[1]).state;
@@ -1029,4 +1037,70 @@ test('год конгломерата: свой акт, свои правила,
   assert.equal(typeof e.goalDone, 'boolean');
   // Рост считается от замороженного счёта, а не от нуля
   assert.ok(Math.abs(e.growth - (e.equityValue / ranked - 1)) < 1e-9);
+});
+
+// ----------------------------------------------------------------------------
+// Финансовая команда и уровни сложности
+// ----------------------------------------------------------------------------
+
+test('финансовая команда: сила растёт с бюджетом, а цена — с выручкой холдинга', () => {
+  const s = createInitialState('fin', 'delivery', {}, 'normal');
+  assert.equal(financeLevel(s, baseDecisions()), 0, 'без бюджета команды нет');
+  const mid = financeLevel(s, baseDecisions({ finance: financeSaturation(s) }));
+  assert.ok(Math.abs(mid - 0.5) < 1e-9, 'на насыщении ровно половина силы');
+  assert.ok(financeLevel(s, baseDecisions({ finance: 50_000_000 })) < 1, 'полной силы не купить');
+
+  // Цена команды считается долей выручки: у крупного холдинга она выше
+  const { state: grown } = warmFull('fin-grown', 20);
+  assert.ok(financeSaturation(grown) > financeSaturation(s),
+    'выросшему холдингу нужна более дорогая финансовая служба');
+
+  // Прочие расходы: слабая служба стоит молча, сильная режет строку
+  assert.ok(miscRate(s, baseDecisions()) > miscRate(s, baseDecisions({ finance: 10_000_000 })));
+  const r = step(s, { decisions: baseDecisions({ finance: 4_000_000 }) }).report;
+  assert.ok(Math.abs(r.miscCost - r.revenue * r.miscRate) < 1, 'строка считается от выручки');
+  assert.ok(r.miscCost > 0 && r.financeCost === 4_000_000, 'обе строки в P&L');
+});
+
+test('уровни сложности: одни механики, разная цена финансовой команды', () => {
+  const decisions = baseDecisions({ finance: 3_000_000 });
+  const level = {};
+  const misc = {};
+  for (const d of DIFFICULTIES) {
+    const s = createInitialState('diff', 'delivery', {}, d.id);
+    level[d.id] = financeLevel(s, decisions);
+    misc[d.id] = miscRate(s, decisions);
+    // Механики не подменяются: город, актив и рычаги те же
+    assert.equal(s.assetId, 'delivery');
+    assert.equal(s.difficulty, d.id);
+  }
+  assert.equal(level.easy, 1, 'на лёгком команда уже собрана');
+  assert.ok(level.normal > level.hard, 'за те же деньги на сложном покупается меньше');
+  assert.ok(misc.easy < misc.normal && misc.normal < misc.hard, 'прочие расходы растут со сложностью');
+
+  // Лёгкий уровень не стоит игроку ничего
+  const easy = createInitialState('diff', 'delivery', {}, 'easy');
+  const rEasy = step(easy, { decisions }).report;
+  assert.equal(rEasy.financeCost, 0, 'на лёгком команду содержит не игрок');
+  assert.equal(rEasy.financeLevel, 1);
+
+  // Ранжируются обычный и сложный, и разными таблицами
+  assert.equal(difficultyById('easy').ranked, false);
+  assert.equal(difficultyById('normal').ranked, true);
+  assert.equal(difficultyById('hard').ranked, true);
+  assert.notEqual(difficultyById('hard').tagSuffix, difficultyById('normal').tagSuffix);
+  assert.equal(difficultyById('чужое').id, 'normal', 'неизвестный уровень — зачётный');
+});
+
+test('финансовая команда улучшает условия раунда, но не счёт', () => {
+  const { state } = warmFull('fin-round', 14);
+  const weak = { ...state, decisions: { ...state.decisions, finance: 0 } };
+  const strong = { ...state, decisions: { ...state.decisions, finance: 15_000_000 } };
+  assert.ok(financeRoundMult(strong) > financeRoundMult(weak));
+  const offerWeak = fundingOffer(weak, CONFIG.fundingOptions[1]);
+  const offerStrong = fundingOffer(strong, CONFIG.fundingOptions[1]);
+  assert.ok(offerStrong.dilution < offerWeak.dilution,
+    'за те же деньги отдаёте меньшую долю');
+  // Оценку холдинга рынок считает сам — упаковка на неё не влияет
+  assert.equal(valuation(strong), valuation(weak));
 });

@@ -564,6 +564,69 @@ export const STRINGS = {
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
   pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+  pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
+  pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
+  sopColMultiple: { ru: 'Множитель', en: 'Multiple' },
+  sopMultipleNote: {
+    ru: 'Множитель к годовой выручке рынок даёт за темп роста и маржу: растущая прибыльная часть стоит несколько выручек, зрелая — около одной, убыточная не стоит ничего и вычитается как обязательство. Колонку показывает финансовая команда — без неё видно, сколько стоит часть, но не почему столько.',
+    en: 'The market applies a multiple to annual revenue based on growth and margin: a growing profitable part is worth several revenues, a mature one about one, a loss-making one is worth nothing and is subtracted as a liability. The column is supplied by your finance team — without one you see what a part is worth, but not why.',
+  },
+  sopMultipleLocked: {
+    ru: 'Как именно рынок превращает выручку и маржу в оценку, разбирает финансовая команда — сейчас она для этого слишком слаба.',
+    en: 'Exactly how the market turns revenue and margin into a valuation is your finance team’s job to explain — right now it is too weak for that.',
+  },
+  readoutFinance: {
+    ru: 'Финансовая команда: сила <b class="{cls}">{level}</b>. Прочие расходы — {misc} выручки, условия раунда лучше на {round}.',
+    en: 'Finance team: strength <b class="{cls}">{level}</b>. Miscellaneous costs run at {misc} of revenue; round terms improve by {round}.',
+  },
+  readoutFinanceFree: {
+    ru: 'На лёгком уровне команда уже собрана и вам ничего не стоит.',
+    en: 'On the easy level the team is already in place and costs you nothing.',
+  },
+  readoutFinanceHalf: {
+    ru: 'Половина силы стоит {half} в месяц — цена растёт вместе с выручкой холдинга.',
+    en: 'Half its strength costs {half} a month — the price grows with the holding’s revenue.',
+  },
+  adviceTitle: { ru: 'Разбор месяца от финансовой команды', en: 'The finance team’s read on the month' },
+  adviceCac: {
+    ru: 'Холодный клиент обходится в {cac}, а приносит около {value} за год. Канал не окупается — либо дешевле, либо меньше.',
+    en: 'A cold customer costs {cac} and brings about {value} a year. The channel does not pay for itself — make it cheaper or smaller.',
+  },
+  adviceCrossWaste: {
+    ru: 'Кросс-селл сжёг {wasted} впустую: денег больше, чем людей, готовых попробовать второй сервис в этом месяце.',
+    en: 'Cross-sell burned {wasted} for nothing: more money than people ready to try a second service this month.',
+  },
+  adviceRunway: {
+    ru: 'Кассы хватит примерно на {months} мес. при текущем сжигании {burn} в месяц. Раунд берут заранее, а не в последний месяц: слабый холдинг отдаёт больше доли.',
+    en: 'Cash lasts about {months} months at the current burn of {burn} a month. Rounds are raised early, not in the final month: a weak holding gives away more equity.',
+  },
+  adviceFocus: {
+    ru: 'Фокус размыт на {penalty}: исполнение проседает во всех сервисах сразу. Либо управляющая компания, либо на одну вертикаль меньше.',
+    en: 'Focus is diluted by {penalty}: execution sags across every service at once. Either a management company or one vertical fewer.',
+  },
+  adviceTake: {
+    ru: 'Монетизация за порогом терпения: деньги приходят сейчас, а уходящие клиенты уносят с собой будущий кросс-селл.',
+    en: 'Monetisation is past the tolerance threshold: the money comes now, and the leavers take your future cross-sell with them.',
+  },
+  adviceEcomThin: {
+    ru: 'Е-ком убыточен при почти нулевой мощности логистики: так эта нога не сходится никогда — либо мощность, либо закрывать.',
+    en: 'E-commerce is loss-making with almost no logistics capacity: that leg never adds up this way — either fund the capacity or close it.',
+  },
+  advicePlusThin: {
+    ru: 'Подписка стоит дороже, чем приносит, и охватывает мало кого: Plus окупается массовостью, а не ценой.',
+    en: 'The subscription costs more than it earns and reaches too few people: Plus pays off through scale, not price.',
+  },
+  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
+  welcomeDifficultyNote: {
+    ru: 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», объясняет вашу оценку и разбирает решения месяца.',
+    en: 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, explains your valuation and reads your monthly decisions.',
+  },
+  gameOverDifficulty: {
+    ru: 'Уровень: <b>{level}</b>. {note}',
+    en: 'Level: <b>{level}</b>. {note}',
+  },
+  gameOverRanked: { ru: 'Результат идёт в мировую таблицу этого уровня.', en: 'The result goes to this level’s world table.' },
+  gameOverUnranked: { ru: 'Тренировочный уровень: в мировую таблицу результат не идёт.', en: 'Training level: the result is not submitted to the world table.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },

@@ -194,7 +194,93 @@ export const CONFIG = {
     ticketsMonthly: 2_500_000,        // партнёрство с билетным сервисом
     ticketsArpuPerMulti: 25,          // событийная выручка на мульти-клиента, ₽/мес
   },
+
+  // --- Финансовая команда ---
+  // Единственный рычаг, который управляет не бизнесом, а тем, как бизнес
+  // считают и показывают. Слабая финансовая служба стоит денег молча:
+  // эквайринг по невыгодной ставке, комиссии, списания, штрафы, неразнесённая
+  // административка — всё это живёт строкой «прочие расходы» и не спрашивает
+  // разрешения. Сильная — режет эту строку, лучше упаковывает компанию к
+  // раунду и делает оценку читаемой.
+  finance: {
+    // Цена команды считается долей выручки, а не абсолютом: финансовая
+    // служба растёт вместе с компанией. Иначе рычаг живёт только у крупного
+    // холдинга — замер это и показал: у билетного актива при фиксированной
+    // цене команду не окупало ничто.
+    saturationShare: 0.05,   // выручки в месяц до «половины» силы
+    saturationFloor: 1_500_000,  // ниже этого команда не бывает даже у малыша
+    // 3% выручки — та величина, при которой строка ощутима, но не убивает
+    // дойную корову без единого решения: замер показал, что при 5% пассивная
+    // партия («ничего не делаю») уходит в банкротство, а это ломает саму
+    // предпосылку игры — вы начинаете с прибыльного насыщенного актива.
+    miscRateBase: 0.030,     // прочие расходы без финансовой службы, доля выручки
+    miscRateCut: 0.020,      // сколько снимает полная команда (остаётся 1.0%)
+    roundGain: 0.25,         // насколько лучше упакована компания к раунду
+    transparencyAt: 0.30,    // с этой силы видно, как собирается оценка
+    adviceAt: 0.55,          // с этой — команда разбирает решения месяца
+  },
 };
+
+// ============================================================================
+// Уровни сложности. Механики игры на всех уровнях одни и те же — меняется
+// только одно: сколько стоит финансовая команда и насколько быстро деньги
+// в неё превращаются в силу.
+//
+//   лёгкий  — команда уже есть и не стоит ничего: новичок получает
+//             читаемую оценку, разбор решений и низкие «прочие» даром;
+//   обычный — команду покупают, но она дешёвая: половина силы за 3.3 млн;
+//   сложный — та же команда стоит втрое дороже, и её приходится взвешивать
+//             против маркетинга, мощности и удержания.
+//
+// Ранжируются в мировой таблице обычный и сложный — разными таблицами.
+// Лёгкий тренировочный: бесплатная помощь несравнима с купленной.
+// ============================================================================
+export const DIFFICULTIES = [
+  {
+    id: 'easy',
+    label: { ru: 'Лёгкий', en: 'Easy' },
+    short: { ru: 'тренировка', en: 'training' },
+    financeFree: true,
+    saturationMult: 1,
+    miscMult: 0.8,
+    ranked: false,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовая команда уже собрана и не стоит ничего: оценка разложена по полкам, «прочие расходы» минимальны, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию. В мировую таблицу не идёт: бесплатная помощь несравнима с купленной.',
+      en: 'The finance team is already in place and costs nothing: the valuation is broken down, miscellaneous costs are minimal, and the team comments on your decisions. This shows you the game rather than its bookkeeping. Not submitted to the world table: free help is not comparable with bought help.',
+    },
+  },
+  {
+    id: 'normal',
+    label: { ru: 'Обычный', en: 'Normal' },
+    short: { ru: 'зачётный', en: 'ranked' },
+    financeFree: false,
+    saturationMult: 0.55,
+    miscMult: 1,
+    ranked: true,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовую команду нанимаете вы, но она недорогая: половина силы за 3.3 млн ₽ в месяц. Это зачётный уровень — мировая таблица считает его.',
+      en: 'You hire the finance team yourself, but it is cheap: half its strength for ₽3.3M a month. This is the ranked level — the world table counts it.',
+    },
+  },
+  {
+    id: 'hard',
+    label: { ru: 'Сложный', en: 'Hard' },
+    short: { ru: 'вызов', en: 'challenge' },
+    financeFree: false,
+    saturationMult: 2.2,
+    miscMult: 1.35,
+    ranked: true,
+    tagSuffix: '·сложный',
+    note: {
+      ru: 'Та же команда стоит вчетверо дороже: половина силы за 13 млн ₽ в месяц. Каждый рубль в финансы — это рубль, не ушедший в мощность, маркетинг и удержание. Своя таблица рекордов.',
+      en: 'The same team costs four times as much: half its strength for ₽13M a month. Every rouble spent on finance is a rouble not spent on capacity, marketing and retention. Its own record table.',
+    },
+  },
+];
+
+export const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
 
 // ============================================================================
 // Стартовые активы — «классы персонажа». Дескриптор сжимает победившую
@@ -249,7 +335,7 @@ export const START_ASSETS = [
     // билеты 3.4 млрд), и общая шкала объявляла бы отличную партию за билеты
     // «скромным итогом». Пороги — доли от оптимума актива: 80% / 45% / 15%.
     // worthy (обратные бонусы и секретная концовка) равен «крепкому» порогу.
-    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
+    grades: { excellent: 9.5e9, solid: 5.5e9, survived: 1.8e9, worthy: 5.5e9 },
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
     // Готовая инфраструктура удешевляет запуск родственной вертикали
     launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
@@ -279,7 +365,7 @@ export const START_ASSETS = [
     returnPool: 18_000,
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
-    grades: { excellent: 11e9, solid: 6e9, survived: 2e9, worthy: 6e9 },
+    grades: { excellent: 10e9, solid: 5.7e9, survived: 1.9e9, worthy: 5.7e9 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
@@ -487,6 +573,17 @@ export const LEVERS = [
     tip: {
       ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Сильная управляющая компания выкупает этот штраф. Пока вертикаль одна, она почти не нужна.',
       en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A strong management company buys that penalty back. With a single vertical you barely need it.',
+    },
+  },
+  {
+    key: 'finance',
+    group: 'holding',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '₽/mo' },
+    min: 0, max: 20_000_000, step: 500_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная режет эту строку, лучше упаковывает холдинг к раунду и объясняет, из чего собирается ваша оценка.',
+      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one cuts that line, packages the holding better for a round, and explains what your valuation is actually built from.',
     },
   },
   {
