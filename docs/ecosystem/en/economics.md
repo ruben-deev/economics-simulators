@@ -171,23 +171,45 @@ Measured after the fix (share of the final score, on tuned anchors):
 The zeros are not errors: your own content needs no cinema licence, your own
 ticketing needs no partnership.
 
-## Are the three starts equal?
+## Are the three starts equal — on every difficulty?
 
-Compare each finale with its own “solid” threshold under one policy
-(12 codes, medians):
+Absolute results differ severalfold by design: the assets differ in size.
+The comparison is each finale against its own "solid finale" threshold under
+one policy. Measured on 24 game codes, identical legacy for all, with the
+finance-team budget taken as the best of a grid for each asset × level pair:
 
-| Start | ×1 (solid finale) | ×1.5 | ×2 (ceiling) |
-|---|---|---|---|
-| NOVOYEDA (delivery) | 1.72× | 1.87× | 2.24× |
-| KINOREKA (streaming) | 1.48× | 1.59× | 1.66× |
-| BILETVILLE (ticketing) | 1.51× | 1.73× | 1.92× |
+| level | delivery | streaming | ticketing | spread |
+|---|---|---|---|---|
+| easy | 1.73× | 1.51× | 1.52× | 1.15× |
+| normal | 1.73× | 1.51× | 1.52× | 1.15× |
+| hard | 1.72× | 1.51× | 1.51× | 1.14× |
 
-The carry-over does not break the balance: the spread holds at 1.16–1.17×
-at ×1 and ×1.5, so all three starts get roughly the same relative boost. At
-the very ceiling delivery pulls ahead (1.35×), but it cannot get there: ×2
-for NOVOYEDA means ₽11bn against a polished anchor of 8.3. At realistically
-reachable levels (delivery ×1.5, streaming and ticketing ×2) the numbers are
-1.87 / 1.66 / 1.92 — a 1.16× spread, exactly as without any carry-over.
+It did not start out that way. Easy used to split the starts by **1.46×**:
+delivery reached 2.38 of its bar, ticketing only 1.63. The channel breakdown
+found the cause: easy's gift — a free finance team — drops other costs to the
+floor (0.5% of revenue instead of 3%), and that saving runs through the
+valuation multiple. For delivery ₽0.13bn of saved costs became ₽3.3bn of
+score (a ×25 lever); for ticketing ₽0.06bn became ₽0.12bn (×2), because the
+small start is also diluted twice as hard (38% equity against 78%), so any
+gain in contribution is divided by a smaller stake.
+
+Two attempts to fix the difficulty itself failed and are recorded so nobody
+repeats them: weakening the free team (strength 1 → 0.35) moved the spread
+only from 1.46× to 1.38×, and a discount on the price of money (round
+valuation +25%) moved it to 1.47×, i.e. not at all. The problem is not the
+size of the gift but its nature: it inherently favours the larger start.
+
+So what was fixed is not the difficulty but the **verdict bar**: it now
+depends on the asset *and* the level (`gradeLevel` in the descriptor). The
+multipliers are measured: easy lifts delivery by 1.38, streaming by 1.34,
+ticketing by 1.07; hard lowers them by 0.97 / 0.92 / 0.99. A player on easy
+is judged against an easy bar — exactly as each level already has its own
+leaderboard.
+
+The remaining 1.15× is delivery's innate edge under this anchor policy; the
+asset thresholds were derived from each asset's own optimum rather than from
+one anchor, so forcing that number to 1.00 would tune the scale to a single
+way of playing.
 
 ## The mid-game crisis: an antitrust case
 

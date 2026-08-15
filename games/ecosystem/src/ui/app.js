@@ -5,10 +5,7 @@
 // tx() для двуязычных полей модели (активы, вертикали, рычаги, события).
 // ============================================================================
 
-import {
-  CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS,
-  assetById, verticalById,
-} from '../model/config.js';
+import { CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS, assetById, verticalById, gradesFor } from '../model/config.js';
 import {
   DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
 } from '../../../../shared/difficulty.js';
@@ -1726,7 +1723,7 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
-        : (s.equityValue >= assetById(state.assetId).grades.worthy && tripleCrown()
+        : (s.equityValue >= gradesFor(state.assetId, state.difficulty).worthy && tripleCrown()
           ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
@@ -1788,7 +1785,7 @@ function showGameOver() {
   // Шкала вердиктов своя у каждого стартового актива: замеренные оптимумы
   // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
   // «скромным итогом». Пороги лежат в дескрипторе актива.
-  const gr = assetById(state.assetId).grades;
+  const gr = gradesFor(state.assetId, state.difficulty);
   const grade = s.bankrupt ? t('gradeBankrupt')
     : s.equityValue > gr.excellent ? t('gradeExcellent')
     : s.equityValue > gr.solid ? t('gradeSolid')

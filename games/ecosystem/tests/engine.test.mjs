@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS,
-  assetById, verticalById,
+  CONFIG, DEFAULT_DECISIONS, START_ASSETS, VERTICALS, assetById, verticalById, gradesFor,
 } from '../src/model/config.js';
 import { DIFFICULTIES, difficultyById, taggedGame } from '../../../shared/difficulty.js';
 import {
@@ -1225,3 +1224,28 @@ function createRngLike() {
     return x / 2147483648;
   };
 }
+
+test('планка вердикта зависит и от актива, и от уровня сложности', () => {
+  // Уровень помогает активам неодинаково — это замерено (24 кода, одна
+  // политика): лёгкий поднимает доставку в 1.38 раза, а билеты только в
+  // 1.07. Если бы планка этого не учитывала, «отлично» на лёгком доставалось
+  // бы одному старту втрое чаще, чем другому, при одинаковой игре.
+  for (const id of ['delivery', 'streaming', 'tickets']) {
+    const normal = gradesFor(id, 'normal');
+    const easy = gradesFor(id, 'easy');
+    const hard = gradesFor(id, 'hard');
+    assert.deepEqual(normal, assetById(id).grades, 'обычный уровень — базовая шкала');
+    assert.ok(easy.solid > normal.solid, `на лёгком планка выше: ${id}`);
+    assert.ok(hard.solid <= normal.solid, `на сложном планка не выше: ${id}`);
+    // Все ступени двигаются одним множителем: шкала не перекашивается
+    const k = easy.solid / normal.solid;
+    for (const step of ['excellent', 'survived', 'worthy']) {
+      assert.ok(Math.abs(easy[step] / normal[step] - k) < 0.01, `ступень ${step} не отстаёт: ${id}`);
+    }
+  }
+  // Множитель у крупных стартов больше, чем у маленького: лёгкий уровень
+  // даёт им больше, и планка это признаёт
+  const kDelivery = gradesFor('delivery', 'easy').solid / gradesFor('delivery', 'normal').solid;
+  const kTickets = gradesFor('tickets', 'easy').solid / gradesFor('tickets', 'normal').solid;
+  assert.ok(kDelivery > kTickets, 'лёгкий помогает доставке сильнее, чем билетам');
+});

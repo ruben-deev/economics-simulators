@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.12.0" />
+  <meta name="app-version" content="1.13.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3205,6 +3205,11 @@ const START_ASSETS = [
     // «скромным итогом». Пороги — доли от оптимума актива: 80% / 45% / 15%.
     // worthy (обратные бонусы и секретная концовка) равен «крепкому» порогу.
     grades: { excellent: 9.5e9, solid: 5.5e9, survived: 1.8e9, worthy: 5.5e9 },
+    // Уровень сложности помогает активам неодинаково, и это замерено
+    // (24 кода, одна политика): лёгкий поднимает этот старт в 1.38 раза,
+    // сложный опускает в 0.97. Планка вердикта двигается вместе с ним —
+    // иначе на лёгком «отлично» доставалось бы одному старту втрое чаще.
+    gradeLevel: { easy: 1.38, hard: 0.97 },
     synergy: { taxi: 1.0, scooters: 1.1, ecom: 1.5, subscription: 0.9 },
     // Готовая инфраструктура удешевляет запуск родственной вертикали
     launchCostMult: { taxi: 1.0, scooters: 0.9, ecom: 0.6 },
@@ -3235,6 +3240,11 @@ const START_ASSETS = [
     reachableCap: 175_000,
     // Форма экосистемы другая: дешёвая синергия — подписка, а не логистика
     grades: { excellent: 11.2e9, solid: 6.4e9, survived: 2.1e9, worthy: 6.4e9 },
+    // Уровень сложности помогает активам неодинаково, и это замерено
+    // (24 кода, одна политика): лёгкий поднимает этот старт в 1.34 раза,
+    // сложный опускает в 0.92. Планка вердикта двигается вместе с ним —
+    // иначе на лёгком «отлично» доставалось бы одному старту втрое чаще.
+    gradeLevel: { easy: 1.34, hard: 0.92 },
     synergy: { taxi: 0.85, scooters: 0.9, ecom: 0.85, subscription: 1.5 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Привычка платить: Plus дешевле в запуске и конвертит лучше.
@@ -3264,6 +3274,11 @@ const START_ASSETS = [
     reachableCap: 125_000,
     startCash: 160_000_000,
     grades: { excellent: 2.7e9, solid: 1.5e9, survived: 0.5e9, worthy: 1.5e9 },
+    // Уровень сложности помогает активам неодинаково, и это замерено
+    // (24 кода, одна политика): лёгкий поднимает этот старт в 1.07 раза,
+    // сложный опускает в 0.99. Планка вердикта двигается вместе с ним —
+    // иначе на лёгком «отлично» доставалось бы одному старту втрое чаще.
+    gradeLevel: { easy: 1.07, hard: 0.99 },
     synergy: { taxi: 1.1, scooters: 1.0, ecom: 1.0, subscription: 0.9 },
     launchCostMult: { taxi: 1.0, scooters: 1.0, ecom: 1.0 },
     // Партнёрская сеть: афиши и кассы города — дешёвый канал привлечения,
@@ -3277,6 +3292,23 @@ const START_ASSETS = [
 ];
 
 const assetById = (id) => START_ASSETS.find((a) => a.id === id) ?? START_ASSETS[0];
+
+/**
+ * Шкала вердиктов для конкретной партии: своя у каждого актива и своя у
+ * каждого уровня сложности. Второе не косметика: замер показал, что лёгкий
+ * уровень поднимает крупные старты в 1.34–1.38 раза, а билетный — только в
+ * 1.07, потому что экономия на прочих расходах компаундится через
+ * мультипликатор оценки, а маленький старт вдобавок вдвое сильнее размыт.
+ * Без поправки на уровень «отлично» на лёгком доставалось бы неравномерно.
+ */
+function gradesFor(assetId, difficulty = 'normal') {
+  const asset = assetById(assetId);
+  const mult = asset.gradeLevel?.[difficulty] ?? 1;
+  if (mult === 1) return asset.grades;
+  return Object.fromEntries(
+    Object.entries(asset.grades).map(([key, value]) => [key, Math.round(value * mult)]),
+  );
+}
 
 // ============================================================================
 // Вертикали экспансии. В прототипе играбельно такси; самокаты и е-ком
@@ -7761,7 +7793,7 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
-        : (s.equityValue >= assetById(state.assetId).grades.worthy && tripleCrown()
+        : (s.equityValue >= gradesFor(state.assetId, state.difficulty).worthy && tripleCrown()
           ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
       turns: s.months,
@@ -7823,7 +7855,7 @@ function showGameOver() {
   // Шкала вердиктов своя у каждого стартового актива: замеренные оптимумы
   // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
   // «скромным итогом». Пороги лежат в дескрипторе актива.
-  const gr = assetById(state.assetId).grades;
+  const gr = gradesFor(state.assetId, state.difficulty);
   const grade = s.bankrupt ? t('gradeBankrupt')
     : s.equityValue > gr.excellent ? t('gradeExcellent')
     : s.equityValue > gr.solid ? t('gradeSolid')
