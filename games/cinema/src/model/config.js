@@ -371,7 +371,7 @@ export const GENRES = [
 export const LEVERS = [
   {
     key: 'finance',
-    group: 'money',
+    group: 'infra',
     label: { ru: 'Финансовая команда', en: 'Finance team' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
