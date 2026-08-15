@@ -124,6 +124,7 @@ export const STRINGS = {
   // --- карта экосистемы ---
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
+  mapFood: { ru: 'Еда', en: 'Food' },
   mapHub: { ru: 'Ядро', en: 'Core' },
   mapEcom: { ru: 'Торговля', en: 'Retail' },
   mapEcomOff: { ru: 'торговля не запущена', en: 'retail not launched' },
@@ -131,18 +132,20 @@ export const STRINGS = {
   mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
   mapTaxiOff: { ru: 'такси не запущено', en: 'taxi not launched' },
+  mapBoth: { ru: 'оба сервиса', en: 'both services' },
+  mapCross: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
+  mapCold: { ru: 'маркетинг', en: 'marketing' },
+  mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
   mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
   mapUnique: {
-    ru: 'Значок — {person} взрослых горожан. Ваших клиентов {unique} — {share} города.',
-    en: 'One figure is {person} adult residents. You have {unique} customers — {share} of the city.',
+    ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, золотое пересечение — люди в двух сервисах: за них инвестор и платит премию.',
+    en: 'Unique holding customers: {unique} — {share} of the city. The circles are service bases; the gold overlap is people on two services — the very thing the investor pays a premium for.',
   },
-  mapFlows: {
-    ru: 'Под зданиями — приток и отток за месяц.',
-    en: 'Under each building are the month’s inflow and outflow.',
+  mapCaption: {
+    ru: 'Подписи — потоки прошлого месяца: зелёное пришло по кросс-селлу, бирюзовое приведено маркетингом, синее — возврат и органика хаба, красное ушло.',
+    en: 'The labels are last month’s flows: green came via cross-sell, teal was brought in by marketing, blue is the hub’s win-back and organic inflow, red left.',
   },
-  mapMulti: { ru: 'два сервиса и больше: {n}', en: 'two services or more: {n}' },
-  mapOne: { ru: 'один сервис: {n}', en: 'one service: {n}' },
-  mapNotYours: { ru: 'не ваши', en: 'not yours' },
 
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
