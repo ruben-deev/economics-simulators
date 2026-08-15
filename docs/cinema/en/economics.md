@@ -547,7 +547,7 @@ first multiplier and leaves the second alone.
 **How it works.** Once per game, from month 6, you can shoot a mega-project
 together: you pay half the budget and hold a slot for seven months. At the
 premiere both services get the hours — the viewer's preference does not move.
-The ceiling does: every segment's `potential` grows by 14% for 18 months, then
+The ceiling does: every segment's `potential` grows by 5% for 18 months, then
 the bonus decays by 4 percentage points a month.
 
 **What you pay besides money.** It is his hit too: the rival's awareness jumps
@@ -555,24 +555,31 @@ the bonus decays by 4 percentage points a month.
 legitimises a weak partner. The bigger market then splits by the same
 preference — most of the growth goes to whoever the viewer was already choosing.
 
-**Measured** (8 game codes, medians, bankruptcy = 0; three anchors differing in
-how well you play):
+**Measured** (24 game codes, medians, bankruptcy = 0; three anchors differing
+in how well you play). Next to each median is how many of the twenty-four
+games the project actually improved: the spread here is wider than the effect,
+and without that counter the median misleads.
 
 | position | no project | launch at 6 | at 12 | at 20 |
 |---|---|---|---|---|
-| leading (a spendthrift game) | ₽11.63bn | +23.7% | +24.6% | +0.6% |
-| level (the best anchor) | ₽23.73bn | **−15.6%** | **+10.3%** | +2.5% |
-| trailing | ₽9.95bn | +5.0% | +3.1% | +3.5% |
+| leading (a spendthrift game) | ₽12.30bn | −8.0% (14/24) | +2.0% (15/24) | 0.0% (17/24) |
+| level (the best anchor) | ₽30.04bn | +9.5% (10/24) | **+14.7% (12/24)** | 0.0% (13/24) |
+| trailing | ₽10.25bn | +2.8% (15/24) | −4.4% (8/24) | +2.1% (7/24) |
 
-The decision has its hour. Too early and the slot and the money go out exactly
-when the base needs building — that costs 15% of the score; mid-game the same
-project is worth +10%; by month 20 the expansion window cannot pay back before
-the finale. And it never rescues a bad strategy: the spendthrift anchor rises
-to ₽14.5bn with it and still ends below the best anchor without it.
+Read it as: **this is a bet, not an upgrade.** A solid game mid-way gains most
+from it, a trailing one gains almost nothing, and by month 20 the expansion
+window cannot pay back before the finale. It pays off in about half the games,
+but the wins are larger than the losses — hence the positive median. It never
+rescues a bad strategy: the spendthrift anchor stays below the best anchor
+without it.
+
+The expansion was cut from 14% to 5% after re-checking on 24 codes: at 14% the
+best anchor gained +26…34% of median, which decides the game rather than being
+felt in it.
 
 **What the decomposition showed.** Switching parts off one at a time: without
-the market expansion the mechanic falls to zero and below (+13.3% → −2.9% at
-month 12) — so what works is the category growth, not the cheap co-financed
+the market expansion the best anchor's median falls from +15% to +7% at month
+12 and goes negative at month 6 — so what works is the category growth, not the cheap co-financed
 content (paying full price instead of half costs only 1–3 percentage points).
 The wartime truce was removed from the mechanic: measurement showed it is no
 gift — a rival who is not fighting on price quietly builds its catalogue, and

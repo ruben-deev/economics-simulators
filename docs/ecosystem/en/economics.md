@@ -97,11 +97,18 @@ a solid game.
 | Customers | the base and the pool of lapsed users | +12% base → **+10.3% of the score** |
 | Cash | the money you did not spend there | +18% treasury → +2.5% |
 | Valuation | your standing with investors (round terms and floor) | +15% / +30% → +3.3% |
-| All three currencies | | **+14.8% of the score** |
+| All three currencies | | **+12.4% of the score** (17 games out of 24 improved) |
 
-Measured over 8 game codes, one policy, bankruptcy = 0, medians compared
-(averages lie near bankruptcy — see below). At a ×1.5 finale the whole carry
-is worth +8.1%.
+Measured over 24 game codes, one policy, bankruptcy = 0, medians compared
+(averages lie near bankruptcy — see below). Next to the median is how many
+games the carry actually helped: with this much spread a median alone
+misleads. The first measurement used eight codes and gave +14.8% — the gap
+shows why eight is not enough.
+
+A side effect worth knowing: the carry raises the board's targets too (they
+scale with the carried base), so bankruptcies go up, not down — 7 games out
+of 24 against 3 with the flag alone. A bigger company takes bigger risks
+because bigger things are demanded of it.
 
 Customers are the strongest and the most non-linear channel: +6% of the base
 gives +2.5% of the score, +12% gives +10.3%, and +21% gives +33%. An extra
