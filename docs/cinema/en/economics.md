@@ -538,6 +538,49 @@ The season scales both sides: `winter 1.18`, `spring 1.00`, `autumn 1.06`, `summ
 
 ---
 
+## 6d. The joint mega-hit: the one decision that grows the market
+
+Everything else in this game is a split: inflow is «how many people will
+subscribe at all» × «which of the two gets them». A joint project hits the
+first multiplier and leaves the second alone.
+
+**How it works.** Once per game, from month 6, you can shoot a mega-project
+together: you pay half the budget and hold a slot for seven months. At the
+premiere both services get the hours — the viewer's preference does not move.
+The ceiling does: every segment's `potential` grows by 14% for 18 months, then
+the bonus decays by 4 percentage points a month.
+
+**What you pay besides money.** It is his hit too: the rival's awareness jumps
+(35% of the remaining headroom) plus premiere buzz, and a joint project
+legitimises a weak partner. The bigger market then splits by the same
+preference — most of the growth goes to whoever the viewer was already choosing.
+
+**Measured** (8 game codes, medians, bankruptcy = 0; three anchors differing in
+how well you play):
+
+| position | no project | launch at 6 | at 12 | at 20 |
+|---|---|---|---|---|
+| leading (a spendthrift game) | ₽11.63bn | +23.7% | +24.6% | +0.6% |
+| level (the best anchor) | ₽23.73bn | **−15.6%** | **+10.3%** | +2.5% |
+| trailing | ₽9.95bn | +5.0% | +3.1% | +3.5% |
+
+The decision has its hour. Too early and the slot and the money go out exactly
+when the base needs building — that costs 15% of the score; mid-game the same
+project is worth +10%; by month 20 the expansion window cannot pay back before
+the finale. And it never rescues a bad strategy: the spendthrift anchor rises
+to ₽14.5bn with it and still ends below the best anchor without it.
+
+**What the decomposition showed.** Switching parts off one at a time: without
+the market expansion the mechanic falls to zero and below (+13.3% → −2.9% at
+month 12) — so what works is the category growth, not the cheap co-financed
+content (paying full price instead of half costs only 1–3 percentage points).
+The wartime truce was removed from the mechanic: measurement showed it is no
+gift — a rival who is not fighting on price quietly builds its catalogue, and
+that is worse for the player, not better. A mechanic whose effect contradicts
+its description cannot stay.
+
+---
+
 ## 6a. Escalating resource costs
 
 The flywheel "more subscribers → more money → more content → more subscribers" cannot

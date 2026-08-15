@@ -14,7 +14,7 @@ import { SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz } from '.
 import { PARTNERS, partnerById, partnerTotals } from '../model/partners.js';
 import {
   createInitialState, step, explain, explainFactors, unitEconomics, valuation, fundingOffer, raise, clamp,
-  finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact,
+  finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact, marketLiftOf,
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
@@ -66,11 +66,15 @@ let pendingRelease = {};          // id готового проекта -> бю�
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
+// Совместный проект, предложенный в этом ходу: как и обычный заказ, он
+// уходит в модель на следующем ходе, а не мгновенно.
+let pendingJoint = null;
 let pendingPartner = null;        // 'accept' | 'decline'
 let bound = false;                // обработчики уже навешаны
 
 const clearActions = () => {
   pendingCommission = [];
+  pendingJoint = null;
   pendingRelease = {};
   pendingRaise = false;
   pendingCrisisChoice = null;
@@ -886,6 +890,45 @@ function projectCard(p, kind) {
   </div>`;
 }
 
+// Совместный мегахит с конкурентом: единственное решение в игре, где рынок
+// не делится, а растёт. Показываем не «доступно», а цену и обе стороны
+// сделки — иначе это выглядит бесплатным подарком, каким оно не является.
+function jointHtml() {
+  const C = CONFIG.coProduction;
+  const done = Boolean(state.coProduction);
+  const alive = state.rivalState?.alive;
+  const early = state.month < C.minMonth;
+  const slots = Math.round(state.decisions.studioSlots);
+  const busy = (state.slate ?? []).filter((p) => p.status === 'production').length
+    + pendingCommission.length >= slots;
+  const price = projectPrice(commissionDraft.genre, C.scale, talentIndexNow())
+    * C.costMult * C.yourShare;
+
+  let state_ = null;
+  if (done) {
+    state_ = state.coProduction.released
+      ? t('jointReleased', { lift: pct(marketLiftOf(state) - 1, 0) })
+      : t('jointInProduction');
+  } else if (!alive) state_ = t('jointNoRival');
+  else if (early) state_ = t('jointTooEarly', { month: C.minMonth });
+  else if (busy) state_ = t('jointNoSlots');
+
+  return `<div class="slate-section joint">
+    <div class="slate-label">${t('jointTitle')}</div>
+    <div class="funding-note">${t('jointWhat', {
+      share: pct(C.yourShare, 0), months: C.months, lift: pct(C.marketLift, 0),
+      window: C.liftMonths,
+    })}</div>
+    <div class="funding-note">${t('jointCost')}</div>
+    <div class="commission-foot">
+      <span>${state_ ?? t('jointPrice', { price: money(price), months: C.months })}</span>
+      ${state_ ? '' : `<button class="btn primary" id="btn-joint"
+        ${price <= state.cash ? '' : 'disabled'}>${
+        price <= state.cash ? t('jointStart') : t('slateNoCash')}</button>`}
+    </div>
+  </div>`;
+}
+
 function renderSlate() {
   const slate = state.slate ?? [];
   const producing = slate.filter((p) => p.status === 'production');
@@ -953,9 +996,17 @@ function renderSlate() {
       </div>
       <div class="funding-note">${t('slateFocusHint')}</div>
     </div>
+
+    ${jointHtml()}
   </div>`;
 
   const root = el('slate-slot');
+  root.querySelector('#btn-joint')?.addEventListener('click', () => {
+    pendingJoint = { genre: commissionDraft.genre };
+    toast(t('jointQueued'));
+    renderSlate();
+    renderTurn();
+  });
   root.querySelectorAll('[data-genre]').forEach((b) => b.addEventListener('click', () => {
     commissionDraft.genre = b.dataset.genre; renderSlate();
   }));
@@ -2245,6 +2296,7 @@ function nextMonth() {
     crisisChoice: pendingCrisisChoice,
     partnerAnswer: pendingPartner,
     commission: pendingCommission,
+    coProduce: pendingJoint,
     release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
     raisePrice: pendingRaise,
   }).state;

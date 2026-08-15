@@ -45,7 +45,7 @@ import {
   rollCrisis, crisisEffects, crisisById, resolutionById, resolutionCost,
 } from './crises.js';
 import {
-  SCALES, scaleById, projectPrice, projectMonths, commission, advanceProduction,
+  SCALES, scaleById, projectPrice, projectMonths, commission, coProduce, advanceProduction,
   releaseBuzz, projectAppeal, inProduction, readyToRelease, slotsUsed, resetProjectIds,
 } from './slate.js';
 import {
@@ -146,6 +146,13 @@ export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     installed: {},
     catalogLicensed: 900,  // стартовая библиотека, доставшаяся от прежнего владельца
     catalogOriginal: 0,
+    // Совместный проект с конкурентом: запускается один раз за партию.
+    // marketLiftUntil — до какого месяца потолок категории поднят, дальше
+    // эффект тает: зритель, которого привёл общий хит, никуда не исчезает
+    // мгновенно, но и держится не вечно.
+    coProduction: null,
+    marketLift: 0,
+    marketLiftUntil: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
     slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
@@ -238,6 +245,21 @@ export function weightedOriginals(originalsByGenre) {
  * Учитывает не только объём, но и то, для кого вы снимали: гора реалити
  * не удержит киноманов, сколько бы её ни было.
  */
+/**
+ * Потолок сегмента с учётом расширения категории. Совместный мегахит
+ * приводит в онлайн-кино тех, кто вообще не подписывался, — и приводит их
+ * обоим сервисам сразу. После окончания окна прибавка тает, а не исчезает:
+ * привычка смотреть остаётся дольше, чем идёт сериал.
+ */
+export function marketLiftOf(state) {
+  if (!state.marketLift) return 1;
+  const over = state.month - (state.marketLiftUntil ?? 0);
+  if (over <= 0) return 1 + state.marketLift;
+  return 1 + state.marketLift * Math.max(0, 1 - CONFIG.coProduction.liftDecay * over);
+}
+
+export const potentialOf = (segDef, state) => segDef.potential * marketLiftOf(state);
+
 export function exclusivePullOf(weightedHours, segDef, byGenre) {
   let relevant = weightedHours;
   if (byGenre) {
@@ -405,6 +427,19 @@ export function step(prevState, input = {}) {
     started.push({ id: project.id, genre: project.genre, scale: project.scale, segment: project.segment });
   }
 
+  // --- Совместный мегахит с конкурентом ---
+  // Договориться можно один раз за партию и только если конкурент жив:
+  // с мёртвым рынок не расширишь, а с воюющим не сядешь за стол.
+  const jointConf = CONFIG.coProduction;
+  let jointStarted = null;
+  if (input.coProduce && !state.coProduction && state.rivalState.alive
+    && month >= jointConf.minMonth && slotsUsed(state.slate) < slots) {
+    const project = coProduce(input.coProduce.genre ?? GENRES[0].id, talentIndex, jointConf);
+    state.slate.push(project);
+    state.coProduction = { id: project.id, startedMonth: month, released: false };
+    jointStarted = { id: project.id, genre: project.genre };
+  }
+
   // Ход производства. Кризис с уходом команды останавливает конвейер.
   const stall = crisisMods.pipelineStall ?? 0;
   const { spent: productionSpend, finished } = advanceProduction(state.slate, {
@@ -430,6 +465,21 @@ export function step(prevState, input = {}) {
     project.campaign = campaign;
     state.originalsByGenre[project.genre] = (state.originalsByGenre[project.genre] ?? 0) + project.hours;
     state.freshHours += project.hours;
+    if (project.joint) {
+      // Часы получают оба — предпочтение не сдвигается. Растёт категория:
+      // общий хит приводит тех, кто не подписывался ни на кого.
+      state.rivalState.catalogOriginal += project.hours;
+      // И это ЕГО хит тоже: про конкурента говорят столько же, сколько про
+      // вас. Совместный проект легитимизирует партнёра — тем сильнее, чем
+      // он был слабее. Это главная цена решения, и она не в деньгах.
+      state.rivalState.awareness = clamp(
+        state.rivalState.awareness
+        + (1 - state.rivalState.awareness) * CONFIG.coProduction.rivalAwareness, 0, 1);
+      state.rivalState.buzz = (state.rivalState.buzz ?? 0) + CONFIG.coProduction.rivalBuzz;
+      state.marketLift = CONFIG.coProduction.marketLift;
+      state.marketLiftUntil = month + CONFIG.coProduction.liftMonths;
+      if (state.coProduction) state.coProduction.released = true;
+    }
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
@@ -538,7 +588,7 @@ export function step(prevState, input = {}) {
   // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
   // наравне с розничными, иначе рынок начинает считаться дважды.
   const partnerBefore = partnerTotals(state.partners).subs;
-  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
+  const marketPotential = SEGMENTS.reduce((s, x) => s + potentialOf(x, state), 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
   // Повторять его каждый месяц нельзя: у людей есть память.
   const wantRaise = Boolean(input.raisePrice);
@@ -625,15 +675,16 @@ export function step(prevState, input = {}) {
     // Узнаваемость — накопительный запас. Маркетинг насыщается: чем глубже
     // проникновение, тем дороже обходится следующий зритель.
     const subsBefore = seg.premium + seg.ads;
-    const penetration = clamp(subsBefore / def.potential, 0, 1);
+    const segPotential = potentialOf(def, state);
+    const penetration = clamp(subsBefore / segPotential, 0, 1);
     const saturation = 1 / (1 + CONFIG.marketingSaturation * penetration * penetration);
-    const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
+    const shareOfMarket = segPotential / marketPotential;
     // Кампания под релиз считается маркетингом именно того сегмента,
     // под который снят проект: реклама сериала — это не реклама бренда.
     const targetedCampaign = premieres.reduce(
       (s, p) => s + (p.campaign ?? 0) * (p.segment === def.id ? 0.75 : p.segment ? 0.08 : 0.25), 0);
     const segMarketing = decisions.brandMarketing * shareOfMarket + targetedCampaign;
-    const spendPerViewer = segMarketing / def.potential;
+    const spendPerViewer = segMarketing / segPotential;
     const gain = clamp(
       0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55) * saturation,
       0, CONFIG.awarenessMaxGain);
@@ -645,8 +696,8 @@ export function step(prevState, input = {}) {
 
     // --- Рынок один на двоих ---
     const rivalSegSubs = riv.segments[def.id] ?? 0;
-    const partnerHere = partnerBefore * (def.potential / marketPotential);
-    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs - partnerHere);
+    const partnerHere = partnerBefore * (segPotential / marketPotential);
+    const untapped = Math.max(0, segPotential - subsBefore - rivalSegSubs - partnerHere);
 
     // Оба сервиса описываются одним и тем же набором характеристик, и оба
     // приводят зрителя по одной и той же формуле. Симметрия здесь принципиальна:
@@ -1211,6 +1262,9 @@ export function step(prevState, input = {}) {
     raiseApplied,
     raiseLost,
     annualCash,
+    jointStarted,
+    jointReleased: premieres.some((p) => state.slate.find((x) => x.id === p.id)?.joint),
+    marketLift: marketLiftOf(state) - 1,
     annualNew,
     annualExpired,
     annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
@@ -1267,7 +1321,7 @@ export function step(prevState, input = {}) {
       premium: p.seg.premium,
       ads: p.seg.ads,
       adShare: p.adShare,
-      penetration: p.subs / p.def.potential,
+      penetration: p.subs / potentialOf(p.def, state),
       awareness: p.seg.awareness,
       churnRate: p.churnRate,
       hours: p.hours,

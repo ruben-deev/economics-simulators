@@ -12,6 +12,7 @@ import { DIFFICULTIES } from '../../../shared/difficulty.js';
 import {
   SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz, projectAppeal,
 } from '../src/model/slate.js';
+import { marketLiftOf, potentialOf } from '../src/model/engine.js';
 import { annualShare, raiseShock, annualSubs } from '../src/model/pricing.js';
 import { PARTNERS, partnerById, rollPartnerOffer, partnerTotals } from '../src/model/partners.js';
 import {
@@ -1663,4 +1664,54 @@ test('уровни сложности: одни механики, разная �
   const easy = step(createInitialState('diff', 'easy'), { decisions: decide({ finance: 8_000_000 }), eventChoice: 0, ...NO_ACTIONS }).report;
   assert.equal(easy.financeCost, 0, 'на лёгком команду содержит не игрок');
   assert.equal(easy.financeLevel, 1);
+});
+
+test('совместный мегахит: рынок растёт обоим, договориться можно один раз', () => {
+  const decide = (over = {}) => ({ ...DEFAULT_DECISIONS, ...over });
+  // NO_ACTIONS ставим ПЕРВЫМ: он обнуляет заказы и релизы, и если положить
+  // его после, он затрёт то, что тест как раз и проверяет.
+  const propose = (st, genre = 'family') => step(st, {
+    ...NO_ACTIONS, decisions: decide({ studioSlots: 3 }), coProduce: { genre }, eventChoice: 0,
+  });
+
+  // До назначенного месяца договориться не с кем: слишком рано
+  let s = createInitialState('совместный');
+  const early = propose(s);
+  assert.equal(early.report.jointStarted, null, 'раньше срока проекта нет');
+
+  // Доводим партию до месяца, когда такое предложение возможно
+  s = createInitialState('совместный');
+  for (let i = 0; i < CONFIG.coProduction.minMonth; i++) {
+    s = step(s, { decisions: decide({ studioSlots: 3 }), eventChoice: 0, ...NO_ACTIONS }).state;
+  }
+  const started = propose(s);
+  assert.ok(started.report.jointStarted, 'предложение принято');
+  s = started.state;
+  assert.ok(s.coProduction, 'проект записан в состояние');
+  const project = s.slate.find((p) => p.joint);
+  assert.ok(project, 'совместный проект попал в конвейер');
+  assert.equal(project.status, 'production');
+
+  // Второй раз так не договориться
+  const again = propose(s);
+  assert.equal(again.report.jointStarted, null, 'совместный проект бывает один за партию');
+
+  // Доводим до премьеры: часы должны достаться обоим, рынок — вырасти
+  const rivalBefore = s.rivalState.catalogOriginal;
+  const potentialBefore = potentialOf(SEGMENTS[0], s);
+  for (let i = 0; i < CONFIG.coProduction.months + 3 && !s.over; i++) {
+    const ready = s.slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 0 }));
+    s = step(s, {
+      ...NO_ACTIONS, decisions: decide({ studioSlots: 3 }), release: ready, eventChoice: 0,
+    }).state;
+  }
+  assert.ok(s.coProduction.released, 'проект вышел');
+  assert.ok(s.rivalState.catalogOriginal > rivalBefore, 'часы достались и конкуренту');
+  assert.ok(marketLiftOf(s) > 1, 'рынок вырос');
+  assert.ok(potentialOf(SEGMENTS[0], s) > potentialBefore, 'и потолок сегмента вместе с ним');
+
+  // Прибавка не вечная: после окна она тает
+  const inWindow = marketLiftOf(s);
+  const later = { ...s, month: s.marketLiftUntil + 30 };
+  assert.ok(marketLiftOf(later) < inWindow, 'после окна расширение тает');
 });
