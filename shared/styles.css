@@ -845,3 +845,27 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .eco-map svg.map-v { max-width: 420px; }
 .eco-map .m-muted { fill: var(--muted); font-size: 11px; }
 .eco-map .m-num { font-weight: 700; }
+
+/* Карточки типов организаторов (БИЛЕТВИЛЬ): решение о канале продаж — это
+   не строка таблицы, а карточка с ценой, темпом и тем, что тип принесёт. */
+.org-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+.org-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+}
+.org-card.on { border-color: var(--accent); }
+.org-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.org-rows { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.org-rows > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.org-rows span { color: var(--muted); }
+.org-rows b { text-align: right; font-variant-numeric: tabular-nums; }
+.org-card .btn { margin-top: auto; }

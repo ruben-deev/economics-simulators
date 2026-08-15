@@ -254,6 +254,23 @@ export const STRINGS = {
   channelColMoney: { ru: 'Ваши деньги с билета', en: 'What a ticket earns you' },
   channelMoneyValue: { ru: '{market} ₽ с афиши', en: '₽{market} from listings' },
   channelMoneyWidget: { ru: '{widget} ₽ с виджета', en: '₽{widget} from the widget' },
+  orgCardGmv: { ru: 'Оборот за месяц', en: 'Turnover per month' },
+  orgCardMoney: { ru: 'С билета вам', en: 'You get per ticket' },
+  orgCardSplit: { ru: 'Куда уходят продажи', en: 'Where sales go' },
+  orgCardLost: { ru: 'Потерянный спрос', en: 'Demand lost' },
+  orgCardPrice: { ru: 'Переезд', en: 'Roll-out' },
+  orgCardPriceValue: { ru: '{per} на организатора · {eta}', en: '{per} per organiser · {eta}' },
+  orgCardPriceOff: { ru: 'не подключаем', en: 'not rolling out' },
+  orgCardEta: { ru: 'все переедут за {n} мес', en: 'all move over in {n} mo' },
+  orgCardEtaNever: { ru: 'при этом бюджете не переедут', en: 'at this budget they will not move' },
+  channelOnboardSplit: {
+    ru: 'бюджет переезда делится на {types} типа: {per} на организатора',
+    en: 'the roll-out budget is split across {types} types: {per} per organiser',
+  },
+  channelOnboardNone: {
+    ru: 'бюджет переезда сейчас никому не достаётся: тип не выбран',
+    en: 'the roll-out budget goes nowhere: no type selected',
+  },
   channelColMoneyNote: {
     ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свои 2.2% с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
     en: 'After acquiring. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',

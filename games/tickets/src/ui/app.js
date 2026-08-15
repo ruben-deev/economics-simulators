@@ -20,7 +20,7 @@ import {
   orgTotal, totalReach, platformLevel, productLevel,
 } from '../model/engine.js';
 import { seasonOf, hitById } from '../model/market.js';
-import { channelSplit } from '../model/channel.js';
+import { channelSplit, widgetAdoption, rivalHoldOf } from '../model/channel.js';
 import { rivalOrgTotal, rivalPlatformLevel, STANCES } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
@@ -987,12 +987,28 @@ function renderTurn() {
 }
 
 // ----------------------------------------------------------------------------
-// Каналы продаж — главная развилка этой игры
+// Каналы продаж — главная развилка этой игры.
+//
+// Это не список с галочками, а карточки решения: у каждого типа своя цена
+// подключения (бюджет переезда делится на всех, кого вы подключаете —
+// значит, каждый следующий тип замедляет остальные), свой темп переезда и
+// свой ответ на вопрос «что он вообще принесёт».
 // ----------------------------------------------------------------------------
 function renderChannels() {
   const d = state.decisions;
   const level = platformLevel(state);
-  const rows = ORGANIZERS.map((def) => {
+  const r = last();
+  const riv = state.rivalState;
+  const rivalP = rivalPlatformLevel(riv);
+  // Цена переезда: бюджет онбординга делится на всех организаторов
+  // подключаемых типов. Поэтому «подключить ещё один тип» — это решение с
+  // ценой, а не бесплатная галочка.
+  const wantedOrgs = ORGANIZERS
+    .filter((def) => d.platformFor?.[def.id])
+    .reduce((sum, def) => sum + (state.orgs[def.id] ?? 0), 0);
+  const spendPerOrg = wantedOrgs > 0 ? (d.onboarding ?? 0) / wantedOrgs : 0;
+
+  const cards = ORGANIZERS.map((def) => {
     const targeted = Boolean(d.platformFor?.[def.id]);
     const share = clamp(state.platformShare?.[def.id] ?? 0, 0, 1);
     const split = channelSplit(def, share, level);
@@ -1003,27 +1019,53 @@ function renderChannels() {
     const acquiring = def.avgPrice * CONFIG.acquiringRate;
     const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission) - acquiring;
     const perPlatform = def.avgPrice * d.platformRate - acquiring;
-    // «Нужен виджет 28%» — процент непонятно чего. Человеку нужна не шкала
-    // модели, а вывод: без виджета этот тип до вас не дойдёт или дойдёт.
     const need = def.platformNeed >= 1.3 ? 'bad' : def.platformNeed >= 0.5 ? 'warn' : '';
     const needWord = def.platformNeed >= 1.3 ? t('needHigh')
       : def.platformNeed >= 0.5 ? t('needMid') : t('needLow');
-    return `<tr>
-      <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
-        · <span class="${need}">${needWord}</span></div></td>
-      <td class="mono wide">${t('channelSplitValue', {
-        market: pct(split.market, 0), widget: pct(split.platform, 0),
-      })} · <span class="neg">${t('channelSplitLost', { lost: pct(split.lost, 0) })}</span></td>
-      <td class="mono wide">${t('channelMoneyValue', { market: num(perMarket) })} · <span
-        class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${t('channelMoneyWidget', { widget: num(perPlatform) })}</span></td>
-      <td class="mono">${share > 0.005
-        ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
-            moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
-            total: compact(state.orgs[def.id] ?? 0) })}</div>`
-        : (targeted ? t('channelQueued') : t('channelOff'))}</td>
-      <td class="wide"><button class="btn small ghost" data-platform="${def.id}">${
-        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
-    </tr>`;
+
+    // Оборот типа: прошлый месяц, а до первого отчёта — расчётный по
+    // дескриптору. Это и есть ответ «что он принесёт», а не абстрактный пул.
+    const row = r?.organizers?.find((o) => o.id === def.id);
+    const gmv = row ? (row.marketSold + row.platformSold) * def.avgPrice
+      : (state.orgs[def.id] ?? 0) * def.eventsPerMonth * def.seats * def.avgPrice * CONFIG.refFill;
+
+    // Темп переезда при ТЕКУЩЕМ бюджете: сколько месяцев до конца очереди.
+    // Считается тем же кодом, что и ход, — иначе карточка обещала бы своё.
+    const hold = rivalHoldOf(def, rivalP, riv?.orgs?.[def.id] ?? 0, state.orgs[def.id] ?? 0);
+    const pace = targeted
+      ? widgetAdoption(def, share, spendPerOrg, level, hold, d.platformRate) : 0;
+    const left = clamp(1 - hold - share, 0, 1);
+    const eta = pace > 0.004 ? Math.ceil(left / pace) : null;
+
+    const stateWord = share > 0.005
+      ? t('channelMoved', {
+        moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
+        total: compact(state.orgs[def.id] ?? 0),
+      })
+      : (targeted ? t('channelQueued') : t('channelOff'));
+
+    return `<div class="org-card${targeted ? ' on' : ''}">
+      <div class="org-head">
+        <b>${tx(def.name)}</b>
+        <span class="badge wrap ${share > 0.005 ? 'ok' : ''}">${stateWord}</span>
+      </div>
+      <div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
+        · <span class="${need}">${needWord}</span></div>
+      <div class="org-rows">
+        <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
+        <div><span>${t('orgCardMoney')}</span><b>${num(perMarket)} ₽ / <span
+          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)} ₽</span></b></div>
+        <div><span>${t('orgCardSplit')}</span><b>${t('channelSplitValue', {
+          market: pct(split.market, 0), widget: pct(split.platform, 0),
+        })}</b></div>
+        <div><span>${t('orgCardLost')}</span><b class="neg">${pct(split.lost, 0)}</b></div>
+        <div><span>${t('orgCardPrice')}</span><b>${targeted
+          ? t('orgCardPriceValue', { per: money(spendPerOrg), eta: eta ? t('orgCardEta', { n: eta }) : t('orgCardEtaNever') })
+          : t('orgCardPriceOff')}</b></div>
+      </div>
+      <button class="btn small ${targeted ? 'ghost' : ''}" data-platform="${def.id}">${
+        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button>
+    </div>`;
   }).join('');
 
   el('channel-slot').innerHTML = `<div class="panel">
@@ -1031,16 +1073,14 @@ function renderChannels() {
     <div class="funding-note" style="margin-bottom:8px">${t('channelCaption')}</div>
     ${level <= 0.02 ? `<div class="alert warn">${t('channelNoPlatform')}
       <a class="jump" data-jump="lever:platformDev">${t('jumpGo')}</a></div>` : ''}
-    <table class="data">
-      <thead><tr>
-        <th>${t('channelColType')}</th>
-        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
-        <th>${t('channelColState')}</th><th></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="org-cards">${cards}</div>
     <div class="funding-note" style="margin-top:8px">${t('channelColMoneyNote')}</div>
-    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}</div>
+    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}
+      · ${wantedOrgs > 0 ? t('channelOnboardSplit', {
+        types: ORGANIZERS.filter((def) => d.platformFor?.[def.id]).length,
+        per: money(spendPerOrg),
+      }) : t('channelOnboardNone')}
+      <a class="jump" data-jump="lever:onboarding">${t('jumpGo')}</a></div>
   </div>`;
 
   el('channel-slot').querySelectorAll('[data-platform]').forEach((b) => {
