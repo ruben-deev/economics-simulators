@@ -3348,6 +3348,21 @@ const ALGORITHMS = [
       label: { ru: 'Жёсткость проверок', en: 'Check strictness' },
       unit: { ru: '%', en: '%' },
       min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+      // Борьба с перекупщиками — это политика, а не ползунок «сделай лучше»:
+      // у неё есть внутренний оптимум. Замер (8 кодов партии, медианы, к
+      // «алгоритм не куплен»): 0% даёт +9.3%, 25% — +10.9%, 50% — +12.3%,
+      // 75% — +10.9%, 100% — +11.1%. Доверие при этом растёт монотонно
+      // (55% -> 72%), а итог — нет: строгая проверка отсекает и живых людей.
+      policy: [
+        { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
+          note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
+        { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
+          note: { ru: 'Дешёвая мера: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да. Живых людей почти не задевает.', en: 'The cheap measure: four tickets per person. It does not stop a professional, it does stop the casual scalper. Real buyers barely notice.' } },
+        { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
+          note: { ru: 'Лучший итог по замеру: перекупщика отсекаете, а очередь и телефон отпугивают немногих. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: you cut off the reseller while the queue and the phone check scare off few. Past this point every extra percent of strictness is bought with real refusals.' } },
+        { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
+          note: { ru: 'Доверие максимальное (72% против 55% без защиты), но итог ниже: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (72% against 55% with no protection), but the result is lower: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+      ],
     },
     what: {
       ru: 'Очередь, лимиты и проверки на старте продаж хита — чтобы билеты достались людям, а не перекупщикам.',
@@ -7694,6 +7709,15 @@ function renderSidesTab() {
     </table>`;
 }
 
+// Ползунок под политикой никуда не делся: между названными режимами есть
+// промежуточные значения, и подпись обязана объяснять то, где стоит ручка,
+// а не то, какую кнопку нажали в прошлый раз.
+function nearestMode(algo, value) {
+  const raw = value / (algo.param.scale ?? 1);
+  return algo.param.policy.reduce((best, m) => (
+    Math.abs(m.v - raw) < Math.abs(best.v - raw) ? m : best), algo.param.policy[0]);
+}
+
 function renderAlgosTab() {
   const quality = algoQuality(state);
   // Купленный, но ещё не внедрённый алгоритм обязан выглядеть купленным:
@@ -7725,6 +7749,13 @@ function renderAlgosTab() {
             <span class="lever-label">${tx(a.param.label)}</span>
             <span class="lever-value">${num(param / (a.param.scale ?? 1))} ${tx(a.param.unit)}</span>
           </div>
+          ${a.param.policy ? `
+            <div class="policy-seg" data-algo-policy="${a.key}">
+              ${a.param.policy.map((m) => `<button type="button" data-mode="${m.v}"${
+                nearestMode(a, param).v === m.v ? ' class="active"' : ''
+              }>${tx(m.label)}</button>`).join('')}
+            </div>
+            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : ''}
           <input type="range" data-param="${a.key}" min="${a.param.min}" max="${a.param.max}"
             step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />
         </div>` : ''}
@@ -7789,6 +7820,18 @@ function renderRightTab() {
       const key = b.dataset.cancelInstall;
       state.pendingInstall = (state.pendingInstall ?? []).filter((k) => k !== key);
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: false };
+      save();
+      renderRightTab();
+      renderTurn();
+    });
+  });
+  el('tab-content').querySelectorAll('[data-algo-policy] [data-mode]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const algo = algorithmByKey(b.closest('[data-algo-policy]').dataset.algoPolicy);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [algo.key]: Number(b.dataset.mode) * (algo.param.scale ?? 1),
+      };
       save();
       renderRightTab();
       renderTurn();

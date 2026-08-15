@@ -607,6 +607,21 @@ export const ALGORITHMS = [
       label: { ru: 'Жёсткость проверок', en: 'Check strictness' },
       unit: { ru: '%', en: '%' },
       min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+      // Борьба с перекупщиками — это политика, а не ползунок «сделай лучше»:
+      // у неё есть внутренний оптимум. Замер (8 кодов партии, медианы, к
+      // «алгоритм не куплен»): 0% даёт +9.3%, 25% — +10.9%, 50% — +12.3%,
+      // 75% — +10.9%, 100% — +11.1%. Доверие при этом растёт монотонно
+      // (55% -> 72%), а итог — нет: строгая проверка отсекает и живых людей.
+      policy: [
+        { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
+          note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
+        { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
+          note: { ru: 'Дешёвая мера: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да. Живых людей почти не задевает.', en: 'The cheap measure: four tickets per person. It does not stop a professional, it does stop the casual scalper. Real buyers barely notice.' } },
+        { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
+          note: { ru: 'Лучший итог по замеру: перекупщика отсекаете, а очередь и телефон отпугивают немногих. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: you cut off the reseller while the queue and the phone check scare off few. Past this point every extra percent of strictness is bought with real refusals.' } },
+        { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
+          note: { ru: 'Доверие максимальное (72% против 55% без защиты), но итог ниже: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (72% against 55% with no protection), but the result is lower: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+      ],
     },
     what: {
       ru: 'Очередь, лимиты и проверки на старте продаж хита — чтобы билеты достались людям, а не перекупщикам.',

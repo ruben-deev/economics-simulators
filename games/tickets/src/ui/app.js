@@ -1484,6 +1484,15 @@ function renderSidesTab() {
     </table>`;
 }
 
+// Ползунок под политикой никуда не делся: между названными режимами есть
+// промежуточные значения, и подпись обязана объяснять то, где стоит ручка,
+// а не то, какую кнопку нажали в прошлый раз.
+function nearestMode(algo, value) {
+  const raw = value / (algo.param.scale ?? 1);
+  return algo.param.policy.reduce((best, m) => (
+    Math.abs(m.v - raw) < Math.abs(best.v - raw) ? m : best), algo.param.policy[0]);
+}
+
 function renderAlgosTab() {
   const quality = algoQuality(state);
   // Купленный, но ещё не внедрённый алгоритм обязан выглядеть купленным:
@@ -1515,6 +1524,13 @@ function renderAlgosTab() {
             <span class="lever-label">${tx(a.param.label)}</span>
             <span class="lever-value">${num(param / (a.param.scale ?? 1))} ${tx(a.param.unit)}</span>
           </div>
+          ${a.param.policy ? `
+            <div class="policy-seg" data-algo-policy="${a.key}">
+              ${a.param.policy.map((m) => `<button type="button" data-mode="${m.v}"${
+                nearestMode(a, param).v === m.v ? ' class="active"' : ''
+              }>${tx(m.label)}</button>`).join('')}
+            </div>
+            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : ''}
           <input type="range" data-param="${a.key}" min="${a.param.min}" max="${a.param.max}"
             step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />
         </div>` : ''}
@@ -1579,6 +1595,18 @@ function renderRightTab() {
       const key = b.dataset.cancelInstall;
       state.pendingInstall = (state.pendingInstall ?? []).filter((k) => k !== key);
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: false };
+      save();
+      renderRightTab();
+      renderTurn();
+    });
+  });
+  el('tab-content').querySelectorAll('[data-algo-policy] [data-mode]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const algo = algorithmByKey(b.closest('[data-algo-policy]').dataset.algoPolicy);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [algo.key]: Number(b.dataset.mode) * (algo.param.scale ?? 1),
+      };
       save();
       renderRightTab();
       renderTurn();
