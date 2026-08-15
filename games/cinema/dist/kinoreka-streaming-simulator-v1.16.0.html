@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.15.0" />
+  <meta name="app-version" content="1.16.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1008,6 +1008,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -1058,7 +1069,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -1149,21 +1162,21 @@ const STRINGS = {
   jumpGo: { ru: 'перейти →', en: 'go there →' },
   alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
   panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
-  partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} ₽ против {retail} ₽ в рознице', en: 'wholesale is {share} of the base · ARPU ₽{wholesale} against ₽{retail} retail' },
+  partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} против {retail} в рознице', en: 'wholesale is {share} of the base · ARPU {wholesale} against {retail} retail' },
   partnerMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
-  partnerDealMeta: { ru: '{subs} подписчиков · {arpu} ₽ с человека ({share} от прайса)', en: '{subs} subscribers · ₽{arpu} each ({share} of list price)' },
-  partnerLockedRate: { ru: 'Ставка зафиксирована при подписании: {signed} ₽ при текущем прайсе {list} ₽. Повышение цены на этот контракт не действует.', en: 'The rate was fixed at signing: ₽{signed} against a current list price of ₽{list}. A price rise does not apply to this contract.' },
+  partnerDealMeta: { ru: '{subs} подписчиков · {arpu} с человека ({share} от прайса)', en: '{subs} subscribers · {arpu} each ({share} of list price)' },
+  partnerLockedRate: { ru: 'Ставка зафиксирована при подписании: {signed} при текущем прайсе {list}. Повышение цены на этот контракт не действует.', en: 'The rate was fixed at signing: {signed} against a current list price of {list}. A price rise does not apply to this contract.' },
   partnerEnding: { ru: 'Контракт кончается — эти люди уйдут разом, а не по одному.', en: 'The contract is ending — these people will leave all at once, not one by one.' },
   partnerTerm: { ru: 'контракт {months} мес.', en: '{months}-month contract' },
   partnerReach: { ru: 'приводит до {reach}/мес', en: 'brings up to {reach}/mo' },
-  partnerShareOf: { ru: 'вам {share} прайса = {arpu} ₽', en: 'you keep {share} of list = ₽{arpu}' },
+  partnerShareOf: { ru: 'вам {share} прайса = {arpu}', en: 'you keep {share} of list = {arpu}' },
   partnerHours: { ru: 'смотрят {value} от обычного', en: 'they watch {value} of normal' },
   partnerChurnMult: { ru: 'отток {value} от обычного', en: 'churn {value} of normal' },
   partnerSetup: { ru: 'подключение {fee} разово', en: 'setup {fee} one-off' },
   partnerMonthly: { ru: '{fee} в месяц', en: '{fee} a month' },
   partnerExclusive: { ru: 'эксклюзив: другие операторы будут закрыты', en: 'exclusive: other operators will be locked out' },
   partnerSign: { ru: 'Подписать контракт', en: 'Sign the contract' },
-  partnerSignDetail: { ru: 'До {subs} новых в месяц по {arpu} ₽ вместо {retail} ₽. Быстрый объём вместо выручки с человека.', en: 'Up to {subs} new a month at ₽{arpu} instead of ₽{retail}. Volume fast, revenue per head slow.' },
+  partnerSignDetail: { ru: 'До {subs} новых в месяц по {arpu} вместо {retail}. Быстрый объём вместо выручки с человека.', en: 'Up to {subs} new a month at {arpu} instead of {retail}. Volume fast, revenue per head slow.' },
   partnerDecline: { ru: 'Отказаться', en: 'Decline' },
   partnerDeclineDetail: { ru: 'Растём розницей: дороже и медленнее, зато это ваши подписчики и ваша цена.', en: 'Grow retail instead: slower and dearer, but they are your subscribers at your price.' },
   todoPartnerTitle: { ru: 'Предложение о партнёрстве: {name}', en: 'A partnership offer: {name}' },
@@ -1226,7 +1239,7 @@ const STRINGS = {
   todoStudioTitle: { ru: 'В производстве пусто', en: 'Nothing in production' },
   todoStudioText: { ru: 'Запустите проект сейчас, иначе следующие месяцы пройдут без единой премьеры — а отток идёт всё это время.', en: 'Commission something now, or the coming months will pass without a single premiere — while churn runs the whole time.' },
   todoPriceGapTitle: { ru: 'База платит на {gap} меньше прайса', en: 'The base pays {gap} below list price' },
-  todoPriceGapText: { ru: 'Новые подписываются по {list} ₽, действующие платят {paid} ₽. Перевести базу на прайс можно одним решением — но часть людей уйдёт именно из-за него.', en: 'New sign-ups pay ₽{list}, the existing base pays ₽{paid}. One decision moves them all onto list price — and some will leave precisely because of it.' },
+  todoPriceGapText: { ru: 'Новые подписываются по {list}, действующие платят {paid}. Перевести базу на прайс можно одним решением — но часть людей уйдёт именно из-за него.', en: 'New sign-ups pay {list}, the existing base pays {paid}. One decision moves them all onto list price — and some will leave precisely because of it.' },
   todoPriceGapCooldown: { ru: 'Повышать снова нельзя ещё {months} мес.: у людей есть память, и второе повышение подряд стоит гораздо дороже.', en: 'You cannot raise again for {months} months: people remember, and a second rise in a row costs far more.' },
   todoPriceGapDo: { ru: 'Перевести базу на прайс', en: 'Move the base to list price' },
   todoPriceGapOn: { ru: '✓ Переведём в этом месяце', en: '✓ Will move them this month' },
@@ -1268,8 +1281,8 @@ const STRINGS = {
   stanceGoneHint: { ru: 'Конкурент обанкротился. Его подписчики расходятся по рынку несколько месяцев — успейте их забрать.', en: 'The rival has gone bust. His subscribers disperse over a few months — get to them first.' },
 
   rivalTheirPrice: { ru: 'Его цена:', en: 'His price:' },
-  rivalPriceAbove: { ru: '(на {gap} ₽ дороже вас)', en: '({gap} ₽ above you)' },
-  rivalPriceBelow: { ru: '(на {gap} ₽ дешевле вас)', en: '({gap} ₽ below you)' },
+  rivalPriceAbove: { ru: '(на {gap} дороже вас)', en: '({gap} above you)' },
+  rivalPriceBelow: { ru: '(на {gap} дешевле вас)', en: '({gap} below you)' },
   rivalPriceSame: { ru: '(как у вас)', en: '(same as yours)' },
   rivalTheirCatalog: { ru: 'Его каталог:', en: 'His catalogue:' },
   rivalTheirOriginals: { ru: 'своего {hours}', en: '{hours} original' },
@@ -1443,7 +1456,7 @@ const STRINGS = {
   statArpu: { ru: 'ARPU', en: 'ARPU' },
   statArpuSub: { ru: 'вклад {value}', en: 'contribution {value}' },
   statTraffic: { ru: 'Трафик', en: 'Bandwidth' },
-  statTrafficSub: { ru: '{perHour} ₽ за час', en: '₽{perHour} per hour' },
+  statTrafficSub: { ru: '{perHour} за час', en: '{perHour} per hour' },
   statProfit: { ru: 'Прибыль', en: 'Profit' },
   statProfitSub: { ru: 'постоянные {value}', en: 'fixed costs {value}' },
   statCacLtv: { ru: 'CAC / LTV', en: 'CAC / LTV' },
@@ -1510,8 +1523,8 @@ const STRINGS = {
   seriesChurn: { ru: 'Отток, %', en: 'Churn, %' },
   chartUnit: { ru: 'Юнит', en: 'Unit' },
   chartUnitCaption: { ru: 'ARPU против вклада: разница между ними — трафик и поддержка. Чем больше смотрят, тем шире эта щель.', en: 'ARPU against contribution: the gap between them is bandwidth and support. The more people watch, the wider it gets.' },
-  seriesArpu: { ru: 'ARPU, ₽', en: 'ARPU, ₽' },
-  seriesCmPerSub: { ru: 'Вклад с подписчика, ₽', en: 'Contribution per subscriber, ₽' },
+  seriesArpu: { ru: 'ARPU, {cur}', en: 'ARPU, {cur}' },
+  seriesCmPerSub: { ru: 'Вклад с подписчика, {cur}', en: 'Contribution per subscriber, {cur}' },
   chartAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
   chartAlgosCaption: { ru: 'Качество алгоритмов = √(данные × команда). Данные копятся только от часов просмотра, поэтому кривая всегда отстаёт от роста базы.', en: 'Algorithm quality = √(data × team). Data only accumulates from watch hours, so the curve always lags behind the base.' },
   seriesQuality: { ru: 'Качество, %', en: 'Quality, %' },
@@ -1528,11 +1541,11 @@ const STRINGS = {
   // --- юнит-экономика ---
   unitIntro: { ru: 'Экономика одного подписчика в месяц при текущих настройках — пересчитывается мгновенно, до перехода к следующему месяцу.', en: 'The economics of one subscriber per month at your current settings — recalculated instantly, before you run the next month.' },
   unitColItem: { ru: 'Статья', en: 'Line' },
-  unitColPerSub: { ru: '₽ / подписчик', en: '₽ / subscriber' },
+  unitColPerSub: { ru: '{cur} / подписчик', en: '{cur} / subscriber' },
   unitSubscription: { ru: 'Подписка', en: 'Subscription' },
   unitAdvertising: { ru: 'Реклама', en: 'Advertising' },
   unitRevenue: { ru: 'ARPU (выручка с подписчика)', en: 'ARPU (revenue per subscriber)' },
-  unitCdn: { ru: 'Трафик ({hours} ч × {perHour} ₽)', en: 'Bandwidth ({hours} h × ₽{perHour})' },
+  unitCdn: { ru: 'Трафик ({hours} ч × {perHour})', en: 'Bandwidth ({hours} h × {perHour})' },
   unitSupport: { ru: 'Поддержка и биллинг', en: 'Support and billing' },
   unitContribution: { ru: 'Вклад с подписчика', en: 'Contribution per subscriber' },
   unitNote: { ru: 'Обратите внимание: контента в этой таблице нет. Он не переменный расход — он постоянный, и потому определяет не выгодность подписчика, а необходимый масштаб.', en: 'Note what is missing: content. It is not a variable cost but a fixed one, so it does not decide whether a subscriber is worth having — it decides what scale you need.' },
@@ -1588,7 +1601,7 @@ const STRINGS = {
   // --- алгоритмы (вкладка) ---
   algosTabQuality: { ru: 'Качество алгоритмов: <b>{quality}</b> (данные {data} × команда {team}).', en: 'Algorithm quality: <b>{quality}</b> (data {data} × team {team}).' },
   algosColName: { ru: 'Алгоритм', en: 'Algorithm' },
-  algosColProfit: { ru: '₽ / мес', en: '₽ / mo' },
+  algosColProfit: { ru: '{cur} / мес', en: '{cur} / mo' },
   algosColSubs: { ru: 'Подписчики', en: 'Subscribers' },
   algosColHours: { ru: 'Часы', en: 'Hours' },
   algosTotal: { ru: 'Итого от алгоритмов', en: 'Total from algorithms' },
@@ -3186,7 +3199,7 @@ const LEVERS = [
     key: 'finance',
     group: 'infra',
     label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: комиссии платёжных систем, списания, штрафы, неразнесённая административка — всё это уходит в «прочие расходы». Сильная режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
@@ -3197,7 +3210,7 @@ const LEVERS = [
     key: 'priceNew',
     group: 'money',
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 99, max: 999, step: 10, def: 399,
     // Режимы — имена решению, ползунок остаётся: кривая отклика цены острая
     // (замер: 449 -> 24.5, 499 -> 40.9, 549 -> 35.8 млрд), и дискретизация
@@ -3223,7 +3236,7 @@ const LEVERS = [
     key: 'priceAds',
     group: 'money',
     label: { ru: 'Цена с рекламой', en: 'Ad-tier price' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 499, step: 10, def: 149,
     tip: {
       ru: 'Дешёвый тариф приводит тех, кто иначе не заплатил бы вообще, и переманивает часть тех, кто заплатил бы полную цену. Это управление каннибализацией, а не «широкая линейка».',
@@ -3279,7 +3292,7 @@ const LEVERS = [
     key: 'licensing',
     group: 'growth',
     label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 500_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Каталог появляется сразу, но истекает 4.5% в месяц, лежит и у конкурента и почти не считается новинкой. Когда за права торгуетесь вы оба, они дорожают для обоих.',
@@ -3290,7 +3303,7 @@ const LEVERS = [
     key: 'brandMarketing',
     group: 'growth',
     label: { ru: 'Маркетинг бренда', en: 'Brand marketing' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 300_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
@@ -3335,7 +3348,7 @@ const LEVERS = [
     key: 'tech',
     group: 'infra',
     label: { ru: 'Технологии и платформа', en: 'Technology' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 120_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: дешевле час трафика и выше качество производимых проектов. Окупается не сразу и не сама.',
@@ -3346,7 +3359,7 @@ const LEVERS = [
     key: 'rnd',
     group: 'infra',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 90_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Команда без данных бесполезна ровно так же, как данные без команды: качество алгоритмов — среднее геометрическое того и другого.',
@@ -4788,8 +4801,8 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up (₽260M × talent index)' },
-        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: ₽260M early in the game, two or three times that by the end.' },
+        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up ($2.6M × talent index)' },
+        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: $2.6M early in the game, two or three times that by the end.' },
         effects: { oneOffCostTalent: 260_000_000, awarenessAdd: 0.03 },
       },
       {
@@ -4812,7 +4825,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights (₽500M)' },
+        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights ($5M)' },
         detail: { ru: 'Мощный приток и рост часов, но деньги ушли безвозвратно.', en: 'A strong inflow and more hours, but the money is gone for good.' },
         effects: { oneOffCost: 500_000_000, demandMult: 1.16, hoursMult: 1.08, awarenessAdd: 0.05 },
       },
@@ -4836,7 +4849,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale (₽80 off per subscriber)' },
+        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale ($0.80 off per subscriber)' },
         detail: { ru: 'Скидка достаётся и действующей базе: маленькой базе распродажа почти бесплатна, большой — очень дорога.', en: 'The discount reaches the existing base too: nearly free with a small base, very expensive with a large one.' },
         effects: { oneOffCostPerSub: 80, demandMult: 1.12, churnAdd: 0.01, valuationBonus: 0.005 },
       },
@@ -4860,7 +4873,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate (₽60 per subscriber)' },
+        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate ($0.60 per subscriber)' },
         detail: { ru: 'Компенсация каждому: цена растёт вместе с базой. Маленькому сервису честность почти ничего не стоит.', en: 'Compensation for everyone: the price grows with the base. For a small service honesty costs almost nothing.' },
         effects: { oneOffCostPerSub: 60, churnAdd: 0.006 },
       },
@@ -6377,6 +6390,14 @@ function finalScore(state) {
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -6384,30 +6405,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -7065,7 +7125,8 @@ const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
 
 function leverDisplay(l, raw) {
   if (MONEY_LEVERS.has(l.key)) return money(raw);
-  return `${num(raw)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 // Разрыв между прайсом и тем, что платит база, — постоянный элемент,
@@ -7089,9 +7150,9 @@ function renderPriceGap() {
 
   box.innerHTML = `<div class="gap-box ${wide ? 'wide' : ''}">
     <div class="gap-row">
-      <span>${t('gapList')}</span><b>${num(listPrice)} ₽</b>
+      <span>${t('gapList')}</span><b>${amount(listPrice)}</b>
       <span class="gap-arrow">→</span>
-      <span>${t('gapPaid')}</span><b class="${wide ? 'warn' : ''}">${num(paid)} ₽</b>
+      <span>${t('gapPaid')}</span><b class="${wide ? 'warn' : ''}">${amount(paid)}</b>
       <span class="gap-value ${wide ? (gap > 0 ? 'neg' : 'pos') : ''}">${
         Math.abs(gap) > 0.005 ? `${gap > 0 ? '−' : '+'}${pct(Math.abs(gap), 0)}` : t('gapNone')}</span>
     </div>
@@ -7141,8 +7202,8 @@ function renderOpsReadout() {
   if (money) {
     money.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${t('opsUnitCheck', {
-        arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
-        cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
+        arpu: `${amount(u.revenue)}`, cost: `${amount(u.variable)}`,
+        cm: `${amount(u.contribution)}`, cls: u.contribution >= 0 ? 'pos' : 'neg',
       })}</div>
       <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
     </div>`;
@@ -7190,11 +7251,11 @@ function renderPartners() {
         <span class="badge ${d.monthsLeft <= 2 ? 'warn' : ''}">${t('partnerMonthsLeft', { months: d.monthsLeft })}</span>
       </div>
       <div class="deal-meta">${t('partnerDealMeta', {
-        subs: compact(d.subs), arpu: num((d.price ?? price) * def.revenueShare),
+        subs: compact(d.subs), arpu: amount((d.price ?? price) * def.revenueShare),
         share: pct(def.revenueShare, 0),
       })}</div>
       ${(d.price ?? price) < price - 1
-        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: num(d.price), list: num(price) })}</div>` : ''}
+        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: amount(d.price), list: amount(price) })}</div>` : ''}
       ${d.monthsLeft <= 2 ? `<div class="deal-meta neg">${t('partnerEnding')}</div>` : ''}
     </div>`;
   };
@@ -7207,7 +7268,7 @@ function renderPartners() {
     <p>${tx(offer.text)}</p>
     <div class="offer-terms">
       <span>${t('partnerReach', { reach: compact(offer.reach) })}</span>
-      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: num(price * offer.revenueShare) })}</span>
+      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: amount(price * offer.revenueShare) })}</span>
       <span>${t('partnerHours', { value: pct(offer.hoursMult, 0) })}</span>
       <span>${t('partnerChurnMult', { value: pct(offer.churnMult, 0) })}</span>
       ${offer.setupFee ? `<span class="neg">${t('partnerSetup', { fee: money(offer.setupFee) })}</span>` : ''}
@@ -7218,7 +7279,7 @@ function renderPartners() {
       <button class="event-option ${pendingPartner === 'accept' ? 'chosen primary' : ''}" data-partner="accept">
         <span class="opt-label">${t('partnerSign')}</span>
         <span class="opt-detail">${t('partnerSignDetail', {
-          subs: compact(offer.reach), arpu: num(price * offer.revenueShare), retail: num(price) })}</span>
+          subs: compact(offer.reach), arpu: amount(price * offer.revenueShare), retail: amount(price) })}</span>
       </button>
       <button class="event-option ${pendingPartner === 'decline' ? 'chosen' : ''}" data-partner="decline">
         <span class="opt-label">${t('partnerDecline')}</span>
@@ -7232,7 +7293,7 @@ function renderPartners() {
     <div class="report-head">
       <h2 class="panel-title inline">${t('panelPartners')}</h2>
       ${r && r.partnerSubs > 0 ? `<span class="funding-note">${t('partnerSummary', {
-        share: pct(r.partnerShare, 0), wholesale: num(r.partnerArpu), retail: num(r.retailArpu),
+        share: pct(r.partnerShare, 0), wholesale: amount(r.partnerArpu), retail: amount(r.retailArpu),
       })}</span>` : ''}
     </div>
     ${deals.length ? `<div class="deals">${deals.map(dealRow).join('')}</div>` : ''}
@@ -7380,7 +7441,7 @@ function turnTodos() {
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
-        : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
+        : t('todoPriceGapText', { list: amount(state.decisions.priceNew), paid: amount(r.lockedPrice) }),
     });
   }
 
@@ -7775,9 +7836,9 @@ function renderRival() {
         <span class="rival-stance-hint">${dead ? t('stanceGoneHint') : t(`stance${stance.charAt(0).toUpperCase()}${stance.slice(1)}Hint`)}</span>
       </div>
       <div class="rival-facts">
-        <span>${t('rivalTheirPrice')} <b>${num(riv.price)} ₽</b>
+        <span>${t('rivalTheirPrice')} <b>${amount(riv.price)}</b>
           <span class="${priceGap > 0 ? 'pos' : priceGap < 0 ? 'neg' : ''}">
-            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: num(Math.abs(priceGap)) })}</span></span>
+            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: amount(Math.abs(priceGap)) })}</span></span>
         <span>${t('rivalTheirCatalog')} <b>${compact(riv.catalogLicensed + riv.catalogOriginal)} ${t('unitHours')}</b>
           (${t('rivalTheirOriginals', { hours: compact(riv.catalogOriginal) })})</span>
         <span>${t('rivalTheirFocus')} <b>${tx(genreById(riv.focus)?.name ?? '')}</b></span>
@@ -8099,7 +8160,7 @@ function buildAlerts(r) {
     alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) }), 'lever:annualDiscount']);
   }
   if (r.cmPerSub < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
+    alerts.push(['bad', t('alertNegativeCm', { value: `${amount(r.cmPerSub)}` })]);
   } else if (r.revenue > 0 && r.cdnCost / r.revenue > 0.30) {
     alerts.push(['warn', t('alertTrafficHeavy', {
       share: pct(r.cdnCost / r.revenue, 0), cost: money(r.cdnCost),
@@ -8108,7 +8169,7 @@ function buildAlerts(r) {
   }
   if (r.cmPerSub > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: `${num(r.cmPerSub)} ₽`, fixed: money(r.fixed), subs: compact(r.fixed / r.cmPerSub),
+      cm: `${amount(r.cmPerSub)}`, fixed: money(r.fixed), subs: compact(r.fixed / r.cmPerSub),
     })]);
   }
   if (runway < 5 && state.cash >= 0) {
@@ -8270,14 +8331,14 @@ function renderReport() {
         original: compact(r.catalogOriginal), share: pct(r.originalShare, 0) }))}
       ${stat(t('statFresh'), `×${r.freshness.toFixed(2)}`, t('statFreshSub', { depth: r.depth.toFixed(2) }))}
       ${stat(t('statChurn'), pct(r.churnRate, 1), t('statChurnSub', { hangover: r.hangover.toFixed(2) }))}
-      ${stat(t('statArpu'), `${num(r.arpu)} ₽`, t('statArpuSub', { value: `${num(r.cmPerSub)} ₽` }))}
-      ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: num(r.cdnPerHour, 2) }))}
+      ${stat(t('statArpu'), `${amount(r.arpu)}`, t('statArpuSub', { value: `${amount(r.cmPerSub)}` }))}
+      ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: amount(r.cdnPerHour, 2) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
       ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
         t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
-      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${num(r.lockedPrice)} ₽`,
+      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
         t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
         t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
@@ -8312,7 +8373,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -8320,7 +8381,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   catalog: {
@@ -8340,8 +8401,7 @@ const CHART_TABS = {
     ],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesArpu'), data: h.map((r) => r.arpu), color: PALETTE[1] },
       { label: t('seriesCmPerSub'), data: h.map((r) => r.cmPerSub), color: PALETTE[0] },
@@ -8399,7 +8459,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -8416,7 +8480,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
 
   return `
@@ -8426,11 +8490,11 @@ function renderUnitTab() {
       <tbody>
         ${row(t('unitSubscription'), u.subscription, 'pos', true)}
         ${row(t('unitAdvertising'), u.advertising, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td></tr>
-        ${row(t('unitCdn', { hours: num(u.hoursPerSub, 1), perHour: num(u.cdnPerHour, 2) }), -u.cdn, 'neg', true)}
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td></tr>
+        ${row(t('unitCdn', { hours: num(u.hoursPerSub, 1), perHour: amount(u.cdnPerHour, 2) }), -u.cdn, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     <p class="funding-note" style="margin-top:10px">${t('unitNote')}</p>
@@ -8439,10 +8503,10 @@ function renderUnitTab() {
       : u.contribution <= 0 ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitLifetime')}</td><td>${t('unitLifetimeValue', {
         value: (1 / Math.max(0.005, r.churnRate)).toFixed(1) })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}`;
@@ -8494,7 +8558,7 @@ function renderSegmentsTab() {
       <tbody>${r.segments.map((s) => `<tr>
         <td>${name(s)}</td><td>${compact(s.subs)}</td><td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
         <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}</td>
-        <td>${num(s.arpu)} ₽</td></tr>`).join('')}</tbody>
+        <td>${amount(s.arpu)}</td></tr>`).join('')}</tbody>
     </table>
     <table class="data" style="margin-top:10px">
       <thead><tr><th>${t('colSegment')}</th><th>${t('colPenetration')}</th><th>${t('colPriceFactor')}</th><th>${t('colAppeal')}</th><th>${t('colAdPenalty')}</th></tr></thead>
@@ -8755,7 +8819,7 @@ function showGameOver() {
     <p class="funding-note">${t('gradeScale', { a: money(32e9), b: money(16e9), c: money(8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
-      subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
+      subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>

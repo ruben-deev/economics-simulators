@@ -194,6 +194,7 @@
       legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
     } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
+    import { money } from './shared/format.js';
     import {
       DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
     } from './shared/difficulty.js';
@@ -215,8 +216,10 @@
         if (!node) continue;
         lbTop(taggedGame(game), 3).then((top) => {
           if (!top || !top.length) { node.textContent = ''; return; }
-          const fmt = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} ${ru ? 'млрд' : 'bn'}`
-            : `${Math.round(n / 1e6)} ${ru ? 'млн' : 'M'}`);
+          // Счёт хранится в рублях (одна шкала на обе версии сайта), а
+          // показывается в валюте языка — иначе финал игры и мировая
+          // таблица говорили бы разными деньгами про одно число.
+          const fmt = (n) => money(n);
           const rows = top.map((r, i) => `<li>${['🥇', '🥈', '🥉'][i]} ${
             String(r.name).replace(/[&<>]/g, '')} — ${fmt(r.score)}</li>`).join('');
           const mine = lbMine(taggedGame(game));

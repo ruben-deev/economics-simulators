@@ -15,7 +15,7 @@ import {
 } from '../model/engine.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
@@ -187,7 +187,7 @@ function renderKpis() {
       kpi(t('kpiOrders'), compact(r.orders), dOrders, cOrders),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiCm'), `${num(r.cmPerOrder)} ₽`,
+      kpi(t('kpiCm'), `${amount(r.cmPerOrder)}`,
         t('kpiTakeRate', { value: pct(r.netRevenue / Math.max(1, r.gmv)) }),
         r.cmPerOrder >= 0 ? 'up' : 'down'),
       kpi(t('kpiDelivery'), t('minutes', { value: num(r.avgDeliveryTime) }),
@@ -248,7 +248,7 @@ function leverDisplay(l, raw) {
   if (l.key === 'marketing' || l.key === 'sales' || l.key === 'tech' || l.key === 'rnd') return money(raw);
   if (unit === '%') return `${raw}%`;
   if (l.key === 'targetCouriers') return num(raw);
-  return `${num(raw)} ${unit}`;
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -323,7 +323,7 @@ function renderOpsReadout() {
       cls: ratio >= 1 ? 'pos' : 'neg', ratio: ratio.toFixed(2), hiring,
     })}</div>
     ${capacityLine}
-    ${batch > 0 ? `<div>${t('opsBatching', { pay: num(payEff) })}</div>` : ''}
+    ${batch > 0 ? `<div>${t('opsBatching', { pay: amount(payEff) })}</div>` : ''}
     ${(WEATHER[nextType]?.severity ?? 0) > 0
       ? `<div>${t('opsWeatherAhead', {
           weather: weatherName(nextType).toLowerCase(),
@@ -331,7 +331,7 @@ function renderOpsReadout() {
         })}</div>`
       : ''}
     ${ratio < CONFIG.courierHireThreshold
-      ? `<div class="neg">${t('opsMinPay', { pay: num(minPay) })}</div>` : ''}
+      ? `<div class="neg">${t('opsMinPay', { pay: amount(minPay) })}</div>` : ''}
   </div>`;
 }
 
@@ -408,8 +408,8 @@ function renderBoard() {
     text = t('goalOrders', { target: num(goal.target, 0) });
     now = num(p.value, 0);
   } else if (goal.type === 'unit') {
-    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
-    now = `${num(p.value, 0)} ₽`;
+    text = t('goalUnit', { target: amount(goal.target), floor: num(goal.ordersFloor, 0) });
+    now = `${amount(p.value)}`;
   } else if (goal.type === 'profit') {
     text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
     now = `${p.value} / ${goal.target}`;
@@ -634,7 +634,7 @@ function renderDistricts() {
           time: num(ds.deliveryTime), reach: pct(ds.customers / d.potential, 1),
         })
       : t('districtStatsIdle', {
-          potential: compact(d.potential), aov: num(aovOf(d)), km: d.distanceKm,
+          potential: compact(d.potential), aov: amount(aovOf(d)), km: d.distanceKm,
         });
     return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
       <div class="district-head">
@@ -814,15 +814,15 @@ function buildAlerts(r) {
     }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
-      util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
+      util: pct(r.utilization, 0), cost: amount(CONFIG.hqPerCourier),
     }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
       / (CONFIG.courierExpectedLoad * Math.max(1, r.perCourier)) / 10) * 10;
     alerts.push(['bad', t('alertNoApplicants', {
-      pay: num(r.decisions.courierPay), orders: num(r.perCourier),
-      market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
+      pay: amount(r.decisions.courierPay), orders: num(r.perCourier),
+      market: money(CONFIG.courierMarketWeeklyPay), minPay: amount(minPay),
     }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
@@ -831,10 +831,10 @@ function buildAlerts(r) {
     }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
+    alerts.push(['bad', t('alertNegativeCm', { value: amount(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
+      cm: amount(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
     }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
@@ -867,7 +867,7 @@ function buildAlerts(r) {
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
-      cost: money(r.weatherBonusCost), perOrder: num(r.weatherBonusPerOrder),
+      cost: money(r.weatherBonusCost), perOrder: amount(r.weatherBonusPerOrder),
     })]);
   }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
@@ -1004,10 +1004,10 @@ function renderReport() {
               demand: signedPct(r.weatherDemandMult - 1, 0),
               capacity: signedPct(r.weatherCapacityMult - 1, 0),
             }))}
-      ${stat(t('statCm'), `${num(r.cmPerOrder)} ₽`,
+      ${stat(t('statCm'), `${amount(r.cmPerOrder)}`,
         t('statCmSub', { value: pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders))) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.opex) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
@@ -1031,7 +1031,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.netRevenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1039,12 +1039,11 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('seriesCmPerOrder'), data: h.map((r) => r.cmPerOrder), color: PALETTE[0] }],
   },
   ops: {
@@ -1125,7 +1124,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -1144,7 +1147,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
 
   const breakEven = r && u.contribution > 0 ? r.opex / u.contribution : null;
 
@@ -1153,16 +1156,16 @@ function renderUnitTab() {
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerOrder')}</th><th>${t('unitColShare')}</th></tr></thead>
       <tbody>
-        <tr><td><b>${t('unitAov')}</b></td><td><b>${num(u.aov)} ₽</b></td><td>100%</td></tr>
+        <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
         ${row(t('unitCommission', { rate: pct(u.commission, 0) }), u.commissionRevenue, 'pos', true)}
         ${row(t('unitFee'), u.feeRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
         ${row(t('unitCourier'), -u.courier, 'neg', true)}
         ${row(t('unitPromo'), -u.promo, 'neg', true)}
         ${row(t('unitPayment'), -u.payment, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
       </tbody>
     </table>
@@ -1173,11 +1176,11 @@ function renderUnitTab() {
       ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitFrequency')}</td><td>${t('unitFrequencyValue', {
         value: (r.customers > 0 ? r.orders / r.customers : 0).toFixed(2),
       })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}
@@ -1543,7 +1546,7 @@ function showGameOver() {
     <p class="funding-note">${t('gradeScale', { a: money(10e9), b: money(5.5e9), c: money(2e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
-      orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
+      orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.11.0" />
+  <meta name="app-version" content="1.12.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1002,6 +1002,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -1052,7 +1063,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -1086,7 +1099,7 @@ const STRINGS = {
   kpiUnique: { ru: 'Клиенты холдинга', en: 'Holding customers' },
   kpiUniqueSub: { ru: 'уникальных людей', en: 'unique people' },
   kpiArpu: { ru: 'ARPU холдинга', en: 'Holding ARPU' },
-  kpiArpuSub: { ru: '₽ с клиента в месяц', en: '₽ per customer per month' },
+  kpiArpuSub: { ru: '{cur} с клиента в месяц', en: '{cur} per customer per month' },
   kpiProfit: { ru: 'Прибыль / мес', en: 'Profit / mo' },
   kpiProfitSub: { ru: 'вклад {value}', en: 'contribution {value}' },
   kpiMulti: { ru: 'Два и более сервисов', en: 'Two or more services' },
@@ -1210,8 +1223,8 @@ const STRINGS = {
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
   vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },
   vertAssetStats: {
-    ru: '{users} клиентов · ARPU {arpu} ₽/мес · маржа {margin}',
-    en: '{users} customers · ARPU ₽{arpu}/mo · margin {margin}',
+    ru: '{users} клиентов · ARPU {arpu}/мес · маржа {margin}',
+    en: '{users} customers · ARPU {arpu}/mo · margin {margin}',
   },
   vertLive: { ru: 'работает', en: 'running' },
   vertLiveStats: {
@@ -1237,7 +1250,7 @@ const STRINGS = {
     ru: 'Склейка экосистемы: подписчик пользуется всеми сервисами чаще и уходит реже. Выгоды стоят маржи — это покупка удержания. Дилемма Amazon Prime.',
     en: 'The ecosystem’s glue: a subscriber uses every service more and churns less. The perks cost margin — you are buying retention. The Amazon Prime dilemma.',
   },
-  plusStats: { ru: '{subs} подписчиков · {price} ₽/мес', en: '{subs} subscribers · ₽{price}/mo' },
+  plusStats: { ru: '{subs} подписчиков · {price}/мес', en: '{subs} subscribers · {price}/mo' },
   plusNeedsVerticals: { ru: 'нужна вторая вертикаль', en: 'needs a second vertical' },
   plusNeedsVerticalsToast: {
     ru: 'Подписке нужно, что склеивать: сначала запустите хотя бы одну вертикаль рядом с хабом.',
@@ -1554,7 +1567,7 @@ const STRINGS = {
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
   seriesContribution: { ru: 'Вклад', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
-  seriesArpu: { ru: 'ARPU, ₽/мес', en: 'ARPU, ₽/mo' },
+  seriesArpu: { ru: 'ARPU, {cur}/мес', en: 'ARPU, {cur}/mo' },
   seriesValueFood: { ru: 'Оценка еды', en: 'Food value' },
   seriesValueTaxi: { ru: 'Оценка такси', en: 'Taxi value' },
   seriesValueEcom: { ru: 'Оценка е-кома', en: 'E-com value' },
@@ -1888,8 +1901,8 @@ const STRINGS = {
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
-    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя и более сервисами {multi}.',
-    en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on two or more services.',
+    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
+    en: 'Final month: revenue {revenue}, ARPU {arpu}, {unique} customers, {multi} of them on two or more services.',
   },
   gameOverQuestions: {
     ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',
@@ -3433,7 +3446,7 @@ const LEVERS = [
     key: 'crossSell',
     group: 'holding',
     label: { ru: 'Кросс-селл между сервисами', en: 'Cross-sell between services' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 25_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Промо своих сервисов внутри своих же приложений: клиент доставки видит предложение такси. В разы дешевле холодного привлечения, но у канала есть ёмкость — и он не спасает мёртвый продукт: конверсия зависит от качества принимающей вертикали.',
@@ -3444,7 +3457,7 @@ const LEVERS = [
     key: 'mgmt',
     group: 'holding',
     label: { ru: 'Управляющая компания', en: 'Management company' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Сильная управляющая компания выкупает этот штраф. Пока вертикаль одна, она почти не нужна.',
@@ -3455,7 +3468,7 @@ const LEVERS = [
     key: 'finance',
     group: 'holding',
     label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 20_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная режет эту строку, лучше упаковывает холдинг к раунду и объясняет, из чего собирается ваша оценка.',
@@ -3491,7 +3504,7 @@ const LEVERS = [
     key: 'foodOps',
     group: 'food',
     label: { ru: 'Сервис и удержание', en: 'Service and retention' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 4_000_000,
     tip: {
       ru: 'Качество исполнения: скорость, споры, ассортимент. В насыщенном рынке удержание — единственный настоящий рост: вернуть нечем, не потерять — можно.',
@@ -3502,7 +3515,7 @@ const LEVERS = [
     key: 'foodMarketing',
     group: 'food',
     label: { ru: 'Возврат ушедших клиентов', en: 'Customer win-back' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Маркетинг насыщенного рынка: новых клиентов в городе нет, но ушедшие ещё помнят сервис. Пул возврата конечен и тает — заливать его деньгами бесполезно, это не рычаг роста, а ремонт удержания.',
@@ -3536,7 +3549,7 @@ const LEVERS = [
     key: 'taxiSupply',
     group: 'taxi',
     label: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 20_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Онбординг и бонусы водителям. Мало водителей — долгая подача и отток клиентов; много — водители простаивают, не зарабатывают и уходят сами. Мощность надо вести за спросом, а не впереди него.',
@@ -3547,7 +3560,7 @@ const LEVERS = [
     key: 'taxiMarketing',
     group: 'taxi',
     label: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 25_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Холодное привлечение на конкурентном рынке: дорого, но масштабируемо и приводит новых для холдинга людей — будущий пул кросс-селла в обе стороны. Сравнивайте цену клиента с кросс-селлом в отчёте.',
@@ -3558,7 +3571,7 @@ const LEVERS = [
     key: 'ecomOps',
     group: 'ecom',
     label: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
     tip: {
       ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
@@ -3588,7 +3601,7 @@ const LEVERS = [
     key: 'ecomLogistics',
     group: 'ecom',
     label: { ru: 'Мощность логистики', en: 'Logistics capacity' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Склады, машины, слоты доставки. Дорого и постоянно — зато привезли вовремя: корзина крупнее, отток ниже, база охотнее пробует посылки. У актива с собственными курьерами парк общий: мощность, ушедшая в посылки, снимается с пиков стартового сервиса.',
@@ -3599,7 +3612,7 @@ const LEVERS = [
     key: 'ecomMarketing',
     group: 'ecom',
     label: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 25_000_000, step: 500_000, def: 0,
     tip: {
       ru: 'Холодное привлечение против маркетплейсов: дорого. Главный канал е-кома — кросс-селл из вашей же базы: сравнивайте цену клиента в отчёте.',
@@ -3610,14 +3623,14 @@ const LEVERS = [
     key: 'plusPrice',
     group: 'holding',
     label: { ru: 'Цена «Новоград Plus»', en: 'Novograd Plus price' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 199, max: 399, step: 100, def: 299, scale: 1,
     policy: [
-      { v: 199, label: { ru: '199 ₽ — массовая', en: '₽199 — mass' },
+      { v: 199, label: { ru: '199 ₽ — массовая', en: '$1.99 — mass' },
         note: { ru: 'Подписка почти в убыток: выгоды стоят дороже цены. Ставка на массовость и удержание.', en: 'The subscription runs near a loss: perks cost more than the price. A bet on scale and retention.' } },
-      { v: 299, label: { ru: '299 ₽ — базовая', en: '₽299 — standard' },
+      { v: 299, label: { ru: '299 ₽ — базовая', en: '$2.99 — standard' },
         note: { ru: 'Выгоды примерно окупаются: подписка зарабатывает на частоте и удержании, а не на цене.', en: 'Perks roughly break even: the subscription earns through frequency and retention, not price.' } },
-      { v: 399, label: { ru: '399 ₽ — премиум', en: '₽399 — premium' },
+      { v: 399, label: { ru: '399 ₽ — премиум', en: '$3.99 — premium' },
         note: { ru: 'Подписка прибыльна сама по себе, но подписываются немногие — склейка растёт медленно.', en: 'Profitable on its own, but few subscribe — the glue grows slowly.' } },
     ],
     tip: {
@@ -3915,7 +3928,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить (3 000 ₽ на водителя)', en: 'Pay up (₽3,000 per driver)' },
+        label: { ru: 'Выплатить (3 000 ₽ на водителя)', en: 'Pay up ($30 per driver)' },
         detail: {
           ru: 'Цена растёт со штатом: тысяче водителей — три миллиона, пяти тысячам — пятнадцать.',
           en: 'The price scales with the fleet: three million for a thousand drivers, fifteen for five thousand.',
@@ -3945,7 +3958,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Лицензировать всех сейчас (2 500 ₽ на водителя)', en: 'License everyone now (₽2,500 per driver)' },
+        label: { ru: 'Лицензировать всех сейчас (2 500 ₽ на водителя)', en: 'License everyone now ($25 per driver)' },
         detail: {
           ru: 'Платите по сегодняшнему парку. Выгодно, если собираетесь расти.',
           en: 'You pay for today’s fleet. A good deal if you plan to grow.',
@@ -3977,10 +3990,10 @@ const EVENTS = [
       {
         // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
         // побеждало в 100% состояний — при дешёвом извинении это викторина.
-        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate (₽380 per customer)' },
+        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate ($3.80 per customer)' },
         detail: {
           ru: 'Плюс 20 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'Plus ₽20M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          en: 'Plus $200K for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
         effects: { oneOffCostPerUniqueUser: 380, oneOffCost: 20_000_000 },
       },
@@ -4043,7 +4056,7 @@ const EVENTS = [
         // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
         // защита базы должна стоить настолько дорого, чтобы дожатой или
         // маленькой базе иногда было правильнее переждать.
-        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo (₽220 per hub customer)' },
+        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo ($2.20 per hub customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
@@ -4073,7 +4086,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить промо (250 ₽ на клиента такси)', en: 'Flood promos (₽250 per taxi customer)' },
+        label: { ru: 'Залить промо (250 ₽ на клиента такси)', en: 'Flood promos ($2.50 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
@@ -4105,7 +4118,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign (₽340 per customer)' },
+        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign ($3.40 per customer)' },
         detail: {
           ru: 'Дорого по всей базе, но набег выдыхается вдвое быстрее и бьёт заметно слабее.',
           en: 'Expensive across the whole base, but the raid runs out of steam twice as fast and hits far softer.',
@@ -4165,7 +4178,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus (₽4,000 per driver)' },
+        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus ($40 per driver)' },
         detail: {
           ru: 'Цена по сегодняшнему парку. Водители остаются, и приток даже растёт.',
           en: 'Priced by today’s fleet. Drivers stay, and applications even pick up.',
@@ -4195,7 +4208,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender (₽110M)' },
+        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender ($1.1M)' },
         detail: {
           ru: 'Разово дорого, зато каждый клиент такси ездит чаще — до конца партии.',
           en: 'A steep one-off — but every taxi customer rides more often, for the rest of the game.',
@@ -4225,7 +4238,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card (₽25M)' },
+        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card ($250K)' },
         detail: {
           ru: 'Интеграция и маркетинг запуска. Кросс-селл дешевеет на 10%, а круг готовых попробовать второй сервис немного расширяется — до конца партии.',
           en: 'Integration and launch marketing. Cross-sell gets 10% cheaper and the circle willing to try a second service grows a little — for the rest of the game.',
@@ -4265,7 +4278,7 @@ const EVENTS = [
         label: { ru: 'Отделить логистику', en: 'Split off logistics' },
         detail: {
           ru: 'Доставка становится отдельной компанией и возит всем по рынку. Дело закрыто сразу, разово — 60 ₽ на клиента холдинга за реорганизацию. Цена в другом: е-ком навсегда теряет часть маржи, свою логистику он теперь покупает как все.',
-          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off ₽60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
+          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off $0.60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
         },
         // Разделение — это ещё и разовая реорганизация: юристы, перевод
         // договоров, новые контуры. Цена растёт с размером холдинга, поэтому
@@ -4281,7 +4294,7 @@ const EVENTS = [
         effects: { plusChurnAdd: 0.05, plusConvMult: 0.85, ecoReliefCut: 0.12 },
       },
       {
-        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate (₽10M/mo for 6 months)' },
+        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate ($100K/mo for 6 months)' },
         detail: {
           ru: 'Структура холдинга остаётся как есть. Полгода юристов и внимания прессы, а единый аккаунт до конца партии остаётся под надзором: согласия собираются строже, и ёмкость кросс-селла ниже.',
           en: 'The holding’s structure stays as it is. Six months of lawyers and press attention — and the unified account stays under supervision to the end: consent is collected more strictly and cross-sell capacity is lower.',
@@ -4375,7 +4388,7 @@ const VANITY_EVENTS = [
         label: { ru: 'Купить имя стадиона', en: 'Buy the naming rights' },
         detail: {
           ru: 'Разово 520 ₽ на каждого клиента холдинга. Измеримая отдача — внимание одного месяца: кросс-селл в этом месяце сработает на 12% лучше. Дальше имя просто висит.',
-          en: 'A one-off ₽520 per holding customer. The measurable return is one month of attention: cross-sell works 12% better this month. After that the name just hangs there.',
+          en: 'A one-off $5.20 per holding customer. The measurable return is one month of attention: cross-sell works 12% better this month. After that the name just hangs there.',
         },
         effects: { oneOffCostPerUniqueUser: 520, crossSellMult: 1.12 },
       },
@@ -4395,7 +4408,7 @@ const VANITY_EVENTS = [
         label: { ru: 'Заказать ребрендинг', en: 'Commission the rebrand' },
         detail: {
           ru: 'Разово 400 ₽ на каждого клиента холдинга: сам проект, перекраска приложений, вывесок и машин. Измеримая отдача — месяц свежести: отток в этом месяце ниже на 0.4 п.п.',
-          en: 'A one-off ₽400 per holding customer: the project itself plus repainting the apps, signage and vehicles. The measurable return is a month of novelty: churn is 0.4pp lower this month.',
+          en: 'A one-off $4 per holding customer: the project itself plus repainting the apps, signage and vehicles. The measurable return is a month of novelty: churn is 0.4pp lower this month.',
         },
         effects: { oneOffCostPerUniqueUser: 400, foodChurnAdd: -0.004, taxiChurnAdd: -0.004 },
       },
@@ -4415,7 +4428,7 @@ const VANITY_EVENTS = [
         label: { ru: 'Провести форум', en: 'Hold the forum' },
         detail: {
           ru: 'Разово 320 ₽ на каждого клиента холдинга: площадка, продакшн, гости. Измеримая отдача — месяц публикаций: спрос стартового сервиса в этом месяце выше на 2%.',
-          en: 'A one-off ₽320 per holding customer: venue, production, guests. The measurable return is a month of coverage: demand for the starting service is 2% higher this month.',
+          en: 'A one-off $3.20 per holding customer: venue, production, guests. The measurable return is a month of coverage: demand for the starting service is 2% higher this month.',
         },
         effects: { oneOffCostPerUniqueUser: 320, foodDemandMult: 1.02 },
       },
@@ -5730,6 +5743,14 @@ function endlessScore(state) {
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -5737,30 +5758,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -6176,7 +6236,7 @@ function renderKpis() {
     const [dA, cA] = delta(r.arpuHolding, p?.arpuHolding);
     parts.push(
       kpi(t('kpiUnique'), compact(r.uniqueUsers), dU || t('kpiUniqueSub'), cU),
-      kpi(t('kpiArpu'), `${num(r.arpuHolding)} ₽`, dA || t('kpiArpuSub'), cA),
+      kpi(t('kpiArpu'), `${amount(r.arpuHolding)}`, dA || t('kpiArpuSub'), cA),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
       kpi(t('kpiMulti'), pct(r.multiShare, 1), t('kpiMultiSub', { value: compact(r.bothUsers) }),
@@ -6404,7 +6464,7 @@ function renderLeverReadouts() {
 function leverDisplay(l, raw) {
   const unit = tx(l.unit);
   if (unit === '%') return `${raw}%`;
-  return money(raw);
+  return isCurUnit(unit) ? money(raw) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -6731,7 +6791,7 @@ function renderVerticals() {
     <div class="district-meta">${t('vertAssetFrom', { game: tx(asset.fromGame) })} ·
       ${t('vertAssetStats', {
         users: compact(r ? r.foodUsers : asset.users),
-        arpu: num(r ? r.arpuFood : asset.arpu),
+        arpu: amount(r ? r.arpuFood : asset.arpu),
         margin: pct(asset.margin, 0),
       })}</div>
     <div class="district-meta">${tx(asset.hint)}</div>
@@ -6818,7 +6878,7 @@ function renderVerticals() {
     </div>
     <div class="district-meta">${t('plusHint')}</div>
     ${plusOn ? `<div class="district-meta">${t('plusStats', {
-      subs: compact(state.plus.subs), price: num(state.decisions.plusPrice ?? 299),
+      subs: compact(state.plus.subs), price: amount(state.decisions.plusPrice ?? 299),
     })}</div>` : ''}
   </div>`;
 
@@ -7210,7 +7270,7 @@ function renderReport() {
         t('statUniqueSub', {
           food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.multiUsers),
         }))}
-      ${stat(t('statArpu'), `${num(r.arpuHolding)} ₽`, t('statArpuSub'))}
+      ${stat(t('statArpu'), `${amount(r.arpuHolding)}`, t('statArpuSub'))}
       ${stat(t('statTaxi'), r.taxiOn ? compact(r.taxiUsers) : '—',
         r.taxiOn ? t('statTaxiSub', { drivers: num(r.drivers), fill: pct(r.fill, 0) }) : t('statTaxiOff'))}
       ${stat(t('statEcom'), r.ecomOn ? compact(r.ecomUsers) : '—',
@@ -7222,8 +7282,8 @@ function renderReport() {
           ? `+${compact(r.crossConv + r.crossEcomConv + r.crossBackConv)}` : '—',
         r.crossConv + r.crossEcomConv + r.crossBackConv > 0
           ? t('statCrossSub', {
-              cac: `${num(r.crossCac)} ₽`,
-              cold: r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—',
+              cac: `${amount(r.crossCac)}`,
+              cold: r.cacCold > 0 ? `${amount(r.cacCold)}` : '—',
             })
           : t('statCrossOff'))}
       ${stat(t('statMulti'), pct(r.multiShare, 1),
@@ -7329,7 +7389,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -7337,16 +7397,15 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   arpu: {
-    label: 'chartArpu', caption: 'chartArpuCaption',
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartArpu', caption: 'chartArpuCaption', money: true,
     series: (h) => [{ label: t('seriesArpu'), data: h.map((r) => r.arpuHolding), color: PALETTE[0] }],
   },
   value: {
-    label: 'chartValue', caption: 'chartValueCaption', zeroLine: true,
+    label: 'chartValue', caption: 'chartValueCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesValueTotal'), data: h.map((r) => r.valuation ?? 0), color: PALETTE[0] },
       { label: t('seriesValueFood'), data: h.map((r) => r.sopFoodValue ?? 0), color: PALETTE[1] },
@@ -7406,7 +7465,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -7542,12 +7605,12 @@ function renderBaseTab() {
       <table class="data">
         <thead><tr><th>${t('baseColChannel')}</th><th>${t('baseColPeople')}</th><th>${t('baseColCac')}</th></tr></thead>
         <tbody>
-          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${num(r.crossCac)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${amount(r.crossCac)}` : '—'}</td></tr>
           <tr><td>${t('baseChCrossEcom')}</td><td>${num(r.crossEcomConv, 0)}</td></tr>
           <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td></tr>
-          <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${num(r.cacColdEcom)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${num((r.decisions.foodMarketing ?? 0) / r.wonBack)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${amount(r.cacCold)}` : '—'}</td></tr>
+          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${amount(r.cacColdEcom)}` : '—'}</td></tr>
+          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${amount((r.decisions.foodMarketing ?? 0) / r.wonBack)}` : '—'}</td></tr>
           <tr><td>${t('baseChOrganic')}</td><td>${num(r.organicFood, 0)}</td><td>—</td></tr>
         </tbody>
       </table>
@@ -7823,7 +7886,7 @@ function showGameOver() {
     ${backHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
-      revenue: money(r.revenue), arpu: num(r.arpuHolding),
+      revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
     })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
@@ -7884,7 +7947,7 @@ function showWelcome() {
     <button type="button" class="event-option ${a.id === assetWanted ? 'selected' : ''}" data-asset="${a.id}">
       <b>${a.icon} ${tx(a.name)}${unlocks[a.id] ? ' ★' : ''}</b>
       <span>${t('vertAssetStats', {
-        users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
+        users: compact(a.users), arpu: amount(a.arpu), margin: pct(a.margin, 0),
       })} · ${tx(a.synergyNote)}</span>
     </button>`).join('');
 

@@ -13,6 +13,17 @@
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+export const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+export const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -63,5 +74,7 @@ export function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }

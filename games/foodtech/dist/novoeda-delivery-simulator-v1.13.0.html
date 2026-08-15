@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.12.0" />
+  <meta name="app-version" content="1.13.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1006,6 +1006,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -1056,7 +1067,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -1138,11 +1151,11 @@ const STRINGS = {
   },
   opsCapacity: { ru: 'Штат {couriers} чел. увезёт <b>{capacity}</b> заказов/нед', en: 'A team of {couriers} delivers <b>{capacity}</b> orders/wk' },
   opsCapacityUtil: { ru: ', спрос прошлой недели {demand} → загрузка <b class="{cls}">{util}</b>', en: ', last week’s demand was {demand} → utilisation <b class="{cls}">{util}</b>' },
-  opsBatching: { ru: 'Батчинг: ставка за отдельный заказ снижена до <b>{pay} ₽</b>, но заказ едет дольше.', en: 'Batching: the rate for a single order drops to <b>₽{pay}</b>, but each order takes longer.' },
+  opsBatching: { ru: 'Батчинг: ставка за отдельный заказ снижена до <b>{pay}</b>, но заказ едет дольше.', en: 'Batching: the rate for a single order drops to <b>{pay}</b>, but each order takes longer.' },
   opsWeatherAhead: { ru: 'Расчёт уже учитывает прогноз ({weather}): спрос вырастет примерно на <b>{lift}</b>.', en: 'This already accounts for the forecast ({weather}): demand will rise by roughly <b>{lift}</b>.' },
   opsMinPay: {
-    ru: 'Наём начнётся от <b>{pay} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.',
-    en: 'Hiring starts at <b>₽{pay}</b> per order: the longer the delivery leg, the fewer orders a courier completes and the higher the rate has to be.',
+    ru: 'Наём начнётся от <b>{pay}</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.',
+    en: 'Hiring starts at <b>{pay}</b> per order: the longer the delivery leg, the fewer orders a courier completes and the higher the rate has to be.',
   },
 
   // --- погода ---
@@ -1176,7 +1189,7 @@ const STRINGS = {
   boardDone: { ru: 'Цели закончились — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
   goalQuarter: { ru: 'Квартал {quarter}', en: 'Quarter {quarter}' },
   goalOrders: { ru: 'Не меньше {target} заказов в неделю к концу квартала. Это про рост: покажите, что через вас вообще заказывают.', en: 'At least {target} orders a week by the end of the quarter. This one is about growth: show that people order through you at all.' },
-  goalUnit: { ru: 'Вклад с заказа не ниже {target} ₽ при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least ₽{target} per order at {floor} orders a week. The turnover is someone else’s, the contribution is yours — and growth alone will not get you there.' },
+  goalUnit: { ru: 'Вклад с заказа не ниже {target} при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least {target} per order at {floor} orders a week. The turnover is someone else’s, the contribution is yours — and growth alone will not get you there.' },
   goalProfit: { ru: 'Не меньше {target} прибыльных недель из тринадцати, и база не ниже {floor} клиентов. Срезать расходы, растеряв город, не считается.', en: 'At least {target} profitable weeks out of thirteen, with a base of no less than {floor} customers. Cutting costs and losing the city does not count.' },
   goalShare: { ru: 'Доля города {target} при {floor} клиентах. Рынок делится не заказами, а людьми, которые к вам вернутся.', en: 'A city share of {target} with {floor} customers. The market is divided not by orders but by the people who come back.' },
   goalNow: { ru: 'сейчас {value}', en: 'now {value}' },
@@ -1234,7 +1247,7 @@ const STRINGS = {
   cityFixedNote: { ru: 'Вход {entry} платится с первым районом, офис города — {weekly}/нед, пока открыт хоть один район. После входа доля рынка считается по обоим городам, а хозяин ответит промо-войной.', en: 'The {entry} entry fee is paid with your first district; the city office costs {weekly}/wk while at least one district is open. After entry your market share covers both cities — and the incumbent will fight back.' },
   alertCityWar: { ru: '«СтароЕд» отвечает промо-войной: приток новых клиентов в Старгороде урезан, отток выше. Ещё {weeks} нед.', en: 'The local incumbent is fighting back: new-customer inflow in Stargorod is cut and churn is up. {weeks} more weeks.' },
   districtStatsLive: { ru: '{customers} клиентов · {restaurants} ресторанов · {time} мин · охват {reach}', en: '{customers} customers · {restaurants} restaurants · {time} min · reach {reach}' },
-  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} ₽ · плечо {km} км', en: '{potential} potential customers · basket ₽{aov} · leg {km} km' },
+  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
   // --- финансирование ---
   fundingTake: { ru: 'Взять', en: 'Take it' },
@@ -1307,11 +1320,11 @@ const STRINGS = {
 
   // --- предупреждения ---
   alertShortage: { ru: 'Курьеров не хватает: спрос покрыт на {fill}. Потеряно {lost} заказов, время доставки выросло до {time} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.', en: 'Not enough couriers: only {fill} of demand was served. {lost} orders lost and delivery time climbed to {time} min. A lost order hits you twice — revenue today, retention tomorrow.' },
-  alertIdle: { ru: 'Курьеры простаивают (загрузка {util}). Каждый лишний курьер стоит {cost} ₽/нед содержания, а заработок на человека падает — начнётся отток.', en: 'Couriers are idle (utilisation {util}). Every spare courier costs ₽{cost}/wk to keep, and per-person earnings fall — churn will follow.' },
-  alertNoApplicants: { ru: 'Никто не откликнулся на вакансию курьера: при ставке {pay} ₽ и {orders} заказах за смену заработок не дотягивает до рыночных {market}. Отклики пойдут примерно от {minPay} ₽ за заказ.', en: 'Nobody applied to be a courier: at ₽{pay} per order and {orders} orders a week the earnings fall short of the market rate of {market}. Applications start at roughly ₽{minPay} per order.' },
+  alertIdle: { ru: 'Курьеры простаивают (загрузка {util}). Каждый лишний курьер стоит {cost}/нед содержания, а заработок на человека падает — начнётся отток.', en: 'Couriers are idle (utilisation {util}). Every spare courier costs {cost}/wk to keep, and per-person earnings fall — churn will follow.' },
+  alertNoApplicants: { ru: 'Никто не откликнулся на вакансию курьера: при ставке {pay} и {orders} заказах за смену заработок не дотягивает до рыночных {market}. Отклики пойдут примерно от {minPay} за заказ.', en: 'Nobody applied to be a courier: at {pay} per order and {orders} orders a week the earnings fall short of the market rate of {market}. Applications start at roughly {minPay} per order.' },
   alertLowPay: { ru: 'Курьер зарабатывает {earnings}/нед против {market} на рынке. Отток {churn}, откликов почти нет.', en: 'A courier earns {earnings}/wk against {market} on the market. Churn is {churn} and applications have dried up.' },
-  alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value} ₽). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative (₽{value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
-  alertBreakEven: { ru: 'Каждый заказ приносит {cm} ₽ вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes ₽{cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
+  alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value}). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative ({value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
+  alertBreakEven: { ru: 'Каждый заказ приносит {cm} вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes {cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
   alertRunway: { ru: 'Денег на {weeks} недель при текущем сжигании {burn}/нед. Пора резать расходы или привлекать раунд.', en: '{weeks} weeks of cash left at the current burn of {burn}/wk. Time to cut costs or raise a round.' },
   alertNoDistricts: { ru: 'Не открыт ни один район — а значит, заказывать негде и заказов не будет. Неделя прошла вхолостую: расходы штаба списались, выручки не было. Начните с одного района: <a class="jump" data-jump="panel:districts">выбрать район</a>.', en: 'No district is open, so there is nowhere to order from and there will be no orders. The week ran empty: head-office costs were charged, revenue was zero. Start with one district: <a class="jump" data-jump="panel:districts">pick a district</a>.' },
   alertNoRestaurants: { ru: 'Ресторанов нет и бюджет на подключение равен нулю. В маркетплейсе предложение первично: пока заказывать нечего, ни один рубль маркетинга не сработает.', en: 'No restaurants and no acquisition budget. In a marketplace supply comes first: until there is something to order, not one rouble of marketing will work.' },
@@ -1320,7 +1333,7 @@ const STRINGS = {
   alertLtvCacBad: { ru: 'LTV/CAC = {value}: вы платите за клиента больше, чем он принесёт за всю жизнь.', en: 'LTV/CAC = {value}: you are paying more for a customer than they will ever bring in.' },
   alertLtvCacGood: { ru: 'LTV/CAC = {value} — привлечение окупается с запасом, есть смысл давить на маркетинг.', en: 'LTV/CAC = {value} — acquisition pays back with room to spare, so it is worth pushing marketing.' },
   alertWeatherCrunch: { ru: '{weather} совпал с нехваткой курьеров: спрос {demand}, мощность {capacity}. Это худшее сочетание в доставке — плохая погода поднимает спрос ровно тогда, когда везти его некому.', en: '{weather} coincided with a courier shortage: demand {demand}, capacity {capacity}. This is the worst combination in delivery — bad weather lifts demand exactly when there is nobody to carry it.' },
-  alertWeatherBonus: { ru: 'Надбавка за погоду обошлась в {cost} ({perOrder} ₽ на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.', en: 'The weather bonus cost {cost} (₽{perOrder} per order) and kept couriers on the road. In a clear week it would have cost nothing.' },
+  alertWeatherBonus: { ru: 'Надбавка за погоду обошлась в {cost} ({perOrder} на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.', en: 'The weather bonus cost {cost} ({perOrder} per order) and kept couriers on the road. In a clear week it would have cost nothing.' },
   alertRndIdle: { ru: 'Data Science стоит {cost}/нед, но ни один алгоритм не включён. Команда копит качество ({quality}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.', en: 'Data science costs {cost}/wk but no algorithm is switched on. The team is building quality ({quality}), yet on its own it earns nothing — the money comes from rules you actually deploy.' },
   alertAlgosReady: { ru: 'Доступно к внедрению: {names}. Качество алгоритмов {quality}.', en: 'Ready to roll out: {names}. Algorithm quality is {quality}.' },
   alertProfit: { ru: 'Неделя закрыта в плюс: {value}.', en: 'The week closed in the black: {value}.' },
@@ -1339,7 +1352,7 @@ const STRINGS = {
   chartCashCaption: { ru: 'Компания умирает не от убытка, а от нуля на счету. Следите за наклоном кривой, а не за её высотой.', en: 'Companies die of an empty account, not of a loss. Watch the slope of the curve, not its height.' },
   chartUnit: { ru: 'Юнит', en: 'Unit' },
   chartUnitCaption: { ru: 'Вклад с одного заказа — главный индикатор здоровья. Если он отрицателен, каждый новый заказ увеличивает убыток.', en: 'Contribution per order is the core health indicator. If it is negative, every new order deepens the loss.' },
-  seriesCmPerOrder: { ru: 'Вклад с заказа, ₽', en: 'Contribution per order, ₽' },
+  seriesCmPerOrder: { ru: 'Вклад с заказа, {cur}', en: 'Contribution per order, {cur}' },
   chartOps: { ru: 'Операции', en: 'Operations' },
   chartOpsCaption: { ru: 'Время доставки — производная от загрузки курьеров. Оно растёт нелинейно: при загрузке выше 90% минуты добавляются лавиной.', en: 'Delivery time is a function of courier utilisation, and it grows non-linearly: above 90% the minutes pile on in an avalanche.' },
   seriesDeliveryTime: { ru: 'Время доставки, мин', en: 'Delivery time, min' },
@@ -1369,7 +1382,7 @@ const STRINGS = {
   // --- юнит-экономика ---
   unitIntro: { ru: 'Экономика одного среднего заказа при текущих настройках ползунков — пересчитывается мгновенно, до перехода к следующей неделе.', en: 'The economics of one average order at your current slider settings — recalculated instantly, before you run the next week.' },
   unitColItem: { ru: 'Статья', en: 'Line' },
-  unitColPerOrder: { ru: '₽ / заказ', en: '₽ / order' },
+  unitColPerOrder: { ru: '{cur} / заказ', en: '{cur} / order' },
   unitColShare: { ru: '% от чека', en: '% of basket' },
   unitAov: { ru: 'Средний чек (GMV)', en: 'Average basket (GMV)' },
   unitCommission: { ru: 'Комиссия с ресторана ({rate})', en: 'Restaurant commission ({rate})' },
@@ -1435,7 +1448,7 @@ const STRINGS = {
   // --- алгоритмы (вкладка) ---
   algosTabQuality: { ru: 'Качество алгоритмов: <b>{quality}</b> (данные {data} × команда {team}). Оно определяет и точность каждого алгоритма, и то, какие из них вообще доступны.', en: 'Algorithm quality: <b>{quality}</b> (data {data} × team {team}). It sets both the accuracy of each algorithm and which ones are available at all.' },
   algosColName: { ru: 'Алгоритм', en: 'Algorithm' },
-  algosColProfit: { ru: '₽ / нед', en: '₽ / wk' },
+  algosColProfit: { ru: '{cur} / нед', en: '{cur} / wk' },
   algosTotal: { ru: 'Итого от алгоритмов', en: 'Total from algorithms' },
   algosTeamCost: { ru: 'Стоимость команды', en: 'Cost of the team' },
   algosNet: { ru: 'Чистый эффект', en: 'Net effect' },
@@ -1443,7 +1456,7 @@ const STRINGS = {
   algosNone: { ru: 'Ни один алгоритм не включён — сравнивать нечего. Начните с бюджета на Data Science: качество алгоритмов растёт как √(данные × команда), а данные копятся только от выполненных заказов.', en: 'No algorithm is switched on, so there is nothing to compare. Start with a data science budget: quality grows as √(data × team), and data only accumulates from completed orders.' },
   algosZeroNote: { ru: '{names} сейчас ничего не меняет. Это не поломка: surge включается только при загрузке выше 70%, аллокация — только когда мощности не хватает, а прогноз бесполезен, если вы и так угадываете штат. Алгоритм стоит денег ровно столько же, работает он или нет.', en: '{names} currently changes nothing. That is not a bug: surge only engages above 70% utilisation, allocation only matters when capacity is short, and forecasting is useless if you already size the team correctly. The algorithm costs the same either way.' },
   algosVsSlider: { ru: 'Чем алгоритм отличается от ползунка', en: 'How an algorithm differs from a slider' },
-  algosVsSliderText: { ru: 'Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда. Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз). Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах. Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса, который для одного числа неразрешим.', en: 'An ordinary lever sets a <b>number</b>: a delivery fee of ₽149 for everyone, always. An algorithm sets a <b>rule</b>: price = f(utilisation), discount = f(customer), couriers = f(forecast). A rule can do what a number cannot — be different in different circumstances. That is why second-order optimisation can improve both ends of a trade-off that a single number cannot resolve.' },
+  algosVsSliderText: { ru: 'Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда. Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз). Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах. Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса, который для одного числа неразрешим.', en: 'An ordinary lever sets a <b>number</b>: a delivery fee of $1.49 for everyone, always. An algorithm sets a <b>rule</b>: price = f(utilisation), discount = f(customer), couriers = f(forecast). A rule can do what a number cannot — be different in different circumstances. That is why second-order optimisation can improve both ends of a trade-off that a single number cannot resolve.' },
 
   // --- справка ---
   helpWhatTitle: { ru: 'Что это такое', en: 'What this is' },
@@ -1494,7 +1507,7 @@ delivery time = base × (1 + 0.85 × utilisation³)`,
 команда = вложения в Data Science / (вложения + 25 млн ₽)`,
     en: `algorithm quality = √(data × team)
 data = cumulative orders / (orders + 400,000)
-team = data science spend / (spend + ₽25M)`,
+team = data science spend / (spend + $250K)`,
   },
   helpAlgosOrder: { ru: 'Ни данные, ни команда по отдельности не работают. Отсюда естественный порядок: сначала объём, потом алгоритмы. Data Science, купленный до того, как появились заказы, — просто строка расходов.', en: 'Neither data nor team works alone. Hence the natural order: volume first, algorithms second. Data science bought before the orders exist is simply a cost line.' },
   helpAlgosCheck: { ru: 'Проверяйте вкладку «Алгоритмы»: там каждая неделя пересчитана заново с выключенным алгоритмом, и видно, сколько он принёс на самом деле. Часто ответ — ноль.', en: 'Check the Algorithms tab: each week is re-simulated with the algorithm switched off, showing what it actually earned. Often the answer is zero.' },
@@ -1529,8 +1542,8 @@ score = valuation × your stake`,
   gradeSolid: { ru: 'Крепкий бизнес', en: 'A solid business' },
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромно', en: 'Modest' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом свыше 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market above ₽10B — surviving is easy, winning is not.' },
-  gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm} ₽, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, ₽{cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 9 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market above $90M — surviving is easy, winning is not.' },
+  gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm}, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, {cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
@@ -1600,7 +1613,7 @@ score = valuation × your stake`,
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
   welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, рестораны и курьеры на самокатах. Вы решаете, сколько брать за доставку и с ресторанов, сколько платить курьерам, куда расти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, restaurants and couriers on scooters. You decide what to charge for delivery, what to keep from restaurants, what to pay couriers, where to grow and where the money goes.' },
   welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год, 52 хода: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year — 52 turns: move the sliders, press "Run week" and see what came of it.' },
-  welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Where the catch is.</b> A customer pays ₽149 for delivery while the courier gets ₽180 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Where the catch is.</b> A customer pays $1.49 for delivery while the courier gets $1.80 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> разориться и понять почему — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> going broke and understanding why teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
@@ -2920,7 +2933,7 @@ const LEVERS = [
   {
     key: 'deliveryFee',
     label: { ru: 'Стоимость доставки', en: 'Delivery fee' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 399, step: 10, def: 149,
     tip: {
       ru: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
@@ -2940,7 +2953,7 @@ const LEVERS = [
   {
     key: 'courierPay',
     label: { ru: 'Оплата курьеру за заказ', en: 'Courier pay per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 60, max: 400, step: 10, def: 180,
     tip: {
       ru: 'Основная переменная себестоимость. Мало платите — курьеры уходят, растёт время доставки и падает удержание клиентов.',
@@ -2960,7 +2973,7 @@ const LEVERS = [
   {
     key: 'marketing',
     label: { ru: 'Маркетинг', en: 'Marketing' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 5_000_000, step: 100_000, def: 0,
     tip: {
       ru: 'Растит узнаваемость → приток новых клиентов. Работает с убывающей отдачей и «забывается» ~5% в неделю.',
@@ -2970,7 +2983,7 @@ const LEVERS = [
   {
     key: 'promo',
     label: { ru: 'Промо-скидка на заказ', en: 'Promo discount per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 300, step: 10, def: 0,
     tip: {
       ru: 'Скидка клиенту за ваш счёт. Мгновенно поднимает спрос и убивает маржу — классическая ловушка «покупки роста».',
@@ -2980,7 +2993,7 @@ const LEVERS = [
   {
     key: 'weatherBonus',
     label: { ru: 'Надбавка за плохую погоду', en: 'Bad-weather bonus' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 150, step: 10, def: 0,
     tip: {
       ru: 'Гарантированная доплата за заказ в плохую погоду. Треть платится и в ясные недели — обещание входит в ставку. Главное: включённая навсегда надбавка становится привычной и в настоящий шторм уже никого не выводит. Включайте её по прогнозу и выключайте в ясные недели.',
@@ -2990,7 +3003,7 @@ const LEVERS = [
   {
     key: 'sales',
     label: { ru: 'Подключение ресторанов', en: 'Restaurant acquisition' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
@@ -3000,7 +3013,7 @@ const LEVERS = [
   {
     key: 'tech',
     label: { ru: 'Технологии и логистика', en: 'Technology and logistics' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
@@ -3010,7 +3023,7 @@ const LEVERS = [
   {
     key: 'rnd',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 1_500_000, step: 50_000, def: 0,
     tip: {
       ru: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
@@ -3020,7 +3033,7 @@ const LEVERS = [
   {
     key: 'finance',
     label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 1_500_000, step: 50_000, def: 0,
     tip: {
       ru: 'Казначейство, контроль расходов, переговоры с банком. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная сбивает ставку эквайринга, режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
@@ -3596,7 +3609,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
         detail: {
           ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
           en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
@@ -3656,7 +3669,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
+        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos ($3.50 per customer)' },
         detail: {
           ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
           en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
@@ -3686,7 +3699,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now ($30 per courier)' },
         detail: {
           ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
           en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',
@@ -4870,6 +4883,14 @@ function finalScore(state) {
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -4877,30 +4898,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -5309,7 +5369,7 @@ function renderKpis() {
       kpi(t('kpiOrders'), compact(r.orders), dOrders, cOrders),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiCm'), `${num(r.cmPerOrder)} ₽`,
+      kpi(t('kpiCm'), `${amount(r.cmPerOrder)}`,
         t('kpiTakeRate', { value: pct(r.netRevenue / Math.max(1, r.gmv)) }),
         r.cmPerOrder >= 0 ? 'up' : 'down'),
       kpi(t('kpiDelivery'), t('minutes', { value: num(r.avgDeliveryTime) }),
@@ -5370,7 +5430,7 @@ function leverDisplay(l, raw) {
   if (l.key === 'marketing' || l.key === 'sales' || l.key === 'tech' || l.key === 'rnd') return money(raw);
   if (unit === '%') return `${raw}%`;
   if (l.key === 'targetCouriers') return num(raw);
-  return `${num(raw)} ${unit}`;
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -5445,7 +5505,7 @@ function renderOpsReadout() {
       cls: ratio >= 1 ? 'pos' : 'neg', ratio: ratio.toFixed(2), hiring,
     })}</div>
     ${capacityLine}
-    ${batch > 0 ? `<div>${t('opsBatching', { pay: num(payEff) })}</div>` : ''}
+    ${batch > 0 ? `<div>${t('opsBatching', { pay: amount(payEff) })}</div>` : ''}
     ${(WEATHER[nextType]?.severity ?? 0) > 0
       ? `<div>${t('opsWeatherAhead', {
           weather: weatherName(nextType).toLowerCase(),
@@ -5453,7 +5513,7 @@ function renderOpsReadout() {
         })}</div>`
       : ''}
     ${ratio < CONFIG.courierHireThreshold
-      ? `<div class="neg">${t('opsMinPay', { pay: num(minPay) })}</div>` : ''}
+      ? `<div class="neg">${t('opsMinPay', { pay: amount(minPay) })}</div>` : ''}
   </div>`;
 }
 
@@ -5530,8 +5590,8 @@ function renderBoard() {
     text = t('goalOrders', { target: num(goal.target, 0) });
     now = num(p.value, 0);
   } else if (goal.type === 'unit') {
-    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
-    now = `${num(p.value, 0)} ₽`;
+    text = t('goalUnit', { target: amount(goal.target), floor: num(goal.ordersFloor, 0) });
+    now = `${amount(p.value)}`;
   } else if (goal.type === 'profit') {
     text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
     now = `${p.value} / ${goal.target}`;
@@ -5756,7 +5816,7 @@ function renderDistricts() {
           time: num(ds.deliveryTime), reach: pct(ds.customers / d.potential, 1),
         })
       : t('districtStatsIdle', {
-          potential: compact(d.potential), aov: num(aovOf(d)), km: d.distanceKm,
+          potential: compact(d.potential), aov: amount(aovOf(d)), km: d.distanceKm,
         });
     return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
       <div class="district-head">
@@ -5936,15 +5996,15 @@ function buildAlerts(r) {
     }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
-      util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
+      util: pct(r.utilization, 0), cost: amount(CONFIG.hqPerCourier),
     }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
       / (CONFIG.courierExpectedLoad * Math.max(1, r.perCourier)) / 10) * 10;
     alerts.push(['bad', t('alertNoApplicants', {
-      pay: num(r.decisions.courierPay), orders: num(r.perCourier),
-      market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
+      pay: amount(r.decisions.courierPay), orders: num(r.perCourier),
+      market: money(CONFIG.courierMarketWeeklyPay), minPay: amount(minPay),
     }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
@@ -5953,10 +6013,10 @@ function buildAlerts(r) {
     }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
+    alerts.push(['bad', t('alertNegativeCm', { value: amount(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
+      cm: amount(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
     }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
@@ -5989,7 +6049,7 @@ function buildAlerts(r) {
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
-      cost: money(r.weatherBonusCost), perOrder: num(r.weatherBonusPerOrder),
+      cost: money(r.weatherBonusCost), perOrder: amount(r.weatherBonusPerOrder),
     })]);
   }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
@@ -6126,10 +6186,10 @@ function renderReport() {
               demand: signedPct(r.weatherDemandMult - 1, 0),
               capacity: signedPct(r.weatherCapacityMult - 1, 0),
             }))}
-      ${stat(t('statCm'), `${num(r.cmPerOrder)} ₽`,
+      ${stat(t('statCm'), `${amount(r.cmPerOrder)}`,
         t('statCmSub', { value: pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders))) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.opex) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
@@ -6153,7 +6213,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.netRevenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -6161,12 +6221,11 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('seriesCmPerOrder'), data: h.map((r) => r.cmPerOrder), color: PALETTE[0] }],
   },
   ops: {
@@ -6247,7 +6306,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -6266,7 +6329,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
 
   const breakEven = r && u.contribution > 0 ? r.opex / u.contribution : null;
 
@@ -6275,16 +6338,16 @@ function renderUnitTab() {
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerOrder')}</th><th>${t('unitColShare')}</th></tr></thead>
       <tbody>
-        <tr><td><b>${t('unitAov')}</b></td><td><b>${num(u.aov)} ₽</b></td><td>100%</td></tr>
+        <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
         ${row(t('unitCommission', { rate: pct(u.commission, 0) }), u.commissionRevenue, 'pos', true)}
         ${row(t('unitFee'), u.feeRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
         ${row(t('unitCourier'), -u.courier, 'neg', true)}
         ${row(t('unitPromo'), -u.promo, 'neg', true)}
         ${row(t('unitPayment'), -u.payment, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
       </tbody>
     </table>
@@ -6295,11 +6358,11 @@ function renderUnitTab() {
       ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitFrequency')}</td><td>${t('unitFrequencyValue', {
         value: (r.customers > 0 ? r.orders / r.customers : 0).toFixed(2),
       })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}
@@ -6665,7 +6728,7 @@ function showGameOver() {
     <p class="funding-note">${t('gradeScale', { a: money(10e9), b: money(5.5e9), c: money(2e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
-      orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
+      orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}

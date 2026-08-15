@@ -18,7 +18,7 @@ import {
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
@@ -441,7 +441,8 @@ const MONEY_LEVERS = new Set(['licensing', 'brandMarketing', 'tech', 'rnd']);
 
 function leverDisplay(l, raw) {
   if (MONEY_LEVERS.has(l.key)) return money(raw);
-  return `${num(raw)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 // Разрыв между прайсом и тем, что платит база, — постоянный элемент,
@@ -465,9 +466,9 @@ function renderPriceGap() {
 
   box.innerHTML = `<div class="gap-box ${wide ? 'wide' : ''}">
     <div class="gap-row">
-      <span>${t('gapList')}</span><b>${num(listPrice)} ₽</b>
+      <span>${t('gapList')}</span><b>${amount(listPrice)}</b>
       <span class="gap-arrow">→</span>
-      <span>${t('gapPaid')}</span><b class="${wide ? 'warn' : ''}">${num(paid)} ₽</b>
+      <span>${t('gapPaid')}</span><b class="${wide ? 'warn' : ''}">${amount(paid)}</b>
       <span class="gap-value ${wide ? (gap > 0 ? 'neg' : 'pos') : ''}">${
         Math.abs(gap) > 0.005 ? `${gap > 0 ? '−' : '+'}${pct(Math.abs(gap), 0)}` : t('gapNone')}</span>
     </div>
@@ -517,8 +518,8 @@ function renderOpsReadout() {
   if (money) {
     money.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${t('opsUnitCheck', {
-        arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
-        cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
+        arpu: `${amount(u.revenue)}`, cost: `${amount(u.variable)}`,
+        cm: `${amount(u.contribution)}`, cls: u.contribution >= 0 ? 'pos' : 'neg',
       })}</div>
       <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
     </div>`;
@@ -566,11 +567,11 @@ function renderPartners() {
         <span class="badge ${d.monthsLeft <= 2 ? 'warn' : ''}">${t('partnerMonthsLeft', { months: d.monthsLeft })}</span>
       </div>
       <div class="deal-meta">${t('partnerDealMeta', {
-        subs: compact(d.subs), arpu: num((d.price ?? price) * def.revenueShare),
+        subs: compact(d.subs), arpu: amount((d.price ?? price) * def.revenueShare),
         share: pct(def.revenueShare, 0),
       })}</div>
       ${(d.price ?? price) < price - 1
-        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: num(d.price), list: num(price) })}</div>` : ''}
+        ? `<div class="deal-meta warn">${t('partnerLockedRate', { signed: amount(d.price), list: amount(price) })}</div>` : ''}
       ${d.monthsLeft <= 2 ? `<div class="deal-meta neg">${t('partnerEnding')}</div>` : ''}
     </div>`;
   };
@@ -583,7 +584,7 @@ function renderPartners() {
     <p>${tx(offer.text)}</p>
     <div class="offer-terms">
       <span>${t('partnerReach', { reach: compact(offer.reach) })}</span>
-      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: num(price * offer.revenueShare) })}</span>
+      <span>${t('partnerShareOf', { share: pct(offer.revenueShare, 0), arpu: amount(price * offer.revenueShare) })}</span>
       <span>${t('partnerHours', { value: pct(offer.hoursMult, 0) })}</span>
       <span>${t('partnerChurnMult', { value: pct(offer.churnMult, 0) })}</span>
       ${offer.setupFee ? `<span class="neg">${t('partnerSetup', { fee: money(offer.setupFee) })}</span>` : ''}
@@ -594,7 +595,7 @@ function renderPartners() {
       <button class="event-option ${pendingPartner === 'accept' ? 'chosen primary' : ''}" data-partner="accept">
         <span class="opt-label">${t('partnerSign')}</span>
         <span class="opt-detail">${t('partnerSignDetail', {
-          subs: compact(offer.reach), arpu: num(price * offer.revenueShare), retail: num(price) })}</span>
+          subs: compact(offer.reach), arpu: amount(price * offer.revenueShare), retail: amount(price) })}</span>
       </button>
       <button class="event-option ${pendingPartner === 'decline' ? 'chosen' : ''}" data-partner="decline">
         <span class="opt-label">${t('partnerDecline')}</span>
@@ -608,7 +609,7 @@ function renderPartners() {
     <div class="report-head">
       <h2 class="panel-title inline">${t('panelPartners')}</h2>
       ${r && r.partnerSubs > 0 ? `<span class="funding-note">${t('partnerSummary', {
-        share: pct(r.partnerShare, 0), wholesale: num(r.partnerArpu), retail: num(r.retailArpu),
+        share: pct(r.partnerShare, 0), wholesale: amount(r.partnerArpu), retail: amount(r.retailArpu),
       })}</span>` : ''}
     </div>
     ${deals.length ? `<div class="deals">${deals.map(dealRow).join('')}</div>` : ''}
@@ -756,7 +757,7 @@ function turnTodos() {
       title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
       text: cooldown > 0
         ? t('todoPriceGapCooldown', { months: cooldown })
-        : t('todoPriceGapText', { list: num(state.decisions.priceNew), paid: num(r.lockedPrice) }),
+        : t('todoPriceGapText', { list: amount(state.decisions.priceNew), paid: amount(r.lockedPrice) }),
     });
   }
 
@@ -1151,9 +1152,9 @@ function renderRival() {
         <span class="rival-stance-hint">${dead ? t('stanceGoneHint') : t(`stance${stance.charAt(0).toUpperCase()}${stance.slice(1)}Hint`)}</span>
       </div>
       <div class="rival-facts">
-        <span>${t('rivalTheirPrice')} <b>${num(riv.price)} ₽</b>
+        <span>${t('rivalTheirPrice')} <b>${amount(riv.price)}</b>
           <span class="${priceGap > 0 ? 'pos' : priceGap < 0 ? 'neg' : ''}">
-            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: num(Math.abs(priceGap)) })}</span></span>
+            ${priceGap === 0 ? t('rivalPriceSame') : t(priceGap > 0 ? 'rivalPriceAbove' : 'rivalPriceBelow', { gap: amount(Math.abs(priceGap)) })}</span></span>
         <span>${t('rivalTheirCatalog')} <b>${compact(riv.catalogLicensed + riv.catalogOriginal)} ${t('unitHours')}</b>
           (${t('rivalTheirOriginals', { hours: compact(riv.catalogOriginal) })})</span>
         <span>${t('rivalTheirFocus')} <b>${tx(genreById(riv.focus)?.name ?? '')}</b></span>
@@ -1475,7 +1476,7 @@ function buildAlerts(r) {
     alerts.push(['good', t('alertAnnualCash', { cash: money(r.annualCash) }), 'lever:annualDiscount']);
   }
   if (r.cmPerSub < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: `${num(r.cmPerSub)} ₽` })]);
+    alerts.push(['bad', t('alertNegativeCm', { value: `${amount(r.cmPerSub)}` })]);
   } else if (r.revenue > 0 && r.cdnCost / r.revenue > 0.30) {
     alerts.push(['warn', t('alertTrafficHeavy', {
       share: pct(r.cdnCost / r.revenue, 0), cost: money(r.cdnCost),
@@ -1484,7 +1485,7 @@ function buildAlerts(r) {
   }
   if (r.cmPerSub > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: `${num(r.cmPerSub)} ₽`, fixed: money(r.fixed), subs: compact(r.fixed / r.cmPerSub),
+      cm: `${amount(r.cmPerSub)}`, fixed: money(r.fixed), subs: compact(r.fixed / r.cmPerSub),
     })]);
   }
   if (runway < 5 && state.cash >= 0) {
@@ -1646,14 +1647,14 @@ function renderReport() {
         original: compact(r.catalogOriginal), share: pct(r.originalShare, 0) }))}
       ${stat(t('statFresh'), `×${r.freshness.toFixed(2)}`, t('statFreshSub', { depth: r.depth.toFixed(2) }))}
       ${stat(t('statChurn'), pct(r.churnRate, 1), t('statChurnSub', { hangover: r.hangover.toFixed(2) }))}
-      ${stat(t('statArpu'), `${num(r.arpu)} ₽`, t('statArpuSub', { value: `${num(r.cmPerSub)} ₽` }))}
-      ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: num(r.cdnPerHour, 2) }))}
+      ${stat(t('statArpu'), `${amount(r.arpu)}`, t('statArpuSub', { value: `${amount(r.cmPerSub)}` }))}
+      ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: amount(r.cdnPerHour, 2) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
       ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
         t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
-      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${num(r.lockedPrice)} ₽`,
+      ${stat(t('statPriceGap'), `${num(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
         t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
         t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
@@ -1688,7 +1689,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1696,7 +1697,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   catalog: {
@@ -1716,8 +1717,7 @@ const CHART_TABS = {
     ],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesArpu'), data: h.map((r) => r.arpu), color: PALETTE[1] },
       { label: t('seriesCmPerSub'), data: h.map((r) => r.cmPerSub), color: PALETTE[0] },
@@ -1775,7 +1775,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -1792,7 +1796,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
 
   return `
@@ -1802,11 +1806,11 @@ function renderUnitTab() {
       <tbody>
         ${row(t('unitSubscription'), u.subscription, 'pos', true)}
         ${row(t('unitAdvertising'), u.advertising, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td></tr>
-        ${row(t('unitCdn', { hours: num(u.hoursPerSub, 1), perHour: num(u.cdnPerHour, 2) }), -u.cdn, 'neg', true)}
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td></tr>
+        ${row(t('unitCdn', { hours: num(u.hoursPerSub, 1), perHour: amount(u.cdnPerHour, 2) }), -u.cdn, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     <p class="funding-note" style="margin-top:10px">${t('unitNote')}</p>
@@ -1815,10 +1819,10 @@ function renderUnitTab() {
       : u.contribution <= 0 ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitLifetime')}</td><td>${t('unitLifetimeValue', {
         value: (1 / Math.max(0.005, r.churnRate)).toFixed(1) })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}`;
@@ -1870,7 +1874,7 @@ function renderSegmentsTab() {
       <tbody>${r.segments.map((s) => `<tr>
         <td>${name(s)}</td><td>${compact(s.subs)}</td><td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
         <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}</td>
-        <td>${num(s.arpu)} ₽</td></tr>`).join('')}</tbody>
+        <td>${amount(s.arpu)}</td></tr>`).join('')}</tbody>
     </table>
     <table class="data" style="margin-top:10px">
       <thead><tr><th>${t('colSegment')}</th><th>${t('colPenetration')}</th><th>${t('colPriceFactor')}</th><th>${t('colAppeal')}</th><th>${t('colAdPenalty')}</th></tr></thead>
@@ -2131,7 +2135,7 @@ function showGameOver() {
     <p class="funding-note">${t('gradeScale', { a: money(32e9), b: money(16e9), c: money(8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
-      subs: compact(r.subs), arpu: `${num(r.arpu)} ₽`,
+      subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>

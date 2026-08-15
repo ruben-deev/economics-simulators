@@ -27,7 +27,7 @@ import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import {
@@ -533,7 +533,8 @@ function leverText(l, value) {
   if (l.scale === 0.01) return `${num(value * 100, value * 100 % 1 ? 1 : 0)} ${tx(l.unit)}`;
   if (l.key === 'managers') return `${num(value)} ${tx(l.unit)}`;
   if (value >= 1_000_000) return money(value);
-  return `${num(value)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(value, unit) : `${num(value)} ${unit}`;
 }
 
 function syncLevers() {
@@ -725,7 +726,7 @@ function renderReport() {
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         gmv: money(r.gmv), revenue: money(r.revenue),
-        perTicket: `${num(r.revenuePerTicket)} ₽` })}</span>
+        perTicket: `${amount(r.revenuePerTicket)}` })}</span>
     </div>
     ${deltaLine}
     <div class="report-grid">
@@ -1053,8 +1054,8 @@ function renderChannels() {
         · <span class="${need}">${needWord}</span></div>
       <div class="org-rows">
         <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
-        <div><span>${t('orgCardMoney')}</span><b>${num(perMarket)} ₽ / <span
-          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)} ₽</span></b></div>
+        <div><span>${t('orgCardMoney')}</span><b>${amount(perMarket)} / <span
+          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${amount(perPlatform)}</span></b></div>
         <div><span>${t('orgCardSplit')}</span><b>${t('channelSplitValue', {
           market: pct(split.market, 0), widget: pct(split.platform, 0),
         })}</b></div>
@@ -1278,7 +1279,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1286,7 +1287,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   fill: {
@@ -1367,7 +1368,11 @@ function renderChart() {
     b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
   });
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -1384,21 +1389,21 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
   return `
     <p class="funding-note">${t('unitIntro')}</p>
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerTicket')}</th></tr></thead>
       <tbody>
-        <tr><td>${t('unitPrice')}</td><td class="mono">${num(u.avgPrice)} ₽</td></tr>
+        <tr><td>${t('unitPrice')}</td><td class="mono">${amount(u.avgPrice)}</td></tr>
         ${row(t('unitMarket'), u.marketRevenue, 'pos', true)}
         ${row(t('unitPlatform'), u.platformRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${num(u.blended)} ₽</td></tr>
+        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${amount(u.blended)}</td></tr>
         ${row(t('unitAcquiring'), -u.acquiring, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     ${breakEven ? `<p class="funding-note">${t('unitBreakEven', { value: compact(breakEven) })}</p>` : ''}`;

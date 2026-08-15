@@ -27,7 +27,7 @@ export const STRINGS = {
   kpiUnique: { ru: 'Клиенты холдинга', en: 'Holding customers' },
   kpiUniqueSub: { ru: 'уникальных людей', en: 'unique people' },
   kpiArpu: { ru: 'ARPU холдинга', en: 'Holding ARPU' },
-  kpiArpuSub: { ru: '₽ с клиента в месяц', en: '₽ per customer per month' },
+  kpiArpuSub: { ru: '{cur} с клиента в месяц', en: '{cur} per customer per month' },
   kpiProfit: { ru: 'Прибыль / мес', en: 'Profit / mo' },
   kpiProfitSub: { ru: 'вклад {value}', en: 'contribution {value}' },
   kpiMulti: { ru: 'Два и более сервисов', en: 'Two or more services' },
@@ -151,8 +151,8 @@ export const STRINGS = {
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
   vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },
   vertAssetStats: {
-    ru: '{users} клиентов · ARPU {arpu} ₽/мес · маржа {margin}',
-    en: '{users} customers · ARPU ₽{arpu}/mo · margin {margin}',
+    ru: '{users} клиентов · ARPU {arpu}/мес · маржа {margin}',
+    en: '{users} customers · ARPU {arpu}/mo · margin {margin}',
   },
   vertLive: { ru: 'работает', en: 'running' },
   vertLiveStats: {
@@ -178,7 +178,7 @@ export const STRINGS = {
     ru: 'Склейка экосистемы: подписчик пользуется всеми сервисами чаще и уходит реже. Выгоды стоят маржи — это покупка удержания. Дилемма Amazon Prime.',
     en: 'The ecosystem’s glue: a subscriber uses every service more and churns less. The perks cost margin — you are buying retention. The Amazon Prime dilemma.',
   },
-  plusStats: { ru: '{subs} подписчиков · {price} ₽/мес', en: '{subs} subscribers · ₽{price}/mo' },
+  plusStats: { ru: '{subs} подписчиков · {price}/мес', en: '{subs} subscribers · {price}/mo' },
   plusNeedsVerticals: { ru: 'нужна вторая вертикаль', en: 'needs a second vertical' },
   plusNeedsVerticalsToast: {
     ru: 'Подписке нужно, что склеивать: сначала запустите хотя бы одну вертикаль рядом с хабом.',
@@ -495,7 +495,7 @@ export const STRINGS = {
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
   seriesContribution: { ru: 'Вклад', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
-  seriesArpu: { ru: 'ARPU, ₽/мес', en: 'ARPU, ₽/mo' },
+  seriesArpu: { ru: 'ARPU, {cur}/мес', en: 'ARPU, {cur}/mo' },
   seriesValueFood: { ru: 'Оценка еды', en: 'Food value' },
   seriesValueTaxi: { ru: 'Оценка такси', en: 'Taxi value' },
   seriesValueEcom: { ru: 'Оценка е-кома', en: 'E-com value' },
@@ -829,8 +829,8 @@ export const STRINGS = {
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
-    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu} ₽, клиентов {unique}, из них с двумя и более сервисами {multi}.',
-    en: 'Final month: revenue {revenue}, ARPU ₽{arpu}, {unique} customers, {multi} of them on two or more services.',
+    ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
+    en: 'Final month: revenue {revenue}, ARPU {arpu}, {unique} customers, {multi} of them on two or more services.',
   },
   gameOverQuestions: {
     ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',

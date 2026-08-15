@@ -129,7 +129,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
         detail: {
           ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
           en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
@@ -189,7 +189,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
+        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos ($3.50 per customer)' },
         detail: {
           ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
           en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
@@ -219,7 +219,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now ($30 per courier)' },
         detail: {
           ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
           en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',

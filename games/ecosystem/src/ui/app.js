@@ -28,7 +28,7 @@ import {
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
@@ -201,7 +201,7 @@ function renderKpis() {
     const [dA, cA] = delta(r.arpuHolding, p?.arpuHolding);
     parts.push(
       kpi(t('kpiUnique'), compact(r.uniqueUsers), dU || t('kpiUniqueSub'), cU),
-      kpi(t('kpiArpu'), `${num(r.arpuHolding)} ₽`, dA || t('kpiArpuSub'), cA),
+      kpi(t('kpiArpu'), `${amount(r.arpuHolding)}`, dA || t('kpiArpuSub'), cA),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
       kpi(t('kpiMulti'), pct(r.multiShare, 1), t('kpiMultiSub', { value: compact(r.bothUsers) }),
@@ -429,7 +429,7 @@ function renderLeverReadouts() {
 function leverDisplay(l, raw) {
   const unit = tx(l.unit);
   if (unit === '%') return `${raw}%`;
-  return money(raw);
+  return isCurUnit(unit) ? money(raw) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -756,7 +756,7 @@ function renderVerticals() {
     <div class="district-meta">${t('vertAssetFrom', { game: tx(asset.fromGame) })} ·
       ${t('vertAssetStats', {
         users: compact(r ? r.foodUsers : asset.users),
-        arpu: num(r ? r.arpuFood : asset.arpu),
+        arpu: amount(r ? r.arpuFood : asset.arpu),
         margin: pct(asset.margin, 0),
       })}</div>
     <div class="district-meta">${tx(asset.hint)}</div>
@@ -843,7 +843,7 @@ function renderVerticals() {
     </div>
     <div class="district-meta">${t('plusHint')}</div>
     ${plusOn ? `<div class="district-meta">${t('plusStats', {
-      subs: compact(state.plus.subs), price: num(state.decisions.plusPrice ?? 299),
+      subs: compact(state.plus.subs), price: amount(state.decisions.plusPrice ?? 299),
     })}</div>` : ''}
   </div>`;
 
@@ -1235,7 +1235,7 @@ function renderReport() {
         t('statUniqueSub', {
           food: compact(r.foodUsers), taxi: compact(r.taxiUsers), both: compact(r.multiUsers),
         }))}
-      ${stat(t('statArpu'), `${num(r.arpuHolding)} ₽`, t('statArpuSub'))}
+      ${stat(t('statArpu'), `${amount(r.arpuHolding)}`, t('statArpuSub'))}
       ${stat(t('statTaxi'), r.taxiOn ? compact(r.taxiUsers) : '—',
         r.taxiOn ? t('statTaxiSub', { drivers: num(r.drivers), fill: pct(r.fill, 0) }) : t('statTaxiOff'))}
       ${stat(t('statEcom'), r.ecomOn ? compact(r.ecomUsers) : '—',
@@ -1247,8 +1247,8 @@ function renderReport() {
           ? `+${compact(r.crossConv + r.crossEcomConv + r.crossBackConv)}` : '—',
         r.crossConv + r.crossEcomConv + r.crossBackConv > 0
           ? t('statCrossSub', {
-              cac: `${num(r.crossCac)} ₽`,
-              cold: r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—',
+              cac: `${amount(r.crossCac)}`,
+              cold: r.cacCold > 0 ? `${amount(r.cacCold)}` : '—',
             })
           : t('statCrossOff'))}
       ${stat(t('statMulti'), pct(r.multiShare, 1),
@@ -1354,7 +1354,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1362,16 +1362,15 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   arpu: {
-    label: 'chartArpu', caption: 'chartArpuCaption',
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartArpu', caption: 'chartArpuCaption', money: true,
     series: (h) => [{ label: t('seriesArpu'), data: h.map((r) => r.arpuHolding), color: PALETTE[0] }],
   },
   value: {
-    label: 'chartValue', caption: 'chartValueCaption', zeroLine: true,
+    label: 'chartValue', caption: 'chartValueCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesValueTotal'), data: h.map((r) => r.valuation ?? 0), color: PALETTE[0] },
       { label: t('seriesValueFood'), data: h.map((r) => r.sopFoodValue ?? 0), color: PALETTE[1] },
@@ -1431,7 +1430,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -1567,12 +1570,12 @@ function renderBaseTab() {
       <table class="data">
         <thead><tr><th>${t('baseColChannel')}</th><th>${t('baseColPeople')}</th><th>${t('baseColCac')}</th></tr></thead>
         <tbody>
-          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${num(r.crossCac)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${amount(r.crossCac)}` : '—'}</td></tr>
           <tr><td>${t('baseChCrossEcom')}</td><td>${num(r.crossEcomConv, 0)}</td></tr>
           <tr><td>${t('baseChCrossBack')}</td><td>${num(r.crossBackConv, 0)}</td></tr>
-          <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${num(r.cacCold)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${num(r.cacColdEcom)} ₽` : '—'}</td></tr>
-          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${num((r.decisions.foodMarketing ?? 0) / r.wonBack)} ₽` : '—'}</td></tr>
+          <tr><td>${t('baseChCold')}</td><td>${num(r.coldAcq, 0)}</td><td>${r.cacCold > 0 ? `${amount(r.cacCold)}` : '—'}</td></tr>
+          <tr><td>${t('baseChColdEcom')}</td><td>${num(r.ecomColdAcq, 0)}</td><td>${r.cacColdEcom > 0 ? `${amount(r.cacColdEcom)}` : '—'}</td></tr>
+          <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${amount((r.decisions.foodMarketing ?? 0) / r.wonBack)}` : '—'}</td></tr>
           <tr><td>${t('baseChOrganic')}</td><td>${num(r.organicFood, 0)}</td><td>—</td></tr>
         </tbody>
       </table>
@@ -1848,7 +1851,7 @@ function showGameOver() {
     ${backHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
-      revenue: money(r.revenue), arpu: num(r.arpuHolding),
+      revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
     })}</p>` : ''}
     ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
@@ -1909,7 +1912,7 @@ function showWelcome() {
     <button type="button" class="event-option ${a.id === assetWanted ? 'selected' : ''}" data-asset="${a.id}">
       <b>${a.icon} ${tx(a.name)}${unlocks[a.id] ? ' ★' : ''}</b>
       <span>${t('vertAssetStats', {
-        users: compact(a.users), arpu: num(a.arpu), margin: pct(a.margin, 0),
+        users: compact(a.users), arpu: amount(a.arpu), margin: pct(a.margin, 0),
       })} · ${tx(a.synergyNote)}</span>
     </button>`).join('');
 

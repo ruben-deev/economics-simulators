@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.19.0" />
+  <meta name="app-version" content="1.20.0" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1007,6 +1007,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -1057,7 +1068,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -1176,7 +1189,7 @@ const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around ₽10B — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around $60M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -1316,8 +1329,8 @@ const STRINGS = {
   channelSplitValue: { ru: '{market} через афишу · {widget} через виджет', en: '{market} via listings · {widget} via widget' },
   channelSplitLost: { ru: '{lost} мимо вас', en: '{lost} past you' },
   channelColMoney: { ru: 'Ваши деньги с билета', en: 'What a ticket earns you' },
-  channelMoneyValue: { ru: '{market} ₽ с афиши', en: '₽{market} from listings' },
-  channelMoneyWidget: { ru: '{widget} ₽ с виджета', en: '₽{widget} from the widget' },
+  channelMoneyValue: { ru: '{market} с афиши', en: '{market} from listings' },
+  channelMoneyWidget: { ru: '{widget} с виджета', en: '{widget} from the widget' },
   orgCardGmv: { ru: 'Оборот за месяц', en: 'Turnover per month' },
   orgCardMoney: { ru: 'С билета вам', en: 'You get per ticket' },
   orgCardSplit: { ru: 'Куда уходят продажи', en: 'Where sales go' },
@@ -3094,7 +3107,7 @@ const LEVERS = [
     key: 'finance',
     group: 'infra',
     label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 12_000_000, step: 250_000, def: 0,
     tip: {
       ru: 'Казначейство, переговоры с банком, контроль расходов. Здесь она важнее, чем кажется: эквайринг снимается с оборота, а зарабатываете вы тонкий процент — сбитая ставка бьёт прямо в вашу маржу. Плюс режет «прочие расходы» и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
@@ -3163,7 +3176,7 @@ const LEVERS = [
     key: 'platformFee',
     group: 'take',
     label: { ru: 'Абонплата платформы', en: 'Platform subscription' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 120_000, step: 5_000, def: 20_000,
     policyMode: 'preset',
     policy: [
@@ -3183,7 +3196,7 @@ const LEVERS = [
     key: 'marketing',
     group: 'growth',
     label: { ru: 'Маркетинг на зрителей', en: 'Marketing to buyers' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
       ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
@@ -3205,7 +3218,7 @@ const LEVERS = [
     key: 'onboarding',
     group: 'growth',
     label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
@@ -3216,7 +3229,7 @@ const LEVERS = [
     key: 'platformDev',
     group: 'growth',
     label: { ru: 'Разработка платформы', en: 'Platform development' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
@@ -3227,7 +3240,7 @@ const LEVERS = [
     key: 'product',
     group: 'infra',
     label: { ru: 'Продукт и приложение', en: 'Product and app' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Скорость оплаты, поиск, карта зала. Влияет на конверсию: сколько дошедших до корзины действительно платят.',
@@ -3238,7 +3251,7 @@ const LEVERS = [
     key: 'support',
     group: 'infra',
     label: { ru: 'Поддержка', en: 'Support' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 6_000_000,
     tip: {
       ru: 'Возвраты, потерянные билеты, вопросы на входе. Плохая поддержка бьёт по доверию зрителей и по терпению организаторов одновременно.',
@@ -3249,7 +3262,7 @@ const LEVERS = [
     key: 'capacityTech',
     group: 'infra',
     label: { ru: 'Запас мощности', en: 'Capacity headroom' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 3_000_000,
     tip: {
       ru: 'Серверы под старт продаж на хит. В обычный месяц это выброшенные деньги — ровно до того месяца, когда сайт ляжет на глазах у ста тысяч человек.',
@@ -3260,7 +3273,7 @@ const LEVERS = [
     key: 'rnd',
     group: 'infra',
     label: { ru: 'Команда данных', en: 'Data team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 30_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Качество алгоритмов. Без неё умные механики работают наугад и вредят чаще, чем помогают.',
@@ -4598,7 +4611,7 @@ const EVENTS = [
     options: [
       {
         label: { ru: 'Подключиться', en: 'Join the programme' },
-        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off ₽80M of work. Demand grows noticeably.' },
+        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off $800K of work. Demand grows noticeably.' },
         effects: { oneOffCost: 80_000_000, demandMult: 1.11, awarenessAdd: 0.015 },
       },
       {
@@ -4646,7 +4659,7 @@ const EVENTS = [
     options: [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
-        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '₽75M one-off, and the venue and its events are yours.' },
+        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '$750K one-off, and the venue and its events are yours.' },
         effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {
@@ -5905,6 +5918,14 @@ function finalScore(state) {
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -5912,30 +5933,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -6683,7 +6743,8 @@ function leverText(l, value) {
   if (l.scale === 0.01) return `${num(value * 100, value * 100 % 1 ? 1 : 0)} ${tx(l.unit)}`;
   if (l.key === 'managers') return `${num(value)} ${tx(l.unit)}`;
   if (value >= 1_000_000) return money(value);
-  return `${num(value)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(value, unit) : `${num(value)} ${unit}`;
 }
 
 function syncLevers() {
@@ -6875,7 +6936,7 @@ function renderReport() {
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         gmv: money(r.gmv), revenue: money(r.revenue),
-        perTicket: `${num(r.revenuePerTicket)} ₽` })}</span>
+        perTicket: `${amount(r.revenuePerTicket)}` })}</span>
     </div>
     ${deltaLine}
     <div class="report-grid">
@@ -7203,8 +7264,8 @@ function renderChannels() {
         · <span class="${need}">${needWord}</span></div>
       <div class="org-rows">
         <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
-        <div><span>${t('orgCardMoney')}</span><b>${num(perMarket)} ₽ / <span
-          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${num(perPlatform)} ₽</span></b></div>
+        <div><span>${t('orgCardMoney')}</span><b>${amount(perMarket)} / <span
+          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${amount(perPlatform)}</span></b></div>
         <div><span>${t('orgCardSplit')}</span><b>${t('channelSplitValue', {
           market: pct(split.market, 0), widget: pct(split.platform, 0),
         })}</b></div>
@@ -7428,7 +7489,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -7436,7 +7497,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   fill: {
@@ -7517,7 +7578,11 @@ function renderChart() {
     b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
   });
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -7534,21 +7599,21 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
   return `
     <p class="funding-note">${t('unitIntro')}</p>
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerTicket')}</th></tr></thead>
       <tbody>
-        <tr><td>${t('unitPrice')}</td><td class="mono">${num(u.avgPrice)} ₽</td></tr>
+        <tr><td>${t('unitPrice')}</td><td class="mono">${amount(u.avgPrice)}</td></tr>
         ${row(t('unitMarket'), u.marketRevenue, 'pos', true)}
         ${row(t('unitPlatform'), u.platformRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${num(u.blended)} ₽</td></tr>
+        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${amount(u.blended)}</td></tr>
         ${row(t('unitAcquiring'), -u.acquiring, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     ${breakEven ? `<p class="funding-note">${t('unitBreakEven', { value: compact(breakEven) })}</p>` : ''}`;

@@ -163,7 +163,10 @@ async function buildGame(name) {
   const buildDate = new Date().toISOString().slice(0, 10);
   let page = html.replace('<meta charset="utf-8" />',
     `<meta charset="utf-8" />\n  <meta name="app-version" content="${version}" />\n  <meta name="app-build-date" content="${buildDate}" />`);
-  page = page.replace(/<script type="module"[^>]*><\/script>/, `<script>\n${bundle}\n</script>`);
+  // Замена функцией, а не строкой: в исходниках встречается «$'» (знак
+  // доллара как валюта), а в строке замены такие сочетания String.replace
+  // толкует как ссылки на части совпадения и молча портит сборку.
+  page = page.replace(/<script type="module"[^>]*><\/script>/, () => `<script>\n${bundle}\n</script>`);
   // Все <link rel="stylesheet"> заменяем встроенными стилями в том же порядке
   let styleIndex = 0;
   page = page.replace(/<link rel="stylesheet"[^>]*>/g, () => `<style>\n${styles[styleIndex++] ?? ''}\n</style>`);

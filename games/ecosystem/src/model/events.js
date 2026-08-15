@@ -107,7 +107,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить (3 000 ₽ на водителя)', en: 'Pay up (₽3,000 per driver)' },
+        label: { ru: 'Выплатить (3 000 ₽ на водителя)', en: 'Pay up ($30 per driver)' },
         detail: {
           ru: 'Цена растёт со штатом: тысяче водителей — три миллиона, пяти тысячам — пятнадцать.',
           en: 'The price scales with the fleet: three million for a thousand drivers, fifteen for five thousand.',
@@ -137,7 +137,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Лицензировать всех сейчас (2 500 ₽ на водителя)', en: 'License everyone now (₽2,500 per driver)' },
+        label: { ru: 'Лицензировать всех сейчас (2 500 ₽ на водителя)', en: 'License everyone now ($25 per driver)' },
         detail: {
           ru: 'Платите по сегодняшнему парку. Выгодно, если собираетесь расти.',
           en: 'You pay for today’s fleet. A good deal if you plan to grow.',
@@ -169,10 +169,10 @@ export const EVENTS = [
       {
         // Цена поднята с 120 ₽ + 5 млн после аудита доминации: «признать»
         // побеждало в 100% состояний — при дешёвом извинении это викторина.
-        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate (₽380 per customer)' },
+        label: { ru: 'Признать и компенсировать (380 ₽ на клиента базы)', en: 'Own it and compensate ($3.80 per customer)' },
         detail: {
           ru: 'Плюс 20 млн на аудит безопасности. Цена растёт с базой: чем лучше шёл кросс-селл, тем дороже извинение.',
-          en: 'Plus ₽20M for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
+          en: 'Plus $200K for a security audit. The price scales with the base: the better your cross-sell went, the dearer the apology.',
         },
         effects: { oneOffCostPerUniqueUser: 380, oneOffCost: 20_000_000 },
       },
@@ -235,7 +235,7 @@ export const EVENTS = [
         // Поднято со 150 ₽ после аудита доминации (83% за этот вариант):
         // защита базы должна стоить настолько дорого, чтобы дожатой или
         // маленькой базе иногда было правильнее переждать.
-        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo (₽220 per hub customer)' },
+        label: { ru: 'Ответное промо (220 ₽ на клиента хаба)', en: 'Counter-promo ($2.20 per hub customer)' },
         detail: {
           ru: 'Дорого при большой базе, но база и защищена: отток месяца почти не растёт.',
           en: 'Expensive with a large base — but the base is protected: churn barely moves.',
@@ -265,7 +265,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить промо (250 ₽ на клиента такси)', en: 'Flood promos (₽250 per taxi customer)' },
+        label: { ru: 'Залить промо (250 ₽ на клиента такси)', en: 'Flood promos ($2.50 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
@@ -297,7 +297,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign (₽340 per customer)' },
+        label: { ru: 'Оборонительная кампания (340 ₽ на клиента базы)', en: 'Defensive campaign ($3.40 per customer)' },
         detail: {
           ru: 'Дорого по всей базе, но набег выдыхается вдвое быстрее и бьёт заметно слабее.',
           en: 'Expensive across the whole base, but the raid runs out of steam twice as fast and hits far softer.',
@@ -357,7 +357,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus (₽4,000 per driver)' },
+        label: { ru: 'Контр-бонус (4 000 ₽ на водителя)', en: 'Counter-bonus ($40 per driver)' },
         detail: {
           ru: 'Цена по сегодняшнему парку. Водители остаются, и приток даже растёт.',
           en: 'Priced by today’s fleet. Drivers stay, and applications even pick up.',
@@ -387,7 +387,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender (₽110M)' },
+        label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender ($1.1M)' },
         detail: {
           ru: 'Разово дорого, зато каждый клиент такси ездит чаще — до конца партии.',
           en: 'A steep one-off — but every taxi customer rides more often, for the rest of the game.',
@@ -417,7 +417,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card (₽25M)' },
+        label: { ru: 'Запустить карту (25 млн ₽)', en: 'Launch the card ($250K)' },
         detail: {
           ru: 'Интеграция и маркетинг запуска. Кросс-селл дешевеет на 10%, а круг готовых попробовать второй сервис немного расширяется — до конца партии.',
           en: 'Integration and launch marketing. Cross-sell gets 10% cheaper and the circle willing to try a second service grows a little — for the rest of the game.',
@@ -457,7 +457,7 @@ export const EVENTS = [
         label: { ru: 'Отделить логистику', en: 'Split off logistics' },
         detail: {
           ru: 'Доставка становится отдельной компанией и возит всем по рынку. Дело закрыто сразу, разово — 60 ₽ на клиента холдинга за реорганизацию. Цена в другом: е-ком навсегда теряет часть маржи, свою логистику он теперь покупает как все.',
-          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off ₽60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
+          en: 'The delivery arm becomes a separate company serving everyone at market rates. The case closes at once; the reorganisation costs a one-off $0.60 per holding customer. The real price is elsewhere: e-commerce permanently loses margin — it now buys logistics like everyone else.',
         },
         // Разделение — это ещё и разовая реорганизация: юристы, перевод
         // договоров, новые контуры. Цена растёт с размером холдинга, поэтому
@@ -473,7 +473,7 @@ export const EVENTS = [
         effects: { plusChurnAdd: 0.05, plusConvMult: 0.85, ecoReliefCut: 0.12 },
       },
       {
-        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate (₽10M/mo for 6 months)' },
+        label: { ru: 'Судиться (юристы 10 млн ₽/мес, 6 мес.)', en: 'Litigate ($100K/mo for 6 months)' },
         detail: {
           ru: 'Структура холдинга остаётся как есть. Полгода юристов и внимания прессы, а единый аккаунт до конца партии остаётся под надзором: согласия собираются строже, и ёмкость кросс-селла ниже.',
           en: 'The holding’s structure stays as it is. Six months of lawyers and press attention — and the unified account stays under supervision to the end: consent is collected more strictly and cross-sell capacity is lower.',
@@ -567,7 +567,7 @@ export const VANITY_EVENTS = [
         label: { ru: 'Купить имя стадиона', en: 'Buy the naming rights' },
         detail: {
           ru: 'Разово 520 ₽ на каждого клиента холдинга. Измеримая отдача — внимание одного месяца: кросс-селл в этом месяце сработает на 12% лучше. Дальше имя просто висит.',
-          en: 'A one-off ₽520 per holding customer. The measurable return is one month of attention: cross-sell works 12% better this month. After that the name just hangs there.',
+          en: 'A one-off $5.20 per holding customer. The measurable return is one month of attention: cross-sell works 12% better this month. After that the name just hangs there.',
         },
         effects: { oneOffCostPerUniqueUser: 520, crossSellMult: 1.12 },
       },
@@ -587,7 +587,7 @@ export const VANITY_EVENTS = [
         label: { ru: 'Заказать ребрендинг', en: 'Commission the rebrand' },
         detail: {
           ru: 'Разово 400 ₽ на каждого клиента холдинга: сам проект, перекраска приложений, вывесок и машин. Измеримая отдача — месяц свежести: отток в этом месяце ниже на 0.4 п.п.',
-          en: 'A one-off ₽400 per holding customer: the project itself plus repainting the apps, signage and vehicles. The measurable return is a month of novelty: churn is 0.4pp lower this month.',
+          en: 'A one-off $4 per holding customer: the project itself plus repainting the apps, signage and vehicles. The measurable return is a month of novelty: churn is 0.4pp lower this month.',
         },
         effects: { oneOffCostPerUniqueUser: 400, foodChurnAdd: -0.004, taxiChurnAdd: -0.004 },
       },
@@ -607,7 +607,7 @@ export const VANITY_EVENTS = [
         label: { ru: 'Провести форум', en: 'Hold the forum' },
         detail: {
           ru: 'Разово 320 ₽ на каждого клиента холдинга: площадка, продакшн, гости. Измеримая отдача — месяц публикаций: спрос стартового сервиса в этом месяце выше на 2%.',
-          en: 'A one-off ₽320 per holding customer: venue, production, guests. The measurable return is a month of coverage: demand for the starting service is 2% higher this month.',
+          en: 'A one-off $3.20 per holding customer: venue, production, guests. The measurable return is a month of coverage: demand for the starting service is 2% higher this month.',
         },
         effects: { oneOffCostPerUniqueUser: 320, foodDemandMult: 1.02 },
       },

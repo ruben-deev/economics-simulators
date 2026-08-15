@@ -13,6 +13,12 @@ an explanation of the formulas.
 The interface is bilingual — the **RU / EN** button in the header. The choice is remembered
 between sessions and shared by all four games.
 
+**Money.** The models are denominated in roubles, and every balance figure in the docs is a
+rouble figure. The English interface shows dollars at a fixed rate of **₽100 = $1** — a round
+rate on purpose, so the conversion can be done in your head. Only the display changes: the
+score written into the world leaderboard stays in roubles, so one table holds one scale
+regardless of the language a game was played in.
+
 | Game | Business | Turn | Length | Central conflict |
 |---|---|---|---|---|
 | [🛵 **NOVOEDA**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
@@ -36,10 +42,10 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.12.0.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.15.0.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.19.0.html) ·
-[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.11.0.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.13.0.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.16.0.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.20.0.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.12.0.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **World leaderboard.** Each game's final screen keeps a local per-device record
@@ -369,7 +375,7 @@ games/<game>/
   src/model/crises.js           crises that last until resolved (streaming)
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.15.0.html
+  dist/kinoreka-streaming-simulator-v1.16.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

@@ -13,6 +13,12 @@
 Интерфейс двуязычный — кнопка **RU / EN** в шапке. Выбор запоминается между сессиями
 и общий для всех четырёх игр.
 
+**Деньги.** Модели считают в рублях — и все числа баланса в документации рублёвые.
+Английская версия показывает доллары по зафиксированному курсу **100 ₽ = $1**: курс
+намеренно круглый, чтобы пересчёт делался в уме. Меняется только показ — счёт, который
+уходит в мировую таблицу, остаётся рублёвым, поэтому в одной таблице одна шкала независимо
+от того, на каком языке играли.
+
 | Игра | Бизнес | Ход | Партия | Главный конфликт |
 |---|---|---|---|---|
 | [🛵 **НОВОЕДА**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | доставка еды | неделя | 52 недели | спрос против пропускной способности |
@@ -37,10 +43,10 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.12.0.html) ·
-[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.15.0.html) ·
-[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.19.0.html) ·
-[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.11.0.html).
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.13.0.html) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.16.0.html) ·
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.20.0.html) ·
+[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.12.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 **Мировая таблица результатов.** На финальном экране каждой игры есть локальная
@@ -366,7 +372,7 @@ games/<игра>/
   src/model/crises.js           кризисы, которые длятся до решения (кинотеатр)
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinoreka-streaming-simulator-v1.15.0.html
+  dist/kinoreka-streaming-simulator-v1.16.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```
