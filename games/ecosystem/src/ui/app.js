@@ -691,6 +691,9 @@ function renderEcoMap() {
     : '';
 
   const badges = [];
+  if (state.flags?.cofounder) {
+    badges.push(`<text x="${narrow ? 12 : 14}" y="${narrow ? 36 : 38}" class="m-muted">🤝 ${t('mapCofounder')}</text>`);
+  }
   if (r && r.warMonthsLeft > 0) {
     // У маленького круга имя сервиса стоит над ним — бейдж войны поднимается выше
     badges.push(`<text x="${tx2}" y="${ty2 - rTaxi - (rTaxi >= 26 ? 10 : 24)}" text-anchor="middle" class="m-muted">⚔️ ${tx(taxi.incumbentName)} · ${r.warMonthsLeft}</text>`);

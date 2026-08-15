@@ -39,11 +39,12 @@ function run(months, decide, seed = 'test', { rounds = true } = {}) {
   let state = createInitialState(seed);
   const reports = [];
   for (let i = 0; i < months && !state.over; i++) {
-    if (rounds && state.month >= CONFIG.minMonthForFunding) {
-      const lastR = state.history[state.history.length - 1];
-      if (lastR && lastR.profit < 0 && state.cash < -lastR.profit * 3) {
-        state = raise(state, CONFIG.fundingOptions[1]).state;
-      }
+    // Подушка та же, что в инструментах замеров (games/*/tools/anchors.mjs):
+    // раунд берётся по кассе, а не по прошлой прибыли. Прежнее правило
+    // молчало, когда прибыль была около нуля, и прогон умирал от одного
+    // дорогого события — вместе с тестами, которые про совсем другое.
+    if (rounds && state.month >= CONFIG.minMonthForFunding && state.cash < 200_000_000) {
+      state = raise(state, CONFIG.fundingOptions[1]).state;
     }
     const d = typeof decide === 'function' ? decide(state) : decide;
     // Перемирие не принимается автоматически: иначе прогоны «случайно»
@@ -769,7 +770,7 @@ test('общая логистика: маржа е-кома выше, но ка�
   // Тот же холдинг без перка (стриминговый хаб): маржа ниже, еда целее
   let sStream = createInitialState('logi-s', 'streaming');
   for (let i = 0; i < 16 && !sStream.over; i++) {
-    if (sStream.month >= 2 && sStream.cash < 120_000_000) {
+    if (sStream.month >= 2 && sStream.cash < 200_000_000) {
       sStream = raise(sStream, CONFIG.fundingOptions[1]).state;
     }
     sStream = step(sStream, { decisions: fullDecisions(sStream), eventChoice: 0 }).state;
@@ -853,7 +854,7 @@ test('наследие: бонусы применяются и складыва�
     let s = createInitialState(seed, 'delivery', legacy);
     for (let i = 0; i < 36 && !s.over; i++) {
       // Подушка под события: раунд при тонкой кассе, а не только при убытке
-      if (s.month >= 2 && s.cash < 120_000_000) {
+      if (s.month >= 2 && s.cash < 200_000_000) {
         s = raise(s, CONFIG.fundingOptions[1]).state;
       }
       // Капитальные варианты событий — только при живой кассе:
@@ -1035,7 +1036,7 @@ test('год конгломерата: свой акт, свои правила,
     ecomLogistics: 3e6, finance: 3e6,
   });
   while (!s.over) {
-    if (s.month >= 2 && s.cash < 120e6) s = raise(s, CONFIG.fundingOptions[1]).state;
+    if (s.month >= 2 && s.cash < 200e6) s = raise(s, CONFIG.fundingOptions[1]).state;
     s = step(s, { decisions: dec(s), eventChoice: 0 }).state;
   }
   assert.equal(s.over, 'finished');
@@ -1195,7 +1196,7 @@ test('престижная трата: считается заранее и не
     for (const seed of seeds) {
       let st = createInitialState(seed, 'delivery', {}, 'normal');
       for (let i = 0; i < CONFIG.monthsTotal && !st.over; i++) {
-        if (st.month >= 2 && st.cash < 120_000_000) {
+        if (st.month >= 2 && st.cash < 200_000_000) {
           st = raise(st, CONFIG.fundingOptions[1]).state;
         }
         const ev = st.pendingEvent?.id;
@@ -1248,4 +1249,37 @@ test('планка вердикта зависит и от актива, и от
   const kDelivery = gradesFor('delivery', 'easy').solid / gradesFor('delivery', 'normal').solid;
   const kTickets = gradesFor('tickets', 'easy').solid / gradesFor('tickets', 'normal').solid;
   assert.ok(kDelivery > kTickets, 'лёгкий помогает доставке сильнее, чем билетам');
+});
+
+// --- Сооснователь за долю ---------------------------------------------------
+
+test('сооснователь берёт долю один раз и снимает часть расфокуса', () => {
+  const EV = EVENTS.find((e) => e.id === 'cofounder');
+  let s = createInitialState('сооснователь');
+  // Две вертикали: без них расфокуса нет и снимать нечего
+  for (let i = 0; i < 10; i++) {
+    s = step(s, { decisions: { ...DEFAULT_DECISIONS, verticals: ['taxi'] } }).state;
+  }
+  const before = focusPenalty(s, { ...DEFAULT_DECISIONS, mgmt: 2_000_000 });
+  const equityBefore = s.equity;
+
+  s = step({ ...s, pendingEvent: EV }, {
+    decisions: { ...DEFAULT_DECISIONS, verticals: ['taxi'] }, eventChoice: 1,
+  }).state;
+
+  assert.ok(s.flags.cofounder, 'флаг сооснователя не поднялся');
+  assert.ok(Math.abs(s.equity - equityBefore * (1 - CONFIG.cofounder.equity)) < 1e-9,
+    'доля разошлась с ценой сооснователя');
+  const after = focusPenalty(s, { ...DEFAULT_DECISIONS, mgmt: 2_000_000 });
+  assert.ok(after < before, 'расфокус не подешевел');
+  assert.ok(Math.abs(after - before * (1 - CONFIG.cofounder.focusRelief)) < 1e-9,
+    'скидка на расфокус не совпала с настройкой');
+
+  // Второй раз долю не берут. Сравнение с контрольным ходом, а не с прошлой
+  // долей: совет может размыть основателя за проваленную цель, и это не имеет
+  // отношения к сооснователю.
+  const decisions = { ...DEFAULT_DECISIONS, verticals: ['taxi'] };
+  const again = step({ ...s, pendingEvent: EV }, { decisions, eventChoice: 1 }).state;
+  const control = step({ ...s, pendingEvent: null }, { decisions, eventChoice: 0 }).state;
+  assert.equal(again.equity, control.equity, 'доля ушла второй раз');
 });

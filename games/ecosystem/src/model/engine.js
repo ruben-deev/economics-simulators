@@ -158,7 +158,7 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
     endless: false,
     scored: null,
     decisions: { ...DEFAULT_DECISIONS, verticals: [], partners: [] },
-    flags: { valuationBonus: 0, regulationRisk: false },
+    flags: { valuationBonus: 0, regulationRisk: false, cofounder: false },
     board: { goal: null, history: [], profitableMonths: 0 },
     restrictions: null,
     pendingDilution: 0,
@@ -222,7 +222,8 @@ export function verticalsCount(state) {
 // Подписка вертикалью не считается — это склейка, а не отдельный бизнес.
 export function focusPenalty(state, decisions) {
   const n = verticalsCount(state);
-  return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions));
+  const relief = state.flags?.cofounder ? (1 - CONFIG.cofounder.focusRelief) : 1;
+  return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions)) * relief;
 }
 
 export function foodQuality(state, decisions) {
@@ -397,6 +398,11 @@ export function step(prevState, input = {}) {
   }
   if (mods.legalMonths) state.story.legalUntil = month + mods.legalMonths - 1;
   if (mods.supervisionOn) state.story.supervision = true;
+  // Сооснователь: доля отдаётся один раз и навсегда, отдача — вечная
+  if (mods.cofounder && !state.flags.cofounder) {
+    state.flags.cofounder = true;
+    state.equity *= 1 - CONFIG.cofounder.equity;
+  }
   const legalActive = (state.story.legalUntil ?? 0) >= month;
   const fedActive = (state.story.fedUntil ?? 0) >= month;
   const fedChurnAdd = fedActive ? (state.story.fedSoft ? 0.004 : 0.008) : 0;

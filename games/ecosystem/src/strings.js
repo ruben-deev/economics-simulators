@@ -137,6 +137,7 @@ export const STRINGS = {
   mapCrossBack: { ru: 'кросс-селл', en: 'cross-sell' },
   mapCold: { ru: 'маркетинг', en: 'marketing' },
   mapWinback: { ru: 'возврат и органика', en: 'win-back & organic' },
+  mapCofounder: { ru: 'сооснователь в деле', en: 'co-founder on board' },
   mapFed: { ru: 'набег федеральной экосистемы · {months} мес.', en: 'national ecosystem raid · {months} mo' },
   mapUnique: {
     ru: 'Уникальных клиентов холдинга: {unique} — {share} города. Круги — базы сервисов, золотое пересечение — люди в двух сервисах: за них инвестор и платит премию.',

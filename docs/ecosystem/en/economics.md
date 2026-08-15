@@ -249,6 +249,42 @@ expensive capital. On a build without e-commerce, splitting logistics is
 predictably the cheapest — that is not an imbalance but a property of
 structure: it is easy to concede what you do not have.
 
+## A co-founder for a stake
+
+The only event where you pay with the company rather than with cash. A COO from
+a company that has already walked this road joins as a co-founder for **14%**,
+and for the rest of the game removes **25%** of the conglomerate focus penalty.
+
+In the model that penalty is:
+
+```
+focus penalty = 0.12 × (verticals − 1) × (1 − management level)
+```
+
+So the co-founder is a direct substitute for the management budget: the same
+problem is cured either with money every month or with equity once. Hence the
+shape of the decision — it depends not on taste but on what you are building.
+
+Measured (24 codes, the event forced on month 8, both branches played by one
+policy):
+
+| strategy | taking the co-founder |
+|---|---|
+| the hub alone, one vertical | **−10.7%** |
+| hub and taxi, management ₽8M/mo | −12.2% |
+| full ecosystem, management ₽11M/mo | −10.2% |
+| full ecosystem, management ₽2M/mo | **+6.0%** |
+
+The rule reads straight off the table: the stake pays for itself only where the
+loss of focus is genuinely expensive and not already paid for by the management
+budget. With a single vertical there is nothing to pay for, and the 14% is
+simply subtracted from the result.
+
+The price and the strength were tuned by measurement to produce exactly this
+shape: at 8% and a 45% discount the co-founder gave +18% to the best strategy —
+a free «yes»; at 24% and 35% it was negative on every branch — a free «no».
+Neither of those is a decision.
+
 ## The post-endgame: the conglomerate year
 
 The game is scored at month 36, the result is frozen and already submitted —

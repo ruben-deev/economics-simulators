@@ -155,6 +155,38 @@ export const EVENTS = [
     ],
   },
   {
+    id: 'cofounder', weight: 6, minMonth: 6, once: true,
+    title: { ru: 'Сооснователь за долю', en: 'A co-founder for a stake' },
+    text: {
+      ru: 'К вам приходит операционный директор из компании, которая прошла этот путь до вас. Готов войти сооснователем и вести вертикали руками — но не за зарплату, а за 14% компании.',
+      en: 'A COO from a company that has already walked this road comes to you. They are ready to join as a co-founder and run the verticals hands-on — not for a salary, but for 14% of the company.',
+    },
+    lesson: {
+      ru: 'Доля отдаётся один раз и навсегда, а стоит она процента от всего, что вы построите потом. Сильный партнёр окупается только там, где расфокус реально дорог: на одной вертикали платить нечем.',
+      en: 'A stake is given once and forever, and it costs a percentage of everything you build afterwards. A strong partner pays off only where the loss of focus is genuinely expensive: with a single vertical there is nothing to pay for.',
+    },
+    // Отказ стоит первым намеренно: доля отдаётся навсегда, и вариант «ничего
+    // не менять» не должен оказываться тем, что нажимают не глядя.
+    options: [
+      {
+        label: { ru: 'Остаться единственным основателем', en: 'Stay the sole founder' },
+        detail: {
+          ru: 'Вся компания ваша. Расфокус придётся оплачивать управляющей компанией — деньгами, а не долей.',
+          en: 'The whole company stays yours. The loss of focus will have to be paid for with the management budget — in cash, not equity.',
+        },
+        effects: {},
+      },
+      {
+        label: { ru: 'Взять сооснователя (14% компании)', en: 'Take the co-founder (14% of the company)' },
+        detail: {
+          ru: 'Конгломератный штраф за расфокус падает на четверть до конца партии. Доля уходит сразу — и из итоговой оценки тоже.',
+          en: 'The conglomerate focus penalty drops by a quarter for the rest of the game. The stake leaves immediately — and out of the final valuation too.',
+        },
+        effects: { cofounder: true },
+      },
+    ],
+  },
+  {
     id: 'data_leak', weight: 4, minMonth: 10,
     title: { ru: 'Утечка данных единого аккаунта', en: 'Unified account data leak' },
     text: {
