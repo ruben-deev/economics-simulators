@@ -22,6 +22,7 @@ export default {
     '../../shared/records.js',
     '../../shared/difficulty.js',
     '../../shared/finance.js',
+    '../../shared/controls.js',
     '../../shared/meta.js',
     '../../shared/leaderboard.js',
     '../../shared/rng.js',

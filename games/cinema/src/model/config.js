@@ -386,6 +386,21 @@ export const LEVERS = [
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 99, max: 999, step: 10, def: 399,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика цены острая
+    // (замер: 449 -> 24.5, 499 -> 40.9, 549 -> 35.8 млрд), и дискретизация
+    // тихо срезала бы верх стратегии. Режимы ставят значение, точное
+    // значение по-прежнему набирается ползунком.
+    policyMode: 'preset',
+    policy: [
+      { v: 249, label: { ru: 'Вход рублём', en: 'Cheap entry' },
+        note: { ru: 'Дешевле рынка: подписываются охотно, но каждый приносит мало, и поднять цену этой базе потом будет отдельным решением с оттоком.', en: 'Below market: people sign up readily but each brings little, and raising the price for that base later is a separate decision with churn attached.' } },
+      { v: 399, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: конкурируете каталогом и премьерами, а не рублём.', en: 'The same as your rival: you compete on catalogue and premieres, not on price.' } },
+      { v: 499, label: { ru: 'Уверенная', en: 'Confident' },
+        note: { ru: 'Выше рынка: подписка окупает контент быстрее, но каталог обязан это оправдывать — иначе новые не приходят.', en: 'Above market: the subscription pays back the content faster, but the catalogue has to justify it — otherwise new sign-ups dry up.' } },
+      { v: 649, label: { ru: 'Премиум', en: 'Premium' },
+        note: { ru: 'Дорого и штучно: приходят немногие, зато платят как за кино. Годится только с сильными оригиналами.', en: 'Expensive and selective: few come, but they pay cinema money. Only works with strong originals.' } },
+    ],
     tip: {
       ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',
       en: 'The price new subscribers sign up at. Your existing base keeps paying what it signed at — moving them to the new price is a separate decision, and some of them will leave over it.',
@@ -408,6 +423,17 @@ export const LEVERS = [
     label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 40, step: 5, def: 0, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Только помесячно', en: 'Monthly only' },
+        note: { ru: 'Никаких годовых: выручка ровная, деньги приходят по мере просмотра.', en: 'No annual plans: revenue is even, money arrives as people watch.' } },
+      { v: 5, label: { ru: 'Мягкая', en: 'Gentle' },
+        note: { ru: 'Небольшая скидка: годовых немного, а те, кто перешёл, уходят заметно реже.', en: 'A small discount: few switch, and those who do churn noticeably less.' } },
+      { v: 15, label: { ru: 'Заметная', en: 'Real' },
+        note: { ru: 'Год вперёд берут охотно: касса сегодня, но цена этих людей зафиксирована и под повышения не попадёт.', en: 'People take the year willingly: cash today, but their price is locked and exempt from any rise.' } },
+      { v: 30, label: { ru: 'Агрессивная', en: 'Aggressive' },
+        note: { ru: 'Заём у собственной будущей выручки: деньги сейчас, тонкая выручка потом весь следующий год.', en: 'A loan against your own future revenue: cash now, thin revenue for the whole year after.' } },
+    ],
     tip: {
       ru: 'Годовая подписка приносит деньги сразу за двенадцать месяцев и защищает от оттока — но фиксирует цену и не попадает под повышения. Это заём у собственной будущей выручки.',
       en: 'An annual plan brings twelve months of cash at once and shields you from churn — but it locks the price and is exempt from any rise. It is a loan against your own future revenue.',
@@ -419,6 +445,17 @@ export const LEVERS = [
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Без рекламы', en: 'Ad-free' },
+        note: { ru: 'Чистый просмотр: вторая статья выручки закрыта, зато никого не раздражаете.', en: 'Clean viewing: your second revenue line is shut, but nobody is annoyed.' } },
+      { v: 2, label: { ru: 'Щадящая', en: 'Light' },
+        note: { ru: 'Пара минут в час: деньги появляются, отток почти не двигается.', en: 'A couple of minutes an hour: money appears while churn barely moves.' } },
+      { v: 6, label: { ru: 'Плотная', en: 'Heavy' },
+        note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее. Киноманы уходят первыми.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster. Cinephiles leave first.' } },
+      { v: 12, label: { ru: 'Как у бесплатных', en: 'Free-TV level' },
+        note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
+    ],
     tip: {
       ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
       en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
@@ -506,9 +543,33 @@ export const LEVERS = [
 ];
 
 export const LEVER_GROUPS = [
-  { id: 'money', label: { ru: 'Деньги и цена', en: 'Money and price' }, open: true },
-  { id: 'growth', label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' }, open: true },
-  { id: 'infra', label: { ru: 'Инфраструктура', en: 'Infrastructure' }, open: false },
+  {
+    id: 'money',
+    label: { ru: 'Деньги и цена', en: 'Money and price' },
+    desc: {
+      ru: 'Две статьи выручки — подписка и реклама — и то, как вы их сочетаете. Цена берётся с новых, действующая база платит свою.',
+      en: 'Two revenue lines — subscription and advertising — and how you combine them. The price applies to new sign-ups; your existing base keeps paying what it signed at.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' },
+    desc: {
+      ru: 'Чем наполнена полка и знает ли о ней город. Лицензии дешевле и быстрее, но тают; своё производство дороже и медленнее, зато остаётся навсегда.',
+      en: 'What fills the shelf and whether the city knows about it. Licences are cheaper and faster but expire; your own production is dearer and slower but stays for good.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Инфраструктура', en: 'Infrastructure' },
+    desc: {
+      ru: 'Настраивается один раз и почти не трогается: качество картинки, платформа, данные.',
+      en: 'Set once and rarely touched: picture quality, platform, data.',
+    },
+    open: false,
+  },
 ];
 
 // ============================================================================

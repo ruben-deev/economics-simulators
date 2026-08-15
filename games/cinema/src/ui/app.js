@@ -29,6 +29,7 @@ import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import {
   DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
 } from '../../../../shared/difficulty.js';
+import { policyHtml, syncPolicy, renderBudgetBar } from '../../../../shared/controls.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinoreka-save-v1';
@@ -158,6 +159,44 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
+// (shared/controls.js); у стриминга статей больше, чем у холдинга, поэтому
+// без неё расходы читались только построчно в P&L.
+const BUDGET_COLORS = {
+  content: PALETTE[1],
+  studio: PALETTE[2],
+  marketing: PALETTE[4],
+  tech: PALETTE[0],
+  fixed: '#64748b',
+};
+
+function renderBudget() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const items = [
+    { key: 'content', label: t('budgetContent'), value: (d.licensing ?? 0) + (r?.productionSpend ?? 0), color: BUDGET_COLORS.content },
+    { key: 'studio', label: t('budgetStudio'), value: r?.slotCost ?? 0, color: BUDGET_COLORS.studio },
+    { key: 'marketing', label: t('budgetMarketing'), value: (d.brandMarketing ?? 0) + (r?.campaignSpend ?? 0), color: BUDGET_COLORS.marketing },
+    { key: 'tech', label: t('budgetTech'), value: (d.tech ?? 0) + (d.rnd ?? 0) + (d.finance ?? 0), color: BUDGET_COLORS.tech },
+    { key: 'fixed', label: t('budgetFixed'), value: CONFIG.hqMonthly + (r?.staffCost ?? 0) + (r?.techUpkeep ?? 0) + (r?.miscCost ?? 0), color: BUDGET_COLORS.fixed },
+  ];
+  const total = items.reduce((a, i) => a + i.value, 0);
+  const contribution = r ? r.contribution : 0;
+  const net = contribution - total;
+  box.innerHTML = renderBudgetBar({
+    title: t('budgetTitle', { total: money(total) }),
+    items,
+    money,
+    note: r ? t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    }) : '',
+  });
+}
+
 function buildLevers() {
   // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
@@ -172,12 +211,15 @@ function buildLevers() {
         <span class="lg-count">${items.length}</span>
       </button>
       <div class="lever-group-body">
+        ${g.desc ? `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>` : ''}
+        <div id="readout-${g.id}"></div>
         ${items.map((l) => `
           <div class="lever" data-key="${l.key}">
             <div class="lever-head">
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
@@ -197,12 +239,32 @@ function buildLevers() {
       syncLevers();
       renderPriceGap();
       renderOpsReadout();
+      renderBudget();
       renderTurn();
       renderSlate();
       renderRightTab();
       save();
     });
   }
+  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
+  // настройки — кривые отклика у этой игры острые, дискретизация срезала бы
+  // верх стратегии (см. shared/controls.js)
+  el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.closest('[data-policy]').dataset.policy;
+      const lever = LEVERS.find((l) => l.key === key);
+      if (!lever) return;
+      state.decisions[key] = Number(b.dataset.policyValue) * (lever.scale ?? 1);
+      syncLevers();
+      renderPriceGap();
+      renderOpsReadout();
+      renderBudget();
+      renderTurn();
+      renderSlate();
+      renderRightTab();
+      save();
+    });
+  });
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
@@ -259,7 +321,7 @@ function renderPriceGap() {
           pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo')}</button>`
       : `<div class="funding-note">${wait > 0
           ? t('todoPriceGapCooldown', { months: wait })
-          : t('gapAligned')}</div>`}
+          : (paid > listPrice + 1 ? t('gapAbove') : t('gapAligned'))}</div>`}
   </div>`;
 
   el('btn-raise')?.addEventListener('click', () => {
@@ -276,6 +338,9 @@ function syncLevers() {
     if (input) input.value = String(raw);
     const out = el(`val-${l.key}`);
     if (out) out.textContent = leverDisplay(l, raw);
+    if (l.policy) {
+      syncPolicy(el('levers'), l, state.decisions[l.key], tx, t('policyCustom'));
+    }
   }
 }
 
@@ -288,22 +353,35 @@ function renderOpsReadout() {
   const idx = last()?.licenseIndex ?? 1;
   const boughtHours = state.decisions.licensing / (CONFIG.licenseCostPerHour * idx);
 
-  el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
-    <div>${t('opsCatalog', {
-      hours: compact(catalogHours), licensed: compact(state.catalogLicensed),
-      original: compact(state.catalogOriginal),
-      depth: catalogDepth(effective).toFixed(2),
-      fresh: catalogFreshness(state.freshHours).toFixed(2),
-    })}</div>
-    <div>${t('opsLicensing', {
-      hours: num(boughtHours), decay: compact(state.catalogLicensed * CONFIG.licenseDecay),
-    })}</div>
-    <div>${t('opsUnitCheck', {
-      arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
-      cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
-    })}</div>
-    <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
-  </div>`;
+  // Сводки живут внутри своих групп: цифры про деньги — рядом с ценой,
+  // цифры про полку — рядом с лицензиями. Одним блоком внизу колонки они
+  // читались как сноска, а не как ответ на только что сдвинутый ползунок.
+  const money = el('readout-money');
+  if (money) {
+    money.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('opsUnitCheck', {
+        arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
+        cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
+      })}</div>
+      <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
+    </div>`;
+  }
+  const growth = el('readout-growth');
+  if (growth) {
+    growth.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('opsCatalog', {
+        hours: compact(catalogHours), licensed: compact(state.catalogLicensed),
+        original: compact(state.catalogOriginal),
+        depth: catalogDepth(effective).toFixed(2),
+        fresh: catalogFreshness(state.freshHours).toFixed(2),
+      })}</div>
+      <div>${t('opsLicensing', {
+        hours: num(boughtHours), decay: compact(state.catalogLicensed * CONFIG.licenseDecay),
+      })}</div>
+    </div>`;
+  }
+  const ops = el('ops-readout');
+  if (ops) ops.innerHTML = '';
 }
 
 // ----------------------------------------------------------------------------
@@ -1096,7 +1174,7 @@ function renderAlgos() {
   el('algos').querySelectorAll('[data-algo]').forEach((box) => {
     box.addEventListener('change', () => {
       state.decisions.algoOn = { ...state.decisions.algoOn, [box.dataset.algo]: box.checked };
-      renderAlgos(); renderOpsReadout(); renderRightTab(); save();
+      renderAlgos(); renderOpsReadout(); renderBudget(); renderRightTab(); save();
     });
   });
   el('algos').querySelectorAll('[data-algo-param]').forEach((input) => {
@@ -1108,7 +1186,8 @@ function renderAlgos() {
       };
       const head = input.parentElement.querySelector('b');
       if (head) head.textContent = `${input.value}${tx(a.param.unit)}`;
-      renderOpsReadout(); renderRightTab(); save();
+      renderOpsReadout();
+      renderBudget(); renderRightTab(); save();
     });
   });
 }
@@ -2076,6 +2155,7 @@ function renderAll() {
   renderPriceGap();
   renderAlgos();
   renderOpsReadout();
+  renderBudget();
   renderKpis();
   renderFunding();
   renderBoard();

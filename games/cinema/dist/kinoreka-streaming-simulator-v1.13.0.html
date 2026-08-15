@@ -884,6 +884,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   <main class="layout">
     <aside class="panel col-left">
       <h2 class="panel-title" id="title-levers"></h2>
+      <div id="budget-slot"></div>
       <div id="levers"></div>
       <div id="ops-readout"></div>
 
@@ -1018,6 +1019,14 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
+  budgetTitle: { ru: 'Расходы этого месяца при текущих настройках: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetContent: { ru: 'контент', en: 'content' },
+  budgetStudio: { ru: 'студия', en: 'studio' },
+  budgetMarketing: { ru: 'маркетинг', en: 'marketing' },
+  budgetTech: { ru: 'технологии', en: 'technology' },
+  budgetFixed: { ru: 'фикс и штат', en: 'fixed and staff' },
+  budgetNet: { ru: 'Вклад прошлого месяца {contribution} → итог примерно <b class="{cls}">{net}</b>.', en: 'Last month’s contribution {contribution} → roughly <b class="{cls}">{net}</b>.' },
+  policyCustom: { ru: 'своё значение', en: 'custom value' },
   pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
   pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
@@ -1094,6 +1103,10 @@ const STRINGS = {
   gapPaid: { ru: 'платят', en: 'paid' },
   gapNone: { ru: 'совпадает', en: 'aligned' },
   gapAligned: { ru: 'База уже платит по прайсу — повышать нечего.', en: 'The base already pays list price — nothing to raise.' },
+  gapAbove: {
+    ru: 'База платит больше нового прайса: вы снизили цену для новых, а действующие остались на своей. Понижать их никто не заставляет — но и удерживать этой ценой уже нечем.',
+    en: 'Your base pays more than the new list price: you cut the price for new sign-ups while existing subscribers stayed on theirs. Nobody forces you to lower it — but it no longer holds anyone either.',
+  },
   gapAnnual: { ru: 'Из них {subs} на годовом тарифе: их повышение не коснётся.', en: 'Of these {subs} are on annual plans: a rise will not touch them.' },
   gapNoData: { ru: 'Разрыв появится, когда у сервиса будет база.', en: 'The gap appears once the service has a base.' },
 
@@ -2086,6 +2099,100 @@ function financeRoundGain(conf, strength) {
 }
 
 
+// ===== ../../shared/controls.js ====================================
+// ============================================================================
+// Общие органы управления набора: полоса бюджета и политики.
+//
+// Оба появились в НОВОГРАДЕ и оказались нужны всем играм: инвентаризация
+// показала, что у КИНОРЕКИ и БИЛЕТВИЛЯ расходных рычагов больше, а ни полосы
+// «куда уходят деньги», ни решений с именами нет вовсе — двенадцать
+// одинаковых ползунков подряд читаются как экран настроек, а не как решения.
+//
+// Разница между режимами политики:
+//   'replace' — режимы ЗАМЕНЯЮТ ползунок (так в НОВОГРАДЕ: решение уровня
+//               совета директоров не имеет промежуточных значений);
+//   'preset'  — режимы стоят НАД ползунком и просто ставят значение. Так в
+//               старых играх: их кривые отклика острые (у цены подписки
+//               КИНОРЕКИ соседние 50 ₽ дают разницу в десятки процентов),
+//               и дискретизация тихо срезала бы верх стратегии. Имена и
+//               последствия появляются, достижимые значения — прежние.
+//
+// Модуль без состояния: строит разметку и синхронизирует её с числом.
+// ============================================================================
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * Разметка политики: ряд названных режимов и строка последствий выбранного.
+ * lever: { key, policy: [{ v, label, note }], scale? }
+ * tx: разворачиватель двуязычных полей.
+ */
+function policyHtml(lever, tx) {
+  return `<div class="policy-seg" data-policy="${esc(lever.key)}">
+      ${lever.policy.map((p) => `<button type="button" data-policy-value="${p.v}">${tx(p.label)}</button>`).join('')}
+    </div>
+    <div class="policy-note" id="note-${esc(lever.key)}"></div>`;
+}
+
+/**
+ * Подсветить выбранный режим и показать его последствия. Работает и когда
+ * точное значение выставлено ползунком мимо режимов: тогда не подсвечен
+ * никто, а строка последствий берётся от ближайшего режима — иначе игрок
+ * теряет объяснение, стоит чуть сдвинуть ползунок.
+ */
+function syncPolicy(root, lever, value, tx, customLabel = '') {
+  const box = root.querySelector(`[data-policy="${lever.key}"]`);
+  if (!box) return null;
+  const raw = value / (lever.scale ?? 1);
+  let exact = null;
+  let nearest = lever.policy[0];
+  for (const p of lever.policy) {
+    if (Math.abs(p.v - raw) < 1e-9) exact = p;
+    if (Math.abs(p.v - raw) < Math.abs(nearest.v - raw)) nearest = p;
+  }
+  box.querySelectorAll('[data-policy-value]').forEach((b) => {
+    b.classList.toggle('active', exact !== null && Math.abs(Number(b.dataset.policyValue) - raw) < 1e-9);
+  });
+  const note = root.querySelector(`#note-${lever.key}`);
+  if (note) {
+    note.innerHTML = exact
+      ? tx(exact.note)
+      : `${customLabel ? `<b>${esc(customLabel)}</b> · ` : ''}${tx(nearest.note)}`;
+  }
+  return exact ?? nearest;
+}
+
+/**
+ * Полоса бюджета: куда уходят деньги этого хода.
+ * items: [{ key, label, value, color }] — нулевые статьи не показываются.
+ * note — готовая строка под полосой (вклад, остаток), необязательна.
+ */
+function budgetBarHtml({ title, items, note = '' }) {
+  const shown = items.filter((i) => i.value > 0);
+  const total = shown.reduce((s, i) => s + i.value, 0);
+  if (total <= 0) return '';
+  const seg = (i) => `<span style="width:${(100 * i.value / total).toFixed(1)}%;background:${i.color}"></span>`;
+  const leg = (i, money) => `<span><i style="background:${i.color}"></i>${i.label} ${money(i.value)}</span>`;
+  return { total, shown, seg, leg };
+}
+
+/**
+ * Готовая разметка полосы. money — форматтер набора (shared/format.js).
+ */
+function renderBudgetBar({ title, items, note = '', money }) {
+  const parts = budgetBarHtml({ title, items });
+  if (!parts) return '';
+  const { shown, seg, leg } = parts;
+  return `<div class="hint-box" style="margin-bottom:12px">
+    <div>${title}</div>
+    <div class="budget-bar">${shown.map(seg).join('')}</div>
+    <div class="budget-legend">${shown.map((i) => leg(i, money)).join('')}</div>
+    ${note ? `<div class="funding-note" style="margin-top:4px">${note}</div>` : ''}
+  </div>`;
+}
+
+
 // ===== ../../shared/meta.js ========================================
 // ============================================================================
 // Мета-прогрессия набора: НОВОГРАД — «эндгейм», три игры — его пролог.
@@ -2988,6 +3095,21 @@ const LEVERS = [
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 99, max: 999, step: 10, def: 399,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика цены острая
+    // (замер: 449 -> 24.5, 499 -> 40.9, 549 -> 35.8 млрд), и дискретизация
+    // тихо срезала бы верх стратегии. Режимы ставят значение, точное
+    // значение по-прежнему набирается ползунком.
+    policyMode: 'preset',
+    policy: [
+      { v: 249, label: { ru: 'Вход рублём', en: 'Cheap entry' },
+        note: { ru: 'Дешевле рынка: подписываются охотно, но каждый приносит мало, и поднять цену этой базе потом будет отдельным решением с оттоком.', en: 'Below market: people sign up readily but each brings little, and raising the price for that base later is a separate decision with churn attached.' } },
+      { v: 399, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: конкурируете каталогом и премьерами, а не рублём.', en: 'The same as your rival: you compete on catalogue and premieres, not on price.' } },
+      { v: 499, label: { ru: 'Уверенная', en: 'Confident' },
+        note: { ru: 'Выше рынка: подписка окупает контент быстрее, но каталог обязан это оправдывать — иначе новые не приходят.', en: 'Above market: the subscription pays back the content faster, but the catalogue has to justify it — otherwise new sign-ups dry up.' } },
+      { v: 649, label: { ru: 'Премиум', en: 'Premium' },
+        note: { ru: 'Дорого и штучно: приходят немногие, зато платят как за кино. Годится только с сильными оригиналами.', en: 'Expensive and selective: few come, but they pay cinema money. Only works with strong originals.' } },
+    ],
     tip: {
       ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',
       en: 'The price new subscribers sign up at. Your existing base keeps paying what it signed at — moving them to the new price is a separate decision, and some of them will leave over it.',
@@ -3010,6 +3132,17 @@ const LEVERS = [
     label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 40, step: 5, def: 0, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Только помесячно', en: 'Monthly only' },
+        note: { ru: 'Никаких годовых: выручка ровная, деньги приходят по мере просмотра.', en: 'No annual plans: revenue is even, money arrives as people watch.' } },
+      { v: 5, label: { ru: 'Мягкая', en: 'Gentle' },
+        note: { ru: 'Небольшая скидка: годовых немного, а те, кто перешёл, уходят заметно реже.', en: 'A small discount: few switch, and those who do churn noticeably less.' } },
+      { v: 15, label: { ru: 'Заметная', en: 'Real' },
+        note: { ru: 'Год вперёд берут охотно: касса сегодня, но цена этих людей зафиксирована и под повышения не попадёт.', en: 'People take the year willingly: cash today, but their price is locked and exempt from any rise.' } },
+      { v: 30, label: { ru: 'Агрессивная', en: 'Aggressive' },
+        note: { ru: 'Заём у собственной будущей выручки: деньги сейчас, тонкая выручка потом весь следующий год.', en: 'A loan against your own future revenue: cash now, thin revenue for the whole year after.' } },
+    ],
     tip: {
       ru: 'Годовая подписка приносит деньги сразу за двенадцать месяцев и защищает от оттока — но фиксирует цену и не попадает под повышения. Это заём у собственной будущей выручки.',
       en: 'An annual plan brings twelve months of cash at once and shields you from churn — but it locks the price and is exempt from any rise. It is a loan against your own future revenue.',
@@ -3021,6 +3154,17 @@ const LEVERS = [
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Без рекламы', en: 'Ad-free' },
+        note: { ru: 'Чистый просмотр: вторая статья выручки закрыта, зато никого не раздражаете.', en: 'Clean viewing: your second revenue line is shut, but nobody is annoyed.' } },
+      { v: 2, label: { ru: 'Щадящая', en: 'Light' },
+        note: { ru: 'Пара минут в час: деньги появляются, отток почти не двигается.', en: 'A couple of minutes an hour: money appears while churn barely moves.' } },
+      { v: 6, label: { ru: 'Плотная', en: 'Heavy' },
+        note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее. Киноманы уходят первыми.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster. Cinephiles leave first.' } },
+      { v: 12, label: { ru: 'Как у бесплатных', en: 'Free-TV level' },
+        note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
+    ],
     tip: {
       ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
       en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
@@ -3108,9 +3252,33 @@ const LEVERS = [
 ];
 
 const LEVER_GROUPS = [
-  { id: 'money', label: { ru: 'Деньги и цена', en: 'Money and price' }, open: true },
-  { id: 'growth', label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' }, open: true },
-  { id: 'infra', label: { ru: 'Инфраструктура', en: 'Infrastructure' }, open: false },
+  {
+    id: 'money',
+    label: { ru: 'Деньги и цена', en: 'Money and price' },
+    desc: {
+      ru: 'Две статьи выручки — подписка и реклама — и то, как вы их сочетаете. Цена берётся с новых, действующая база платит свою.',
+      en: 'Two revenue lines — subscription and advertising — and how you combine them. The price applies to new sign-ups; your existing base keeps paying what it signed at.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' },
+    desc: {
+      ru: 'Чем наполнена полка и знает ли о ней город. Лицензии дешевле и быстрее, но тают; своё производство дороже и медленнее, зато остаётся навсегда.',
+      en: 'What fills the shelf and whether the city knows about it. Licences are cheaper and faster but expire; your own production is dearer and slower but stays for good.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Инфраструктура', en: 'Infrastructure' },
+    desc: {
+      ru: 'Настраивается один раз и почти не трогается: качество картинки, платформа, данные.',
+      en: 'Set once and rarely touched: picture quality, platform, data.',
+    },
+    open: false,
+  },
 ];
 
 // ============================================================================
@@ -6511,6 +6679,44 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
+// (shared/controls.js); у стриминга статей больше, чем у холдинга, поэтому
+// без неё расходы читались только построчно в P&L.
+const BUDGET_COLORS = {
+  content: PALETTE[1],
+  studio: PALETTE[2],
+  marketing: PALETTE[4],
+  tech: PALETTE[0],
+  fixed: '#64748b',
+};
+
+function renderBudget() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const items = [
+    { key: 'content', label: t('budgetContent'), value: (d.licensing ?? 0) + (r?.productionSpend ?? 0), color: BUDGET_COLORS.content },
+    { key: 'studio', label: t('budgetStudio'), value: r?.slotCost ?? 0, color: BUDGET_COLORS.studio },
+    { key: 'marketing', label: t('budgetMarketing'), value: (d.brandMarketing ?? 0) + (r?.campaignSpend ?? 0), color: BUDGET_COLORS.marketing },
+    { key: 'tech', label: t('budgetTech'), value: (d.tech ?? 0) + (d.rnd ?? 0) + (d.finance ?? 0), color: BUDGET_COLORS.tech },
+    { key: 'fixed', label: t('budgetFixed'), value: CONFIG.hqMonthly + (r?.staffCost ?? 0) + (r?.techUpkeep ?? 0) + (r?.miscCost ?? 0), color: BUDGET_COLORS.fixed },
+  ];
+  const total = items.reduce((a, i) => a + i.value, 0);
+  const contribution = r ? r.contribution : 0;
+  const net = contribution - total;
+  box.innerHTML = renderBudgetBar({
+    title: t('budgetTitle', { total: money(total) }),
+    items,
+    money,
+    note: r ? t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    }) : '',
+  });
+}
+
 function buildLevers() {
   // Рычаги сгруппированы, и группа «инфраструктура» свёрнута по умолчанию.
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
@@ -6525,12 +6731,15 @@ function buildLevers() {
         <span class="lg-count">${items.length}</span>
       </button>
       <div class="lever-group-body">
+        ${g.desc ? `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>` : ''}
+        <div id="readout-${g.id}"></div>
         ${items.map((l) => `
           <div class="lever" data-key="${l.key}">
             <div class="lever-head">
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
@@ -6550,12 +6759,32 @@ function buildLevers() {
       syncLevers();
       renderPriceGap();
       renderOpsReadout();
+      renderBudget();
       renderTurn();
       renderSlate();
       renderRightTab();
       save();
     });
   }
+  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
+  // настройки — кривые отклика у этой игры острые, дискретизация срезала бы
+  // верх стратегии (см. shared/controls.js)
+  el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.closest('[data-policy]').dataset.policy;
+      const lever = LEVERS.find((l) => l.key === key);
+      if (!lever) return;
+      state.decisions[key] = Number(b.dataset.policyValue) * (lever.scale ?? 1);
+      syncLevers();
+      renderPriceGap();
+      renderOpsReadout();
+      renderBudget();
+      renderTurn();
+      renderSlate();
+      renderRightTab();
+      save();
+    });
+  });
   el('levers').querySelectorAll('.lever-why').forEach((b) => {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
@@ -6612,7 +6841,7 @@ function renderPriceGap() {
           pendingRaise ? t('todoPriceGapOn') : t('todoPriceGapDo')}</button>`
       : `<div class="funding-note">${wait > 0
           ? t('todoPriceGapCooldown', { months: wait })
-          : t('gapAligned')}</div>`}
+          : (paid > listPrice + 1 ? t('gapAbove') : t('gapAligned'))}</div>`}
   </div>`;
 
   el('btn-raise')?.addEventListener('click', () => {
@@ -6629,6 +6858,9 @@ function syncLevers() {
     if (input) input.value = String(raw);
     const out = el(`val-${l.key}`);
     if (out) out.textContent = leverDisplay(l, raw);
+    if (l.policy) {
+      syncPolicy(el('levers'), l, state.decisions[l.key], tx, t('policyCustom'));
+    }
   }
 }
 
@@ -6641,22 +6873,35 @@ function renderOpsReadout() {
   const idx = last()?.licenseIndex ?? 1;
   const boughtHours = state.decisions.licensing / (CONFIG.licenseCostPerHour * idx);
 
-  el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
-    <div>${t('opsCatalog', {
-      hours: compact(catalogHours), licensed: compact(state.catalogLicensed),
-      original: compact(state.catalogOriginal),
-      depth: catalogDepth(effective).toFixed(2),
-      fresh: catalogFreshness(state.freshHours).toFixed(2),
-    })}</div>
-    <div>${t('opsLicensing', {
-      hours: num(boughtHours), decay: compact(state.catalogLicensed * CONFIG.licenseDecay),
-    })}</div>
-    <div>${t('opsUnitCheck', {
-      arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
-      cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
-    })}</div>
-    <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
-  </div>`;
+  // Сводки живут внутри своих групп: цифры про деньги — рядом с ценой,
+  // цифры про полку — рядом с лицензиями. Одним блоком внизу колонки они
+  // читались как сноска, а не как ответ на только что сдвинутый ползунок.
+  const money = el('readout-money');
+  if (money) {
+    money.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('opsUnitCheck', {
+        arpu: `${num(u.revenue)} ₽`, cost: `${num(u.variable)} ₽`,
+        cm: `${num(u.contribution)} ₽`, cls: u.contribution >= 0 ? 'pos' : 'neg',
+      })}</div>
+      <div>${t('opsAdShare', { share: pct(u.adShare, 0) })}</div>
+    </div>`;
+  }
+  const growth = el('readout-growth');
+  if (growth) {
+    growth.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('opsCatalog', {
+        hours: compact(catalogHours), licensed: compact(state.catalogLicensed),
+        original: compact(state.catalogOriginal),
+        depth: catalogDepth(effective).toFixed(2),
+        fresh: catalogFreshness(state.freshHours).toFixed(2),
+      })}</div>
+      <div>${t('opsLicensing', {
+        hours: num(boughtHours), decay: compact(state.catalogLicensed * CONFIG.licenseDecay),
+      })}</div>
+    </div>`;
+  }
+  const ops = el('ops-readout');
+  if (ops) ops.innerHTML = '';
 }
 
 // ----------------------------------------------------------------------------
@@ -7449,7 +7694,7 @@ function renderAlgos() {
   el('algos').querySelectorAll('[data-algo]').forEach((box) => {
     box.addEventListener('change', () => {
       state.decisions.algoOn = { ...state.decisions.algoOn, [box.dataset.algo]: box.checked };
-      renderAlgos(); renderOpsReadout(); renderRightTab(); save();
+      renderAlgos(); renderOpsReadout(); renderBudget(); renderRightTab(); save();
     });
   });
   el('algos').querySelectorAll('[data-algo-param]').forEach((input) => {
@@ -7461,7 +7706,8 @@ function renderAlgos() {
       };
       const head = input.parentElement.querySelector('b');
       if (head) head.textContent = `${input.value}${tx(a.param.unit)}`;
-      renderOpsReadout(); renderRightTab(); save();
+      renderOpsReadout();
+      renderBudget(); renderRightTab(); save();
     });
   });
 }
@@ -8429,6 +8675,7 @@ function renderAll() {
   renderPriceGap();
   renderAlgos();
   renderOpsReadout();
+  renderBudget();
   renderKpis();
   renderFunding();
   renderBoard();

@@ -5,6 +5,34 @@
 // ============================================================================
 
 export const STRINGS = {
+  readoutTake: {
+    ru: 'Вы забираете <b>{rate}</b> оборота — {perTicket} с билета. Эквайринг съедает {acquiring} оборота, и берётся он до вас.',
+    en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card processing eats {acquiring} of turnover, and it is charged before you.',
+  },
+  readoutTakeSplit: {
+    ru: 'Из них через афишу {market}, через виджет {widget}. Сбор и комиссия идут вместе: зритель платит один, организатор — другую.',
+    en: 'Of that, {market} comes through the listings and {widget} through the widget. Fee and commission travel together: the buyer pays one, the organiser the other.',
+  },
+  readoutSides: {
+    ru: 'Организаторов <b>{orgs}</b>, из них с виджетом {connected}. Ваша доля рынка организаторов — {share}.',
+    en: 'Organisers: <b>{orgs}</b>, {connected} of them with the widget. Your share of the organiser market is {share}.',
+  },
+  readoutFill: {
+    ru: 'Заполняемость залов <b class="{cls}">{fill}</b>, перекупщики забрали {bots} билетов.',
+    en: 'Hall fill rate <b class="{cls}">{fill}</b>; resellers took {bots} of tickets.',
+  },
+  readoutTrust: {
+    ru: 'Доверие <b class="{cls}">{trust}</b>, уровень сервиса {service}. Копится медленно, рушится быстро.',
+    en: 'Trust <b class="{cls}">{trust}</b>, service level {service}. Slow to build, quick to break.',
+  },
+  budgetTitle: { ru: 'Расходы этого месяца при текущих настройках: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetDemand: { ru: 'спрос', en: 'demand' },
+  budgetSupply: { ru: 'организаторы', en: 'organisers' },
+  budgetProduct: { ru: 'продукт и поддержка', en: 'product and support' },
+  budgetTech: { ru: 'технологии', en: 'technology' },
+  budgetFixed: { ru: 'фикс и штат', en: 'fixed and staff' },
+  budgetNet: { ru: 'Вклад прошлого месяца {contribution} → итог примерно <b class="{cls}">{net}</b>.', en: 'Last month’s contribution {contribution} → roughly <b class="{cls}">{net}</b>.' },
+  policyCustom: { ru: 'своё значение', en: 'custom value' },
   pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
   pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },

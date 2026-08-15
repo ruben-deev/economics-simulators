@@ -4,6 +4,14 @@
 // ============================================================================
 
 export const STRINGS = {
+  budgetTitle: { ru: 'Расходы этого месяца при текущих настройках: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetContent: { ru: 'контент', en: 'content' },
+  budgetStudio: { ru: 'студия', en: 'studio' },
+  budgetMarketing: { ru: 'маркетинг', en: 'marketing' },
+  budgetTech: { ru: 'технологии', en: 'technology' },
+  budgetFixed: { ru: 'фикс и штат', en: 'fixed and staff' },
+  budgetNet: { ru: 'Вклад прошлого месяца {contribution} → итог примерно <b class="{cls}">{net}</b>.', en: 'Last month’s contribution {contribution} → roughly <b class="{cls}">{net}</b>.' },
+  policyCustom: { ru: 'своё значение', en: 'custom value' },
   pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
   pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
@@ -80,6 +88,10 @@ export const STRINGS = {
   gapPaid: { ru: 'платят', en: 'paid' },
   gapNone: { ru: 'совпадает', en: 'aligned' },
   gapAligned: { ru: 'База уже платит по прайсу — повышать нечего.', en: 'The base already pays list price — nothing to raise.' },
+  gapAbove: {
+    ru: 'База платит больше нового прайса: вы снизили цену для новых, а действующие остались на своей. Понижать их никто не заставляет — но и удерживать этой ценой уже нечем.',
+    en: 'Your base pays more than the new list price: you cut the price for new sign-ups while existing subscribers stayed on theirs. Nobody forces you to lower it — but it no longer holds anyone either.',
+  },
   gapAnnual: { ru: 'Из них {subs} на годовом тарифе: их повышение не коснётся.', en: 'Of these {subs} are on annual plans: a rise will not touch them.' },
   gapNoData: { ru: 'Разрыв появится, когда у сервиса будет база.', en: 'The gap appears once the service has a base.' },
 

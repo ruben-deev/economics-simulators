@@ -332,9 +332,33 @@ export const audienceById = (id) => AUDIENCES.find((a) => a.id === id);
 // ============================================================================
 
 export const LEVER_GROUPS = [
-  { id: 'take', label: { ru: 'Комиссия и сборы', en: 'Fees and commission' }, open: true },
-  { id: 'growth', label: { ru: 'Спрос и предложение', en: 'Demand and supply' }, open: true },
-  { id: 'infra', label: { ru: 'Продукт и поддержка', en: 'Product and support' }, open: false },
+  {
+    id: 'take',
+    label: { ru: 'Комиссия и сборы', en: 'Fees and commission' },
+    desc: {
+      ru: 'С кого вы берёте деньги: со зрителя сбором, который он видит, или с организатора комиссией, которую он видит в договоре. Обе стороны нужны одновременно.',
+      en: 'Whom you charge: the buyer through a fee they see, or the organiser through a commission they see in the contract. You need both sides at once.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Спрос и предложение', en: 'Demand and supply' },
+    desc: {
+      ru: 'Двусторонний рынок растёт только с обоих концов: зрители приходят за афишей, организаторы — за зрителями. Маркетинг зовёт первых, менеджеры приводят вторых.',
+      en: 'A two-sided market only grows from both ends: buyers come for the listings, organisers come for the buyers. Marketing calls the former, account managers bring the latter.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Продукт и поддержка', en: 'Product and support' },
+    desc: {
+      ru: 'То, что держит доверие и выдерживает он-сейл: витрина, поддержка, ёмкость. Настраивается редко, но именно здесь ломается всё остальное.',
+      en: 'What holds trust and survives the on-sale: the storefront, support, capacity. Rarely adjusted — and exactly where everything else breaks.',
+    },
+    open: false,
+  },
 ];
 
 export const LEVERS = [
@@ -355,6 +379,20 @@ export const LEVERS = [
     label: { ru: 'Сервисный сбор с покупателя', en: 'Buyer service fee' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 22, step: 0.5, def: 10, scale: 0.01,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика сбора
+    // пологая, но с изломом наверху (замер: 15% -> 7.34, 20% -> 8.05,
+    // 25% -> 7.61 млрд), и точная настройка здесь уместна.
+    policyMode: 'preset',
+    policy: [
+      { v: 5, label: { ru: 'Почти без сбора', en: 'Barely a fee' },
+        note: { ru: 'Зритель видит почти цену билета: конверсия лучшая на рынке, выручки с билета почти нет.', en: 'The buyer sees almost the ticket price: best conversion on the market, almost no revenue per ticket.' } },
+      { v: 10, label: { ru: 'Рыночный', en: 'Market' },
+        note: { ru: 'Как у всех: зритель ворчит, но платит. Средний путь между оборотом и выручкой.', en: 'Same as everyone: the buyer grumbles and pays. The middle road between turnover and revenue.' } },
+      { v: 15, label: { ru: 'Плотный', en: 'Firm' },
+        note: { ru: 'Выше рынка: с каждого билета берёте заметно больше, часть корзин бросают на оплате.', en: 'Above market: you take visibly more per ticket, and some baskets are abandoned at checkout.' } },
+      { v: 20, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'На пороге терпения: выручка максимальная, но ещё шаг — и зритель уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue peaks, but one more step and the buyer leaves for a rival — taking the organiser along.' } },
+    ],
     tip: {
       ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку.',
       en: 'The mark-up on top of the ticket price that the buyer sees at checkout. The most visible line of your revenue — and the most visible reason to close the tab.',
@@ -366,6 +404,17 @@ export const LEVERS = [
     label: { ru: 'Комиссия с организатора', en: 'Organiser commission' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 14, step: 0.5, def: 5, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 1, label: { ru: 'Заманить', en: 'Court them' },
+        note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
+      { v: 3, label: { ru: 'Умеренная', en: 'Moderate' },
+        note: { ru: 'Заметно в договоре, но терпимо: организатор сравнивает с конкурентом и остаётся.', en: 'Visible in the contract but tolerable: the organiser compares with a rival and stays.' } },
+      { v: 5, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
+      { v: 8, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'Дороже рынка: крупные площадки начинают считать и уходить — вместе со своими залами.', en: 'Above market: big venues start doing the maths and leaving — with their halls.' } },
+    ],
     tip: {
       ru: 'Ваша доля из выручки организатора. Зритель её не видит совсем, зато организатор видит в договоре — и держит в голове предложение конкурента.',
       en: 'Your share of the organiser revenue. The buyer never sees it; the organiser sees it in the contract — and keeps the rival offer in mind.',
@@ -388,6 +437,15 @@ export const LEVERS = [
     label: { ru: 'Абонплата платформы', en: 'Platform subscription' },
     unit: { ru: '₽/мес', en: '₽/mo' },
     min: 0, max: 120_000, step: 5_000, def: 20_000,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
+        note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },
+      { v: 20_000, label: { ru: 'Символическая', en: 'Token' },
+        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already a reason to think for the small.' } },
+      { v: 60_000, label: { ru: 'Полная', en: 'Full' },
+        note: { ru: 'Деньги, не зависящие от оборота, — но длинный хвост маленьких площадок останется у конкурента.', en: 'Money independent of turnover — but the long tail of small venues stays with your rival.' } },
+    ],
     tip: {
       ru: 'Фиксированная плата с подключённого организатора. Деньги, не зависящие от оборота, — но для маленького клуба это и есть причина не подключаться.',
       en: 'A flat fee per connected organiser. Money that does not depend on turnover — and for a small club, exactly the reason not to connect.',

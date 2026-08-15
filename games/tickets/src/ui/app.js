@@ -37,6 +37,7 @@ import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import {
   DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
 } from '../../../../shared/difficulty.js';
+import { policyHtml, syncPolicy, renderBudgetBar } from '../../../../shared/controls.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'biletville-save-v1';
@@ -250,6 +251,89 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
+// (shared/controls.js). У маркетплейса статей больше всех в наборе, и до
+// сих пор они читались только построчно в P&L.
+const BUDGET_COLORS = {
+  demand: PALETTE[1],
+  supply: PALETTE[2],
+  product: PALETTE[4],
+  tech: PALETTE[0],
+  fixed: '#64748b',
+};
+
+// Живые сводки групп: что механика группы делает прямо сейчас. Считаются от
+// последнего отчёта — тех же чисел, что игрок видит в центре экрана.
+function renderGroupReadouts() {
+  const r = last();
+  const take = el('readout-take');
+  if (take) {
+    take.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTake', {
+        rate: pct(r.takeRate ?? 0, 1),
+        perTicket: money(r.revenuePerTicket ?? 0),
+        acquiring: pct((r.gmv ?? 0) > 0 ? (r.acquiring ?? 0) / r.gmv : 0, 1),
+      })}</div>
+      <div>${t('readoutTakeSplit', {
+        market: money(r.marketplaceRevenue ?? 0),
+        widget: money((r.platformRevenue ?? 0) + (r.subscriptionRevenue ?? 0)),
+      })}</div>
+    </div>` : '';
+  }
+  const growth = el('readout-growth');
+  if (growth) {
+    growth.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutSides', {
+        orgs: num(Math.round(orgTotal(state))),
+        connected: num(r.connectedCount ?? 0),
+        share: pct(r.orgShare ?? 0, 0),
+      })}</div>
+      <div>${t('readoutFill', {
+        fill: pct(r.fill ?? 0, 0),
+        cls: (r.fill ?? 0) >= 0.7 ? 'pos' : 'neg',
+        bots: pct(r.botShare ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+  const infra = el('readout-infra');
+  if (infra) {
+    infra.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTrust', {
+        trust: pct(state.trust ?? 0, 0),
+        cls: (state.trust ?? 0) >= 0.6 ? 'pos' : 'neg',
+        service: pct(r.service ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+}
+
+function renderBudget() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const items = [
+    { key: 'demand', label: t('budgetDemand'), value: d.marketing ?? 0, color: BUDGET_COLORS.demand },
+    { key: 'supply', label: t('budgetSupply'), value: (r?.managerCost ?? 0) + (r?.onboardingSpend ?? 0), color: BUDGET_COLORS.supply },
+    { key: 'product', label: t('budgetProduct'), value: (d.product ?? 0) + (d.support ?? 0), color: BUDGET_COLORS.product },
+    { key: 'tech', label: t('budgetTech'), value: (d.platformDev ?? 0) + (d.capacityTech ?? 0) + (d.rnd ?? 0) + (d.finance ?? 0), color: BUDGET_COLORS.tech },
+    { key: 'fixed', label: t('budgetFixed'), value: CONFIG.hqMonthly + (r?.staffCost ?? 0) + (r?.techUpkeep ?? 0) + (r?.serverCost ?? 0) + (r?.miscCost ?? 0), color: BUDGET_COLORS.fixed },
+  ];
+  const total = items.reduce((a, i) => a + i.value, 0);
+  const contribution = r ? r.contribution : 0;
+  const net = contribution - total;
+  box.innerHTML = renderBudgetBar({
+    title: t('budgetTitle', { total: money(total) }),
+    items,
+    money,
+    note: r ? t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    }) : '',
+  });
+}
+
 function buildLevers() {
   // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
   // команды нет — она уже оплачена
@@ -264,12 +348,15 @@ function buildLevers() {
         <span class="lg-count">${items.length}</span>
       </button>
       <div class="lever-group-body">
+        ${g.desc ? `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>` : ''}
+        <div id="readout-${g.id}"></div>
         ${items.map((l) => `
           <div class="lever" data-key="${l.key}">
             <div class="lever-head">
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
@@ -286,6 +373,23 @@ function buildLevers() {
       group.classList.toggle('open', openGroups[id]);
     });
   });
+  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
+  // настройки (см. shared/controls.js)
+  el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.closest('[data-policy]').dataset.policy;
+      const lever = LEVERS.find((l) => l.key === key);
+      if (!lever) return;
+      state.decisions[key] = Number(b.dataset.policyValue) * (lever.scale ?? 1);
+      syncLevers();
+      renderTurn();
+      renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderRightTab();
+      save();
+    });
+  });
   for (const l of LEVERS) {
     // Рычага может не быть в панели (на лёгком уровне финансовой команды
     // нет — она уже оплачена), тогда и слушать нечего
@@ -297,6 +401,8 @@ function buildLevers() {
       syncLevers();
       renderTurn();
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
       renderRightTab();
     });
     el('levers').querySelector(`[data-why="${l.key}"]`).addEventListener('click', (e) => {
@@ -322,6 +428,7 @@ function syncLevers() {
     if (input && Number(input.value) !== raw) input.value = String(raw);
     const label = el(`val-${l.key}`);
     if (label) label.textContent = leverText(l, value);
+    if (l.policy) syncPolicy(el('levers'), l, value, tx, t('policyCustom'));
   }
 }
 
@@ -827,6 +934,8 @@ function renderChannels() {
       state.decisions.platformFor = { ...state.decisions.platformFor, [id]: !was };
       if (was) toast(t('channelDisconnectWarn'));
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
       renderTurn();
       renderRightTab();
     });
@@ -1652,6 +1761,8 @@ function renderAll() {
   renderTurn();
   renderNews();
   renderChannels();
+  renderBudget();
+  renderGroupReadouts();
   renderSupply();
   renderRival();
   renderChart();
