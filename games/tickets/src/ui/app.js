@@ -340,10 +340,14 @@ function renderMarketMap() {
       class="${cls}" stroke-width="${w.toFixed(1)}"></path>` : '');
     // Поток мимо вас уходит вбок, в собственную кассу организатора
     const side = i < rows.length / 2 ? -1 : 1;
-    const ox = Math.min(W - 14, Math.max(14, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
+    // Касса организатора не должна упираться в край: под ней ещё подпись
+    const edge = narrow ? 14 : 40;
+    const ox = Math.min(W - edge, Math.max(edge, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
     const past = wo > 0 ? `<path d="M ${cxv} ${vy + vh} C ${cxv} ${vy + vh + 26},
       ${ox} ${vy + vh + 20}, ${ox} ${vy + vh + 46}" class="v-past" stroke-width="${wo.toFixed(1)}"></path>
-      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>` : '';
+      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>
+      ${narrow ? '' : `<text x="${ox}" y="${vy + vh + 71}" text-anchor="middle"
+        class="m-muted">${t('mapOwnTill')}</text>`}` : '';
     return `<g>
       ${past}
       ${toKiosk(wm, narrow ? -7 : -11, 'v-market')}

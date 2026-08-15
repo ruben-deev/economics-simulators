@@ -701,19 +701,6 @@ function renderCityMap() {
     C ${x - 48} 258, ${x + 10} 320, ${x - 12} 400 L ${x + 30} 400
     C ${x + 50} 318, ${x - 4} 258, ${x + 22} 205 C ${x + 48} 150, ${x + 6} 92, ${x + 22} 0 Z`;
 
-  // Мост там, где дорога в Заречье пересекает воду: без него карта врёт —
-  // курьеры ездят туда каждый день.
-  const bridge = () => {
-    if (!across || riverX === null) return '';
-    const k = (riverX - cx) / (across.x - cx || 1);
-    const by = cy + k * (across.y - cy);
-    const deg = (Math.atan2(across.y - cy, across.x - cx) * 180) / Math.PI;
-    return `<g transform="translate(${riverX} ${by}) rotate(${deg.toFixed(1)})">
-      <rect x="-34" y="-11" width="68" height="22" class="m-bridge"></rect>
-      <line x1="-34" y1="-11" x2="34" y2="-11" class="m-rail"></line>
-      <line x1="-34" y1="11" x2="34" y2="11" class="m-rail"></line>
-    </g>`;
-  };
 
   // Где кончается норма: время линейно растёт с плечом (по вашим же районам),
   // и мы решаем уравнение «время = эталон» относительно километров
@@ -785,13 +772,6 @@ function renderCityMap() {
       ${refR ? `<circle cx="${cx}" cy="${cy}" r="${refR}" class="m-ref"></circle>
         <text x="${cx}" y="${cy - refR - 8}" text-anchor="middle" class="m-muted">${
           t('mapRefRing', { min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</text>` : ''}
-      ${placed.filter((p) => !p.d.id.endsWith('center')).map((p) => {
-        const L = Math.hypot(p.x - cx, p.y - cy) || 1;
-        return `<line x1="${(cx + ((p.x - cx) / L) * 52).toFixed(1)}"
-          y1="${(cy + ((p.y - cy) / L) * 52).toFixed(1)}" x2="${p.x}" y2="${p.y}"
-          class="m-road"></line>`;
-      }).join('')}
-      ${bridge()}
       ${placed.map((p, i) => quarter(p, i)).join('')}
       <circle cx="${cx}" cy="${cy}" r="9" class="m-core"></circle>
       <circle cx="${cx}" cy="${cy}" r="3.5" class="m-core-dot"></circle>

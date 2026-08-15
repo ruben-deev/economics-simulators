@@ -239,13 +239,14 @@ export const STRINGS = {
 
   // --- Каналы и платформа ---
   mapTitle: { ru: 'Куда ушли билеты этого месяца', en: "Where this month's tickets went" },
-  mapKiosk: { ru: 'АФИША БИЛЕТВИЛЬ', en: 'BILETVILLE LISTINGS' },
+  mapKiosk: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
+  mapOwnTill: { ru: 'своя касса', en: 'own box office' },
   mapKioskSold: { ru: '{tickets} билетов · {gmv}', en: '{tickets} tickets · {gmv}' },
   mapNoOrgs: { ru: 'вы с ними не работаете', en: 'you do not work with them' },
   mapOrgsShort: { ru: 'орг.', en: "orgs" },
   mapCaption: {
-    ru: 'Сверху площадки по типам организаторов, снизу ваша афиша, между ними весь спрос месяца. Толщина потока — билеты: синий прошёл через афишу, зелёный — через виджет организатора, серый свернул в его собственную кассу и до вас не дошёл. Тёмная площадка — тип, с которым вы не работаете.',
-    en: 'Above are the venues by organiser type, below your listings desk, and between them all of this month’s demand. Stream thickness is tickets: blue went through your listings, green through the organiser’s widget, grey turned aside into their own box office and never reached you. A dark venue is a type you do not work with.',
+    ru: 'Сверху площадки по типам организаторов, снизу вы, между ними весь спрос месяца. Толщина потока — билеты: синий прошёл через афишу, зелёный — через виджет организатора, серый свернул в его собственную кассу и до вас не дошёл. Тёмная площадка — тип, с которым вы не работаете.',
+    en: 'Above are the venues by organiser type, below you, and between them all of this month’s demand. Stream thickness is tickets: blue went through your listings, green through the organiser’s widget, grey turned aside into their own box office and never reached you. A dark venue is a type you do not work with.',
   },
   channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {

@@ -180,8 +180,8 @@ export const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Кварталы — районы: дальше от центра на карте — дальше в городе, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
-    en: 'The blocks are districts: the further from the centre on the map, the further in the city; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
+    ru: 'Кварталы — районы: дальше от центра на карте — дальше и плечо доставки, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
+    en: 'The blocks are districts: the further from the centre on the map, the longer the delivery leg; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 

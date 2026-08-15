@@ -921,7 +921,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 /* Зал КИНОРЕКИ: кресла, экран, обводка новичков */
 .hall .s-seat rect { fill: var(--muted); fill-opacity: 0.85; }
 .hall .s-seat.s-fresh rect { stroke: #fff; stroke-width: 1.4; }
-.hall .s-seat.s-empty rect { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.hall .s-seat.s-empty rect { fill: none; stroke-width: 1.2; opacity: 0.55; }
 .hall .s-screen { fill: none; stroke: var(--text); stroke-opacity: 0.45; stroke-width: 6; stroke-linecap: round; }
 .flow-key i.k-fresh { background: var(--muted); border: 1.5px solid #fff; }
 .flow-key i.k-empty { background: transparent; border: 1.5px solid var(--line); }
@@ -931,14 +931,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
 .city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
-.city-map .m-road { stroke: var(--line); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
 .city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
 .city-map .m-core { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.85; }
 .city-map .m-core-dot { fill: var(--accent); }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
-.city-map .m-bridge { fill: var(--panel-2, #1b2333); stroke: none; }
-.city-map .m-rail { stroke: var(--muted); stroke-width: 1.5; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
 /* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
 .city-map .m-name, .city-map .m-small, .city-map .m-muted {
@@ -1382,13 +1379,14 @@ const STRINGS = {
 
   // --- Каналы и платформа ---
   mapTitle: { ru: 'Куда ушли билеты этого месяца', en: "Where this month's tickets went" },
-  mapKiosk: { ru: 'АФИША БИЛЕТВИЛЬ', en: 'BILETVILLE LISTINGS' },
+  mapKiosk: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
+  mapOwnTill: { ru: 'своя касса', en: 'own box office' },
   mapKioskSold: { ru: '{tickets} билетов · {gmv}', en: '{tickets} tickets · {gmv}' },
   mapNoOrgs: { ru: 'вы с ними не работаете', en: 'you do not work with them' },
   mapOrgsShort: { ru: 'орг.', en: "orgs" },
   mapCaption: {
-    ru: 'Сверху площадки по типам организаторов, снизу ваша афиша, между ними весь спрос месяца. Толщина потока — билеты: синий прошёл через афишу, зелёный — через виджет организатора, серый свернул в его собственную кассу и до вас не дошёл. Тёмная площадка — тип, с которым вы не работаете.',
-    en: 'Above are the venues by organiser type, below your listings desk, and between them all of this month’s demand. Stream thickness is tickets: blue went through your listings, green through the organiser’s widget, grey turned aside into their own box office and never reached you. A dark venue is a type you do not work with.',
+    ru: 'Сверху площадки по типам организаторов, снизу вы, между ними весь спрос месяца. Толщина потока — билеты: синий прошёл через афишу, зелёный — через виджет организатора, серый свернул в его собственную кассу и до вас не дошёл. Тёмная площадка — тип, с которым вы не работаете.',
+    en: 'Above are the venues by organiser type, below you, and between them all of this month’s demand. Stream thickness is tickets: blue went through your listings, green through the organiser’s widget, grey turned aside into their own box office and never reached you. A dark venue is a type you do not work with.',
   },
   channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   channelCaption: {
@@ -6644,10 +6642,14 @@ function renderMarketMap() {
       class="${cls}" stroke-width="${w.toFixed(1)}"></path>` : '');
     // Поток мимо вас уходит вбок, в собственную кассу организатора
     const side = i < rows.length / 2 ? -1 : 1;
-    const ox = Math.min(W - 14, Math.max(14, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
+    // Касса организатора не должна упираться в край: под ней ещё подпись
+    const edge = narrow ? 14 : 40;
+    const ox = Math.min(W - edge, Math.max(edge, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
     const past = wo > 0 ? `<path d="M ${cxv} ${vy + vh} C ${cxv} ${vy + vh + 26},
       ${ox} ${vy + vh + 20}, ${ox} ${vy + vh + 46}" class="v-past" stroke-width="${wo.toFixed(1)}"></path>
-      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>` : '';
+      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>
+      ${narrow ? '' : `<text x="${ox}" y="${vy + vh + 71}" text-anchor="middle"
+        class="m-muted">${t('mapOwnTill')}</text>`}` : '';
     return `<g>
       ${past}
       ${toKiosk(wm, narrow ? -7 : -11, 'v-market')}

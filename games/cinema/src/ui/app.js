@@ -199,19 +199,32 @@ function renderStudioMap() {
     ?? SEAT_UNITS[SEAT_UNITS.length - 1];
   const filled = Math.max(1, Math.min(capacity, Math.round(after / unit)));
   const ghosts = Math.min(capacity - filled, Math.round(left / unit));
-  const freshSeats = Math.min(filled, Math.round(joined / unit));
 
   // Кресла раздаются сегментам по их доле в базе — цвет ряда показывает,
-  // из кого зал состоит на самом деле
+  // из кого зал состоит на самом деле. Обводку «пришли в этом месяце»
+  // получают последние кресла КАЖДОГО сегмента по его собственному притоку:
+  // иначе светлая рамка стояла бы на чужом цвете и врала бы о том, кто
+  // пришёл, — а вопрос «кто» в этой игре и есть главный.
   const total = segs.reduce((a, x) => a + x.subs, 0) || 1;
   const seatSeg = [];
   let acc = 0;
   segs.forEach((sg, i) => {
     const n = i === segs.length - 1 ? filled - acc : Math.round(filled * (sg.subs / total));
-    for (let k = 0; k < n; k++) seatSeg.push(colorOf(i));
+    const fresh = Math.min(n, Math.round((sg.joined ?? 0) / unit));
+    for (let k = 0; k < n; k++) seatSeg.push({ color: colorOf(i), fresh: k >= n - fresh });
     acc += n;
   });
-  while (seatSeg.length < filled) seatSeg.push(colorOf(0));
+  while (seatSeg.length < filled) seatSeg.push({ color: colorOf(0), fresh: false });
+
+  // Пустые кресла тоже по сегментам: ушёл не «кто-то», а массовый зритель
+  // после премьеры или киноман от рекламы
+  const seatGhost = [];
+  const leftTotal = segs.reduce((a, x) => a + (x.left ?? 0), 0) || 1;
+  segs.forEach((sg, i) => {
+    const n = Math.round(ghosts * ((sg.left ?? 0) / leftTotal));
+    for (let k = 0; k < n && seatGhost.length < ghosts; k++) seatGhost.push(colorOf(i));
+  });
+  while (seatGhost.length < ghosts) seatGhost.push('var(--line)');
 
   const W = narrow ? 360 : 700;
   const sw = narrow ? 26 : 28;      // шаг кресла
@@ -233,11 +246,12 @@ function renderStudioMap() {
     const col = i % perRow;
     const x = x0 + col * sw;
     const y = y0 + row * sh - bow(col);
-    const fresh = kind === 'fill' && i >= filled - freshSeats;
-    const cls = kind === 'fill' ? `s-seat${fresh ? ' s-fresh' : ''}` : 's-seat s-empty';
+    const spot = kind === 'fill' ? seatSeg[i] : null;
+    const cls = kind === 'fill' ? `s-seat${spot?.fresh ? ' s-fresh' : ''}` : 's-seat s-empty';
     // Цвет сегмента идёт стилем, а не атрибутом: атрибут проиграл бы правилу
     // из таблицы, и весь зал остался бы серым
-    const fill = kind === 'fill' ? ` style="fill:${seatSeg[i] ?? colorOf(0)}"` : '';
+    const fill = kind === 'fill' ? ` style="fill:${spot?.color ?? colorOf(0)}"`
+      : ` style="stroke:${seatGhost[i - filled] ?? 'var(--line)'}"`;
     // Кресло: спинка и подлокотники — мелочь, но именно она делает картинку
     return `<g class="${cls}">
       <rect x="${x}" y="${y}" width="${sw - 8}" height="${sh - 9}" rx="3"${fill}></rect>

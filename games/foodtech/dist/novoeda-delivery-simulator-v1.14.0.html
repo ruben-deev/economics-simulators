@@ -921,7 +921,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 /* Зал КИНОРЕКИ: кресла, экран, обводка новичков */
 .hall .s-seat rect { fill: var(--muted); fill-opacity: 0.85; }
 .hall .s-seat.s-fresh rect { stroke: #fff; stroke-width: 1.4; }
-.hall .s-seat.s-empty rect { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.hall .s-seat.s-empty rect { fill: none; stroke-width: 1.2; opacity: 0.55; }
 .hall .s-screen { fill: none; stroke: var(--text); stroke-opacity: 0.45; stroke-width: 6; stroke-linecap: round; }
 .flow-key i.k-fresh { background: var(--muted); border: 1.5px solid #fff; }
 .flow-key i.k-empty { background: transparent; border: 1.5px solid var(--line); }
@@ -931,14 +931,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
 .city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
-.city-map .m-road { stroke: var(--line); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
 .city-map .m-ref { fill: none; stroke: var(--muted); stroke-dasharray: 6 6; opacity: 0.7; }
 .city-map .m-core { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.85; }
 .city-map .m-core-dot { fill: var(--accent); }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
-.city-map .m-bridge { fill: var(--panel-2, #1b2333); stroke: none; }
-.city-map .m-rail { stroke: var(--muted); stroke-width: 1.5; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
 /* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
 .city-map .m-name, .city-map .m-small, .city-map .m-muted {
@@ -1325,8 +1322,8 @@ const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Кварталы — районы: дальше от центра на карте — дальше в городе, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
-    en: 'The blocks are districts: the further from the centre on the map, the further in the city; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
+    ru: 'Кварталы — районы: дальше от центра на карте — дальше и плечо доставки, гуще застройка — больше ресторанов. Цвет — вклад с заказа. Пунктирный круг — где доставка перестаёт укладываться в 35 минут; он посчитан по вашим районам и двигается вместе с игрой.',
+    en: 'The blocks are districts: the further from the centre on the map, the longer the delivery leg; the denser the buildings, the more restaurants. Colour is contribution per order. The dashed ring is where delivery stops fitting the 35-minute reference; it is computed from your own districts and moves with the game.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
@@ -5964,19 +5961,6 @@ function renderCityMap() {
     C ${x - 48} 258, ${x + 10} 320, ${x - 12} 400 L ${x + 30} 400
     C ${x + 50} 318, ${x - 4} 258, ${x + 22} 205 C ${x + 48} 150, ${x + 6} 92, ${x + 22} 0 Z`;
 
-  // Мост там, где дорога в Заречье пересекает воду: без него карта врёт —
-  // курьеры ездят туда каждый день.
-  const bridge = () => {
-    if (!across || riverX === null) return '';
-    const k = (riverX - cx) / (across.x - cx || 1);
-    const by = cy + k * (across.y - cy);
-    const deg = (Math.atan2(across.y - cy, across.x - cx) * 180) / Math.PI;
-    return `<g transform="translate(${riverX} ${by}) rotate(${deg.toFixed(1)})">
-      <rect x="-34" y="-11" width="68" height="22" class="m-bridge"></rect>
-      <line x1="-34" y1="-11" x2="34" y2="-11" class="m-rail"></line>
-      <line x1="-34" y1="11" x2="34" y2="11" class="m-rail"></line>
-    </g>`;
-  };
 
   // Где кончается норма: время линейно растёт с плечом (по вашим же районам),
   // и мы решаем уравнение «время = эталон» относительно километров
@@ -6048,13 +6032,6 @@ function renderCityMap() {
       ${refR ? `<circle cx="${cx}" cy="${cy}" r="${refR}" class="m-ref"></circle>
         <text x="${cx}" y="${cy - refR - 8}" text-anchor="middle" class="m-muted">${
           t('mapRefRing', { min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</text>` : ''}
-      ${placed.filter((p) => !p.d.id.endsWith('center')).map((p) => {
-        const L = Math.hypot(p.x - cx, p.y - cy) || 1;
-        return `<line x1="${(cx + ((p.x - cx) / L) * 52).toFixed(1)}"
-          y1="${(cy + ((p.y - cy) / L) * 52).toFixed(1)}" x2="${p.x}" y2="${p.y}"
-          class="m-road"></line>`;
-      }).join('')}
-      ${bridge()}
       ${placed.map((p, i) => quarter(p, i)).join('')}
       <circle cx="${cx}" cy="${cy}" r="9" class="m-core"></circle>
       <circle cx="${cx}" cy="${cy}" r="3.5" class="m-core-dot"></circle>
