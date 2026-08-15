@@ -840,7 +840,7 @@ function renderCityMap() {
   const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14,
     edge.bottom + 12);
 
-  const quarter = (p, i) => {
+  const quarter = (p) => {
     const planned = !p.live && chosen.has(p.d.id);
     const closing = p.live && !chosen.has(p.d.id);
     const cls = closing ? 'm-closing'
@@ -853,8 +853,8 @@ function renderCityMap() {
       + `${p.x + k * 0.72},${p.y - k * 0.78} ${p.x + k},${p.y - k * 0.1} `
       + `${p.x + k * 0.62},${p.y + k * 0.86} ${p.x - k * 0.55},${p.y + k * 0.92} `
       + `${p.x - k * 0.98},${p.y + k * 0.3}`;
-    // На телефоне карта ужимается втрое, и мелкие подписи превращаются в шум:
-    // в кварталах остаются только номера, числа уходят в список под картой.
+    // На телефоне карта ужимается втрое, и мелкие числа превращаются в шум:
+    // в кварталах остаются только названия, числа уходят в список под картой.
     const label = narrow ? '' : p.lines.map((l, k) => `<text x="${p.x}" y="${p.ly + k * 14}"
         text-anchor="middle" class="${l.cls}">${l.text}</text>`).join('');
     return `<g class="m-hit" data-id="${p.d.id}">
@@ -863,7 +863,7 @@ function renderCityMap() {
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) + legLine(p) : ''}
       <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
-        text-anchor="middle" class="m-name">${narrow ? i + 1 : tx(p.d.name)}</text>
+        text-anchor="middle" class="m-name">${tx(p.d.name)}</text>
       ${label}
     </g>`;
   };
@@ -874,7 +874,7 @@ function renderCityMap() {
 
   // Список под картой нужен узкому экрану: на телефоне подписи внутри
   // кварталов мельчают, а числа терять нельзя
-  const list = placed.map((p, i) => `<li data-id="${p.d.id}"><b>${i + 1}. ${tx(p.d.name)}</b> · ${
+  const list = placed.map((p) => `<li data-id="${p.d.id}"><b>${tx(p.d.name)}</b> · ${
     p.d.distanceKm} ${t('mapKmShort')} · ${
     p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
       : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')} · ${
@@ -890,7 +890,7 @@ function renderCityMap() {
       <path d="${edge.d}" class="m-border"></path>
       ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
 
-      ${placed.map((p, i) => quarter(p, i)).join('')}
+      ${placed.map(quarter).join('')}
     </svg>
     <div class="map-foot">
       <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
