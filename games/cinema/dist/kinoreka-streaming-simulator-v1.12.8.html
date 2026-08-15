@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.12.7" />
+  <meta name="app-version" content="1.12.8" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1653,8 +1653,8 @@ score = valuation × your stake`,
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
   metaConglomerateText: {
-    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте памятную партию с одним из кодов: {seeds}. Награда чисто символическая: экономика зачётных партий не меняется.',
-    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a commemorative game with one of these codes: {seeds}. The reward is purely symbolic: ranked games’ economics stay untouched.',
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
   },
   metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
   metaReturnText: {
@@ -1937,7 +1937,7 @@ function bestRecord(key) {
 // правилу «чувствуется, но не решает партию» (~4–6% итога).
 //
 // Обратный бонус — строго неэкономический: успешный НОВОГРАД открывает
-// в старых играх бейдж и спец-сиды «городов-побратимов» на финальном
+// в старых играх бейдж и коды «городов-побратимов» на финальном
 // экране. Экономических бустов в зачётных партиях старых игр нет:
 // они сломали бы сравнимость лидерборда и калибровку целей совета.
 // ============================================================================
@@ -2066,7 +2066,7 @@ function novogradBest() {
 }
 
 // Запоминает лучший финал НОВОГРАДА — старые игры читают его для
-// неэкономических обратных бонусов (бейдж, спец-сиды).
+// неэкономических обратных бонусов (бейдж, коды партий).
 //
 // «Достойность» зависит от стартового актива: у сложных активов оптимум
 // втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
@@ -2190,7 +2190,7 @@ function resetEcosystemProgress() {
   return cleared;
 }
 
-// Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
+// Коды «городов-побратимов» — символическая награда в старых играх
 const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
 
 
@@ -7936,7 +7936,7 @@ function recordsBlockHtml(s) {
 }
 
 // Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
-// открывает бейдж и сувенирные сиды «городов-побратимов». Строго
+// открывает бейдж и коды партий «городов-побратимов». Строго
 // косметика: экономика зачётных партий не меняется — экономический буст
 // сломал бы честность общей таблицы и калибровку целей совета.
 function conglomerateBadgeHtml() {

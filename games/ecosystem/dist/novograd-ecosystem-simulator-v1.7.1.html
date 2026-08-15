@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.7.0" />
+  <meta name="app-version" content="1.7.1" />
   <meta name="app-build-date" content="2026-08-15" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1650,8 +1650,8 @@ const STRINGS = {
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
-    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, оставляет в старых играх памятный знак и сувенирные коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
-    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn leaves a keepsake mark and souvenir game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
+    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -2082,7 +2082,7 @@ function bestRecord(key) {
 // правилу «чувствуется, но не решает партию» (~4–6% итога).
 //
 // Обратный бонус — строго неэкономический: успешный НОВОГРАД открывает
-// в старых играх бейдж и спец-сиды «городов-побратимов» на финальном
+// в старых играх бейдж и коды «городов-побратимов» на финальном
 // экране. Экономических бустов в зачётных партиях старых игр нет:
 // они сломали бы сравнимость лидерборда и калибровку целей совета.
 // ============================================================================
@@ -2211,7 +2211,7 @@ function novogradBest() {
 }
 
 // Запоминает лучший финал НОВОГРАДА — старые игры читают его для
-// неэкономических обратных бонусов (бейдж, спец-сиды).
+// неэкономических обратных бонусов (бейдж, коды партий).
 //
 // «Достойность» зависит от стартового актива: у сложных активов оптимум
 // втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
@@ -2335,7 +2335,7 @@ function resetEcosystemProgress() {
   return cleared;
 }
 
-// Спец-сиды «городов-побратимов» — награда-сувенир в старых играх
+// Коды «городов-побратимов» — символическая награда в старых играх
 const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
 
 
@@ -6982,7 +6982,7 @@ function showGameOver() {
     : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
 
   // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
-  // бонусы в старых играх (бейдж и спец-сиды на их финальных экранах)
+  // бонусы в старых играх (бейдж и коды партий на их финальных экранах)
   if (!s.bankrupt) rememberNovogradResult(s.equityValue, gr.worthy);
   // Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
   // Строго косметика — никакого множителя к счёту.
