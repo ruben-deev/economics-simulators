@@ -489,6 +489,7 @@ export const STRINGS = {
   // --- Финал ---
   overTitle: { ru: 'Партия окончена', en: 'The game is over' },
   overBankrupt: { ru: 'Деньги кончились на {month}-м месяце.', en: 'The money ran out in month {month}.' },
+  overSold: { ru: 'Деньги кончились на {month}-м месяце. Совет продал сервис: 28% оценки минус долги — ваша доля остатка {value}. Продажа за долги — не ноль, но и не победа.', en: 'The money ran out in month {month}. The board sold the service: 28% of the valuation minus the debts — your share of the remainder is {value}. A distressed sale is not zero, but it is not a win either.' },
   overFinished: { ru: 'Три года позади.', en: 'Three years are behind you.' },
   overStats: {
     ru: 'Оценка компании {valuation}, ваша доля {equity} — это {value}. Организаторов {orgs}, доля рынка {share}, оборот {gmv}, доверие {trust}.',
@@ -512,6 +513,11 @@ export const STRINGS = {
   wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
   wfTurn: { ru: 'мес. {n}', en: 'mo {n}' },
   // --- Код партии и таблица рекордов ---
+  scoreRaised: { ru: 'Привлечено', en: 'Raised' },
+  scoreCash: { ru: 'Касса', en: 'Cash' },
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'месяц', en: 'month' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -523,6 +529,7 @@ export const STRINGS = {
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
@@ -560,6 +567,7 @@ export const STRINGS = {
   reportDelta: { ru: 'К прошлому месяцу: оборот {gmv}, прибыль {profit}, касса {cash}.', en: 'Versus last month: turnover {gmv}, profit {profit}, cash {cash}.' },
   fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the cash lasts about {n} months. A round is cheaper raised early, not at zero.' },
   gradeBankrupt: { ru: 'Банкротство. Оборот в билетном бизнесе растёт легко — платит по счетам выручка.', en: 'Bankruptcy. Turnover in ticketing grows easily — it is revenue that pays the bills.' },
+  gradeSold: { ru: 'Продана за долги. Партнёрская сеть чего-то стоила даже в спешке.', en: 'Distressed sale. The partner network was worth something even in a hurry.' },
   gradeExcellent: { ru: 'Отличный результат: рынок ваш, и он вам ещё и платит.', en: 'An excellent result: the market is yours, and it pays you too.' },
   gradeSolid: { ru: 'Крепкий результат. Бизнес стоит на ногах и растёт.', en: 'A solid result. The business stands on its own and grows.' },
   gradeSurvived: { ru: 'Вы выжили. Но оборот так и не стал выручкой.', en: 'You survived. But turnover never turned into revenue.' },

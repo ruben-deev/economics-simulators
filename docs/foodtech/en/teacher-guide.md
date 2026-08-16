@@ -134,7 +134,9 @@ How it goes:
    week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
    panel shows habit eating its effect over eight to ten weeks. A weather-driven bonus is
    both cheaper and stronger: measured, "bonus only in heavy weeks" earns +87% over the
-   best constant, and playing it
+   best constant — though with forecast auto-hiring on, the bonus becomes redundant
+   (the fleet is already weather-sized, and paying twice costs 28% of the outcome) —
+   and playing it
    backwards loses a quarter of the final score.
 
 The core idea: the weather forecast is public and every competitor sees it. The advantage

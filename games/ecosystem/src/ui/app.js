@@ -1443,7 +1443,25 @@ function decisionChanges() {
     if ((cur.partners ?? []).length !== (before.partners ?? []).length) {
       names.push(t('chartChangePartners'));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -1482,6 +1500,7 @@ function renderChart() {
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -1765,6 +1784,7 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
+        : s.sold ? 'sold'
         : (s.equityValue >= gradesFor(state.assetId, state.difficulty).worthy && tripleCrown()
           ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
@@ -1777,6 +1797,7 @@ function recordsBlockHtml(s) {
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
     <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt'
+      : rec.outcome === 'sold' ? 'recordsOutcomeSold'
       : rec.outcome === 'conglomerate' ? 'recordsOutcomeConglomerate'
       : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
@@ -1810,12 +1831,14 @@ function showEndlessOver() {
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>`,
   [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
    { label: t('gameOverCharts'), onClick: () => {} }]);
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 function showGameOver() {
@@ -1829,6 +1852,7 @@ function showGameOver() {
   // «скромным итогом». Пороги лежат в дескрипторе актива.
   const gr = gradesFor(state.assetId, state.difficulty);
   const grade = s.bankrupt ? t('gradeBankrupt')
+    : s.sold ? t('gradeSold')
     : s.equityValue > gr.excellent ? t('gradeExcellent')
     : s.equityValue > gr.solid ? t('gradeSolid')
     : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
@@ -1867,9 +1891,11 @@ function showGameOver() {
   });
   const diffNow = difficultyById(state.difficulty);
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { month: s.months })
+      : s.sold ? t('gameOverSoldText', { month: s.months, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <p class="funding-note">${t('gameOverDifficulty', {
       level: tx(diffNow.label),
       note: t('gameOverOwnTable'),
@@ -1893,7 +1919,8 @@ function showGameOver() {
       revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
     })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -2256,4 +2283,52 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `novograd-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

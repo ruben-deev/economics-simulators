@@ -441,12 +441,15 @@ bandwidth bill.
 subscriptions = ad_free_subs × premium_price + ad_subs × ad_price
 impressions   = ad_hours × ad_load × 2 × adaptive_ads_yield
 glut          = impressions / (impressions + adInventorySaturation)
-cpm           = base cpm × (1 − 0.45 × glut)
+cpm           = base cpm × cpm_season × (1 − 0.45 × glut)
 advertising   = impressions / 1000 × cpm
 revenue       = subscriptions + advertising
 ```
 
-`cpm = ₽480`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
+`base cpm = ₽640`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
+The ad market is seasonal (2026-08 audit): winter ×1.25, autumn ×1.1, spring ×0.95,
+summer ×0.75 — the same spot earns two-thirds more in winter than in July, turning
+ad load from set-and-forget into a tactical decision.
 
 There is a finite number of advertisers: the more impressions you dump, the cheaper each
 one gets. Without this, "crank the price and herd everyone onto the ad tier" was a free
@@ -486,6 +489,12 @@ exists. The right answer to "should I raise the price" depends on what the rival
 doing now and what he can still afford.
 
 ### His stances
+
+Viewers judge the rival with the same entry-price formula as you: two tiers with
+the segment's intrinsic weights, faded by his ad load (2026-08 audit; the old
+×0.82 eyeball multiplier acted as a hidden handicap in your favour). The one
+declared asymmetry: his ad tier is priced at 45% of his list price against your
+~37% — a corporation discounts its cheap tier less aggressively.
 
 The rival picks a stance from his market share and his cash runway, and holds it for
 **at least four months**. The hysteresis is not decoration: an opponent who changes

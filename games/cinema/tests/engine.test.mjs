@@ -886,7 +886,9 @@ test('закрытие контракта не роняет базу на бум
       const kept = c.partnerExpired.reduce((s, e) => s + e.kept, 0);
       const lost = c.partnerExpired.reduce((s, e) => s + e.lost, 0);
       const drop = reports[i - 1].subs - c.subs;
-      assert.ok(drop < lost + kept * 0.02 + Math.max(1, c.subs * 0.05),
+      // Допуск на органику 8%: в новом мире месяц третьего акта двигает
+      // базу сильнее пяти процентов и без всякого контракта
+      assert.ok(drop < lost + kept * 0.02 + Math.max(1, c.subs * 0.08),
         `м${c.month}: контракт унёс ${Math.round(drop)} при потерянных ${Math.round(lost)}`
         + ` и удержанных ${Math.round(kept)}`);
     }
@@ -1105,7 +1107,9 @@ test('смешанный слейт бьёт однообразный', () => {
       const scale = mixScales ? (n++ % 2 ? 'pilot' : 'season') : 'season';
       const o = step(state, {
         decisions: decide({
-          priceNew: 799, priceAds: 120, adLoad: 2, annualDiscount: 0.15,
+          // 449 вместо прежних 799: после пересборки спроса (аудит 2026-08)
+          // задранный прайс разоряет, и на 799 тест мерил бы обрывы, а не слейт
+          priceNew: 449, priceAds: 166, adLoad: 2, annualDiscount: 0.15,
           licensing: 375_000_000, brandMarketing: 60_000_000, trialDays: 21,
           tech: 20_000_000, rnd: 10_000_000, studioSlots: 2,
         }),
@@ -1129,7 +1133,32 @@ test('смешанный слейт бьёт однообразный', () => {
 test('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
   // Один и тот же seed, разная доля выручки в контент. Подписчиков больше
   // у агрессивной стратегии, но она добирает деньги раундами и размывается.
-  const modest = grown(CONFIG.monthsTotal, 'greed');
+  // Скромная сторона считана здесь же, а не через grown(): после пересборки
+  // спроса (аудит 2026-08) мир жёстче, и бюджет 90 млн + 50% выручки тоже
+  // выбирал все три раунда — обе стороны разводнялись до пола, и тест мерил
+  // потолок раундов, а не цену жадности.
+  let modest = createInitialState('greed');
+  {
+    let revenue = 0;
+    let raises = 0;
+    for (let i = 0; i < CONFIG.monthsTotal && !modest.over; i++) {
+      if (modest.cash < 900_000_000 && raises < CONFIG.fundingOptions.length) {
+        modest = raise(modest, CONFIG.fundingOptions[raises]).state;
+        raises += 1;
+      }
+      const budget = 60_000_000 + revenue * 0.4;
+      const res = step(modest, {
+        decisions: decide({
+          priceNew: 399, priceAds: 149, adLoad: 4,
+          licensing: Math.round(budget * 0.55), originals: Math.round(budget * 0.45),
+          brandMarketing: Math.round(35_000_000 + revenue * 0.15),
+          tech: 20_000_000, rnd: 20_000_000,
+        }),
+      });
+      modest = res.state;
+      revenue = res.report.revenue;
+    }
+  }
   let aggressive = createInitialState('greed');
   let revenue = 0;
   let raises = 0;
@@ -1166,7 +1195,9 @@ test('конкурент — не константа: он растёт, тра�
   const mid = state.history[11];
   const last = state.history[23];
   assert.ok(first.rivalSubs > 0, 'на старте рынок уже занят');
-  assert.ok(last.rivalPrice !== first.rivalPrice, 'цена конкурента менялась');
+  // Цена сравнивается по всей партии: конец может случайно совпасть с началом
+  const prices = new Set(state.history.map((r) => r.rivalPrice));
+  assert.ok(prices.size >= 2, `цена конкурента менялась: ${[...prices].slice(0, 5)}`);
   const stances = new Set(state.history.map((r) => r.rivalStance));
   assert.ok(stances.size >= 2, `конкурент должен менять позицию, а не стоять в одной: ${[...stances]}`);
   assert.ok(Number.isFinite(mid.duopolyShare) && mid.duopolyShare > 0 && mid.duopolyShare < 1);
@@ -1699,10 +1730,15 @@ test('совместный мегахит: рынок растёт обоим, �
   // Доводим до премьеры: часы должны достаться обоим, рынок — вырасти
   const rivalBefore = s.rivalState.catalogOriginal;
   const potentialBefore = potentialOf(SEGMENTS[0], s);
-  for (let i = 0; i < CONFIG.coProduction.months + 3 && !s.over; i++) {
+  // Кризисы гасятся первым решением: тест меряет совместный проект, а не
+  // невезение — шоураннерский кризис останавливает конвейер, и без
+  // урегулирования мегахит не выйдет никогда (шанс кризиса растёт с базой).
+  const firstResolution = (id) => CRISES.find((c) => c.id === id)?.resolutions?.[0]?.id ?? null;
+  for (let i = 0; i < CONFIG.coProduction.months + 5 && !s.over; i++) {
     const ready = s.slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 0 }));
     s = step(s, {
       ...NO_ACTIONS, decisions: decide({ studioSlots: 3 }), release: ready, eventChoice: 0,
+      crisisChoice: s.crisis ? firstResolution(s.crisis.id) : null,
     }).state;
   }
   assert.ok(s.coProduction.released, 'проект вышел');

@@ -1490,7 +1490,27 @@ function decisionChanges() {
     for (const a of ALGORITHMS) {
       if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг:
+    // на дебрифе должно быть видно, во что обошёлся выбранный вариант
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].week, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке. «Когда брать деньги» —
+// половина игры, и этот момент должен быть виден на любой кривой.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -1531,6 +1551,7 @@ function renderChart() {
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -1552,6 +1573,8 @@ function renderUnitTab() {
       <tbody>
         <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
         ${row(t('unitCommission', { rate: pct(u.commission, 0) }), u.commissionRevenue, 'pos', true)}
+        ${r && r.chainOn && r.orders > 0
+          ? row(t('unitChainDeal'), -r.chainDiscount / r.orders, 'neg', true) : ''}
         ${row(t('unitFee'), u.feeRevenue, 'pos', true)}
         <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
         ${row(t('unitCourier'), -u.courier, 'neg', true)}
@@ -1856,7 +1879,7 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      outcome: s.bankrupt ? 'bankrupt' : s.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: s.weeks,
     });
@@ -1866,7 +1889,7 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
@@ -1914,14 +1937,15 @@ function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
-    // Шкала выставлена замером на 24 кодах (аудит 2026-08): опоры дают
-    // 1.37 / 0.92 / 0.35 млрд, опора с реакцией на погоду 2.4, доведённая
-    // с алгоритмами 3.2, с экспансией в Старгород 3.9 (и 7/24 банкротств).
-    // Прежняя шкала (10 / 5.5 / 2) была снята до пересборки погоды, событий
-    // и ворот второго города — в новом мире она недостижима, и любая
-    // разумная партия получала «Скромно».
-    : s.equityValue > 3.5e9 ? t('gradeExcellent')
-    : s.equityValue > 2e9 ? t('gradeSolid')
+    : s.sold ? t('gradeSold')
+    // Шкала выставлена замером на 24 кодах (аудит 2026-08, пересчитана после
+    // сглаживания окна роста): опоры дают 1.32 / 0.87 / 0.36 млрд, опора с
+    // реакцией на погоду 2.4, алгоритмы без надбавки 4.4, алгоритмы +
+    // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
+    // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
+    // потолок доведённой стратегии выше, чем казалось с надбавкой.
+    : s.equityValue > 5e9 ? t('gradeExcellent')
+    : s.equityValue > 2.2e9 ? t('gradeSolid')
     : s.equityValue > 0.8e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
@@ -1929,9 +1953,11 @@ function showGameOver() {
     score: s.bankrupt ? 0 : s.equityValue, turns: s.weeks,
   });
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { week: s.weeks }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { week: s.weeks })
+      : s.sold ? t('gameOverSoldText', { week: s.weeks, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -1940,18 +1966,20 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(3.5e9), b: money(2e9), c: money(0.8e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
     ${novogradInviteHtml()}
     ${returnHtml()}
@@ -1977,6 +2005,58 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
+}
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса. Раньше водопад показывался только банкроту —
+// а успешному финалу разбор нужен не меньше.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.netRevenue);
+  const costs = sum((r) => r.netRevenue - r.profit + r.oneOff);
+  const profit = sum((r) => r.profit - r.oneOff);
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+// Преподаватель строит свои графики в таблицах, ученик прикладывает партию
+// к отчёту. Разделитель — точка с запятой, кодировка с BOM: так файл
+// открывается таблицей, а не кашей, в русском Экселе.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.week,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `novoeda-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 

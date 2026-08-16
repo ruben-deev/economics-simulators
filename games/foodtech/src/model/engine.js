@@ -21,7 +21,7 @@
 import { CONFIG, DISTRICTS, CITIES, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, bonusHabitStep, seasonOf } from './weather.js';
@@ -828,6 +828,7 @@ export function step(prevState, input = {}) {
     cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
     couriers: state.couriers,
     hires,
@@ -996,7 +997,7 @@ export function valuation(state) {
   // купить рывком на один ход — задрать плату и обнулить вложения перед самым
   // концом партии. См. shared/valuation.js.
   const netRevenueRunRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue) * 52;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -1129,10 +1130,15 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     weeks: state.week,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
 }

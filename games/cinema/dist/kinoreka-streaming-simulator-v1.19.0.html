@@ -1783,6 +1783,8 @@ score = valuation × your stake`,
   gameOverBankrupt: { ru: '💀 Деньги кончились', en: '💀 Out of money' },
   gameOverFinished: { ru: '🏁 Три года позади', en: '🏁 Three years done' },
   gameOverBankruptText: { ru: 'Касса ушла в минус на {month}-м месяце. Контент оплачивается вперёд, а окупается через полгода — этот разрыв и топит сервисы.', en: 'Cash went negative in month {month}. Content is paid for upfront and pays back six months later — that gap is what sinks services.' },
+  gameOverSold: { ru: '🏳️ Компания продана за долги', en: '🏳️ Sold to cover the debts' },
+  gameOverSoldText: { ru: 'Касса ушла в минус на {month}-м месяце. Совет не стал дожидаться настоящего нуля и продал сервис: покупатель заплатил 28% оценки, долги погашены, ваша доля остатка — {value}. Библиотека и база чего-то стоили даже в такой сделке — но заметно меньше, чем стоили бы без спешки.', en: 'Cash went negative in month {month}. The board did not wait for an actual zero and sold the service: the buyer paid 28% of the valuation, the debts were settled, and your share of the remainder is {value}. The library and the base were worth something even in a deal like this — just far less than without the urgency.' },
   gameOverFinishedText: { ru: 'Тридцать шесть месяцев позади. Итоговая оценка компании и ваша доля в ней:', en: 'Thirty-six months done. Here is the final valuation and your share of it:' },
   scoreValuation: { ru: 'Оценка компании', en: 'Company valuation' },
   scoreStake: { ru: 'Ваша доля', en: 'Your stake' },
@@ -1792,6 +1794,7 @@ score = valuation × your stake`,
   scoreLibrary: { ru: 'Своя библиотека', en: 'Own library' },
   scoreGrade: { ru: 'Оценка результата', en: 'Verdict' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
+  gradeSold: { ru: 'Продана за долги', en: 'Distressed sale' },
   gradeExcellent: { ru: 'Отличный результат', en: 'Excellent' },
   gradeSolid: { ru: 'Крепкий сервис', en: 'A solid service' },
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
@@ -1813,6 +1816,9 @@ score = valuation × your stake`,
   wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
   wfTurn: { ru: 'мес. {n}', en: 'mo {n}' },
   // --- Код партии и таблица рекордов ---
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'месяц', en: 'month' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -1824,6 +1830,7 @@ score = valuation × your stake`,
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
@@ -1855,7 +1862,7 @@ score = valuation × your stake`,
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с 9–17 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $90–170M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с 6–14 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $60–140M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
@@ -2031,6 +2038,34 @@ function windowGrowth(history, n, pick, fallback = 0.25) {
 }
 
 /**
+ * Устойчивый темп роста: короткое окно, подтверждённое длинным.
+ *
+ * Короткое окно (n против предыдущих n) реагирует быстро, но одноразовая
+ * ступенька выручки, попавшая в него целиком, читается как темп роста и
+ * умножается мультипликатором несоразмерно кассе. Аудит 2026-08 измерил
+ * цену этой дыры на контракте аэропорта в НОВОГРАДЕ: честная кассовая
+ * ценность годового контракта +2–3% итога, а перекрывший окно оценки —
+ * +23–31%. Тот же механизм — двигатель «рывка в конце».
+ *
+ * Лечение: инвестор верит короткому окну только в той мере, в какой его
+ * подтверждает длинное (2n против предыдущих 2n). Берётся минимум из двух
+ * темпов. Разовая ступенька гаснет, как только целиком входит в длинное
+ * окно; устойчивый рост показывает одинаковый темп в обоих окнах и не
+ * теряет ничего. Падение при этом видно по ХУДШЕМУ из окон — сжатие
+ * замечается сразу, и это сознательная асимметрия: рост докажи, спад
+ * очевиден.
+ *
+ * Пока истории на длинное окно не хватает, работает короткое — иначе
+ * первая треть партии жила бы на одном запасном значении.
+ */
+function windowGrowthStable(history, n, pick, fallback = 0.25) {
+  const short = windowGrowth(history, n, pick, fallback);
+  if (history.length < 4 * Math.max(1, n)) return short;
+  const long = windowGrowth(history, 2 * Math.max(1, n), pick, fallback);
+  return Math.min(short, long);
+}
+
+/**
  * Множитель к выручке.
  *
  * @param growth       прирост за окно (может быть отрицательным)
@@ -2055,6 +2090,24 @@ function revenueMultiple(growth, margin, k) {
       + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
     min, max,
   );
+}
+
+/**
+ * Продажа за долги: чего стоит компания, у которой кончились деньги.
+ *
+ * Раньше банкротство означало ноль, и на грани выживания счёт партии
+ * превращался в лотерею: одна и та же стратегия давала 0 или миллиарды
+ * в зависимости от кода партии. В жизни компанию на грани не выключают,
+ * а продают: покупатель платит долю оценки (дисконт за спешку и слабую
+ * переговорную позицию), из выручки гасятся долги, остаток делится по
+ * долям. Если долг больше цены продажи — вот это и есть настоящий ноль.
+ *
+ * Учебный смысл: ликвидационная стоимость. Компания с построенным
+ * активом и долгом — не то же самое, что компания без ничего, и финал
+ * «продались» отличается от финала «сгорели».
+ */
+function distressedSale(valuation, cash, share = 0.28) {
+  return Math.max(0, valuation * share + Math.min(0, cash));
 }
 
 /**
@@ -3030,6 +3083,9 @@ const CONFIG = {
 
   // --- Реклама ---
   cpm: 640,                   // ₽ за 1000 показов
+  // Сезонность рекламного рынка: зимние бюджеты дороже летних.
+  // Совпадает по фазе с сезоном просмотра — зимой и смотрят, и платят больше.
+  cpmSeason: { winter: 1.25, spring: 0.95, summer: 0.75, autumn: 1.1 },
   adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
   refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
   // Рекламодателей конечное число. Столько показов в месяц — половина скидки
@@ -3448,8 +3504,8 @@ const LEVERS = [
         note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
     ],
     tip: {
-      ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
-      en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
+      ru: 'Вторая статья выручки. Пара минут в час почти не замечается, дальше раздражение растёт быстрее денег: киноманы уходят первыми, молодёжь терпит дольше всех. Показы сезонные: зимой CPM на четверть дороже, летом — на четверть дешевле.',
+      en: 'Your second revenue line. A couple of minutes an hour goes almost unnoticed; past that, irritation grows faster than the money — cinephiles leave first, the young put up with it longest. Impressions are seasonal: winter CPMs run about a quarter dearer, summer a quarter cheaper.',
     },
   },
 
@@ -5827,12 +5883,29 @@ function step(prevState, input = {}) {
       priceFactor, appeal, adPenalty, awareness: seg.awareness, buzz,
       exclusive: exclusivePullOf(weightedOriginal, def, state.originalsByGenre),
     };
+    // Конкурент проходит через ту же формулу цены входа, что и вы: два
+    // тарифа с внутренними весами сегмента и гашением от его рекламной
+    // нагрузки. Прежний множитель ×0.82 был форой «на глазок» — при
+    // симметричной формуле фора не нужна (его рекламный тариф считается
+    // по той же связке 37% от прайса, что и его выручка ниже).
+    const rivalPain = clamp(
+      Math.pow(riv.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
+    const rivalConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, rivalPain - 1), 0, 1);
+    // Его рекламный тариф считается по 45% от прайса против ваших ~37%:
+    // конкурент-корпорация дисконтирует свой дешёвый тариф менее агрессивно.
+    // Это единственная несимметрия пары, и она объявлена: при полностью
+    // равных формулах разумная константная стратегия опускалась ниже
+    // конкурентоспособной доли (тест «игра выигрываема»), потому что прежний
+    // скрытый гандикап ×0.82 на его цене работал в пользу игрока.
+    const rivalEntry = riv.price * (1 - rivalConsider) + riv.price * 0.45 * rivalConsider;
     const rivalSide = {
-      priceFactor: clamp(Math.pow(refPrice / Math.max(30, riv.price * 0.82), def.elasticity), 0.15, 2.6),
+      priceFactor: clamp(Math.pow(refPrice / Math.max(30, rivalEntry), def.elasticity), 0.15, 2.6),
       appeal: clamp(
         Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
         * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
-      adPenalty: clamp(1 - 0.16 * clamp((riv.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3) * 0.45, 0.45, 1),
+      adPenalty: clamp(1 - 0.16 * rivalPain * 0.45, 0.35, 1),
       awareness: riv.awareness,
       buzz: riv.buzz,
       exclusive: exclusivePullOf(riv.catalogOriginal * CONFIG.originalDepthWeight, def, null),
@@ -6153,7 +6226,11 @@ function step(prevState, input = {}) {
   // тариф» было бесплатной стратегией — прайс работал не как цена, а как
   // переключатель, и его верхняя половина ничего не меняла.
   const glut = impressions / (impressions + CONFIG.adInventorySaturation);
-  const cpm = CONFIG.cpm * (1 - CONFIG.adGlutDiscount * glut);
+  // Рекламный рынок сезонный: к зиме бюджеты рекламодателей раздуваются,
+  // летом показы дешевеют. Это делает нагрузку тактическим решением —
+  // тот же ролик приносит зимой на треть больше, чем в июле.
+  const cpmSeason = CONFIG.cpmSeason[seasonOf(month)] ?? 1;
+  const cpm = CONFIG.cpm * cpmSeason * (1 - CONFIG.adGlutDiscount * glut);
   const adRevenue = (impressions / 1000) * cpm;
   const revenue = subscriptionRevenue + adRevenue;
 
@@ -6321,6 +6398,7 @@ function step(prevState, input = {}) {
     crisisCost,
     installedNow,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
 
     // --- Конкурент ---
@@ -6570,7 +6648,7 @@ function valuation(state) {
   // можно купить рывком на один ход — задрать прайс и обнулить контент перед
   // самым концом партии. См. shared/valuation.js.
   const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -6676,11 +6754,16 @@ function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
     duopolyShare: last?.duopolyShare ?? 0,
     rivalAlive: state.rivalState?.alive ?? true,
     goals: state.board?.history ?? [],
@@ -6895,9 +6978,13 @@ function niceTicks(min, max, count = 4) {
 /**
  * series: [{ label, color?, data: number[] }]
  * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
- *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
- * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
- * кривой» и становится дневником — видно, где решение, а где последствия.
+ *         markers?: number[], rounds?: number[] } — индексы ходов (0-базные).
+ * markers — ходы, где игрок менял решения или случилось событие с выбором:
+ * рисуются пунктирными вертикалями, график перестаёт быть «просто кривой»
+ * и становится дневником — видно, где решение, а где последствия.
+ * rounds — ходы, где привлекались деньги (раунд или вливание совета):
+ * рисуются ромбами по верхней кромке — «когда брать деньги» само по себе
+ * решение, и оно заслуживает собственного знака.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -6977,6 +7064,21 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.lineTo(px + 0.5, padT + h);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // раунды — ромбы по верхней кромке: деньги пришли в этот ход
+  for (const ri of (opts.rounds ?? [])) {
+    if (ri < 0 || ri >= n) continue;
+    const px = x(ri);
+    const py = padT + 5;
+    ctx.fillStyle = 'rgba(96,165,250,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px + 4, py);
+    ctx.lineTo(px, py + 4);
+    ctx.lineTo(px - 4, py);
+    ctx.closePath();
+    ctx.fill();
   }
 
   // линии
@@ -8773,7 +8875,25 @@ function decisionChanges() {
     for (const a of ALGORITHMS) {
       if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -8811,6 +8931,7 @@ function renderChart() {
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -9075,7 +9196,7 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      outcome: s.bankrupt ? 'bankrupt' : s.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: s.months,
     });
@@ -9085,7 +9206,7 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
@@ -9133,26 +9254,29 @@ function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
+    : s.sold ? t('gradeSold')
     // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
     // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
     // (80 млрд) была недостижима ни одной опорой.
-    // Шкала переснята аудитом 2026-08 после правок цены и рекламы:
-    // доведённые опоры дают 9.4 / 14.8 / 16.8 млрд. «Выжили» достаёт любая
-    // живая стратегия, «крепко» — собранный конвейер, «отлично» — доведённая
-    // опора. Прежние пороги (32/16/8) были из мира, где прайс 999 был
-    // бесплатным: без эксплойта «отлично» не достигалось вовсе.
-    : s.equityValue > 16e9 ? t('gradeExcellent')
-    : s.equityValue > 9e9 ? t('gradeSolid')
-    : s.equityValue > 3.5e9 ? t('gradeSurvived') : t('gradeModest');
+    // Шкала переснята аудитом 2026-08 после пересборки спроса, симметричного
+    // конкурента и сглаживания окна роста: доведённые опоры дают
+    // 6.0 / 10.9 / 14.1 млрд. «Выжили» достаёт любая живая стратегия,
+    // «крепко» — доведённый конвейер, «отлично» — лучшая опора. Прежние
+    // пороги (32/16/8) были из мира, где прайс 999 был бесплатным.
+    : s.equityValue > 12e9 ? t('gradeExcellent')
+    : s.equityValue > 6e9 ? t('gradeSolid')
+    : s.equityValue > 2.5e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
   });
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { month: s.months })
+      : s.sold ? t('gameOverSoldText', { month: s.months, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -9162,17 +9286,19 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(16e9), b: money(9e9), c: money(3.5e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
     ${novogradInviteHtml()}
     ${returnHtml()}
@@ -9196,6 +9322,7 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 
@@ -9447,6 +9574,54 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kinoreka-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 

@@ -77,6 +77,9 @@ export const CONFIG = {
 
   // --- Реклама ---
   cpm: 640,                   // ₽ за 1000 показов
+  // Сезонность рекламного рынка: зимние бюджеты дороже летних.
+  // Совпадает по фазе с сезоном просмотра — зимой и смотрят, и платят больше.
+  cpmSeason: { winter: 1.25, spring: 0.95, summer: 0.75, autumn: 1.1 },
   adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
   refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
   // Рекламодателей конечное число. Столько показов в месяц — половина скидки
@@ -495,8 +498,8 @@ export const LEVERS = [
         note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
     ],
     tip: {
-      ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
-      en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
+      ru: 'Вторая статья выручки. Пара минут в час почти не замечается, дальше раздражение растёт быстрее денег: киноманы уходят первыми, молодёжь терпит дольше всех. Показы сезонные: зимой CPM на четверть дороже, летом — на четверть дешевле.',
+      en: 'Your second revenue line. A couple of minutes an hour goes almost unnoticed; past that, irritation grows faster than the money — cinephiles leave first, the young put up with it longest. Impressions are seasonal: winter CPMs run about a quarter dearer, summer a quarter cheaper.',
     },
   },
 

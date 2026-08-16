@@ -2002,6 +2002,8 @@ const STRINGS = {
     ru: 'Касса ушла в минус на месяце {month}. Экосистема строится на чужие деньги, но и они кончаются.',
     en: 'Cash went negative in month {month}. Ecosystems are built on other people’s money — but that runs out too.',
   },
+  gameOverSold: { ru: '🏳️ Холдинг продан за долги', en: '🏳️ Sold to cover the debts' },
+  gameOverSoldText: { ru: 'Касса ушла в минус на {month}-м месяце. Совет не стал дожидаться настоящего нуля и продал холдинг: покупатель заплатил 28% оценки, долги погашены, ваша доля остатка — {value}. Вертикали и общая база чего-то стоили даже в такой сделке.', en: 'Cash went negative in month {month}. The board did not wait for an actual zero and sold the holding: the buyer paid 28% of the valuation, the debts were settled, and your share of the remainder is {value}. The verticals and the shared base were worth something even in a deal like this.' },
   scoreValuation: { ru: 'Оценка холдинга', en: 'Holding valuation' },
   scoreStake: { ru: 'Ваша доля', en: 'Your stake' },
   scoreResult: { ru: 'Итог: доля × (оценка + касса)', en: 'Score: stake × (valuation + cash)' },
@@ -2013,6 +2015,7 @@ const STRINGS = {
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
+  gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
@@ -2096,6 +2099,9 @@ const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
 
   // --- строка результата и рекорды ---
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'месяц', en: 'month' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -2107,6 +2113,7 @@ const STRINGS = {
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продан', en: 'sold' },
   recordsOutcomeConglomerate: { ru: '👑 конгломерат', en: '👑 conglomerate' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
@@ -2196,6 +2203,34 @@ function windowGrowth(history, n, pick, fallback = 0.25) {
 }
 
 /**
+ * Устойчивый темп роста: короткое окно, подтверждённое длинным.
+ *
+ * Короткое окно (n против предыдущих n) реагирует быстро, но одноразовая
+ * ступенька выручки, попавшая в него целиком, читается как темп роста и
+ * умножается мультипликатором несоразмерно кассе. Аудит 2026-08 измерил
+ * цену этой дыры на контракте аэропорта в НОВОГРАДЕ: честная кассовая
+ * ценность годового контракта +2–3% итога, а перекрывший окно оценки —
+ * +23–31%. Тот же механизм — двигатель «рывка в конце».
+ *
+ * Лечение: инвестор верит короткому окну только в той мере, в какой его
+ * подтверждает длинное (2n против предыдущих 2n). Берётся минимум из двух
+ * темпов. Разовая ступенька гаснет, как только целиком входит в длинное
+ * окно; устойчивый рост показывает одинаковый темп в обоих окнах и не
+ * теряет ничего. Падение при этом видно по ХУДШЕМУ из окон — сжатие
+ * замечается сразу, и это сознательная асимметрия: рост докажи, спад
+ * очевиден.
+ *
+ * Пока истории на длинное окно не хватает, работает короткое — иначе
+ * первая треть партии жила бы на одном запасном значении.
+ */
+function windowGrowthStable(history, n, pick, fallback = 0.25) {
+  const short = windowGrowth(history, n, pick, fallback);
+  if (history.length < 4 * Math.max(1, n)) return short;
+  const long = windowGrowth(history, 2 * Math.max(1, n), pick, fallback);
+  return Math.min(short, long);
+}
+
+/**
  * Множитель к выручке.
  *
  * @param growth       прирост за окно (может быть отрицательным)
@@ -2220,6 +2255,24 @@ function revenueMultiple(growth, margin, k) {
       + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
     min, max,
   );
+}
+
+/**
+ * Продажа за долги: чего стоит компания, у которой кончились деньги.
+ *
+ * Раньше банкротство означало ноль, и на грани выживания счёт партии
+ * превращался в лотерею: одна и та же стратегия давала 0 или миллиарды
+ * в зависимости от кода партии. В жизни компанию на грани не выключают,
+ * а продают: покупатель платит долю оценки (дисконт за спешку и слабую
+ * переговорную позицию), из выручки гасятся долги, остаток делится по
+ * долям. Если долг больше цены продажи — вот это и есть настоящий ноль.
+ *
+ * Учебный смысл: ликвидационная стоимость. Компания с построенным
+ * активом и долгом — не то же самое, что компания без ничего, и финал
+ * «продались» отличается от финала «сгорели».
+ */
+function distressedSale(valuation, cash, share = 0.28) {
+  return Math.max(0, valuation * share + Math.min(0, cash));
 }
 
 /**
@@ -4292,15 +4345,18 @@ const EVENTS = [
     },
     options: [
       {
-        // Цена поднята с 420 ₽ после аудита доминации: на поздних месяцах
-        // ставка оценки на большой капитализации перевешивала любую цену
-        // промо, и «залить» побеждало 12/12. На 600 ₽ выбор живой: 10/24.
-        label: { ru: 'Залить промо (600 ₽ на клиента такси)', en: 'Flood promos ($6 per taxi customer)' },
+        // Цена калибровалась дважды. Сначала 420 → 600: на поздних месяцах
+        // ставка оценки перевешивала любую цену промо (12/12). Затем
+        // сглаживание окна роста (windowGrowthStable) само убило позднюю
+        // выгоду — инвестор перестал веритьOneMonth-бампу, и 600 стало
+        // перелечено (2/24). На 400 ₽ выбор живой (8/24) и честно зависит
+        // от срока: ранний бамп ещё разгоняет рост, поздний — уже нет.
+        label: { ru: 'Залить промо (400 ₽ на клиента такси)', en: 'Flood promos ($4 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
         },
-        effects: { oneOffCostPerTaxiUser: 600, taxiDemandMult: 1.12, valuationBonus: 0.004 },
+        effects: { oneOffCostPerTaxiUser: 400, taxiDemandMult: 1.12, valuationBonus: 0.004 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -5643,6 +5699,7 @@ function step(prevState, input = {}) {
     profit,
     oneOff,
     launchCost,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
     // --- база (хаб и спицы) ---
     foodUsers: state.food.users,
@@ -5833,7 +5890,7 @@ function sumOfParts(state) {
 
   const mkPart = (id, pickRevenue, pickFull, k) => {
     const runRate = windowAvg(h, CONFIG.valuationWindow, pickRevenue) * 12;
-    const growth = windowGrowth(h, CONFIG.growthWindow, pickRevenue, 0.05);
+    const growth = windowGrowthStable(h, CONFIG.growthWindow, pickRevenue, 0.05);
     const fullAvg = windowAvg(h, CONFIG.valuationWindow, pickFull);
     const revAvg = windowAvg(h, CONFIG.valuationWindow, pickRevenue);
     const margin = revAvg > 0 ? fullAvg / revAvg : (fullAvg < 0 ? -1 : 0);
@@ -5950,11 +6007,16 @@ function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
 }
 
@@ -6196,9 +6258,13 @@ function niceTicks(min, max, count = 4) {
 /**
  * series: [{ label, color?, data: number[] }]
  * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
- *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
- * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
- * кривой» и становится дневником — видно, где решение, а где последствия.
+ *         markers?: number[], rounds?: number[] } — индексы ходов (0-базные).
+ * markers — ходы, где игрок менял решения или случилось событие с выбором:
+ * рисуются пунктирными вертикалями, график перестаёт быть «просто кривой»
+ * и становится дневником — видно, где решение, а где последствия.
+ * rounds — ходы, где привлекались деньги (раунд или вливание совета):
+ * рисуются ромбами по верхней кромке — «когда брать деньги» само по себе
+ * решение, и оно заслуживает собственного знака.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -6278,6 +6344,21 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.lineTo(px + 0.5, padT + h);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // раунды — ромбы по верхней кромке: деньги пришли в этот ход
+  for (const ri of (opts.rounds ?? [])) {
+    if (ri < 0 || ri >= n) continue;
+    const px = x(ri);
+    const py = padT + 5;
+    ctx.fillStyle = 'rgba(96,165,250,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px + 4, py);
+    ctx.lineTo(px, py + 4);
+    ctx.lineTo(px - 4, py);
+    ctx.closePath();
+    ctx.fill();
   }
 
   // линии
@@ -7731,7 +7812,25 @@ function decisionChanges() {
     if ((cur.partners ?? []).length !== (before.partners ?? []).length) {
       names.push(t('chartChangePartners'));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -7770,6 +7869,7 @@ function renderChart() {
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -8053,6 +8153,7 @@ function recordsBlockHtml(s) {
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
       // Титул «Конгломерат Новограда» остаётся в локальных рекордах
       outcome: s.bankrupt ? 'bankrupt'
+        : s.sold ? 'sold'
         : (s.equityValue >= gradesFor(state.assetId, state.difficulty).worthy && tripleCrown()
           ? 'conglomerate' : 'finished'),
       version: APP_VERSION,
@@ -8065,6 +8166,7 @@ function recordsBlockHtml(s) {
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
     <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt'
+      : rec.outcome === 'sold' ? 'recordsOutcomeSold'
       : rec.outcome === 'conglomerate' ? 'recordsOutcomeConglomerate'
       : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
@@ -8098,12 +8200,14 @@ function showEndlessOver() {
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>`,
   [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
    { label: t('gameOverCharts'), onClick: () => {} }]);
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 function showGameOver() {
@@ -8117,6 +8221,7 @@ function showGameOver() {
   // «скромным итогом». Пороги лежат в дескрипторе актива.
   const gr = gradesFor(state.assetId, state.difficulty);
   const grade = s.bankrupt ? t('gradeBankrupt')
+    : s.sold ? t('gradeSold')
     : s.equityValue > gr.excellent ? t('gradeExcellent')
     : s.equityValue > gr.solid ? t('gradeSolid')
     : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
@@ -8155,9 +8260,11 @@ function showGameOver() {
   });
   const diffNow = difficultyById(state.difficulty);
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { month: s.months }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { month: s.months })
+      : s.sold ? t('gameOverSoldText', { month: s.months, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <p class="funding-note">${t('gameOverDifficulty', {
       level: tx(diffNow.label),
       note: t('gameOverOwnTable'),
@@ -8181,7 +8288,8 @@ function showGameOver() {
       revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
     })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -8544,6 +8652,54 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `novograd-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 

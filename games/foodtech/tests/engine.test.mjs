@@ -186,11 +186,15 @@ test('промо-скидка уменьшает вклад ровно на св
   assert.ok(Math.abs(diff - (100 - 100 * CONFIG.paymentFeeRate)) < 1e-6, `получено ${diff}`);
 });
 
-test('банкротство наступает при уходе кассы в минус', () => {
+test('касса в минусе кончает партию: продажа за долги или банкротство', () => {
   const { state } = run(52, baseDecisions({ marketing: 20_000_000, sales: 5_000_000, tech: 8_000_000, promo: 300 }));
   assert.equal(state.over, 'bankrupt');
   assert.ok(state.cash < 0);
-  assert.ok(finalScore(state).bankrupt);
+  const f = finalScore(state);
+  // С 2026-08 крах — это продажа за долги (см. valuation.distressedSale)
+  assert.ok(f.bankrupt || f.sold);
+  if (f.sold) assert.ok(f.equityValue > 0 && f.equityValue < f.valuation);
+  else assert.equal(f.equityValue, 0);
 });
 
 test('раунд инвестиций даёт деньги и размывает долю', () => {

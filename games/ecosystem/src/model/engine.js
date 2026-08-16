@@ -29,7 +29,7 @@ import {
   financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
 } from '../../../../shared/finance.js';
 import { createRng } from '../../../../shared/rng.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { makeGoal, makeEndlessGoal, goalProgress, applyGoalOutcome } from './board.js';
@@ -942,6 +942,7 @@ export function step(prevState, input = {}) {
     profit,
     oneOff,
     launchCost,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
     // --- база (хаб и спицы) ---
     foodUsers: state.food.users,
@@ -1132,7 +1133,7 @@ export function sumOfParts(state) {
 
   const mkPart = (id, pickRevenue, pickFull, k) => {
     const runRate = windowAvg(h, CONFIG.valuationWindow, pickRevenue) * 12;
-    const growth = windowGrowth(h, CONFIG.growthWindow, pickRevenue, 0.05);
+    const growth = windowGrowthStable(h, CONFIG.growthWindow, pickRevenue, 0.05);
     const fullAvg = windowAvg(h, CONFIG.valuationWindow, pickFull);
     const revAvg = windowAvg(h, CONFIG.valuationWindow, pickRevenue);
     const margin = revAvg > 0 ? fullAvg / revAvg : (fullAvg < 0 ? -1 : 0);
@@ -1249,11 +1250,16 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
 }
 

@@ -34,7 +34,7 @@ import {
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep } from '../../../../shared/upkeep.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
@@ -736,12 +736,29 @@ export function step(prevState, input = {}) {
       priceFactor, appeal, adPenalty, awareness: seg.awareness, buzz,
       exclusive: exclusivePullOf(weightedOriginal, def, state.originalsByGenre),
     };
+    // Конкурент проходит через ту же формулу цены входа, что и вы: два
+    // тарифа с внутренними весами сегмента и гашением от его рекламной
+    // нагрузки. Прежний множитель ×0.82 был форой «на глазок» — при
+    // симметричной формуле фора не нужна (его рекламный тариф считается
+    // по той же связке 37% от прайса, что и его выручка ниже).
+    const rivalPain = clamp(
+      Math.pow(riv.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
+    const rivalConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, rivalPain - 1), 0, 1);
+    // Его рекламный тариф считается по 45% от прайса против ваших ~37%:
+    // конкурент-корпорация дисконтирует свой дешёвый тариф менее агрессивно.
+    // Это единственная несимметрия пары, и она объявлена: при полностью
+    // равных формулах разумная константная стратегия опускалась ниже
+    // конкурентоспособной доли (тест «игра выигрываема»), потому что прежний
+    // скрытый гандикап ×0.82 на его цене работал в пользу игрока.
+    const rivalEntry = riv.price * (1 - rivalConsider) + riv.price * 0.45 * rivalConsider;
     const rivalSide = {
-      priceFactor: clamp(Math.pow(refPrice / Math.max(30, riv.price * 0.82), def.elasticity), 0.15, 2.6),
+      priceFactor: clamp(Math.pow(refPrice / Math.max(30, rivalEntry), def.elasticity), 0.15, 2.6),
       appeal: clamp(
         Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
         * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
-      adPenalty: clamp(1 - 0.16 * clamp((riv.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3) * 0.45, 0.45, 1),
+      adPenalty: clamp(1 - 0.16 * rivalPain * 0.45, 0.35, 1),
       awareness: riv.awareness,
       buzz: riv.buzz,
       exclusive: exclusivePullOf(riv.catalogOriginal * CONFIG.originalDepthWeight, def, null),
@@ -1062,7 +1079,11 @@ export function step(prevState, input = {}) {
   // тариф» было бесплатной стратегией — прайс работал не как цена, а как
   // переключатель, и его верхняя половина ничего не меняла.
   const glut = impressions / (impressions + CONFIG.adInventorySaturation);
-  const cpm = CONFIG.cpm * (1 - CONFIG.adGlutDiscount * glut);
+  // Рекламный рынок сезонный: к зиме бюджеты рекламодателей раздуваются,
+  // летом показы дешевеют. Это делает нагрузку тактическим решением —
+  // тот же ролик приносит зимой на треть больше, чем в июле.
+  const cpmSeason = CONFIG.cpmSeason[seasonOf(month)] ?? 1;
+  const cpm = CONFIG.cpm * cpmSeason * (1 - CONFIG.adGlutDiscount * glut);
   const adRevenue = (impressions / 1000) * cpm;
   const revenue = subscriptionRevenue + adRevenue;
 
@@ -1230,6 +1251,7 @@ export function step(prevState, input = {}) {
     crisisCost,
     installedNow,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
 
     // --- Конкурент ---
@@ -1479,7 +1501,7 @@ export function valuation(state) {
   // можно купить рывком на один ход — задрать прайс и обнулить контент перед
   // самым концом партии. См. shared/valuation.js.
   const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -1585,11 +1607,16 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
     duopolyShare: last?.duopolyShare ?? 0,
     rivalAlive: state.rivalState?.alive ?? true,
     goals: state.board?.history ?? [],

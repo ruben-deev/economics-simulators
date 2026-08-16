@@ -821,6 +821,8 @@ export const STRINGS = {
     ru: 'Касса ушла в минус на месяце {month}. Экосистема строится на чужие деньги, но и они кончаются.',
     en: 'Cash went negative in month {month}. Ecosystems are built on other people’s money — but that runs out too.',
   },
+  gameOverSold: { ru: '🏳️ Холдинг продан за долги', en: '🏳️ Sold to cover the debts' },
+  gameOverSoldText: { ru: 'Касса ушла в минус на {month}-м месяце. Совет не стал дожидаться настоящего нуля и продал холдинг: покупатель заплатил 28% оценки, долги погашены, ваша доля остатка — {value}. Вертикали и общая база чего-то стоили даже в такой сделке.', en: 'Cash went negative in month {month}. The board did not wait for an actual zero and sold the holding: the buyer paid 28% of the valuation, the debts were settled, and your share of the remainder is {value}. The verticals and the shared base were worth something even in a deal like this.' },
   scoreValuation: { ru: 'Оценка холдинга', en: 'Holding valuation' },
   scoreStake: { ru: 'Ваша доля', en: 'Your stake' },
   scoreResult: { ru: 'Итог: доля × (оценка + касса)', en: 'Score: stake × (valuation + cash)' },
@@ -832,6 +834,7 @@ export const STRINGS = {
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
+  gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
@@ -915,6 +918,9 @@ export const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
 
   // --- строка результата и рекорды ---
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'месяц', en: 'month' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -926,6 +932,7 @@ export const STRINGS = {
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продан', en: 'sold' },
   recordsOutcomeConglomerate: { ru: '👑 конгломерат', en: '👑 conglomerate' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },

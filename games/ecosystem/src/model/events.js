@@ -312,15 +312,18 @@ export const EVENTS = [
     },
     options: [
       {
-        // Цена поднята с 420 ₽ после аудита доминации: на поздних месяцах
-        // ставка оценки на большой капитализации перевешивала любую цену
-        // промо, и «залить» побеждало 12/12. На 600 ₽ выбор живой: 10/24.
-        label: { ru: 'Залить промо (600 ₽ на клиента такси)', en: 'Flood promos ($6 per taxi customer)' },
+        // Цена калибровалась дважды. Сначала 420 → 600: на поздних месяцах
+        // ставка оценки перевешивала любую цену промо (12/12). Затем
+        // сглаживание окна роста (windowGrowthStable) само убило позднюю
+        // выгоду — инвестор перестал веритьOneMonth-бампу, и 600 стало
+        // перелечено (2/24). На 400 ₽ выбор живой (8/24) и честно зависит
+        // от срока: ранний бамп ещё разгоняет рост, поздний — уже нет.
+        label: { ru: 'Залить промо (400 ₽ на клиента такси)', en: 'Flood promos ($4 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
         },
-        effects: { oneOffCostPerTaxiUser: 600, taxiDemandMult: 1.12, valuationBonus: 0.004 },
+        effects: { oneOffCostPerTaxiUser: 400, taxiDemandMult: 1.12, valuationBonus: 0.004 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },

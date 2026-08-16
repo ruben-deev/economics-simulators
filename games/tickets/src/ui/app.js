@@ -1372,7 +1372,25 @@ function decisionChanges() {
     const platformDiff = ['theatre', 'concert', 'club', 'sport']
       .some((k) => Boolean(cur.platformFor?.[k]) !== Boolean(prev.platformFor?.[k]));
     if (platformDiff) names.push(t('chartChangePlatform'));
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -1409,6 +1427,7 @@ function renderChart() {
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -1733,6 +1752,7 @@ function waterfallHtml(rows) {
 
 function gradeOf(score) {
   if (score.bankrupt) return t('gradeBankrupt');
+  if (score.sold) return t('gradeSold');
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return t('gradeExcellent');
   // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
   // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
@@ -1751,7 +1771,7 @@ function recordsBlockHtml(score) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: score.bankrupt ? 0 : Math.round(score.equityValue),
-      outcome: score.bankrupt ? 'bankrupt' : 'finished',
+      outcome: score.bankrupt ? 'bankrupt' : score.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: score.months,
     });
@@ -1761,7 +1781,7 @@ function recordsBlockHtml(score) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
@@ -1814,8 +1834,10 @@ function showGameOver() {
     score: score.bankrupt ? 0 : score.equityValue, turns: score.months,
   });
   modal(`<h2>${t('overTitle')}</h2>
-    <p>${state.over === 'bankrupt'
-      ? t('overBankrupt', { month: state.month }) : t('overFinished')}</p>
+    <p>${score.bankrupt
+      ? t('overBankrupt', { month: state.month })
+      : score.sold ? t('overSold', { month: state.month, value: money(score.equityValue) })
+      : t('overFinished')}</p>
     <p class="funding-note">${t('overStats', {
       valuation: money(score.valuation), equity: pct(score.equity, 1),
       value: money(score.equityValue), orgs: num(state.history.at(-1)?.orgs ?? 0, 0),
@@ -1825,12 +1847,14 @@ function showGameOver() {
     <p><b>${gradeOf(score)}</b></p>
     <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
-    ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(score)}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
     ${novogradInviteHtml()}
     ${returnHtml()}
@@ -1854,6 +1878,7 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 function restart() {
@@ -2072,4 +2097,52 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `biletville-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

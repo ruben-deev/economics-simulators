@@ -213,6 +213,12 @@ Economically it is an alternative to keeping spare couriers: permanent excess he
 costs money all 52 weeks, while the bonus only costs while it is switched on. With a thin
 roster the forecast-driven bonus wins; with a large buffer it becomes wasted spending.
 
+**With forecast auto-hiring the bonus is redundant** (2026-08 audit). The forecast
+algorithm already sizes the fleet to next week's weather-adjusted demand, and a bonus
+on top pays twice for the same job: a polished strategy with algorithms and no bonus
+measures ₽4.44B, with a heavy-weather reaction — ₽3.19B (−28%). The lesson reads:
+the bonus is a manual capacity tool; once an algorithm runs capacity, do not pay twice.
+
 ---
 
 ## 3. Demand

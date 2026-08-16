@@ -415,14 +415,23 @@ test('раунд даёт деньги и размывает долю; итог�
   assert.ok(Math.abs(f.equityValue - (f.valuation + Math.max(0, after.cash)) * after.equity) < 1);
 });
 
-test('банкротство наступает при уходе кассы в минус', () => {
+test('касса в минусе кончает партию: продажа за долги или банкротство', () => {
   const { state } = run(36, (s) => expansionDecisions(s, {
     taxiMarketing: 25_000_000, crossSell: 25_000_000, taxiSupply: 20_000_000,
     mgmt: 15_000_000, foodMarketing: 15_000_000,
   }), 'burn', { rounds: false });
   assert.equal(state.over, 'bankrupt');
   assert.ok(state.cash < 0);
-  assert.ok(finalScore(state).bankrupt);
+  const f = finalScore(state);
+  // С 2026-08 крах — это продажа за долги: 28% оценки минус долг, остаток
+  // по долям. Настоящий ноль остаётся только когда долг съел и цену продажи.
+  assert.ok(f.bankrupt || f.sold, 'исход краха: банкротство или продажа');
+  if (f.sold) {
+    assert.ok(f.equityValue > 0, 'продажа за долги — не ноль');
+    assert.ok(f.equityValue < f.valuation, 'но заметно дешевле здоровой компании');
+  } else {
+    assert.equal(f.equityValue, 0);
+  }
 });
 
 test('игра завершается ровно через заданное число месяцев', () => {

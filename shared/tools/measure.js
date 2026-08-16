@@ -4,8 +4,11 @@
 //
 //   * партия играется политикой — функцией «состояние → решения», а не
 //     руками; иначе замер меряет настроение измеряющего;
-//   * банкротство считается нулём, а не отрицательным числом: иначе одна
-//     разорившаяся партия перевешивает десять удачных;
+//   * настоящее банкротство (долг съел и цену продажи) считается нулём, а
+//     не отрицательным числом: иначе одна разорившаяся партия перевешивает
+//     десять удачных. Продажа за долги (см. valuation.distressedSale) —
+//     не ноль: партия получает ликвидационную стоимость, и рядом с медианой
+//     печатается «продаж за долги N/24»;
 //   * сравниваются МЕДИАНЫ, а не средние: средние переворачиваются от одного
 //     банкротства, медиана — нет;
 //   * кодов партии берётся не меньше двадцати четырёх. На восьми кодах шум
@@ -40,9 +43,16 @@ export const mean = (values) => (values.length
 export function runPolicy(play, seeds = SEEDS) {
   const scores = [];
   let bankrupts = 0;
+  let sold = 0;
   for (const seed of seeds) {
     const f = play(seed);
-    if (f.bankrupt) { bankrupts += 1; scores.push(0); } else scores.push(f.equityValue);
+    // Продажа за долги (f.sold) — не ноль: партия получает ликвидационную
+    // стоимость. Нулём остаётся только настоящее банкротство, где долг
+    // съел и цену продажи.
+    if (f.bankrupt) { bankrupts += 1; scores.push(0); } else {
+      if (f.sold) sold += 1;
+      scores.push(f.equityValue);
+    }
   }
   return {
     scores,
@@ -50,6 +60,7 @@ export function runPolicy(play, seeds = SEEDS) {
     p25: quantile(scores, 0.25),
     p75: quantile(scores, 0.75),
     bankrupts,
+    sold,
     // «В плюсе»: партия, где итог выше вложенного капитала, — то есть
     // политика не просто выжила, а заработала
     inPlus: (base) => scores.filter((v) => v > base).length,
@@ -66,7 +77,8 @@ export function line(name, res, base = 0) {
   return `${name.padEnd(14)} медиана ${money(res.median).padStart(10)}`
     + ` · квартили ${money(res.p25)} / ${money(res.p75)}`
     + ` · в плюсе ${plus}/${res.scores.length}`
-    + ` · банкротств ${res.bankrupts}/${res.scores.length}`;
+    + ` · банкротств ${res.bankrupts}/${res.scores.length}`
+    + (res.sold ? ` · продаж за долги ${res.sold}/${res.scores.length}` : '');
 }
 
 export { money };
