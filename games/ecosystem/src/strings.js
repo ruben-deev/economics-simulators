@@ -844,6 +844,33 @@ export const STRINGS = {
     ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',
     en: 'Debrief questions: when did you launch taxi, and why then? What did a cross-sell customer cost versus cold? What would the valuation be had you simply milked food for all three years?',
   },
+
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run’s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: подписка склеила вертикали, менеджмент поспевал за ростом, касса держала подушку. Сильная партия.',
+    en: 'The rules found no systematic misses: the subscription glued the verticals, management kept pace with growth, cash held its cushion. A strong run.',
+  },
+  debriefNoPlus: {
+    ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: опора-экосистема с Плюсом даёт 8.7 млрд против 6.7 без него.',
+    en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: the ecosystem baseline makes $87M with Plus against $67M without.',
+  },
+  debriefUnfocused: {
+    ru: 'Штраф расфокуса держался {n} месяцев (в среднем −{pct}% к качеству): вертикали открывались быстрее, чем рос менеджмент. Качество — это удержание, а удержание — вся юнит-экономика.',
+    en: 'The focus penalty persisted for {n} months (−{pct}% quality on average): verticals opened faster than management grew. Quality is retention, and retention is the whole unit economics.',
+  },
+  debriefThinCash: {
+    ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
+    en: 'Cash sat below one month of costs for {n} months while operations ran at a loss. Any shock at such a moment means a distressed sale — it returns only 28% of the valuation.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
   crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
   crownText: {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
@@ -935,6 +962,9 @@ export const STRINGS = {
   recordsOutcomeSold: { ru: 'продан', en: 'sold' },
   recordsOutcomeConglomerate: { ru: '👑 конгломерат', en: '👑 conglomerate' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
 
   // --- крушение ---

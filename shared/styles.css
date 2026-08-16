@@ -955,6 +955,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-hit polygon { pointer-events: all; }
 .city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
 .map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }

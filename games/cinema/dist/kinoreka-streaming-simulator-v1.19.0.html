@@ -968,6 +968,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-hit polygon { pointer-events: all; }
 .city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
 .map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
@@ -1801,6 +1813,37 @@ score = valuation × your stake`,
   gradeModest: { ru: 'Скромно', en: 'Modest' },
   gameOverLastMonth: { ru: 'Последний месяц: {subs} подписчиков, ARPU {arpu}, отток {churn}, прибыль {profit}.', en: 'Final month: {subs} subscribers, ARPU {arpu}, churn {churn}, profit {profit}.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> что удерживало подписчика — каталог или привычка? В какой момент рост часов перестал приносить прибыль? Сколько стоила бы та же база без единого оригинала?', en: '<b>Questions for the debrief:</b> what kept subscribers — the catalogue or the habit? At what point did rising hours stop producing profit? What would the same base be worth without a single original?' },
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run\u2019s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: полка пополнялась, цена не заламывалась, реклама работала по сезону. Сильная партия.',
+    en: 'The rules found no systematic misses: the shelf kept filling, the price stayed sane, ads followed the season. A strong run.',
+  },
+  debriefNoAdTier: {
+    ru: 'Рекламная полка простояла закрытой почти всю партию ({n} мес. без рекламных подписчиков). На опорах рекламный тариф добавляет 0.3–0.5 млрд и открывает дешёвый вход чувствительным к цене.',
+    en: 'The ad tier stayed shut for most of the run ({n} months with no ad subscribers). On the baselines the ad tier adds $3–5M and opens a cheap entry for price-sensitive viewers.',
+  },
+  debriefLicenseStall: {
+    ru: 'Закупка каталога стояла на нуле {n} месяцев. Лицензионная опора с закупкой 300 млн/мес даёт 14.1 млрд; она же с закупкой 0 — 0.4 млрд: полка тает быстрее, чем копится экономия.',
+    en: 'Catalogue licensing sat at zero for {n} months. The licensing baseline at 300M/month makes $141M; the same baseline at zero — $4M: the shelf melts faster than the savings add up.',
+  },
+  debriefPricyPremium: {
+    ru: 'Премиум держался на 449 ₽ и выше {n} месяцев — больше половины партии. На опорах 399 ₽ обгоняет 449 ₽ на 0.7 млрд: эластичность режет приток раньше, чем дорастает ARPU.',
+    en: 'Premium stayed at 449 ₽ or higher for {n} months — more than half the run. On the baselines 399 ₽ beats 449 ₽ by $7M: elasticity cuts the inflow before ARPU catches up.',
+  },
+  debriefSummerAds: {
+    ru: 'Рекламная загрузка летом была выше зимней — против сезона CPM (лето ×0.75, зима ×1.25). Та же минута рекламы летом приносит на 40% меньше зимней.',
+    en: 'Ad load ran higher in summer than in winter — against the CPM season (summer ×0.75, winter ×1.25). The same ad minute earns 40% less in summer than in winter.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
+
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
@@ -1837,6 +1880,9 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый рынок у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same market. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -2851,8 +2897,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -2866,7 +2917,8 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -2876,7 +2928,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -2911,19 +2963,43 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -6775,6 +6851,50 @@ function finalScore(state) {
 }
 
 
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Рекламная полка простояла закрытой. Цена: на опорах рекламный тариф
+  // добавляет 0.3–0.5 млрд и открывает дешёвый вход чувствительным к цене.
+  const noAdMonths = hist.filter((r) => (r.adSubs ?? 0) < 0.02 * Math.max(1, r.subs)).length;
+  if (noAdMonths > hist.length * 0.8) out.push({ id: 'noAdTier', n: noAdMonths });
+
+  // Закупка каталога стояла на нуле. Цена: лицензионная опора с закупкой
+  // 300 млн/мес — 14.1 млрд; она же с закупкой 0 — 0.4 млрд: полка тает,
+  // отток съедает базу быстрее, чем экономия копится.
+  const noBuyMonths = hist.filter((r) => (r.decisions?.licensing ?? 0) === 0).length;
+  if (noBuyMonths >= 6) out.push({ id: 'licenseStall', n: noBuyMonths });
+
+  // Премиум держался дорогим больше полупартии. Цена: на опоре 399₽
+  // обгоняет 449₽ на 0.7 млрд — эластичность режет приток раньше,
+  // чем дорастает ARPU.
+  const pricyMonths = hist.filter((r) => (r.decisions?.priceNew ?? 0) >= 449).length;
+  if (pricyMonths > hist.length / 2) out.push({ id: 'pricyPremium', n: pricyMonths });
+
+  // Рекламная загрузка летом выше зимней — против сезона CPM
+  // (лето ×0.75, зима ×1.25: та же минута летом приносит на 40% меньше).
+  const meanLoad = (season) => {
+    const rows = hist.filter((r) => r.season === season && (r.adSubs ?? 0) > 0);
+    return rows.length
+      ? rows.reduce((a, r) => a + (r.decisions?.adLoad ?? 0), 0) / rows.length : null;
+  };
+  const summer = meanLoad('summer');
+  const winter = meanLoad('winter');
+  if (summer != null && winter != null && summer > winter + 0.5) {
+    out.push({ id: 'summerAds' });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}
+
 
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
@@ -9297,6 +9417,7 @@ function showGameOver() {
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -9314,6 +9435,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -9432,6 +9554,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
@@ -9580,6 +9703,21 @@ function boot() {
   if (!saved) showWelcome();
 }
 
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса — разбор нужен не только банкроту.

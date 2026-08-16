@@ -968,6 +968,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-hit polygon { pointer-events: all; }
 .city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
 .map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
@@ -1684,6 +1696,33 @@ const STRINGS = {
   overGoals: { ru: 'Цели: {list}', en: 'Goals: {list}' },
   overAgain: { ru: 'Сыграть заново', en: 'Play again' },
   overQuestions: { ru: '<b>Вопросы для разбора:</b> кто на самом деле ваш клиент — зритель или организатор? Какая часть оборота держалась на одном крупном промоутере? Что стоило дороже — уступки организаторам или потерянное доверие зрителей?', en: '<b>Questions for the debrief:</b> who is your real customer — the buyer or the organiser? How much of the turnover rested on one large promoter? Which cost more — concessions to organisers or the buyers’ lost trust?' },
+
+  // --- персональный разбор: правила по телеметрии партии (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии: цены взяты из самих цифр партии и замеров на 24 стандартных кодах.',
+    en: 'Automatic observations from this run’s telemetry: prices come from the run’s own numbers and from measurements on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
+    en: 'The rules found no systematic misses: advances came back, bots never took over, cash kept its cushion. A strong run.',
+  },
+  debriefAdvances: {
+    ru: 'Авансы организаторам списаны на {lost} — вернулось только {back}. Ставка на хиты без запаса: каждый списанный аванс — это чужой концерт, оплаченный вашей кассой.',
+    en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a margin: every written-off advance is someone else’s show paid from your cash.',
+  },
+  debriefBots: {
+    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: фоновая доля ботов у опор не поднимается выше 15%.',
+    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: the background bot share on the baselines never tops 15%.',
+  },
+  debriefThinCash: {
+    ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
+    en: 'Cash sat below one month of costs for {n} months while operations ran at a loss. Any shock at such a moment means a distressed sale — it returns only 28% of the valuation.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
@@ -1722,6 +1761,9 @@ const STRINGS = {
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -2751,8 +2793,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -2766,7 +2813,8 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -2776,7 +2824,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -2811,19 +2859,43 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -6105,6 +6177,43 @@ function finalScore(state) {
 }
 
 
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи; цены — из телеметрии самой партии и замеров аудита 2026-08.
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+  const sum = (fn) => hist.reduce((a, r) => a + (fn(r) ?? 0), 0);
+
+  // Авансы организаторам списывались чаще, чем возвращались: ставки на
+  // хиты без запаса. Цена — собственные списания партии.
+  const writtenOff = sum((r) => r.advanceWrittenOff);
+  const recouped = sum((r) => r.advanceRecouped);
+  if (writtenOff >= 30e6 && writtenOff > 0.35 * (writtenOff + recouped)) {
+    out.push({ id: 'advances', lost: writtenOff, back: recouped });
+  }
+
+  // Боты держали заметную долю продаж, а антибот-фильтр стоял на нуле:
+  // доверие зрителей — это спрос следующих месяцев. Порог 18%: фоновая
+  // доля ботов на опорах не поднимается выше 15% — правило ловит
+  // запущенное нашествие, а не обычный шум.
+  const botMonths = hist.filter((r) => (r.botShare ?? 0) >= 0.18
+    && (r.decisions?.antiBot ?? 0) === 0).length;
+  if (botMonths >= 3) out.push({ id: 'bots', n: botMonths });
+
+  // Касса жила ниже месяца расходов при убыточной операционке: любой шок
+  // в такой момент — продажа за долги (28% оценки минус долг).
+  const thinMonths = hist.filter((r) => r.profit < 0
+    && r.cash < (r.revenue - r.profit)).length;
+  if (thinMonths >= 3) out.push({ id: 'thinCash', n: thinMonths });
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}
+
 
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
@@ -8269,6 +8378,7 @@ function showGameOver() {
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(score)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -8286,6 +8396,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -8381,6 +8492,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
@@ -8519,6 +8631,28 @@ function boot() {
   if (!saved) showWelcome();
 }
 
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+// Денежные параметры правил приводятся к валюте показа заранее:
+// шаблону строки достаётся готовый текст.
+function fmtDebrief(f) {
+  const out = { ...f };
+  if (out.lost != null) out.lost = money(out.lost);
+  if (out.back != null) out.back = money(out.back);
+  return out;
+}
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса — разбор нужен не только банкроту.

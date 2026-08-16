@@ -202,9 +202,35 @@ export const STRINGS = {
   mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery leg {km} km · {time} min per order' },
   mapTipHouses: { ru: 'Подключено ресторанов: {n}', en: 'Restaurants signed up: {n}' },
   mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
-  mapLegend: {
-    ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше потенциальных клиентов, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Наведите на любую часть квартала — подскажет, что это. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
-    en: 'A block is a district, and its area is that district’s market: the block’s area scales with the district’s market. Filled from the bottom is how much of that market is already yours. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Hover any part of a block and it will tell you what it is. Click a block to open the district or drop it from the plan.',
+  // Легенда разобрана на элементы: наведение на пункт подсвечивает
+  // соответствующий орган карты (аудит 2026-08, ось визуала)
+  mapLegendArea: {
+    ru: 'Квартал — район, его площадь — рынок: во сколько раз больше потенциальных клиентов, во столько больше квартал.',
+    en: 'A block is a district and its area is the market: the more potential customers, the bigger the block.',
+  },
+  mapLegendShare: {
+    ru: 'Залито снизу — сколько этого рынка уже ваше.',
+    en: 'Filled from the bottom — how much of that market is already yours.',
+  },
+  mapLegendColor: {
+    ru: 'Цвет — вклад с заказа: зелёный приносит, красный съедает.',
+    en: 'Colour is contribution per order: green earns, red eats.',
+  },
+  mapLegendHouses: {
+    ru: 'Домики — подключённые рестораны, один на тридцать.',
+    en: 'Little houses are restaurants signed up, one per thirty.',
+  },
+  mapLegendLeg: {
+    ru: 'Ниточка — плечо доставки; красная — район не укладывается в эталонные минуты.',
+    en: 'The thread is the delivery leg; red means the district misses the reference time.',
+  },
+  mapLegendOutline: {
+    ru: 'Обводка пунктиром — про конец недели: зелёная откроется, красная закроется, серая ждёт входа.',
+    en: 'A dashed outline is about the end of the week: green opens, red closes, grey waits for its entry fee.',
+  },
+  mapLegendHint: {
+    ru: 'Наведите на пункт легенды — карта подсветит его. Клик по кварталу открывает район или убирает его из плана.',
+    en: 'Hover a legend item and the map highlights it. Clicking a block opens the district or drops it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · AOV {aov} · leg {km} km' },
 
@@ -508,6 +534,33 @@ score = valuation × your stake`,
   gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом 4.5–6.5 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $45–65M — surviving is easy, winning is not.' },
   gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm}, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, {cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run\u2019s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: шторма закрыты, алгоритмы работали, экспансия случилась. Сильная партия.',
+    en: 'The rules found no systematic misses: storms were covered, the algorithms ran, the expansion happened. A strong run.',
+  },
+  debriefStorms: {
+    ru: '{n} штормовых недель прошли без ответа — ни надбавки курьерам, ни прогнозного автонайма. Стратегии, отвечающие на шторм, берут на реакции до +87% к итогу.',
+    en: '{n} storm weeks went unanswered — no courier bonus and no forecast auto-hiring. Strategies that react to storms gain up to +87% on the final score.',
+  },
+  debriefAlgosIdle: {
+    ru: 'Алгоритмы почти не работали: {n} недель после 12-й — с одним включённым или меньше. Доведённая стратегия с алгоритмами даёт ~4.4 млрд против 1.3 у ручной опоры.',
+    en: 'The algorithms sat idle: {n} weeks after week 12 had one or none enabled. A polished strategy with algorithms makes ~$44M against $13M for the manual baseline.',
+  },
+  debriefNoExpansion: {
+    ru: 'Совет открыл второй город ещё на неделе {w}, но экспансии не случилось. Опора с алгоритмами — 4.4 млрд; она же со Старгородом — 6.4.',
+    en: 'The board opened the second city back on week {w}, but the expansion never happened. The algorithm baseline makes $44M; the same baseline with Stargorod — $64M.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась на неделе {w}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out on week {w}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
+
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
@@ -546,6 +599,9 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },

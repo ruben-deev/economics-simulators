@@ -498,6 +498,33 @@ export const STRINGS = {
   overGoals: { ru: 'Цели: {list}', en: 'Goals: {list}' },
   overAgain: { ru: 'Сыграть заново', en: 'Play again' },
   overQuestions: { ru: '<b>Вопросы для разбора:</b> кто на самом деле ваш клиент — зритель или организатор? Какая часть оборота держалась на одном крупном промоутере? Что стоило дороже — уступки организаторам или потерянное доверие зрителей?', en: '<b>Questions for the debrief:</b> who is your real customer — the buyer or the organiser? How much of the turnover rested on one large promoter? Which cost more — concessions to organisers or the buyers’ lost trust?' },
+
+  // --- персональный разбор: правила по телеметрии партии (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии: цены взяты из самих цифр партии и замеров на 24 стандартных кодах.',
+    en: 'Automatic observations from this run’s telemetry: prices come from the run’s own numbers and from measurements on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
+    en: 'The rules found no systematic misses: advances came back, bots never took over, cash kept its cushion. A strong run.',
+  },
+  debriefAdvances: {
+    ru: 'Авансы организаторам списаны на {lost} — вернулось только {back}. Ставка на хиты без запаса: каждый списанный аванс — это чужой концерт, оплаченный вашей кассой.',
+    en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a margin: every written-off advance is someone else’s show paid from your cash.',
+  },
+  debriefBots: {
+    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: фоновая доля ботов у опор не поднимается выше 15%.',
+    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: the background bot share on the baselines never tops 15%.',
+  },
+  debriefThinCash: {
+    ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
+    en: 'Cash sat below one month of costs for {n} months while operations ran at a loss. Any shock at such a moment means a distressed sale — it returns only 28% of the valuation.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
@@ -536,6 +563,9 @@ export const STRINGS = {
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },

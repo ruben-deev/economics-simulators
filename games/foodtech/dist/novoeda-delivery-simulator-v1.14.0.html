@@ -968,6 +968,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-hit polygon { pointer-events: all; }
 .city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
 .map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
 .city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
 .city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
 .city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
@@ -1390,9 +1402,35 @@ const STRINGS = {
   mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery leg {km} km · {time} min per order' },
   mapTipHouses: { ru: 'Подключено ресторанов: {n}', en: 'Restaurants signed up: {n}' },
   mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
-  mapLegend: {
-    ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше потенциальных клиентов, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Наведите на любую часть квартала — подскажет, что это. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
-    en: 'A block is a district, and its area is that district’s market: the block’s area scales with the district’s market. Filled from the bottom is how much of that market is already yours. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Hover any part of a block and it will tell you what it is. Click a block to open the district or drop it from the plan.',
+  // Легенда разобрана на элементы: наведение на пункт подсвечивает
+  // соответствующий орган карты (аудит 2026-08, ось визуала)
+  mapLegendArea: {
+    ru: 'Квартал — район, его площадь — рынок: во сколько раз больше потенциальных клиентов, во столько больше квартал.',
+    en: 'A block is a district and its area is the market: the more potential customers, the bigger the block.',
+  },
+  mapLegendShare: {
+    ru: 'Залито снизу — сколько этого рынка уже ваше.',
+    en: 'Filled from the bottom — how much of that market is already yours.',
+  },
+  mapLegendColor: {
+    ru: 'Цвет — вклад с заказа: зелёный приносит, красный съедает.',
+    en: 'Colour is contribution per order: green earns, red eats.',
+  },
+  mapLegendHouses: {
+    ru: 'Домики — подключённые рестораны, один на тридцать.',
+    en: 'Little houses are restaurants signed up, one per thirty.',
+  },
+  mapLegendLeg: {
+    ru: 'Ниточка — плечо доставки; красная — район не укладывается в эталонные минуты.',
+    en: 'The thread is the delivery leg; red means the district misses the reference time.',
+  },
+  mapLegendOutline: {
+    ru: 'Обводка пунктиром — про конец недели: зелёная откроется, красная закроется, серая ждёт входа.',
+    en: 'A dashed outline is about the end of the week: green opens, red closes, grey waits for its entry fee.',
+  },
+  mapLegendHint: {
+    ru: 'Наведите на пункт легенды — карта подсветит его. Клик по кварталу открывает район или убирает его из плана.',
+    en: 'Hover a legend item and the map highlights it. Clicking a block opens the district or drops it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · AOV {aov} · leg {km} km' },
 
@@ -1696,6 +1734,33 @@ score = valuation × your stake`,
   gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом 4.5–6.5 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $45–65M — surviving is easy, winning is not.' },
   gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm}, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, {cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run\u2019s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: шторма закрыты, алгоритмы работали, экспансия случилась. Сильная партия.',
+    en: 'The rules found no systematic misses: storms were covered, the algorithms ran, the expansion happened. A strong run.',
+  },
+  debriefStorms: {
+    ru: '{n} штормовых недель прошли без ответа — ни надбавки курьерам, ни прогнозного автонайма. Стратегии, отвечающие на шторм, берут на реакции до +87% к итогу.',
+    en: '{n} storm weeks went unanswered — no courier bonus and no forecast auto-hiring. Strategies that react to storms gain up to +87% on the final score.',
+  },
+  debriefAlgosIdle: {
+    ru: 'Алгоритмы почти не работали: {n} недель после 12-й — с одним включённым или меньше. Доведённая стратегия с алгоритмами даёт ~4.4 млрд против 1.3 у ручной опоры.',
+    en: 'The algorithms sat idle: {n} weeks after week 12 had one or none enabled. A polished strategy with algorithms makes ~$44M against $13M for the manual baseline.',
+  },
+  debriefNoExpansion: {
+    ru: 'Совет открыл второй город ещё на неделе {w}, но экспансии не случилось. Опора с алгоритмами — 4.4 млрд; она же со Старгородом — 6.4.',
+    en: 'The board opened the second city back on week {w}, but the expansion never happened. The algorithm baseline makes $44M; the same baseline with Stargorod — $64M.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась на неделе {w}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out on week {w}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
+
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
@@ -1734,6 +1799,9 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -2652,8 +2720,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -2667,7 +2740,8 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -2677,7 +2751,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -2712,19 +2786,43 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -5141,6 +5239,49 @@ function finalScore(state) {
   };
 }
 
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Шторм без ответа: ни надбавки курьерам, ни прогнозного автонайма.
+  // Цена: реакция на погоду даёт опоре до +87% к итогу; с прогнозным
+  // автонаймом надбавка не нужна — обе механики закрывают один провал.
+  // Первые 12 недель — льготные: прогнозный автонайм открывается качеством
+  // к 9–13 неделе, и ранние шторма — не системный промах, а часть пути.
+  const severe = hist.filter((r) => r.week > 12 && (r.weatherSeverity ?? 0) >= 0.7);
+  const stormsIgnored = severe.filter((r) => !(r.decisions?.weatherBonus > 0)
+    && !r.algoActive?.forecast).length;
+  if (stormsIgnored >= 3 && stormsIgnored > severe.length / 2) {
+    out.push({ id: 'storms', n: stormsIgnored });
+  }
+
+  // Алгоритмы простаивали. Цена: доведённая стратегия с включёнными
+  // алгоритмами — 4.4 млрд против 1.3 у ручной опоры.
+  const lateWeeks = hist.filter((r) => r.week > 12);
+  const idleWeeks = lateWeeks.filter((r) => Object.values(r.algoActive ?? {})
+    .filter(Boolean).length <= 1).length;
+  if (lateWeeks.length >= 8 && idleWeeks > lateWeeks.length / 2) {
+    out.push({ id: 'algosIdle', n: idleWeeks });
+  }
+
+  // Ворота экспансии открыты, а второго города так и не случилось.
+  // Цена: опора с алгоритмами 4.4 млрд, она же со Старгородом — 6.4.
+  const firstOpen = hist.find((r) => r.expansionOpen);
+  const entered = Object.keys(state.cityEntered ?? {}).some((c) => c !== 'novograd');
+  if (firstOpen && !entered && state.week - firstOpen.week >= 10) {
+    out.push({ id: 'noExpansion', w: firstOpen.week });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', w: state.week });
+
+  return out.slice(0, 4);
+}
+
 
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
@@ -6446,10 +6587,26 @@ function renderCityMap() {
     ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
     <details class="map-legend">
       <summary>${t('mapLegendTitle')}</summary>
-      <div class="funding-note">${t('mapLegend')}</div>
+      <div class="funding-note">
+        ${[['area', 'mapLegendArea'], ['share', 'mapLegendShare'], ['color', 'mapLegendColor'],
+    ['houses', 'mapLegendHouses'], ['leg', 'mapLegendLeg'], ['outline', 'mapLegendOutline']]
+    .map(([k, key]) => `<span class="legend-item" data-hl="${k}" tabindex="0">${t(key)}</span>`).join(' ')}
+        <span>${t('mapLegendHint')}</span>
+      </div>
     </details>
   </div>`;
 
+  // Интерактивная легенда: наведение (или фокус с клавиатуры) на пункт
+  // приглушает карту и оставляет в полную силу только описанный орган
+  const mapPanel = box.querySelector('.city-map');
+  box.querySelectorAll('.legend-item').forEach((item) => {
+    const on = () => { if (mapPanel) mapPanel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (mapPanel) delete mapPanel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
   // Карта — не картинка, а панель управления: район открывается нажатием
   // прямо на квартал, как и на карточку в левой колонке.
   box.querySelectorAll('[data-id]').forEach((node) => {
@@ -7437,6 +7594,7 @@ function showGameOver() {
     })}</p>` : ''}
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -7456,6 +7614,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -7470,6 +7629,22 @@ function showGameOver() {
   });
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса. Раньше водопад показывался только банкроту —
@@ -7625,6 +7800,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });

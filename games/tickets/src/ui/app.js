@@ -16,7 +16,7 @@ import {
 } from '../model/config.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
-  explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel,
+  explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, debrief,
   orgTotal, totalReach, platformLevel, productLevel,
 } from '../model/engine.js';
 import { seasonOf, hitById } from '../model/market.js';
@@ -1849,6 +1849,7 @@ function showGameOver() {
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(score)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1866,6 +1867,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -1961,6 +1963,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
@@ -2099,6 +2102,28 @@ function boot() {
   if (!saved) showWelcome();
 }
 
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+// Денежные параметры правил приводятся к валюте показа заранее:
+// шаблону строки достаётся готовый текст.
+function fmtDebrief(f) {
+  const out = { ...f };
+  if (out.lost != null) out.lost = money(out.lost);
+  if (out.back != null) out.back = money(out.back);
+  return out;
+}
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса — разбор нужен не только банкроту.

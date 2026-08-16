@@ -14,7 +14,7 @@ import { SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz } from '.
 import { PARTNERS, partnerById, partnerTotals } from '../model/partners.js';
 import {
   createInitialState, step, explain, explainFactors, unitEconomics, valuation, fundingOffer, raise, clamp,
-  finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact, marketLiftOf,
+  finalScore, algoQuality, dataLevel, rndLevel, algorithmImpact, marketLiftOf, debrief,
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
@@ -2205,6 +2205,7 @@ function showGameOver() {
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -2222,6 +2223,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2340,6 +2342,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
@@ -2488,6 +2491,21 @@ function boot() {
   if (!saved) showWelcome();
 }
 
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса — разбор нужен не только банкроту.

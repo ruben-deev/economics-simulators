@@ -614,6 +614,37 @@ score = valuation × your stake`,
   gradeModest: { ru: 'Скромно', en: 'Modest' },
   gameOverLastMonth: { ru: 'Последний месяц: {subs} подписчиков, ARPU {arpu}, отток {churn}, прибыль {profit}.', en: 'Final month: {subs} subscribers, ARPU {arpu}, churn {churn}, profit {profit}.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> что удерживало подписчика — каталог или привычка? В какой момент рост часов перестал приносить прибыль? Сколько стоила бы та же база без единого оригинала?', en: '<b>Questions for the debrief:</b> what kept subscribers — the catalogue or the habit? At what point did rising hours stop producing profit? What would the same base be worth without a single original?' },
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run\u2019s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: полка пополнялась, цена не заламывалась, реклама работала по сезону. Сильная партия.',
+    en: 'The rules found no systematic misses: the shelf kept filling, the price stayed sane, ads followed the season. A strong run.',
+  },
+  debriefNoAdTier: {
+    ru: 'Рекламная полка простояла закрытой почти всю партию ({n} мес. без рекламных подписчиков). На опорах рекламный тариф добавляет 0.3–0.5 млрд и открывает дешёвый вход чувствительным к цене.',
+    en: 'The ad tier stayed shut for most of the run ({n} months with no ad subscribers). On the baselines the ad tier adds $3–5M and opens a cheap entry for price-sensitive viewers.',
+  },
+  debriefLicenseStall: {
+    ru: 'Закупка каталога стояла на нуле {n} месяцев. Лицензионная опора с закупкой 300 млн/мес даёт 14.1 млрд; она же с закупкой 0 — 0.4 млрд: полка тает быстрее, чем копится экономия.',
+    en: 'Catalogue licensing sat at zero for {n} months. The licensing baseline at 300M/month makes $141M; the same baseline at zero — $4M: the shelf melts faster than the savings add up.',
+  },
+  debriefPricyPremium: {
+    ru: 'Премиум держался на 449 ₽ и выше {n} месяцев — больше половины партии. На опорах 399 ₽ обгоняет 449 ₽ на 0.7 млрд: эластичность режет приток раньше, чем дорастает ARPU.',
+    en: 'Premium stayed at 449 ₽ or higher for {n} months — more than half the run. On the baselines 399 ₽ beats 449 ₽ by $7M: elasticity cuts the inflow before ARPU catches up.',
+  },
+  debriefSummerAds: {
+    ru: 'Рекламная загрузка летом была выше зимней — против сезона CPM (лето ×0.75, зима ×1.25). Та же минута рекламы летом приносит на 40% меньше зимней.',
+    en: 'Ad load ran higher in summer than in winter — against the CPM season (summer ×0.75, winter ×1.25). The same ad minute earns 40% less in summer than in winter.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
+
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
@@ -650,6 +681,9 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый рынок у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same market. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },

@@ -10,7 +10,7 @@ import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
-  fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById,
+  fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById, debrief,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../model/engine.js';
 import { goalProgress } from '../model/board.js';
@@ -983,10 +983,26 @@ function renderCityMap() {
     ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
     <details class="map-legend">
       <summary>${t('mapLegendTitle')}</summary>
-      <div class="funding-note">${t('mapLegend')}</div>
+      <div class="funding-note">
+        ${[['area', 'mapLegendArea'], ['share', 'mapLegendShare'], ['color', 'mapLegendColor'],
+    ['houses', 'mapLegendHouses'], ['leg', 'mapLegendLeg'], ['outline', 'mapLegendOutline']]
+    .map(([k, key]) => `<span class="legend-item" data-hl="${k}" tabindex="0">${t(key)}</span>`).join(' ')}
+        <span>${t('mapLegendHint')}</span>
+      </div>
     </details>
   </div>`;
 
+  // Интерактивная легенда: наведение (или фокус с клавиатуры) на пункт
+  // приглушает карту и оставляет в полную силу только описанный орган
+  const mapPanel = box.querySelector('.city-map');
+  box.querySelectorAll('.legend-item').forEach((item) => {
+    const on = () => { if (mapPanel) mapPanel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (mapPanel) delete mapPanel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
   // Карта — не картинка, а панель управления: район открывается нажатием
   // прямо на квартал, как и на карточку в левой колонке.
   box.querySelectorAll('[data-id]').forEach((node) => {
@@ -1974,6 +1990,7 @@ function showGameOver() {
     })}</p>` : ''}
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1993,6 +2010,7 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2007,6 +2025,22 @@ function showGameOver() {
   });
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
 
 // Вся партия одной строкой цифр: выручка, расходы, операционный итог,
 // привлечённые деньги, касса. Раньше водопад показывался только банкроту —
@@ -2162,6 +2196,7 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
