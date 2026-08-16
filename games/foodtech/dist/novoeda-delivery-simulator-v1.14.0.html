@@ -936,11 +936,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 
 /* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
 .city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
-.city-map .m-quarter.m-good { fill: var(--good); fill-opacity: 0.22; stroke: var(--good); }
-.city-map .m-quarter.m-bad { fill: var(--bad); fill-opacity: 0.2; stroke: var(--bad); }
+/* Фон квартала и уровень «наша доля района» внутри него */
+.city-map .m-quarter-bg { fill: var(--panel-2, #16213a); fill-opacity: 0.5; stroke: none; }
+.city-map .m-share { fill-opacity: 0.55; }
+.city-map .m-share.m-good { fill: var(--good); }
+.city-map .m-share.m-bad, .city-map .m-share.m-closing { fill: var(--bad); }
+.city-map .m-ceiling { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; opacity: 0.75; }
+.city-map .m-quarter.m-good { fill: none; stroke: var(--good); }
+.city-map .m-quarter.m-bad { fill: none; stroke: var(--bad); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
-.city-map .m-quarter.m-closing { fill: var(--bad); fill-opacity: 0.12; stroke: var(--bad); stroke-dasharray: 5 4; }
-.city-map .m-quarter.m-plan { fill: var(--accent); fill-opacity: 0.1; stroke: var(--accent); }
+.city-map .m-quarter.m-closing { fill: none; stroke: var(--bad); stroke-dasharray: 5 4; }
+.city-map .m-quarter.m-plan { fill: none; stroke: var(--accent); }
 /* Квартал — орган управления: нажатие открывает район */
 /* pointer-events: all — иначе незакрашенный квартал (закрытый район) не
    ловит нажатие вовсе: по спецификации SVG прозрачная заливка не цель */
@@ -1355,8 +1361,8 @@ const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Квартал — район. Размер — сколько в нём жителей, цвет — вклад с заказа (зелёный приносит, красный съедает), домики — подключённые рестораны (один домик на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Пунктир говорит про конец недели: зелёный откроется, красный закроется, серый закрыт и ждёт входа. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
-    en: 'A block is a district. Its size is how many people live there, its colour is contribution per order (green earns, red eats), the little houses are restaurants signed up (one house per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Click a block to open the district or drop it from the plan.',
+    ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше жителей, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше; поперечный пунктир — потолок: часть жителей заперта у конкурента, и выше него не подняться никаким маркетингом. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
+    en: 'A block is a district, and its area is that district’s market: as many times more residents, as many times bigger the block. Filled from the bottom is how much of that market is already yours; the dashed line across is the ceiling — part of the residents are locked in with the competitor, and no amount of marketing gets you above it. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Click a block to open the district or drop it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
@@ -5944,6 +5950,8 @@ function renderAlgos() {
 // настройка взгляда, а не решение игрока.
 let mapCity = null;
 
+const clampShare = (x) => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
+
 function renderCityMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -5994,7 +6002,10 @@ function renderCityMap() {
   // Радиус на карте пропорционален корню расстояния: иначе загородный район
   // на девяти километрах уносит все остальные в кучу у центра.
   const rad = (km) => 40 + 178 * Math.sqrt(km / maxKm);
-  const size = (pot) => 26 + 26 * Math.sqrt(pot / maxPot);
+  // Площадь квартала пропорциональна рынку района: радиус — корень из
+  // потенциала БЕЗ смещения, иначе разницу между районами съедала константа
+  // и все кварталы выглядели одинаковыми
+  const size = (pot) => 54 * Math.sqrt(pot / maxPot);
 
   const placed = rows.map((row, i) => {
     const ang = ((DIR[row.d.id] ?? (-90 + (360 / rows.length) * i)) * Math.PI) / 180;
@@ -6108,6 +6119,12 @@ function renderCityMap() {
     </g>`;
   };
 
+  // Сколько района уже наше и сколько вообще можно взять. Потолок в модели:
+  // reachable = потенциал × (1 − сила конкурента × 0.6) — часть жителей
+  // заперта у конкурента навсегда, сколько ни трать на маркетинг.
+  const ceilingOf = (d) => 1 - d.competitor * CONFIG.competitorLock;
+  const shareOf = (p) => clampShare((p.customers ?? 0) / (p.d.potential || 1));
+
   const chosen = new Set(state.decisions.districts ?? []);
   // Четыре состояния, а не два. Снятый с плана работающий район — самое
   // важное из них: модель закроет его в конце недели и обнулит клиентов с
@@ -6117,7 +6134,9 @@ function renderCityMap() {
   // теперь две-три, и соседние районы налезали друг на друга подписями, а не
   // кварталами. Простая раскладка сверху вниз: следующая подпись уезжает
   // ниже, если попала в уже занятое место.
-  const boxes = [];
+  // Кварталы кладутся в раскладку первыми: подпись обязана обходить не только
+  // соседние подписи, но и сами кварталы — иначе числа ложатся на застройку
+  const boxes = placed.map((p) => ({ x: p.x, y: p.y - p.rr * 0.92, w: p.rr * 2, h: p.rr * 1.84 }));
   const estWidth = (text) => text.length * 5.4;
   for (const p of [...placed].sort((a, b) => a.y - b.y)) {
     const planned = !p.live && chosen.has(p.d.id);
@@ -6175,9 +6194,27 @@ function renderCityMap() {
     // в кварталах остаются только названия, числа уходят в список под картой.
     const label = narrow ? '' : p.lines.map((l, k) => `<text x="${p.x}" y="${p.ly + k * 14}"
         text-anchor="middle" class="${l.cls}">${l.text}</text>`).join('');
+    // Заливка снизу — доля района, которая уже ваша; пунктир поперёк —
+    // потолок доступного. Квартал показывает сразу две вещи: сколько здесь
+    // рынка (площадь) и сколько вы из него взяли (уровень).
+    const top = p.y - k * 0.92;
+    const bottom = p.y + k * 0.92;
+    const height = bottom - top;
+    const level = bottom - height * shareOf(p);
+    const ceiling = bottom - height * ceilingOf(p.d);
+    const clipId = `q-${p.d.id}`;
     return `<g class="m-hit" data-id="${p.d.id}">
       ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
         y2="${p.ly - 10}" class="m-leader"></line>` : ''}
+      <clipPath id="${clipId}"><polygon points="${shape}"></polygon></clipPath>
+      <g clip-path="url(#${clipId})">
+        <polygon points="${shape}" class="m-quarter-bg"></polygon>
+        ${p.live ? `<rect x="${(p.x - k * 1.1).toFixed(1)}" y="${level.toFixed(1)}"
+          width="${(k * 2.2).toFixed(1)}" height="${(bottom - level).toFixed(1)}"
+          class="m-share ${cls}"></rect>` : ''}
+        <line x1="${(p.x - k * 1.1).toFixed(1)}" y1="${ceiling.toFixed(1)}"
+          x2="${(p.x + k * 1.1).toFixed(1)}" y2="${ceiling.toFixed(1)}" class="m-ceiling"></line>
+      </g>
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) + legLine(p) : ''}
       <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
