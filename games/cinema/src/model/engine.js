@@ -601,6 +601,11 @@ export function step(prevState, input = {}) {
   let newSubs = 0;
   let lostSubs = 0;
   let trialsTotal = 0;
+  // Приток по тарифам — для схемы «Мультиплекс»: сколько новичков выбрали
+  // полный прайс, сколько рекламный, и сколько спустились вниз от цены
+  let premiumNewTotal = 0;
+  let adsNewTotal = 0;
+  let downgradedTotal = 0;
   let winbackCost = 0;
   let switchedIn = 0;
   let switchedOut = 0;
@@ -919,6 +924,9 @@ export function step(prevState, input = {}) {
     newSubs += converted;
     lostSubs += leaving;
     trialsTotal += trials;
+    premiumNewTotal += premiumNew;
+    adsNewTotal += adsNew;
+    downgradedTotal += downgraded;
 
     perSegment.push({
       def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
@@ -1200,6 +1208,9 @@ export function step(prevState, input = {}) {
     adSubs,
     newSubs,
     lostSubs,
+    premiumNew: premiumNewTotal,
+    adsNew: adsNewTotal,
+    downgraded: downgradedTotal,
     switchedIn,
     switchedOut,
     netSwitch: switchedIn - switchedOut,

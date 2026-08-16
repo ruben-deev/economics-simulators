@@ -987,29 +987,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .holding text { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
 .holding .node { cursor: pointer; }
 
-/* Городская афиша (БИЛЕТВИЛЬ): площадки, потоки билетов, касса */
-.venues .v-house path, .venues .v-house rect, .venues .v-house ellipse {
-  fill: var(--panel-2, #16213a); stroke: var(--line); stroke-width: 1.2;
-}
-.venues .v-house.on path, .venues .v-house.on rect, .venues .v-house.on ellipse {
-  fill: #24334f; stroke: rgba(148, 163, 184, 0.45);
-}
-.venues .v-house .v-cut rect, .venues .v-house .v-cut ellipse { fill: var(--bg); stroke: none; }
-.venues .v-market { fill: none; stroke: #60a5fa; opacity: 0.8; }
-.venues .v-widget { fill: none; stroke: #4ade80; opacity: 0.8; }
-.venues .v-past { fill: none; stroke: var(--muted); opacity: 0.45; stroke-dasharray: 5 4; }
-.venues .v-till { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: 0.6; }
-.venues .v-kiosk rect { fill: var(--panel-2, #16213a); stroke: var(--accent); stroke-width: 1.6; }
-.venues .v-kiosk line { stroke: var(--line); stroke-width: 3; }
-.flow-key i.k-past { background: transparent; border: 1.5px dashed var(--muted); }
 
-/* Зал КИНОРЕКИ: кресла, экран, обводка новичков */
-.hall .s-seat rect { fill: var(--muted); fill-opacity: 0.85; }
-.hall .s-seat.s-fresh rect { stroke: #fff; stroke-width: 1.4; }
-.hall .s-seat.s-empty rect { fill: none; stroke-width: 1.2; opacity: 0.55; }
-.hall .s-screen { fill: none; stroke: var(--text); stroke-opacity: 0.45; stroke-width: 6; stroke-linecap: round; }
-.flow-key i.k-fresh { background: var(--muted); border: 1.5px solid #fff; }
-.flow-key i.k-empty { background: transparent; border: 1.5px solid var(--line); }
 
 /* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
 .city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
@@ -1093,6 +1071,36 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .more[open] > summary::before { content: '▾'; }
 .more > summary:hover { color: var(--text); }
 .more > .funding-note { margin-top: 6px; }
+
+/* «Мультиплекс» КИНОРЕКИ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.plex[data-hl] .px { opacity: 0.15; transition: opacity 0.15s; }
+.plex[data-hl="premium"] .px-premium, .plex[data-hl="premium"] .px-down { opacity: 1; }
+.plex[data-hl="ads"] .px-ads, .plex[data-hl="ads"] .px-down { opacity: 1; }
+.plex[data-hl="rival"] .px-rival, .plex[data-hl="rival"] .px-net { opacity: 1; }
+.plex[data-hl="in"] .px-in { opacity: 1; }
+.plex[data-hl="out"] .px-out { opacity: 1; }
+.plex .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.plex .legend-item:hover, .plex .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* «Кварталы» БИЛЕТВИЛЯ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.quarters[data-hl] .qx { opacity: 0.15; transition: opacity 0.15s; }
+.quarters[data-hl] .qx-frame, .quarters[data-hl] .qx-name { opacity: 0.45; }
+.quarters[data-hl="share"] .qx-share { opacity: 1; }
+.quarters[data-hl="widget"] .qx-widget { opacity: 1; }
+.quarters[data-hl="own"] .qx-frame { opacity: 1; }
+.quarters[data-hl="loss"] .qx-loss { opacity: 1; }
+.quarters[data-hl="loss"] .qt:not(.qt-dead) .qx-frame { opacity: 1; }
+.quarters .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.quarters .legend-item:hover, .quarters .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* Полоса каналов в карточке типа организаторов (БИЛЕТВИЛЬ): те же три числа,
+   что раньше пыталась показать схема потоков, — одной 100%-полосой */
+.chan-bar {
+  display: flex; height: 11px; border-radius: 6px; overflow: hidden;
+  margin: 8px 0 3px; background: rgba(148, 163, 184, 0.12);
+}
+.chan-bar span { height: 100%; }
+.chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
 
 </style>
   <script id="js-flag">

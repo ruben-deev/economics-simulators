@@ -263,35 +263,15 @@ const BUDGET_COLORS = {
   fixed: '#64748b',
 };
 // ----------------------------------------------------------------------------
-// Городская афиша
+// Кварталы рынка
 //
-// Схема отвечает на вопрос «куда ушли билеты этого месяца», и раньше отвечала
-// полосами — то есть таблицей, набранной прямоугольниками. Здесь тот же ответ
-// нарисован городом: сверху площадки по типам организаторов, снизу ваша
-// афиша, между ними потоки билетов. Толщина потока — билеты; синий идёт через
-// афишу, зелёный — через виджет на сайте организатора, серый пунктирный
-// сворачивает в его собственную кассу и до вас не доходит вовсе.
+// Прежняя схема отвечала потоками-жгутами, толщину которых глаз сравнивать
+// не умеет: один толстый и три волосяных, вся суть — в трёх процентах подписи
+// (пересборка визуала 2026-08, PROPOSALS-VIZ). Теперь грамматика карты
+// НОВОЕДЫ: каждый тип организаторов — квартал, ширина квартала — оборот типа,
+// зелёная заливка снизу — ваша доля этого оборота, рамка — состояние
+// (бирюзовая — виджет развёрнут, красный пунктир — тип теряет организаторов).
 // ----------------------------------------------------------------------------
-const VENUE_ICON = {
-  // Театр: фронтон и колонны
-  theatre: (x, y, w, h) => `<path d="M ${x} ${y + 12} L ${x + w / 2} ${y} L ${x + w} ${y + 12} Z"></path>
-    <rect x="${x + 2}" y="${y + 12}" width="${w - 4}" height="${h - 12}" rx="2"></rect>
-    <g class="v-cut">${[0.22, 0.5, 0.78].map((k) => `<rect x="${x + w * k - 2.5}"
-      y="${y + 17}" width="5" height="${h - 21}"></rect>`).join('')}</g>`,
-  // Концерты: сцена-раковина
-  concert: (x, y, w, h) => `<path d="M ${x} ${y + h} L ${x} ${y + h * 0.55}
-    A ${w / 2} ${h * 0.55} 0 0 1 ${x + w} ${y + h * 0.55} L ${x + w} ${y + h} Z"></path>
-    <g class="v-cut"><rect x="${x + w / 2 - 9}" y="${y + h - 13}" width="18" height="13" rx="2"></rect></g>`,
-  // Клуб: коробка с вывеской
-  club: (x, y, w, h) => `<rect x="${x}" y="${y + 10}" width="${w}" height="${h - 10}" rx="3"></rect>
-    <rect x="${x + w * 0.16}" y="${y}" width="${w * 0.68}" height="9" rx="3"></rect>
-    <g class="v-cut">${[0.3, 0.62].map((k) => `<rect x="${x + w * k}" y="${y + 20}"
-      width="${w * 0.14}" height="${h - 26}"></rect>`).join('')}</g>`,
-  // Спорт: чаша стадиона
-  sport: (x, y, w, h) => `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}"></ellipse>
-    <g class="v-cut"><ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 3.2}" ry="${h / 3.4}"></ellipse></g>`,
-};
-
 function renderMarketMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -306,93 +286,112 @@ function renderMarketMap() {
     // «Мимо вас» модель считает сама (ownSold): выводить это вычитанием из
     // спроса нельзя — спрос там свой у каждой стороны, и разность врала нулём
     const own = row?.lostSold ?? 0;
-    return { def, market, platform, own, total: market + platform + own, fill: row?.fill ?? 0,
-      count: row?.count ?? 0 };
+    const total = market + platform + own;
+    return {
+      def,
+      count: row?.count ?? 0,
+      turnover: total * def.avgPrice,
+      mineShare: total > 0 ? (market + platform) / total : 0,
+      ownShare: total > 0 ? own / total : 0,
+      widgetShare: clamp(state.platformShare?.[def.id] ?? 0, 0, 1),
+      gained: row?.gained ?? 0,
+    };
   });
-  // Типы, с которыми вы не работаете, из схемы не убираются: пустая площадка —
+  // Типы, с которыми вы не работаете, из схемы не убираются: тёмный квартал —
   // это и есть ответ на вопрос «а что я не беру», а он в этой игре главный.
 
-  const maxTotal = Math.max(1, ...rows.map((x) => x.total));
   const W = narrow ? 360 : 700;
-  const H = narrow ? 300 : 330;
-  const vw = narrow ? 56 : 96;          // ширина площадки
-  const vh = narrow ? 40 : 54;
-  const vy = narrow ? 32 : 34;
-  const gap = (W - 24 - rows.length * vw) / (rows.length - 1 || 1);
-  const kioskY = H - (narrow ? 76 : 84);
-  const kioskW = narrow ? 150 : 250;
-  const kioskX = (W - kioskW) / 2;
+  const sumTurn = Math.max(1, rows.reduce((a, x) => a + x.turnover, 0));
+  const gap = 8;
+  const pad = 6;
 
-  // Толщина потока — билеты: одна и та же шкала на все площадки, иначе
-  // сравнивать типы было бы нельзя
-  const thick = (v) => (v > 0 ? Math.max(1.5, (narrow ? 26 : 34) * (v / maxTotal)) : 0);
+  // Ширина квартала — доля оборота (мекко-раскладка): на десктопе один ряд,
+  // на телефоне два ряда по два квартала. Минимум держит подписи читаемыми.
+  const layoutRow = (list, y, rowW, h) => {
+    const rowSum = Math.max(1, list.reduce((a, x) => a + x.turnover, 0));
+    const free = rowW - gap * (list.length - 1);
+    const minW = narrow ? 96 : 118;
+    let widths = list.map((x) => Math.max(minW, free * (x.turnover / rowSum)));
+    const over = widths.reduce((a, w) => a + w, 0) - free;
+    if (over > 0) {
+      const shrinkable = widths.map((w) => w - minW);
+      const shrinkSum = Math.max(1e-6, shrinkable.reduce((a, w) => a + w, 0));
+      widths = widths.map((w, i) => w - over * (shrinkable[i] / shrinkSum));
+    }
+    let x = pad;
+    return list.map((row, i) => {
+      const out = { row, x, y, w: widths[i], h };
+      x += widths[i] + gap;
+      return out;
+    });
+  };
+  const tileH = narrow ? 108 : 150;
+  const tiles = narrow
+    ? [...layoutRow(rows.slice(0, 2), 8, W - pad * 2, tileH),
+      ...layoutRow(rows.slice(2), tileH + 18, W - pad * 2, tileH)]
+    : layoutRow(rows, 8, W - pad * 2, tileH);
+  const H = narrow ? tileH * 2 + 28 : tileH + 18;
 
-  const venue = (row, i) => {
-    const vx = 12 + i * (vw + gap);
-    const cxv = vx + vw / 2;
-    const icon = VENUE_ICON[row.def.id] ?? VENUE_ICON.club;
+  const tile = ({ row, x, y, w, h }) => {
     const live = row.count > 0;
-    const wm = thick(row.market);
-    const wp = thick(row.platform);
-    const wo = thick(row.own);
-    // Потоки к афише: две дуги от площадки вниз к кассе, каждая своей толщины
-    const toKiosk = (w, dx, cls) => (w > 0 ? `<path d="M ${cxv + dx} ${vy + vh}
-      C ${cxv + dx} ${vy + vh + 60}, ${W / 2 + dx * 1.6} ${kioskY - 60}, ${W / 2 + dx * 1.6} ${kioskY}"
-      class="${cls}" stroke-width="${w.toFixed(1)}"></path>` : '');
-    // Поток мимо вас уходит вбок, в собственную кассу организатора
-    const side = i < rows.length / 2 ? -1 : 1;
-    // Касса организатора не должна упираться в край: под ней ещё подпись
-    const edge = narrow ? 14 : 40;
-    const ox = Math.min(W - edge, Math.max(edge, cxv + side * (vw / 2 + (narrow ? 12 : 22))));
-    const past = wo > 0 ? `<path d="M ${cxv} ${vy + vh} C ${cxv} ${vy + vh + 26},
-      ${ox} ${vy + vh + 20}, ${ox} ${vy + vh + 46}" class="v-past" stroke-width="${wo.toFixed(1)}"></path>
-      <rect x="${ox - 9}" y="${vy + vh + 46}" width="18" height="13" rx="2" class="v-till"></rect>
-      ${narrow ? '' : `<text x="${ox}" y="${vy + vh + 71}" text-anchor="middle"
-        class="m-muted">${t('mapOwnTill')}</text>`}` : '';
-    return `<g>
-      ${past}
-      ${toKiosk(wm, narrow ? -7 : -11, 'v-market')}
-      ${toKiosk(wp, narrow ? 7 : 11, 'v-widget')}
-      <g class="v-house${live ? ' on' : ''}">${icon(vx, vy, vw, vh)}</g>
-      <text x="${cxv}" y="${vy - 12}" text-anchor="middle" class="m-name">${
-        tx(narrow ? row.def.short : row.def.name)}</text>
-      <text x="${cxv}" y="${vy - 2}" text-anchor="middle" class="m-muted">${narrow
-        ? compact(row.total)
-        : (live ? `${compact(row.count)} ${t('mapOrgsShort')} · ${compact(row.total)}`
-          : t('mapNoOrgs'))}</text>
+    const losing = row.gained < 0;
+    const hasWidget = row.widgetShare > 0.005;
+    const stroke = !live ? 'var(--line)'
+      : losing ? 'rgba(248, 113, 113, 0.75)'
+      : hasWidget ? 'rgba(45, 212, 191, 0.8)' : 'rgba(74, 222, 128, 0.6)';
+    const fillH = Math.round((h - 8) * clamp(row.mineShare, 0, 1));
+    const name = tx(w < 200 ? row.def.short : row.def.name);
+    return `<g class="qt${live ? '' : ' qt-dead'}">
+      ${fillH > 1 ? `<rect class="qx qx-share" x="${x + 1.5}" y="${y + h - 1.5 - fillH}"
+        width="${w - 3}" height="${fillH}" rx="7" fill="var(--good)" fill-opacity="0.16"></rect>` : ''}
+      <rect class="qx qx-frame" x="${x}" y="${y}" width="${w}" height="${h}" rx="9"
+        fill="${live ? 'none' : 'rgba(148, 163, 184, 0.05)'}" stroke="${stroke}"
+        stroke-width="1.6"${losing || !live ? ' stroke-dasharray="6 4"' : ''}></rect>
+      <text class="qx qx-name" x="${x + 10}" y="${y + 20}" font-size="13" font-weight="700" fill="var(--text)">${name}</text>
+      <text class="qx qx-meta" x="${x + 10}" y="${y + 36}" font-size="10" fill="var(--muted)">${live
+        ? (w >= 165 ? `${compact(row.count)} ${t('mapOrgsShort')} · ${money(row.turnover)}` : money(row.turnover))
+        : t('mapNoOrgs')}</text>
+      ${live ? `<text class="qx qx-share" x="${x + 10}" y="${y + h - 10}" font-size="11"
+        font-weight="700" fill="var(--good)">${t('qtShare', { p: pct(row.mineShare, 0) })}</text>` : ''}
+      ${live ? `<text class="qx qx-widget" x="${x + w - 8}" y="${y + h - 26}" text-anchor="end" font-size="10"
+        fill="${hasWidget ? '#2dd4bf' : 'var(--muted)'}">${hasWidget
+          ? t('qtWidget', { p: pct(row.widgetShare, 0) }) : t('qtNoWidget')}</text>` : ''}
+      ${losing ? `<text class="qx qx-loss" x="${x + w - 8}" y="${y + 36}" text-anchor="end"
+        font-size="10" fill="var(--bad)">${t('qtLoss', { n: compact(-row.gained) })}</text>` : ''}
     </g>`;
   };
 
-  const sum = rows.reduce((acc, x) => ({
-    market: acc.market + x.market, platform: acc.platform + x.platform, own: acc.own + x.own,
-  }), { market: 0, platform: 0, own: 0 });
-  const all = Math.max(1, sum.market + sum.platform + sum.own);
-  const mine = sum.market + sum.platform;
+  const KEY_CHIPS = {
+    share: 'background:rgba(74, 222, 128, 0.5)',
+    widget: 'background:#2dd4bf',
+    own: 'background:transparent;border:1.5px solid var(--line)',
+    loss: 'background:transparent;border:1.5px dashed var(--bad)',
+  };
+  const legend = [['share', 'qtKeyShare'], ['widget', 'qtKeyWidget'], ['own', 'qtKeyOwn'], ['loss', 'qtKeyLoss']]
+    .map(([k, key]) => `<span class="flow-key legend-item" data-hl="${k}" tabindex="0"><i style="${KEY_CHIPS[k]}"></i>${t(key)}</span>`).join('');
 
-  box.innerHTML = `<div class="panel eco-map venues">
+  const mineMoney = rows.reduce((a, x) => a + x.turnover * x.mineShare, 0);
+  box.innerHTML = `<div class="panel eco-map quarters">
     <h2 class="panel-title">${t('mapTitle')}</h2>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle')}">
-      ${rows.map(venue).join('')}
-      <!-- ваша афиша: сюда стекается всё, что вы не отдали -->
-      <g class="v-kiosk">
-        <rect x="${kioskX}" y="${kioskY}" width="${kioskW}" height="${narrow ? 50 : 52}" rx="6"></rect>
-        <line x1="${kioskX + 16}" y1="${kioskY + (narrow ? 50 : 52)}" x2="${kioskX + 16}"
-          y2="${kioskY + (narrow ? 58 : 68)}"></line>
-        <line x1="${kioskX + kioskW - 16}" y1="${kioskY + (narrow ? 50 : 52)}"
-          x2="${kioskX + kioskW - 16}" y2="${kioskY + (narrow ? 58 : 68)}"></line>
-      </g>
-      <text x="${W / 2}" y="${kioskY + (narrow ? 20 : 24)}" text-anchor="middle"
-        class="m-name">${t('mapKiosk')}</text>
-      <text x="${W / 2}" y="${kioskY + (narrow ? 36 : 42)}" text-anchor="middle"
-        class="m-small">${t('mapKioskSold', { tickets: compact(mine), gmv: money(r.gmv ?? 0) })}</text>
+      ${tiles.map(tile).join('')}
     </svg>
-    <div class="flow-legend">
-      <span class="flow-key"><i style="background:${PALETTE[1]}"></i>${t('mapLaneMarket')} ${pct(sum.market / all, 0)}</span>
-      <span class="flow-key"><i style="background:${PALETTE[0]}"></i>${t('mapLanePlatform')} ${pct(sum.platform / all, 0)}</span>
-      <span class="flow-key"><i class="k-past"></i>${t('mapLanePast')} ${pct(sum.own / all, 0)}</span>
-    </div>
+    <div class="funding-note">${t('qtTotal', {
+    mine: money(mineMoney), all: money(sumTurn), share: pct(mineMoney / sumTurn, 0),
+  })}</div>
+    <div class="flow-legend map-legend">${legend}</div>
     <div class="chart-caption">${t('mapCaption')}</div>
   </div>`;
+
+  const panel = box.querySelector('.quarters');
+  box.querySelectorAll('.legend-item[data-hl]').forEach((item) => {
+    const on = () => { if (panel) panel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (panel) delete panel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
 }
 
 // Живые сводки групп: что механика группы делает прямо сейчас. Считаются от
@@ -1087,10 +1086,18 @@ function renderChannels() {
         <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
         <div><span>${t('orgCardMoney')}</span><b>${amount(perMarket)} / <span
           class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${amount(perPlatform)}</span></b></div>
-        <div><span>${t('orgCardSplit')}</span><b>${t('channelSplitValue', {
-          market: pct(split.market, 0), widget: pct(split.platform, 0),
-        })}</b></div>
-        <div><span>${t('orgCardLost')}</span><b class="neg">${pct(split.lost, 0)}</b></div>
+      </div>
+      <div class="chan-bar" role="img" aria-label="${t('orgCardSplit')}">
+        <span style="width:${(100 * split.market).toFixed(1)}%;background:var(--accent-2)"></span>
+        <span style="width:${(100 * split.platform).toFixed(1)}%;background:#2dd4bf"></span>
+        <span style="width:${(100 * split.lost).toFixed(1)}%;background:rgba(148, 163, 184, 0.35)"></span>
+      </div>
+      <div class="chan-lbl">
+        <span style="color:var(--accent-2)">${t('chanMarket', { p: pct(split.market, 0) })}</span>
+        <span style="color:#2dd4bf">${t('chanWidget', { p: pct(split.platform, 0) })}</span>
+        <span>${t('chanOwn', { p: pct(split.lost, 0) })}</span>
+      </div>
+      <div class="org-rows">
         <div><span>${t('orgCardPrice')}</span><b>${targeted
           ? t('orgCardPriceValue', { per: money(spendPerOrg), eta: eta ? t('orgCardEta', { n: eta }) : t('orgCardEtaNever') })
           : t('orgCardPriceOff')}</b></div>

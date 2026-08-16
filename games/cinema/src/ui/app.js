@@ -165,19 +165,16 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-// Зал КИНОРЕКИ
+// «Мультиплекс» и «Полка» КИНОРЕКИ
 //
-// Первая версия рисовала механизм (полка, календарь, слоты), вторая —
-// водопад из четырёх столбиков. Столбики честно считали месяц, но читались
-// как таблица, набранная прямоугольниками. Здесь то же самое нарисовано
-// картинкой: зал, в котором одно кресло — фиксированное число подписчиков.
-// База растёт — зал заполняется рядами; кресло красят в цвет сегмента, у
-// пришедших в этом месяце светлая обводка, ушедшие остаются пустыми
-// креслами. Цену деления выбирает сама схема, поэтому зал не переполняется
-// ни на первом месяце, ни на последнем.
+// Прежний зал раскрашивал кресла по сегментам зрителей, на которые нет
+// помесячного рычага, а кресло стоило 20 тыс подписчиков — месячная динамика
+// не читалась (пересборка визуала 2026-08, PROPOSALS-VIZ). Теперь схема
+// показывает то, чем игрок управляет: два зала-тарифа в масштабе базы
+// (площадь равна числу подписчиков), потоки месяца стрелками и зал
+// конкурента в том же масштабе. Ниже — полка каталога: актив, который
+// тает (лицензии) или растёт навсегда (оригиналы).
 // ----------------------------------------------------------------------------
-const SEAT_UNITS = [100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
-
 function renderStudioMap() {
   const box = el('map-slot');
   if (!box) return;
@@ -185,113 +182,174 @@ function renderStudioMap() {
   if (!r) { box.innerHTML = ''; return; }
   const narrow = (box.clientWidth || window.innerWidth) < 620;
 
-  const joined = r.newSubs ?? 0;
-  const left = r.lostSubs ?? 0;
-  const after = r.subs ?? 0;
+  const premium = r.premiumSubs ?? 0;
+  const ads = r.adSubs ?? 0;
   const rival = r.rivalSubs ?? 0;
-  const segs = (r.segments ?? []).filter((x) => (x.subs ?? 0) > 0);
-  const colorOf = (i) => PALETTE[(i + 1) % PALETTE.length];
-
-  const perRow = narrow ? 10 : 20;
-  const rowsMax = narrow ? 7 : 7;
-  const capacity = perRow * rowsMax;
-  // Цена кресла подбирается так, чтобы зал вмещал и базу, и тех, кто ушёл
-  const unit = SEAT_UNITS.find((u) => (after + left) / u <= capacity)
-    ?? SEAT_UNITS[SEAT_UNITS.length - 1];
-  const filled = Math.max(1, Math.min(capacity, Math.round(after / unit)));
-  const ghosts = Math.min(capacity - filled, Math.round(left / unit));
-
-  // Кресла раздаются сегментам по их доле в базе — цвет ряда показывает,
-  // из кого зал состоит на самом деле. Обводку «пришли в этом месяце»
-  // получают последние кресла КАЖДОГО сегмента по его собственному притоку:
-  // иначе светлая рамка стояла бы на чужом цвете и врала бы о том, кто
-  // пришёл, — а вопрос «кто» в этой игре и есть главный.
-  const total = segs.reduce((a, x) => a + x.subs, 0) || 1;
-  const seatSeg = [];
-  let acc = 0;
-  segs.forEach((sg, i) => {
-    const n = i === segs.length - 1 ? filled - acc : Math.round(filled * (sg.subs / total));
-    const fresh = Math.min(n, Math.round((sg.joined ?? 0) / unit));
-    for (let k = 0; k < n; k++) seatSeg.push({ color: colorOf(i), fresh: k >= n - fresh });
-    acc += n;
-  });
-  while (seatSeg.length < filled) seatSeg.push({ color: colorOf(0), fresh: false });
-
-  // Пустые кресла тоже по сегментам: ушёл не «кто-то», а массовый зритель
-  // после премьеры или киноман от рекламы
-  const seatGhost = [];
-  const leftTotal = segs.reduce((a, x) => a + (x.left ?? 0), 0) || 1;
-  segs.forEach((sg, i) => {
-    const n = Math.round(ghosts * ((sg.left ?? 0) / leftTotal));
-    for (let k = 0; k < n && seatGhost.length < ghosts; k++) seatGhost.push(colorOf(i));
-  });
-  while (seatGhost.length < ghosts) seatGhost.push('var(--line)');
-
   const W = narrow ? 360 : 700;
-  const sw = narrow ? 26 : 28;      // шаг кресла
-  const sh = narrow ? 22 : 22;      // шаг ряда
-  const rowW = perRow * sw;
-  const x0 = (W - rowW) / 2 + 3;
-  const y0 = narrow ? 74 : 78;
-  const H = y0 + rowsMax * sh + (narrow ? 42 : 46);
+  const floor = narrow ? 148 : 168;
+  const H = floor + (narrow ? 78 : 74);
 
-  // Ряд выгибается дугой к экрану: без этого сетка кресел снова читается
-  // таблицей, а не залом
-  const bow = (col) => {
-    const t2 = (col - (perRow - 1) / 2) / ((perRow - 1) / 2);
-    return -t2 * t2 * (narrow ? 10 : 14);
+  // Площадь зала пропорциональна базе: сторона растёт корнем, чтобы зал
+  // конкурента в 20 раз больше не выдавливал ваши залы в точки
+  const subsMax = Math.max(premium, ads, rival, 1);
+  const areaMax = narrow ? 8200 : 19000;
+  const hallDims = (subs) => {
+    const a = areaMax * (subs / subsMax);
+    const w = Math.max(30, Math.sqrt(a * 1.9));
+    const h = Math.max(20, a / Math.max(1, w));
+    return { w, h };
   };
+  const dP = hallDims(premium);
+  const dA = hallDims(ads);
+  const dR = hallDims(rival);
 
-  const seat = (i, kind) => {
-    const row = Math.floor(i / perRow);
-    const col = i % perRow;
-    const x = x0 + col * sw;
-    const y = y0 + row * sh - bow(col);
-    const spot = kind === 'fill' ? seatSeg[i] : null;
-    const cls = kind === 'fill' ? `s-seat${spot?.fresh ? ' s-fresh' : ''}` : 's-seat s-empty';
-    // Цвет сегмента идёт стилем, а не атрибутом: атрибут проиграл бы правилу
-    // из таблицы, и весь зал остался бы серым
-    const fill = kind === 'fill' ? ` style="fill:${spot?.color ?? colorOf(0)}"`
-      : ` style="stroke:${seatGhost[i - filled] ?? 'var(--line)'}"`;
-    // Кресло: спинка и подлокотники — мелочь, но именно она делает картинку
-    return `<g class="${cls}">
-      <rect x="${x}" y="${y}" width="${sw - 8}" height="${sh - 9}" rx="3"${fill}></rect>
-      <rect x="${x - 2}" y="${y + sh - 13}" width="${sw - 4}" height="4" rx="2"${fill}></rect>
+  // Три колонки: премиум, рекламный, конкурент. Ваши залы прижаты влево,
+  // конкурент — вправо; между рекламным и конкурентом живёт стрелка перетока.
+  const xP = narrow ? 56 : 78;
+  const xA = xP + dP.w + (narrow ? 78 : 64);
+  const xR = W - dR.w - 10;
+  const hall = (x, d, cls, stroke, fill) => `
+    <g class="px ${cls}">
+      ${d.h >= 46 ? `<path d="M ${x + 4} ${floor - d.h - 8} Q ${x + d.w / 2} ${floor - d.h - (narrow ? 14 : 20)} ${x + d.w - 4} ${floor - d.h - 8}"
+        fill="none" stroke="var(--text)" stroke-opacity="0.4" stroke-width="4" stroke-linecap="round"></path>` : ''}
+      <rect x="${x}" y="${floor - d.h}" width="${d.w}" height="${d.h}" rx="7"
+        fill="${fill}" stroke="${stroke}"${cls === 'px-rival' ? ' stroke-dasharray="7 4"' : ''}></rect>
     </g>`;
+
+  // Подписи под полом — не зависят от размера зала, читаются и на первом
+  // месяце, когда собственные залы ещё крошечные
+  const cap = (x, d, l1, l2, color) => `
+    <g class="px ${l1[0] === '<' ? '' : ''}">
+      <text x="${x + d.w / 2}" y="${floor + 16}" text-anchor="middle" font-size="11" fill="${color}" font-weight="700">${l1}</text>
+      <text x="${x + d.w / 2}" y="${floor + 32}" text-anchor="middle" font-size="13" fill="var(--text)" font-weight="800">${l2}</text>
+    </g>`;
+
+  const premiumNew = r.premiumNew ?? 0;
+  const adsNew = r.adsNew ?? 0;
+  const downgraded = r.downgraded ?? 0;
+  const lost = r.lostSubs ?? 0;
+  const net = r.netSwitch ?? 0;
+
+  // Стрелки потоков. Приток — зелёным снизу в зал, отток — красным вниз
+  // слева от мультиплекса, переток от цены — золотым пунктиром, переток
+  // рынка с конкурентом — по знаку месяца.
+  const arrowV = (x, up, color, cls, dash = '') => `
+    <g class="px ${cls}">
+      <line x1="${x}" y1="${up ? floor + 3 : floor - 8}" x2="${x}" y2="${up ? floor - 8 : floor + 3}"
+        stroke="${color}" stroke-width="4"${dash}></line>
+      <path d="M ${x - 4} ${up ? floor - 6 : floor + 1} L ${x} ${up ? floor - 12 : floor + 7} L ${x + 4} ${up ? floor - 6 : floor + 1} z" fill="${color}"></path>
+    </g>`;
+  const yMid = floor - Math.max(14, Math.min(dP.h, dA.h) / 2);
+  const downArrow = downgraded > 499 ? `
+    <g class="px px-down">
+      <line x1="${xP + dP.w + 3}" y1="${yMid}" x2="${xA - 9}" y2="${yMid}" stroke="var(--warn)" stroke-width="3" stroke-dasharray="6 4"></line>
+      <path d="M ${xA - 9} ${yMid - 4} L ${xA - 3} ${yMid} L ${xA - 9} ${yMid + 4} z" fill="var(--warn)"></path>
+      <text x="${(xP + dP.w + xA) / 2}" y="${yMid - 8}" text-anchor="middle" font-size="10" fill="var(--warn)">${t('plexDown', { n: compact(downgraded) })}</text>
+    </g>` : '';
+  const yNet = floor - Math.max(16, Math.min(dA.h, dR.h) / 2);
+  const netX1 = xA + dA.w + 6;
+  const netX2 = xR - 8;
+  const netArrow = (Math.abs(net) > 499 && netX2 - netX1 > 34) ? `
+    <g class="px px-net">
+      <line x1="${net >= 0 ? netX2 : netX1}" y1="${yNet}" x2="${net >= 0 ? netX1 + 7 : netX2 - 7}" y2="${yNet}"
+        stroke="${net >= 0 ? 'var(--good)' : 'var(--bad)'}" stroke-width="3"></line>
+      <path d="M ${net >= 0 ? netX1 + 8 : netX2 - 8} ${yNet} l ${net >= 0 ? 7 : -7} -4 v 8 z" fill="${net >= 0 ? 'var(--good)' : 'var(--bad)'}"></path>
+      <text x="${(netX1 + netX2) / 2}" y="${yNet - 8}" text-anchor="middle" font-size="10"
+        fill="${net >= 0 ? 'var(--good)' : 'var(--bad)'}">${t('plexNet', { n: compact(Math.abs(net)) })}</text>
+    </g>` : '';
+
+  const flowLbl = (x, text, color, cls, row = 0) => `
+    <text class="px ${cls}" x="${x}" y="${floor + (narrow ? 50 : 48) + row * 14}" text-anchor="middle" font-size="10" fill="${color}">${text}</text>`;
+
+  const priceP = Math.round(state.decisions.priceNew);
+  const priceA = Math.round(state.decisions.priceAds);
+
+  const multiplexSvg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
+    ${hall(xP, dP, 'px-premium', 'rgba(251, 191, 36, 0.7)', 'rgba(251, 191, 36, 0.22)')}
+    ${hall(xA, dA, 'px-ads', 'rgba(45, 212, 191, 0.7)', 'rgba(45, 212, 191, 0.18)')}
+    ${hall(xR, dR, 'px-rival', 'rgba(148, 163, 184, 0.55)', 'var(--panel-2)')}
+    <line x1="6" y1="${floor}" x2="${W - 6}" y2="${floor}" stroke="var(--line)"></line>
+    ${cap(xP, dP, narrow ? t('plexPremiumShort') : t('plexPremium', { price: priceP }), compact(premium), 'var(--warn)')}
+    ${cap(xA, dA, narrow ? t('plexAdsShort') : t('plexAds', { price: priceA }), compact(ads), '#2dd4bf')}
+    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: Math.round(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
+    ${arrowV(xP + dP.w * 0.35, true, 'var(--good)', 'px-in')}
+    ${flowLbl(xP + dP.w * 0.35, '+' + compact(premiumNew), 'var(--good)', 'px-in')}
+    ${arrowV(xA + dA.w * 0.4, true, 'var(--good)', 'px-in')}
+    ${flowLbl(xA + dA.w * 0.4, '+' + compact(adsNew), 'var(--good)', 'px-in')}
+    ${arrowV(xP - (narrow ? 26 : 40), false, 'var(--bad)', 'px-out')}
+    ${flowLbl(xP - (narrow ? 26 : 40) + 14, '−' + compact(lost), 'var(--bad)', 'px-out', 1)}
+    ${downArrow}
+    ${netArrow}
+  </svg>`;
+
+  // --- Полка каталога: тающий актив против вечного ---
+  const lic = r.catalogLicensed ?? 0;
+  const orig = r.catalogOriginal ?? 0;
+  const bought = r.licenseBought ?? 0;
+  // Что истечёт за квартал при текущем темпе — красный край полки
+  const expire3 = lic * (1 - Math.pow(1 - CONFIG.licenseDecay, 3));
+  const sW = W;
+  const barX = narrow ? 8 : 10;
+  const barW = sW - barX - 10;
+  const hoursMax = Math.max(lic + bought, orig, 1);
+  const px = (h) => Math.max(h > 0 ? 3 : 0, barW * (h / hoursMax));
+  const licW = px(lic);
+  const expW = Math.min(licW, px(expire3));
+  const boughtW = px(bought);
+  const freshPct = clampNum(r.freshness ?? 0, 0, 1);
+  const shelfSvg = `<svg viewBox="0 0 ${sW} 148" role="img" aria-label="${t('shelfTitle')}">
+    <text x="${barX}" y="14" font-size="10" fill="var(--muted)">${t('shelfLicensed', { h: compact(lic) })}</text>
+    <rect x="${barX}" y="20" width="${licW}" height="20" rx="4" fill="rgba(96, 165, 250, 0.4)" stroke="rgba(96, 165, 250, 0.5)"></rect>
+    ${expW > 8 ? `<rect x="${barX + licW - expW}" y="20" width="${expW}" height="20" rx="4"
+      fill="rgba(248, 113, 113, 0.35)" stroke="rgba(248, 113, 113, 0.6)" stroke-dasharray="4 3"></rect>` : ''}
+    ${boughtW > 2 ? `<rect x="${barX + licW + 2}" y="20" width="${boughtW}" height="20" rx="4"
+      fill="rgba(74, 222, 128, 0.4)" stroke="rgba(74, 222, 128, 0.7)"></rect>` : ''}
+    <text x="${sW - 10}" y="52" text-anchor="end" font-size="10" fill="${bought > 0 ? 'var(--good)' : 'var(--bad)'}">${
+      bought > 0 ? t('shelfBought', { h: compact(bought) }) : t('shelfNoBuy')}</text>
+    ${expW > 8 && !narrow ? `<text x="${barX}" y="52" font-size="10" fill="var(--bad)">${t('shelfExpire', { h: compact(expire3) })}</text>` : ''}
+    <text x="${barX}" y="82" font-size="10" fill="var(--muted)">${t('shelfOriginals', { h: compact(orig) })}</text>
+    <rect x="${barX}" y="88" width="${px(orig)}" height="20" rx="4" fill="rgba(251, 191, 36, 0.35)" stroke="rgba(251, 191, 36, 0.6)"></rect>
+    <text x="${barX}" y="134" font-size="10" fill="var(--muted)">${t('shelfFresh')}</text>
+    <rect x="${barX + (narrow ? 72 : 80)}" y="125" width="${narrow ? 150 : 280}" height="11" rx="5" fill="rgba(148, 163, 184, 0.14)"></rect>
+    <rect x="${barX + (narrow ? 72 : 80)}" y="125" width="${(narrow ? 150 : 280) * freshPct}" height="11" rx="5" fill="var(--good)" fill-opacity="0.75"></rect>
+    <text x="${barX + (narrow ? 72 : 80) + (narrow ? 158 : 288)}" y="134" font-size="10" fill="var(--muted)">${narrow ? pct(freshPct, 0) : t('shelfFreshNote', { pct: pct(freshPct, 0) })}</text>
+  </svg>`;
+
+  const KEY_CHIPS = {
+    premium: 'background:rgba(251,191,36,0.8)', ads: 'background:rgba(45,212,191,0.8)',
+    rival: 'background:transparent;border:1.5px dashed var(--muted)',
+    in: 'background:var(--good)', out: 'background:var(--bad)',
   };
+  const legend = [
+    ['premium', 'plexKeyPremium'], ['ads', 'plexKeyAds'], ['rival', 'plexKeyRival'],
+    ['in', 'plexKeyIn'], ['out', 'plexKeyOut'],
+  ].map(([k, key]) => `<span class="flow-key legend-item" data-hl="${k}" tabindex="0"><i style="${KEY_CHIPS[k]}"></i>${t(key)}</span>`).join('');
 
-  const seats = [];
-  for (let i = 0; i < filled; i++) seats.push(seat(i, 'fill'));
-  for (let i = filled; i < filled + ghosts; i++) seats.push(seat(i, 'ghost'));
-
-  const share = after + rival > 0 ? after / (after + rival) : 0;
-  const shareY = H - (narrow ? 22 : 24);
-  const shareW = W - 16;
-  const mineW = Math.max(2, shareW * share);
-  const legend = segs.map((sg, i) => `<span class="flow-key"><i style="background:${colorOf(i)}"></i>${
-    tx(segmentById(sg.id)?.name ?? { ru: sg.id, en: sg.id })}</span>`).join('')
-    + `<span class="flow-key"><i class="k-fresh"></i>${t('hallFresh', { n: compact(joined) })}</span>`
-    + `<span class="flow-key"><i class="k-empty"></i>${t('hallLeft', { n: compact(left) })}</span>`;
-
-  box.innerHTML = `<div class="panel eco-map hall${narrow ? ' narrow' : ''}">
+  box.innerHTML = `<div class="panel eco-map plex">
     <h2 class="panel-title">${t('flowTitle')}</h2>
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
-      <!-- экран: он же причина, по которой зал сидит дугой -->
-      <path d="M ${x0 - 6} 36 Q ${W / 2} 6 ${x0 + rowW - 2} 36" class="s-screen"></path>
-      <text x="${W / 2}" y="48" text-anchor="middle" class="m-muted">${t('hallScreen')}</text>
-      ${seats.join('')}
-      <rect x="8" y="${shareY}" width="${shareW}" height="12" rx="6" fill="var(--line)"></rect>
-      <rect x="8" y="${shareY}" width="${mineW}" height="12" rx="6" fill="var(--accent)"
-        opacity="0.85"></rect>
-    </svg>
-    <div class="funding-note">${t('hallSeat', { seat: compact(unit), subs: compact(after) })}</div>
-    <div class="flow-legend">${legend}</div>
-    <div class="funding-note">${t('flowShare', {
-      share: pct(share, 0), you: compact(after), rival: compact(rival),
-      churn: pct(r.churnRate ?? 0, 1) })}</div>
-    <div class="chart-caption">${t('flowLegend')}</div>
+    ${multiplexSvg}
+    <div class="flow-legend map-legend">${legend}</div>
+    <div class="chart-caption">${t('plexCaption')}</div>
+    <div class="slate-label" style="margin-top:12px">${t('shelfTitle')}</div>
+    ${shelfSvg}
+    <div class="chart-caption">${t('shelfCaption')}</div>
   </div>`;
+
+  // Подсветка с легенды: наведение или фокус гасит все группы, кроме своей
+  const panel = box.querySelector('.plex');
+  box.querySelectorAll('.legend-item[data-hl]').forEach((item) => {
+    const on = () => { if (panel) panel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (panel) delete panel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
 }
+
+// Числовой зажим для схем: shared clamp живёт в модели, а интерфейсу
+// хватает трёх строк без лишнего импорта
+function clampNum(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
 // Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
 // (shared/controls.js); у стриминга статей больше, чем у холдинга, поэтому
