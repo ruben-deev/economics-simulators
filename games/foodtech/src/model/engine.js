@@ -806,6 +806,10 @@ export function step(prevState, input = {}) {
     cityEntryCost,
     cityFixed,
     enteredCities,
+    // Ворота экспансии: совет согласовал второй город или ещё нет. В отчёте,
+    // а не только в панели районов, — иначе интерфейс не может отличить
+    // «уже можно» от «стало можно только что» и сообщить об этом новостью.
+    expansionOpen: expansionOpen(),
     // Сколько недель хозяину второго города осталось воевать (0 — мир)
     cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,

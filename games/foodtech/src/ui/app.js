@@ -502,6 +502,16 @@ function buildNews(r) {
     })]);
   }
 
+  // Совет согласовал второй город. Ровно на той неделе, когда согласовал:
+  // ворота открываются молча, а это решение на десятки миллионов, и узнавать
+  // о нём по бейджу в панели районов игрок не обязан.
+  const away = CITIES.find((c) => !c.home);
+  if (r?.expansionOpen && !prev()?.expansionOpen && away && !state.cityEntered?.[away.id]) {
+    news.push(['good', t('newsExpansionOpen', {
+      city: tx(away.name), cost: money(away.entryCost), weekly: money(away.weeklyFixed),
+    })]);
+  }
+
   // Районы открываются и закрываются — это видно на карте, но не словами
   for (const id of r?.launched ?? []) {
     news.push(['good', t('newsDistrictOpen', { name: tx(districtById(id)?.name ?? '') })]);

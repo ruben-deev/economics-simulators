@@ -137,6 +137,10 @@ export const STRINGS = {
   newsCouriersBad: { ru: 'Уходит больше, чем приходит. Смотрите, сколько курьер зарабатывает у вас против рынка.', en: 'More are leaving than arriving. Look at what a courier earns with you against the market.' },
   newsNoApplicants: { ru: '<b>На вакансии никто не откликается.</b> Курьеры уходят, а замены нет: при такой оплате в очереди пусто, и нанять некого ни за какие деньги на найм.', en: '<b>Nobody is answering the job ads.</b> Couriers leave and there is no replacement: at this pay the queue is empty, and no hiring budget will conjure one.' },
   newsUnserved: { ru: '<b>{share} заказов никто не повёз.</b> Спрос был, машины не нашлось — среднее время доставки {time} мин. Такие заказы не переносятся на следующую неделю: человек просто заказал в другом месте.', en: '<b>{share} of orders went undelivered.</b> The demand was there, the courier was not — average delivery time {time} min. Those orders do not roll over to next week: the customer simply ordered somewhere else.' },
+  newsExpansionOpen: {
+    ru: 'Совет согласовал выход во второй город: {city} открыт для входа. Разовый вход {cost}, городской офис {weekly}/нед — платится, пока там открыт хоть один район.',
+    en: 'The board has approved a second city: {city} is open to enter. A one-off {cost} entry fee and a {weekly}/wk city office, paid while at least one district there is open.',
+  },
   newsDistrictOpen: { ru: '<b>Открылся район: {name}.</b> Первые недели он будет убыточным — пока о вас там не знают, а ездить уже надо.', en: '<b>A new district is open: {name}.</b> The first weeks there will lose money — nobody knows you yet, but the driving starts at once.' },
   newsDistrictClosed: { ru: '<b>Район закрыт: {name}.</b> Клиенты, которых вы там набрали, потеряны — во второй раз они придут не сразу.', en: '<b>District closed: {name}.</b> The customers you gathered there are lost — they will not come back quickly.' },
   newsCustomers: { ru: '<b>Клиенты за неделю: пришли {came}, ушли {left}.</b> {verdict}', en: '<b>{came} customers arrived this week, {left} left.</b> {verdict}' },
