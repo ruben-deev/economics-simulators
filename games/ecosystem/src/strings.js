@@ -76,7 +76,7 @@ export const STRINGS = {
   },
   readoutTaxiWar: {
     ru: 'Идёт война с «Таксоградом»: приток урезан, цены продавлены (ещё {months} мес.).',
-    en: 'The Taxograd war is on: intake cut, fares pushed down ({months} months left).',
+    en: 'The Taxograd war is on: new-customer inflow cut, fares pushed down ({months} months left).',
   },
   readoutFocus: {
     ru: 'Штраф фокуса к исполнению всех вертикалей: <b class="{cls}">−{penalty}</b>.',
@@ -169,7 +169,7 @@ export const STRINGS = {
   vertWar: { ru: '⚔️ война со «{name}»: ещё {months} мес.', en: '⚔️ war with {name}: {months} months left' },
   vertFixedNote: {
     ru: 'Запуск {cost} разово + {monthly}/мес фикса. «{incumbent}» ответит демпингом: {war} месяцев приток урезан и цены рынка продавлены.',
-    en: 'Launch {cost} one-off + {monthly}/mo fixed. {incumbent} will answer with dumping: for {war} months your intake is cut and market fares are pushed down.',
+    en: 'Launch {cost} one-off + {monthly}/mo fixed. {incumbent} will answer with predatory pricing: for {war} months your new-customer inflow is cut and market fares are pushed down.',
   },
   vertFuture: { ru: 'следующая фаза', en: 'next phase' },
   vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch {discount} cheaper.' },
@@ -262,7 +262,7 @@ export const STRINGS = {
   forkLaunchTitle: { ru: 'Запустить такси сразу.', en: 'Launch taxi right away.' },
   forkLaunchBody: {
     ru: 'Разово {cost}, «Таксоград» ответит {war} месяцами демпинга, и первый год вертикаль будет убыточной. Зато время работает на вас: каждый месяц роста компаундится до конца партии.',
-    en: 'A one-off {cost}; Taxograd answers with {war} months of dumping, and the vertical loses money in year one. But time works for you: every month of growth compounds to the end of the game.',
+    en: 'A one-off {cost}; Taxograd answers with {war} months of predatory pricing, and the vertical loses money in year one. But time works for you: every month of growth compounds to the end of the game.',
   },
   forkSaveTitle: { ru: 'Подкопить и зайти позже.', en: 'Save up and enter later.' },
   forkSaveBody: {
@@ -303,7 +303,7 @@ export const STRINGS = {
   statPlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   statPlusSub: { ru: '+{conv} / −{churned} за месяц', en: '+{conv} / −{churned} this month' },
   statCross: { ru: 'Кросс-селл за месяц', en: 'Cross-sell this month' },
-  statCrossSub: { ru: 'клиент за {cac} против {cold} холодного', en: 'a customer for {cac} vs {cold} cold' },
+  statCrossSub: { ru: 'клиент за {cac} против {cold} холодного', en: 'CAC {cac} vs {cold} cold' },
   statCrossOff: { ru: 'канал не включён', en: 'channel not in use' },
   statMulti: { ru: 'Два и более сервисов', en: 'Two or more services' },
   statMultiSub: { ru: 'премия инвестора за склейку: +{premium}', en: 'the investor’s glue premium: +{premium}' },
@@ -313,7 +313,7 @@ export const STRINGS = {
 
   launchNote: {
     ru: 'Запущено такси: разовый платёж {cost}. «Таксоград» объявил войну — {months} месяцев демпинга.',
-    en: 'Taxi launched: one-off cost {cost}. Taxograd declared war — {months} months of dumping.',
+    en: 'Taxi launched: one-off cost {cost}. Taxograd declared war — {months} months of predatory pricing.',
   },
   closeNote: {
     ru: 'Вертикаль такси закрыта: клиенты и парк распущены, фикс больше не платится.',
@@ -336,7 +336,7 @@ export const STRINGS = {
   },
   alertWar: {
     ru: 'Война с «Таксоградом»: приток такси урезан и цены продавлены ещё {months} мес. Это конечно — но каждый месяц войны стоит денег.',
-    en: 'The Taxograd war: taxi intake is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
+    en: 'The Taxograd war: taxi new-customer inflow is cut and fares pushed down for {months} more months. It is finite — but every month of it costs money.',
   },
   alertNoDrivers: {
     ru: 'Водителей не хватает: подача выполняется на {fill}, клиенты уходят из-за долгого ожидания.',
@@ -348,7 +348,7 @@ export const STRINGS = {
   },
   alertCrossWasted: {
     ru: 'Кросс-селл упёрся в ёмкость канала: {wasted} из бюджета сгорело. Пул соседней вертикали не бесконечен — лишний рубль здесь ничего не покупает.',
-    en: 'Cross-sell hit the channel’s capacity: {wasted} of the budget burned. The neighbouring vertical’s pool is finite — an extra rouble buys nothing here.',
+    en: 'Cross-sell hit the channel’s capacity: {wasted} of the budget burned. The neighbouring vertical’s pool is finite — an extra dollar buys nothing here.',
   },
   alertTakeExodus: {
     ru: 'Монетизация {take} — за порогом: клиенты хаба уходят к конкуренту ускоренно, и вместе с ними тает пул кросс-селла.',
@@ -420,8 +420,8 @@ export const STRINGS = {
     ru: 'Совет готов согласовать запуск такси: стартовый актив прибыльный, ворота открыты.',
     en: 'The board is ready to approve the taxi launch: the starting asset is profitable, the gate is open.',
   },
-  newsWarStarted: { ru: '«Таксоград» начал войну: демпинг и перехват вашей рекламы.', en: 'Taxograd opened the war: dumping and intercepting your ads.' },
-  newsWarLeft: { ru: 'Война с «Таксоградом»: ещё {months} мес. демпинга.', en: 'The Taxograd war: {months} more months of dumping.' },
+  newsWarStarted: { ru: '«Таксоград» начал войну: демпинг и перехват вашей рекламы.', en: 'Taxograd opened the war: predatory fares and intercepted ads.' },
+  newsWarLeft: { ru: 'Война с «Таксоградом»: ещё {months} мес. демпинга.', en: 'The Taxograd war: {months} more months of predatory pricing.' },
   newsWarOver: { ru: 'Война закончилась: рынок такси вернулся к нормальным ценам.', en: 'The war is over: the taxi market is back to normal fares.' },
   newsCustomers: { ru: 'Клиенты холдинга: +{came} / −{left} — {verdict}', en: 'Holding customers: +{came} / −{left} — {verdict}' },
   newsCustomersGood: { ru: 'база растёт', en: 'the base is growing' },
@@ -469,8 +469,8 @@ export const STRINGS = {
   },
   chartCash: { ru: 'Касса', en: 'Cash' },
   chartCashCaption: {
-    ru: 'Касса и раунды. Экспансия почти всегда живёт на чужие деньги — вопрос в оценке, по которой вы их берёте.',
-    en: 'Cash and rounds. Expansion nearly always runs on outside money — the question is the valuation you take it at.',
+    ru: 'Касса холдинга. Экспансия почти всегда живёт на чужие деньги — вопрос в оценке, по которой вы их берёте.',
+    en: 'The holding’s cash. Expansion nearly always runs on outside money — the question is the valuation you take it at.',
   },
   chartArpu: { ru: 'ARPU', en: 'ARPU' },
   chartArpuCaption: {
@@ -484,8 +484,8 @@ export const STRINGS = {
   },
   chartAcq: { ru: 'Привлечение', en: 'Acquisition' },
   chartAcqCaption: {
-    ru: 'Два канала роста такси: кросс-селл из своей базы и холодный маркетинг. У кросс-селла ниже цена, у маркетинга — выше потолок.',
-    en: 'Taxi’s two growth channels: cross-sell from your own base and cold marketing. Cross-sell is cheaper; marketing scales higher.',
+    ru: 'Два канала роста вертикалей: кросс-селл из общей базы (сюда же — возврат клиентов в хаб) и холодный маркетинг. У кросс-селла ниже цена, у маркетинга — выше потолок.',
+    en: 'The verticals’ two growth channels: cross-sell from the shared base (returns to the hub count here too) and cold marketing. Cross-sell is cheaper; marketing scales higher.',
   },
   seriesFood: { ru: 'Ядро', en: 'Core' },
   seriesTaxi: { ru: 'Такси', en: 'Taxi' },
@@ -578,7 +578,7 @@ export const STRINGS = {
   sopColMultiple: { ru: 'Множитель', en: 'Multiple' },
   sopMultipleNote: {
     ru: 'Множитель к годовой выручке рынок даёт за темп роста и маржу: растущая прибыльная часть стоит несколько выручек, зрелая — около одной, убыточная не стоит ничего и вычитается как обязательство. Колонку показывает финансовая команда — без неё видно, сколько стоит часть, но не почему столько.',
-    en: 'The market applies a multiple to annual revenue based on growth and margin: a growing profitable part is worth several revenues, a mature one about one, a loss-making one is worth nothing and is subtracted as a liability. The column is supplied by your finance team — without one you see what a part is worth, but not why.',
+    en: 'The market applies a multiple to annual revenue based on growth and margin: a growing profitable part is worth several times revenue, a mature one about 1×, a loss-making one is worth nothing and is subtracted as a liability. The column is supplied by your finance team — without one you see what a part is worth, but not why.',
   },
   sopMultipleLocked: {
     ru: 'Как именно рынок превращает выручку и маржу в оценку, разбирает финансовая команда — сейчас она для этого слишком слаба.',
@@ -628,13 +628,13 @@ export const STRINGS = {
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
   welcomeDifficultyNote: {
     ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
-    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level has its own record table.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
   },
   gameOverDifficulty: {
     ru: 'Уровень: <b>{level}</b>. {note}',
     en: 'Level: <b>{level}</b>. {note}',
   },
-  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level has its own record table: games played at a different price of money are not comparable.' },
+  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level keeps its own high-score table: games played at a different price of money are not comparable.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
@@ -696,7 +696,7 @@ export const STRINGS = {
   helpCrossTitle: { ru: 'Кросс-селл против маркетинга', en: 'Cross-sell versus marketing' },
   helpCrossFormula: {
     ru: 'приток = min(бюджет / цена клиента, пул × охват × качество сервиса)',
-    en: 'intake = min(budget / cost per customer, pool × reach × service quality)',
+    en: 'inflow = min(budget / cost per customer, pool × reach × service quality)',
   },
   helpCrossText: {
     ru: 'Кросс-селл конвертирует клиентов соседней вертикали — в разы дешевле холодного, но упирается в ёмкость пула и в качество принимающего сервиса: мёртвую вертикаль не спасает никакой трафик. Холодный маркетинг дороже, зато растит общую базу города.',
@@ -705,7 +705,7 @@ export const STRINGS = {
   helpWarTitle: { ru: 'Война за рынок', en: 'The market war' },
   helpWarText: {
     ru: 'В такси уже десять лет живёт «Таксоград». На ваш вход он ответит конечной войной: демпинг режет ваш приток и продавливает цены. Ранний вход платит войну на маленькой базе, поздний — теряет месяцы роста. Тайминг — и есть решение.',
-    en: 'Taxograd has run the taxi market for a decade. It answers your entry with a finite war: dumping cuts your intake and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
+    en: 'Taxograd has run the taxi market for a decade. It answers your entry with a finite war: predatory pricing cuts your new-customer inflow and pushes fares down. Enter early and you pay the war on a small base; enter late and you lose months of growth. The timing is the decision.',
   },
   helpPlusTitle: { ru: 'Подписка Plus и партнёрства', en: 'The Plus subscription and partnerships' },
   helpPlusText: {
@@ -729,7 +729,7 @@ export const STRINGS = {
   },
   helpScoreText: {
     ru: 'Оценка — сумма частей: каждая вертикаль своим множителем, премия за долю клиентов двух и более сервисов, вычет за убыточные вертикали без роста. Касса принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль.',
-    en: 'The valuation is a sum of parts: each vertical at its own multiple, a premium for the share of two-plus-service customers, a deduction for loss-making verticals without growth. Cash belongs to the shareholders: an unspent rouble is worth a rouble.',
+    en: 'The valuation is a sum of parts: each vertical at its own multiple, a premium for the share of two-plus-service customers, a deduction for loss-making verticals without growth. Cash belongs to the shareholders: a dollar left unspent is still worth a dollar.',
   },
   helpSpiralsTitle: { ru: 'Спирали, которые стоит знать', en: 'Spirals worth knowing' },
   helpSpiralMilk: {
@@ -811,7 +811,7 @@ export const STRINGS = {
   gameOverBankrupt: { ru: 'Деньги кончились', en: 'Out of money' },
   gameOverFinishedText: {
     ru: 'Партия окончена. Совет подводит итог: чего стоит построенное — и сколько из этого принадлежит вам.',
-    en: 'The game is over. The board takes stock: what you built is worth — and how much of it is yours.',
+    en: 'The game is over. The board takes stock: what the company you built is worth — and how much of it is yours.',
   },
   gameOverBankruptText: {
     ru: 'Касса ушла в минус на месяце {month}. Экосистема строится на чужие деньги, но и они кончаются.',
@@ -840,7 +840,7 @@ export const STRINGS = {
   crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
   crownText: {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
-    en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a rouble is added to the score — conglomerates are not built for multipliers.',
+    en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a dollar is added to the score — conglomerates are not built for multipliers.',
   },
   // --- после финала: год конгломерата ---
   endlessStart: { ru: 'Играть год конгломерата', en: 'Play the conglomerate year' },

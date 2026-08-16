@@ -260,7 +260,7 @@ export const SEGMENTS = [
     loyalty: 0.85,             // множитель базового оттока (меньше — лояльнее)
     hint: {
       ru: 'Самый большой сегмент. Приходит на громкую премьеру и уходит, когда её досмотрел. Считает каждый рубль.',
-      en: 'The biggest segment. Arrives for a loud premiere and leaves once it is finished. Counts every rouble.',
+      en: 'The biggest segment. Arrives for a loud premiere and leaves once it is finished. Counts every penny.',
     },
   },
   {
@@ -305,7 +305,7 @@ export const SEGMENTS = [
     loyalty: 1.30,
     hint: {
       ru: 'Готовы терпеть рекламу вместо оплаты, но уходят при первой скуке. Живут на бесплатном тарифе и в хайпе.',
-      en: 'Happy to trade ads for money, but they leave the moment they are bored. They live on the ad tier and on hype.',
+      en: 'Happy to sit through ads instead of paying, but they leave the moment they are bored. They live on the ad tier and on hype.',
     },
   },
 ];

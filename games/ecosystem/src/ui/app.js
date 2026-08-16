@@ -1995,6 +1995,7 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
+    <p class="funding-note">${t('welcomeHint')}</p>
     <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
     <p class="funding-note">${t('welcomeAssetChoice')}</p>
     <div class="event-options">${assetCards}</div>

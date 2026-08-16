@@ -1204,12 +1204,6 @@ const STRINGS = {
   mapLanePast: { ru: 'мимо вас', en: 'past you' },
   // Внутри SVG нельзя HTML-теги: <b> выбрасывает парсер из режима SVG,
   // и вся схема разваливается в строку текста (проверено вживую).
-  mapFillBadge: { ru: 'Заполняемость залов {fill}', en: 'Hall fill rate {fill}' },
-  mapBotsBadge: { ru: 'перекупщики забрали {share} билетов', en: 'resellers took {share} of tickets' },
-  marketMapCaption: {
-    ru: 'Толщина полосы — сколько билетов прошло каналом за месяц. «Мимо вас» — то, что организатор продал сам: этих денег вы не видите совсем. Рынок растёт только с обоих концов: зрители приходят за афишей, организаторы — за зрителями, и потерять можно любую сторону.',
-    en: 'The thickness of a lane is how many tickets went through that channel this month. “Past you” is what the organiser sold on their own: you never see that money. The market only grows from both ends — buyers come for the listings, organisers come for the buyers — and either side can be lost.',
-  },
   readoutTake: {
     ru: 'Вы забираете <b>{rate}</b> оборота — {perTicket} с билета. Эквайринг съедает {acquiring} оборота, и берётся он до вас.',
     en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card processing eats {acquiring} of turnover, and it is charged before you.',
@@ -1243,7 +1237,7 @@ const STRINGS = {
   welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
   welcomeDifficultyNote: {
     ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
-    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level has its own record table.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
   },
   brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
@@ -1282,7 +1276,7 @@ const STRINGS = {
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
   welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years — 36 turns. The year starts in September, with the opening of the theatre season.' },
-  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The billions in turnover are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The tens of millions flowing through you are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
@@ -1346,7 +1340,7 @@ const STRINGS = {
   statGmv: { ru: 'Оборот', en: 'Turnover' },
   statGmvSub: { ru: 'через афишу {share}', en: '{share} via listings' },
   statTake: { ru: 'Ваша доля оборота', en: 'Your take rate' },
-  statTakeSub: { ru: 'эквайринг съедает {acq}', en: 'acquiring eats {acq}' },
+  statTakeSub: { ru: 'эквайринг съедает {acq}', en: 'card fees eat {acq}' },
   statFill: { ru: 'Заполняемость', en: 'Fill rate' },
   statFillSub: { ru: 'мест выставлено {seats}', en: '{seats} seats listed' },
   statReach: { ru: 'Охват', en: 'Reach' },
@@ -1384,7 +1378,7 @@ const STRINGS = {
   alertNoListings: { ru: 'Афиша почти пуста: мест {seats}. Маркетинг сейчас сгорает впустую — приводить зрителя некуда.', en: 'The listings are nearly empty: {seats} seats. Marketing burns for nothing right now — there is nowhere to bring buyers.' },
   alertLowFill: { ru: 'Заполняемость {fill}: организаторы видят пустые залы и уходят. Либо больше спроса, либо меньше афиши.', en: 'Fill rate {fill}: organisers see empty halls and leave. Either more demand or fewer listings.' },
   alertOverloaded: { ru: 'Менеджеры перегружены: качество обслуживания {service}. На каждого приходится {perManager} организаторов.', en: 'The managers are overloaded: service level {service}. Each one carries {perManager} organisers.' },
-  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival {rival}. Buyers compare the final price: demand is already {pref} of parity.' },
+  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival {rival}. Buyers compare the final price: demand is already {pref} of what it would be at price parity.' },
   alertCommissionHigh: { ru: 'Комиссия {value} — организаторы считают каждый процент, и конкурент это знает.', en: 'Commission at {value} — organisers count every percent, and the rival knows it.' },
   alertTrustLow: { ru: 'Доверие упало до {value}. Оно возвращается месяцами, а тратится за один плохой старт продаж.', en: 'Trust has fallen to {value}. It comes back over months and is spent in one bad on-sale.' },
   alertBots: { ru: 'Перекупщики забрали {share} билетов на хитах. Оборот это даже поднимает, доверие — нет.', en: 'Resellers took {share} of tickets on the hits. It even lifts turnover; it does not lift trust.' },
@@ -1566,7 +1560,7 @@ const STRINGS = {
   seriesGmvPlatform: { ru: 'Через виджет на их сайтах', en: 'Via widget on their sites' },
 
   chartMoney: { ru: 'Деньги', en: 'Money' },
-  chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and acquiring still comes out of it.' },
+  chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and card fees still come out of it.' },
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
   seriesContribution: { ru: 'Маржа', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
@@ -1581,12 +1575,12 @@ const STRINGS = {
   seriesSold: { ru: 'Продано', en: 'Sold' },
 
   chartTake: { ru: 'Доля оборота', en: 'Take rate' },
-  chartTakeCaption: { ru: 'Сколько процентов оборота остаётся вам. Эквайринг вычитается из этого же числа, а не из оборота организатора.', en: 'What percentage of turnover stays with you. Acquiring comes out of this number, not out of the organiser’s.' },
+  chartTakeCaption: { ru: 'Сколько процентов оборота остаётся вам. Эквайринг вычитается из этого же числа, а не из оборота организатора.', en: 'What percentage of turnover stays with you. Card fees come out of this number, not out of the organiser’s.' },
   seriesTake: { ru: 'Ваша доля, %', en: 'Your take, %' },
-  seriesAcq: { ru: 'Эквайринг, %', en: 'Acquiring, %' },
+  seriesAcq: { ru: 'Эквайринг, %', en: 'Card fees, %' },
 
   chartTrust: { ru: 'Доверие', en: 'Trust' },
-  chartTrustCaption: { ru: 'Единственный актив билетного сервиса, который нельзя купить в тот месяц, когда он понадобился.', en: 'The one asset a ticketing service cannot buy in the month it turns out to be needed.' },
+  chartTrustCaption: { ru: 'Единственный актив билетного сервиса, который нельзя купить в тот месяц, когда он понадобился. Рядом нарисована конверсия: когда доверие проседает, она откликается первой.', en: 'The one asset a ticketing service cannot buy in the month it turns out to be needed. Conversion is drawn beside it: when trust sags, it is the first to follow.' },
   seriesTrust: { ru: 'Доверие, %', en: 'Trust, %' },
   seriesConv: { ru: 'Конверсия, %', en: 'Conversion, %' },
 
@@ -1610,7 +1604,7 @@ const STRINGS = {
   unitMarket: { ru: 'Через афишу: сбор + комиссия', en: 'Via listings: fee + commission' },
   unitPlatform: { ru: 'Через виджет на сайте организатора', en: 'Via widget on the organiser\'s site' },
   unitBlended: { ru: 'Ваша выручка с билета', en: 'Your revenue per ticket' },
-  unitAcquiring: { ru: 'Эквайринг', en: 'Acquiring' },
+  unitAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   unitSupport: { ru: 'Поддержка', en: 'Support' },
   unitContribution: { ru: 'Маржа с билета', en: 'Contribution per ticket' },
   unitBreakEven: { ru: 'Чтобы выйти в ноль, нужно {value} билетов в месяц.', en: 'To break even you need {value} tickets a month.' },
@@ -1620,7 +1614,7 @@ const STRINGS = {
   pnlMarketplace: { ru: 'Афиша: сбор и комиссия', en: 'Listings: fee and commission' },
   pnlPlatform: { ru: 'Платформа: ставка', en: 'Platform: rate' },
   pnlSubscription: { ru: 'Платформа: абонплата', en: 'Platform: subscriptions' },
-  pnlAcquiring: { ru: 'Эквайринг', en: 'Acquiring' },
+  pnlAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   pnlSupport: { ru: 'Поддержка', en: 'Support' },
   pnlContribution: { ru: 'Маржа', en: 'Contribution' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
@@ -1667,7 +1661,7 @@ const STRINGS = {
   },
   helpGmv: {
     ru: '<b>Оборот и выручка — разные числа.</b> Через вас проходят миллиарды, ваши из них — проценты. Эквайринг вычитается из этих процентов, а не из оборота.',
-    en: '<b>Turnover and revenue are different numbers.</b> Billions pass through you; percentages of it are yours. Acquiring comes out of those percentages, not out of the turnover.',
+    en: '<b>Turnover and revenue are different numbers.</b> Vast sums pass through you; only a few percent are yours. Card fees come out of those percentages, not out of the turnover.',
   },
   helpTrust: {
     ru: '<b>Доверие.</b> Перекупщики, упавший сайт и скрытый сбор бьют по одному счёту. Оборот при этом держится — и в этом ловушка: цифры выглядят нормально ровно до месяца, когда становится поздно.',
@@ -1689,7 +1683,7 @@ const STRINGS = {
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
-  deathText: { ru: 'В кассе {cash}, за прошлый месяц сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'The till holds {cash}; last month burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the till is to zero, the worse the terms. You will only see this warning once.' },
+  deathText: { ru: 'В кассе {cash}, за прошлый месяц сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'You have {cash} in the bank; last month burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the balance is to zero, the worse the terms. You will only see this warning once.' },
   deathRunway: { ru: '{n} мес.', en: '{n} mo' },
   deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
   deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
@@ -1747,7 +1741,7 @@ const STRINGS = {
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
   chartChangePlatform: { ru: 'типы площадок платформы', en: 'platform venue types' },
   reportDelta: { ru: 'К прошлому месяцу: оборот {gmv}, прибыль {profit}, касса {cash}.', en: 'Versus last month: turnover {gmv}, profit {profit}, cash {cash}.' },
-  fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the till lasts about {n} months. A round is cheaper raised early, not at zero.' },
+  fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the cash lasts about {n} months. A round is cheaper raised early, not at zero.' },
   gradeBankrupt: { ru: 'Банкротство. Оборот в билетном бизнесе растёт легко — платит по счетам выручка.', en: 'Bankruptcy. Turnover in ticketing grows easily — it is revenue that pays the bills.' },
   gradeExcellent: { ru: 'Отличный результат: рынок ваш, и он вам ещё и платит.', en: 'An excellent result: the market is yours, and it pays you too.' },
   gradeSolid: { ru: 'Крепкий результат. Бизнес стоит на ногах и растёт.', en: 'A solid result. The business stands on its own and grows.' },
@@ -1755,7 +1749,6 @@ const STRINGS = {
   gradeModest: { ru: 'Скромно. Рынок остался за конкурентом.', en: 'Modest. The market stayed with the rival.' },
 
   eventChoiceNeeded: { ru: 'Сначала выберите вариант в событии', en: 'Choose an option in the event first' },
-  crisisChoiceHint: { ru: 'Кризис можно не решать — но он станет дороже.', en: 'You can leave the crisis alone — it will get more expensive.' },
 
   seasonAutumn: { ru: 'осень', en: 'autumn' },
   seasonWinter: { ru: 'зима', en: 'winter' },
@@ -3284,7 +3277,7 @@ const LEVERS = [
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
       ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Сервисного сбора там нет: цену для покупателя на своём сайте назначает он, а не вы, — так что это вся ваша выручка с такого билета. Плюс эквайринг банк снимает и с неё тоже.',
-      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its acquiring out of it too.',
+      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its card fees out of it too.',
     },
   },
   {

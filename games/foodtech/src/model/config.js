@@ -241,7 +241,7 @@ export const DISTRICTS = [
     restaurantPool: 120, launchCost: 1_200_000, weeklyFixed: 180_000,
     hint: {
       ru: 'Студенты: заказывают часто, но крайне чувствительны к цене. Рай для промо, ад для маржи.',
-      en: 'Students order often and count every rouble. Heaven for promotions, hell for margin.',
+      en: 'Students order often and count every penny. Heaven for promotions, hell for margin.',
     },
   },
   {
@@ -313,7 +313,7 @@ export const DISTRICTS = [
     restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 155_000,
     hint: {
       ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
-      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
+      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the baskets are modest.',
     },
   },
   {

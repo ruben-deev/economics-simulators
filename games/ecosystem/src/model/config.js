@@ -666,7 +666,7 @@ export const LEVERS = [
       { v: 95, label: { ru: 'Ниже рынка', en: 'Below market' },
         note: { ru: 'Заметно дешевле «Таксограда»: рост быстрее, вклад с поездки тоньше.', en: 'Visibly cheaper than Taxograd: faster growth, thinner per-trip contribution.' } },
       { v: 100, label: { ru: 'Рынок', en: 'Market' },
-        note: { ru: 'Цена как у всех: конкурируете сервисом и подачей, а не рублём.', en: 'Priced like everyone: you compete on service and pickup, not roubles.' } },
+        note: { ru: 'Цена как у всех: конкурируете сервисом и подачей, а не рублём.', en: 'Priced like everyone: you compete on service and pickup, not on price.' } },
       { v: 108, label: { ru: 'Премиум', en: 'Premium' },
         note: { ru: 'Дороже рынка: маржа сейчас, спрос и рост — медленнее.', en: 'Above market: margin now, slower demand and growth.' } },
       { v: 120, label: { ru: 'Снять сливки', en: 'Skim' },
