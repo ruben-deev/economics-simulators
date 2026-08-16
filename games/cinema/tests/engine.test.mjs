@@ -1111,9 +1111,11 @@ test('смешанный слейт бьёт однообразный', () => {
           // задранный прайс разоряет, и на 799 тест мерил бы обрывы, а не слейт
           priceNew: 449, priceAds: 166, adLoad: 2, annualDiscount: 0.15,
           licensing: 375_000_000, brandMarketing: 60_000_000, trialDays: 21,
-          tech: 20_000_000, rnd: 10_000_000, studioSlots: 2,
+          // Три слота, а не два: состав слейта решает тем сильнее, чем чаще
+          // выходят проекты — на двух слотах разница тонула в шуме сидов
+          tech: 20_000_000, rnd: 10_000_000, studioSlots: 3,
         }),
-        commission: producing < 2 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
+        commission: producing < 3 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
         release: state.slate.filter((p) => p.status === 'ready')
           .map((p) => ({ id: p.id, campaign: 25_000_000 })),
       });
@@ -1271,18 +1273,24 @@ test('цель года объявляется заранее и известн�
 });
 
 test('цели трёх лет тянут в разные стороны', () => {
+  // Аудит 2026-08 поменял годы 2 и 3 местами: доля — пока рынок делится,
+  // прибыльность — в год жатвы (в году 2 её не достигала ни одна доведённая
+  // опора на 72 партиях, см. комментарий в board.makeGoal).
   const s = createInitialState('goals');
   const y1 = makeGoal(1, s, 0, 1_000_000);
   const y2 = makeGoal(2, s, 1_500_000, 2_000_000);
   const y3 = makeGoal(3, s, 3_000_000, 3_000_000);
   assert.equal(y1.type, 'subscribers');
-  assert.equal(y2.type, 'profit');
-  assert.equal(y3.type, 'share');
-  // Год прибыльности требует и роста, и плюса — одного мало
-  const onlyProfit = goalProgress(y2, { subs: 100, rivalSubs: 0, profitableMonths: 12 });
-  assert.equal(onlyProfit.done, false, 'одной прибыли без роста не хватает');
-  const onlyGrowth = goalProgress(y2, { subs: 9_000_000, rivalSubs: 0, profitableMonths: 0 });
-  assert.equal(onlyGrowth.done, false, 'одного роста без прибыли тоже');
+  assert.equal(y2.type, 'share');
+  assert.equal(y3.type, 'profit');
+  // Год прибыльности требует и плюса, и удержания базы — одного мало
+  const onlyProfit = goalProgress(y3, { subs: 100, rivalSubs: 0, profitableMonths: 12 });
+  assert.equal(onlyProfit.done, false, 'одной прибыли без базы не хватает');
+  const onlyBase = goalProgress(y3, { subs: 9_000_000, rivalSubs: 0, profitableMonths: 0 });
+  assert.equal(onlyBase.done, false, 'одной базы без прибыли тоже');
+  // Год доли требует и доли, и не сжаться
+  const onlyShare = goalProgress(y2, { subs: 100, rivalSubs: 10, profitableMonths: 0 });
+  assert.equal(onlyShare.done, false, 'доля при съёжившейся базе не считается');
 });
 
 test('провал цели имеет последствия, а не просто грустную надпись', () => {
@@ -1607,14 +1615,18 @@ test('цели совета берутся не всеми и не никем', 
   const y2 = makeGoal(2, null, 4_000_000, 3_000_000);
   assert.ok(y2.subsFloor <= 4_000_000 * 1.1,
     'второй год не должен требовать роста, недостижимого для девяти из десяти');
+  // Замер аудита 2026-08 (24 кода × 3 доведённые опоры): медиана доли на
+  // 24-м месяце 0.49, 90-й процентиль 0.60. Планка обязана лежать между:
+  // ниже — берут все, выше — не берёт никто.
+  assert.ok(y2.target > 0.49 - 1e-9 && y2.target <= 0.60,
+    `планка доли ${y2.target} должна лежать между медианой и 90-м процентилем`);
   const y3 = makeGoal(3, null, 4_000_000, 3_000_000);
   assert.ok(y3.subsFloor < 4_000_000,
     'третий год — год обороны: требовать роста базы в нём нельзя');
-  // Замер после перебалансировки каталога: медиана доли на конец партии 0.43,
-  // 75-й процентиль 0.59, 90-й — 0.70. Планка обязана лежать между медианой
-  // и девяностым процентилем: ниже — её берут все, выше — не берёт никто.
-  assert.ok(y3.target > 0.43 && y3.target <= 0.70,
-    `планка ${y3.target} должна лежать между медианой и 90-м процентилем`);
+  // Прибыльных месяцев ≥2 достигают 26/72 партий доведённых опор —
+  // сознательно самая жёсткая цель, но живая
+  assert.ok(y3.target >= 1 && y3.target <= 3,
+    `планка прибыльных месяцев ${y3.target} должна быть жёсткой, но живой`);
 });
 
 // ----------------------------------------------------------------------------
