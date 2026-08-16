@@ -187,8 +187,8 @@ export const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapLegend: {
-    ru: 'Ниточка в квартале — плечо доставки: заказ едет от ресторана района к его же клиенту, и чем плечо длиннее, тем меньше заказов успевает курьер. Красная — район не укладывается в эталонные минуты. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
-    en: 'The thread inside a block is the delivery leg: an order travels from a restaurant in the district to a customer in the same district, and the longer the leg, the fewer orders a courier completes. A red thread means the district misses the reference time. Click a block to open the district or drop it from the plan.',
+    ru: 'Цвет квартала — вклад с заказа: зелёный приносит, красный съедает. Пунктир — то, что изменится в конце недели: зелёный откроется, красный закроется, серый закрыт и ждёт входа. Ниточка внутри — плечо доставки от ресторана района к его же клиенту: чем длиннее, тем меньше заказов успевает курьер, а красная значит, что район не укладывается в эталонные минуты. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
+    en: 'A block’s colour is contribution per order: green earns, red eats. A dashed outline is what changes at the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. The thread inside is the delivery leg from a restaurant in the district to a customer in the same district: the longer it is, the fewer orders a courier completes, and a red thread means the district misses the reference time. Click a block to open the district or drop it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 
