@@ -69,9 +69,14 @@ Measured over 24 codes, with four near districts as the base:
 
 | what was added | ordinary fee, little technology | high fee, technology invested |
 |---|---|---|
-| nothing (base) | ₽3.41B | ₽4.09B |
-| + Industrial | ₽2.11B · 46 min · ₽80 per order | ₽4.02B · 34 min · ₽131 |
-| + Suburbs | ₽2.24B · 56 min · ₽174 per order | ₽3.98B · 41 min · ₽225 |
+| nothing (base) | ₽0.92B | ₽2.56B |
+| + Industrial | ₽0.58B · 51 min · ₽50 per order | ₽2.93B · 37 min · ₽110 |
+| + Suburbs | ₽0.79B · 60 min · ₽139 per order | ₽3.08B · 45 min · ₽200 |
+
+(Re-measured in the 2026-08 audit after the weather, events and goal reworks —
+the absolute values are lower than before, the shape is the same and even
+sharper: with technology a far district now adds rather than merely breaking
+even.)
 
 Note the third figure in each cell: contribution per order is positive in every
 case. What loses money is not the district itself but what it does to the whole
