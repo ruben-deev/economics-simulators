@@ -2150,9 +2150,14 @@ function showGameOver() {
     // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
     // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
     // (80 млрд) была недостижима ни одной опорой.
-    : s.equityValue > 32e9 ? t('gradeExcellent')
-    : s.equityValue > 16e9 ? t('gradeSolid')
-    : s.equityValue > 8e9 ? t('gradeSurvived') : t('gradeModest');
+    // Шкала переснята аудитом 2026-08 после правок цены и рекламы:
+    // доведённые опоры дают 9.4 / 14.8 / 16.8 млрд. «Выжили» достаёт любая
+    // живая стратегия, «крепко» — собранный конвейер, «отлично» — доведённая
+    // опора. Прежние пороги (32/16/8) были из мира, где прайс 999 был
+    // бесплатным: без эксплойта «отлично» не достигалось вовсе.
+    : s.equityValue > 16e9 ? t('gradeExcellent')
+    : s.equityValue > 9e9 ? t('gradeSolid')
+    : s.equityValue > 3.5e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -2171,7 +2176,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(32e9), b: money(16e9), c: money(8e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(16e9), b: money(9e9), c: money(3.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,

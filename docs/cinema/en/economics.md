@@ -298,17 +298,44 @@ Each segment splits itself between the paid and the ad-supported tier:
 
 ```
 saving      = (ad_free_price − ad_tier_price) / ad_free_price
-ad_pain     = (ad_load / refAdLoad) / tolerance(segment)
+ad_pain     = (ad_load / refAdLoad)^1.6 / tolerance(segment)   — convex
 ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)
 ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)
 ```
 
-**The ceiling on the ad tier came out of measurement.** Without it the list price stopped
-being a price and became a switch: crank it to a thousand and you simply herded almost
-everyone onto the cheap tier, and demand barely noticed — the price optimum sat in the top
-third of the slider and that whole third was flat. Some viewers will not watch with ads at
-any price, and every segment has its own limit: cinephiles 32%, families 58%, the mass
-audience 83%, the young 90%.
+Ad pain is convex (2026-08 audit): a couple of minutes an hour goes almost unnoticed,
+and past that every extra spot annoys more than the previous one. With linear pain the
+load optimum sat at zero on every anchor — there was no lever; with convexity each
+anchor has an interior optimum at 2–4 min/hr, and heavy load is honestly expensive —
+through irritation and because the cheap tier stops counting as a way in (see Inflow).
+
+**The ceiling on the ad tier came out of measurement.** Some viewers will not watch with
+ads at any price, and every segment has its own limit: cinephiles 32%, families 58%, the
+mass audience 83%, the young 90%.
+
+**The cheap tier's weight in the entry price is intrinsic, not actual** (2026-08 audit).
+Demand used to look at a price blend weighted by the actual ad-tier share — and that
+share itself grows with the price gap: cranking the list price inflated the cheap tier's
+share, the blend got cheaper, and demand ROSE. The cheap blend printed demand faster
+than ARPU fell: the price optimum sat pinned at 999 on every anchor (+102% for the
+mid anchor). Now the weight is the share of the segment that considers watching with
+ads at all, and it fades with ad load: a tier you cannot stand to watch does not exist
+in a newcomer's eyes. The price gap helps entry only as far as the segment tolerates
+ads — the loop is broken, and price has an honest interior optimum (measured: peak at
+449, minus two-thirds of the outcome at 999).
+
+**The premium choice feels the full list price.** A newcomer taking the ad-free tier
+judges it by its own price, not by the blend:
+
+```
+premium_take = clamp((399 / premium_price)^(elasticity × 0.8), 0.10, 1)
+premium_new  = converted × (1 − ad_share) × premium_take
+downgraded   = (1 − premium_take) × (1 − ad_share) × converted
+               × clamp(0.5 × tolerance, 0, 0.9)   — onto the ad tier
+```
+
+Those scared off the premium tier partly step down to the cheap one (as far as the
+segment tolerates ads); the rest do not sign up at all.
 
 Hence a non-obvious consequence: **cutting the cheap tier's price poaches people from
 your own expensive one**. Cannibalisation is not a side effect, it is the main mechanism.
@@ -322,9 +349,11 @@ Inflow splits into two independent questions that must not be confused:
 2. **Which of the two gets them.** That is decided by preference (see section 6).
 
 ```
-list_price  = premium × (1 − ad_share) + ad_price × ad_share
+ad_weight   = clamp(0.5 × tolerance, 0.15, 0.75)
+              × clamp(1 − 0.12 × max(0, ad_pain − 1), 0, 1)
+entry_price = premium × (1 − ad_weight) + ad_price × ad_weight
 paid_price  = lockedPrice × (1 − ad_share) + ad_price × ad_share
-list_factor = (399 / list_price) ^ elasticity(segment)   — for new sign-ups
+list_factor = (399 / entry_price) ^ elasticity(segment)  — for new sign-ups
 paid_factor = (399 / paid_price) ^ elasticity(segment)   — for the existing base
 appeal      = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
 ad_penalty  = 1 − 0.16 × ad_pain × ad_share × (1 − relief)

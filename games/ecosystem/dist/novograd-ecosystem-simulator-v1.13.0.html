@@ -958,8 +958,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 /* Плечо доставки внутри квартала: ресторан, путь, клиент */
 .city-map .m-leg rect, .city-map .m-leg circle { fill: var(--text); fill-opacity: 0.8; }
 .city-map .m-leg line { stroke: var(--text); stroke-opacity: 0.7; stroke-width: 1.6; stroke-dasharray: 3 2; }
-.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 0.9; }
-.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 0.8; }
+/* Опоздание должно быть видно с расстояния вытянутой руки: ниточка в
+   ~20 px — самый мелкий орган карты, и прежнее покраснение при той же
+   толщине читалось только в упор (аудит 2026-08, ось визуала) */
+.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 1; }
+.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 1; stroke-width: 2.6; stroke-dasharray: 4 2; }
 .city-map .m-leader { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
 .city-map .m-hit { cursor: pointer; }
 .city-map .m-hit polygon { pointer-events: all; }

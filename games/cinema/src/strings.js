@@ -141,7 +141,7 @@ export const STRINGS = {
   },
   jointCost: {
     ru: 'Цена — не только деньги. Это и его хит тоже: про конкурента заговорят столько же, сколько про вас, и слабого партнёра общий проект узаконивает. Расширенный рынок делится по предпочтению — большую долю прироста заберёт тот, кого зритель и так выбирал.',
-    en: 'The price is not only money. It is his hit too: your rival gets talked about as much as you do, and a joint project legitimises a weak partner. The bigger market splits by preference — most of the growth goes to whoever the viewer was already choosing.',
+    en: 'The price is not only money. It is their hit too: your rival gets talked about as much as you do, and a joint project legitimises a weak partner. The bigger market splits by preference — most of the growth goes to whoever the viewer was already choosing.',
   },
   jointPrice: { ru: 'Ваша половина: {price} · {months} мес производства', en: 'Your half: {price} · {months} months in production' },
   jointStart: { ru: 'Предложить проект', en: 'Propose the project' },
@@ -210,9 +210,9 @@ export const STRINGS = {
   stanceBuild: { ru: 'Ровный рост', en: 'Steady growth' },
   stanceBuildHint: { ru: 'Держит курс: умеренные бюджеты, цена чуть ниже вашей.', en: 'Holding course: moderate budgets, price a little under yours.' },
   stanceWar: { ru: 'Война цен', en: 'Price war' },
-  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing him down on price is a losing idea — he has deeper pockets.' },
+  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing them down on price is a losing idea — their pockets are deeper.' },
   stancePress: { ru: 'Давит', en: 'Pressing' },
-  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from him while he gets expensive.' },
+  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from them while they get expensive.' },
   stanceHarvest: { ru: 'Снимает сливки', en: 'Harvesting' },
   stanceHarvestHint: { ru: 'Экономит: режет контент и маркетинг, поднимает цену и рекламу. Его каталог начнёт выдыхаться — ваш шанс.', en: 'Economising: cutting content and marketing, raising price and ad load. His catalogue will start going stale — that is your opening.' },
   stanceRetreat: { ru: 'Отступает', en: 'Retreating' },
@@ -230,7 +230,7 @@ export const STRINGS = {
   shareYou: { ru: 'вы', en: 'you' },
   shareThem: { ru: 'он', en: 'rival' },
   shareBarHint: { ru: 'Доля рынка подписок: вы против конкурента', en: 'Share of the subscription market: you versus the rival' },
-  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, he has {them}. Net switching this month: {flow}.' },
+  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, the rival has {them}. Net switching this month: {flow}.' },
 
   // --- Совет директоров ---
   goalYear: { ru: 'Цель года {year}', en: 'Year {year} goal' },
@@ -272,12 +272,12 @@ export const STRINGS = {
   alertWinningSubs: { ru: 'От конкурента пришло {count} подписчиков: ваш сервис сейчас выглядит лучше.', en: '{count} subscribers came over from the rival: your service looks better right now.' },
   alertLicenseWar: { ru: 'Права подорожали в {index} раза: вы с конкурентом торгуетесь за один и тот же контент. Тот же бюджет покупает меньше часов.', en: 'Rights are {index}× more expensive: you and the rival are bidding for the same content. The same budget buys fewer hours.' },
   alertTalentCost: { ru: 'Талант подорожал в {index} раза. Успешному сервису звёзды выставляют другой счёт — себестоимость хита растёт быстрее его аудитории.', en: 'Talent is {index}× more expensive. Stars charge a successful service differently — a hit\u2019s cost grows faster than its audience.' },
-  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect his budgets to grow.' },
+  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect their budgets to grow.' },
   alertRivalDead: { ru: 'Конкурент обанкротился. Его база расходится по рынку — это ваш шанс забрать её.', en: 'The rival has gone bust. His base is dispersing — this is your chance to take it.' },
 
   // --- График войны ---
   chartWar: { ru: 'Вы и конкурент', en: 'You and the rival' },
-  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by taking his — and the second is faster.' },
+  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by poaching the rival’s — and the second is faster.' },
   seriesYou: { ru: 'Вы', en: 'You' },
   seriesThem: { ru: 'Конкурент', en: 'Rival' },
 
@@ -668,7 +668,7 @@ score = valuation × your stake`,
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с десятками миллиардов — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market in the hundreds of millions of dollars — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с 9–17 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $90–170M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },

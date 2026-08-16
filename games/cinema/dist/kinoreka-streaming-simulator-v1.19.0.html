@@ -958,8 +958,11 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 /* Плечо доставки внутри квартала: ресторан, путь, клиент */
 .city-map .m-leg rect, .city-map .m-leg circle { fill: var(--text); fill-opacity: 0.8; }
 .city-map .m-leg line { stroke: var(--text); stroke-opacity: 0.7; stroke-width: 1.6; stroke-dasharray: 3 2; }
-.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 0.9; }
-.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 0.8; }
+/* Опоздание должно быть видно с расстояния вытянутой руки: ниточка в
+   ~20 px — самый мелкий орган карты, и прежнее покраснение при той же
+   толщине читалось только в упор (аудит 2026-08, ось визуала) */
+.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 1; }
+.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 1; stroke-width: 2.6; stroke-dasharray: 4 2; }
 .city-map .m-leader { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
 .city-map .m-hit { cursor: pointer; }
 .city-map .m-hit polygon { pointer-events: all; }
@@ -1325,7 +1328,7 @@ const STRINGS = {
   },
   jointCost: {
     ru: 'Цена — не только деньги. Это и его хит тоже: про конкурента заговорят столько же, сколько про вас, и слабого партнёра общий проект узаконивает. Расширенный рынок делится по предпочтению — большую долю прироста заберёт тот, кого зритель и так выбирал.',
-    en: 'The price is not only money. It is his hit too: your rival gets talked about as much as you do, and a joint project legitimises a weak partner. The bigger market splits by preference — most of the growth goes to whoever the viewer was already choosing.',
+    en: 'The price is not only money. It is their hit too: your rival gets talked about as much as you do, and a joint project legitimises a weak partner. The bigger market splits by preference — most of the growth goes to whoever the viewer was already choosing.',
   },
   jointPrice: { ru: 'Ваша половина: {price} · {months} мес производства', en: 'Your half: {price} · {months} months in production' },
   jointStart: { ru: 'Предложить проект', en: 'Propose the project' },
@@ -1394,9 +1397,9 @@ const STRINGS = {
   stanceBuild: { ru: 'Ровный рост', en: 'Steady growth' },
   stanceBuildHint: { ru: 'Держит курс: умеренные бюджеты, цена чуть ниже вашей.', en: 'Holding course: moderate budgets, price a little under yours.' },
   stanceWar: { ru: 'Война цен', en: 'Price war' },
-  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing him down on price is a losing idea — he has deeper pockets.' },
+  stanceWarHint: { ru: 'Проигрывает и жжёт кассу: демпингует и заливает рынок маркетингом. Догонять его вниз по цене — проигрышная идея, он богаче.', en: 'Losing and burning cash: undercutting hard and flooding the market with marketing. Chasing them down on price is a losing idea — their pockets are deeper.' },
   stancePress: { ru: 'Давит', en: 'Pressing' },
-  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from him while he gets expensive.' },
+  stancePressHint: { ru: 'Выигрывает и знает это: поднимает цену и наращивает бюджеты. Самое время отбирать у него зрителя, пока он дорожает.', en: 'Winning and knows it: raising price and increasing budgets. This is the moment to take viewers from them while they get expensive.' },
   stanceHarvest: { ru: 'Снимает сливки', en: 'Harvesting' },
   stanceHarvestHint: { ru: 'Экономит: режет контент и маркетинг, поднимает цену и рекламу. Его каталог начнёт выдыхаться — ваш шанс.', en: 'Economising: cutting content and marketing, raising price and ad load. His catalogue will start going stale — that is your opening.' },
   stanceRetreat: { ru: 'Отступает', en: 'Retreating' },
@@ -1414,7 +1417,7 @@ const STRINGS = {
   shareYou: { ru: 'вы', en: 'you' },
   shareThem: { ru: 'он', en: 'rival' },
   shareBarHint: { ru: 'Доля рынка подписок: вы против конкурента', en: 'Share of the subscription market: you versus the rival' },
-  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, he has {them}. Net switching this month: {flow}.' },
+  shareCaption: { ru: 'У вас {you} подписчиков, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} subscribers, the rival has {them}. Net switching this month: {flow}.' },
 
   // --- Совет директоров ---
   goalYear: { ru: 'Цель года {year}', en: 'Year {year} goal' },
@@ -1456,12 +1459,12 @@ const STRINGS = {
   alertWinningSubs: { ru: 'От конкурента пришло {count} подписчиков: ваш сервис сейчас выглядит лучше.', en: '{count} subscribers came over from the rival: your service looks better right now.' },
   alertLicenseWar: { ru: 'Права подорожали в {index} раза: вы с конкурентом торгуетесь за один и тот же контент. Тот же бюджет покупает меньше часов.', en: 'Rights are {index}× more expensive: you and the rival are bidding for the same content. The same budget buys fewer hours.' },
   alertTalentCost: { ru: 'Талант подорожал в {index} раза. Успешному сервису звёзды выставляют другой счёт — себестоимость хита растёт быстрее его аудитории.', en: 'Talent is {index}× more expensive. Stars charge a successful service differently — a hit\u2019s cost grows faster than its audience.' },
-  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect his budgets to grow.' },
+  alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect their budgets to grow.' },
   alertRivalDead: { ru: 'Конкурент обанкротился. Его база расходится по рынку — это ваш шанс забрать её.', en: 'The rival has gone bust. His base is dispersing — this is your chance to take it.' },
 
   // --- График войны ---
   chartWar: { ru: 'Вы и конкурент', en: 'You and the rival' },
-  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by taking his — and the second is faster.' },
+  chartWarCaption: { ru: 'Рынок один на двоих. Расти можно, приводя новых или переманивая чужих, — и второй способ работает быстрее.', en: 'One market for the two of you. You can grow by bringing in new viewers or by poaching the rival’s — and the second is faster.' },
   seriesYou: { ru: 'Вы', en: 'You' },
   seriesThem: { ru: 'Конкурент', en: 'Rival' },
 
@@ -1852,7 +1855,7 @@ score = valuation × your stake`,
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с десятками миллиардов — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market in the hundreds of millions of dollars — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с 9–17 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $90–170M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
@@ -3003,6 +3006,18 @@ const CONFIG = {
   // прайс работал не как цена, а как переключатель тарифа.
   adTierCeiling: 0.72,
 
+  // Насколько премиальный выбор новичка чувствует собственную цену тарифа
+  // (множитель к эластичности сегмента). 0 — прежний мир, где спрос видел
+  // только смесь listPrice и оптимум прайса лежал на упоре 999. Замер
+  // аудита 2026-08: при 1.0 внутренний оптимум есть, но студийная опора
+  // разоряется на собственной цене; при 0.6 упор исчезает, но верх кривой
+  // плоский. 0.8 — середина: см. срезы в комментарии к LEVERS.priceNew.
+  premiumChoiceElasticity: 0.8,
+
+  // Выпуклость раздражения рекламой: pain = (adLoad/refAdLoad)^exponent.
+  // 1.0 — прежний линейный мир с оптимумом нагрузки в нуле.
+  adPainExponent: 1.6,
+
   // Какая доля действующих подписчиков, готовых к годовому тарифу, реально
   // переходит на него за месяц. Новичку решать проще: он и так выбирает.
   annualUpgradeRate: 0.28,
@@ -3443,7 +3458,12 @@ const LEVERS = [
     group: 'growth',
     label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
     unit: { ru: '₽', en: '$' },
-    min: 0, max: 500_000_000, step: 10_000_000, def: 0,
+    // Максимум поднят с 500 млн: оптимум закупки лежал ровно на упоре
+    // ползунка, а падающая сторона кривой (перегретый индекс прав) игроку
+    // была не видна. Замер аудита 2026-08: 500 млн — 13.2 млрд итога,
+    // 650 — 8.4, 800 — 7.1. Перебор должен быть доступен, иначе урок
+    // «платишь дороже сам себе» останется за краем шкалы.
+    min: 0, max: 800_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Каталог появляется сразу, но истекает 4.5% в месяц, лежит и у конкурента и почти не считается новинкой. Когда за права торгуетесь вы оба, они дорожают для обоих.',
       en: 'The catalogue appears at once, but 4.5% expires monthly, the rival has the same titles, and it barely counts as new. When you both bid for rights, they get more expensive for both.',
@@ -5704,7 +5724,19 @@ function step(prevState, input = {}) {
     // тем охотнее он идёт на дешёвый тариф с рекламой.
     const saving = decisions.priceNew > 0
       ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
-    const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
+    // Раздражение выпуклое: пару минут рекламы в час зритель почти не
+    // замечает, дальше каждый ролик злит сильнее предыдущего. При линейном
+    // раздражении оптимум нагрузки лежал в нуле на всех опорах — рычага не
+    // было, а пресеты рычага при этом обещали ровно выпуклый мир («пара
+    // минут в час: деньги появляются, отток почти не двигается»). Замер
+    // аудита 2026-08: с выпуклостью внутренний оптимум на 2 мин/час у всех
+    // трёх опор (студийная 17.0 против 13.7 млрд в нуле).
+    // Потолок боли поднят с 3 до 6: раньше за клампом каждая следующая
+    // минута рекламы была бесплатной, и упор ползунка возвращался — только
+    // теперь справа (оптимум на 16 мин/час, замер аудита 2026-08).
+    const adLoadPain = clamp(
+      Math.pow(decisions.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
     // Потолок на долю рекламного тарифа. Без него прайс переставал быть ценой
     // и становился переключателем: задрав его до тысячи, вы просто перегоняли
     // почти всех на дешёвый тариф с рекламой, а спрос этого не замечал.
@@ -5718,8 +5750,26 @@ function step(prevState, input = {}) {
     const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
     const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
     const blendedPrice = listPrice;
-    // Новый смотрит на прайс — он решает, подписываться ли вообще
-    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, listPrice), def.elasticity), 0.15, 2.6);
+    // Новый решает, подписываться ли вообще, глядя на воспринимаемую цену
+    // входа — смесь цен двух тарифов с ВНУТРЕННИМИ весами сегмента: какая
+    // его часть вообще рассматривает просмотр с рекламой (доля терпимости),
+    // а не с весом фактического разбора тарифов. Раньше вес в смеси был
+    // adShare, который сам растёт от разрыва цен: задирание прайса раздувало
+    // долю дешёвого тарифа, смесь ДЕШЕВЕЛА, и спрос категории РОС — дешёвая
+    // смесь печатала спрос быстрее, чем падал ARPU. Замер аудита 2026-08:
+    // оптимум прайса лежал на упоре 999 у всех опор (+102% у «ровной»).
+    // С внутренними весами разрыв цен помогает спросу ровно настолько,
+    // насколько сегмент вообще готов смотреть с рекламой, — петля разомкнута.
+    // Вес дешёвого тарифа гаснет с рекламной нагрузкой: тариф, который
+    // невозможно смотреть, в глазах новичка не существует, и вход дорожает
+    // до полного прайса. Важно, что вес НЕ зависит от разрыва цен — иначе
+    // плотная реклама становится трюком «премиум по цене смеси».
+    // Порог: боль ниже 1 (для сегмента) восприятие входа не трогает —
+    // «пара минут в час почти не замечается», как и обещают пресеты рычага.
+    const adConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, adLoadPain - 1), 0, 1);
+    const entryPrice = decisions.priceNew * (1 - adConsider) + decisions.priceAds * adConsider;
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, entryPrice), def.elasticity), 0.15, 2.6);
     // Действующий подписчик злится на ту цену, которую платит сам. Пока база
     // не переведена на новый прайс, повышение её не раздражает — и в этом
     // весь смысл разрыва: он даёт расти цене, не платя оттоком сразу.
@@ -5735,7 +5785,7 @@ function step(prevState, input = {}) {
     // Реклама раздражает тем сильнее, чем меньше её терпит сегмент.
     // Адаптивная реклама перераспределяет нагрузку и снимает часть раздражения.
     const adRelief = 1 - 0.45 * adSpread * quality;
-    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
+    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.35, 1);
 
     // Премьера тянет к себе именно свой сегмент — и тем точнее, чем прицельнее
     // она снята. Проект «под киноманов» соберёт их и оставит равнодушными всех
@@ -5807,7 +5857,23 @@ function step(prevState, input = {}) {
     const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
     const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
-    const converted = trials * CONFIG.trialConversion * trialFactor;
+    let converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
+    // на смесь listPrice, и премиальная доля новичков (1 − adShare, не меньше
+    // 28%) платила задранный прайс, никак не отвечая спросом: оптимум цены
+    // лежал на упоре ползунка (999), «ровная» опора выигрывала от него +102%.
+    // Теперь новичок, выбирающий тариф без рекламы, оценивает его по
+    // собственной цене: часть отпугнутых спускается на тариф с рекламой
+    // (настолько, насколько сегмент её терпит), остальные не подписываются.
+    const premiumTake = clamp(
+      Math.pow(refPrice / Math.max(30, decisions.priceNew),
+        def.elasticity * CONFIG.premiumChoiceElasticity), 0.10, 1);
+    const premiumRaw = converted * (1 - adShare);
+    const premiumNew = premiumRaw * premiumTake;
+    const downgraded = (premiumRaw - premiumNew) * clamp(0.5 * def.adTolerance, 0, 0.9);
+    const adsNew = converted * adShare + downgraded;
+    converted = premiumNew + adsNew;
 
     // Конкурент забирает вторую половину той же поляны
     const rivalConverted = riv.alive
@@ -5880,7 +5946,7 @@ function step(prevState, input = {}) {
     // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
     // месяцев, но цена фиксируется и повышения их не касаются.
     const annualPortion = annualShare(decisions.annualDiscount, def);
-    const annualTakers = converted * (1 - adShare) * annualPortion;
+    const annualTakers = premiumNew * annualPortion;
     if (annualTakers > 0) {
       const annualPrice = decisions.priceNew * (1 - decisions.annualDiscount);
       annualCash += addAnnualCohort(pricing, annualTakers, annualPrice);
@@ -5903,7 +5969,7 @@ function step(prevState, input = {}) {
     // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
     // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
     // закрывается сам — но медленно, за время оборота базы.
-    const monthlyNew = Math.max(0, converted * (1 - adShare) - annualTakers);
+    const monthlyNew = Math.max(0, premiumNew - annualTakers);
     const monthlyStaying = Math.max(0, survivorsBeforeSwitch + flow - lockedIn) * (1 - survivorAdShareGuess);
     const monthlyTotal = monthlyStaying + monthlyNew;
     if (monthlyTotal > 0 && monthlyNew > 0) {
@@ -5917,8 +5983,8 @@ function step(prevState, input = {}) {
     const lockedNow = annualSubs(pricing);
     const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
-    seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+    seg.ads = Math.max(0, movable * survivorAdShare + adsNew);
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + premiumNew);
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
@@ -9070,9 +9136,14 @@ function showGameOver() {
     // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
     // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
     // (80 млрд) была недостижима ни одной опорой.
-    : s.equityValue > 32e9 ? t('gradeExcellent')
-    : s.equityValue > 16e9 ? t('gradeSolid')
-    : s.equityValue > 8e9 ? t('gradeSurvived') : t('gradeModest');
+    // Шкала переснята аудитом 2026-08 после правок цены и рекламы:
+    // доведённые опоры дают 9.4 / 14.8 / 16.8 млрд. «Выжили» достаёт любая
+    // живая стратегия, «крепко» — собранный конвейер, «отлично» — доведённая
+    // опора. Прежние пороги (32/16/8) были из мира, где прайс 999 был
+    // бесплатным: без эксплойта «отлично» не достигалось вовсе.
+    : s.equityValue > 16e9 ? t('gradeExcellent')
+    : s.equityValue > 9e9 ? t('gradeSolid')
+    : s.equityValue > 3.5e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -9091,7 +9162,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(32e9), b: money(16e9), c: money(8e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(16e9), b: money(9e9), c: money(3.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,

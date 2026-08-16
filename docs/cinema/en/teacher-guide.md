@@ -146,32 +146,33 @@ only the rights budget differs:
 
 | Team | Rights budget | Equity | Subscribers | Own share |
 |---|---|---|---|---|
-| A | 0 | ₽7B | 1.6M | 90% |
-| B | ₽150M/mo | **₽129B** | 5.4M | 41% |
-| C | ₽320M/mo | **₽128B** | 6.7M | 34% |
-| D | ₽500M/mo | ₽83B | 6.8M | 30% |
+| A | 0 | ₽0.2B | 1.6M | 94% |
+| B | ₽150M/mo | ₽6.4B | 2.7M | 43% |
+| C | ₽500M/mo | **₽13.2B** | 5.2M | 30% |
+| D | ₽800M/mo | ₽7.1B | 4.8M | 27% |
 
-Measured across four seeds, full game. Three things are visible at once:
+Measured in the 2026-08 audit across 24 seeds, full game. Three things are visible at once:
 
-1. **You cannot do it without buying.** Team A builds a library out of its own work alone
-   and ends the game worth twenty times less than the others. In-house production is far
-   too slow to assemble a catalogue by itself.
-2. **You cannot do it on buying alone either.** D has the most subscribers — and a result
-   half as good as B and C: buying beyond measure heats the rights index, and you pay
-   more to yourself. That is the central question for the debrief.
-3. **The optimum is inside, and it is flat.** From ₽150M to ₽320M the outcome barely
-   moves — what decides is not the exact rights figure but the in-house production
-   running next to it.
+1. **You cannot do it without buying.** Team A builds a library out of its own work
+   alone — a third of its games end in bankruptcy, and the survivors are worth thirty
+   times less than C. In-house production is far too slow to assemble a catalogue by
+   itself.
+2. **You cannot do it on buying alone either.** D buys more than C and ends up nearly
+   twice worse: buying beyond measure heats the rights index, and you pay more to
+   yourself. That is the central question for the debrief.
+3. **The optimum is inside.** The curve is a hump: from ₽150M to ₽500M the outcome
+   doubles, past ~₽550M it falls. What decides is not the exact rights figure but the
+   in-house production running next to it: your own premieres are what keeps the viewer
+   when someone else's rights expire.
 
 Debrief on three numbers on screen:
 * **own share of the catalogue** — it drives exclusive retention;
-* **freshness** — for the buyers it only holds up while buying continues and drops at the
-  first economy;
-* **company valuation** — C's is higher on lower revenue, because the library enters
+* **freshness** — for team A it rests on premieres alone and sags between them;
+* **company valuation** — C's is higher not only on revenue: the library enters
   the valuation as a separate term while licences do not enter it at all: they are rent.
 
-Debrief question: team D has more subscribers, lower churn and more revenue. Why does the
-investor value it lower than C?
+Debrief question: team D has nearly as many subscribers as C and a rights budget 60%
+larger. Why does the investor value it at almost half of C?
 
 ---
 

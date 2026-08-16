@@ -633,7 +633,19 @@ export function step(prevState, input = {}) {
     // тем охотнее он идёт на дешёвый тариф с рекламой.
     const saving = decisions.priceNew > 0
       ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
-    const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
+    // Раздражение выпуклое: пару минут рекламы в час зритель почти не
+    // замечает, дальше каждый ролик злит сильнее предыдущего. При линейном
+    // раздражении оптимум нагрузки лежал в нуле на всех опорах — рычага не
+    // было, а пресеты рычага при этом обещали ровно выпуклый мир («пара
+    // минут в час: деньги появляются, отток почти не двигается»). Замер
+    // аудита 2026-08: с выпуклостью внутренний оптимум на 2 мин/час у всех
+    // трёх опор (студийная 17.0 против 13.7 млрд в нуле).
+    // Потолок боли поднят с 3 до 6: раньше за клампом каждая следующая
+    // минута рекламы была бесплатной, и упор ползунка возвращался — только
+    // теперь справа (оптимум на 16 мин/час, замер аудита 2026-08).
+    const adLoadPain = clamp(
+      Math.pow(decisions.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
     // Потолок на долю рекламного тарифа. Без него прайс переставал быть ценой
     // и становился переключателем: задрав его до тысячи, вы просто перегоняли
     // почти всех на дешёвый тариф с рекламой, а спрос этого не замечал.
@@ -647,8 +659,26 @@ export function step(prevState, input = {}) {
     const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
     const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
     const blendedPrice = listPrice;
-    // Новый смотрит на прайс — он решает, подписываться ли вообще
-    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, listPrice), def.elasticity), 0.15, 2.6);
+    // Новый решает, подписываться ли вообще, глядя на воспринимаемую цену
+    // входа — смесь цен двух тарифов с ВНУТРЕННИМИ весами сегмента: какая
+    // его часть вообще рассматривает просмотр с рекламой (доля терпимости),
+    // а не с весом фактического разбора тарифов. Раньше вес в смеси был
+    // adShare, который сам растёт от разрыва цен: задирание прайса раздувало
+    // долю дешёвого тарифа, смесь ДЕШЕВЕЛА, и спрос категории РОС — дешёвая
+    // смесь печатала спрос быстрее, чем падал ARPU. Замер аудита 2026-08:
+    // оптимум прайса лежал на упоре 999 у всех опор (+102% у «ровной»).
+    // С внутренними весами разрыв цен помогает спросу ровно настолько,
+    // насколько сегмент вообще готов смотреть с рекламой, — петля разомкнута.
+    // Вес дешёвого тарифа гаснет с рекламной нагрузкой: тариф, который
+    // невозможно смотреть, в глазах новичка не существует, и вход дорожает
+    // до полного прайса. Важно, что вес НЕ зависит от разрыва цен — иначе
+    // плотная реклама становится трюком «премиум по цене смеси».
+    // Порог: боль ниже 1 (для сегмента) восприятие входа не трогает —
+    // «пара минут в час почти не замечается», как и обещают пресеты рычага.
+    const adConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, adLoadPain - 1), 0, 1);
+    const entryPrice = decisions.priceNew * (1 - adConsider) + decisions.priceAds * adConsider;
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, entryPrice), def.elasticity), 0.15, 2.6);
     // Действующий подписчик злится на ту цену, которую платит сам. Пока база
     // не переведена на новый прайс, повышение её не раздражает — и в этом
     // весь смысл разрыва: он даёт расти цене, не платя оттоком сразу.
@@ -664,7 +694,7 @@ export function step(prevState, input = {}) {
     // Реклама раздражает тем сильнее, чем меньше её терпит сегмент.
     // Адаптивная реклама перераспределяет нагрузку и снимает часть раздражения.
     const adRelief = 1 - 0.45 * adSpread * quality;
-    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
+    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.35, 1);
 
     // Премьера тянет к себе именно свой сегмент — и тем точнее, чем прицельнее
     // она снята. Проект «под киноманов» соберёт их и оставит равнодушными всех
@@ -736,7 +766,23 @@ export function step(prevState, input = {}) {
     const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
     const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
-    const converted = trials * CONFIG.trialConversion * trialFactor;
+    let converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
+    // на смесь listPrice, и премиальная доля новичков (1 − adShare, не меньше
+    // 28%) платила задранный прайс, никак не отвечая спросом: оптимум цены
+    // лежал на упоре ползунка (999), «ровная» опора выигрывала от него +102%.
+    // Теперь новичок, выбирающий тариф без рекламы, оценивает его по
+    // собственной цене: часть отпугнутых спускается на тариф с рекламой
+    // (настолько, насколько сегмент её терпит), остальные не подписываются.
+    const premiumTake = clamp(
+      Math.pow(refPrice / Math.max(30, decisions.priceNew),
+        def.elasticity * CONFIG.premiumChoiceElasticity), 0.10, 1);
+    const premiumRaw = converted * (1 - adShare);
+    const premiumNew = premiumRaw * premiumTake;
+    const downgraded = (premiumRaw - premiumNew) * clamp(0.5 * def.adTolerance, 0, 0.9);
+    const adsNew = converted * adShare + downgraded;
+    converted = premiumNew + adsNew;
 
     // Конкурент забирает вторую половину той же поляны
     const rivalConverted = riv.alive
@@ -809,7 +855,7 @@ export function step(prevState, input = {}) {
     // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
     // месяцев, но цена фиксируется и повышения их не касаются.
     const annualPortion = annualShare(decisions.annualDiscount, def);
-    const annualTakers = converted * (1 - adShare) * annualPortion;
+    const annualTakers = premiumNew * annualPortion;
     if (annualTakers > 0) {
       const annualPrice = decisions.priceNew * (1 - decisions.annualDiscount);
       annualCash += addAnnualCohort(pricing, annualTakers, annualPrice);
@@ -832,7 +878,7 @@ export function step(prevState, input = {}) {
     // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
     // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
     // закрывается сам — но медленно, за время оборота базы.
-    const monthlyNew = Math.max(0, converted * (1 - adShare) - annualTakers);
+    const monthlyNew = Math.max(0, premiumNew - annualTakers);
     const monthlyStaying = Math.max(0, survivorsBeforeSwitch + flow - lockedIn) * (1 - survivorAdShareGuess);
     const monthlyTotal = monthlyStaying + monthlyNew;
     if (monthlyTotal > 0 && monthlyNew > 0) {
@@ -846,8 +892,8 @@ export function step(prevState, input = {}) {
     const lockedNow = annualSubs(pricing);
     const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
-    seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+    seg.ads = Math.max(0, movable * survivorAdShare + adsNew);
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + premiumNew);
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
