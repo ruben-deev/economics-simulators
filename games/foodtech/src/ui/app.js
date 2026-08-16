@@ -752,7 +752,9 @@ function renderCityMap() {
     const spots = [[-0.55, 0.45], [0.45, 0.5], [-0.7, -0.32], [0.6, -0.38], [0, 0.62],
       [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06],
       [-0.12, -0.86], [0.62, 0.72], [-0.62, 0.74]];
-    return spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
+    return `<title>${t('mapTipHouses', {
+      n: num(Math.round(state.districts[p.d.id]?.restaurants ?? 0)) })}</title>`
+      + spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
       y="${(p.y + ay * k - 4).toFixed(1)}" width="${i % 3 === 0 ? 12 : 9}" height="8"
       rx="1.5" class="m-block"></rect>`).join('');
   };
@@ -803,6 +805,7 @@ function renderCityMap() {
     const x1 = p.x - len / 2;
     const late = p.time > CONFIG.refDeliveryTime;
     return `<g class="m-leg${late ? ' late' : ''}">
+      <title>${t('mapTipLeg', { km: p.d.distanceKm, time: num(p.time) })}</title>
       <rect x="${x1 - 4}" y="${y - 4}" width="8" height="8" rx="1.5"></rect>
       <line x1="${x1 + 5}" y1="${y}" x2="${x1 + len - 4}" y2="${y}"></line>
       <circle cx="${x1 + len}" cy="${y}" r="2.6"></circle>
@@ -867,6 +870,19 @@ function renderCityMap() {
   const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14,
     edge.bottom + 12);
 
+  // Подсказка на элементе: легенда свёрнута под кат, и наводка мышью должна
+  // отвечать на «что это?» без её раскрытия
+  const tip = (p) => (p.live
+    ? t('mapTipLive', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        customers: compact(p.customers), share: pct(shareOf(p), 0),
+        ceiling: pct(ceilingOf(p.d), 0), cm: amount(p.cm), time: num(p.time),
+      })
+    : t('mapTipIdle', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        ceiling: pct(ceilingOf(p.d), 0), cost: money(p.d.launchCost), km: p.d.distanceKm,
+      }));
+
   const quarter = (p) => {
     const planned = !p.live && chosen.has(p.d.id);
     const closing = p.live && !chosen.has(p.d.id);
@@ -896,14 +912,20 @@ function renderCityMap() {
     return `<g class="m-hit" data-id="${p.d.id}">
       ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
         y2="${p.ly - 10}" class="m-leader"></line>` : ''}
+      <title>${tip(p)}</title>
       <clipPath id="${clipId}"><polygon points="${shape}"></polygon></clipPath>
       <g clip-path="url(#${clipId})">
         <polygon points="${shape}" class="m-quarter-bg"></polygon>
         ${p.live ? `<rect x="${(p.x - k * 1.1).toFixed(1)}" y="${level.toFixed(1)}"
           width="${(k * 2.2).toFixed(1)}" height="${(bottom - level).toFixed(1)}"
-          class="m-share ${cls}"></rect>` : ''}
+          class="m-share ${cls}"><title>${t('mapTipShare', {
+            customers: compact(p.customers), share: pct(shareOf(p), 0) })}</title></rect>` : ''}
         <line x1="${(p.x - k * 1.1).toFixed(1)}" y1="${ceiling.toFixed(1)}"
-          x2="${(p.x + k * 1.1).toFixed(1)}" y2="${ceiling.toFixed(1)}" class="m-ceiling"></line>
+          x2="${(p.x + k * 1.1).toFixed(1)}" y2="${ceiling.toFixed(1)}" class="m-ceiling">
+          <title>${t('mapTipCeiling', {
+            reach: compact(p.d.potential * ceilingOf(p.d)), share: pct(ceilingOf(p.d), 0),
+            potential: compact(p.d.potential) })}</title>
+        </line>
       </g>
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) + legLine(p) : ''}
