@@ -1624,3 +1624,47 @@ export function finalScore(state) {
 }
 
 export { STANCES, rivalSubs };
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Рекламная полка простояла закрытой. Цена: на опорах рекламный тариф
+  // добавляет 0.3–0.5 млрд и открывает дешёвый вход чувствительным к цене.
+  const noAdMonths = hist.filter((r) => (r.adSubs ?? 0) < 0.02 * Math.max(1, r.subs)).length;
+  if (noAdMonths > hist.length * 0.8) out.push({ id: 'noAdTier', n: noAdMonths });
+
+  // Закупка каталога стояла на нуле. Цена: лицензионная опора с закупкой
+  // 300 млн/мес — 14.1 млрд; она же с закупкой 0 — 0.4 млрд: полка тает,
+  // отток съедает базу быстрее, чем экономия копится.
+  const noBuyMonths = hist.filter((r) => (r.decisions?.licensing ?? 0) === 0).length;
+  if (noBuyMonths >= 6) out.push({ id: 'licenseStall', n: noBuyMonths });
+
+  // Премиум держался дорогим больше полупартии. Цена: на опоре 399₽
+  // обгоняет 449₽ на 0.7 млрд — эластичность режет приток раньше,
+  // чем дорастает ARPU.
+  const pricyMonths = hist.filter((r) => (r.decisions?.priceNew ?? 0) >= 449).length;
+  if (pricyMonths > hist.length / 2) out.push({ id: 'pricyPremium', n: pricyMonths });
+
+  // Рекламная загрузка летом выше зимней — против сезона CPM
+  // (лето ×0.75, зима ×1.25: та же минута летом приносит на 40% меньше).
+  const meanLoad = (season) => {
+    const rows = hist.filter((r) => r.season === season && (r.adSubs ?? 0) > 0);
+    return rows.length
+      ? rows.reduce((a, r) => a + (r.decisions?.adLoad ?? 0), 0) / rows.length : null;
+  };
+  const summer = meanLoad('summer');
+  const winter = meanLoad('winter');
+  if (summer != null && winter != null && summer > winter + 0.5) {
+    out.push({ id: 'summerAds' });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}

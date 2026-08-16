@@ -1293,3 +1293,38 @@ export function endlessScore(state) {
     raisedInAct: 0,
   };
 }
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи; цены — из замеров аудита 2026-08 и телеметрии самой партии.
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Вертикали подняты, а Плюса нет: подписка и партнёрства — клей
+  // экосистемы. Цена: экосистемная опора с Плюсом 8.7 млрд, без — 6.7.
+  const taxiEver = hist.some((r) => r.taxiOn);
+  const plusEver = hist.some((r) => r.plusOn);
+  if (taxiEver && !plusEver && hist.length >= 30) out.push({ id: 'noPlus' });
+
+  // Расфокус: вертикали открывались быстрее, чем рос менеджмент, и штраф
+  // качества держался месяцами. Цена — собственный средний штраф партии.
+  const focusRows = hist.filter((r) => (r.focusPenalty ?? 0) >= 0.1);
+  if (focusRows.length >= 6) {
+    const avg = focusRows.reduce((a, r) => a + r.focusPenalty, 0) / focusRows.length;
+    out.push({ id: 'unfocused', n: focusRows.length, pct: Math.round(avg * 100) });
+  }
+
+  // Касса жила ниже месяца расходов при убыточной операционке: любой шок
+  // в такой момент — продажа за долги (28% оценки минус долг). Порог 5:
+  // опоры с подушкой 200 млн задевают 1–3 таких месяца между раундами.
+  const thinMonths = hist.filter((r) => r.profit < 0
+    && r.cash < (r.revenue - r.profit)).length;
+  if (thinMonths >= 5) out.push({ id: 'thinCash', n: thinMonths });
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}

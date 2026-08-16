@@ -1179,3 +1179,40 @@ export function finalScore(state) {
 }
 
 export { STANCES, rivalOrgTotal, platformFit, feeFactor, hitById, eventById, crisisById };
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи; цены — из телеметрии самой партии и замеров аудита 2026-08.
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+  const sum = (fn) => hist.reduce((a, r) => a + (fn(r) ?? 0), 0);
+
+  // Авансы организаторам списывались чаще, чем возвращались: ставки на
+  // хиты без запаса. Цена — собственные списания партии.
+  const writtenOff = sum((r) => r.advanceWrittenOff);
+  const recouped = sum((r) => r.advanceRecouped);
+  if (writtenOff >= 30e6 && writtenOff > 0.35 * (writtenOff + recouped)) {
+    out.push({ id: 'advances', lost: writtenOff, back: recouped });
+  }
+
+  // Боты держали заметную долю продаж, а антибот-фильтр стоял на нуле:
+  // доверие зрителей — это спрос следующих месяцев. Порог 18%: фоновая
+  // доля ботов на опорах не поднимается выше 15% — правило ловит
+  // запущенное нашествие, а не обычный шум.
+  const botMonths = hist.filter((r) => (r.botShare ?? 0) >= 0.18
+    && (r.decisions?.antiBot ?? 0) === 0).length;
+  if (botMonths >= 3) out.push({ id: 'bots', n: botMonths });
+
+  // Касса жила ниже месяца расходов при убыточной операционке: любой шок
+  // в такой момент — продажа за долги (28% оценки минус долг).
+  const thinMonths = hist.filter((r) => r.profit < 0
+    && r.cash < (r.revenue - r.profit)).length;
+  if (thinMonths >= 3) out.push({ id: 'thinCash', n: thinMonths });
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}

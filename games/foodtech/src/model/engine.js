@@ -1142,3 +1142,46 @@ export function finalScore(state) {
     sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
 }
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Шторм без ответа: ни надбавки курьерам, ни прогнозного автонайма.
+  // Цена: реакция на погоду даёт опоре до +87% к итогу; с прогнозным
+  // автонаймом надбавка не нужна — обе механики закрывают один провал.
+  // Первые 12 недель — льготные: прогнозный автонайм открывается качеством
+  // к 9–13 неделе, и ранние шторма — не системный промах, а часть пути.
+  const severe = hist.filter((r) => r.week > 12 && (r.weatherSeverity ?? 0) >= 0.7);
+  const stormsIgnored = severe.filter((r) => !(r.decisions?.weatherBonus > 0)
+    && !r.algoActive?.forecast).length;
+  if (stormsIgnored >= 3 && stormsIgnored > severe.length / 2) {
+    out.push({ id: 'storms', n: stormsIgnored });
+  }
+
+  // Алгоритмы простаивали. Цена: доведённая стратегия с включёнными
+  // алгоритмами — 4.4 млрд против 1.3 у ручной опоры.
+  const lateWeeks = hist.filter((r) => r.week > 12);
+  const idleWeeks = lateWeeks.filter((r) => Object.values(r.algoActive ?? {})
+    .filter(Boolean).length <= 1).length;
+  if (lateWeeks.length >= 8 && idleWeeks > lateWeeks.length / 2) {
+    out.push({ id: 'algosIdle', n: idleWeeks });
+  }
+
+  // Ворота экспансии открыты, а второго города так и не случилось.
+  // Цена: опора с алгоритмами 4.4 млрд, она же со Старгородом — 6.4.
+  const firstOpen = hist.find((r) => r.expansionOpen);
+  const entered = Object.keys(state.cityEntered ?? {}).some((c) => c !== 'novograd');
+  if (firstOpen && !entered && state.week - firstOpen.week >= 10) {
+    out.push({ id: 'noExpansion', w: firstOpen.week });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', w: state.week });
+
+  return out.slice(0, 4);
+}
