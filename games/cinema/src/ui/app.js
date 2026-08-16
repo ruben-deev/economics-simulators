@@ -21,6 +21,7 @@ import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js
 import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
+import { watchSliders } from '../../../../shared/sliders.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import {
   conglomerateUnlocked, TWIN_CITY_SEEDS, returnTarget, novogradBest,
@@ -903,11 +904,13 @@ function jointHtml() {
 
   return `<div class="slate-section joint">
     <div class="slate-label">${t('jointTitle')}</div>
-    <div class="funding-note">${t('jointWhat', {
-      share: pct(C.yourShare, 0), months: C.months, lift: pct(C.marketLift, 0),
-      window: C.liftMonths,
-    })}</div>
-    <div class="funding-note">${t('jointCost')}</div>
+    <details class="more"${state_ ? '' : ' open'}><summary>${t('moreHow')}</summary>
+      <div class="funding-note">${t('jointWhat', {
+        share: pct(C.yourShare, 0), months: C.months, lift: pct(C.marketLift, 0),
+        window: C.liftMonths,
+      })}</div>
+      <div class="funding-note">${t('jointCost')}</div>
+    </details>
     <div class="commission-foot">
       <span>${state_ ?? t('jointPrice', { price: money(price), months: C.months })}</span>
       ${state_ ? '' : `<button class="btn primary" id="btn-joint"
@@ -2469,6 +2472,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);

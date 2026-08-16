@@ -27,6 +27,7 @@ import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
+import { watchSliders } from '../../../../shared/sliders.js';
 import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
@@ -1101,11 +1102,15 @@ function renderChannels() {
 
   el('channel-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('channelPanel')}</h2>
-    <div class="funding-note" style="margin-bottom:8px">${t('channelCaption')}</div>
+    <details class="more" style="margin:0 0 8px"><summary>${t('moreHow')}</summary>
+      <div class="funding-note">${t('channelCaption')}</div>
+    </details>
     ${level <= 0.02 ? `<div class="alert warn">${t('channelNoPlatform')}
       <a class="jump" data-jump="lever:platformDev">${t('jumpGo')}</a></div>` : ''}
     <div class="org-cards">${cards}</div>
-    <div class="funding-note" style="margin-top:8px">${t('channelColMoneyNote')}</div>
+    <details class="more" style="margin-top:8px"><summary>${t('moreMoney')}</summary>
+      <div class="funding-note">${t('channelColMoneyNote')}</div>
+    </details>
     <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}
       · ${wantedOrgs > 0 ? t('channelOnboardSplit', {
         types: ORGANIZERS.filter((def) => d.platformFor?.[def.id]).length,
@@ -2080,6 +2085,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);

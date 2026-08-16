@@ -32,6 +32,7 @@ export default {
     'src/model/engine.js',
     '../../shared/format.js',
     '../../shared/tables.js',
+  '../../shared/sliders.js',
     '../../shared/charts.js',
     'src/ui/app.js',
   ],

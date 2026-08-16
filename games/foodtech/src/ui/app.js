@@ -18,6 +18,7 @@ import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js
 import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
+import { watchSliders } from '../../../../shared/sliders.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import {
   conglomerateUnlocked, TWIN_CITY_SEEDS, returnTarget, novogradBest,
@@ -2320,6 +2321,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);

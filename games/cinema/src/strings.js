@@ -135,6 +135,7 @@ export const STRINGS = {
   slateNoCash: { ru: 'Не хватает кассы', en: 'Not enough cash' },
   slatePrice: { ru: 'Стоимость {price}, платится равными долями {months} месяцев', en: 'Costs {price}, paid in equal instalments over {months} months' },
   jointTitle: { ru: 'Совместный мегахит с конкурентом', en: 'A joint mega-hit with your rival' },
+  moreHow: { ru: 'Как это устроено', en: 'How it works' },
   jointWhat: {
     ru: 'Снять вскладчину: вы платите {share} бюджета и {months} месяцев держите слот. Часы получаете и вы, и он — предпочтение зрителя не сдвинется. Сдвинется другое: сам рынок вырастет примерно на {lift} и продержится так около {window} месяцев.',
     en: 'Shoot it together: you pay {share} of the budget and hold a slot for {months} months. Both of you get the hours — the viewer’s preference does not move. Something else does: the market itself grows by about {lift} and stays there for roughly {window} months.',
