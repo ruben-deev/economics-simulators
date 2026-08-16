@@ -5940,16 +5940,30 @@ function renderAlgos() {
 // потому двигается вместе с игрой: наняли курьеров — круг раздался, зажали
 // ставку и открыли дальний район — сжался.
 // ----------------------------------------------------------------------------
+// Какой город показан на карте. Живёт в модуле, а не в сохранении: это
+// настройка взгляда, а не решение игрока.
+let mapCity = null;
+
 function renderCityMap() {
   const box = el('map-slot');
   if (!box) return;
   const r = last();
   const narrow = (box.clientWidth || window.innerWidth) < 620;
   const entered = state.cityEntered ?? { novograd: true };
-  const city = CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
-    ?? CITIES.find((c) => entered[c.id]) ?? CITIES[0];
+  // Карта показывает один город за раз. Пока город один — выбирать нечего;
+  // после входа во второй появляются вкладки, иначе половина бизнеса живёт
+  // без карты: раньше выбор молча падал на первый город с работающим
+  // районом, то есть всегда на домашний.
+  const open = CITIES.filter((c) => entered[c.id]);
+  const city = open.find((c) => c.id === mapCity)
+    ?? CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
+    ?? open[0] ?? CITIES[0];
   const defs = DISTRICTS.filter((d) => d.city === city.id);
   const byId = Object.fromEntries((r?.districts ?? []).map((d) => [d.id, d]));
+
+  // Имя района на карте без города: заголовок карты и так называет город,
+  // а «Старгород · Центр» в квартале налезает на числа соседей
+  const shortName = (d) => tx(d.name).split(' · ').pop();
 
   const rows = defs.map((d) => {
     const ds = state.districts[d.id] ?? {};
@@ -6167,7 +6181,7 @@ function renderCityMap() {
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) + legLine(p) : ''}
       <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
-        text-anchor="middle" class="m-name">${tx(p.d.name)}</text>
+        text-anchor="middle" class="m-name">${shortName(p.d)}</text>
       ${label}
     </g>`;
   };
@@ -6178,7 +6192,7 @@ function renderCityMap() {
 
   // Список под картой нужен узкому экрану: на телефоне подписи внутри
   // кварталов мельчают, а числа терять нельзя
-  const list = placed.map((p) => `<li data-id="${p.d.id}"><b>${tx(p.d.name)}</b> · ${
+  const list = placed.map((p) => `<li data-id="${p.d.id}"><b>${shortName(p.d)}</b> · ${
     p.d.distanceKm} ${t('mapKmShort')} · ${
     p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
       : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')} · ${
@@ -6188,8 +6202,18 @@ function renderCityMap() {
           : `${t('mapOpenFor', { cost: money(p.d.launchCost) })} · ${
             t('mapIdleMeta', { potential: compact(p.d.potential), km: p.d.distanceKm })}`)}</li>`).join('');
 
+  // Вкладка города показывает не только имя: сколько районов работает — это
+  // ровно тот вопрос, ради которого на вторую карту и переключаются
+  const tabs = open.length > 1 ? `<div class="tabs">${open.map((c) => {
+    const live = DISTRICTS.filter((d) => d.city === c.id && state.districts[d.id]?.active).length;
+    const all = DISTRICTS.filter((d) => d.city === c.id).length;
+    return `<button type="button" class="tab${c.id === city.id ? ' on' : ''}" data-map-city="${c.id}">${
+      tx(c.name)} · ${live}/${all}</button>`;
+  }).join('')}</div>` : '';
+
   box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
     <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
+    ${tabs}
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
       <path d="${edge.d}" class="m-border"></path>
       ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
@@ -6212,6 +6236,9 @@ function renderCityMap() {
   // прямо на квартал, как и на карточку в левой колонке.
   box.querySelectorAll('[data-id]').forEach((node) => {
     node.addEventListener('click', () => toggleDistrict(node.dataset.id));
+  });
+  box.querySelectorAll('[data-map-city]').forEach((node) => {
+    node.addEventListener('click', () => { mapCity = node.dataset.mapCity; renderCityMap(); });
   });
 }
 
