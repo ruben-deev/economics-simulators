@@ -240,6 +240,9 @@ export function step(prevState, input = {}) {
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
   applyEvent(mods, event, choice);
   if (mods.commissionOverrideDelta) state.flags.commissionDelta += mods.commissionOverrideDelta;
+  if (mods.chainDeal) state.flags.chainOn = true;
+  // Фанаты сети заказывают у неё и после недели новости — пока сеть на борту
+  if (state.flags.chainOn) mods.demandMult *= 1 + CONFIG.chain.fans;
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
@@ -487,7 +490,18 @@ export function step(prevState, input = {}) {
   const fillRate = effDemandTotal > 0 ? orders / effDemandTotal : (capacity > 0 ? 1 : 0);
 
   // --- 5. P&L недели ---
-  const commissionRevenue = gmv * commissionForRevenue;
+  // Сделка с сетью: её заказы идут по льготной ставке. Доля заказов сети —
+  // её рестораны с весом популярности против остальной витрины.
+  let chainDiscount = 0;
+  if (state.flags.chainOn) {
+    const totalRests = activeDefs.reduce(
+      (sum, d) => sum + state.districts[d.id].restaurants, 0);
+    const chainShare = totalRests > 0
+      ? Math.min(0.45, CONFIG.chain.popularity * 40 / totalRests) : 0;
+    chainDiscount = gmv * chainShare
+      * Math.max(0, commissionForRevenue - CONFIG.chain.rate);
+  }
+  const commissionRevenue = gmv * commissionForRevenue - chainDiscount;
   const feeRevenue = orders * decisions.deliveryFee * surgeFeeMult;
   const netRevenue = commissionRevenue + feeRevenue;
 
@@ -874,6 +888,8 @@ export function step(prevState, input = {}) {
     forecastDemand,
     commissionForRevenue,
     commissionPerceived,
+    chainDiscount,
+    chainOn: Boolean(state.flags.chainOn),
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),

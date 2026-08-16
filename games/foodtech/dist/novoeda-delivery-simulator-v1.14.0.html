@@ -2806,6 +2806,17 @@ const CONFIG = {
   // Больше — но не бесконечно: иначе прицеливание делает скидку бесплатной.
   targetingLeverage: 2.0,
 
+  // Сделка с крупной сетью (событие big_chain): сеть подключается на своей
+  // льготной ставке, и скидка касается ТОЛЬКО её заказов. Прежняя реализация
+  // резала комиссию всему городу навсегда (−0.8 п.п. ≈ 12–22% итога) и
+  // расходилась с собственным текстом события «льготная комиссия 10%» —
+  // согласие не выигрывало никогда (0/72).
+  chain: {
+    rate: 0.10,        // ставка сети — столько она платит со своих заказов
+    popularity: 2.0,   // заказов на ресторан сети больше, чем на средний
+    fans: 0.04,        // фанаты сети: постоянная прибавка спроса, пока сеть на борту
+  },
+
   maxMarketShare: 0.90,       // потолок доли: часть города к нам не придёт никогда
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
   // Конкурент рядом, и его цена за нашей не идёт. Пока мы стоим как рынок,
@@ -3663,6 +3674,7 @@ function neutralModifiers() {
     // дёшево то, что большой не по карману, и наоборот.
     oneOffCostPerCourier: 0,
     oneOffCostPerCustomer: 0,
+    chainDeal: false,       // крупная сеть подключается на своей льготной ставке
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -3794,12 +3806,21 @@ const EVENTS = [
     },
     options: [
       {
+        // Переделано аудитом 2026-08. Раньше уступка резала комиссию всему
+        // городу навсегда (−0.8 п.п.), что противоречило собственному тексту
+        // события и стоило 12–22% итога — согласие не выигрывало никогда
+        // (0/72), и никакая выгода в рамках словаря эффектов это не
+        // компенсировала (проверены узнаваемость и вечный спрос до +12%).
+        // Теперь скидка касается только заказов самой сети: популярные
+        // рестораны оттягивают на себя долю заказов, и с этой доли платформа
+        // получает 10% вместо своей ставки. Дорого, когда сеть — большая
+        // часть вашей витрины; терпимо, когда ресторанов и так сотни.
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
-          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
+          ru: '+40 популярных ресторанов сразу и их постоянные клиенты. Но со своих заказов сеть платит 10% вместо вашей ставки — и чем заметнее она в витрине, тем больше оборота уходит по льготной цене.',
+          en: '+40 popular restaurants at once, and their regulars with them. But the chain pays 10% on its own orders instead of your rate — and the more it dominates your listings, the more volume moves at the discounted price.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, chainDeal: true, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },
@@ -4160,6 +4181,9 @@ function step(prevState, input = {}) {
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
   applyEvent(mods, event, choice);
   if (mods.commissionOverrideDelta) state.flags.commissionDelta += mods.commissionOverrideDelta;
+  if (mods.chainDeal) state.flags.chainOn = true;
+  // Фанаты сети заказывают у неё и после недели новости — пока сеть на борту
+  if (state.flags.chainOn) mods.demandMult *= 1 + CONFIG.chain.fans;
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
@@ -4407,7 +4431,18 @@ function step(prevState, input = {}) {
   const fillRate = effDemandTotal > 0 ? orders / effDemandTotal : (capacity > 0 ? 1 : 0);
 
   // --- 5. P&L недели ---
-  const commissionRevenue = gmv * commissionForRevenue;
+  // Сделка с сетью: её заказы идут по льготной ставке. Доля заказов сети —
+  // её рестораны с весом популярности против остальной витрины.
+  let chainDiscount = 0;
+  if (state.flags.chainOn) {
+    const totalRests = activeDefs.reduce(
+      (sum, d) => sum + state.districts[d.id].restaurants, 0);
+    const chainShare = totalRests > 0
+      ? Math.min(0.45, CONFIG.chain.popularity * 40 / totalRests) : 0;
+    chainDiscount = gmv * chainShare
+      * Math.max(0, commissionForRevenue - CONFIG.chain.rate);
+  }
+  const commissionRevenue = gmv * commissionForRevenue - chainDiscount;
   const feeRevenue = orders * decisions.deliveryFee * surgeFeeMult;
   const netRevenue = commissionRevenue + feeRevenue;
 
@@ -4794,6 +4829,8 @@ function step(prevState, input = {}) {
     forecastDemand,
     commissionForRevenue,
     commissionPerceived,
+    chainDiscount,
+    chainOn: Boolean(state.flags.chainOn),
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),

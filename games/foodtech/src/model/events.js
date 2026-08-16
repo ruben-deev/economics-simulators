@@ -28,6 +28,7 @@ export function neutralModifiers() {
     // дёшево то, что большой не по карману, и наоборот.
     oneOffCostPerCourier: 0,
     oneOffCostPerCustomer: 0,
+    chainDeal: false,       // крупная сеть подключается на своей льготной ставке
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -159,12 +160,21 @@ export const EVENTS = [
     },
     options: [
       {
+        // Переделано аудитом 2026-08. Раньше уступка резала комиссию всему
+        // городу навсегда (−0.8 п.п.), что противоречило собственному тексту
+        // события и стоило 12–22% итога — согласие не выигрывало никогда
+        // (0/72), и никакая выгода в рамках словаря эффектов это не
+        // компенсировала (проверены узнаваемость и вечный спрос до +12%).
+        // Теперь скидка касается только заказов самой сети: популярные
+        // рестораны оттягивают на себя долю заказов, и с этой доли платформа
+        // получает 10% вместо своей ставки. Дорого, когда сеть — большая
+        // часть вашей витрины; терпимо, когда ресторанов и так сотни.
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
-          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
+          ru: '+40 популярных ресторанов сразу и их постоянные клиенты. Но со своих заказов сеть платит 10% вместо вашей ставки — и чем заметнее она в витрине, тем больше оборота уходит по льготной цене.',
+          en: '+40 popular restaurants at once, and their regulars with them. But the chain pays 10% on its own orders instead of your rate — and the more it dominates your listings, the more volume moves at the discounted price.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, chainDeal: true, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },

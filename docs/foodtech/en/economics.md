@@ -443,15 +443,19 @@ first thing to check whenever "we will grow into profitability" comes up.
 ### Event decisions are priced by your size
 
 Some weekly events demand a choice, and the expensive options are priced per head:
-paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽350 ×
+paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽200 ×
 your customer base, insurance ₽3,000 × headcount (and the fine for waiting out the
 law, ₽8,000 × the fleet you have on the day it lands). A hundred couriers make the
 strike payment a quarter of a million; fifteen hundred make it nearly four. So events
 have no memorised right answer: measured across three company sizes, the profitable
 option shifts with the state. Generosity is cheap for the small and dear for the
-large; the big chain's discounted commission cuts the other way — a bargain for a
-small city with a hundred restaurants, ruinous for a large one where the discount
-smears across the whole turnover.
+large; the big chain's discounted commission follows the same logic in a different
+currency — your listings: the chain pays 10% only on its own orders, and its share
+of your volume is larger the fewer other restaurants you have. A big marketplace
+barely notices the discount; in a small one the chain is a third of the shopfront
+(measured in the 2026-08 audit: accepting wins 23/72 — previously 0/72, because the
+discount used to cut the citywide commission forever, costing 12–22% of the final
+score).
 
 ---
 
