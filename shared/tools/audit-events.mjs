@@ -26,6 +26,13 @@ const GAMES = [
       'одна вертикаль': (C, cfg) => () => ({ ...cfg.DEFAULT_DECISIONS, verticals: [], foodTake: 1.06, foodOps: 5e6, foodMarketing: 3e6, finance: 3e6 }),
       экосистема: (C, cfg) => (s) => ({ ...cfg.DEFAULT_DECISIONS, verticals: ['taxi', ...(s.month + 1 >= 12 ? ['ecom'] : []), ...(s.taxi.on && s.month + 1 >= 8 ? ['plus'] : [])], foodOps: 4e6, foodMarketing: 2e6, crossSell: 5e6, mgmt: 8e6, taxiSupply: 9e6, taxiMarketing: 14e6, ecomOps: 2e6, ecomMarketing: 6e6, ecomLogistics: 3e6, finance: 3e6 }),
     },
+    // Контекстные ворота событий. Форсировать «перемирие» без войны или штраф
+    // на пустой парк — то же самое, что форсировать событие раньше срока:
+    // вердикт выносится о состоянии, которого в игре не бывает.
+    gateOk: (ev, s, cfg) => (!ev.needsTaxi || s.taxi.on)
+      && (!ev.needsWar || (s.taxi.on && s.taxi.warUntil > s.month + 1))
+      && (!ev.needsGlue || s.plus.on
+        || (s.ecom.on && (cfg.assetById(s.assetId).perks ?? []).includes('courier-logistics'))),
     cushion: 200e6, minTurn: (C) => C.minMonthForFunding, turnOf: (s) => s.month },
 ];
 const SEEDS = Array.from({ length: 12 }, (_, i) => `дом-${i + 1}`);
@@ -49,28 +56,39 @@ for (const g of GAMES) {
       const ats = g.forceAt.filter((x) => x >= gate);
       if (!ats.length) continue;
       for (const at of ats) {
+        // Прогон возвращает и счёт, и флаг «событие реально применилось»:
+        // если контекстные ворота (needsTaxi/needsWar/needsGlue) в этот ход
+        // не выполнены, у этой пары прогонов вердикта нет.
         const play = (choice) => SEEDS.map((seed) => {
           let s = eng.createInitialState(seed);
+          let applied = false;
           for (let i = 0; i < g.turns(C) && !s.over; i++) {
             if (g.turnOf(s) >= g.minTurn(C) && s.cash < g.cushion) s = eng.raise(s, C.fundingOptions[1]).state;
-            const forced = g.turnOf(s) + 1 === at;
+            const forced = g.turnOf(s) + 1 === at && (!g.gateOk || g.gateOk(ev, s, cfg));
+            if (forced) applied = true;
             const st = forced ? { ...s, pendingEvent: ev } : s;
             s = eng.step(st, { decisions: policy(s), eventChoice: forced ? choice : 0 }).state;
           }
           const f = eng.finalScore(s);
-          return f.bankrupt ? 0 : f.equityValue;
+          return { score: f.bankrupt ? 0 : f.equityValue, applied };
         });
         const a = play(0); const b = play(1);
-        const winsA = a.filter((v, i) => v > b[i]).length;
-        rows.push({ pname, at, winsA, n: a.length, medA: q(a, 0.5), medB: q(b, 0.5) });
+        // До форсированного хода обе ветки идут одинаково, поэтому applied
+        // у пары совпадает — фильтруем пары, где событие не смогло случиться
+        const pairs = a.map((x, i) => [x, b[i]]).filter(([x, y]) => x.applied && y.applied);
+        if (!pairs.length) continue;
+        const winsA = pairs.filter(([x, y]) => x.score > y.score).length;
+        rows.push({ pname, at, winsA, n: pairs.length,
+          medA: q(pairs.map(([x]) => x.score), 0.5), medB: q(pairs.map(([, y]) => y.score), 0.5) });
       }
     }
-    if (!rows.length) { console.log(`${ev.id.padEnd(18)} пропущено: срок события позже всех точек замера`); continue; }
+    if (!rows.length) { console.log(`${ev.id.padEnd(18)} пропущено: срок или контекст события недостижимы в точках замера`); continue; }
     const total = rows.reduce((s, r) => s + r.n, 0);
     const winsA = rows.reduce((s, r) => s + r.winsA, 0);
     const share = winsA / total;
     const verdict = share > 0.8 ? 'ДОМИНИРУЕТ вариант 1' : share < 0.2 ? 'ДОМИНИРУЕТ вариант 2' : 'решение';
-    console.log(`${ev.id.padEnd(18)} вариант 1 выигрывает ${winsA}/${total} → ${verdict}`);
+    const detail = rows.map((r) => `${r.pname}@${r.at}:${r.winsA}/${r.n}`).join(' ');
+    console.log(`${ev.id.padEnd(18)} вариант 1 выигрывает ${winsA}/${total} → ${verdict}\n${''.padEnd(19)}${detail}`);
     if (share > 0.8 || share < 0.2) {
       found.push(`${g.name} · ${ev.id}: ${(share * 100).toFixed(0)}% побед у одного варианта`);
     }
