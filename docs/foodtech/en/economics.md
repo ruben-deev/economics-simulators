@@ -195,11 +195,14 @@ opposite. Now a permanent bonus is a permanent expense.
 **Habituation.** A bonus that is always on stops being an incentive: habit builds up over
 roughly eight to ten weeks and cuts the bonus's "freshness" to 20% of its power — in a real
 storm it no longer brings anyone extra onto the road. A switched-off bonus is forgotten at
-the same pace. Switching it on by forecast is both cheaper and more effective: on a
-re-optimised reference strategy, the policy "bonus only in heavy weather" measures +2%
-against the best constant, while playing it backwards — "bonus in clear weeks" — loses
-27%. The asymmetry is the lesson: the right timing earns a little, the wrong timing
-costs a lot.
+the same pace. Switching it on with the weather is both cheaper and more effective: on the
+reference strategy, the policy "bonus only in heavy weather" measures +87% against the
+best constant (a median of 2.36bn vs 1.26bn over 24 seeds), while playing it backwards —
+"bonus in clear weeks" — loses 28%. The right timing is rewarded generously and the wrong
+timing is punished. (An earlier measurement showed "+2%": its reaction policy keyed off
+NEXT week's forecast, while the bonus applies to the current — already announced — week.
+A reaction shifted by a week is indistinguishable from a random one, and that is what
+was being measured.)
 
 Economically it is an alternative to keeping spare couriers: permanent excess headcount
 costs money all 52 weeks, while the bonus only costs while it is switched on. With a thin

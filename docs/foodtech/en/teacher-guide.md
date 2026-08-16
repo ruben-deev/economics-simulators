@@ -132,8 +132,9 @@ How it goes:
 4. Discuss why "set the bonus to ₽80 and forget it" does not work. Two reasons, both visible
    in the game: the promise is paid for (35% of the bonus reaches the courier even in a clear
    week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
-   panel shows habit eating its effect over eight to ten weeks. A forecast-driven bonus is
-   both cheaper and stronger, and a mistimed one is ruinous: measured, playing it
+   panel shows habit eating its effect over eight to ten weeks. A weather-driven bonus is
+   both cheaper and stronger: measured, "bonus only in heavy weeks" earns +87% over the
+   best constant, and playing it
    backwards loses a quarter of the final score.
 
 The core idea: the weather forecast is public and every competitor sees it. The advantage
