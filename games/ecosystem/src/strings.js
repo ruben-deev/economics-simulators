@@ -452,8 +452,12 @@ export const STRINGS = {
     en: 'The downturn is over: demand is back to its usual level.',
   },
   newsAirport: {
-    ru: 'Аэропорт ваш: официальные стоянки дают постоянный поток дальних поездок.',
-    en: 'The airport is yours: official ranks feed a permanent stream of long rides.',
+    ru: 'Аэропорт ваш: год официальных стоянок и дальних поездок.',
+    en: 'The airport is yours: a year of official ranks and long rides.',
+  },
+  newsAirportEnd: {
+    ru: 'Контракт с аэропортом истёк: стоянки снова разыграют на тендере, частота поездок вернулась к обычной.',
+    en: 'The airport contract has expired: the ranks go back out to tender, and ride frequency is back to normal.',
   },
 
   // --- графики ---

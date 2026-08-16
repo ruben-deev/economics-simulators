@@ -3824,12 +3824,15 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos ($3.50 per customer)' },
+        // Цена опущена с 350 ₽ после аудита доминации: промо не брали никогда
+        // (4/48) — раздача не окупала ни спрос недели, ни ставку оценки.
+        // На 200 ₽ выбор живой: 20/48, и ответ зависит от размера базы.
+        label: { ru: 'Залить рынок промо (200 ₽ на клиента базы)', en: 'Flood the market with promos ($2 per customer)' },
         detail: {
           ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
           en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
         },
-        effects: { oneOffCostPerCustomer: 350, demandMult: 1.09, valuationBonus: 0.003 },
+        effects: { oneOffCostPerCustomer: 200, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },

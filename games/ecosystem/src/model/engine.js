@@ -378,7 +378,15 @@ export function step(prevState, input = {}) {
     state.story.crisisUntil = month + mods.crisisMonths - 1;
     state.story.crisisCut = Boolean(mods.crisisCut);
   }
-  if (mods.tripsPerUserAdd) state.story.tripsAdd = (state.story.tripsAdd ?? 0) + mods.tripsPerUserAdd;
+  // Контракт с аэропортом срочный: год выделенных стоянок, потом новый тендер.
+  // Вечная прибавка частоты была викториной (24/24 за «выиграть» при любой
+  // цене): тонкая маржа такси умножает любой вечный плюс частоты в десятки
+  // процентов итога, а поздний буст ещё и целиком попадает в окно роста
+  // оценки. Срок возвращает решению цену.
+  if (mods.tripsPerUserAdd) {
+    state.story.tripsAdd = (state.story.tripsAdd ?? 0) + mods.tripsPerUserAdd;
+    state.story.tripsUntil = month + CONFIG.airportContractMonths - 1;
+  }
   if (mods.crossCacMult !== 1) {
     state.story.crossCacMult = (state.story.crossCacMult ?? 1) * mods.crossCacMult;
   }
@@ -411,8 +419,13 @@ export function step(prevState, input = {}) {
   const crisisFoodDemand = crisisActive ? 0.93 : 1;
   const crisisTaxiDemand = crisisActive ? 0.88 : 1;
   const crisisEcomDemand = crisisActive ? 0.90 : 1;
-  const crisisFixedMult = crisisActive && state.story.crisisCut ? 0.75 : 1;
-  const crisisQualityMult = crisisActive && state.story.crisisCut ? 0.93 : 1;
+  // Срез экономит 35% фикса ценой 4% качества. Прежние 25%/7% делали выбор
+  // викториной: «держать сервис» побеждало в 94% состояний — экономия не
+  // окупала оттока никогда. На 35%/4% выбор живой (23/48) и зависит от
+  // месяца и структуры: ранний кризис выгоднее резать, поздний на одной
+  // вертикали — переждать.
+  const crisisFixedMult = crisisActive && state.story.crisisCut ? 0.65 : 1;
+  const crisisQualityMult = crisisActive && state.story.crisisCut ? 0.96 : 1;
 
   // --- 2. Запуски: вертикали и подписка ---
   const wanted = new Set(decisions.verticals ?? []);
@@ -555,7 +568,11 @@ export function step(prevState, input = {}) {
     taxiPool = Math.max(0, taxiDef.potential * (1 - lock) - state.taxi.users);
 
     fareEff = taxiDef.fare * priceIdx * (atWar ? 1 - taxiDef.warFareCut : 1);
-    const tripsPerUser = taxiDef.tripsPerUser + (state.story.tripsAdd ?? 0);
+    // Прибавка частоты живёт, пока действует контракт с аэропортом.
+    // В старых сохранениях срока нет — там прибавка остаётся вечной.
+    const tripsBoostOn = (state.story.tripsAdd ?? 0) > 0
+      && (state.story.tripsUntil == null || month <= state.story.tripsUntil);
+    const tripsPerUser = taxiDef.tripsPerUser + (tripsBoostOn ? state.story.tripsAdd : 0);
     const subsInTaxi = multiAtStart > 0 ? state.plus.subs * (state.both / multiAtStart) : 0;
     const plusTaxiBoost = state.taxi.users > 0
       ? 1 + CONFIG.plus.freqBoostTaxi * (subsInTaxi / Math.max(1, state.taxi.users)) : 1;
@@ -1004,7 +1021,13 @@ export function step(prevState, input = {}) {
     crisisActive,
     crisisMonthsLeft: crisisActive ? state.story.crisisUntil - month + 1 : 0,
     crisisCut: Boolean(crisisActive && state.story.crisisCut),
-    tripsAdd: state.story.tripsAdd ?? 0,
+    // Прибавка частоты показывается, только пока контракт действует;
+    // рядом — сколько месяцев ему осталось (null у бессрочных старых сейвов)
+    tripsAdd: ((state.story.tripsAdd ?? 0) > 0
+      && (state.story.tripsUntil == null || month <= state.story.tripsUntil))
+      ? state.story.tripsAdd : 0,
+    tripsMonthsLeft: (state.story.tripsAdd ?? 0) > 0 && state.story.tripsUntil != null
+      ? Math.max(0, state.story.tripsUntil - month + 1) : null,
     crossCacStoryMult: state.story.crossCacMult ?? 1,
     // --- совет ---
     goal: state.board.goal ? { ...state.board.goal } : null,

@@ -1331,6 +1331,7 @@ function buildNews(r) {
   if (r && r.crisisMonthsLeft > 0) news.push(['warn', t('newsCrisis', { months: r.crisisMonthsLeft })]);
   if (r && prev()?.crisisMonthsLeft > 0 && r.crisisMonthsLeft === 0) news.push(['good', t('newsCrisisOver')]);
   if (r && r.tripsAdd > 0 && prev() && !(prev().tripsAdd > 0)) news.push(['good', t('newsAirport')]);
+  if (r && !(r.tripsAdd > 0) && prev() && prev().tripsAdd > 0) news.push(['warn', t('newsAirportEnd')]);
 
   if (r) {
     const came = r.wonBack + r.organicFood + r.coldAcq + r.crossConv + r.crossBackConv;

@@ -40,7 +40,7 @@ export function neutralModifiers() {
     fedSoft: false,          // оборона выбрана: давление мягче
     crisisMonths: 0,         // экономический спад: месяцы слабого спроса
     crisisCut: false,        // расходы срезаны: дешевле, но исполнение страдает
-    tripsPerUserAdd: 0,      // постоянная прибавка частоты поездок (аэропорт)
+    tripsPerUserAdd: 0,      // прибавка частоты поездок на срок контракта (аэропорт)
     crossCacMult: 1,         // постоянный множитель цены кросс-селла (кобренд)
     crossReachMult: 1,       // постоянный множитель ёмкости кросс-селла (кобренд)
     // Антимонопольное дело: три исхода расходятся навсегда и в разных валютах
@@ -63,9 +63,15 @@ export function neutralModifiers() {
 // раундами выигрывают почти всегда: у такой политики деньги бесплатны, и
 // любой положительный NPV доминирует по построению. Контрольный замер с
 // дорогим капиталом (раунды только на грани смерти) даёт живой выбор:
-// оборона 75/25, аэропорт 67/33, утечка 40/60 — с зазорами в десятки
-// процентов. Это и есть смысл этих событий: капитальное решение зависит от
-// стоимости капитала, а не от таблички «правильных ответов».
+// оборона 75/25, утечка 40/60, аэропорт после перевода на срочный контракт —
+// ровно 15/30 со сменой знака по состояниям. Это и есть смысл этих событий:
+// капитальное решение зависит от стоимости капитала, а не от таблички
+// «правильных ответов». У аэропорта отдельная физика, знать про которую
+// полезно при любой правке такси: +5% частоты запускают маховик предложения
+// (загрузка выше -> водители реже простаивают -> парк растёт -> возят ещё
+// больше), и выгода почти не зависит от размера прибавки — при дешёвых
+// деньгах контракт, перекрывающий окно оценки, даёт +23..31% итога, а
+// контракт, истёкший задолго до финала, только +2..3% (его честная касса).
 export const EVENTS = [
   {
     id: 'fuel', weight: 6, minMonth: 3, needsTaxi: true,
@@ -168,6 +174,14 @@ export const EVENTS = [
     },
     // Отказ стоит первым намеренно: доля отдаётся навсегда, и вариант «ничего
     // не менять» не должен оказываться тем, что нажимают не глядя.
+    //
+    // К аудиту доминации: в агрегате отказ побеждает 61/72 (85%), но это
+    // контекстная зависимость, а не викторина. На одной вертикали отказ
+    // выигрывает 36/36 — и ровно этому событие учит (см. lesson: «на одной
+    // вертикали платить нечем»); на полной экосистеме выбор живой, 25/36.
+    // Агрегат пересекает планку 80% из-за того, что один из контекстов имеет
+    // известный ответ ЗАМЫСЛОМ — как у vanity_*, только ответ зависит от
+    // формы холдинга, и его надо увидеть, а не вспомнить.
     options: [
       {
         label: { ru: 'Остаться единственным основателем', en: 'Stay the sole founder' },
@@ -224,7 +238,7 @@ export const EVENTS = [
     title: { ru: '«Таксоград» предлагает перемирие', en: 'Taxograd offers a truce' },
     text: {
       ru: 'Хозяин рынка такси устал жечь деньги и предлагает разойтись: он прекращает демпинг, вы не трогаете его корпоративных клиентов и аэропорт.',
-      en: 'The incumbent is tired of burning money and offers a deal: they stop dumping, you stay away from their corporate accounts and the airport.',
+      en: 'The incumbent is tired of burning money and offers a deal: they stop the predatory fares, you stay away from their corporate accounts and the airport.',
     },
     lesson: {
       ru: 'Ценовые войны кончаются переговорами. Вопрос лишь, кто к этому моменту потерял больше — и что отдал за мир.',
@@ -298,12 +312,15 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить промо (420 ₽ на клиента такси)', en: 'Flood promos ($4.20 per taxi customer)' },
+        // Цена поднята с 420 ₽ после аудита доминации: на поздних месяцах
+        // ставка оценки на большой капитализации перевешивала любую цену
+        // промо, и «залить» побеждало 12/12. На 600 ₽ выбор живой: 10/24.
+        label: { ru: 'Залить промо (600 ₽ на клиента такси)', en: 'Flood promos ($6 per taxi customer)' },
         detail: {
           ru: 'Раздача по всей базе такси: маленькой базе почти бесплатно, большой — очень дорого.',
           en: 'A blast across the taxi base: nearly free when small, very dear when large.',
         },
-        effects: { oneOffCostPerTaxiUser: 420, taxiDemandMult: 1.12, valuationBonus: 0.004 },
+        effects: { oneOffCostPerTaxiUser: 600, taxiDemandMult: 1.12, valuationBonus: 0.004 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -411,19 +428,24 @@ export const EVENTS = [
     id: 'airport_tender', weight: 6, minMonth: 12, once: true, needsTaxi: true,
     title: { ru: 'Тендер на аэропорт', en: 'The airport tender' },
     text: {
-      ru: 'Аэропорт выбирает официального перевозчика на выделенных стоянках. Дорогой контракт — и постоянный поток дальних поездок.',
-      en: 'The airport is choosing an official operator for its dedicated ranks. A dear contract — and a permanent stream of long rides.',
+      ru: 'Аэропорт выбирает официального перевозчика на выделенных стоянках. Годовой контракт — дорого и вперёд, зато весь год дальние поездки ваши.',
+      en: 'The airport is choosing an official operator for its dedicated ranks. A one-year contract — dear and paid up front, but the long rides are yours all year.',
     },
     lesson: {
-      ru: 'Инфраструктурные контракты покупают частоту навсегда, но платятся вперёд — это капитальное решение, а не операционное.',
-      en: 'Infrastructure contracts buy frequency forever but are paid up front — a capital decision, not an operating one.',
+      ru: 'Инфраструктурные контракты платятся вперёд, а действуют срок — это капитальное решение, и считать его надо против цены денег и остатка партии.',
+      en: 'Infrastructure contracts are paid up front and run for a term — a capital decision, to be weighed against the price of money and the time left.',
     },
     options: [
       {
+        // Контракт срочный (12 мес, CONFIG.airportContractMonths). Вечная
+        // прибавка выигрывала 24/24 при любой разумной цене: тонкая маржа
+        // такси умножает вечный плюс частоты, а поздний буст целиком попадал
+        // в окно роста оценки. Со сроком выбор живой — и честно зависит от
+        // того, сколько партии осталось.
         label: { ru: 'Выиграть тендер (110 млн ₽)', en: 'Win the tender ($1.1M)' },
         detail: {
-          ru: 'Разово дорого, зато каждый клиент такси ездит чаще — до конца партии.',
-          en: 'A steep one-off — but every taxi customer rides more often, for the rest of the game.',
+          ru: 'Разово дорого, зато каждый клиент такси ездит чаще — ближайшие 12 месяцев.',
+          en: 'A steep one-off — but every taxi customer rides more often, for the next 12 months.',
         },
         effects: { oneOffCost: 110_000_000, tripsPerUserAdd: 0.35 },
       },
