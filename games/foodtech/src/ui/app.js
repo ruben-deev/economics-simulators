@@ -956,7 +956,10 @@ function renderCityMap() {
     ${refShown ? `<div class="funding-note">${t('mapRefRing', {
       min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</div>` : ''}
     ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
-    <div class="funding-note">${t('mapLegend')}</div>
+    <details class="map-legend">
+      <summary>${t('mapLegendTitle')}</summary>
+      <div class="funding-note">${t('mapLegend')}</div>
+    </details>
   </div>`;
 
   // Карта — не картинка, а панель управления: район открывается нажатием

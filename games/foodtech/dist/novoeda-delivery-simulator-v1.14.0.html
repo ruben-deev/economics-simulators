@@ -974,6 +974,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
 .city-map.narrow .m-name { font-size: 16px; font-weight: 800; }
 .city-map.narrow .m-muted { font-size: 18px; }
+/* Легенда карты под катом: полный разбор кодировок нужен один раз, а место
+   под картой занимает каждый ход */
+.map-legend { margin-top: 6px; }
+.map-legend summary {
+  cursor: pointer; color: var(--muted); font-size: 11px;
+  list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.map-legend summary::-webkit-details-marker { display: none; }
+.map-legend summary::before { content: '▸'; font-size: 10px; }
+.map-legend[open] summary::before { content: '▾'; }
+.map-legend summary:hover { color: var(--text); }
+.map-legend .funding-note { margin-top: 6px; }
 .map-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
 .map-list li { padding: 2px 0; border-bottom: 1px solid var(--line); }
 .map-list li:last-child { border-bottom: 0; }
@@ -1360,6 +1372,7 @@ const STRINGS = {
   mapClosing: { ru: 'закроется в конце недели', en: 'closes at the end of the week' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
+  mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
   mapLegend: {
     ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше жителей, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше; поперечный пунктир — потолок: часть жителей заперта у конкурента, и выше него не подняться никаким маркетингом. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
     en: 'A block is a district, and its area is that district’s market: as many times more residents, as many times bigger the block. Filled from the bottom is how much of that market is already yours; the dashed line across is the ceiling — part of the residents are locked in with the competitor, and no amount of marketing gets you above it. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Click a block to open the district or drop it from the plan.',
@@ -6266,7 +6279,10 @@ function renderCityMap() {
     ${refShown ? `<div class="funding-note">${t('mapRefRing', {
       min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</div>` : ''}
     ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
-    <div class="funding-note">${t('mapLegend')}</div>
+    <details class="map-legend">
+      <summary>${t('mapLegendTitle')}</summary>
+      <div class="funding-note">${t('mapLegend')}</div>
+    </details>
   </div>`;
 
   // Карта — не картинка, а панель управления: район открывается нажатием
