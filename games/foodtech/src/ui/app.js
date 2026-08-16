@@ -812,10 +812,10 @@ function renderCityMap() {
     </g>`;
   };
 
-  // Сколько района уже наше и сколько вообще можно взять. Потолок в модели:
-  // reachable = потенциал × (1 − сила конкурента × 0.6) — часть жителей
-  // заперта у конкурента навсегда, сколько ни трать на маркетинг.
-  const ceilingOf = (d) => 1 - d.competitor * CONFIG.competitorLock;
+  // Доля района, которая уже ваша. Потолок доступного рынка на карте не
+  // рисуется: замер показал, что до него не доходит ни одна стратегия
+  // (24–32% доступного к концу партии), и черта показывала границу, которой
+  // игрок в своей партии не видит.
   const shareOf = (p) => clampShare((p.customers ?? 0) / (p.d.potential || 1));
 
   const chosen = new Set(state.decisions.districts ?? []);
@@ -876,11 +876,11 @@ function renderCityMap() {
     ? t('mapTipLive', {
         name: tx(p.d.name), potential: compact(p.d.potential),
         customers: compact(p.customers), share: pct(shareOf(p), 0),
-        ceiling: pct(ceilingOf(p.d), 0), cm: amount(p.cm), time: num(p.time),
+        cm: amount(p.cm), time: num(p.time),
       })
     : t('mapTipIdle', {
         name: tx(p.d.name), potential: compact(p.d.potential),
-        ceiling: pct(ceilingOf(p.d), 0), cost: money(p.d.launchCost), km: p.d.distanceKm,
+        cost: money(p.d.launchCost), km: p.d.distanceKm,
       }));
 
   const quarter = (p) => {
@@ -907,7 +907,6 @@ function renderCityMap() {
     const bottom = p.y + k * 0.92;
     const height = bottom - top;
     const level = bottom - height * shareOf(p);
-    const ceiling = bottom - height * ceilingOf(p.d);
     const clipId = `q-${p.d.id}`;
     return `<g class="m-hit" data-id="${p.d.id}">
       ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
@@ -920,12 +919,6 @@ function renderCityMap() {
           width="${(k * 2.2).toFixed(1)}" height="${(bottom - level).toFixed(1)}"
           class="m-share ${cls}"><title>${t('mapTipShare', {
             customers: compact(p.customers), share: pct(shareOf(p), 0) })}</title></rect>` : ''}
-        <line x1="${(p.x - k * 1.1).toFixed(1)}" y1="${ceiling.toFixed(1)}"
-          x2="${(p.x + k * 1.1).toFixed(1)}" y2="${ceiling.toFixed(1)}" class="m-ceiling">
-          <title>${t('mapTipCeiling', {
-            reach: compact(p.d.potential * ceilingOf(p.d)), share: pct(ceilingOf(p.d), 0),
-            potential: compact(p.d.potential) })}</title>
-        </line>
       </g>
       <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
       ${p.live ? blocks(p) + legLine(p) : ''}

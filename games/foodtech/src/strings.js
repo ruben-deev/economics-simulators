@@ -187,24 +187,20 @@ export const STRINGS = {
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
   mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
   mapTipLive: {
-    ru: '{name}: жителей {potential}, ваших клиентов {customers} ({share}). Потолок доступного — {ceiling} района, выше не взять. Сейчас {time} мин и {cm} с заказа.',
-    en: '{name}: {potential} residents, {customers} of them yours ({share}). The reachable ceiling is {ceiling} of the district — no more than that. Right now {time} min and {cm} per order.',
+    ru: '{name}: жителей {potential}, ваших клиентов {customers} ({share}). Сейчас {time} мин и {cm} с заказа.',
+    en: '{name}: {potential} residents, {customers} of them yours ({share}). Right now {time} min and {cm} per order.',
   },
   mapTipIdle: {
-    ru: '{name}: жителей {potential}, доступно {ceiling} — остальные заперты у конкурента. Вход {cost}, плечо {km} км.',
-    en: '{name}: {potential} residents, {ceiling} reachable — the rest are locked in with the competitor. Entry {cost}, a {km} km leg.',
+    ru: '{name}: жителей {potential}, вход {cost}, плечо {km} км.',
+    en: '{name}: {potential} residents, entry {cost}, a {km} km leg.',
   },
   mapTipShare: { ru: 'Ваши клиенты: {customers} — {share} района', en: 'Your customers: {customers} — {share} of the district' },
-  mapTipCeiling: {
-    ru: 'Потолок: доступно {reach} жителей ({share} района), выше — те, кто заперт у конкурента',
-    en: 'Ceiling: {reach} residents reachable ({share} of the district); above it are those locked in with the competitor',
-  },
   mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery leg {km} km · {time} min per order' },
   mapTipHouses: { ru: 'Подключено ресторанов: {n}', en: 'Restaurants signed up: {n}' },
   mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
   mapLegend: {
-    ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше жителей, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше; поперечный пунктир — потолок: часть жителей заперта у конкурента, и выше него не подняться никаким маркетингом. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Наведите на любую часть квартала — подскажет, что это. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
-    en: 'A block is a district, and its area is that district’s market: as many times more residents, as many times bigger the block. Filled from the bottom is how much of that market is already yours; the dashed line across is the ceiling — part of the residents are locked in with the competitor, and no amount of marketing gets you above it. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Hover any part of a block and it will tell you what it is. Click a block to open the district or drop it from the plan.',
+    ru: 'Квартал — район, и его площадь — рынок района: во сколько раз больше жителей, во столько больше квартал. Залито снизу — сколько этого рынка уже ваше. Цвет — вклад с заказа: зелёный приносит, красный съедает. Домики — подключённые рестораны (один на тридцать), ниточка — плечо доставки от ресторана к клиенту того же района (красная значит, что район не укладывается в эталонные минуты). Обводка пунктиром говорит про конец недели: зелёная откроется, красная закроется, серая закрыта и ждёт входа. Наведите на любую часть квартала — подскажет, что это. Нажмите на квартал, чтобы открыть район или убрать его из плана.',
+    en: 'A block is a district, and its area is that district’s market: as many times more residents, as many times bigger the block. Filled from the bottom is how much of that market is already yours. Colour is contribution per order: green earns, red eats. The little houses are restaurants signed up (one per thirty), and the thread is the delivery leg from a restaurant to a customer in the same district (red means the district misses the reference time). A dashed outline is about the end of the week: green opens, red closes, grey is closed and waiting for its entry fee. Hover any part of a block and it will tell you what it is. Click a block to open the district or drop it from the plan.',
   },
   districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · basket {aov} · leg {km} km' },
 

@@ -928,7 +928,6 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .city-map .m-share { fill-opacity: 0.55; }
 .city-map .m-share.m-good { fill: var(--good); }
 .city-map .m-share.m-bad, .city-map .m-share.m-closing { fill: var(--bad); }
-.city-map .m-ceiling { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; opacity: 0.75; }
 .city-map .m-quarter.m-good { fill: none; stroke: var(--good); }
 .city-map .m-quarter.m-bad { fill: none; stroke: var(--bad); }
 .city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
