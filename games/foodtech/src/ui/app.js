@@ -1914,12 +1914,15 @@ function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
-    // Шкала выставлена замером опорных стратегий (6 сидов): осторожная даёт
-    // 3.9 млрд, средняя 5.6, размашистая 9.9, доведённая 8.3. Старая шкала
-    // (3/1/0.3 млрд) ставила «отлично» даже осторожной игре.
-    : s.equityValue > 10e9 ? t('gradeExcellent')
-    : s.equityValue > 5.5e9 ? t('gradeSolid')
-    : s.equityValue > 2e9 ? t('gradeSurvived') : t('gradeModest');
+    // Шкала выставлена замером на 24 кодах (аудит 2026-08): опоры дают
+    // 1.37 / 0.92 / 0.35 млрд, опора с реакцией на погоду 2.4, доведённая
+    // с алгоритмами 3.2, с экспансией в Старгород 3.9 (и 7/24 банкротств).
+    // Прежняя шкала (10 / 5.5 / 2) была снята до пересборки погоды, событий
+    // и ворот второго города — в новом мире она недостижима, и любая
+    // разумная партия получала «Скромно».
+    : s.equityValue > 3.5e9 ? t('gradeExcellent')
+    : s.equityValue > 2e9 ? t('gradeSolid')
+    : s.equityValue > 0.8e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -1937,7 +1940,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(10e9), b: money(5.5e9), c: money(2e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(3.5e9), b: money(2e9), c: money(0.8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
