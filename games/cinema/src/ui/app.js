@@ -426,8 +426,8 @@ function buildLevers() {
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
             ${inertNote(l)}
-            ${l.policy ? policyHtml(l, tx) : ''}
-            <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+            ${l.policy ? policyHtml(l, tx)
+              : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`}
             <button class="lever-why" type="button">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
             ${l.key === 'priceNew' ? '<div id="price-gap"></div>' : ''}
@@ -454,9 +454,9 @@ function buildLevers() {
       save();
     });
   }
-  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
-  // настройки — кривые отклика у этой игры острые, дискретизация срезала бы
-  // верх стратегии (см. shared/controls.js)
+  // Режимы политики заменяют ползунок: после пересборки спроса вершины кривых
+  // легли на сами режимы (замер, аудит 2026-08), и двойное управление стало
+  // перегрузом (см. shared/controls.js; унификация по образцу НОВОГРАДА)
   el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
     b.addEventListener('click', () => {
       const key = b.closest('[data-policy]').dataset.policy;

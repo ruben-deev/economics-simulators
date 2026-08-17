@@ -501,8 +501,8 @@ function buildLevers() {
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
             ${inertNote(l)}
-            ${l.policy ? policyHtml(l, tx) : ''}
-            <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
+            ${l.policy ? policyHtml(l, tx)
+              : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`}
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
           </div>`).join('')}
@@ -518,8 +518,8 @@ function buildLevers() {
       group.classList.toggle('open', openGroups[id]);
     });
   });
-  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
-  // настройки (см. shared/controls.js)
+  // Режимы политики заменяют ползунок: решение с именем, а не процент
+  // (см. shared/controls.js; унификация по образцу НОВОГРАДА, аудит 2026-08)
   el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
     b.addEventListener('click', () => {
       const key = b.closest('[data-policy]').dataset.policy;
@@ -539,6 +539,9 @@ function buildLevers() {
   for (const l of LEVERS) {
     // Рычага может не быть в панели (на лёгком уровне финансовой команды
     // нет — она уже оплачена), тогда и слушать нечего
+    el('levers').querySelector(`[data-why="${l.key}"]`)?.addEventListener('click', (e) => {
+      e.target.closest('.lever').classList.toggle('open');
+    });
     const input = el(`in-${l.key}`);
     if (!input) continue;
     input.addEventListener('input', () => {
@@ -551,9 +554,6 @@ function buildLevers() {
       renderGroupReadouts();
       renderMarketMap();
       renderRightTab();
-    });
-    el('levers').querySelector(`[data-why="${l.key}"]`).addEventListener('click', (e) => {
-      e.target.closest('.lever').classList.toggle('open');
     });
   }
   leversBuilt = true;
@@ -1599,9 +1599,9 @@ function renderAlgosTab() {
                 nearestMode(a, param).v === m.v ? ' class="active"' : ''
               }>${tx(m.label)}</button>`).join('')}
             </div>
-            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : ''}
+            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : `
           <input type="range" data-param="${a.key}" min="${a.param.min}" max="${a.param.max}"
-            step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />
+            step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />`}
         </div>` : ''}
       <div class="lesson"><b>${tx(a.tradeoff)}</b><br>${tx(a.lesson)}</div>
     </div>`;
