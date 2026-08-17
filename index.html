@@ -291,15 +291,15 @@
           : 'The bar shows how close you are to a confident win in that game; it does not grow beyond.'}</p>
         <div class="card-actions" style="padding-top:4px">
           <a href="#" id="series-reset" style="flex:0 0 auto;padding:8px 14px;font-size:13px">${
-            ru ? 'Пройти путь заново' : 'Start the path over'}</a>
+            ru ? 'Сбросить всё и пройти заново' : 'Reset everything and start over'}</a>
         </div>`;
-      // Сброс пути: забываются введённые строки, лучший финал экосистемы и
-      // её незаконченная партия. Таблицы рекордов игр остаются — они заработаны.
+      // Полный сброс: партии, строки, наследие и личные рекорды всех игр.
+      // Мировая таблица на сервере не трогается — туда уже отправлено.
       document.getElementById('series-reset')?.addEventListener('click', (e) => {
         e.preventDefault();
         const ask = ru
-          ? 'Пройти путь заново? Забудутся: введённые строки результатов, лучший финал НОВОГРАДА и незаконченные партии всех четырёх игр. Таблицы рекордов останутся на месте.'
-          : 'Start the path over? This forgets: entered result strings, your best NOVOGRAD finale and the unfinished games of all four titles. Every record table stays.';
+          ? 'Сбросить всё и пройти путь заново? Стирается весь местный прогресс: незаконченные партии, строки результатов, наследие и личные таблицы рекордов всех четырёх игр. Мировая таблица на сервере останется.'
+          : 'Reset everything and start the path over? This wipes all local progress: unfinished games, result strings, the legacy and the personal record tables of all four titles. The shared online table stays.';
         if (!window.confirm(ask)) return;
         resetEcosystemProgress();
         render();
