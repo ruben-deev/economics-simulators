@@ -102,7 +102,7 @@ export const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around $60M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players finish this market around $60M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -511,20 +511,20 @@ export const STRINGS = {
   // --- персональный разбор: правила по телеметрии партии (аудит 2026-08) ---
   debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
   debriefNote: {
-    ru: 'Автоматические наблюдения по телеметрии партии: цены взяты из самих цифр партии и замеров на 24 стандартных кодах.',
-    en: 'Automatic observations from this run’s telemetry: prices come from the run’s own numbers and from measurements on the 24 standard game codes.',
+    ru: 'Что игра заметила в вашей партии — и сколько это стоило. Цены — из цифр самой партии и контрольных партий.',
+    en: 'What the game noticed in your run — and what it cost. The prices come from the run’s own numbers and from control runs.',
   },
   debriefClean: {
-    ru: 'Системных промахов правила не нашли: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
-    en: 'The rules found no systematic misses: advances came back, bots never took over, cash kept its cushion. A strong run.',
+    ru: 'Системных промахов не нашлось: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
+    en: 'No systematic misses found: advances came back, bots never took over, cash kept its cushion. A strong run.',
   },
   debriefAdvances: {
     ru: 'Авансы организаторам списаны на {lost} — вернулось только {back}. Ставка на хиты без запаса: каждый списанный аванс — это чужой концерт, оплаченный вашей кассой.',
     en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a margin: every written-off advance is someone else’s show paid from your cash.',
   },
   debriefBots: {
-    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: фоновая доля ботов у опор не поднимается выше 15%.',
-    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: the background bot share on the baselines never tops 15%.',
+    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: в здоровой партии доля ботов не поднимается выше 15%.',
+    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: in a healthy run the bot share never tops 15%.',
   },
   debriefThinCash: {
     ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',

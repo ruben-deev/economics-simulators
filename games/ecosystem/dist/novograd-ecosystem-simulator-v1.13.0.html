@@ -1832,8 +1832,8 @@ const STRINGS = {
   sopBonus: { ru: 'Репутация у совета и инвесторов', en: 'Standing with the board and investors' },
   sopTotal: { ru: 'Оценка холдинга', en: 'Holding valuation' },
   sopNote: {
-    ru: 'Премию платят только за замеряемую склейку — долю клиентов двух и более сервисов. Убыточная вертикаль без роста — «зоопарк»: инвестор вычитает её годовой burn.',
-    en: 'The premium is paid only for measurable glue — the share of customers on two or more services. A loss-making vertical without growth is a “zoo”: investors subtract its annual burn.',
+    ru: 'Премию платят только за измеримую склейку — долю клиентов двух и более сервисов. Убыточная вертикаль без роста — «зоопарк»: инвестор вычитает её годовые убытки.',
+    en: 'The premium is paid only for measurable glue — the share of customers on two or more services. A loss-making vertical without growth is a “zoo”: investors subtract its annual losses.',
   },
 
   // --- правая колонка: P&L ---
@@ -2009,7 +2009,7 @@ const STRINGS = {
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
-    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но замерены так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
+    ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но подобраны так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
     en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
@@ -2126,7 +2126,7 @@ const STRINGS = {
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
-  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Доведённые стратегии заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Polished strategies finish above {a} — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Strong players finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
     en: 'Final month: revenue {revenue}, ARPU {arpu}, {unique} customers, {multi} of them on two or more services.',
@@ -2139,16 +2139,16 @@ const STRINGS = {
   // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
   debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
   debriefNote: {
-    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
-    en: 'Automatic observations from this run’s telemetry. Each comes with a price measured on the 24 standard game codes.',
+    ru: 'Что игра заметила в вашей партии — и сколько это стоило. Цены проверены на контрольных партиях.',
+    en: 'What the game noticed in your run — and what it cost. The prices are verified on control runs.',
   },
   debriefClean: {
-    ru: 'Системных промахов правила не нашли: подписка склеила вертикали, менеджмент поспевал за ростом, касса держала подушку. Сильная партия.',
-    en: 'The rules found no systematic misses: the subscription glued the verticals, management kept pace with growth, cash held its cushion. A strong run.',
+    ru: 'Системных промахов не нашлось: подписка склеила вертикали, менеджмент поспевал за ростом, касса держала подушку. Сильная партия.',
+    en: 'No systematic misses found: the subscription glued the verticals, management kept pace with growth, cash held its cushion. A strong run.',
   },
   debriefNoPlus: {
-    ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: опора-экосистема с Плюсом даёт 8.7 млрд против 6.7 без него.',
-    en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: the ecosystem baseline makes $87M with Plus against $67M without.',
+    ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: с Плюсом такая же партия приносит 8.7 млрд, без него — 6.7.',
+    en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: with Plus the same run makes $87M; without — $67M.',
   },
   debriefUnfocused: {
     ru: 'Штраф расфокуса держался {n} месяцев (в среднем −{pct}% к качеству): вертикали открывались быстрее, чем рос менеджмент. Качество — это удержание, а удержание — вся юнит-экономика.',
@@ -2562,8 +2562,8 @@ const DIFFICULTIES = [
     miscMult: 1,
     tagSuffix: '',
     note: {
-      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Это уровень, на котором игра откалибрована.',
-      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. This is the level the game is calibrated on.',
+      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Основной уровень — на него рассчитан баланс, на нём играется общая таблица рекордов.',
+      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. The main level — the balance is built around it, and the shared leaderboard is played here.',
     },
   },
   {
