@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Ruben Deev" />
+  <title>The ticketing model: formulas and assumptions</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E📚%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../../../shared/styles.css" />
+  <style>
+    .doc { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; line-height: 1.65; }
+    .doc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 8px; font-size: 14px; }
+    .doc-top a { color: var(--accent-2); text-decoration: none; }
+    .doc h1 { font-size: 26px; line-height: 1.25; margin: 18px 0 6px; }
+    .doc h2 { font-size: 20px; margin: 34px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .doc h3 { font-size: 16px; margin: 24px 0 8px; }
+    .doc h4 { font-size: 14px; margin: 18px 0 6px; }
+    .doc p { margin: 10px 0; color: var(--text); }
+    .doc li { margin: 5px 0; }
+    .doc blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid var(--accent);
+      background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
+    .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+      padding: 1px 5px; font-size: 0.92em; }
+    .doc-pre code { background: none; border: none; padding: 0; }
+    .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
+    .doc table.data { width: 100%; }
+    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+      border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
+      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <div class="doc-top">
+      <a href="../../../index.html">⬅ Back to the games</a>
+      <a href="../economics.html">Русская версия</a>
+    </div>
+    
+  <nav class="doc-toc">
+    <div class="doc-toc-title">Contents</div>
+    <a href="#s-1">1. The loop</a>
+    <a href="#s-2">2. One revenue, two sides</a>
+    <a href="#s-3">3. Channel conflict</a>
+    <a href="#s-5">3a. The subscription is a tier, not a deduction</a>
+    <a href="#s-6">4. The two-sided market</a>
+    <a href="#s-7">5. Demand and fill</a>
+    <a href="#s-8">6. Turnover, revenue and acquiring</a>
+    <a href="#s-9">6b. The hit of the month is announced in advance</a>
+    <a href="#s-10">6c. An advance is a loan, not a fee</a>
+    <a href="#s-11">7. Trust</a>
+    <a href="#s-12">8. Algorithms</a>
+    <a href="#s-13">9. Shareholder goals</a>
+    <a href="#s-14">10. What the model leaves out</a>
+    <a href="#s-15">The cost of what is already built</a>
+  </nav>
+    <h1>The ticketing model: formulas and assumptions</h1>
+<p>"BILETVILLE" is a teaching model of a two-sided market. This page collects the formulas it computes with and the assumptions it makes. All numbers live in <code>games/tickets/src/model/config.js</code> and can be changed without touching logic.</p>
+<hr>
+<h2 id="s-1">1. The loop</h2>
+<pre class="doc-pre"><code>organisers ──&gt; listings (events and seats) ──&gt; buyers ──&gt; tickets ──&gt; turnover
+     ^                                                                   │
+     └────────────── audience reach &lt;──── marketing &lt;────────────── revenue</code></pre>
+<p>The loop closes in both directions, and that is the central property of the model: organisers go where the buyers are, buyers go where the listings are. Neither side arrives first on its own. Hence two traps: marketing into empty listings burns entirely, and rich listings without buyers produce empty halls, which is exactly why organisers leave.</p>
+<p>One turn is a month; a game is 36 months. The year starts in September, with the opening of the season: a theatre and a stadium have opposite years, and "sign up theatres" looks different in summer than in autumn.</p>
+<hr>
+<h2 id="s-2">2. One revenue, two sides</h2>
+<p>You take money twice from the same transaction:</p>
+<pre class="doc-pre"><code>listings revenue = listings turnover × (buyer fee + organiser commission)
+platform revenue = widget turnover × platform rate
+subscriptions    = connected organisers × monthly fee</code></pre>
+<p><b>There is no buyer fee on the widget at all</b> — and that is a chosen model, not an oversight. On your own listings you set the price the buyer sees, which is why you take from it twice. On the organiser's site they set it: there you are the engine vendor, not the seller, and all your revenue from such a ticket is the platform rate plus the subscription. Both arrangements exist in real life; the pure SaaS one is taken here because it turns channel conflict into a real choice rather than arithmetic.</p>
+<p>Count it after the bank: acquiring comes off the full ticket price alike in both channels, and on the platform rate it eats nearly everything. At default settings a ₽1400 club ticket leaves you ₽179 through the listings and ₽4 through the widget. The widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.</p>
+<p><b>The buyer fee</b> is paid on top of the ticket price. It is visible at checkout and comparable with the rival, so it hits demand directly:</p>
+<pre class="doc-pre"><code>demand multiplier(segment) = ((1 + 0.10) / (1 + fee)) ^ elasticity(segment)</code></pre>
+<p>Elasticities: theatre regulars 0.8, music fans 1.7, sports fans 2.1, casual buyers 2.6. The same 18% fee costs you four times more among casual buyers than among regulars.</p>
+<p><b>The organiser commission</b> is invisible to the buyer. The organiser sees it in the contract — and keeps the rival offer in mind:</p>
+<pre class="doc-pre"><code>commission factor = ((0.05 + 0.035) / (commission + 0.035)) ^ (sensitivity × 0.45)</code></pre>
+<p>Sensitivity: clubs 0.85, theatres 1.5, concerts 2.4, sport 3.1. A sports club with a billion in turnover haggles over tenths of a percent; a 150-seat club barely cares.</p>
+<p><b>The sum can be identical and the consequences are not.</b> That is the first decision of the game: 14% can be taken as 14/0, as 0/14, or anything between. The model is built so that splitting evenly is the worst option: you subsidise one side — and which one depends on how your channels are set up.</p>
+<hr>
+<h2 id="s-3">3. Channel conflict</h2>
+<h3 id="s-4">A migration, not a checkbox</h3>
+<p>Ticking a type does not mean the widget is installed. Every organiser already runs something: their own build or the rival's platform. Moving is a project: integration, porting seat maps and season tickets, training the box office, and an advance against events for the big ones. So a type does not have a yes/no but a <b>share that has moved over</b>, and it grows exactly as far as it is paid for:</p>
+<pre class="doc-pre"><code>ceiling   = 1 − how much of the type the rival holds
+moved this month = (ceiling − share) × 0.42 × payment^0.6 × platform maturity
+payment   = onboarding budget per organiser / (₽260K / their need for the widget)
+maturity  = platform level / (platform level + 0.18)</code></pre>
+<p>Three consequences. <b>Need works as a discount:</b> a club with no ticketing of its own needs the widget badly and moves almost for free; a stadium with its own system costs the most. <b>A raw product moves nobody:</b> while there is no platform, onboarding money burns for nothing. <b>The rival holds their own:</b> whoever already moved to them will not move again within the year — hence a ceiling below one.</p>
+<p>Going back is instant and it stings: switching off someone else's site takes a day, and the more organisers had moved over, the greater the resentment and the more of them leave.</p>
+<p>An organiser has two ways to sell: through your listings and through the <b>ticketing widget</b> — your ticket sales embedded in their own site: their domain, their branding, your engine underneath.</p>
+<pre class="doc-pre"><code>widget:        neutral  = own audience × (0.80 + 0.50 × platform level)
+               widget   = neutral × push(type, platform rate)
+               lost     = max(0, neutral − widget)
+               listings = 1 − widget − lost
+
+no widget:     lost     = own audience × 0.80
+               listings = 1 − lost
+               widget   = 0
+
+push = 1 − 0.32 × (rate / 0.025 − 1) × (0.5 + 0.5 × sensitivity)</code></pre>
+<p>"Own audience" is the share of buyers the organiser brings themselves: sport 0.72, theatres 0.50, clubs 0.42, concerts 0.28. A fan goes to the club site anyway; a promoter has almost no audience of their own.</p>
+<p>Hence the asymmetric arithmetic. <b>Not connecting</b> an organiser loses you their own traffic entirely: they sell past you. <b>Connecting</b> recovers that turnover, but at the platform rate — several times lower. And you actively help them grow their own channel: the stronger the platform, the harder they push buyers towards it.</p>
+<p>"Push" is how eagerly the organiser drives buyers into the widget rather than your listings — and you set it, with the rate. <b>Below the market 2.5%</b> the widget is nearly free to them, so they promote it themselves — a banner, a mailing, a QR code on the poster — and move turnover out of your listings, where you took both the fee and the commission. <b>Above it</b> they do the arithmetic and route around the widget entirely: the box office at the door, season tickets sold to their own people, the old in-house solution. That turnover does not come back to your listings; it simply disappears. An expensive rate also slows migration — a factor of <code>1 − 0.35 × (rate/0.025 − 1)</code> on adoption speed, because moving is an investment decision with a payback period.</p>
+<p>So the platform rate has a peak, not a ceiling. Measured across three reference strategies (founder's equity over a full game, 12 seeds):</p>
+<pre class="doc-pre"><code>                0%       3.5%      7%
+lean          8.55     8.52     8.02 B
+mid           8.91    10.72     9.87 B
+wide          9.36    13.96    12.86 B</code></pre>
+<p>The third effect is the least obvious and the most important. <b>Tickets sold through the widget on the organiser's site never appear in your listings.</b> And demand is computed from the listings, so giving everyone a widget undercuts the very audience organisers come to you for. Measured on the reference strategy:</p>
+<pre class="doc-pre"><code>nobody                     0.88 B
+clubs only                 1.72 B   (+95%)
+concerts only              1.77 B  (+100%)
+theatres only              0.85 B    (−4%)
+sport only                 0.87 B    (−1%)
+clubs + concerts           2.63 B
+all four types             2.59 B</code></pre>
+<p>Clubs need self-service badly: there are thousands of them and no way to serve them by hand. Concerts cost you almost nothing: they have no audience of their own to lose. Theatres and sport cost more than they bring: they move half the hall into the widget on their own site and the listings get thinner.</p>
+<p><b>The optimum is neither "everyone" nor "nobody" but per type.</b></p>
+<hr>
+<h2 id="s-5">3a. The subscription is a tier, not a deduction</h2>
+<p>The subscription is charged per connected organiser and does not depend on turnover. It used to do exactly one thing — subtract:</p>
+<pre class="doc-pre"><code>drag(type) = 1 − subscription × 6 / monthly turnover of the type</code></pre>
+<p>For a stadium turning over ₽17M a month, ₽100k is loose change; for a club turning over ₽1.26M it is a reason not to connect at all. All true, but one-sided: if the subscription only takes, the right answer always collapsed to "charge nothing", and the lever was a button.</p>
+<p>In life an organiser pays not for access to the widget but for a tier: priority in the listings, hall analytics, a dedicated manager, box-office training. So the subscription gained its second half:</p>
+<pre class="doc-pre"><code>value(type) = 1 + 0.50 × (fee / (fee + 45 000))
+                       × platform level × widget need        (capped at 1.7)
+appeal = … × drag(type) × value(type)</code></pre>
+<p>Three consequences, all economic rather than arithmetic.</p>
+<p><b>Free means no obligations.</b> At a zero subscription the value is exactly one: the tier promises nothing, and the organiser feels it.</p>
+<p><b>You can only promise what you built.</b> The value is multiplied by platform maturity: a ₽100k tier on a raw product is a con, and it carries no value at all. Raising the subscription pays off after investment in the platform, not from month one.</p>
+<p><b>A promise has to be serviced.</b> The tier is not paid for in words:</p>
+<pre class="doc-pre"><code>upkeep = connected × (₽2,400 + 0.30 × subscription)</code></pre>
+<p>Collecting a subscription and delivering nothing is not possible in this model — the cost is booked automatically, alongside the revenue.</p>
+<p><b>The tier picks your clientele.</b> A 150-seat club walks away from ₽100k; a seven-thousand-seat stadium does not. A high subscription changes not only the money but the shape of the listings: the long tail disappears, breadth falls, and that feeds back into demand through listing strength. Measured (founder's equity, 12 seeds):</p>
+<pre class="doc-pre"><code>                 ₽0      ₽70–80k     ₽120k
+lean           7.45      10.15        6.30 B   (organisers 1071 → 540)
+mid            8.91      12.07       10.06 B   (organisers 1489 → 910)
+wide          11.16      16.60       15.32 B   (organisers 1746 → 1128)</code></pre>
+<hr>
+<h2 id="s-6">4. The two-sided market</h2>
+<pre class="doc-pre"><code>appeal = commission factor
+       × fee drag                  (the organiser sees that a ticket with a
+                                    mark-up sells worse)
+       × audience pull             (reach / 4.5M) ^ 0.55
+       × platform fit
+       × service quality
+       × fill factor
+       × trust factor</code></pre>
+<p><code>audience pull</code> is the core of the cross-side effect: the argument "we have an audience" works exactly as far as that audience exists.</p>
+<p><code>fill factor</code> is what the organiser sees with their own eyes:</p>
+<pre class="doc-pre"><code>factor = clamp(fill / 0.62, 0.15, 1.6) ^ 0.9</code></pre>
+<p>An empty hall is not beaten by any commission: even at a zero rate an organiser with 25% fill leaves.</p>
+<p>The free pool is split between you and the rival by the same formula, and the rival is evaluated with <b>the same function</b> as you — otherwise the comparison would be dishonest and the balance a fudge.</p>
+<hr>
+<h2 id="s-7">5. Demand and fill</h2>
+<pre class="doc-pre"><code>reach(segment) += (1 − reach) × gain(marketing, listing power) − reach × 0.075
+demand(segment) = potential × reach × interest × conversion × 0.28 × season × buyer choice
+sold            = seats × (1 − exp(−demand / seats))</code></pre>
+<p>Demand is allocated across event types in proportion to <code>affinity[type] × listing share[type]</code>, and fill is computed per type — that is what the organiser of that type sees, not the service average.</p>
+<p><b>Buyer choice.</b> Big events are on both operators: a promoter rarely gives a tour to one. So the buyer compares the final price:</p>
+<pre class="doc-pre"><code>score(side) = demand multiplier(fee) × (0.82 + 0.18 × trust) × (0.88 + 0.14 × product)
+multiplier  = 2 × your score^2.2 / (your score^2.2 + rival score^2.2)</code></pre>
+<p>Parity gives 1.0. Without this the buyer fee would be free for you: the organiser barely sees it, and a buyer with nowhere else to go pays anything.</p>
+<hr>
+<h2 id="s-8">6. Turnover, revenue and acquiring</h2>
+<pre class="doc-pre"><code>turnover  = (listings tickets + widget tickets) × average price
+revenue   = listings turnover × (fee + commission) + widget turnover × rate + subscriptions
+acquiring = turnover × 0.022</code></pre>
+<p><b>Acquiring comes out of your share, not the organiser's.</b> That is why a low commission is more dangerous than it looks: a 3% take rate minus 2.2% acquiring is almost nothing. Billions pass through the service; percentages of it are yours, and one of those percentages goes to the bank.</p>
+<hr>
+<h2 id="s-9">6b. The hit of the month is announced in advance</h2>
+<p>The city is not the same every month: a stadium tour arrives, a derby is played, a headline premiere opens, a festival happens. A hit raises demand, site load and reseller interest all at once.</p>
+<p>The point is that it is <b>visible a month ahead</b>. Before, a hit landed in the same turn, so capacity headroom had to be bought blind: the site went down, the money was lost, and there had been no decision to make — only something to watch. Now what is coming to town is announced in advance, and headroom becomes a decision: holding it all year is expensive, and it cannot be bought on the on-sale day.</p>
+<p>The chance of a hit depends on the season (34% in summer, 30% in winter, 26% otherwise) and on whether you have organisers of the right type: somebody else's tour does nothing for your listings.</p>
+<h2 id="s-10">6c. An advance is a loan, not a fee</h2>
+<p>An exclusive is not bought with money for rights but with an <b>advance against future sales</b>: the organiser takes ₽120–500M now — for a production, a tour, a venue — and repays it out of the revenue of their own tickets.</p>
+<pre class="doc-pre"><code>withheld per month = that type's turnover × 35%
+term               = 12 months
+not repaid by then -&gt; written off as a loss</code></pre>
+<p>Three things follow that an ordinary commission does not have. <b>A cash gap:</b> the money leaves in one payment and comes back over a year. <b>Repayment is not revenue:</b> while the debt is open the inflow returns principal, so it is in the cash and not in the profit. <b>Recoupment risk:</b> if the halls did not sell, there is nothing to repay from, and the remainder is written off — the organiser sold what they sold and does not owe the difference out of pocket.</p>
+<p>This is why ticketing operators carry a large balance sheet on a thin margin: they do not only take a percentage, they finance the market.</p>
+<h2 id="s-11">7. Trust</h2>
+<p>The one asset that cannot be bought in the month it turns out to be needed.</p>
+<pre class="doc-pre"><code>damage   = reseller share × 0.28
+         + hidden fee × 0.030
+         + dynamic fee spread × 0.016 × (1 − quality/2)
+         + on-sale losses × 0.35
+         + crisis effect
+recovery = 0.055 × (0.4 + 0.6 × support quality) × (1 − trust)</code></pre>
+<p>Trust enters both conversion and appeal to organisers. The trap is that turnover holds up for a while as trust falls: the numbers look fine right up to the month it is too late.</p>
+<p><b>Resellers</b> buy faster than people on the hits, and turnover even grows — that is the whole lesson: turnover and trust are different accounts. <b>Capacity</b> is held all year and pays off in a single day, if that day comes at all.</p>
+<hr>
+<h2 id="s-12">8. Algorithms</h2>
+<p>Quality = <code>sqrt(data × team)</code>: data without a team is useless, and so is a team without data.</p>
+<div class="doc-tablewrap"><table class="data">
+<thead><tr><th>Algorithm</th><th>What it gives</th><th>What you pay</th></tr></thead>
+<tbody><tr><td>Personal listings</td><td>casual buyers find somewhere to go; the long tail starts selling</td><td>with weak data the feed collapses into a dozen hits and small organisers stop selling</td></tr><tr><td>Dynamic fee</td><td>more revenue from the same turnover, weak events fill up</td><td>buyers see the fee was different yesterday</td></tr><tr><td>Bot protection</td><td>tickets go to people</td><td>strict checks cut off real buyers too</td></tr><tr><td>Fee at the last step</td><td>conversion rises at once and visibly</td><td>trust falls just as reliably, and it compounds over months</td></tr></tbody>
+</table></div>
+<hr>
+<h2 id="s-13">9. Shareholder goals</h2>
+<div class="doc-tablewrap"><table class="data">
+<thead><tr><th>Year</th><th>Goal</th><th>Failure</th></tr></thead>
+<tbody><tr><td>1</td><td>monthly turnover of ₽1.2B or more</td><td>shareholders inject money themselves, your stake is cut by 18%</td></tr><tr><td>2</td><td>at least 3 profitable months with turnover above ₽700M</td><td>marketing capped for six months</td></tr><tr><td>3</td><td>65% market share with 420+ organisers</td><td>valuation drops by 15%</td></tr></tbody>
+</table></div>
+<p>The strategy that wins year one (low rates for turnover) fails year two. That is the point: the take rate is a decision for the year, not a setting.</p>
+<hr>
+<h2 id="s-14">10. What the model leaves out</h2>
+<ul><li><b>Money held on account.</b> In reality tickets are paid for now and the organiser is paid after the event, and half the industry lives on that gap. Here revenue is recognised at the moment of sale; cancellations appear only as a crisis.</li><li><b>Individual events.</b> Organisers are averaged into types: there is no specific tour with a specific sales curve.</li><li><b>The secondary market.</b> Resellers are a parameter, not a side of the market with its own economics.</li><li><b>Regions and currency.</b> One market, one season, one currency.</li><li><b>More than two operators.</b> There is one rival; an oligopoly of five behaves differently.</li></ul>
+<p>The model shows the <b>structure</b> of a two-sided market, not a forecast of any particular ticketing business.</p>
+<hr>
+<h2 id="s-15">The cost of what is already built</h2>
+<p>The "invest in technology" lever used to be dishonest: the spend was written off once, the accumulated level stayed forever and cost nothing. That is not how it works. Two lines were missing from the model.</p>
+<p><b>Upkeep.</b> Every feature built has to be maintained: libraries updated, breakage from other changes fixed, new people taught. The bill arrives every month and does not depend on whether anyone uses the feature:</p>
+<pre class="doc-pre"><code>upkeep = cumulative investment × 1.25% в месяц</code></pre>
+<p>It is computed from the amount invested, not from the level. The level saturates; the maintenance bill does not. So "invest a large sum at once" is not a one-off cost but a permanent obligation.</p>
+<p><b>Infrastructure.</b> Servers grow with tickets sold: <code>servers = tickets × ₽1.4 × (1 − 0.30 × product level)</code>. Capacity headroom (a separate lever) covers the peak on the on-sale day; this line covers the steady traffic every month.</p>
+<p>Both lines used to hide inside "office and administration" and grew with neither the product nor the load. The base fixed line was reduced by exactly what these two add under the reference strategy, so the balance did not shift — but the behaviour did: costs now grow together with the business.</p>
+<p><b>Staff.</b> Beyond account managers (their own slider) the operator has a team you cannot set to zero: integrations, finance, legal, second-line support. It grows with the number of organisers being served: <code>staff = organisers × ₽6,000/mo</code>. Together with the office (₽22M/mo) these are the fixed costs of scale: a passive game of "sliders at midpoint, no funding rounds" no longer survives to the end on the starting cash.</p>
+  </div>
+</body>
+</html>

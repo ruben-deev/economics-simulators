@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Ruben Deev" />
+  <title>Instructor notes: the streaming simulator in class</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E📚%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../../../shared/styles.css" />
+  <style>
+    .doc { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; line-height: 1.65; }
+    .doc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 8px; font-size: 14px; }
+    .doc-top a { color: var(--accent-2); text-decoration: none; }
+    .doc h1 { font-size: 26px; line-height: 1.25; margin: 18px 0 6px; }
+    .doc h2 { font-size: 20px; margin: 34px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .doc h3 { font-size: 16px; margin: 24px 0 8px; }
+    .doc h4 { font-size: 14px; margin: 18px 0 6px; }
+    .doc p { margin: 10px 0; color: var(--text); }
+    .doc li { margin: 5px 0; }
+    .doc blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid var(--accent);
+      background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
+    .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+      padding: 1px 5px; font-size: 0.92em; }
+    .doc-pre code { background: none; border: none; padding: 0; }
+    .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
+    .doc table.data { width: 100%; }
+    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+      border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
+      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <div class="doc-top">
+      <a href="../../../index.html">⬅ Back to the games</a>
+      <a href="../teacher-guide.html">Русская версия</a>
+    </div>
+    
+  <nav class="doc-toc">
+    <div class="doc-toc-title">Contents</div>
+    <a href="#s-1">What the student should take away</a>
+    <a href="#s-2">Scenario 1. "Where to put the first billion" (30 minutes)</a>
+    <a href="#s-3">Scenario 2. "Two tiers" (40 minutes)</a>
+    <a href="#s-4">Scenario 3. "One hit" (40 minutes)</a>
+    <a href="#s-5">Scenario 4. "Reading the rival" (45 minutes)</a>
+    <a href="#s-6">Scenario 4a. "The rival's line-up" (35 minutes)</a>
+    <a href="#s-7">Scenario 5. "Licences versus originals" (50 minutes)</a>
+    <a href="#s-8">Scenario 6. "Smart algorithms" (50 minutes)</a>
+    <a href="#s-9">Scenario 7. "The board" (30 minutes)</a>
+    <a href="#s-10">Scenario 8. "The year-two goal" (50 minutes)</a>
+    <a href="#s-11">Scenario 9. "A crisis will not go away on its own" (35 minutes)</a>
+    <a href="#s-12">Quick questions for oral debrief</a>
+    <a href="#s-13">Technical notes for the instructor</a>
+  </nav>
+    <h1>Instructor notes: the streaming simulator in class</h1>
+<p><i><a href="../teacher-guide.html">Русская версия</a></i></p>
+<p>The game suits courses on subscription economics, media business, unit economics and corporate finance. One game is 36 turns, which at a calm pace is 40–60 minutes. A class session usually needs only 12–18 turns.</p>
+<p>The three games in the set model different kinds of business, which is the point of playing more than one. In delivery (<code>docs/foodtech/</code>) revenue per customer grows with their activity; in subscription it is fixed while cost grows; in ticketing (<code>docs/tickets/</code>) billions pass through you and yours are the percentages. The same words — "engagement", "retention", "growth" — mean different things in each.</p>
+<hr>
+<h2 id="s-1">What the student should take away</h2>
+<ol><li><b>Content is a capital investment with a lag.</b> A decision to produce in-house pays off in six months. By the time the problem shows up in the report, production is too slow a cure.</li><li><b>Renting and owning look identical in the P&amp;L and different on the balance sheet.</b> A licence and an original are the same cost line; they are not the same asset.</li><li><b>Engagement is a cost.</b> In subscription, revenue per person is fixed while bandwidth grows with hours. The most loyal viewer is the most expensive one.</li><li><b>Churn matters more than inflow.</b> At 10% monthly churn, half the base turns over in six months: you run to stand still.</li><li><b>A catalogue can shrink by nothing and still lose people.</b> Freshness is a separate stock from depth.</li><li><b>Growing the base ≠ growing the value of your stake.</b> Funding rounds finance growth and take equity; the final score counts equity.</li></ol>
+<hr>
+<h2 id="s-2">Scenario 1. "Where to put the first billion" (30 minutes)</h2>
+<p>Task: maximise subscribers over 12 turns. Starting capital is ₽4B.</p>
+<p>Almost every team does one of two things: pour everything into marketing, or everything into in-house production. Both fail, and differently:</p>
+<ol><li><b>All marketing.</b> The base grows for two or three turns and stalls: there is nowhere to bring the viewer, catalogue appeal is near zero. Show the analysis line "the catalogue is nearly empty: marketing simply burns right now".</li><li><b>All originals.</b> Nothing appears on screen for six months and the cash runs out around turn 9–13. Show the "Studio and production" panel: projects in the pipeline, no premieres.</li></ol>
+<p>Debrief: ask them to name the minimum catalogue at which marketing makes any sense, and to calculate how many months the company can afford to have no premieres.</p>
+<hr>
+<h2 id="s-3">Scenario 2. "Two tiers" (40 minutes)</h2>
+<p>Task: 15 turns, maximise revenue. Prices and ad load are free.</p>
+<p>Running the session:</p>
+<ol><li>Let them play 5 turns, then stop and ask what is happening to the split between tiers. The Audience tab shows the ad-tier share by segment.</li><li>Ask: what happens if you cut the ad-tier price by ₽50? The expected answer is "more people arrive". The actual effect is that part of the audience <b>moves down from the expensive tier</b>. Let them check.</li><li>Raise ad load from 4 to 12 minutes an hour. Ad revenue rises immediately, churn rises next turn. Discuss how to tell whether the move paid off.</li></ol>
+<p>The core idea: two tiers are not a "broad line-up", they are cannibalisation management. The cheap tier earns from people who would not have paid at all, and loses on people who would have paid full price.</p>
+<p>Debrief question: cinephiles have an ad tolerance of 0.45, young viewers 1.35. How does that change the answer to "should we raise ad load"?</p>
+<hr>
+<h2 id="s-4">Scenario 3. "One hit" (40 minutes)</h2>
+<p>Task: make one blockbuster and hold on to the base it brings.</p>
+<p>Running the session:</p>
+<ol><li>Everything into a blockbuster, wait six turns, watch the sign-up spike.</li><li>Two turns later, the collapse. Show the "hangover" line in the month analysis.</li><li>Ask: what should have been done on turn 5 to prevent this? (Answer: start the second project while the first was still in production — otherwise the next premiere is six months after the collapse.)</li><li>Let them replay with a continuous pipeline.</li></ol>
+<p>Compare genres: <code>hangover</code> is 1.0 for a blockbuster and 0.1 for family animation. The blockbuster gives a spike one and a half times as large and a collapse ten times as large.</p>
+<p>The core idea: a single hit with nothing behind it is a loan, not growth. A subscription business lives on the release schedule, not on the size of any one release.</p>
+<hr>
+<h2 id="s-5">Scenario 4. "Reading the rival" (45 minutes)</h2>
+<p>Task: 18 turns, get to 50% market share.</p>
+<p>Running the session:</p>
+<ol><li>Show the rival panel. He has five stances, and each is held for at least four months — that is not noise, it is a course you can read.</li><li>Ask in advance: what do you do when he is "harvesting"? (Answer: he cuts content and raises price — his catalogue will go stale and you can take his base by switching. That is the best moment to attack.)</li><li>Let a team undercut him while he is in "price war". Show the result: he has more money; you do not win a war of attrition.</li><li>Work through the "switching" line in the month results: these are people who did not give up on streaming — they chose someone else.</li></ol>
+<p>The core idea: there are two ways to grow — bring in people with no subscription, and take people who pay the other guy. The second is faster, but the other guy has a counter-move and the untapped market does not.</p>
+<p>Debrief question: why is a strong rival sometimes useful? (He grows the whole category: new sign-ups are computed from the best offer on the market, not only from yours.)</p>
+<hr>
+<h2 id="s-6">Scenario 4a. "The rival's line-up" (35 minutes)</h2>
+<p>Task: 15 turns, and answer the rival's "event of the year" at least once.</p>
+<p>Running the session:</p>
+<ol><li>Point students at the "Rival line-up" panel: the right card is next month's announcement. Ask what can be done with that knowledge in one turn.</li><li>Let them play. Most teams answer with their own premiere. Show that counter-programming is capped at 65%: an "event of the year" cannot be fully cancelled.</li><li>Offer the alternative: release the same premiere a month later, into a quiet month. Compare the resulting growth in the base.</li></ol>
+<p>The core idea: everyone has the same information — rival release schedules are public. The advantage comes not from knowing but from having a project ready to ship. And readiness is decided six months earlier.</p>
+<p>Debrief question: why are there fewer rival premieres in summer but also a weaker spike for you? (The seasonal hours multiplier is 0.84 — everyone watches less.)</p>
+<hr>
+<h2 id="s-7">Scenario 5. "Licences versus originals" (50 minutes)</h2>
+<p>Split the group into four teams. Everyone gets three studio slots and the same price — only the rights budget differs:</p>
+<div class="doc-tablewrap"><table class="data">
+<thead><tr><th>Team</th><th>Rights budget</th><th>Equity</th><th>Subscribers</th><th>Own share</th></tr></thead>
+<tbody><tr><td>A</td><td>0</td><td>₽0.2B</td><td>1.6M</td><td>94%</td></tr><tr><td>B</td><td>₽150M/mo</td><td>₽6.4B</td><td>2.7M</td><td>43%</td></tr><tr><td>C</td><td>₽500M/mo</td><td><b>₽13.2B</b></td><td>5.2M</td><td>30%</td></tr><tr><td>D</td><td>₽800M/mo</td><td>₽7.1B</td><td>4.8M</td><td>27%</td></tr></tbody>
+</table></div>
+<p>Measured in the 2026-08 audit across 24 seeds, full game. Three things are visible at once:</p>
+<ol><li><b>You cannot do it without buying.</b> Team A builds a library out of its own work alone — a third of its games end in bankruptcy, and the survivors are worth thirty times less than C. In-house production is far too slow to assemble a catalogue by itself.</li><li><b>You cannot do it on buying alone either.</b> D buys more than C and ends up nearly twice worse: buying beyond measure heats the rights index, and you pay more to yourself. That is the central question for the debrief.</li><li><b>The optimum is inside.</b> The curve is a hump: from ₽150M to ₽500M the outcome doubles, past ~₽550M it falls. What decides is not the exact rights figure but the in-house production running next to it: your own premieres are what keeps the viewer when someone else's rights expire.</li></ol>
+<p>Debrief on three numbers on screen:</p>
+<ul><li><b>own share of the catalogue</b> — it drives exclusive retention;</li><li><b>freshness</b> — for team A it rests on premieres alone and sags between them;</li><li><b>company valuation</b> — C's is higher not only on revenue: the library enters the valuation as a separate term while licences do not enter it at all: they are rent.</li></ul>
+<p>Debrief question: team D has nearly as many subscribers as C and a rights budget 60% larger. Why does the investor value it at almost half of C?</p>
+<hr>
+<h2 id="s-8">Scenario 6. "Smart algorithms" (50 minutes)</h2>
+<p>Task: run the service to turn 20 on ordinary levers, then start switching on algorithms, explaining each decision.</p>
+<p>Running the session:</p>
+<ol><li>Ask in advance: what happens if you hire a strong data science team on turn 1? (Answer: nothing but cost. <code>quality = √(data × team)</code>, and data accumulates only from viewing.)</li><li>Switch recommendations to full strength at model quality 0.3. The perceived catalogue will <b>fall</b>. Show the formula: the benefit is linear in strength, the harm quadratic.</li><li>Set the task of finding the optimal personalisation strength. The optimum is interior and moves right as quality grows — a good moment to discuss why a "smart algorithm" has a setting and not just a switch.</li><li>Open the Algorithms tab: last month re-simulated with the algorithm off. The contribution is often about zero.</li></ol>
+<p>Work out why. Retention is pointless at low churn, encoding does not pay at low traffic, and there is nothing for the release calendar to spread out without premieres. The algorithm costs the same whether or not it works.</p>
+<p>The main conclusion: second-order optimisation does not replace a first-order decision. Recommendations increase consumption of what you already have — they do not replace content, they only take it off the shelf.</p>
+<hr>
+<h2 id="s-9">Scenario 7. "The board" (30 minutes)</h2>
+<p>Task: 20 turns, maximise <b>your stake in money</b>, not the number of subscribers.</p>
+<p>Running the session:</p>
+<ol><li>Do not mention funding rounds in advance. Let the team accelerate, hit the cash wall and raise.</li><li>On turn 20, compare two metrics: company valuation and the final score (valuation × stake).</li><li>Let them replay with the instruction "raise as late as possible".</li></ol>
+<p>The usual outcome: the second game has fewer subscribers and a larger score.</p>
+<p>Debrief question: when is raising at a low valuation still right? (When without the money the company will not survive to the point where the valuation grows. A round is not a mistake; a round taken earlier than needed is.)</p>
+<hr>
+<h2 id="s-10">Scenario 8. "The year-two goal" (50 minutes)</h2>
+<p>The single most valuable scenario in the course if you only have time for one.</p>
+<p>Task: play 24 turns, meeting the board's goals.</p>
+<p>Running the session:</p>
+<ol><li>Year one has one goal: reach 3.4M subscribers. Almost every team pours money into content and marketing and meets it while going deeply into the red.</li><li>In the first month of year two the board announces a new goal: <b>four profitable months out of twelve and a base no smaller than it was</b>. Pause and ask the teams to say out loud what they will have to change.</li><li>It usually turns out that the year-one strategy directly contradicts the year-two goal. They cannot cut content — the base falls; they cannot not cut it — there will be no profit. The working answer usually lies in price and ad load, not in the budget.</li><li>If the goal is missed, show the consequence: the content budget is capped for six months. "Pour everything into growth" stops being physically available.</li></ol>
+<p>The core idea: a business does not have one goal for life. The strategy that wins year one fails year two — and that is not a planning error, it is a normal change of stage. What has to be learned is not "the right setting" but the ability to rebuild it.</p>
+<p>Debrief question: what should the team have done in month 10 if it had known the year-two goal in advance? (It did know — the goal is announced at the start of the year and is on screen every turn. The question is who was looking at it.)</p>
+<hr>
+<h2 id="s-11">Scenario 9. "A crisis will not go away on its own" (35 minutes)</h2>
+<p>Task: finish a game with a crisis running, explaining every decision.</p>
+<p>Running the session:</p>
+<ol><li>Wait for a crisis (from month 7 onwards they arrive more often the larger the service is). Show the two buttons: the expensive fix and the cheap inaction.</li><li>Split the teams: half resolve immediately, half stall for three months.</li><li>Compare the total losses. The cost of the fix grows every month, and churn runs the whole time.</li><li>Discuss "A rights holder sues" separately: it freezes part of the <b>rented</b> library. What you own cannot be taken away — one more argument for originals that never appears in the P&amp;L.</li></ol>
+<p>The core idea: crises arrive more often the better things are going. This is not a punishment for success, it is what success actually costs — and no growth model includes it.</p>
+<p>Debrief question: why is "wait it out" sometimes the right answer after all? (With two months left in the game, paying for the fix can cost more than living with the problem. What matters is the remaining horizon, not the month.)</p>
+<hr>
+<h2 id="s-12">Quick questions for oral debrief</h2>
+<ul><li>Churn is 8% a month. How long does a subscription last, and what does that mean for LTV?</li><li>Hours per subscriber rose from 18 to 26. Is that good news? (Look at bandwidth and at contribution per subscriber: rising hours can eat the entire margin.)</li><li>You bought 300 hours of licences. After how many months is half of it gone? (<code>licenseDecay = 0.045</code> → about 15 months.)</li><li>Freshness has fallen to 0.2 and the catalogue has not shrunk. Where is the churn coming from?</li><li>A premiere brought +400K sign-ups and −180K a month later. A failure? (It depends on what comes next. Count the area under the curve, not the spike.)</li><li>Your blockbuster lands in the same month as the rival's "event of the year". Should you move it? (Counter-programming gives at most 65%; a quiet month gives 100%, but costs you a month. Work it out through the change in the base.)</li><li>LTV/CAC = 5. Does that mean marketing should be doubled? (Not necessarily: CAC rises with the budget because of diminishing returns, and without a catalogue marketing does not convert at all.)</li><li>An algorithm shows a contribution of ₽0. Switch it off? (Yes, unless the regime is about to change: retention wakes up when churn rises, encoding when traffic grows.)</li></ul>
+<hr>
+<h2 id="s-13">Technical notes for the instructor</h2>
+<p><b>The same scenario for the whole group.</b> A game is deterministic in its game code (seed): the same sequence of decisions on the same code gives an identical result. The code is entered right on the welcome screen — invent one, dictate it to the group, and everyone plays the same market: the same rival premieres, events and seasons. The current game's code is shown in the help dialog ("?"). On the final screen the game produces a result string carrying the code, the score and a checksum — ask students to send it in: a doctored score fails the checksum. The final screen also keeps a table of the best games on that device.</p>
+<p><b>Tuning difficulty.</b> All parameters live in <code>games/cinema/src/model/config.js</code>:</p>
+<ul><li><code>startCash</code> — how much room there is for mistakes;</li><li><code>monthsTotal</code> — the length of a game;</li><li><code>originalLeadMonths</code> — how painful the production lag is;</li><li><code>originalDepthWeight</code> and <code>licenseDepthWeight</code> — how strongly exclusives beat a rented catalogue;</li><li><code>baseChurn</code> and <code>exclusiveRetention</code> — how expensive a boring catalogue is;</li><li><code>cdnCostPerHour</code> — how visible the "engagement trap" is;</li><li><code>freshDecay</code> — how quickly a release stops feeling new;</li><li><code>rndSaturation</code> and <code>dataSaturation</code> — how quickly algorithms unlock;</li><li><code>unlock</code> and <code>install</code> in the <code>ALGORITHMS</code> array — availability threshold and rollout cost;</li><li><code>SEASON</code> in <code>games/cinema/src/model/market.js</code> — seasonality of viewing;</li><li><code>switchIntensity</code> and <code>competeSharpness</code> — how fast the base flows between services. Higher is more dynamic and more brutal; lower is calmer and more predictable;</li><li><code>exclusivePull</code> — how strongly exclusives pull viewers across;</li><li><code>licenseInflation</code> and <code>talentInflation</code> — how hard the growth flywheel is braked;</li><li>the rival's starting parameters in <code>games/cinema/src/model/rival.js</code> (<code>createRival</code>) and the stance thresholds in <code>chooseStance</code>;</li><li>the board's goals in <code>games/cinema/src/model/board.js</code> (<code>makeGoal</code>);</li><li>the list and severity of crises in <code>games/cinema/src/model/crises.js</code>.</li></ul>
+<p>To run a session on algorithms alone without spending turns on the ramp-up, hand students a game with <code>dataStock</code> and <code>rndStock</code> already accumulated — that is what the tests in <code>games/cinema/tests/engine.test.mjs</code> do (the <code>grown</code> helper).</p>
+<p>After changes it is worth running <code>npm test</code>: the tests check qualitative properties of the model (an interior price optimum, ad revenue traded against churn, a mixed content strategy beating both extremes) rather than specific numbers, so they survive rebalancing.</p>
+<p><b>Handing it out to students.</b> <code>npm run build</code> produces <code>games/cinema/dist/kinoreka-streaming-simulator-v1.19.0.html</code> — a single file that works offline. Progress is saved in the browser's localStorage.</p>
+<p><b>Language.</b> The interface switches between Russian and English with the RU / EN button. All text in the model is stored as <code>{ ru, en }</code> pairs in <code>games/cinema/src/model/config.js</code>, <code>games/cinema/src/model/events.js</code> and <code>games/cinema/src/strings.js</code>.</p>
+  </div>
+</body>
+</html>
