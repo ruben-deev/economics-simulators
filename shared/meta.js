@@ -53,9 +53,19 @@ export const META_LINES_KEY = 'novograd-meta-lines';
 //   поднялась почти вдвое. Средняя опора «сбор с организатора» — 4.13 млрд
 //   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
 //   в НОВОГРАД не должны дорожать задним числом.
+//
+//   Входы (threshold) пересчитаны под сегодняшние коридоры опор (аудит
+//   2026-08): правило «вход ниже ЛЮБОЙ опоры» после пересборок баланса
+//   нарушалось у двух игр из трёх. Коридоры сегодня: НОВОЕДА
+//   0.36/0.87/1.32 млрд (вход был 1 — выше двух опор), КИНОРЕКА
+//   6.01/11.35/14.11 (вход был 12 — выше двух опор: честно пройденная
+//   партия не зажигала ★, и игрок утыкался в «вводите коды»). Теперь вход
+//   ниже самой слабой опоры каждой игры: доигранная не-банкротом партия
+//   любой разумной стратегией открывает актив. Единицы переноса (solid)
+//   не тронуты: сколько переносится — по-прежнему вопрос силы финала.
 export const LEGACY_GAMES = [
-  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 5e9, solid: 1.6e10 },
   { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 

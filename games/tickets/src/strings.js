@@ -678,8 +678,8 @@ export const STRINGS = {
   },
   metaContinueTitle: { ru: 'Продолжить в НОВОГРАДЕ?', en: 'Continue in NOVOGRAD?' },
   metaContinueText: {
-    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Сильный финал засчитается как наследие — сохраните строку результата ниже.',
-    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. A strong finale counts as a legacy — keep the result string below.',
+    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Этот финал засчитается там сам — по кнопке НОВОГРАД откроется сразу с вашим активом. Строка результата ниже нужна, только если продолжать на другом устройстве.',
+    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. This finale counts there automatically — the button opens NOVOGRAD with your asset preselected. The result string below is only needed to continue on another device.',
   },
-  metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
+  metaContinueLink: { ru: 'Продолжить этим активом в НОВОГРАДЕ →', en: 'Continue with this asset in NOVOGRAD →' },
 };

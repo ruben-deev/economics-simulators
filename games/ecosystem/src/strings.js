@@ -852,8 +852,25 @@ export const STRINGS = {
   },
   welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
   welcomeLegacyNote: {
-    ru: 'Финалы старых игр усиливают НОВОГРАД: свой актив, льготные первый год лицензия кино и партнёрство по билетам — и числа вашего финала: чем больше вы там заработали, тем больше клиентов и кассы на старте и выше оценка у инвесторов. На этом устройстве финалы видны сами; со строкой результата — с любого.',
-    en: 'The old games’ endgames strengthen NOVOGRAD: your own asset, a discounted cinema licence and ticketing partnership for the first year — and the numbers of your finale: the more you earned there, the bigger your customer base and cash at the start and the higher investors price you. On this device endgames are picked up automatically; a result string works from any device.',
+    ru: 'Финалы, сыгранные на этом устройстве, засчитываются сами — вводить ничего не нужно. ★ усиливает старт соответствующим активом: клиенты, касса и репутация переносятся из вашего финала.',
+    en: 'Endgames played on this device are picked up automatically — nothing to type in. A ★ strengthens the matching starting asset: customers, cash and reputation carry over from your finale.',
+  },
+  welcomeLegacyFound: {
+    ru: 'финал {score} найден и засчитан',
+    en: 'a {score} finale found and counted',
+  },
+  welcomeLegacyShort: {
+    ru: 'найден финал {score} — для ★ нужен от {need}',
+    en: 'a {score} finale found — ★ needs {need} or more',
+  },
+  welcomeLegacyNone: { ru: 'финалов пока не найдено', en: 'no finales found yet' },
+  welcomeLegacyOther: {
+    ru: 'Играли на другом устройстве?',
+    en: 'Played on another device?',
+  },
+  welcomeLegacyOtherNote: {
+    ru: 'Вставьте строку результата с финального экрана той игры — финал засчитается и здесь.',
+    en: 'Paste the result string from that game’s finale screen — the finale will count here too.',
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
@@ -866,8 +883,8 @@ export const STRINGS = {
     en: 'The unit of carry-over is the source game’s solid finale; the ceiling is twice that.',
   },
   welcomeCarryEmpty: {
-    ru: 'Числа прошлой игры пока не перенесены: сыграйте одну из трёх игр на этом устройстве или введите строку результата выше — в НОВОГРАД перейдут ваши клиенты, касса и оценка, а не только отметка «сыграно».',
-    en: 'No numbers carried over yet: play one of the three games on this device or paste a result string above — your customers, cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
+    ru: 'У выбранного актива наследия нет: его игра-источник на этом устройстве ещё не пройдена. Сыграйте её — и в НОВОГРАД перейдут ваши клиенты, касса и оценка, а не только отметка «сыграно».',
+    en: 'The chosen asset has no legacy: its source game has not been finished on this device yet. Play it — and your customers, cash and valuation will carry into NOVOGRAD, not just a “played” mark.',
   },
   welcomeLegacyPlaceholder: { ru: 'строка результата, например НОВОЕДА|v1.10.5|…', en: 'result string, e.g. НОВОЕДА|v1.10.5|…' },
   welcomeLegacyAdd: { ru: 'Ввести', en: 'Add' },

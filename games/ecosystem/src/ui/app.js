@@ -2126,6 +2126,27 @@ function showWelcome() {
   let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
+  const scores = legacyScores();
+
+  // Свежая партия ещё не начата — можно предложить актив за игрока:
+  // ссылка из финала игры-источника (?asset=) сильнее, чем автовыбор
+  // самого сильного наследия. Явный выбор в самой модалке сильнее обоих.
+  if (state.month === 0) {
+    const fromLink = (() => {
+      try { return new URLSearchParams(window.location.search).get('asset'); } catch { return null; }
+    })();
+    if (fromLink && START_ASSETS.some((a) => a.id === fromLink)) {
+      assetWanted = fromLink;
+    } else if (!legacyFor(assetWanted, unlocks, scores).assetScore) {
+      // Выбранный актив без наследия, а у другого оно есть — предлагаем его:
+      // «начать тем, что только что прошёл» должно быть путём по умолчанию
+      const withCarry = START_ASSETS
+        .map((a) => ({ id: a.id, ratio: legacyFor(a.id, unlocks, scores).assetRatio ?? 0 }))
+        .filter((x) => x.ratio > 0)
+        .sort((x, y) => y.ratio - x.ratio)[0];
+      if (withCarry) assetWanted = withCarry.id;
+    }
+  }
 
   const assetCards = START_ASSETS.map((a) => `
     <button type="button" class="event-option ${a.id === assetWanted ? 'selected' : ''}" data-asset="${a.id}">
@@ -2141,35 +2162,48 @@ function showWelcome() {
       <span>${tx(dd.note)}</span>
     </button>`).join('');
 
+  // Статус наследия по каждой игре — с реальными числами, найденными на
+  // этом устройстве: игрок должен видеть, что его финал засчитан сам,
+  // а не гадать, зачем тут поле для каких-то кодов
   const legacyLine = LEGACY_GAMES.map((g) => {
     const a = assetById(g.assetId);
-    return `${unlocks[g.assetId] ? '★' : '☆'} ${tx(a.fromGame)}`;
-  }).join(' · ');
+    const found = scores[g.assetId] ?? 0;
+    const status = unlocks[g.assetId]
+      ? t('welcomeLegacyFound', { score: money(found) })
+      : found > 0
+        ? t('welcomeLegacyShort', { score: money(found), need: money(g.threshold) })
+        : t('welcomeLegacyNone');
+    return `${unlocks[g.assetId] ? '★' : '☆'} <b>${tx(a.fromGame)}</b> — ${status}`;
+  }).join('<br>');
 
   // Что переносится числами: клиенты, касса и репутация у инвесторов.
   // Показываем до старта, чтобы перенос был виден, а не угадывался по
-  // цифре в шапке.
-  const carry = legacyFor(assetWanted, unlocks, legacyScores());
-  const carryAsset = assetById(assetWanted);
-  const carryCash = startingCash(carryAsset, carry);
-  const baseCash = carryAsset.startCash ?? CONFIG.startCash;
-  const carryUsers = startingUsers(carryAsset, carry);
-  const carryHtml = carry.assetScore > 0
-    ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
-        ${t('welcomeCarry', {
-          game: tx(carryAsset.fromGame),
-          score: money(carry.assetScore),
-          ratio: `${carry.assetRatio.toFixed(2)}×`,
-          users: compact(carryUsers.users),
-          usersBonus: carryUsers.users > carryAsset.users
-            ? `+${compact(carryUsers.users - carryAsset.users)}` : t('welcomeCarryNone'),
-          cash: money(carryCash),
-          bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
-          floor: money(legacyValuationFloor(carry)),
-          round: pct(legacyReputationMult(carry) - 1, 0),
-        })}
-        <div class="funding-note" style="margin-top:4px">${t('welcomeCarryUnit')}</div></div>`
-    : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
+  // цифре в шапке. Пересчитывается при смене актива — раньше блок
+  // рисовался один раз и врал после клика по другому активу.
+  const carryHtmlFor = (assetId) => {
+    const carry = legacyFor(assetId, unlocks, scores);
+    const carryAsset = assetById(assetId);
+    const carryCash = startingCash(carryAsset, carry);
+    const baseCash = carryAsset.startCash ?? CONFIG.startCash;
+    const carryUsers = startingUsers(carryAsset, carry);
+    return carry.assetScore > 0
+      ? `<div class="hint-box" style="margin-top:6px"><b>${t('welcomeCarryTitle')}</b>
+          ${t('welcomeCarry', {
+            game: tx(carryAsset.fromGame),
+            score: money(carry.assetScore),
+            ratio: `${carry.assetRatio.toFixed(2)}×`,
+            users: compact(carryUsers.users),
+            usersBonus: carryUsers.users > carryAsset.users
+              ? `+${compact(carryUsers.users - carryAsset.users)}` : t('welcomeCarryNone'),
+            cash: money(carryCash),
+            bonus: carryCash > baseCash ? `+${money(carryCash - baseCash)}` : t('welcomeCarryNone'),
+            floor: money(legacyValuationFloor(carry)),
+            round: pct(legacyReputationMult(carry) - 1, 0),
+          })}
+          <div class="funding-note" style="margin-top:4px">${t('welcomeCarryUnit')}</div></div>`
+      : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
+  };
+  const carryHtml = `<div id="carry-box">${carryHtmlFor(assetWanted)}</div>`;
 
   const startGame = () => {
     track('game_start');
@@ -2200,14 +2234,18 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeDifficultyNote')}</p>
     <div class="event-options" id="diff-options">${diffCards()}</div>
     <div class="hint-box" style="margin-top:8px">
-      <b>${t('welcomeLegacy')}:</b> ${legacyLine}<br>
-      ${t('welcomeLegacyNote')}
-      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-        <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
-          style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-        <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
-        <button class="btn small" id="legacy-reset" type="button">${t('welcomeLegacyReset')}</button>
-      </div>
+      <b>${t('welcomeLegacy')}:</b><br>${legacyLine}
+      <div class="funding-note" style="margin-top:6px">${t('welcomeLegacyNote')}</div>
+      <details style="margin-top:6px">
+        <summary style="cursor:pointer">${t('welcomeLegacyOther')}</summary>
+        <div class="funding-note" style="margin:6px 0 4px">${t('welcomeLegacyOtherNote')}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <input id="legacy-line" type="text" placeholder="${t('welcomeLegacyPlaceholder')}"
+            style="flex:1;min-width:200px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+          <button class="btn small" id="legacy-add" type="button">${t('welcomeLegacyAdd')}</button>
+          <button class="btn small" id="legacy-reset" type="button">${t('welcomeLegacyReset')}</button>
+        </div>
+      </details>
     </div>
     ${carryHtml}
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
@@ -2237,6 +2275,8 @@ function showWelcome() {
       el('modal-root').querySelectorAll('[data-asset]').forEach((x) => {
         x.classList.toggle('selected', x.dataset.asset === assetWanted);
       });
+      const box = el('modal-root').querySelector('#carry-box');
+      if (box) box.innerHTML = carryHtmlFor(assetWanted);
     });
   });
   el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
