@@ -110,8 +110,25 @@ function cleanText_(value, max) {
     .slice(0, max);
 }
 
+// Таблица достаётся двумя способами, потому что проект бывает двух видов.
+// Привязанный (создан из таблицы: Расширения → Apps Script) знает свою
+// таблицу сам. Отдельный (создан на script.google.com) не знает никакой —
+// ему адрес таблицы задают свойством скрипта SHEET_ID. Раньше поддерживался
+// только первый вид, и отдельный проект молча падал на пустой таблице.
+function spreadsheet_() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  let id = '';
+  try { id = PropertiesService.getScriptProperties().getProperty('SHEET_ID') || ''; } catch (err) { id = ''; }
+  if (!id) return null;
+  // Из свойства принимается и полная ссылка на таблицу — на телефоне копируют её
+  const m = String(id).match(/[-\w]{25,}/);
+  return SpreadsheetApp.openById(m ? m[0] : id);
+}
+
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = spreadsheet_();
+  if (!ss) throw new Error('нет таблицы: проект не привязан к ней и свойство скрипта SHEET_ID не задано');
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
@@ -189,7 +206,23 @@ function gamesSeen_() {
 function doGet(e) {
   try {
     const p = (e && e.parameter) || {};
-    if (p.ping) return json_({ ok: true, api: 2 });
+    // Пинг отвечает не только «жив», но и «дотягиваюсь ли до таблицы»:
+    // с телефона это единственный способ отличить «развёртка не та» от
+    // «таблица недоступна», не открывая редактор.
+    if (p.ping) {
+      let mode = 'none';
+      let rows = null;
+      let error = '';
+      try {
+        mode = SpreadsheetApp.getActiveSpreadsheet() ? 'bound' : 'byId';
+        rows = Math.max(0, sheet_().getLastRow() - 1);
+      } catch (err) {
+        error = String(err.message || err);
+      }
+      const out = { ok: !error, api: 2, mode: mode, rows: rows };
+      if (error) out.error = error;
+      return json_(out);
+    }
     if (p.games) return json_({ ok: true, api: 2, games: gamesSeen_() });
 
     // Слишком длинный тег не обрезается до валидного, а отвергается:

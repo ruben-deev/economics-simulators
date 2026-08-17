@@ -19,7 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(path.join(here, '../../server/leaderboard.gs'), 'utf-8');
 
 // Свежая песочница на каждый тест: таблица, кэш и свойства — с нуля
-function makeServer({ props = {} } = {}) {
+function makeServer({ props = {}, standalone = false } = {}) {
   const data = [];
   const sheet = {
     appendRow(row) { data.push(row.slice()); },
@@ -34,12 +34,17 @@ function makeServer({ props = {} } = {}) {
   let sheetCreated = false;
   const cacheStore = new Map();
   const cacheOps = { puts: 0, gets: 0, removes: 0 };
+  const book = {
+    getSheetByName: () => (sheetCreated ? sheet : null),
+    insertSheet: () => { sheetCreated = true; return sheet; },
+  };
+  const opened = [];
   const ctx = {
     SpreadsheetApp: {
-      getActiveSpreadsheet: () => ({
-        getSheetByName: () => (sheetCreated ? sheet : null),
-        insertSheet: () => { sheetCreated = true; return sheet; },
-      }),
+      // Отдельный проект (создан на script.google.com) не знает активной
+      // таблицы — Apps Script возвращает там null
+      getActiveSpreadsheet: () => (standalone ? null : book),
+      openById: (id) => { opened.push(id); return book; },
     },
     ContentService: {
       MimeType: { JSON: 'json' },
@@ -63,6 +68,7 @@ function makeServer({ props = {} } = {}) {
     data,
     cacheStore,
     cacheOps,
+    opened,
     get: (params) => ctx.doGet({ parameter: params }).body,
     post: (body) => ctx.doPost({ postData: { contents: JSON.stringify(body) } }).body,
     postRaw: (contents) => ctx.doPost({ postData: { contents } }).body,
@@ -72,11 +78,6 @@ function makeServer({ props = {} } = {}) {
 const line = (tag, opts = {}) => resultString({
   tag, version: '1.0.0', seed: opts.seed ?? 'урок-7б',
   score: opts.score ?? 1_000_000, turns: opts.turns ?? 48,
-});
-
-test('пинг отвечает версией протокола', () => {
-  const srv = makeServer();
-  assert.deepEqual(srv.get({ ping: '1' }), { ok: true, api: 2 });
 });
 
 test('честная строка записывается и попадает в топ', () => {
@@ -198,4 +199,39 @@ test('длинная строка и абсурдные числа отбрас�
   assert.equal(srv.post({ game: 'НОВОЕДА', name: 'А', line: huge }).ok, false);
   const marathon = line('НОВОЕДА', { turns: 900 });
   assert.equal(srv.post({ game: 'НОВОЕДА', name: 'А', line: marathon }).ok, false);
+});
+
+test('пинг сообщает режим и число записей', () => {
+  const srv = makeServer();
+  assert.deepEqual(srv.get({ ping: '1' }), { ok: true, api: 2, mode: 'bound', rows: 0 });
+  srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') });
+  assert.deepEqual(srv.get({ ping: '1' }), { ok: true, api: 2, mode: 'bound', rows: 1 });
+});
+
+test('отдельный проект берёт таблицу из свойства SHEET_ID', () => {
+  const id = '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-x';
+  const srv = makeServer({ standalone: true, props: { SHEET_ID: id } });
+  const ping = srv.get({ ping: '1' });
+  assert.equal(ping.ok, true);
+  assert.equal(ping.mode, 'byId');
+  assert.equal(srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') }).ok, true);
+  assert.equal(srv.get({ game: 'НОВОЕДА' }).top.length, 1);
+  assert.equal(srv.opened[0], id);
+});
+
+test('в свойство можно вставить ссылку на таблицу целиком', () => {
+  const id = '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-x';
+  const srv = makeServer({ standalone: true, props: { SHEET_ID: `https://docs.google.com/spreadsheets/d/${id}/edit#gid=0` } });
+  assert.equal(srv.get({ ping: '1' }).ok, true);
+  assert.equal(srv.opened[0], id);
+});
+
+test('отдельный проект без SHEET_ID честно говорит, чего ему не хватает', () => {
+  const srv = makeServer({ standalone: true });
+  const ping = srv.get({ ping: '1' });
+  assert.equal(ping.ok, false);
+  assert.match(ping.error, /SHEET_ID/);
+  // и обычные запросы не роняют сервер, а отвечают ошибкой
+  assert.equal(srv.get({ game: 'НОВОЕДА' }).ok, false);
+  assert.equal(srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') }).ok, false);
 });
