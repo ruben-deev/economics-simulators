@@ -50,8 +50,8 @@ export const DIFFICULTIES = [
     miscMult: 1,
     tagSuffix: '',
     note: {
-      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Это уровень, на котором игра откалибрована.',
-      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. This is the level the game is calibrated on.',
+      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Основной уровень — на него рассчитан баланс, на нём играется общая таблица рекордов.',
+      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. The main level — the balance is built around it, and the shared leaderboard is played here.',
     },
   },
   {
