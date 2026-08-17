@@ -427,7 +427,9 @@ function renderLeverReadouts() {
 
 function leverDisplay(l, raw) {
   const unit = tx(l.unit);
-  if (unit === '%') return `${raw}%`;
+  // Обратное деление на scale приносит плавающий хвост (115.00000000000001) —
+  // срезаем его, не трогая честные доли процента
+  if (unit === '%') return `${+raw.toFixed(2)}%`;
   return isCurUnit(unit) ? money(raw) : `${num(raw)} ${unit}`;
 }
 
