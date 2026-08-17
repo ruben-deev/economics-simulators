@@ -19,7 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(path.join(here, '../../server/leaderboard.gs'), 'utf-8');
 
 // Свежая песочница на каждый тест: таблица, кэш и свойства — с нуля
-function makeServer({ props = {}, standalone = false } = {}) {
+function makeServer({ props = {}, standalone = false, sheetIdConst = '' } = {}) {
   const data = [];
   const sheet = {
     appendRow(row) { data.push(row.slice()); },
@@ -63,7 +63,10 @@ function makeServer({ props = {}, standalone = false } = {}) {
     },
   };
   vm.createContext(ctx);
-  vm.runInContext(source, ctx);
+  const code = sheetIdConst
+    ? source.replace("const SHEET_ID = '';", `const SHEET_ID = ${JSON.stringify(sheetIdConst)};`)
+    : source;
+  vm.runInContext(code, ctx);
   return {
     data,
     cacheStore,
@@ -234,4 +237,12 @@ test('отдельный проект без SHEET_ID честно говори�
   // и обычные запросы не роняют сервер, а отвечают ошибкой
   assert.equal(srv.get({ game: 'НОВОЕДА' }).ok, false);
   assert.equal(srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') }).ok, false);
+});
+
+test('отдельный проект берёт таблицу из константы в начале файла', () => {
+  const id = '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-x';
+  const srv = makeServer({ standalone: true, sheetIdConst: `https://docs.google.com/spreadsheets/d/${id}/edit` });
+  assert.equal(srv.get({ ping: '1' }).mode, 'byId');
+  assert.equal(srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') }).ok, true);
+  assert.equal(srv.opened[0], id);
 });

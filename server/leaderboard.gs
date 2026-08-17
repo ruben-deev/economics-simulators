@@ -30,6 +30,16 @@
 // тридцать раз. Отправка результата сбрасывает кэш своей игры.
 // ============================================================================
 
+// ЕДИНСТВЕННОЕ, ЧТО ЗДЕСЬ НАСТРАИВАЕТСЯ ВРУЧНУЮ.
+// Пусто — и правильно: проект, открытый из самой таблицы (Расширения →
+// Apps Script), находит её сам. Если проект создан отдельно на
+// script.google.com («Проект без названия»), он никакой таблицы не знает —
+// вставьте между кавычками ссылку на неё целиком, прямо из адресной строки:
+//   const SHEET_ID = 'https://docs.google.com/spreadsheets/d/…/edit';
+// Идентификатор из ссылки сервер вырежет сам. То же самое можно задать
+// свойством скрипта SHEET_ID, если так удобнее.
+const SHEET_ID = '';
+
 const SHEET_NAME = 'scores';
 const NAME_MAX = 24;
 const LINE_MAX = 200;
@@ -118,8 +128,10 @@ function cleanText_(value, max) {
 function spreadsheet_() {
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) return active;
-  let id = '';
-  try { id = PropertiesService.getScriptProperties().getProperty('SHEET_ID') || ''; } catch (err) { id = ''; }
+  let id = String(SHEET_ID || '').trim();
+  if (!id) {
+    try { id = PropertiesService.getScriptProperties().getProperty('SHEET_ID') || ''; } catch (err) { id = ''; }
+  }
   if (!id) return null;
   // Из свойства принимается и полная ссылка на таблицу — на телефоне копируют её
   const m = String(id).match(/[-\w]{25,}/);
@@ -128,7 +140,7 @@ function spreadsheet_() {
 
 function sheet_() {
   const ss = spreadsheet_();
-  if (!ss) throw new Error('нет таблицы: проект не привязан к ней и свойство скрипта SHEET_ID не задано');
+  if (!ss) throw new Error('нет таблицы: проект не привязан к ней, а SHEET_ID в начале файла пуст');
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
