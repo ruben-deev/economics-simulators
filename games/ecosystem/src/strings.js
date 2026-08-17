@@ -8,6 +8,7 @@ export const STRINGS = {
   brandTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
   brandSub: { ru: 'симулятор экосистемы · финал серии', en: 'ecosystem simulator · the finale of the series' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
@@ -859,6 +860,19 @@ export const STRINGS = {
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
+  // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
+  // шкалу. Тексты одинаковы во всех играх набора — это голос города.
+  // Тихий ход: показывается изредка, чтобы тишина была частью мира,
+  // а не пустым местом (и не надоедала)
+  quietQuip1: { ru: 'Тихий месяц. Подозрительно тихий.', en: 'A quiet month. Suspiciously quiet.' },
+  quietQuip2: { ru: 'Городу нечем вас удивить. Пока.', en: 'The city has nothing to surprise you with. Yet.' },
+  quietQuip3: { ru: 'Событий нет. Конкурент, вероятно, тоже отдыхает. Вероятно.', en: 'No events. The rival is probably resting too. Probably.' },
+  gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
+  gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
+  gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
+  gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива своя шкала: их потолки различаются втрое. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold. Strong players finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',

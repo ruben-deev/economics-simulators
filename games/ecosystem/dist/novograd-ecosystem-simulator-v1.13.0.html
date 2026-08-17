@@ -1129,6 +1129,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   <div class="nojs-hint">
     <div class="panel">
       <h2 class="panel-title">Скрипты не выполняются</h2>
+      <p class="funding-note">Экономика без JavaScript не сходится. · The economics don’t add up without JavaScript.</p>
       <p class="funding-note">Игра — это расчётная модель, она целиком живёт в JavaScript.
         Сейчас он выключен, поэтому виден только пустой каркас.</p>
       <p class="funding-note">Так бывает, когда файл открыт не в браузере, а в <b>просмотрщике</b>:
@@ -1312,6 +1313,7 @@ const STRINGS = {
   brandTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
   brandSub: { ru: 'симулятор экосистемы · финал серии', en: 'ecosystem simulator · the finale of the series' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
@@ -2163,6 +2165,19 @@ const STRINGS = {
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
+  // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
+  // шкалу. Тексты одинаковы во всех играх набора — это голос города.
+  // Тихий ход: показывается изредка, чтобы тишина была частью мира,
+  // а не пустым местом (и не надоедала)
+  quietQuip1: { ru: 'Тихий месяц. Подозрительно тихий.', en: 'A quiet month. Suspiciously quiet.' },
+  quietQuip2: { ru: 'Городу нечем вас удивить. Пока.', en: 'The city has nothing to surprise you with. Yet.' },
+  quietQuip3: { ru: 'Событий нет. Конкурент, вероятно, тоже отдыхает. Вероятно.', en: 'No events. The rival is probably resting too. Probably.' },
+  gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
+  gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
+  gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
+  gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива своя шкала: их потолки различаются втрое. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold. Strong players finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
@@ -7836,7 +7851,14 @@ function renderFunding() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+  if (!ev || state.over) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.month;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
 
   const options = ev.options
     ? `<div class="event-options">${ev.options.map((o, i) => `
@@ -8622,11 +8644,14 @@ function showGameOver() {
   // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
   // «скромным итогом». Пороги лежат в дескрипторе актива.
   const gr = gradesFor(state.assetId, state.difficulty);
-  const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.sold ? t('gradeSold')
-    : s.equityValue > gr.excellent ? t('gradeExcellent')
-    : s.equityValue > gr.solid ? t('gradeSolid')
-    : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
+  // Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+  // подпись gradeQuip*
+  const gradeTier = s.bankrupt ? 'Bankrupt'
+    : s.sold ? 'Sold'
+    : s.equityValue > gr.excellent ? 'Excellent'
+    : s.equityValue > gr.solid ? 'Solid'
+    : s.equityValue > gr.survived ? 'Survived' : 'Modest';
+  const grade = t(`grade${gradeTier}`);
 
   // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
   // бонусы в старых играх (бейдж и коды партий на их финальных экранах)
@@ -8690,6 +8715,7 @@ function showGameOver() {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${secretHtml}
     ${crownHtml}
     ${backHtml}
@@ -8958,6 +8984,7 @@ function renderChrome() {
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');

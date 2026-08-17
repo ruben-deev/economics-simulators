@@ -349,12 +349,17 @@ function weatherCard(type, when, cls = '') {
         capacity: signedPct(fx.capacityMult - 1, 0),
         churn: (fx.churnAdd * 100).toFixed(1),
       });
+  // Ремарка — только у текущей погоды: прогноз остаётся деловым,
+  // по нему принимают решение о надбавке
+  const quip = cls === 'weather-now'
+    ? `<div class="weather-fx">${t(`wxQuip${type.charAt(0).toUpperCase()}${type.slice(1)}`)}</div>` : '';
   return `<div class="${cls}">
     <span class="weather-icon">${WEATHER[type]?.icon ?? '☀️'}</span>
     <span class="weather-body">
       <span class="weather-when">${when}</span>
       <div class="weather-name">${weatherName(type)}</div>
       <div class="weather-fx">${effects}</div>
+      ${quip}
     </span>
   </div>`;
 }
@@ -1169,7 +1174,14 @@ function renderFunding() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+  if (!ev || state.over) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.week;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
 
   const options = ev.options
     ? `<div class="event-options">${ev.options.map((o, i) => `
@@ -1955,17 +1967,20 @@ function novogradInviteHtml() {
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
-  const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.sold ? t('gradeSold')
+  // Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+  // подпись gradeQuip* — шутка меняется вместе с исходом, а не дублируется
+  const gradeTier = s.bankrupt ? 'Bankrupt'
+    : s.sold ? 'Sold'
     // Шкала выставлена замером на 24 кодах (аудит 2026-08, пересчитана после
     // сглаживания окна роста): опоры дают 1.32 / 0.87 / 0.36 млрд, опора с
     // реакцией на погоду 2.4, алгоритмы без надбавки 4.4, алгоритмы +
     // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
     // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
     // потолок доведённой стратегии выше, чем казалось с надбавкой.
-    : s.equityValue > 5e9 ? t('gradeExcellent')
-    : s.equityValue > 2.2e9 ? t('gradeSolid')
-    : s.equityValue > 0.8e9 ? t('gradeSurvived') : t('gradeModest');
+    : s.equityValue > 5e9 ? 'Excellent'
+    : s.equityValue > 2.2e9 ? 'Solid'
+    : s.equityValue > 0.8e9 ? 'Survived' : 'Modest';
+  const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -1986,6 +2001,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
@@ -2225,6 +2241,7 @@ function renderChrome() {
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');

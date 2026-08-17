@@ -64,6 +64,7 @@ export const STRINGS = {
   brandTitle: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
   brandSub: { ru: 'экономический симулятор онлайн-кинотеатра', en: 'streaming service economics simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
@@ -729,6 +730,19 @@ score = valuation × your stake`,
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
+  // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
+  // шкалу. Тексты одинаковы во всех играх набора — это голос города.
+  // Тихий ход: показывается изредка, чтобы тишина была частью мира,
+  // а не пустым местом (и не надоедала)
+  quietQuip1: { ru: 'Тихий месяц. Подозрительно тихий.', en: 'A quiet month. Suspiciously quiet.' },
+  quietQuip2: { ru: 'Городу нечем вас удивить. Пока.', en: 'The city has nothing to surprise you with. Yet.' },
+  quietQuip3: { ru: 'Событий нет. Конкурент, вероятно, тоже отдыхает. Вероятно.', en: 'No events. The rival is probably resting too. Probably.' },
+  gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
+  gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
+  gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
+  gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 6–14 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $60–140M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },

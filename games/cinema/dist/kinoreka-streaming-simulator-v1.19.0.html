@@ -1129,6 +1129,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   <div class="nojs-hint">
     <div class="panel">
       <h2 class="panel-title">Скрипты не выполняются</h2>
+      <p class="funding-note">Экономика без JavaScript не сходится. · The economics don’t add up without JavaScript.</p>
       <p class="funding-note">Игра — это расчётная модель, она целиком живёт в JavaScript.
         Сейчас он выключен, поэтому виден только пустой каркас.</p>
       <p class="funding-note">Так бывает, когда файл открыт не в браузере, а в <b>просмотрщике</b>:
@@ -1374,6 +1375,7 @@ const STRINGS = {
   brandTitle: { ru: 'КИНОРЕКА', en: 'KINOREKA' },
   brandSub: { ru: 'экономический симулятор онлайн-кинотеатра', en: 'streaming service economics simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
@@ -2039,6 +2041,19 @@ score = valuation × your stake`,
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
+  // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
+  // шкалу. Тексты одинаковы во всех играх набора — это голос города.
+  // Тихий ход: показывается изредка, чтобы тишина была частью мира,
+  // а не пустым местом (и не надоедала)
+  quietQuip1: { ru: 'Тихий месяц. Подозрительно тихий.', en: 'A quiet month. Suspiciously quiet.' },
+  quietQuip2: { ru: 'Городу нечем вас удивить. Пока.', en: 'The city has nothing to surprise you with. Yet.' },
+  quietQuip3: { ru: 'Событий нет. Конкурент, вероятно, тоже отдыхает. Вероятно.', en: 'No events. The rival is probably resting too. Probably.' },
+  gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
+  gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
+  gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
+  gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 6–14 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $60–140M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
@@ -8592,7 +8607,44 @@ function renderSlate() {
 // ----------------------------------------------------------------------------
 // Афиша конкурента
 // ----------------------------------------------------------------------------
-function rivalCard(type, when, cls = '') {
+// Названия премьер конкурента — чистая косметика с иронией: экономикой
+// релиза правит масштаб (type), а название только украшает афишу. Выбор
+// детерминирован кодом партии и позицией, чтобы афиша не мигала при
+// перерисовках. Все названия вымышленные.
+const RIVAL_TITLES = {
+  small: [
+    { ru: 'Стажёр-3', en: 'Intern 3' },
+    { ru: 'Копейка', en: 'Penny' },
+    { ru: 'Прожарка бюджета', en: 'Budget Roast' },
+  ],
+  notable: [
+    { ru: 'Дожим', en: 'The Follow-Up' },
+    { ru: 'Пивот', en: 'The Pivot' },
+    { ru: 'Оферта', en: 'The Term Sheet' },
+  ],
+  major: [
+    { ru: 'Юнит и экономика: финальный сезон', en: 'Unit & Economics: The Final Season' },
+    { ru: 'Меморандум', en: 'The Memorandum' },
+    { ru: 'Слияние', en: 'The Merger' },
+  ],
+  mega: [
+    { ru: 'Отжим 2: Холодная маржа', en: 'Squeeze 2: Cold Margin' },
+    { ru: 'Планёрка бесконечности', en: 'Standup Meeting: Endgame' },
+    { ru: 'Голый рынок', en: 'The Naked Market' },
+  ],
+};
+// Соль — месяц выхода релиза: анонс «в следующем месяце» и вышедшая
+// через месяц премьера получают одно и то же название.
+function rivalTitle(type, releaseMonth) {
+  const pool = RIVAL_TITLES[type];
+  if (!pool) return '';
+  const s = `${state.seed}|${releaseMonth}|${type}`;
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return tx(pool[h % pool.length]);
+}
+
+function rivalCard(type, when, cls = '', releaseMonth = state.month) {
   const fx = rivalEffect(type, 0);
   const effects = type === 'none'
     ? t('rivalNoEffect')
@@ -8601,11 +8653,12 @@ function rivalCard(type, when, cls = '') {
         churn: (fx.churnAdd * 100).toFixed(1),
         hours: signedPct(fx.hoursMult - 1, 0),
       });
+  const title = rivalTitle(type, releaseMonth);
   return `<div class="${cls}">
     <span class="weather-icon">${RIVAL_RELEASES[type]?.icon ?? '·'}</span>
     <span class="weather-body">
       <span class="weather-when">${when}</span>
-      <div class="weather-name">${rivalName(type)}</div>
+      <div class="weather-name">${rivalName(type)}${title ? ` · «${title}»` : ''}</div>
       <div class="weather-fx">${effects}</div>
     </span>
   </div>`;
@@ -8773,7 +8826,7 @@ function renderRival() {
 
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
-      ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`)}
+      ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`, state.month + 1)}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
@@ -9002,7 +9055,14 @@ function renderFunding() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+  if (!ev || state.over) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.month;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
 
   const options = ev.options
     ? `<div class="event-options">${ev.options.map((o, i) => `
@@ -9728,8 +9788,10 @@ function novogradInviteHtml() {
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
-  const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.sold ? t('gradeSold')
+  // Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+  // подпись gradeQuip*
+  const gradeTier = s.bankrupt ? 'Bankrupt'
+    : s.sold ? 'Sold'
     // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
     // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
     // (80 млрд) была недостижима ни одной опорой.
@@ -9738,9 +9800,10 @@ function showGameOver() {
     // 6.0 / 10.9 / 14.1 млрд. «Выжили» достаёт любая живая стратегия,
     // «крепко» — доведённый конвейер, «отлично» — лучшая опора. Прежние
     // пороги (32/16/8) были из мира, где прайс 999 был бесплатным.
-    : s.equityValue > 12e9 ? t('gradeExcellent')
-    : s.equityValue > 6e9 ? t('gradeSolid')
-    : s.equityValue > 2.5e9 ? t('gradeSurvived') : t('gradeModest');
+    : s.equityValue > 12e9 ? 'Excellent'
+    : s.equityValue > 6e9 ? 'Solid'
+    : s.equityValue > 2.5e9 ? 'Survived' : 'Modest';
+  const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -9762,6 +9825,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
@@ -9930,6 +9994,7 @@ function renderChrome() {
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
