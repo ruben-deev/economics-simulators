@@ -804,7 +804,7 @@ export const STRINGS = {
   welcomeLegacyResetDone: { ru: 'Путь набора сброшен. Рекорды игр не тронуты.', en: 'The set’s path is reset. Game records are untouched.' },
   welcomeLegacyAdded: { ru: 'Строка принята: {tag}. Наследие обновлено.', en: 'String accepted: {tag}. Legacy updated.' },
   welcomeLegacyBad: { ru: 'Строка не прошла проверку контрольной суммы.', en: 'The string failed its checksum.' },
-  welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
+  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is no tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
@@ -835,7 +835,7 @@ export const STRINGS = {
   gradeModest: { ru: 'Скромный итог', en: 'A modest outcome' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
   gradeSold: { ru: 'Продан за долги', en: 'Distressed sale' },
-  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива шкала своя: их потолки расходятся втрое, и общая линейка объявляла бы отличную партию за маленький актив скромной. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold, and a single ruler would call an excellent game on a small asset modest. Strong players finish above {a} — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива своя шкала: их потолки различаются втрое. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold. Strong players finish above {a} — surviving is easy, winning is not.' },
   gameOverLastMonth: {
     ru: 'Последний месяц: выручка {revenue}, ARPU {arpu}, клиентов {unique}, из них с двумя и более сервисами {multi}.',
     en: 'Final month: revenue {revenue}, ARPU {arpu}, {unique} customers, {multi} of them on two or more services.',

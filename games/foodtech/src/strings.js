@@ -623,7 +623,7 @@ score = valuation × your stake`,
   lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
   lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---
-  welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
+  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is no tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же город ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same city again.' },
   // --- Дневник решений на графике ---
@@ -668,10 +668,10 @@ score = valuation × your stake`,
     ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
     en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
   },
-  metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
+  metaContinueTitle: { ru: 'Продолжить в НОВОГРАДЕ?', en: 'Continue in NOVOGRAD?' },
   metaContinueText: {
-    ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
-    en: 'NOVOGRAD is the series endgame: the business you won here becomes the starting asset of a holding with ride-hailing, e-commerce and a subscription. Keep the result string above and enter it on NOVOGRAD’s welcome screen — a strong finale counts as a legacy and boosts your start.',
+    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Сильный финал засчитается как наследие — сохраните строку результата ниже.',
+    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. A strong finale counts as a legacy — keep the result string below.',
   },
   metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
 };
