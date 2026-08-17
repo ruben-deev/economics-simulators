@@ -291,15 +291,16 @@
           : 'The bar shows how close you are to a confident win in that game; it does not grow beyond.'}</p>
         <div class="card-actions" style="padding-top:4px">
           <a href="#" id="series-reset" style="flex:0 0 auto;padding:8px 14px;font-size:13px">${
-            ru ? 'Сбросить всё и пройти заново' : 'Reset everything and start over'}</a>
+            ru ? 'Начать путь заново' : 'Start the path over'}</a>
         </div>`;
-      // Полный сброс: партии, строки, наследие и личные рекорды всех игр.
-      // Мировая таблица на сервере не трогается — туда уже отправлено.
+      // Сброс пути: партии, строки и наследие. Таблицы рекордов
+      // неприкосновенны — и личные, и мировая: сброс лишь ставит отметку
+      // времени, старые записи перестают питать наследие (см. meta.js).
       document.getElementById('series-reset')?.addEventListener('click', (e) => {
         e.preventDefault();
         const ask = ru
-          ? 'Сбросить всё и пройти путь заново? Стирается весь местный прогресс: незаконченные партии, строки результатов, наследие и личные таблицы рекордов всех четырёх игр. Мировая таблица на сервере останется.'
-          : 'Reset everything and start the path over? This wipes all local progress: unfinished games, result strings, the legacy and the personal record tables of all four titles. The shared online table stays.';
+          ? 'Начать путь заново? Стираются незаконченные партии, строки результатов и перенос наследия — серия встретит как в первый раз. Таблицы рекордов не трогаются: и личные в играх, и мировая на сервере останутся как есть.'
+          : 'Start the path over? Unfinished games, result strings and the legacy transfer are wiped — the series greets you as on day one. Record tables are untouched: both the personal ones in the games and the shared online table stay as they are.';
         if (!window.confirm(ask)) return;
         resetEcosystemProgress();
         render();
