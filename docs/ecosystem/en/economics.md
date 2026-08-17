@@ -124,9 +124,10 @@ seed: a run that went bankrupt without it survives with it — and the average
 jumps 20–36% where the median moves 8–15%. The cushion decides where the run
 was on the edge anyway.
 
-### Why the thresholds were reset
+### Where the thresholds come from
 
-The audit showed the carry-over was not the same for the three games.
+The carry thresholds are derived from measurement, not decreed: an equally
+well-played run must produce an equal carry from any of the three games.
 Measured anchor strategies (6 codes, bankruptcy = 0):
 
 | Game | cautious | middling | sweeping | polished |
@@ -135,10 +136,8 @@ Measured anchor strategies (6 codes, bankruptcy = 0):
 | KINOREKA | 15.29 | 15.49 | bankrupt | 35.80 bn |
 | BILETVILLE | 0.84 | 2.13 | 5.01 | 5.58 bn |
 
-The old thresholds were ₽1bn / ₽30bn / ₽2.8bn. Any NOVOYEDA finale therefore
-hit the carry ceiling (even a cautious run scored four times the threshold),
-while KINOREKA carried almost nothing — its middling run is half its own
-threshold. Two different bars are now separate:
+These measurements produce two different bars — and it matters not to
+confuse them:
 
 * **entry** (`threshold`) — the asset is unlocked, ★ on the card. It sits
   below each game’s cautious anchor: ₽1bn / ₽12bn / ₽1.2bn. A gate, not an
@@ -146,21 +145,18 @@ threshold. Two different bars are now separate:
 * **the unit of carry** (`solid`) — a solid finale: ₽5.5bn / ₽16bn / ₽2.5bn,
   the middling anchor of each game. The ceiling (×2) is a polished run.
 
-The games’ own verdict scales were re-measured the same way: NOVOYEDA put
-“excellent” at ₽3bn while a cautious run scores 3.9 (everyone got it), and
-KINOREKA put it at ₽80bn, which no anchor reaches. Now: NOVOYEDA 10 / 5.5 / 2,
-KINOREKA 32 / 16 / 8, BILETVILLE “solid” ₽2.5bn (was 4).
+The games’ own verdict scales are set from the same measurements — each game
+shows its exact bars on its finale screen.
 
 ## A legacy is a head start, not a rent
 
-The first per-flag measurement exposed a skew: permanently waived monthly
-fees (the free ticketing partnership, the cinema licence discount) were worth
-+11.5% and +8.0% of the final score, and the whole stack +21% for delivery.
-The cause was structural: saving ₽2.5M a month compounds across all 36
-months. The fix is not a tweak to the numbers but a term: legacy discounts
-now last the first year, after which everyone pays the same.
+Legacy discounts last only the first year of the game — after that everyone
+pays the same. The reason is structural: a permanently waived monthly fee
+(₽2.5M a month) would compound across all 36 months and be worth +8–12% of
+the final score per flag — the head start would turn into a rent. Limiting
+the term solves this without touching the numbers themselves.
 
-Measured after the fix (share of the final score, on tuned anchors):
+Measured per flag (share of the final score, on tuned anchors):
 
 | Asset | own asset | licence | partnership | flag stack |
 |---|---|---|---|---|
@@ -184,22 +180,17 @@ finance-team budget taken as the best of a grid for each asset × level pair:
 | normal | 1.73× | 1.51× | 1.52× | 1.15× |
 | hard | 1.72× | 1.51× | 1.51× | 1.14× |
 
-It did not start out that way. Easy used to split the starts by **1.46×**:
-delivery reached 2.38 of its bar, ticketing only 1.63. The channel breakdown
-found the cause: easy's gift — a free finance team — drops other costs to the
-floor (0.5% of revenue instead of 3%), and that saving runs through the
-valuation multiple. For delivery ₽0.13bn of saved costs became ₽3.3bn of
-score (a ×25 lever); for ticketing ₽0.06bn became ₽0.12bn (×2), because the
-small start is also diluted twice as hard (38% equity against 78%), so any
-gain in contribution is divided by a smaller stake.
+Equality does not arise by itself: a level's gifts inherently favour the
+larger start. Easy's free finance team drops other costs to the floor (0.5%
+of revenue instead of 3%), and that saving runs through the valuation
+multiple: for delivery ₽0.13bn of saved costs becomes ₽3.3bn of score (a ×25
+lever), for ticketing ₽0.06bn becomes just ₽0.12bn (×2), and the small start
+is also diluted twice as hard (38% equity against 78%). Resizing the gift
+does not help — measurement shows that both a halved team and a discount on
+the price of money leave the spread almost unchanged.
 
-Two attempts to fix the difficulty itself failed and are recorded so nobody
-repeats them: weakening the free team (strength 1 → 0.35) moved the spread
-only from 1.46× to 1.38×, and a discount on the price of money (round
-valuation +25%) moved it to 1.47×, i.e. not at all. The problem is not the
-size of the gift but its nature: it inherently favours the larger start.
-
-So what was fixed is not the difficulty but the **verdict bar**: it now
+That is why what equalises the starts is not the difficulty but the
+**verdict bar**: it
 depends on the asset *and* the level (`gradeLevel` in the descriptor). The
 multipliers are measured: easy lifts delivery by 1.38, streaming by 1.34,
 ticketing by 1.07; hard lowers them by 0.97 / 0.92 / 0.99. A player on easy

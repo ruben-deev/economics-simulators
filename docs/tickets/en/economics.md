@@ -181,20 +181,19 @@ hall into the widget on their own site and the listings get thinner.
 ## 3a. The subscription is a tier, not a deduction
 
 The subscription is charged per connected organiser and does not depend on
-turnover. It used to do exactly one thing — subtract:
+turnover. It has two sides. The first is drag: the fee repels an organiser the
+smaller their turnover is.
 
 ```
 drag(type) = 1 − subscription × 6 / monthly turnover of the type
 ```
 
 For a stadium turning over ₽17M a month, ₽100k is loose change; for a club
-turning over ₽1.26M it is a reason not to connect at all. All true, but
-one-sided: if the subscription only takes, the right answer always collapsed to
-"charge nothing", and the lever was a button.
-
-In life an organiser pays not for access to the widget but for a tier: priority
-in the listings, hall analytics, a dedicated manager, box-office training. So
-the subscription gained its second half:
+turning over ₽1.26M it is a reason not to connect at all. But in life an
+organiser pays not for access to the widget but for a tier: priority in the
+listings, hall analytics, a dedicated manager, box-office training. That is
+the second side — value (without it the right answer would always collapse
+to "charge nothing", and the lever would be a button):
 
 ```
 value(type) = 1 + 0.50 × (fee / (fee + 45 000))
@@ -313,12 +312,11 @@ The city is not the same every month: a stadium tour arrives, a derby is played,
 a headline premiere opens, a festival happens. A hit raises demand, site load and
 reseller interest all at once.
 
-The point is that it is **visible a month ahead**. Before, a hit landed in the
-same turn, so capacity headroom had to be bought blind: the site went down, the
-money was lost, and there had been no decision to make — only something to watch.
-Now what is coming to town is announced in advance, and headroom becomes a
-decision: holding it all year is expensive, and it cannot be bought on the
-on-sale day.
+The point is that it is **visible a month ahead**. The announcement is what
+turns capacity headroom into a decision: holding it all year is expensive, it
+cannot be bought on the on-sale day — so you prepare exactly when the hit is
+announced. If hits landed in the same turn, headroom would be bought blind,
+and there would be no decision to make — only something to watch.
 
 The chance of a hit depends on the season (34% in summer, 30% in winter, 26%
 otherwise) and on whether you have organisers of the right type: somebody else's
@@ -418,9 +416,10 @@ particular ticketing business.
 
 ## The cost of what is already built
 
-The "invest in technology" lever used to be dishonest: the spend was written off
-once, the accumulated level stayed forever and cost nothing. That is not how it
-works. Two lines were missing from the model.
+What you have built has a cost of ownership. If the spend were written off once
+while the accumulated level stayed forever and cost nothing, the "invest in
+technology" lever would be dishonest: pay once, enjoy the advantage forever.
+That is not how it works, and two cost lines carry that price.
 
 **Upkeep.** Every feature built has to be maintained: libraries updated, breakage
 from other changes fixed, new people taught. The bill arrives every month and
@@ -436,10 +435,10 @@ a one-off cost but a permanent obligation.
 
 **Infrastructure.** Servers grow with tickets sold: `servers = tickets × ₽1.4 × (1 − 0.30 × product level)`. Capacity headroom (a separate lever) covers the peak on the on-sale day; this line covers the steady traffic every month.
 
-Both lines used to hide inside "office and administration" and grew with neither
-the product nor the load. The base fixed line was reduced by exactly what these
-two add under the reference strategy, so the balance did not shift — but the
-behaviour did: costs now grow together with the business.
+The point of splitting these two lines out of "office and administration" is
+behavioural: the base fixed part is small, while upkeep and servers grow with
+the product and the sales. Costs breathe together with the business, and every
+"invest more" decision carries a tail of future obligations.
 
 **Staff.** Beyond account managers (their own slider) the operator has a team you
 cannot set to zero: integrations, finance, legal, second-line support. It grows
