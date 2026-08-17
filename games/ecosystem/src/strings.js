@@ -181,7 +181,38 @@ export const STRINGS = {
   // «Следующая фаза» читалась как достижимый контент — игроки искали, чем
   // её открыть (замечание владельца). Это анонс: механики самокатов в этой
   // версии нет, и плашка обязана говорить об этом прямо.
-  vertFuture: { ru: 'анонс — в этой версии не запускается', en: 'teaser — cannot be launched in this version' },
+  vertFuture: { ru: 'откроется в год конгломерата', en: 'opens in the conglomerate year' },
+  // --- самокаты: вертикаль года конгломерата ---
+  scootReady: { ru: 'парк не куплен — расходов нет', en: 'no fleet yet — costs nothing' },
+  scootHint: {
+    ru: 'Парк как капитал: самокат живёт ~{life} уличных месяцев и стареет только на улице. Склад сохраняет цену перепродажи, но райдеры разбегаются.',
+    en: 'The fleet is capital: a scooter lives ~{life} street months and ages only on the street. Storage preserves resale value, but riders drift away.',
+  },
+  scootStats: {
+    ru: 'парк {units} · износ {wear} · райдеры {riders} · продать сейчас: {residual}',
+    en: 'fleet {units} · wear {wear} · riders {riders} · sell now for {residual}',
+  },
+  scootBuy: { ru: 'купить {units} шт — {cost}', en: 'buy {units} for {cost}' },
+  scootSell: { ru: 'продать {units} шт', en: 'sell {units}' },
+  scootBuyMax: {
+    ru: 'Поставщик больше {n} партий в месяц не привезёт.',
+    en: 'The supplier will not deliver more than {n} batches a month.',
+  },
+  scootNoCash: {
+    ru: 'На ещё одну партию ({cost}) кассы не хватает, а раундов в этом акте нет.',
+    en: 'The till cannot cover another batch ({cost}), and there are no rounds in this act.',
+  },
+  scootQueued: {
+    ru: 'заказ на этот ход: купить {buy} · продать {sell}',
+    en: 'this turn’s order: buy {buy} · sell {sell}',
+  },
+  scootPlanTitle: { ru: 'План года: улица или склад', en: 'Year plan: street or storage' },
+  scootPlanHint: {
+    ru: 'Клик по месяцу переключает 🛴 улицу и 📦 склад. Столбик — сезонный спрос: июль возит в десятки раз больше января, а зимняя улица изнашивает парк вдвое быстрее — реагенты и морозы.',
+    en: 'Click a month to switch between 🛴 street and 📦 storage. The bar is seasonal demand: July carries dozens of times more than January, and a winter street month wears the fleet twice as fast — road salt and frost.',
+  },
+  scootCellStreet: { ru: 'улица: парк зарабатывает и изнашивается', en: 'street: the fleet earns and wears out' },
+  scootCellStore: { ru: 'склад: парк цел, но не возит и теряет райдеров', en: 'storage: the fleet is safe, carries no one and sheds riders' },
   vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch {discount} cheaper.' },
   vertEcomStats: { ru: '{users} клиентов · маржа {margin}', en: '{users} customers · margin {margin}' },
   plusName: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },
@@ -665,6 +696,7 @@ export const STRINGS = {
   pnlSvcTaxi: { ru: 'Такси', en: 'Taxi' },
   pnlSvcEcom: { ru: 'Е-ком', en: 'E-commerce' },
   pnlSvcPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
+  pnlSvcScoot: { ru: '🛴 Самокаты', en: '🛴 Scooters' },
   pnlNote: {
     ru: 'Вклад — выручка минус переменные расходы вертикалей. Ниже — постоянные и бюджеты: они не зависят от того, сколько заказов и поездок случилось.',
     en: 'Contribution is revenue minus the verticals’ variable costs. Below come fixed costs and budgets: they do not depend on how many orders and rides happened.',
@@ -955,6 +987,15 @@ export const STRINGS = {
     ru: 'Главное правило акта: чужих денег больше нет. Три года экспансия жила на раунды — теперь холдинг обязан расти сам, и привычный ход «поднять ещё раунд» закрыт.',
     en: 'The rule of the act: there is no outside money left. For three years the expansion ran on rounds — now the holding has to grow on its own, and the familiar move of raising another round is closed.',
   },
+  endlessScootNote: {
+    ru: 'Совет открыл самокаты. Парк — капитал: живёт ~{life} уличных месяцев, зимой почти не возит. Карточка внизу панели вертикалей: закупка партиями и план года улица/склад.',
+    en: 'The board has unlocked scooters. The fleet is capital: it lives ~{life} street months and barely rides in winter. See the card at the bottom of the verticals panel: batch purchases and a street/storage year plan.',
+  },
+  scootMonthLetters: { ru: 'Я Ф М А М И И А С О Н Д', en: 'J F M A M J J A S O N D' },
+  endlessFleetNote: {
+    ru: '🛴 Парк самокатов на конец года: {units} шт, остаточная стоимость {value} — она уже в оценке холдинга.',
+    en: '🛴 Fleet at year end: {units} scooters, residual value {value} — already counted in the holding’s valuation.',
+  },
   fundingClosedEndless: {
     ru: 'Раунды закрыты: в год конгломерата холдинг живёт на свои. Касса пополняется только прибылью.',
     en: 'Rounds are closed: in the conglomerate year the holding lives on its own. Cash comes from profit alone.',
@@ -965,6 +1006,11 @@ export const STRINGS = {
   },
   goalConglomerateNow: { ru: 'склейка {glue}, рост {growth}', en: 'glue {glue}, growth {growth}' },
   endlessOverTitle: { ru: 'Год конгломерата прожит', en: 'The conglomerate year is over' },
+  endlessBankruptTitle: { ru: 'Год конгломерата оборвался', en: 'The conglomerate year cut short' },
+  endlessBankrupt: {
+    ru: 'Касса кончилась посреди года конгломерата, а раундов в этом акте нет — холдинг ушёл за долги. Зачётный счёт партии не пострадал: он заморожен в момент финала. Но год зрелости провален.',
+    en: 'The till ran dry in the middle of the conglomerate year, and this act has no rounds — the holding went for its debts. Your scored result is safe: it was frozen at the finale. But the year of maturity is failed.',
+  },
   endlessWon: {
     ru: 'Совет удовлетворён: холдинг вырос сам и склейка выдержала. Это и есть зрелая экосистема — она больше не нуждается в чужих деньгах, чтобы становиться дороже.',
     en: 'The board is satisfied: the holding grew on its own and the glue held. That is a mature ecosystem — it no longer needs outside money to become more valuable.',

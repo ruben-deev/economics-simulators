@@ -50,6 +50,8 @@ export function neutralModifiers() {
     ecoReliefCut: 0,         // ослабление экосистемного удержания навсегда
     legalMonths: 0,          // месяцы разбирательства: юристы каждый месяц
     supervisionOn: false,    // надзор за единым аккаунтом остаётся навсегда
+    scootDemandMult: 1,      // множитель спроса на самокаты (погода)
+    scootForceStreet: false, // парк выкатывается на улицу вопреки плану года
     notes: [],
   };
 }
@@ -574,6 +576,46 @@ export const EVENTS = [
       en: 'Technical debt is a P&L line too — just a deferred one.',
     },
   },
+
+  // --- Год конгломерата: события открываются с 37-го месяца, пул основной
+  // партии не меняется — зачтённые результаты неприкосновенны ---
+  {
+    id: 'scoot_warm_winter',
+    weight: 14, minMonth: 37, once: true,
+    needsScooters: true,
+    // Только календарная зима: январь, февраль, декабрь
+    calMonths: [0, 1, 11],
+    title: { ru: 'Аномально тёплая зима', en: 'Freak warm winter' },
+    text: {
+      ru: 'Синоптики разводят руками: плюс десять в разгар зимы, и весь город хочет кататься прямо сейчас. А ваш парк, скорее всего, зимует по плану.',
+      en: 'Forecasters shrug: ten above zero in the dead of winter, and the whole city wants to ride right now. Your fleet, most likely, is wintering according to plan.',
+    },
+    // Погода поднимает спрос независимо от решения — вопрос лишь в том,
+    // стоит ли парк там, где этот спрос можно собрать
+    effects: { scootDemandMult: 5 },
+    options: [
+      {
+        label: { ru: 'Экстренно выкатить парк (бригады, 2 млн ₽)', en: 'Roll the fleet out overnight (crews, $20K)' },
+        detail: {
+          ru: 'Ночной вывоз со склада: уличный месяц вне плана. Парк соберёт аномальный спрос — но зима есть зима: реагенты никуда не делись, износ двойной.',
+          en: 'An overnight rollout from the warehouse: an off-plan street month. The fleet collects the freak demand — but winter is winter: the road salt is still there, wear is doubled.',
+        },
+        effects: { scootForceStreet: true, oneOffCost: 2_000_000 },
+      },
+      {
+        label: { ru: 'Не верить погоде: план есть план', en: 'Distrust the weather: the plan is the plan' },
+        detail: {
+          ru: 'Парк остаётся, где стоит по плану года. Если он и так на улице — спрос ваш бесплатно; если на складе — тёплые недели пройдут мимо.',
+          en: 'The fleet stays wherever the year plan says. If it is already out — the demand is yours for free; if it is in storage, the warm weeks pass you by.',
+        },
+        effects: {},
+      },
+    ],
+    lesson: {
+      ru: 'Сезонность — это ожидание, погода — реализация: капитал зарабатывает, только когда он на улице в правильный месяц.',
+      en: 'Seasonality is the expectation, weather is the realization: capital earns only when it is on the street in the right month.',
+    },
+  },
 ];
 
 // Штраф прилетает только тем, кто решил дождаться закона
@@ -720,6 +762,8 @@ export function rollEvent(rng, month, flags = {}, ctx = {}) {
     && (!e.needsTaxi || ctx.taxiOn)
     && (!e.needsWar || ctx.atWar)
     && (!e.needsGlue || ctx.glued)
+    && (!e.needsScooters || ctx.scooters)
+    && (!e.calMonths || e.calMonths.includes((month - 1) % 12))
     && !(e.once && seen.has(e.id))
     && e.id !== ctx.lastId);
   if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {
@@ -737,7 +781,7 @@ export function applyEvent(mods, event, optionIndex) {
     Object.assign(effects, event.options[optionIndex].effects);
   }
   const multiplicative = new Set(['foodDemandMult', 'taxiDemandMult', 'taxiCapacityMult',
-    'driverSupplyMult', 'crossSellMult', 'crossCacMult', 'crossReachMult']);
+    'driverSupplyMult', 'crossSellMult', 'crossCacMult', 'crossReachMult', 'scootDemandMult']);
   for (const [key, value] of Object.entries(effects)) {
     if (multiplicative.has(key)) {
       mods[key] *= value;

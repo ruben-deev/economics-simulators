@@ -41,6 +41,11 @@ export function seasonFood(month) {
 export function seasonTaxi(month) {
   return 1 + CONFIG.taxiSeasonAmp * Math.cos((2 * Math.PI * (month - 1)) / 12);
 }
+// Самокаты: сезон задан таблицей по календарю (январь..декабрь) — косинусом
+// такую яму не описать: зима ×0.1, июль ×1.7. Месяц 37 — январь.
+export function seasonScooters(month) {
+  return CONFIG.scooters.season[(month - 1) % 12];
+}
 
 export const hasPerk = (asset, key) => Boolean(asset.perks?.includes(key));
 
@@ -150,8 +155,15 @@ export function createInitialState(seed = 'novograd', assetId = 'delivery', lega
       launchedMonth: null,
       subs: 0,
     },
+    // Самокаты открываются только в год конгломерата; до него парк пуст,
+    // не стоит ни рубля и не считается вертикалью.
+    scoot: {
+      cohorts: [],    // партии закупки: { units, wear } — износ в уличных месяцах
+      users: 0,       // активные райдеры
+    },
     both: 0,          // хаб ∩ такси
     bothEcom: 0,      // хаб ∩ е-ком
+    bothScoot: 0,     // хаб ∩ самокаты
     trustUntil: 0,
     story: {},
     seenEvents: [],
@@ -220,8 +232,14 @@ export function verticalsCount(state) {
 
 // Конгломератный штраф: каждая вертикаль сверх первой размывает фокус.
 // Подписка вертикалью не считается — это склейка, а не отдельный бизнес.
+// Самокаты весят полвертикали (CONFIG.scooters.focusWeight) и только пока
+// парк существует: операционно это склад, бригада и календарь, а не второе
+// такси — но внимание совета директоров они всё же едят. Замер: с полным
+// весом штраф фокуса стоил дороже всей самокатной экономики, и вертикаль
+// становилась ловушкой по построению.
 export function focusPenalty(state, decisions) {
-  const n = verticalsCount(state);
+  const n = verticalsCount(state)
+    + (scooterFleet(state) > 0 ? CONFIG.scooters.focusWeight : 0);
   const relief = state.flags?.cofounder ? (1 - CONFIG.cofounder.focusRelief) : 1;
   return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions)) * relief;
 }
@@ -253,15 +271,30 @@ export function ecomCapacity(decisions) {
   return b > 0 ? b / (b + verticalById('ecom').logisticsSaturation) : 0;
 }
 
+// Парк самокатов: сумма живых партий закупки
+export function scooterFleet(state) {
+  return (state.scoot?.cohorts ?? []).reduce((s, c) => s + c.units, 0);
+}
+
+// Остаточная стоимость парка: за сколько его можно продать прямо сейчас.
+// Стареет только на улице — склад сохраняет цену (см. CONFIG.scooters).
+export function scooterResidualValue(state) {
+  const sc = CONFIG.scooters;
+  return Math.round((state.scoot?.cohorts ?? []).reduce((s, c) => s
+    + c.units * sc.unitCost * sc.resaleShare
+    * Math.max(0, 1 - c.wear / sc.streetLifeMonths), 0));
+}
+
 // Клиенты двух и более сервисов: пересечения хаба с вертикалями
 export function multiUsers(state) {
-  return state.both + (state.bothEcom ?? 0);
+  return state.both + (state.bothEcom ?? 0) + (state.bothScoot ?? 0);
 }
 
 export function uniqueUsers(state) {
   return Math.max(0,
     state.food.users + state.taxi.users + (state.ecom?.users ?? 0)
-    - state.both - (state.bothEcom ?? 0));
+    + (state.scoot?.users ?? 0)
+    - state.both - (state.bothEcom ?? 0) - (state.bothScoot ?? 0));
 }
 
 // Ворота совета: у такси их нет, е-ком выходит за воротами по метрикам
@@ -785,6 +818,85 @@ export function step(prevState, input = {}) {
   state.both = Math.min(state.both, state.food.users, state.taxi.users);
   state.bothEcom = Math.min(state.bothEcom, state.food.users, state.ecom.users);
 
+  // --- 7б. Самокаты: парк как капитал (только год конгломерата) ---
+  // Деньги превращаются в железо. Железо возит, стареет на улице и продаётся
+  // дешевле, чем куплено. Управление — не бюджет, а календарь: план года
+  // решает, какие месяцы парк зарабатывает, а какие пережидает на складе.
+  if (!state.scoot) state.scoot = { cohorts: [], users: 0 };
+  if (state.bothScoot == null) state.bothScoot = 0;
+  const sc = CONFIG.scooters;
+  let revenueScoot = 0; let scootRides = 0; let scootCosts = 0;
+  let scootCapex = 0; let scootResale = 0;
+  let scootBought = 0; let scootSold = 0; let scootScrapped = 0;
+  let scootStreet = false;
+  if (state.endless) {
+    // Закупка: очередь решения исполняется и сбрасывается — это заказ,
+    // а не ставка бюджета
+    const buyBatches = clamp(Math.floor(decisions.scooterBuy ?? 0), 0, sc.maxBatchesPerMonth);
+    if (buyBatches > 0) {
+      scootBought = buyBatches * sc.batchUnits;
+      scootCapex = scootBought * sc.unitCost;
+      state.scoot.cohorts.push({ units: scootBought, wear: 0 });
+    }
+    decisions.scooterBuy = 0;
+    // Продажа: сперва самые изношенные — у них меньше всего остаточной жизни
+    let sellLeft = Math.max(0, Math.floor(decisions.scooterSell ?? 0)) * sc.batchUnits;
+    if (sellLeft > 0) {
+      const worn = [...state.scoot.cohorts].sort((a, b) => b.wear - a.wear);
+      for (const cohort of worn) {
+        if (sellLeft <= 0) break;
+        const take = Math.min(cohort.units, sellLeft);
+        scootResale += take * sc.unitCost * sc.resaleShare
+          * Math.max(0, 1 - cohort.wear / sc.streetLifeMonths);
+        cohort.units -= take;
+        sellLeft -= take;
+        scootSold += take;
+      }
+      state.scoot.cohorts = state.scoot.cohorts.filter((c) => c.units > 0);
+      scootResale = Math.round(scootResale);
+    }
+    decisions.scooterSell = 0;
+
+    const fleet = scooterFleet(state);
+    const plan = Array.isArray(decisions.scooterPlan) && decisions.scooterPlan.length === 12
+      ? decisions.scooterPlan : null;
+    const calIdx = (month - 1) % 12;
+    scootStreet = fleet > 0
+      && (mods.scootForceStreet || !plan || plan[calIdx] !== 'store');
+    if (scootStreet) {
+      // Поездки: спрос города против ёмкости парка. Лишние самокаты зимой
+      // не возят никого — но стареть продолжают.
+      const demand = sc.cityDemandRides * seasonScooters(month) * (mods.scootDemandMult ?? 1);
+      scootRides = Math.round(Math.min(demand, fleet * sc.ridesPerUnitMonth));
+      revenueScoot = scootRides * sc.ridePrice;
+      scootCosts += fleet * sc.maintenancePerUnit;
+      // Износ — только уличный: месяц на улице съедает месяц жизни.
+      // Зимняя улица съедает два: реагенты, соль и морозы убивают батареи.
+      const wearAdd = seasonScooters(month) < sc.winterSeasonMax ? sc.winterWearMult : 1;
+      for (const cohort of state.scoot.cohorts) cohort.wear += wearAdd;
+      scootScrapped = state.scoot.cohorts
+        .filter((c) => c.wear >= sc.streetLifeMonths)
+        .reduce((s, c) => s + c.units, 0);
+      state.scoot.cohorts = state.scoot.cohorts.filter((c) => c.wear < sc.streetLifeMonths);
+      // Райдеры подтягиваются к ёмкости живого парка
+      const capRiders = scooterFleet(state) * sc.ridersPerUnit;
+      state.scoot.users += Math.round((capRiders - state.scoot.users) * sc.riderAdopt);
+    } else {
+      if (fleet > 0) scootCosts += fleet * sc.storagePerUnit;
+      // Без самокатов на улице привычка тает — склейка зимой проседает
+      state.scoot.users = Math.round(state.scoot.users * (1 - sc.riderDecay));
+    }
+    if (fleet > 0) scootCosts += sc.fixedMonthly;
+    state.scoot.users = Math.max(0, state.scoot.users);
+    // Склейка: райдеры в большинстве своём уже клиенты хаба, Plus даёт
+    // бесплатный доступ и увеличивает пересечение
+    const overlap = clamp(sc.hubOverlap + (state.plus.on ? sc.plusOverlapBoost : 0), 0, 0.95);
+    state.bothScoot = Math.min(Math.round(state.scoot.users * overlap), state.food.users);
+  }
+  const scootOn = scooterFleet(state) > 0 || scootSold > 0 || scootScrapped > 0;
+  const scootFullContribution = state.endless
+    ? scootRides * (sc.ridePrice - sc.rideVarCost) - scootCosts : 0;
+
   // --- 8. Подписка «Новоград Plus»: покупка удержания за маржу ---
   let plusConv = 0; let plusChurned = 0; let revenuePlus = 0; let plusPerkCost = 0;
   const plusPrice = clamp(decisions.plusPrice ?? CONFIG.plus.priceRef, 199, 399);
@@ -817,9 +929,11 @@ export function step(prevState, input = {}) {
   const ticketsFee = ticketsOn ? ticketsPartnerFee(state) : 0;
 
   // --- 9. P&L холдинга ---
-  const revenue = revenueFood + revenueTaxi + revenueEcom + revenuePlus + revenueTickets;
+  const revenue = revenueFood + revenueTaxi + revenueEcom + revenuePlus
+    + revenueTickets + revenueScoot;
   const contribution = contribFood + contribTaxi + contribEcom
-    + (revenuePlus - plusPerkCost) + revenueTickets * 0.7;
+    + (revenuePlus - plusPerkCost) + revenueTickets * 0.7
+    + scootRides * (sc.ridePrice - sc.rideVarCost);
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
   // Фикс е-кома — это склады: у площадки их нет, товар лежит у продавца
@@ -841,7 +955,7 @@ export function step(prevState, input = {}) {
   const opex = CONFIG.hqMonthly + legalCost + (decisions.mgmt ?? 0) + crossBudget
     + (decisions.foodOps ?? 0) + (decisions.foodMarketing ?? 0)
     + fixedFood + fixedTaxi + fixedEcom + taxiBudgets + ecomBudgets
-    + licenseFee + ticketsFee + financeBudget + miscCost;
+    + licenseFee + ticketsFee + financeBudget + miscCost + scootCosts;
 
   const foodFullContribution = contribFood - fixedFood
     - (decisions.foodOps ?? 0) - (decisions.foodMarketing ?? 0);
@@ -861,8 +975,12 @@ export function step(prevState, input = {}) {
   const ecomGrowthUsers = Math.max(0, state.ecom.users - ecomUsersAtStart);
   const workingCapital = ecomOn
     ? ecomGrowthUsers * ecomDef.workingCapitalPerUser * ownShare : 0;
-  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost + workingCapital;
-  state.cash += profit - oneOff;
+  // Закупка самокатов — капитальные расходы: касса меняется на цену партии,
+  // но в операционную прибыль они не входят (в оценке парк живёт остаточной
+  // стоимостью — см. sumOfParts). Продажа возвращает деньги той же строкой.
+  const oneOff = launchCost + (mods.oneOffCost ?? 0) + perUnitCost + workingCapital
+    + scootCapex;
+  state.cash += profit - oneOff + scootResale;
 
   // --- 10. Метрики ---
   const unique = uniqueUsers(state);
@@ -998,6 +1116,25 @@ export function step(prevState, input = {}) {
     lostEcom,
     ecomColdAcq,
     cacColdEcom,
+    // --- самокаты: поля появляются только в году конгломерата, чтобы
+    // отчёты зачётной партии не менялись задним числом ---
+    ...(state.endless ? {
+      scootOn,
+      scootStreet,
+      scootUnits: scooterFleet(state),
+      scootUsers: state.scoot.users,
+      bothScootUsers: state.bothScoot,
+      revenueScoot,
+      scootRides,
+      scootFullContribution,
+      scootCapex,
+      scootResale,
+      scootBought,
+      scootSold,
+      scootScrapped,
+      scootResidual: scooterResidualValue(state),
+      scootSeason: seasonScooters(month),
+    } : {}),
     // --- подписка и партнёрства ---
     plusOn,
     plusLaunched,
@@ -1063,6 +1200,7 @@ export function step(prevState, input = {}) {
     // «Связывать» регулятору есть что, только если работает подписка или
     // общая логистика: иначе выбор в антимонопольном деле фиктивный.
     glued: state.plus.on || (state.ecom.on && hasPerk(asset, 'courier-logistics')),
+    scooters: scooterFleet(state) > 0,
     seen: state.seenEvents ?? [],
     lastId: event?.id ?? null,
   });
@@ -1107,6 +1245,17 @@ export function enterEndless(state) {
   next.board.goal = makeEndlessGoal(next);
   next.board.profitableMonths = 0;
   next.restrictions = null;
+  // Самокаты открываются вместе с актом — автоматически, но парк пуст:
+  // пока не куплен первый самокат, вертикаль не стоит ни рубля и не
+  // размывает фокус. План года по умолчанию наивный — «улица весь год»;
+  // догадаться про склад должен игрок.
+  next.scoot = next.scoot ?? { cohorts: [], users: 0 };
+  next.bothScoot = next.bothScoot ?? 0;
+  next.decisions.scooterBuy = 0;
+  next.decisions.scooterSell = 0;
+  if (!Array.isArray(next.decisions.scooterPlan) || next.decisions.scooterPlan.length !== 12) {
+    next.decisions.scooterPlan = Array(12).fill('street');
+  }
   return next;
 }
 
@@ -1167,6 +1316,17 @@ export function sumOfParts(state) {
     }
     if (state.plus.on || h.some((r) => r.plusOn)) {
       mkPart('plus', (r) => r.revenuePlus ?? 0, (r) => r.plusFullContribution ?? 0, CONFIG.plus.multiple);
+    }
+  }
+
+  // Самокаты в оценке — не «история роста», а железо по остаточной
+  // стоимости: инвестор платит за то, что можно продать. Операционная
+  // прибыль парка уже пришла кассой; мультипликатор на неё не даётся —
+  // иначе закупка парка накачивала бы рост года конгломерата.
+  if (state.endless) {
+    const residual = scooterResidualValue(state);
+    if (residual > 0) {
+      parts.push({ id: 'scoot', runRate: 0, growth: 0, margin: 0, value: residual, zoo: false });
     }
   }
 

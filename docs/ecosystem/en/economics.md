@@ -298,6 +298,42 @@ The act’s result goes out as a separate string tagged NOVOGRAD+ into a
 separate table: a 36-month game and a 48-month game are not comparable and
 must not share a ranking.
 
+## Scooters: the fleet as capital
+
+Together with the conglomerate year the board unlocks scooters — the only
+vertical whose main lever is a calendar, not a budget. Money turns into
+hardware: the fleet is bought in batches of 100 (₽40K per scooter), lives
+about **8 street months**, and sells for less than it cost — half the price
+times the life remaining. Until the first batch is bought the vertical costs
+nothing and dilutes no focus.
+
+The seasonality is the harshest in the set: January carries 5% of the norm,
+July 170%. Hence the new control element — the **year plan**: each month the
+fleet is either on the street (earning and wearing out) or in storage (safe,
+carrying no one, riders slowly drifting away). A winter street month wears
+the fleet twice as fast — road salt and frost. The “Freak warm winter” event
+lets you break the plan once — for the cost of overnight crews and the
+doubled wear.
+
+The economics are measured on 12 seeds (medians, base — the full ecosystem):
+
+- a 26-batch fleet with a March–October street plan and a reinforced
+  management company adds **+1.5 p.p.** of conglomerate-year growth;
+- the same fleet left on the street all year round is **worse than having no
+  scooters at all** (−1.1 p.p.): winter maintenance drains the till and the
+  doubled winter wear kills the fleet by peak season;
+- a fleet without extra management costs **−1.2 p.p.** through the defocus
+  of the whole holding — scooters weigh half a vertical in the conglomerate
+  penalty, and that is their hidden price.
+
+Riders overlap the hub base (~70%, more with Plus) and count as multi-service
+customers — the fleet works for the glue too. In the holding’s valuation the
+fleet is worth exactly its residual value: hardware gets no revenue multiple,
+otherwise buying scooters would pump the year’s growth. And remember: the act
+has no rounds — the game will not accept a fleet order larger than your till,
+and running out of cash mid-year means a distressed sale (your scored result
+stays untouched).
+
 ## The price of decisions (an extract from the measurements)
 
 | Decision | Shape of the answer |
