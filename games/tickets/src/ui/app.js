@@ -789,7 +789,14 @@ function renderReport() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev) { el('event-slot').innerHTML = ''; return; }
+  if (!ev) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.month;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
   const options = ev.options ?? [];
   el('event-slot').innerHTML = `<div class="panel event">
     <h3>${tx(ev.title)}</h3>
@@ -1773,16 +1780,19 @@ function waterfallHtml(rows) {
     </tbody></table></div>`;
 }
 
-function gradeOf(score) {
-  if (score.bankrupt) return t('gradeBankrupt');
-  if (score.sold) return t('gradeSold');
-  if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return t('gradeExcellent');
+// Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+// подпись gradeQuip*
+function gradeTierOf(score) {
+  if (score.bankrupt) return 'Bankrupt';
+  if (score.sold) return 'Sold';
+  if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return 'Excellent';
   // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
   // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
-  if (score.equityValue >= 2_500_000_000) return t('gradeSolid');
-  if (score.orgShare < 0.25) return t('gradeModest');
-  return t('gradeSurvived');
+  if (score.equityValue >= 2_500_000_000) return 'Solid';
+  if (score.orgShare < 0.25) return 'Modest';
+  return 'Survived';
 }
+const gradeOf = (score) => t(`grade${gradeTierOf(score)}`);
 
 // Итог заносится в локальную таблицу рекордов один раз за партию; метка своей
 // записи хранится в state, чтобы переоткрытие экрана итогов её не теряло.
@@ -1870,6 +1880,7 @@ function showGameOver() {
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
     <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
@@ -2005,6 +2016,7 @@ function renderAll() {
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('app-foot').textContent = t('footNumbers');
   // Кнопки «Игры» и «🏆» живут только там, где есть витрина и сервер таблицы:
   // офлайн-файл не показывает ни ту, ни другую.

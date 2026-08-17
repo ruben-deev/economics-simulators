@@ -1067,7 +1067,14 @@ function renderFunding() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+  if (!ev || state.over) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.month;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
 
   const options = ev.options
     ? `<div class="event-options">${ev.options.map((o, i) => `
@@ -1853,11 +1860,14 @@ function showGameOver() {
   // расходятся втрое, и общая шкала объявляла бы отличную партию за билеты
   // «скромным итогом». Пороги лежат в дескрипторе актива.
   const gr = gradesFor(state.assetId, state.difficulty);
-  const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.sold ? t('gradeSold')
-    : s.equityValue > gr.excellent ? t('gradeExcellent')
-    : s.equityValue > gr.solid ? t('gradeSolid')
-    : s.equityValue > gr.survived ? t('gradeSurvived') : t('gradeModest');
+  // Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+  // подпись gradeQuip*
+  const gradeTier = s.bankrupt ? 'Bankrupt'
+    : s.sold ? 'Sold'
+    : s.equityValue > gr.excellent ? 'Excellent'
+    : s.equityValue > gr.solid ? 'Solid'
+    : s.equityValue > gr.survived ? 'Survived' : 'Modest';
+  const grade = t(`grade${gradeTier}`);
 
   // Мета-прогрессия: лучший финал НОВОГРАДА открывает неэкономические
   // бонусы в старых играх (бейдж и коды партий на их финальных экранах)
@@ -1921,6 +1931,7 @@ function showGameOver() {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${secretHtml}
     ${crownHtml}
     ${backHtml}
@@ -2189,6 +2200,7 @@ function renderChrome() {
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');

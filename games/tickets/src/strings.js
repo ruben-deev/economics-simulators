@@ -56,6 +56,7 @@ export const STRINGS = {
   brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
+  btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   langToggle: { ru: 'EN', en: 'RU' },
   langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
 
@@ -102,6 +103,19 @@ export const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
+  // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
+  // шкалу. Тексты одинаковы во всех играх набора — это голос города.
+  // Тихий ход: показывается изредка, чтобы тишина была частью мира,
+  // а не пустым местом (и не надоедала)
+  quietQuip1: { ru: 'Тихий месяц. Подозрительно тихий.', en: 'A quiet month. Suspiciously quiet.' },
+  quietQuip2: { ru: 'Городу нечем вас удивить. Пока.', en: 'The city has nothing to surprise you with. Yet.' },
+  quietQuip3: { ru: 'Событий нет. Конкурент, вероятно, тоже отдыхает. Вероятно.', en: 'No events. The rival is probably resting too. Probably.' },
+  gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
+  gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
+  gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
+  gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players finish this market around $60M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },

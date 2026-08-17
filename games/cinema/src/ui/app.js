@@ -1092,7 +1092,44 @@ function renderSlate() {
 // ----------------------------------------------------------------------------
 // Афиша конкурента
 // ----------------------------------------------------------------------------
-function rivalCard(type, when, cls = '') {
+// Названия премьер конкурента — чистая косметика с иронией: экономикой
+// релиза правит масштаб (type), а название только украшает афишу. Выбор
+// детерминирован кодом партии и позицией, чтобы афиша не мигала при
+// перерисовках. Все названия вымышленные.
+const RIVAL_TITLES = {
+  small: [
+    { ru: 'Стажёр-3', en: 'Intern 3' },
+    { ru: 'Копейка', en: 'Penny' },
+    { ru: 'Прожарка бюджета', en: 'Budget Roast' },
+  ],
+  notable: [
+    { ru: 'Дожим', en: 'The Follow-Up' },
+    { ru: 'Пивот', en: 'The Pivot' },
+    { ru: 'Оферта', en: 'The Term Sheet' },
+  ],
+  major: [
+    { ru: 'Юнит и экономика: финальный сезон', en: 'Unit & Economics: The Final Season' },
+    { ru: 'Меморандум', en: 'The Memorandum' },
+    { ru: 'Слияние', en: 'The Merger' },
+  ],
+  mega: [
+    { ru: 'Отжим 2: Холодная маржа', en: 'Squeeze 2: Cold Margin' },
+    { ru: 'Планёрка бесконечности', en: 'Standup Meeting: Endgame' },
+    { ru: 'Голый рынок', en: 'The Naked Market' },
+  ],
+};
+// Соль — месяц выхода релиза: анонс «в следующем месяце» и вышедшая
+// через месяц премьера получают одно и то же название.
+function rivalTitle(type, releaseMonth) {
+  const pool = RIVAL_TITLES[type];
+  if (!pool) return '';
+  const s = `${state.seed}|${releaseMonth}|${type}`;
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return tx(pool[h % pool.length]);
+}
+
+function rivalCard(type, when, cls = '', releaseMonth = state.month) {
   const fx = rivalEffect(type, 0);
   const effects = type === 'none'
     ? t('rivalNoEffect')
@@ -1101,11 +1138,12 @@ function rivalCard(type, when, cls = '') {
         churn: (fx.churnAdd * 100).toFixed(1),
         hours: signedPct(fx.hoursMult - 1, 0),
       });
+  const title = rivalTitle(type, releaseMonth);
   return `<div class="${cls}">
     <span class="weather-icon">${RIVAL_RELEASES[type]?.icon ?? '·'}</span>
     <span class="weather-body">
       <span class="weather-when">${when}</span>
-      <div class="weather-name">${rivalName(type)}</div>
+      <div class="weather-name">${rivalName(type)}${title ? ` · «${title}»` : ''}</div>
       <div class="weather-fx">${effects}</div>
     </span>
   </div>`;
@@ -1273,7 +1311,7 @@ function renderRival() {
 
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
-      ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`)}
+      ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`, state.month + 1)}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
@@ -1502,7 +1540,14 @@ function renderFunding() {
 // ----------------------------------------------------------------------------
 function renderEvent() {
   const ev = state.pendingEvent;
-  if (!ev || state.over) { el('event-slot').innerHTML = ''; return; }
+  if (!ev || state.over) {
+    // Тихий ход: изредка вместо пустоты — ироничная строка. Каждый раз
+    // было бы шумом, поэтому только на ходах с остатком 2 от пяти.
+    const turn = state.month;
+    el('event-slot').innerHTML = (!state.over && turn > 3 && turn % 5 === 2)
+      ? `<div class="funding-note">${t(`quietQuip${(turn % 3) + 1}`)}</div>` : '';
+    return;
+  }
 
   const options = ev.options
     ? `<div class="event-options">${ev.options.map((o, i) => `
@@ -2228,8 +2273,10 @@ function novogradInviteHtml() {
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
-  const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.sold ? t('gradeSold')
+  // Ярус вердикта отдельно от текста: по нему же выбирается ироничная
+  // подпись gradeQuip*
+  const gradeTier = s.bankrupt ? 'Bankrupt'
+    : s.sold ? 'Sold'
     // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
     // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
     // (80 млрд) была недостижима ни одной опорой.
@@ -2238,9 +2285,10 @@ function showGameOver() {
     // 6.0 / 10.9 / 14.1 млрд. «Выжили» достаёт любая живая стратегия,
     // «крепко» — доведённый конвейер, «отлично» — лучшая опора. Прежние
     // пороги (32/16/8) были из мира, где прайс 999 был бесплатным.
-    : s.equityValue > 12e9 ? t('gradeExcellent')
-    : s.equityValue > 6e9 ? t('gradeSolid')
-    : s.equityValue > 2.5e9 ? t('gradeSurvived') : t('gradeModest');
+    : s.equityValue > 12e9 ? 'Excellent'
+    : s.equityValue > 6e9 ? 'Solid'
+    : s.equityValue > 2.5e9 ? 'Survived' : 'Modest';
+  const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
     tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
@@ -2262,6 +2310,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
+    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
@@ -2430,6 +2479,7 @@ function renderChrome() {
   el('title-funding').textContent = t('panelFunding');
   el('title-dynamics').textContent = t('panelDynamics');
   el('btn-restart').textContent = t('btnRestart');
+  el('btn-restart').title = t('btnRestartTitle');
   el('btn-help').title = t('btnHelpTitle');
   el('btn-lang').textContent = t('langToggle');
   el('btn-lang').title = t('langTitle');
