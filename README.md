@@ -1,4 +1,4 @@
-# Учебные экономические симуляторы
+# Новоград: бизнес-симуляторы
 
 *[English version](README.en.md)* · автор — **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)**
 
