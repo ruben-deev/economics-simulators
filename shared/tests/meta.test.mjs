@@ -18,7 +18,7 @@ globalThis.localStorage = {
 };
 
 const {
-  parseResultLine, addResultLine, savedLines, legacyUnlocks, legacyFor,
+  parseResultLine, addResultLine, savedLines, legacyUnlocks, legacyScores, legacyFor,
   rememberNovogradResult, novogradBest, conglomerateUnlocked, tripleCrown,
   LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY, legacyRatio, LEGACY_RATIO_CAP,
   resetEcosystemProgress, NOVOGRAD_SAVE_KEY,
@@ -148,33 +148,48 @@ test('порог достойного финала приходит от акт�
   assert.equal(conglomerateUnlocked(), true, 'старая запись читается по общему порогу');
 });
 
-test('сброс пути — полный: партии, рекорды и наследие стираются', () => {
+test('сброс пути: наследие и партии стираются, рекорды неприкосновенны', () => {
   store.clear();
   const g = LEGACY_GAMES[0];
-  // Заработанные рекорды игр, строка наследия, сохранения и место в таблице
-  localStorage.setItem(g.recordsKey, JSON.stringify([{ score: g.threshold * 2 }]));
+  // Заработанный рекорд (id — миллисекунды записи, как пишут игры),
+  // строка наследия, сохранения и место в мировой таблице
+  const oldRecord = [{ id: String(Date.now() - 60_000), score: g.threshold * 2 }];
+  localStorage.setItem(g.recordsKey, JSON.stringify(oldRecord));
   addResultLine(line(g.tag, g.threshold * 2));
   rememberNovogradResult(5e9);
   localStorage.setItem(NOVOGRAD_SAVE_KEY, '{"state":{}}');
   localStorage.setItem('novoeda-save-v3', '{"state":{}}');
   localStorage.setItem('lb-mine-НОВОЕДА', '{"rank":3}');
-  // А имя, язык и уровень сложности сброс пережить обязаны
+  // Имя, язык и уровень сложности сброс пережить обязаны
   localStorage.setItem('lb-name', 'Аня');
   localStorage.setItem('series-difficulty', 'hard');
   assert.equal(legacyUnlocks().delivery, true);
 
   const cleared = resetEcosystemProgress();
-  assert.ok(cleared.length >= 5, 'сброшено всё перечисленное');
+  assert.ok(cleared.length >= 4, 'сброшено всё перечисленное');
   assert.equal(novogradBest(), 0, 'лучший финал НОВОГРАДА забыт');
   assert.equal(savedLines().length, 0, 'введённые строки наследия забыты');
   assert.equal(localStorage.getItem(NOVOGRAD_SAVE_KEY), null, 'партия НОВОГРАДА сброшена');
   assert.equal(localStorage.getItem('novoeda-save-v3'), null, 'партия НОВОЕДЫ сброшена');
   assert.equal(conglomerateUnlocked(), false, 'обратный бонус закрыт заново');
-  // Рекорды тоже стёрты: наследие НОВОГРАДА читается и из них, и без этого
-  // «перенос из прошлой игры» переживал сброс (замечание владельца)
-  assert.equal(localStorage.getItem(g.recordsKey), null, 'таблица рекордов стёрта');
-  assert.equal(legacyUnlocks().delivery, false, 'наследие после сброса пусто');
-  assert.equal(localStorage.getItem('lb-mine-НОВОЕДА'), null, 'место в таблице забыто');
+  // Таблицы рекордов неприкосновенны (правило владельца): сброс ставит
+  // отметку времени, и старые записи перестают питать наследие — но из
+  // таблиц не пропадают. Мировую таблицу сброс не трогает по построению.
+  assert.equal(localStorage.getItem(g.recordsKey), JSON.stringify(oldRecord),
+    'таблица рекордов не тронута');
+  assert.equal(localStorage.getItem('lb-mine-НОВОЕДА'), '{"rank":3}',
+    'место в мировой таблице не тронуто');
+  assert.equal(legacyUnlocks().delivery, false, 'старый рекорд наследие больше не открывает');
+  assert.equal(legacyScores().delivery, 0, 'и в перенос не попадает');
   assert.equal(localStorage.getItem('lb-name'), 'Аня', 'имя игрока пережило сброс');
   assert.equal(localStorage.getItem('series-difficulty'), 'hard', 'уровень пережил сброс');
+
+  // Партия, сыгранная после сброса, открывает наследие заново
+  const fresh = { id: String(Date.now() + 60_000), score: g.threshold * 2 };
+  localStorage.setItem(g.recordsKey, JSON.stringify([...oldRecord, fresh]));
+  assert.equal(legacyUnlocks().delivery, true, 'новая запись после сброса считается');
+
+  // Запись без меток времени (древний формат) после сброса тоже не считается
+  localStorage.setItem(g.recordsKey, JSON.stringify([{ score: g.threshold * 3 }]));
+  assert.equal(legacyUnlocks().delivery, false, 'безвременная запись считается древней');
 });

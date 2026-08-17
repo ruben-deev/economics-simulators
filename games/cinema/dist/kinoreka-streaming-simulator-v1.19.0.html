@@ -2686,6 +2686,36 @@ const safeSetJson = (key, value) => {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
 };
 
+// Момент последнего «начать путь заново». Таблицы рекордов неприкосновенны,
+// поэтому сброс их не стирает, а ставит эту отметку: наследие и путь серии
+// считаются только по записям моложе неё. Сами таблицы в играх показывают
+// всю историю, как и мировая таблица на сервере.
+const SERIES_RESET_KEY = 'series-reset-at';
+
+const seriesResetAt = () => {
+  try { return Number(localStorage.getItem(SERIES_RESET_KEY)) || 0; } catch { return 0; }
+};
+
+// Момент записи рекорда: id — миллисекунды создания (так пишут все четыре
+// игры), date — день, страховка для записей без id. Совсем без меток —
+// древняя запись, после сброса она не считается.
+const recordTime = (r) => {
+  const byId = Number(r?.id);
+  if (Number.isFinite(byId) && byId > 0) return byId;
+  const byDate = Date.parse(String(r?.date ?? ''));
+  return Number.isFinite(byDate) ? byDate : 0;
+};
+
+// Лучший счёт из локальной таблицы рекордов игры, учитывая только записи
+// не старше отметки сброса. Пока сброса не было (since = 0), считаются все,
+// включая записи древних форматов без меток времени.
+const bestLocalScore = (g, since) => {
+  const records = safeGetJson(g.recordsKey, []);
+  if (!Array.isArray(records)) return 0;
+  return records.reduce((best, r) => (recordTime(r) >= since
+    ? Math.max(best, Number(r?.score) || 0) : best), 0);
+};
+
 // Разбор строки результата: «ИГРА|vX.Y.Z|код|счёт|ходов|#СУММА»
 function parseResultLine(line) {
   const text = String(line ?? '').trim();
@@ -2728,11 +2758,10 @@ const sameGame = (lineTag, gameTag) => lineTag === gameTag
  */
 function legacyUnlocks() {
   const out = {};
+  const since = seriesResetAt();
   const lines = savedLines().map(parseResultLine).filter(Boolean);
   for (const g of LEGACY_GAMES) {
-    const records = safeGetJson(g.recordsKey, []);
-    const bestLocal = Array.isArray(records)
-      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLocal = bestLocalScore(g, since);
     const bestLine = lines
       .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
@@ -2749,11 +2778,10 @@ function legacyUnlocks() {
  */
 function legacyScores() {
   const out = {};
+  const since = seriesResetAt();
   const lines = savedLines().map(parseResultLine).filter(Boolean);
   for (const g of LEGACY_GAMES) {
-    const records = safeGetJson(g.recordsKey, []);
-    const bestLocal = Array.isArray(records)
-      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLocal = bestLocalScore(g, since);
     const bestLine = lines
       .filter((l) => sameGame(l.tag, g.tag))
       .reduce((best, l) => Math.max(best, l.score), 0);
@@ -2911,40 +2939,27 @@ const GAME_SAVE_KEYS = [
   'novoeda-save-v3', 'kinoreka-save-v1', 'biletville-save-v1', NOVOGRAD_SAVE_KEY,
 ];
 
-// Личные таблицы рекордов всех игр. Наследие НОВОГРАДА подтягивается и из
-// них (не только из введённых строк) — поэтому «сбросить всё» обязан
-// стирать и рекорды, иначе перенос из прошлой игры переживает сброс.
-const GAME_RECORDS_KEYS = [
-  'novoeda-records', 'kinoreka-records', 'biletville-records', 'novograd-records',
-];
-
 /**
- * Полный сброс пути серии: строки наследия, лучший финал НОВОГРАДА,
- * незаконченные партии и личные таблицы рекордов всех четырёх игр, а также
- * запомненные места в мировой таблице. Устройство встречает серию «как в
- * первый раз». Две итерации починок: сначала сброс щадил сейвы (НОВОЕДА
- * встречала недоигранной партией), потом рекорды (НОВОГРАД продолжал
- * показывать перенос из прошлой игры — наследие читается и из рекордов).
+ * Сброс пути серии: строки наследия, лучший финал НОВОГРАДА и незаконченные
+ * партии всех четырёх игр стираются, а вместо стирания рекордов ставится
+ * отметка времени. Таблицы рекордов неприкосновенны — и личные, и мировая:
+ * они история игрока, а не состояние пути. Поэтому наследие и путь серии
+ * после сброса считаются только по записям МОЛОЖЕ отметки (см. legacyUnlocks
+ * и legacyScores), и НОВОГРАД встречает без «что перенеслось из прошлой
+ * игры», хотя сами таблицы в играх показывают всё как показывали.
  *
- * Не трогаются: мировая таблица на сервере (результаты уже отправлены),
- * имя игрока, язык и выбранный уровень сложности.
+ * Не трогаются: рекорды всех игр, места в мировой таблице, мировая таблица
+ * на сервере, имя игрока, язык и выбранный уровень сложности.
  */
 function resetEcosystemProgress() {
   const cleared = [];
-  const fixed = [META_BEST_KEY, META_LINES_KEY, ...GAME_SAVE_KEYS, ...GAME_RECORDS_KEYS];
-  try {
-    // Запомненные места в мировой таблице: ключи с тегом игры и уровня
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('lb-mine-')) fixed.push(k);
-    }
-  } catch { /* приватный режим */ }
-  for (const key of fixed) {
+  for (const key of [META_BEST_KEY, META_LINES_KEY, ...GAME_SAVE_KEYS]) {
     try {
       if (localStorage.getItem(key) !== null) cleared.push(key);
       localStorage.removeItem(key);
     } catch { /* приватный режим */ }
   }
+  try { localStorage.setItem(SERIES_RESET_KEY, String(Date.now())); } catch { /* приватный режим */ }
   return cleared;
 }
 
