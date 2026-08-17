@@ -1313,9 +1313,9 @@ const STRINGS = {
     en: 'There are no annual plans yet: the discount starts working with the first person who pays a year upfront.',
   },
   flowTitle: { ru: 'Мультиплекс: тарифы и рынок', en: 'The multiplex: tiers and the market' },
-  plexPremium: { ru: 'Премиум · {price} ₽', en: 'Premium · {price} ₽' },
-  plexAds: { ru: 'Рекламный · {price} ₽', en: 'Ad tier · {price} ₽' },
-  plexRival: { ru: 'Конкурент · {price} ₽', en: 'Rival · {price} ₽' },
+  plexPremium: { ru: 'Премиум · {price}', en: 'Premium · {price}' },
+  plexAds: { ru: 'Рекламный · {price}', en: 'Ad tier · {price}' },
+  plexRival: { ru: 'Конкурент · {price}', en: 'Rival · {price}' },
   plexPremiumShort: { ru: 'Премиум', en: 'Premium' },
   plexAdsShort: { ru: 'Рекламный', en: 'Ad tier' },
   plexRivalShort: { ru: 'Конкурент', en: 'Rival' },
@@ -1949,7 +1949,7 @@ score = valuation × your stake`,
   },
   debriefPricyPremium: {
     ru: 'Премиум держался на 449 ₽ и выше {n} месяцев — больше половины партии. Цена 399 ₽ обгоняет 449 ₽ примерно на 0.7 млрд: дорогой вход режет приток новичков раньше, чем дорастает выручка с подписчика.',
-    en: 'Premium stayed at 449 ₽ or higher for {n} months — more than half the run. A 399 ₽ price beats 449 ₽ by about $7M: a pricey door cuts the inflow of newcomers before the revenue per subscriber catches up.',
+    en: 'Premium stayed at $4.49 or higher for {n} months — more than half the run. A $3.99 price beats $4.49 by about $7M: a pricey door cuts the inflow of newcomers before the revenue per subscriber catches up.',
   },
   debriefSummerAds: {
     ru: 'Рекламная загрузка летом была выше зимней — против сезона CPM (лето ×0.75, зима ×1.25). Та же минута рекламы летом приносит на 40% меньше зимней.',
@@ -7747,8 +7747,8 @@ function renderStudioMap() {
   const flowLbl = (x, text, color, cls, row = 0) => `
     <text class="px ${cls}" x="${x}" y="${floor + (narrow ? 50 : 48) + row * 14}" text-anchor="middle" font-size="10" fill="${color}">${text}</text>`;
 
-  const priceP = Math.round(state.decisions.priceNew);
-  const priceA = Math.round(state.decisions.priceAds);
+  const priceP = amount(state.decisions.priceNew);
+  const priceA = amount(state.decisions.priceAds);
 
   const multiplexSvg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
     ${hall(xP, dP, 'px-premium', 'rgba(251, 191, 36, 0.7)', 'rgba(251, 191, 36, 0.22)')}
@@ -7757,7 +7757,7 @@ function renderStudioMap() {
     <line x1="6" y1="${floor}" x2="${W - 6}" y2="${floor}" stroke="var(--line)"></line>
     ${cap(xP, dP, narrow ? t('plexPremiumShort') : t('plexPremium', { price: priceP }), compact(premium), 'var(--warn)')}
     ${cap(xA, dA, narrow ? t('plexAdsShort') : t('plexAds', { price: priceA }), compact(ads), '#2dd4bf')}
-    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: Math.round(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
+    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: amount(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
     ${arrowV(xP + dP.w * 0.35, true, 'var(--good)', 'px-in')}
     ${flowLbl(xP + dP.w * 0.35, '+' + compact(premiumNew), 'var(--good)', 'px-in')}
     ${arrowV(xA + dA.w * 0.4, true, 'var(--good)', 'px-in')}

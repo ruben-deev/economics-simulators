@@ -262,8 +262,8 @@ function renderStudioMap() {
   const flowLbl = (x, text, color, cls, row = 0) => `
     <text class="px ${cls}" x="${x}" y="${floor + (narrow ? 50 : 48) + row * 14}" text-anchor="middle" font-size="10" fill="${color}">${text}</text>`;
 
-  const priceP = Math.round(state.decisions.priceNew);
-  const priceA = Math.round(state.decisions.priceAds);
+  const priceP = amount(state.decisions.priceNew);
+  const priceA = amount(state.decisions.priceAds);
 
   const multiplexSvg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('flowTitle')}">
     ${hall(xP, dP, 'px-premium', 'rgba(251, 191, 36, 0.7)', 'rgba(251, 191, 36, 0.22)')}
@@ -272,7 +272,7 @@ function renderStudioMap() {
     <line x1="6" y1="${floor}" x2="${W - 6}" y2="${floor}" stroke="var(--line)"></line>
     ${cap(xP, dP, narrow ? t('plexPremiumShort') : t('plexPremium', { price: priceP }), compact(premium), 'var(--warn)')}
     ${cap(xA, dA, narrow ? t('plexAdsShort') : t('plexAds', { price: priceA }), compact(ads), '#2dd4bf')}
-    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: Math.round(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
+    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: amount(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
     ${arrowV(xP + dP.w * 0.35, true, 'var(--good)', 'px-in')}
     ${flowLbl(xP + dP.w * 0.35, '+' + compact(premiumNew), 'var(--good)', 'px-in')}
     ${arrowV(xA + dA.w * 0.4, true, 'var(--good)', 'px-in')}
