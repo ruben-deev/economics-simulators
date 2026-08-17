@@ -260,7 +260,7 @@
       });
     }
 
-    // Табель серии: одна строка о том, где игрок на пути из четырёх игр.
+    // Путь серии: одна строка о том, где игрок на пути из четырёх игр.
     // Прогресс каждой игры нормирован её «крепким» финалом, поэтому 100% —
     // это «сыграно крепко всё», а не «набит рекорд в одной».
     function renderSeries() {
@@ -282,7 +282,7 @@
         ? (ru ? 'Весь путь пройден: серия сыграна целиком.' : 'The whole path is walked: the series is complete.')
         : (ru ? `Не хватает: ${sc.missing.join(', ')}.` : `Missing: ${sc.missing.join(', ')}.`);
       node.innerHTML = `<div class="series-head">
-          <b>${ru ? 'Табель серии' : 'Series scorecard'}</b>
+          <b>${ru ? 'Путь серии' : 'The series path'}</b>
           <span>${Math.round(sc.share * 100)}% · ${sc.filled}/${sc.total}</span>
         </div>
         <div class="series-grid">${cells}</div>
@@ -298,8 +298,8 @@
       document.getElementById('series-reset')?.addEventListener('click', (e) => {
         e.preventDefault();
         const ask = ru
-          ? 'Пройти путь заново? Забудутся: введённые строки результатов, лучший финал НОВОГРАДА и его незаконченная партия. Таблицы рекордов всех игр останутся на месте.'
-          : 'Start the path over? This forgets: entered result strings, your best NOVOGRAD finale and its unfinished game. Every game’s record table stays.';
+          ? 'Пройти путь заново? Забудутся: введённые строки результатов, лучший финал НОВОГРАДА и незаконченные партии всех четырёх игр. Таблицы рекордов останутся на месте.'
+          : 'Start the path over? This forgets: entered result strings, your best NOVOGRAD finale and the unfinished games of all four titles. Every record table stays.';
         if (!window.confirm(ask)) return;
         resetEcosystemProgress();
         render();
