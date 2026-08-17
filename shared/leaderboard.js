@@ -22,10 +22,15 @@ export function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
 
-export async function lbTop(game, limit = 10) {
+// seed передаётся и серверу: сервер второй версии фильтрует по коду партии
+// сам, а первой — просто не знает такого параметра и отдаёт обычный топ
+// (страховкой работает клиентский фильтр в lbMount).
+export async function lbTop(game, limit = 10, seed = '') {
   const base = lbEndpoint();
   if (!base) return null;
-  const res = await fetch(`${base}?game=${encodeURIComponent(game)}&limit=${limit}`);
+  const url = `${base}?game=${encodeURIComponent(game)}&limit=${limit}`
+    + (seed ? `&seed=${encodeURIComponent(seed)}` : '');
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`leaderboard ${res.status}`);
   const data = await res.json();
   return Array.isArray(data.top) ? data.top : [];
@@ -164,8 +169,9 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
   // С фильтром топ запрашивается глубже: код партии — редкая строка,
-  // и в первой десятке его может не оказаться вовсе
-  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10)
+  // и в первой десятке его может не оказаться вовсе (страховка для сервера
+  // первой версии; второй фильтрует сам по параметру seed)
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10, filterSeed)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
