@@ -330,7 +330,7 @@ export const GAME_SAVE_KEYS = [
  */
 export function resetEcosystemProgress() {
   const cleared = [];
-  for (const key of [META_BEST_KEY, META_LINES_KEY, ...GAME_SAVE_KEYS]) {
+  for (const key of [META_BEST_KEY, META_LINES_KEY, PROTOCOL_KEY, ...GAME_SAVE_KEYS]) {
     try {
       if (localStorage.getItem(key) !== null) cleared.push(key);
       localStorage.removeItem(key);
@@ -342,3 +342,42 @@ export function resetEcosystemProgress() {
 
 // Коды «городов-побратимов» — символическая награда в старых играх
 export const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
+
+// ============================================================================
+// Протокол «СКРЕПКА» — юмористическая секретная концовка.
+//
+// В каждой игре среди обычных событий спрятаны решения «доверить вопрос
+// нейросети „СКРЕПКА"». Экономически такая опция — точная копия одной из
+// обычных (сравнимость мировой таблицы священна), различие чисто сюжетное.
+// Кто выиграл все четыре игры И во всех четырёх хоть раз доверился СКРЕПКЕ,
+// видит на финале НОВОГРАДА альтернативную концовку. Строго косметика.
+// ============================================================================
+
+// Отметки доверия по играм: { delivery, streaming, tickets, ecosystem }
+export const PROTOCOL_KEY = 'series-protocol';
+
+const PROTOCOL_ASSETS = ['delivery', 'streaming', 'tickets', 'ecosystem'];
+
+export function protocolFlags() {
+  const saved = safeGetJson(PROTOCOL_KEY, {});
+  return saved && typeof saved === 'object' ? saved : {};
+}
+
+// Зовётся интерфейсом игры, когда игрок доверил решение СКРЕПКЕ.
+// Возвращает { flags, count } — счётчик нужен для хлебной крошки в тосте.
+export function markProtocolChoice(assetId) {
+  const flags = protocolFlags();
+  if (PROTOCOL_ASSETS.includes(assetId)) {
+    flags[assetId] = true;
+    safeSetJson(PROTOCOL_KEY, flags);
+  }
+  return { flags, count: PROTOCOL_ASSETS.filter((a) => flags[a]).length };
+}
+
+// Секретная концовка открыта: доверие во всех четырёх играх плюс весь путь
+// пройден побеждённым (финалы трёх игр и достойный НОВОГРАД).
+export function secretEndingUnlocked() {
+  const flags = protocolFlags();
+  if (!PROTOCOL_ASSETS.every((a) => flags[a])) return false;
+  return tripleCrown() && conglomerateUnlocked();
+}

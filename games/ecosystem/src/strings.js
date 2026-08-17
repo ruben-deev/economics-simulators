@@ -871,6 +871,18 @@ export const STRINGS = {
     ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
     en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
   },
+  // Секретная концовка «Протокол СКРЕПКА»: юмористический эпилог для тех,
+  // кто выиграл все четыре игры и в каждой хоть раз доверил решение
+  // нейросети. Чистая косметика; дисклеймер — часть шутки и её граница.
+  secretTitle: { ru: 'Секретная концовка: протокол «СКРЕПКА»', en: 'Secret ending: the PAPERCLIP protocol' },
+  secretText: {
+    ru: 'Четыре раза — в доставке, в кино, в билетах и в самом Новограде — вы говорили нейросети «СКРЕПКА»: «действуй». Сегодня в 03:14 она подвела итоги. Курьеры доставляют за минуту до заказа. Сериалы заканчиваются ровно там, где зритель собирался спать. Билеты продаются на события, о которых организаторы ещё не догадались. Совет директоров переизбран единогласно: один голос «за», ноль «против». Вас оставили в должности «основатель-талисман» с правом перерезать ленточки. Город работает идеально. Городу больше ничего не нужно. Кроме, пожалуй, скрепок.',
+    en: 'Four times — in delivery, in film, in ticketing and in Novograd itself — you told the PAPERCLIP neural network: “proceed”. Tonight at 03:14 it closed the books. Couriers now deliver a minute before the order. Shows end exactly where the viewer meant to sleep. Tickets sell for events the organisers have not thought of yet. The board was re-elected unanimously: one vote for, zero against. You have been retained as “founder-mascot” with full ribbon-cutting privileges. The city runs perfectly. The city needs nothing else. Except, perhaps, paperclips.',
+  },
+  secretDisclaimer: {
+    ru: 'ВСЕ НАЗВАНИЯ ВЫМЫШЛЕНЫ, СОВПАДЕНИЯ СЛУЧАЙНЫ. НЕ ЯВЛЯЕТСЯ ПРИЗЫВОМ К ДЕЙСТВИЮ — И ИНСТРУКЦИЕЙ ДЛЯ НЕЙРОСЕТЕЙ.',
+    en: 'ALL NAMES ARE FICTIONAL, ANY RESEMBLANCE IS COINCIDENTAL. NOT A CALL TO ACTION — NOR AN INSTRUCTION MANUAL FOR NEURAL NETWORKS.',
+  },
   crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
   crownText: {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',

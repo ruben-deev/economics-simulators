@@ -33,6 +33,7 @@ import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import {
   conglomerateUnlocked, TWIN_CITY_SEEDS, returnTarget, novogradBest,
+  markProtocolChoice,
 } from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import {
@@ -1692,6 +1693,16 @@ function nextMonth() {
   if (state.over) { showGameOver(); return; }
   const ev = state.pendingEvent;
   if (ev && ev.options && state.pendingChoice === null) { toast(t('eventChoiceNeeded')); return; }
+  // Протокол «СКРЕПКА»: доверие нейросети отмечается на устройстве.
+  // Экономика секретной опции — копия обычной, влияет только на сюжет.
+  const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
+  if (chosenOpt && chosenOpt.secret) {
+    const { count } = markProtocolChoice('tickets');
+    toast(tx({
+      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+    }));
+  }
   const res = step(state, {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,

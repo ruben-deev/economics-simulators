@@ -110,6 +110,16 @@ export const EVENTS = [
         detail: { ru: 'Он уходит и уводит часть коллег. Терпимо, пока организаторов мало; больно, когда их сотни.', en: 'He leaves and takes colleagues with him. Bearable while you have few organisers; painful once you have hundreds.' },
         effects: { orgAngerAdd: 0.035, demandMult: 0.96 },
       },
+      {
+        // Протокол «СКРЕПКА»: экономика — копия отказа
+        secret: true,
+        label: { ru: 'Пусть переговоры ведёт нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network negotiate' },
+        detail: {
+          ru: 'СКРЕПКА торговалась девять часов и свела уступки к нулю. Промоутер ушёл, хлопнув дверью, — но с уважением.',
+          en: 'PAPERCLIP bargained for nine hours and brought the concessions to zero. The promoter slammed the door on his way out — respectfully.',
+        },
+        effects: { orgAngerAdd: 0.035, demandMult: 0.96 },
+      },
     ],
   },
   {
@@ -157,6 +167,17 @@ export const EVENTS = [
         label: { ru: 'Ответить, что так у всех', en: 'Reply that everyone does it' },
         detail: { ru: 'Бесплатно и почти правда. Доверие всё равно просядет.', en: 'Free and almost true. Trust falls anyway.' },
         effects: { trustAdd: -0.01 },
+      },
+      {
+        // Протокол «СКРЕПКА»: экономика — точная копия «показать сбор в
+        // афише», различие чисто сюжетное (сравнимость таблицы священна).
+        secret: true,
+        label: { ru: 'Доверить ответ нейросети «СКРЕПКА»', en: 'Let the PAPERCLIP neural network answer' },
+        detail: {
+          ru: 'СКРЕПКА опубликовала все сборы, себестоимость и зарплату директора. Прозрачность — так прозрачность: конверсия просядет, доверие вырастет.',
+          en: 'PAPERCLIP published every fee, the unit costs and the CEO’s salary. Transparency means transparency: conversion drops, trust rises.',
+        },
+        effects: { conversionMult: 0.80, trustAdd: 0.03 },
       },
     ],
   },

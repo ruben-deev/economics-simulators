@@ -2953,7 +2953,7 @@ const GAME_SAVE_KEYS = [
  */
 function resetEcosystemProgress() {
   const cleared = [];
-  for (const key of [META_BEST_KEY, META_LINES_KEY, ...GAME_SAVE_KEYS]) {
+  for (const key of [META_BEST_KEY, META_LINES_KEY, PROTOCOL_KEY, ...GAME_SAVE_KEYS]) {
     try {
       if (localStorage.getItem(key) !== null) cleared.push(key);
       localStorage.removeItem(key);
@@ -2965,6 +2965,45 @@ function resetEcosystemProgress() {
 
 // Коды «городов-побратимов» — символическая награда в старых играх
 const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
+
+// ============================================================================
+// Протокол «СКРЕПКА» — юмористическая секретная концовка.
+//
+// В каждой игре среди обычных событий спрятаны решения «доверить вопрос
+// нейросети „СКРЕПКА"». Экономически такая опция — точная копия одной из
+// обычных (сравнимость мировой таблицы священна), различие чисто сюжетное.
+// Кто выиграл все четыре игры И во всех четырёх хоть раз доверился СКРЕПКЕ,
+// видит на финале НОВОГРАДА альтернативную концовку. Строго косметика.
+// ============================================================================
+
+// Отметки доверия по играм: { delivery, streaming, tickets, ecosystem }
+const PROTOCOL_KEY = 'series-protocol';
+
+const PROTOCOL_ASSETS = ['delivery', 'streaming', 'tickets', 'ecosystem'];
+
+function protocolFlags() {
+  const saved = safeGetJson(PROTOCOL_KEY, {});
+  return saved && typeof saved === 'object' ? saved : {};
+}
+
+// Зовётся интерфейсом игры, когда игрок доверил решение СКРЕПКЕ.
+// Возвращает { flags, count } — счётчик нужен для хлебной крошки в тосте.
+function markProtocolChoice(assetId) {
+  const flags = protocolFlags();
+  if (PROTOCOL_ASSETS.includes(assetId)) {
+    flags[assetId] = true;
+    safeSetJson(PROTOCOL_KEY, flags);
+  }
+  return { flags, count: PROTOCOL_ASSETS.filter((a) => flags[a]).length };
+}
+
+// Секретная концовка открыта: доверие во всех четырёх играх плюс весь путь
+// пройден побеждённым (финалы трёх игр и достойный НОВОГРАД).
+function secretEndingUnlocked() {
+  const flags = protocolFlags();
+  if (!PROTOCOL_ASSETS.every((a) => flags[a])) return false;
+  return tripleCrown() && conglomerateUnlocked();
+}
 
 
 // ===== ../../shared/leaderboard.js =================================
@@ -5305,6 +5344,17 @@ const EVENTS = [
         detail: { ru: 'Экономим деньги, но зрители замечают и уходят. Чем дороже рынок таланта, тем чаще замена — правильный ответ.', en: 'Saves the money, but viewers notice and leave. The pricier the talent market, the more often recasting is the right call.' },
         effects: { churnAdd: 0.010, demandMult: 0.98 },
       },
+      {
+        // Протокол «СКРЕПКА»: экономика — точная копия замены актёра,
+        // различие чисто сюжетное (сравнимость мировой таблицы священна).
+        secret: true,
+        label: { ru: 'Сгенерировать актёра нейросетью «СКРЕПКА»', en: 'Have the PAPERCLIP neural network generate an actor' },
+        detail: {
+          ru: 'Дешевле живой звезды, гонораров не просит. Зрители замечают, что герой моргает строго раз в 4,7 секунды, — часть уходит.',
+          en: 'Cheaper than a living star and never asks for a fee. Viewers notice the hero blinks exactly once every 4.7 seconds — some leave.',
+        },
+        effects: { churnAdd: 0.010, demandMult: 0.98 },
+      },
     ],
   },
   {
@@ -5351,6 +5401,16 @@ const EVENTS = [
       {
         label: { ru: 'Отстоять цену', en: 'Hold the price' },
         detail: { ru: 'Инвесторы недовольны, оценка ниже.', en: 'Investors are unhappy and the valuation suffers.' },
+        effects: { valuationBonus: -0.005 },
+      },
+      {
+        // Протокол «СКРЕПКА»: экономика — копия «отстоять цену»
+        secret: true,
+        label: { ru: 'Пусть с советом поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network talk to the board' },
+        detail: {
+          ru: 'СКРЕПКА вежливо объяснила, что скидка — это кредит у собственной выручки. Совет недоволен, но впечатлён. Оценка ниже.',
+          en: 'PAPERCLIP politely explained that a discount is a loan taken from your own revenue. The board is unhappy but impressed. Valuation down.',
+        },
         effects: { valuationBonus: -0.005 },
       },
     ],
@@ -9798,6 +9858,16 @@ function nextMonth() {
   if (state.over) { showGameOver(); return; }
   const ev = state.pendingEvent;
   if (ev && ev.options && state.pendingChoice === null) { toast(t('eventChoiceNeeded')); return; }
+  // Протокол «СКРЕПКА»: доверие нейросети отмечается на устройстве.
+  // Экономика секретной опции — копия обычной, влияет только на сюжет.
+  const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
+  if (chosenOpt && chosenOpt.secret) {
+    const { count } = markProtocolChoice('streaming');
+    toast(tx({
+      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+    }));
+  }
   state = step(state, {
     decisions: state.decisions,
     eventChoice: state.pendingChoice ?? 0,
