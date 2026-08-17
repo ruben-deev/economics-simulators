@@ -178,7 +178,10 @@ export const STRINGS = {
     ru: 'Запуск {cost} разово + {monthly}/мес фикса. «{incumbent}» ответит демпингом: {war} месяцев приток урезан и цены рынка продавлены.',
     en: 'Launch {cost} one-off + {monthly}/mo fixed. {incumbent} will answer with predatory pricing: for {war} months your new-customer inflow is cut and market fares are pushed down.',
   },
-  vertFuture: { ru: 'следующая фаза', en: 'next phase' },
+  // «Следующая фаза» читалась как достижимый контент — игроки искали, чем
+  // её открыть (замечание владельца). Это анонс: механики самокатов в этой
+  // версии нет, и плашка обязана говорить об этом прямо.
+  vertFuture: { ru: 'анонс — в этой версии не запускается', en: 'teaser — cannot be launched in this version' },
   vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch {discount} cheaper.' },
   vertEcomStats: { ru: '{users} клиентов · маржа {margin}', en: '{users} customers · margin {margin}' },
   plusName: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },

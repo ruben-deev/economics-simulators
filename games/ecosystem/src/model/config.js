@@ -521,8 +521,8 @@ export const FUTURE_VERTICALS = [
     icon: '🛴',
     name: { ru: 'Самокаты', en: 'Scooters' },
     hint: {
-      ru: 'Следующая фаза: короткие поездки, сезонность, парк как капитал.',
-      en: 'Next phase: short rides, seasonality, the fleet as capital.',
+      ru: 'Когда-нибудь: короткие поездки, сезонность, парк как капитал. Пока — только витринная мечта основателя.',
+      en: 'Someday: short rides, seasonality, the fleet as capital. For now — just the founder’s window-shopping dream.',
     },
   },
 ];
