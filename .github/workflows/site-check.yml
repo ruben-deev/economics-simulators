@@ -1,0 +1,84 @@
+# Живая проверка опубликованного сайта (запускается вручную).
+# Песочница рабочей сессии не выпускает запросы наружу, а у раннера Actions
+# интернет открыт — поэтому проверка раскатки живёт здесь, рядом с проверкой
+# сервера таблицы (lb-check.yml).
+#
+# Что проверяется: обе версии сайта отвечают, в корне стоит новая версия
+# (НОВОГРАД без пометки «бета»), модульные версии всех четырёх игр и их
+# однофайловые сборки открываются, а служебные каталоги на сайт не уехали.
+name: Проверка опубликованного сайта
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Корень сайта и /next/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Опрос сайта
+        run: |
+          node --input-type=module << 'EOF'
+          import { readdirSync } from 'node:fs';
+
+          const SITE = 'https://ruben-deev.github.io/economics-simulators';
+          const GAMES = ['foodtech', 'cinema', 'tickets', 'ecosystem'];
+          let failed = false;
+
+          const say = (ok, text) => {
+            console.log(`${ok ? '✓' : '✗'} ${text}`);
+            if (!ok) failed = true;
+          };
+
+          // GitHub Pages иногда отдаёт прежнюю версию сразу после деплоя —
+          // поэтому у страниц есть несколько попыток с паузой.
+          async function get(path, tries = 3) {
+            for (let i = 1; i <= tries; i++) {
+              try {
+                const res = await fetch(`${SITE}${path}`);
+                const text = await res.text();
+                if (res.ok) return { status: res.status, text };
+                console.log(`… ${path}, попытка ${i}: HTTP ${res.status}`);
+              } catch (err) {
+                console.log(`… ${path}, попытка ${i}: ${err}`);
+              }
+              await new Promise((r) => setTimeout(r, 4000));
+            }
+            return { status: 0, text: '' };
+          }
+
+          for (const [name, base] of [['корень', ''], ['/next/', '/next']]) {
+            const home = await get(`${base}/`);
+            say(home.status === 200, `${name}: витрина отвечает (HTTP ${home.status})`);
+            say(home.text.includes('НОВОГРАД') || home.text.includes('NOVOGRAD'),
+              `${name}: НОВОГРАД на витрине`);
+            say(!/eco-badge|>бета<|>beta</.test(home.text),
+              `${name}: пометки «бета» нет`);
+
+            for (const game of GAMES) {
+              const page = await get(`${base}/games/${game}/`, 2);
+              say(page.status === 200, `${name}: /games/${game}/ (HTTP ${page.status})`);
+            }
+          }
+
+          // Однофайловые сборки: имена берём из репозитория, чтобы проверка
+          // не устаревала при смене версии игры.
+          for (const game of GAMES) {
+            const dir = `games/${game}/dist`;
+            const file = readdirSync(dir).find((f) => f.endsWith('.html'));
+            if (!file) { say(false, `${game}: в ${dir} нет собранного файла`); continue; }
+            const res = await get(`/games/${game}/dist/${file}`, 2);
+            say(res.status === 200 && res.text.includes('<!DOCTYPE html>'),
+              `сборка ${file} (HTTP ${res.status}, ${Math.round(res.text.length / 1024)} КБ)`);
+          }
+
+          // Служебное на сайт не уезжает: инструменты замеров и тесты
+          for (const path of ['/shared/tools/measure.js', '/games/foodtech/tools/anchors.mjs']) {
+            const res = await fetch(`${SITE}${path}`).catch(() => ({ status: 0 }));
+            say(res.status === 404, `${path} не опубликован (HTTP ${res.status})`);
+          }
+
+          if (failed) process.exit(1);
+          console.log('\nСайт опубликован: обе версии отвечают, новая стоит в корне.');
+          EOF
