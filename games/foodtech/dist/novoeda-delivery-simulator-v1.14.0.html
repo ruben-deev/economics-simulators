@@ -2042,10 +2042,10 @@ score = valuation × your stake`,
   },
   metaContinueTitle: { ru: 'Продолжить в НОВОГРАДЕ?', en: 'Continue in NOVOGRAD?' },
   metaContinueText: {
-    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Сильный финал засчитается как наследие — сохраните строку результата ниже.',
-    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. A strong finale counts as a legacy — keep the result string below.',
+    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Этот финал засчитается там сам — по кнопке НОВОГРАД откроется сразу с вашим активом. Строка результата ниже нужна, только если продолжать на другом устройстве.',
+    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. This finale counts there automatically — the button opens NOVOGRAD with your asset preselected. The result string below is only needed to continue on another device.',
   },
-  metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
+  metaContinueLink: { ru: 'Продолжить этим активом в НОВОГРАДЕ →', en: 'Continue with this asset in NOVOGRAD →' },
 };
 
 
@@ -2555,9 +2555,19 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   поднялась почти вдвое. Средняя опора «сбор с организатора» — 4.13 млрд
 //   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
 //   в НОВОГРАД не должны дорожать задним числом.
+//
+//   Входы (threshold) пересчитаны под сегодняшние коридоры опор (аудит
+//   2026-08): правило «вход ниже ЛЮБОЙ опоры» после пересборок баланса
+//   нарушалось у двух игр из трёх. Коридоры сегодня: НОВОЕДА
+//   0.36/0.87/1.32 млрд (вход был 1 — выше двух опор), КИНОРЕКА
+//   6.01/11.35/14.11 (вход был 12 — выше двух опор: честно пройденная
+//   партия не зажигала ★, и игрок утыкался в «вводите коды»). Теперь вход
+//   ниже самой слабой опоры каждой игры: доигранная не-банкротом партия
+//   любой разумной стратегией открывает актив. Единицы переноса (solid)
+//   не тронуты: сколько переносится — по-прежнему вопрос силы финала.
 const LEGACY_GAMES = [
-  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 5e9, solid: 1.6e10 },
   { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 
@@ -7886,7 +7896,7 @@ function returnHtml() {
 
 function novogradInviteHtml() {
   const link = window.__homeUrl
-    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html">${t('metaContinueLink')}</a></div>`
+    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html?asset=delivery">${t('metaContinueLink')}</a></div>`
     : '';
   return `<div class="alert good" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b>
     ${t('metaContinueText')}${link}</div>`;

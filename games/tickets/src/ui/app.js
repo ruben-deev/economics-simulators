@@ -1854,7 +1854,7 @@ function returnHtml() {
 
 function novogradInviteHtml() {
   const link = window.__homeUrl
-    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html">${t('metaContinueLink')}</a></div>`
+    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html?asset=tickets">${t('metaContinueLink')}</a></div>`
     : '';
   return `<div class="alert good" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b>
     ${t('metaContinueText')}${link}</div>`;

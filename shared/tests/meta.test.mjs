@@ -43,8 +43,10 @@ test('введённые строки открывают наследие, по�
   let unlocks = legacyUnlocks();
   assert.deepEqual(unlocks, { delivery: false, streaming: false, tickets: false });
 
-  // Слабый финал не открывает
-  addResultLine(line('НОВОЕДА', 5e8));
+  // Слабый финал не открывает: берём половину действующего порога, чтобы
+  // тест не устаревал при перекалибровках входов
+  const deliveryGate = LEGACY_GAMES.find((g) => g.assetId === 'delivery').threshold;
+  addResultLine(line('НОВОЕДА', deliveryGate / 2));
   assert.equal(legacyUnlocks().delivery, false, 'ниже порога — не считается');
 
   addResultLine(line('НОВОЕДА', 1.5e9));
