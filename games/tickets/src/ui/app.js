@@ -16,21 +16,29 @@ import {
 } from '../model/config.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
-  explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel,
+  explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, debrief,
   orgTotal, totalReach, platformLevel, productLevel,
 } from '../model/engine.js';
 import { seasonOf, hitById } from '../model/market.js';
-import { channelSplit } from '../model/channel.js';
+import { channelSplit, widgetAdoption, rivalHoldOf } from '../model/channel.js';
 import { rivalOrgTotal, rivalPlatformLevel, STANCES } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { watchSliders } from '../../../../shared/sliders.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import {
+  conglomerateUnlocked, TWIN_CITY_SEEDS, returnTarget, novogradBest,
+} from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
+import {
+  DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
+} from '../../../../shared/difficulty.js';
+import { policyHtml, syncPolicy, renderBudgetBar } from '../../../../shared/controls.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'biletville-save-v1';
@@ -60,6 +68,7 @@ let state = null;
 let chartTab = 'market';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;
 let openGroups = { take: true, growth: true, infra: false };
 let pendingExclusive = null;   // 'accept' | 'decline'
@@ -243,10 +252,238 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
+// (shared/controls.js). У маркетплейса статей больше всех в наборе, и до
+// сих пор они читались только построчно в P&L.
+const BUDGET_COLORS = {
+  demand: PALETTE[1],
+  supply: PALETTE[2],
+  product: PALETTE[4],
+  tech: PALETTE[0],
+  fixed: '#64748b',
+};
+// ----------------------------------------------------------------------------
+// Кварталы рынка
+//
+// Прежняя схема отвечала потоками-жгутами, толщину которых глаз сравнивать
+// не умеет: один толстый и три волосяных, вся суть — в трёх процентах подписи
+// (пересборка визуала 2026-08, PROPOSALS-VIZ). Теперь грамматика карты
+// НОВОЕДЫ: каждый тип организаторов — квартал, ширина квартала — оборот типа,
+// зелёная заливка снизу — ваша доля этого оборота, рамка — состояние
+// (бирюзовая — виджет развёрнут, красный пунктир — тип теряет организаторов).
+// ----------------------------------------------------------------------------
+function renderMarketMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  if (!r) { box.innerHTML = ''; return; }
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
+
+  const rows = ORGANIZERS.map((def) => {
+    const row = (r.organizers ?? []).find((o) => o.id === def.id);
+    const market = row?.marketSold ?? 0;
+    const platform = row?.platformSold ?? 0;
+    // «Мимо вас» модель считает сама (ownSold): выводить это вычитанием из
+    // спроса нельзя — спрос там свой у каждой стороны, и разность врала нулём
+    const own = row?.lostSold ?? 0;
+    const total = market + platform + own;
+    return {
+      def,
+      count: row?.count ?? 0,
+      turnover: total * def.avgPrice,
+      mineShare: total > 0 ? (market + platform) / total : 0,
+      ownShare: total > 0 ? own / total : 0,
+      widgetShare: clamp(state.platformShare?.[def.id] ?? 0, 0, 1),
+      gained: row?.gained ?? 0,
+    };
+  });
+  // Типы, с которыми вы не работаете, из схемы не убираются: тёмный квартал —
+  // это и есть ответ на вопрос «а что я не беру», а он в этой игре главный.
+
+  const W = narrow ? 360 : 700;
+  const sumTurn = Math.max(1, rows.reduce((a, x) => a + x.turnover, 0));
+  const gap = 8;
+  const pad = 6;
+
+  // Ширина квартала — доля оборота (мекко-раскладка): на десктопе один ряд,
+  // на телефоне два ряда по два квартала. Минимум держит подписи читаемыми.
+  const layoutRow = (list, y, rowW, h) => {
+    const rowSum = Math.max(1, list.reduce((a, x) => a + x.turnover, 0));
+    const free = rowW - gap * (list.length - 1);
+    const minW = narrow ? 96 : 118;
+    let widths = list.map((x) => Math.max(minW, free * (x.turnover / rowSum)));
+    const over = widths.reduce((a, w) => a + w, 0) - free;
+    if (over > 0) {
+      const shrinkable = widths.map((w) => w - minW);
+      const shrinkSum = Math.max(1e-6, shrinkable.reduce((a, w) => a + w, 0));
+      widths = widths.map((w, i) => w - over * (shrinkable[i] / shrinkSum));
+    }
+    let x = pad;
+    return list.map((row, i) => {
+      const out = { row, x, y, w: widths[i], h };
+      x += widths[i] + gap;
+      return out;
+    });
+  };
+  const tileH = narrow ? 108 : 150;
+  const tiles = narrow
+    ? [...layoutRow(rows.slice(0, 2), 8, W - pad * 2, tileH),
+      ...layoutRow(rows.slice(2), tileH + 18, W - pad * 2, tileH)]
+    : layoutRow(rows, 8, W - pad * 2, tileH);
+  const H = narrow ? tileH * 2 + 28 : tileH + 18;
+
+  const tile = ({ row, x, y, w, h }) => {
+    const live = row.count > 0;
+    const losing = row.gained < 0;
+    const hasWidget = row.widgetShare > 0.005;
+    const stroke = !live ? 'var(--line)'
+      : losing ? 'rgba(248, 113, 113, 0.75)'
+      : hasWidget ? 'rgba(45, 212, 191, 0.8)' : 'rgba(74, 222, 128, 0.6)';
+    const fillH = Math.round((h - 8) * clamp(row.mineShare, 0, 1));
+    const name = tx(w < 200 ? row.def.short : row.def.name);
+    return `<g class="qt${live ? '' : ' qt-dead'}">
+      ${fillH > 1 ? `<rect class="qx qx-share" x="${x + 1.5}" y="${y + h - 1.5 - fillH}"
+        width="${w - 3}" height="${fillH}" rx="7" fill="var(--good)" fill-opacity="0.16"></rect>` : ''}
+      <rect class="qx qx-frame" x="${x}" y="${y}" width="${w}" height="${h}" rx="9"
+        fill="${live ? 'none' : 'rgba(148, 163, 184, 0.05)'}" stroke="${stroke}"
+        stroke-width="1.6"${losing || !live ? ' stroke-dasharray="6 4"' : ''}></rect>
+      <text class="qx qx-name" x="${x + 10}" y="${y + 20}" font-size="13" font-weight="700" fill="var(--text)">${name}</text>
+      <text class="qx qx-meta" x="${x + 10}" y="${y + 36}" font-size="10" fill="var(--muted)">${live
+        ? (w >= 165 ? `${compact(row.count)} ${t('mapOrgsShort')} · ${money(row.turnover)}` : money(row.turnover))
+        : t('mapNoOrgs')}</text>
+      ${live ? `<text class="qx qx-share" x="${x + 10}" y="${y + h - 10}" font-size="11"
+        font-weight="700" fill="var(--good)">${t('qtShare', { p: pct(row.mineShare, 0) })}</text>` : ''}
+      ${live ? `<text class="qx qx-widget" x="${x + w - 8}" y="${y + h - 26}" text-anchor="end" font-size="10"
+        fill="${hasWidget ? '#2dd4bf' : 'var(--muted)'}">${hasWidget
+          ? t('qtWidget', { p: pct(row.widgetShare, 0) }) : t('qtNoWidget')}</text>` : ''}
+      ${losing ? `<text class="qx qx-loss" x="${x + w - 8}" y="${y + 36}" text-anchor="end"
+        font-size="10" fill="var(--bad)">${t('qtLoss', { n: compact(-row.gained) })}</text>` : ''}
+    </g>`;
+  };
+
+  const KEY_CHIPS = {
+    share: 'background:rgba(74, 222, 128, 0.5)',
+    widget: 'background:#2dd4bf',
+    own: 'background:transparent;border:1.5px solid var(--line)',
+    loss: 'background:transparent;border:1.5px dashed var(--bad)',
+  };
+  const legend = [['share', 'qtKeyShare'], ['widget', 'qtKeyWidget'], ['own', 'qtKeyOwn'], ['loss', 'qtKeyLoss']]
+    .map(([k, key]) => `<span class="flow-key legend-item" data-hl="${k}" tabindex="0"><i style="${KEY_CHIPS[k]}"></i>${t(key)}</span>`).join('');
+
+  const mineMoney = rows.reduce((a, x) => a + x.turnover * x.mineShare, 0);
+  box.innerHTML = `<div class="panel eco-map quarters">
+    <h2 class="panel-title">${t('mapTitle')}</h2>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle')}">
+      ${tiles.map(tile).join('')}
+    </svg>
+    <div class="funding-note">${t('qtTotal', {
+    mine: money(mineMoney), all: money(sumTurn), share: pct(mineMoney / sumTurn, 0),
+  })}</div>
+    <div class="flow-legend map-legend">${legend}</div>
+    <div class="chart-caption">${t('mapCaption')}</div>
+  </div>`;
+
+  const panel = box.querySelector('.quarters');
+  box.querySelectorAll('.legend-item[data-hl]').forEach((item) => {
+    const on = () => { if (panel) panel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (panel) delete panel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
+}
+
+// Живые сводки групп: что механика группы делает прямо сейчас. Считаются от
+// последнего отчёта — тех же чисел, что игрок видит в центре экрана.
+function renderGroupReadouts() {
+  const r = last();
+  const take = el('readout-take');
+  if (take) {
+    take.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTake', {
+        rate: pct(r.takeRate ?? 0, 1),
+        perTicket: money(r.revenuePerTicket ?? 0),
+        acquiring: pct((r.gmv ?? 0) > 0 ? (r.acquiring ?? 0) / r.gmv : 0, 1),
+      })}</div>
+      <div>${t('readoutTakeSplit', {
+        market: money(r.marketplaceRevenue ?? 0),
+        widget: money((r.platformRevenue ?? 0) + (r.subscriptionRevenue ?? 0)),
+      })}</div>
+    </div>` : '';
+  }
+  const growth = el('readout-growth');
+  if (growth) {
+    growth.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutSides', {
+        orgs: num(Math.round(orgTotal(state))),
+        connected: num(r.connectedCount ?? 0),
+        share: pct(r.orgShare ?? 0, 0),
+      })}</div>
+      <div>${t('readoutFill', {
+        fill: pct(r.fill ?? 0, 0),
+        cls: (r.fill ?? 0) >= 0.7 ? 'pos' : 'neg',
+        bots: pct(r.botShare ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+  const infra = el('readout-infra');
+  if (infra) {
+    infra.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTrust', {
+        trust: pct(state.trust ?? 0, 0),
+        cls: (state.trust ?? 0) >= 0.6 ? 'pos' : 'neg',
+        service: pct(r.service ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+}
+
+function renderBudget() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const items = [
+    { key: 'demand', label: t('budgetDemand'), value: d.marketing ?? 0, color: BUDGET_COLORS.demand },
+    { key: 'supply', label: t('budgetSupply'), value: (r?.managerCost ?? 0) + (r?.onboardingSpend ?? 0), color: BUDGET_COLORS.supply },
+    { key: 'product', label: t('budgetProduct'), value: (d.product ?? 0) + (d.support ?? 0), color: BUDGET_COLORS.product },
+    { key: 'tech', label: t('budgetTech'), value: (d.platformDev ?? 0) + (d.capacityTech ?? 0) + (d.rnd ?? 0) + (d.finance ?? 0), color: BUDGET_COLORS.tech },
+    { key: 'fixed', label: t('budgetFixed'), value: CONFIG.hqMonthly + (r?.staffCost ?? 0) + (r?.techUpkeep ?? 0) + (r?.serverCost ?? 0) + (r?.miscCost ?? 0), color: BUDGET_COLORS.fixed },
+  ];
+  const total = items.reduce((a, i) => a + i.value, 0);
+  const contribution = r ? r.contribution : 0;
+  const net = contribution - total;
+  box.innerHTML = renderBudgetBar({
+    title: t('budgetTitle', { total: money(total) }),
+    items,
+    money,
+    note: r ? t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    }) : '',
+  });
+}
+
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения: игрок двигает его и
+// не понимает, почему ничего не происходит.
+function inertNote(l) {
+  const connected = last()?.connectedCount ?? 0;
+  if ((l.key === 'platformRate' || l.key === 'platformFee') && connected === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertPlatform')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
-  if (leversBuilt) return;
+  // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
+  // команды нет — она уже оплачена
+  if (leversBuilt && leversDiff === state.difficulty) return;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
-    const items = LEVERS.filter((l) => l.group === g.id);
+    const items = LEVERS.filter((l) => l.group === g.id
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
     if (!items.length) return '';
     return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
       <button class="lever-group-head" type="button">
@@ -254,12 +491,16 @@ function buildLevers() {
         <span class="lg-count">${items.length}</span>
       </button>
       <div class="lever-group-body">
+        ${g.desc ? `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>` : ''}
+        <div id="readout-${g.id}"></div>
         ${items.map((l) => `
           <div class="lever" data-key="${l.key}">
             <div class="lever-head">
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
+            ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
@@ -276,14 +517,38 @@ function buildLevers() {
       group.classList.toggle('open', openGroups[id]);
     });
   });
+  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
+  // настройки (см. shared/controls.js)
+  el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.closest('[data-policy]').dataset.policy;
+      const lever = LEVERS.find((l) => l.key === key);
+      if (!lever) return;
+      state.decisions[key] = Number(b.dataset.policyValue) * (lever.scale ?? 1);
+      syncLevers();
+      renderTurn();
+      renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
+      renderRightTab();
+      save();
+    });
+  });
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (на лёгком уровне финансовой команды
+    // нет — она уже оплачена), тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       const raw = Number(input.value);
       state.decisions[l.key] = raw * (l.scale ?? 1);
       syncLevers();
       renderTurn();
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
       renderRightTab();
     });
     el('levers').querySelector(`[data-why="${l.key}"]`).addEventListener('click', (e) => {
@@ -291,13 +556,15 @@ function buildLevers() {
     });
   }
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverText(l, value) {
   if (l.scale === 0.01) return `${num(value * 100, value * 100 % 1 ? 1 : 0)} ${tx(l.unit)}`;
   if (l.key === 'managers') return `${num(value)} ${tx(l.unit)}`;
   if (value >= 1_000_000) return money(value);
-  return `${num(value)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(value, unit) : `${num(value)} ${unit}`;
 }
 
 function syncLevers() {
@@ -308,6 +575,7 @@ function syncLevers() {
     if (input && Number(input.value) !== raw) input.value = String(raw);
     const label = el(`val-${l.key}`);
     if (label) label.textContent = leverText(l, value);
+    if (l.policy) syncPolicy(el('levers'), l, value, tx, t('policyCustom'));
   }
 }
 
@@ -488,7 +756,7 @@ function renderReport() {
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         gmv: money(r.gmv), revenue: money(r.revenue),
-        perTicket: `${num(r.revenuePerTicket)} ₽` })}</span>
+        perTicket: `${amount(r.revenuePerTicket)}` })}</span>
     </div>
     ${deltaLine}
     <div class="report-grid">
@@ -750,12 +1018,28 @@ function renderTurn() {
 }
 
 // ----------------------------------------------------------------------------
-// Каналы продаж — главная развилка этой игры
+// Каналы продаж — главная развилка этой игры.
+//
+// Это не список с галочками, а карточки решения: у каждого типа своя цена
+// подключения (бюджет переезда делится на всех, кого вы подключаете —
+// значит, каждый следующий тип замедляет остальные), свой темп переезда и
+// свой ответ на вопрос «что он вообще принесёт».
 // ----------------------------------------------------------------------------
 function renderChannels() {
   const d = state.decisions;
   const level = platformLevel(state);
-  const rows = ORGANIZERS.map((def) => {
+  const r = last();
+  const riv = state.rivalState;
+  const rivalP = rivalPlatformLevel(riv);
+  // Цена переезда: бюджет онбординга делится на всех организаторов
+  // подключаемых типов. Поэтому «подключить ещё один тип» — это решение с
+  // ценой, а не бесплатная галочка.
+  const wantedOrgs = ORGANIZERS
+    .filter((def) => d.platformFor?.[def.id])
+    .reduce((sum, def) => sum + (state.orgs[def.id] ?? 0), 0);
+  const spendPerOrg = wantedOrgs > 0 ? (d.onboarding ?? 0) / wantedOrgs : 0;
+
+  const cards = ORGANIZERS.map((def) => {
     const targeted = Boolean(d.platformFor?.[def.id]);
     const share = clamp(state.platformShare?.[def.id] ?? 0, 0, 1);
     const split = channelSplit(def, share, level);
@@ -766,44 +1050,80 @@ function renderChannels() {
     const acquiring = def.avgPrice * CONFIG.acquiringRate;
     const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission) - acquiring;
     const perPlatform = def.avgPrice * d.platformRate - acquiring;
-    // «Нужен виджет 28%» — процент непонятно чего. Человеку нужна не шкала
-    // модели, а вывод: без виджета этот тип до вас не дойдёт или дойдёт.
     const need = def.platformNeed >= 1.3 ? 'bad' : def.platformNeed >= 0.5 ? 'warn' : '';
     const needWord = def.platformNeed >= 1.3 ? t('needHigh')
       : def.platformNeed >= 0.5 ? t('needMid') : t('needLow');
-    return `<tr>
-      <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
-        · <span class="${need}">${needWord}</span></div></td>
-      <td class="mono wide">${t('channelSplitValue', {
-        market: pct(split.market, 0), widget: pct(split.platform, 0),
-      })} · <span class="neg">${t('channelSplitLost', { lost: pct(split.lost, 0) })}</span></td>
-      <td class="mono wide">${t('channelMoneyValue', { market: num(perMarket) })} · <span
-        class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${t('channelMoneyWidget', { widget: num(perPlatform) })}</span></td>
-      <td class="mono">${share > 0.005
-        ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
-            moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
-            total: compact(state.orgs[def.id] ?? 0) })}</div>`
-        : (targeted ? t('channelQueued') : t('channelOff'))}</td>
-      <td class="wide"><button class="btn small ghost" data-platform="${def.id}">${
-        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
-    </tr>`;
+
+    // Оборот типа: прошлый месяц, а до первого отчёта — расчётный по
+    // дескриптору. Это и есть ответ «что он принесёт», а не абстрактный пул.
+    const row = r?.organizers?.find((o) => o.id === def.id);
+    const gmv = row ? (row.marketSold + row.platformSold) * def.avgPrice
+      : (state.orgs[def.id] ?? 0) * def.eventsPerMonth * def.seats * def.avgPrice * CONFIG.refFill;
+
+    // Темп переезда при ТЕКУЩЕМ бюджете: сколько месяцев до конца очереди.
+    // Считается тем же кодом, что и ход, — иначе карточка обещала бы своё.
+    const hold = rivalHoldOf(def, rivalP, riv?.orgs?.[def.id] ?? 0, state.orgs[def.id] ?? 0);
+    const pace = targeted
+      ? widgetAdoption(def, share, spendPerOrg, level, hold, d.platformRate) : 0;
+    const left = clamp(1 - hold - share, 0, 1);
+    const eta = pace > 0.004 ? Math.ceil(left / pace) : null;
+
+    const stateWord = share > 0.005
+      ? t('channelMoved', {
+        moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
+        total: compact(state.orgs[def.id] ?? 0),
+      })
+      : (targeted ? t('channelQueued') : t('channelOff'));
+
+    return `<div class="org-card${targeted ? ' on' : ''}">
+      <div class="org-head">
+        <b>${tx(def.name)}</b>
+        <span class="badge wrap ${share > 0.005 ? 'ok' : ''}">${stateWord}</span>
+      </div>
+      <div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
+        · <span class="${need}">${needWord}</span></div>
+      <div class="org-rows">
+        <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
+        <div><span>${t('orgCardMoney')}</span><b>${amount(perMarket)} / <span
+          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${amount(perPlatform)}</span></b></div>
+      </div>
+      <div class="chan-bar" role="img" aria-label="${t('orgCardSplit')}">
+        <span style="width:${(100 * split.market).toFixed(1)}%;background:var(--accent-2)"></span>
+        <span style="width:${(100 * split.platform).toFixed(1)}%;background:#2dd4bf"></span>
+        <span style="width:${(100 * split.lost).toFixed(1)}%;background:rgba(148, 163, 184, 0.35)"></span>
+      </div>
+      <div class="chan-lbl">
+        <span style="color:var(--accent-2)">${t('chanMarket', { p: pct(split.market, 0) })}</span>
+        <span style="color:#2dd4bf">${t('chanWidget', { p: pct(split.platform, 0) })}</span>
+        <span>${t('chanOwn', { p: pct(split.lost, 0) })}</span>
+      </div>
+      <div class="org-rows">
+        <div><span>${t('orgCardPrice')}</span><b>${targeted
+          ? t('orgCardPriceValue', { per: money(spendPerOrg), eta: eta ? t('orgCardEta', { n: eta }) : t('orgCardEtaNever') })
+          : t('orgCardPriceOff')}</b></div>
+      </div>
+      <button class="btn small ${targeted ? 'ghost' : ''}" data-platform="${def.id}">${
+        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button>
+    </div>`;
   }).join('');
 
   el('channel-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('channelPanel')}</h2>
-    <div class="funding-note" style="margin-bottom:8px">${t('channelCaption')}</div>
+    <details class="more" style="margin:0 0 8px"><summary>${t('moreHow')}</summary>
+      <div class="funding-note">${t('channelCaption')}</div>
+    </details>
     ${level <= 0.02 ? `<div class="alert warn">${t('channelNoPlatform')}
       <a class="jump" data-jump="lever:platformDev">${t('jumpGo')}</a></div>` : ''}
-    <table class="data">
-      <thead><tr>
-        <th>${t('channelColType')}</th>
-        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
-        <th>${t('channelColState')}</th><th></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="funding-note" style="margin-top:8px">${t('channelColMoneyNote')}</div>
-    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}</div>
+    <div class="org-cards">${cards}</div>
+    <details class="more" style="margin-top:8px"><summary>${t('moreMoney')}</summary>
+      <div class="funding-note">${t('channelColMoneyNote')}</div>
+    </details>
+    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}
+      · ${wantedOrgs > 0 ? t('channelOnboardSplit', {
+        types: ORGANIZERS.filter((def) => d.platformFor?.[def.id]).length,
+        per: money(spendPerOrg),
+      }) : t('channelOnboardNone')}
+      <a class="jump" data-jump="lever:onboarding">${t('jumpGo')}</a></div>
   </div>`;
 
   el('channel-slot').querySelectorAll('[data-platform]').forEach((b) => {
@@ -813,6 +1133,9 @@ function renderChannels() {
       state.decisions.platformFor = { ...state.decisions.platformFor, [id]: !was };
       if (was) toast(t('channelDisconnectWarn'));
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
       renderTurn();
       renderRightTab();
     });
@@ -998,7 +1321,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1006,7 +1329,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   fill: {
@@ -1061,7 +1384,25 @@ function decisionChanges() {
     const platformDiff = ['theatre', 'concert', 'club', 'sport']
       .some((k) => Boolean(cur.platformFor?.[k]) !== Boolean(prev.platformFor?.[k]));
     if (platformDiff) names.push(t('chartChangePlatform'));
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -1087,13 +1428,18 @@ function renderChart() {
     b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
   });
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -1104,21 +1450,21 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
   return `
     <p class="funding-note">${t('unitIntro')}</p>
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerTicket')}</th></tr></thead>
       <tbody>
-        <tr><td>${t('unitPrice')}</td><td class="mono">${num(u.avgPrice)} ₽</td></tr>
+        <tr><td>${t('unitPrice')}</td><td class="mono">${amount(u.avgPrice)}</td></tr>
         ${row(t('unitMarket'), u.marketRevenue, 'pos', true)}
         ${row(t('unitPlatform'), u.platformRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${num(u.blended)} ₽</td></tr>
+        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${amount(u.blended)}</td></tr>
         ${row(t('unitAcquiring'), -u.acquiring, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     ${breakEven ? `<p class="funding-note">${t('unitBreakEven', { value: compact(breakEven) })}</p>` : ''}`;
@@ -1154,6 +1500,8 @@ function renderPnlTab() {
         ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
         ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlProfit')}</td>
           <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff !== 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
@@ -1197,6 +1545,15 @@ function renderSidesTab() {
     </table>`;
 }
 
+// Ползунок под политикой никуда не делся: между названными режимами есть
+// промежуточные значения, и подпись обязана объяснять то, где стоит ручка,
+// а не то, какую кнопку нажали в прошлый раз.
+function nearestMode(algo, value) {
+  const raw = value / (algo.param.scale ?? 1);
+  return algo.param.policy.reduce((best, m) => (
+    Math.abs(m.v - raw) < Math.abs(best.v - raw) ? m : best), algo.param.policy[0]);
+}
+
 function renderAlgosTab() {
   const quality = algoQuality(state);
   // Купленный, но ещё не внедрённый алгоритм обязан выглядеть купленным:
@@ -1228,6 +1585,13 @@ function renderAlgosTab() {
             <span class="lever-label">${tx(a.param.label)}</span>
             <span class="lever-value">${num(param / (a.param.scale ?? 1))} ${tx(a.param.unit)}</span>
           </div>
+          ${a.param.policy ? `
+            <div class="policy-seg" data-algo-policy="${a.key}">
+              ${a.param.policy.map((m) => `<button type="button" data-mode="${m.v}"${
+                nearestMode(a, param).v === m.v ? ' class="active"' : ''
+              }>${tx(m.label)}</button>`).join('')}
+            </div>
+            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : ''}
           <input type="range" data-param="${a.key}" min="${a.param.min}" max="${a.param.max}"
             step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />
         </div>` : ''}
@@ -1292,6 +1656,18 @@ function renderRightTab() {
       const key = b.dataset.cancelInstall;
       state.pendingInstall = (state.pendingInstall ?? []).filter((k) => k !== key);
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: false };
+      save();
+      renderRightTab();
+      renderTurn();
+    });
+  });
+  el('tab-content').querySelectorAll('[data-algo-policy] [data-mode]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const algo = algorithmByKey(b.closest('[data-algo-policy]').dataset.algoPolicy);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [algo.key]: Number(b.dataset.mode) * (algo.param.scale ?? 1),
+      };
       save();
       renderRightTab();
       renderTurn();
@@ -1388,8 +1764,11 @@ function waterfallHtml(rows) {
 
 function gradeOf(score) {
   if (score.bankrupt) return t('gradeBankrupt');
+  if (score.sold) return t('gradeSold');
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return t('gradeExcellent');
-  if (score.equityValue >= 4_000_000_000) return t('gradeSolid');
+  // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
+  // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
+  if (score.equityValue >= 2_500_000_000) return t('gradeSolid');
   if (score.orgShare < 0.25) return t('gradeModest');
   return t('gradeSurvived');
 }
@@ -1404,7 +1783,7 @@ function recordsBlockHtml(score) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: score.bankrupt ? 0 : Math.round(score.equityValue),
-      outcome: score.bankrupt ? 'bankrupt' : 'finished',
+      outcome: score.bankrupt ? 'bankrupt' : score.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: score.months,
     });
@@ -1414,11 +1793,48 @@ function recordsBlockHtml(score) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
+}
+
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и коды партий «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы честность общей таблицы и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+// Возвращение из экосистемы. Игрок, уже строивший НОВОГРАД, приходит сюда
+// не «сыграть ещё раз», а прокачать стартовый актив: его финал здесь —
+// это база, ARPU и казна холдинга там. Показываем следующую ступень
+// наследия числом. Строго справочно: экономика этой партии не меняется —
+// обратные бонусы набора неэкономические по правилу.
+function returnHtml() {
+  const r = returnTarget('tickets');
+  if (!r) return '';
+  const body = r.maxed
+    ? t('metaReturnMaxed')
+    : t('metaReturnText', {
+        ratio: r.ratio.toFixed(1),
+        next: String(r.nextRatio),
+        target: money(r.target),
+      });
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
+}
+
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
 }
 
 function showGameOver() {
@@ -1426,12 +1842,14 @@ function showGameOver() {
   const goals = (state.board?.history ?? [])
     .map((h) => `${t('goalYear', { year: h.year })} ${h.passed ? '✓' : '✗'}`).join(' · ');
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
     score: score.bankrupt ? 0 : score.equityValue, turns: score.months,
   });
   modal(`<h2>${t('overTitle')}</h2>
-    <p>${state.over === 'bankrupt'
-      ? t('overBankrupt', { month: state.month }) : t('overFinished')}</p>
+    <p>${score.bankrupt
+      ? t('overBankrupt', { month: state.month })
+      : score.sold ? t('overSold', { month: state.month, value: money(score.equityValue) })
+      : t('overFinished')}</p>
     <p class="funding-note">${t('overStats', {
       valuation: money(score.valuation), equity: pct(score.equity, 1),
       value: money(score.equityValue), orgs: num(state.history.at(-1)?.orgs ?? 0, 0),
@@ -1439,15 +1857,21 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
-    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
-    ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(score)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
+    ${novogradInviteHtml()}
+    ${returnHtml()}
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(score)}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
@@ -1455,10 +1879,11 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: taggedGame(GAME_TAG, state.difficulty),
     line,
     myScore: score.bankrupt ? 0 : score.equityValue,
     submitted: Boolean(state.lbSent),
@@ -1467,6 +1892,7 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 function restart() {
@@ -1487,13 +1913,24 @@ function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   let seedWanted = '';
+  // Сложность — настройка всего набора: выбранная здесь действует и в
+  // остальных играх. Меняет она только цену финансовой команды.
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
+    </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
+    ${returnHtml()}
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -1504,7 +1941,7 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); clearActions(); save(); renderAll(); }
+      if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
@@ -1513,6 +1950,14 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = setDifficulty(b.dataset.diff);
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
 }
 
 function showHelp() {
@@ -1530,8 +1975,9 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
 }
 
@@ -1577,6 +2023,9 @@ function renderAll() {
   renderTurn();
   renderNews();
   renderChannels();
+  renderBudget();
+  renderGroupReadouts();
+  renderMarketMap();
   renderSupply();
   renderRival();
   renderChart();
@@ -1643,6 +2092,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);
@@ -1663,4 +2113,74 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+// Денежные параметры правил приводятся к валюте показа заранее:
+// шаблону строки достаётся готовый текст.
+function fmtDebrief(f) {
+  const out = { ...f };
+  if (out.lost != null) out.lost = money(out.lost);
+  if (out.back != null) out.back = money(out.back);
+  return out;
+}
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `biletville-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

@@ -14,6 +14,18 @@
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 export const CONFIG = {
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // У билетного маркетплейса выручка — тонкий take rate поверх крупного GMV,
+  // поэтому команда здесь чинит в первую очередь эквайринг: он снимается
+  // с оборота, а не с вашей комиссии.
+  finance: {
+    saturationShare: 0.03,       // выручки в месяц до «половины» силы
+    saturationFloor: 300_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,
+    acquiringCut: 0.005,         // насколько сбивается ставка эквайринга с GMV
+    roundGain: 0.20,
+  },
   monthsTotal: 36,        // партия — три года
   startCash: 1_500_000_000, // деньги инвестора на старте
 
@@ -181,7 +193,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 11,
     seats: 380,
     avgPrice: 1600,
-    commissionSensitivity: 1.5, // насколько больно берут комиссию
+    commissionSensitivity: 1.25, // насколько больно берут комиссию
     feeAwareness: 0.9,          // насколько организатор замечает ваш сбор с покупателя
     loyalty: 0.55,              // множитель оттока: меньше — консервативнее
     platformNeed: 0.55,         // насколько ему нужен билетный виджет
@@ -200,7 +212,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 2_600,
     avgPrice: 3_800,
-    commissionSensitivity: 2.4,
+    commissionSensitivity: 2.0,
     feeAwareness: 1.3,
     loyalty: 1.7,
     platformNeed: 0.30,
@@ -219,7 +231,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 6,
     seats: 150,
     avgPrice: 1_400,
-    commissionSensitivity: 0.85,
+    commissionSensitivity: 0.7,
     feeAwareness: 0.6,
     loyalty: 1.25,
     platformNeed: 1.75,
@@ -238,7 +250,7 @@ export const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 7_000,
     avgPrice: 1_100,
-    commissionSensitivity: 3.1,
+    commissionSensitivity: 2.6,
     feeAwareness: 1.5,
     loyalty: 0.75,
     platformNeed: 1.40,
@@ -263,7 +275,7 @@ export const AUDIENCES = [
     id: 'regulars',
     name: { ru: 'Театралы', en: 'Theatre regulars' },
     potential: 3_400_000,
-    feeElasticity: 0.8,        // насколько больно бьёт сервисный сбор
+    feeElasticity: 1.5,        // насколько больно бьёт сервисный сбор
     trustWeight: 1.4,          // насколько важна репутация сервиса
     discovery: 0.45,           // насколько зависит от рекомендаций и подборок
     affinity: { theatre: 2.3, concert: 0.6, club: 0.5, sport: 0.15 },
@@ -276,7 +288,7 @@ export const AUDIENCES = [
     id: 'music',
     name: { ru: 'Меломаны', en: 'Music fans' },
     potential: 6_000_000,
-    feeElasticity: 1.7,
+    feeElasticity: 3.0,
     trustWeight: 0.9,
     discovery: 0.75,
     affinity: { theatre: 0.35, concert: 2.5, club: 1.7, sport: 0.25 },
@@ -289,7 +301,7 @@ export const AUDIENCES = [
     id: 'fans',
     name: { ru: 'Болельщики', en: 'Sports fans' },
     potential: 4_200_000,
-    feeElasticity: 2.1,
+    feeElasticity: 3.7,
     trustWeight: 1.1,
     discovery: 0.20,
     affinity: { theatre: 0.1, concert: 0.45, club: 0.2, sport: 3.0 },
@@ -302,7 +314,7 @@ export const AUDIENCES = [
     id: 'casual',
     name: { ru: 'За компанию', en: 'Casual buyers' },
     potential: 8_000_000,
-    feeElasticity: 2.6,
+    feeElasticity: 4.5,
     trustWeight: 1.0,
     discovery: 1.35,
     affinity: { theatre: 0.9, concert: 1.0, club: 0.85, sport: 0.8 },
@@ -320,18 +332,67 @@ export const audienceById = (id) => AUDIENCES.find((a) => a.id === id);
 // ============================================================================
 
 export const LEVER_GROUPS = [
-  { id: 'take', label: { ru: 'Комиссия и сборы', en: 'Fees and commission' }, open: true },
-  { id: 'growth', label: { ru: 'Спрос и предложение', en: 'Demand and supply' }, open: true },
-  { id: 'infra', label: { ru: 'Продукт и поддержка', en: 'Product and support' }, open: false },
+  {
+    id: 'take',
+    label: { ru: 'Комиссия и сборы', en: 'Fees and commission' },
+    desc: {
+      ru: 'С кого вы берёте деньги: со зрителя сбором, который он видит, или с организатора комиссией, которую он видит в договоре. Обе стороны нужны одновременно.',
+      en: 'Whom you charge: the buyer through a fee they see, or the organiser through a commission they see in the contract. You need both sides at once.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Спрос и предложение', en: 'Demand and supply' },
+    desc: {
+      ru: 'Двусторонний рынок растёт только с обоих концов: зрители приходят за афишей, организаторы — за зрителями. Маркетинг зовёт первых, менеджеры приводят вторых.',
+      en: 'A two-sided market only grows from both ends: buyers come for the listings, organisers come for the buyers. Marketing calls the former, account managers bring the latter.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Продукт и поддержка', en: 'Product and support' },
+    desc: {
+      ru: 'То, что держит доверие и выдерживает он-сейл: витрина, поддержка, ёмкость. Настраивается редко, но именно здесь ломается всё остальное.',
+      en: 'What holds trust and survives the on-sale: the storefront, support, capacity. Rarely adjusted — and exactly where everything else breaks.',
+    },
+    open: false,
+  },
 ];
 
 export const LEVERS = [
+  {
+    key: 'finance',
+    group: 'infra',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '$/mo' },
+    min: 0, max: 12_000_000, step: 250_000, def: 0,
+    tip: {
+      ru: 'Казначейство, переговоры с банком, контроль расходов. Здесь она важнее, чем кажется: эквайринг снимается с оборота, а зарабатываете вы тонкий процент — сбитая ставка бьёт прямо в вашу маржу. Плюс режет «прочие расходы» и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, bank negotiations, cost control. It matters more here than it looks: card processing is charged on turnover while you earn a thin percentage — a lower rate goes straight into your margin. It also cuts “miscellaneous” and packages the company better for a round. The series difficulty changes only its price.',
+    },
+  },
   {
     key: 'buyerFee',
     group: 'take',
     label: { ru: 'Сервисный сбор с покупателя', en: 'Buyer service fee' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 22, step: 0.5, def: 10, scale: 0.01,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика сбора
+    // пологая, но с изломом наверху (замер: 15% -> 7.34, 20% -> 8.05,
+    // 25% -> 7.61 млрд), и точная настройка здесь уместна.
+    policyMode: 'preset',
+    policy: [
+      { v: 5, label: { ru: 'Почти без сбора', en: 'Barely a fee' },
+        note: { ru: 'Зритель видит почти цену билета: конверсия лучшая на рынке, выручки с билета почти нет.', en: 'The buyer sees almost the ticket price: best conversion on the market, almost no revenue per ticket.' } },
+      { v: 10, label: { ru: 'Рыночный', en: 'Market' },
+        note: { ru: 'Как у всех: зритель ворчит, но платит. Средний путь между оборотом и выручкой.', en: 'Same as everyone: the buyer grumbles and pays. The middle road between turnover and revenue.' } },
+      { v: 15, label: { ru: 'Плотный', en: 'Firm' },
+        note: { ru: 'Выше рынка: с каждого билета берёте заметно больше, часть корзин бросают на оплате.', en: 'Above market: you take visibly more per ticket, and some baskets are abandoned at checkout.' } },
+      { v: 20, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'На пороге терпения: выручка максимальная, но ещё шаг — и зритель уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue peaks, but one more step and the buyer leaves for a rival — taking the organiser along.' } },
+    ],
     tip: {
       ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку.',
       en: 'The mark-up on top of the ticket price that the buyer sees at checkout. The most visible line of your revenue — and the most visible reason to close the tab.',
@@ -343,6 +404,17 @@ export const LEVERS = [
     label: { ru: 'Комиссия с организатора', en: 'Organiser commission' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 14, step: 0.5, def: 5, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 1, label: { ru: 'Заманить', en: 'Court them' },
+        note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
+      { v: 3, label: { ru: 'Умеренная', en: 'Moderate' },
+        note: { ru: 'Заметно в договоре, но терпимо: организатор сравнивает с конкурентом и остаётся.', en: 'Visible in the contract but tolerable: the organiser compares with a rival and stays.' } },
+      { v: 5, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
+      { v: 8, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'Дороже рынка: крупные площадки начинают считать и уходить — вместе со своими залами.', en: 'Above market: big venues start doing the maths and leaving — with their halls.' } },
+    ],
     tip: {
       ru: 'Ваша доля из выручки организатора. Зритель её не видит совсем, зато организатор видит в договоре — и держит в голове предложение конкурента.',
       en: 'Your share of the organiser revenue. The buyer never sees it; the organiser sees it in the contract — and keeps the rival offer in mind.',
@@ -356,15 +428,24 @@ export const LEVERS = [
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
       ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Сервисного сбора там нет: цену для покупателя на своём сайте назначает он, а не вы, — так что это вся ваша выручка с такого билета. Плюс эквайринг банк снимает и с неё тоже.',
-      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its acquiring out of it too.',
+      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its card fees out of it too.',
     },
   },
   {
     key: 'platformFee',
     group: 'take',
     label: { ru: 'Абонплата платформы', en: 'Platform subscription' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 120_000, step: 5_000, def: 20_000,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
+        note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },
+      { v: 20_000, label: { ru: 'Символическая', en: 'Token' },
+        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already a reason to think for the small.' } },
+      { v: 60_000, label: { ru: 'Полная', en: 'Full' },
+        note: { ru: 'Деньги, не зависящие от оборота, — но длинный хвост маленьких площадок останется у конкурента.', en: 'Money independent of turnover — but the long tail of small venues stays with your rival.' } },
+    ],
     tip: {
       ru: 'Фиксированная плата с подключённого организатора. Деньги, не зависящие от оборота, — но для маленького клуба это и есть причина не подключаться.',
       en: 'A flat fee per connected organiser. Money that does not depend on turnover — and for a small club, exactly the reason not to connect.',
@@ -374,7 +455,7 @@ export const LEVERS = [
     key: 'marketing',
     group: 'growth',
     label: { ru: 'Маркетинг на зрителей', en: 'Marketing to buyers' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
       ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
@@ -396,7 +477,7 @@ export const LEVERS = [
     key: 'onboarding',
     group: 'growth',
     label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
@@ -407,7 +488,7 @@ export const LEVERS = [
     key: 'platformDev',
     group: 'growth',
     label: { ru: 'Разработка платформы', en: 'Platform development' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
@@ -418,7 +499,7 @@ export const LEVERS = [
     key: 'product',
     group: 'infra',
     label: { ru: 'Продукт и приложение', en: 'Product and app' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Скорость оплаты, поиск, карта зала. Влияет на конверсию: сколько дошедших до корзины действительно платят.',
@@ -429,7 +510,7 @@ export const LEVERS = [
     key: 'support',
     group: 'infra',
     label: { ru: 'Поддержка', en: 'Support' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 6_000_000,
     tip: {
       ru: 'Возвраты, потерянные билеты, вопросы на входе. Плохая поддержка бьёт по доверию зрителей и по терпению организаторов одновременно.',
@@ -440,7 +521,7 @@ export const LEVERS = [
     key: 'capacityTech',
     group: 'infra',
     label: { ru: 'Запас мощности', en: 'Capacity headroom' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 3_000_000,
     tip: {
       ru: 'Серверы под старт продаж на хит. В обычный месяц это выброшенные деньги — ровно до того месяца, когда сайт ляжет на глазах у ста тысяч человек.',
@@ -451,7 +532,7 @@ export const LEVERS = [
     key: 'rnd',
     group: 'infra',
     label: { ru: 'Команда данных', en: 'Data team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 30_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Качество алгоритмов. Без неё умные механики работают наугад и вредят чаще, чем помогают.',
@@ -526,6 +607,26 @@ export const ALGORITHMS = [
       label: { ru: 'Жёсткость проверок', en: 'Check strictness' },
       unit: { ru: '%', en: '%' },
       min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+      // Борьба с перекупщиками — это политика, а не ползунок «сделай лучше»:
+      // у неё есть внутренний оптимум. Замер на 24 кодах партии (медианы, к
+      // «алгоритм не куплен»): 0% даёт +11.8%, 25% — +13.8%, 50% — +2.8%,
+      // 75% — −4.6%, 100% — +1.1%. Доверие растёт монотонно (53% -> 65%),
+      // итог — нет: за жёсткостью платят отказы живых зрителей.
+      //
+      // Первый замер был на восьми кодах и указывал на 50%. Он ошибся:
+      // разброс по партиям шире разницы между режимами, и на восьми кодах
+      // оптимум гуляет. Отсюда правило набора — такие срезы снимать не
+      // меньше чем на 24 кодах.
+      policy: [
+        { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
+          note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
+        { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
+          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is bought with real refusals.' } },
+        { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
+          note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: по замеру итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: measured, the result is already below a simple limit, even though trust is higher.' } },
+        { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
+          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is barely better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+      ],
     },
     what: {
       ru: 'Очередь, лимиты и проверки на старте продаж хита — чтобы билеты достались людям, а не перекупщикам.',

@@ -5,7 +5,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../valuation.js';
+import {
+  windowAvg, windowGrowth, windowGrowthStable, revenueMultiple, roundTerms,
+} from '../valuation.js';
 
 const hist = (values) => values.map((v) => ({ revenue: v }));
 
@@ -38,6 +40,32 @@ test('темп роста считает окно против предыдущ�
 test('без истории на два окна рост не выдумывается', () => {
   assert.equal(windowGrowth(hist([10, 10]), 2, (r) => r.revenue, 0.3), 0.3, 'возвращается заявленный запасной');
   assert.equal(windowGrowth([], 2, (r) => r.revenue, 0.3), 0, 'а если и выручки нет — ноль');
+});
+
+test('устойчивый рост верит короткому окну лишь с подтверждением длинного', () => {
+  // Ступенька: выручка удвоилась прямо в свежем окне. Короткое окно
+  // (2 против 2) читает её как +100% роста, длинное (4 против 4) — вдвое.
+  const ступенька = hist([10, 10, 10, 10, 10, 10, 20, 20]);
+  const короткое = windowGrowth(ступенька, 2, (r) => r.revenue);
+  const устойчивое = windowGrowthStable(ступенька, 2, (r) => r.revenue);
+  assert.ok(устойчивое < короткое,
+    `ступенька в коротком окне ${короткое}, в устойчивом ${устойчивое}`);
+
+  // Настоящий устойчивый рост показывает один темп в обоих окнах — не теряет
+  const ровныйРост = hist([10, 11, 12, 13, 14, 15, 17, 18]);
+  const к = windowGrowth(ровныйРост, 2, (r) => r.revenue);
+  const у = windowGrowthStable(ровныйРост, 2, (r) => r.revenue);
+  assert.ok(Math.abs(к - у) < 0.06, `устойчивый рост почти не штрафуется: ${к} против ${у}`);
+
+  // Падение видно по худшему окну: сжатие замечается сразу
+  const обвал = hist([20, 20, 20, 20, 20, 20, 10, 10]);
+  assert.ok(windowGrowthStable(обвал, 2, (r) => r.revenue)
+    <= windowGrowth(обвал, 2, (r) => r.revenue) + 1e-9);
+
+  // Пока истории на длинное окно нет — работает короткое
+  assert.equal(
+    windowGrowthStable(hist([10, 10, 20, 20]), 2, (r) => r.revenue),
+    windowGrowth(hist([10, 10, 20, 20]), 2, (r) => r.revenue));
 });
 
 test('за сжатие платят меньший множитель, и это правило общее', () => {

@@ -21,11 +21,15 @@
 import { CONFIG, DISTRICTS, CITIES, DEFAULT_DECISIONS, ALGORITHMS } from './config.js';
 import { createRng } from '../../../../shared/rng.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { rollWeather, weatherEffect, bonusHabitStep, seasonOf } from './weather.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const safe = (x, fallback = 0) => (Number.isFinite(x) ? x : fallback);
@@ -52,7 +56,39 @@ export function reachableOf(district) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'novograd') {
+/**
+ * Финансовая команда: сила, цена и то, что она чинит. Цена считается долей
+ * недельной выручки — служба растёт вместе с компанией.
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].netRevenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка
+export function paymentRate(state, decisions) {
+  return Math.max(0.004,
+    CONFIG.paymentFeeRate - CONFIG.finance.paymentCut * financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'novograd', difficulty = 'normal') {
   const rng = createRng(seed);
   // Погода первой недели и публичный прогноз на вторую
   const weather = rollWeather(rng, 1);
@@ -60,6 +96,9 @@ export function createInitialState(seed = 'novograd') {
   const state = {
     seed,
     rngState: rng.state(),
+    // Уровень сложности — общая настройка набора: меняет только цену
+    // финансовой команды (см. shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     weather,
     weatherNext,
     week: 0,
@@ -201,6 +240,9 @@ export function step(prevState, input = {}) {
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
   applyEvent(mods, event, choice);
   if (mods.commissionOverrideDelta) state.flags.commissionDelta += mods.commissionOverrideDelta;
+  if (mods.chainDeal) state.flags.chainOn = true;
+  // Фанаты сети заказывают у неё и после недели новости — пока сеть на борту
+  if (state.flags.chainOn) mods.demandMult *= 1 + CONFIG.chain.fans;
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
@@ -448,13 +490,25 @@ export function step(prevState, input = {}) {
   const fillRate = effDemandTotal > 0 ? orders / effDemandTotal : (capacity > 0 ? 1 : 0);
 
   // --- 5. P&L недели ---
-  const commissionRevenue = gmv * commissionForRevenue;
+  // Сделка с сетью: её заказы идут по льготной ставке. Доля заказов сети —
+  // её рестораны с весом популярности против остальной витрины.
+  let chainDiscount = 0;
+  if (state.flags.chainOn) {
+    const totalRests = activeDefs.reduce(
+      (sum, d) => sum + state.districts[d.id].restaurants, 0);
+    const chainShare = totalRests > 0
+      ? Math.min(0.45, CONFIG.chain.popularity * 40 / totalRests) : 0;
+    chainDiscount = gmv * chainShare
+      * Math.max(0, commissionForRevenue - CONFIG.chain.rate);
+  }
+  const commissionRevenue = gmv * commissionForRevenue - chainDiscount;
   const feeRevenue = orders * decisions.deliveryFee * surgeFeeMult;
   const netRevenue = commissionRevenue + feeRevenue;
 
   const courierCost = orders * courierPayEff;
   const promoCost = orders * promoCostPerOrder;
-  const paymentCost = Math.max(0, paymentBase) * CONFIG.paymentFeeRate;
+  const payRate = paymentRate(state, decisions);
+  const paymentCost = Math.max(0, paymentBase) * payRate;
   const supportCost = orders * Math.max(2,
     CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state) + mods.variableCostAdd);
   const variableCost = courierCost + promoCost + paymentCost + supportCost;
@@ -650,8 +704,14 @@ export function step(prevState, input = {}) {
   }
 
   // --- 9. Деньги ---
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая административка.
+  // Единственная строка, которая растёт сама — вместе с выручкой, — и
+  // единственная, которую режет не бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = netRevenue * rateMisc;
   const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
-    + decisions.tech + (decisions.rnd ?? 0);
+    + decisions.tech + (decisions.rnd ?? 0) + financeBudget + miscCost;
   // Поштучные разовые расходы событий: «доплата всем курьерам» стоит по штату
   // на начало недели, «раздача по базе» — по числу клиентов. Цена решения
   // растёт вместе с компанией — это и делает выбор состояние-зависимым.
@@ -748,6 +808,11 @@ export function step(prevState, input = {}) {
     opex,
     districtFixed,
     hqCost,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    paymentRate: payRate,
     techUpkeep,
     serverCost,
     oneOff,
@@ -755,10 +820,15 @@ export function step(prevState, input = {}) {
     cityEntryCost,
     cityFixed,
     enteredCities,
+    // Ворота экспансии: совет согласовал второй город или ещё нет. В отчёте,
+    // а не только в панели районов, — иначе интерфейс не может отличить
+    // «уже можно» от «стало можно только что» и сообщить об этом новостью.
+    expansionOpen: expansionOpen(),
     // Сколько недель хозяину второго города осталось воевать (0 — мир)
     cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
     couriers: state.couriers,
     hires,
@@ -819,6 +889,8 @@ export function step(prevState, input = {}) {
     forecastDemand,
     commissionForRevenue,
     commissionPerceived,
+    chainDiscount,
+    chainOn: Boolean(state.flags.chainOn),
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),
@@ -925,7 +997,7 @@ export function valuation(state) {
   // купить рывком на один ход — задрать плату и обнулить вложения перед самым
   // концом партии. См. shared/valuation.js.
   const netRevenueRunRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue) * 52;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -940,8 +1012,17 @@ export function valuation(state) {
   return Math.max(40_000_000, base * bonus);
 }
 
+// Насколько лучше компания упакована к раунду: та же выручка, но с внятной
+// отчётностью и чистой юнит-экономикой стоит для инвестора дороже. На счёт
+// это не влияет — оценку считает рынок; влияет на отдаваемую долю.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -1049,10 +1130,58 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     weeks: state.week,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
+}
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Шторм без ответа: ни надбавки курьерам, ни прогнозного автонайма.
+  // Цена: реакция на погоду даёт опоре до +87% к итогу; с прогнозным
+  // автонаймом надбавка не нужна — обе механики закрывают один провал.
+  // Первые 12 недель — льготные: прогнозный автонайм открывается качеством
+  // к 9–13 неделе, и ранние шторма — не системный промах, а часть пути.
+  const severe = hist.filter((r) => r.week > 12 && (r.weatherSeverity ?? 0) >= 0.7);
+  const stormsIgnored = severe.filter((r) => !(r.decisions?.weatherBonus > 0)
+    && !r.algoActive?.forecast).length;
+  if (stormsIgnored >= 3 && stormsIgnored > severe.length / 2) {
+    out.push({ id: 'storms', n: stormsIgnored });
+  }
+
+  // Алгоритмы простаивали. Цена: доведённая стратегия с включёнными
+  // алгоритмами — 4.4 млрд против 1.3 у ручной опоры.
+  const lateWeeks = hist.filter((r) => r.week > 12);
+  const idleWeeks = lateWeeks.filter((r) => Object.values(r.algoActive ?? {})
+    .filter(Boolean).length <= 1).length;
+  if (lateWeeks.length >= 8 && idleWeeks > lateWeeks.length / 2) {
+    out.push({ id: 'algosIdle', n: idleWeeks });
+  }
+
+  // Ворота экспансии открыты, а второго города так и не случилось.
+  // Цена: опора с алгоритмами 4.4 млрд, она же со Старгородом — 6.4.
+  const firstOpen = hist.find((r) => r.expansionOpen);
+  const entered = Object.keys(state.cityEntered ?? {}).some((c) => c !== 'novograd');
+  if (firstOpen && !entered && state.week - firstOpen.week >= 10) {
+    out.push({ id: 'noExpansion', w: firstOpen.week });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', w: state.week });
+
+  return out.slice(0, 4);
 }

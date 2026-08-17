@@ -2,11 +2,14 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.10.5" />
-  <meta name="app-build-date" content="2026-08-13" />
+  <meta name="app-version" content="1.14.0" />
+  <meta name="app-build-date" content="2026-08-17" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОЕДА · food delivery economics simulator</title>
+  <!-- Иконка вкладки: SVG в data-URI. Внешнего файла нет намеренно —
+       раздаваемая сборка одним файлом должна оставаться самодостаточной. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E🛵%3C/text%3E%3C/svg%3E" />
   <style>
 :root {
   --bg: #0b1120;
@@ -24,6 +27,16 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Атрибут hidden обязан прятать даже то, чему классы задали display:
+   у кнопки-ссылки «Игры» display: inline-flex из .btn перебивал hidden,
+   и в офлайн-файле в шапке висел пустой квадрат без подписи. */
+[hidden] { display: none !important; }
+
+/* Видимый фокус для клавиатуры — на всех интерактивных элементах разом.
+   Safari 14.1 не знает :focus-visible: правило стоит отдельно, чтобы он
+   отбросил только его, а мышиные нажатия колец не рисуют нигде. */
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 
 html, body {
   margin: 0;
@@ -65,9 +78,9 @@ button { font-family: inherit; }
   padding: 5px 10px;
   min-width: 96px;
 }
-.kpi .k-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.kpi .k-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .kpi .k-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
-.kpi .k-delta { font-size: 10px; font-variant-numeric: tabular-nums; }
+.kpi .k-delta { font-size: 11px; font-variant-numeric: tabular-nums; }
 .up { color: var(--good); }
 .down { color: var(--bad); }
 .neutral { color: var(--muted); }
@@ -101,12 +114,15 @@ button { font-family: inherit; }
   font-weight: 600;
   transition: 0.15s;
 }
-.btn:hover { border-color: rgba(148, 163, 184, 0.4); }
-.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; }
-.btn.primary:hover { filter: brightness(1.08); }
+.btn:hover { border-color: rgba(148, 163, 184, 0.4); background: #1b2946; }
+/* Нажатие отвечает телом кнопки: без сдвига клик по тёмной кнопке немой */
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; box-shadow: 0 2px 12px rgba(34, 197, 94, 0.25); }
+.btn.primary:hover { filter: brightness(1.08); background: linear-gradient(180deg, #22c55e, #16a34a); box-shadow: 0 3px 16px rgba(34, 197, 94, 0.35); }
 .btn.ghost { background: transparent; }
+.btn.ghost:hover { background: rgba(148, 163, 184, 0.08); }
 .btn.small { padding: 5px 9px; font-size: 12px; font-weight: 500; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ------------------------------- Сетка ---------------------------------- */
 .layout {
@@ -154,13 +170,68 @@ button { font-family: inherit; }
 .lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .lever-label { font-weight: 600; font-size: 13px; }
 .lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
-.lever input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent); }
+.lever input[type="range"] { width: 100%; margin: 6px 0 2px; }
 .lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
 .lever.open .lever-tip { display: block; }
+/* «Зачем это?» — раскрывашка, а не ссылка: каретка вместо пунктира, как у
+   «Как читать карту». Двенадцать пунктирных подчёркиваний в столбце рычагов
+   читались как двенадцать ссылок наружу. */
 .lever-why {
   background: none; border: none; color: var(--muted); cursor: pointer;
-  font-size: 11px; padding: 0; text-decoration: underline dotted;
+  font-size: 11px; padding: 0; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
 }
+.lever-why::before { content: '▸'; font-size: 9px; transition: transform 0.15s ease; }
+.lever.open .lever-why::before { content: '▾'; }
+.lever-why:hover { color: var(--text); }
+
+/* ------------------------------ Ползунки ---------------------------------
+   Свой вид вместо системного: на планке совместимости Safari 14.1 нет
+   accent-color, и ползунки там оставались белыми системными. Дорожка
+   заливается до ручки цветом акцента: в WebKit процент заливки задаёт
+   переменная --fill (её ставит shared/sliders.js), в Firefox заливку рисует
+   ::-moz-range-progress без всякого скрипта. Синие ползунки алгоритмов
+   задают свой цвет переменной --range-accent. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 22px;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--range-accent, var(--accent)) var(--fill, 0%),
+    rgba(148, 163, 184, 0.22) var(--fill, 0%));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--range-accent, var(--accent));
+  border: 2px solid #0b1120;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  transition: transform 0.12s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.18); }
+input[type="range"]:disabled::-webkit-slider-thumb { transform: none; }
+input[type="range"]::-moz-range-track {
+  height: 6px; border-radius: 999px; background: rgba(148, 163, 184, 0.22);
+}
+input[type="range"]::-moz-range-progress {
+  height: 6px; border-radius: 999px; background: var(--range-accent, var(--accent));
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--range-accent, var(--accent));
+  border: 2px solid #0b1120;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+input[type="range"]:disabled { opacity: 0.45; }
 
 /* ------------------------------- Районы --------------------------------- */
 .districts { display: flex; flex-direction: column; gap: 8px; }
@@ -172,7 +243,7 @@ button { font-family: inherit; }
   cursor: pointer;
   transition: 0.15s;
 }
-.district:hover { border-color: rgba(148, 163, 184, 0.35); }
+.district:hover { border-color: rgba(148, 163, 184, 0.35); background: #1a2540; }
 .district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
 /* Шапка второго города в панели районов: выглядит как карточка, но не кликается —
    вход в город платится сам, вместе с запуском первого района. */
@@ -187,9 +258,14 @@ button { font-family: inherit; }
 .district-name { font-weight: 700; font-size: 13px; }
 .district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }
 .badge {
-  font-size: 10px; padding: 2px 6px; border-radius: 999px;
+  font-size: 11px; padding: 2px 6px; border-radius: 999px;
   border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
 }
+/* Длинный бейдж (например, условия ворот совета) обязан переноситься:
+   с nowrap он уезжал за правый край панели, и прочитать его можно было
+   только горизонтальной прокруткой внутри колонки. */
+.badge.wrap { white-space: normal; text-align: right; }
+.district-head { flex-wrap: wrap; }
 .badge.on { color: var(--good); border-color: rgba(74, 222, 128, 0.4); }
 
 /* ------------------------------ Инвестиции ------------------------------ */
@@ -211,8 +287,9 @@ button { font-family: inherit; }
 .event-option {
   flex: 1 1 200px; text-align: left; border: 1px solid var(--line); border-radius: 10px;
   padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
+  transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
 }
-.event-option:hover { border-color: var(--warn); }
+.event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
@@ -237,9 +314,9 @@ button { font-family: inherit; }
 .report-head h3 { margin: 0; font-size: 15px; }
 .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
 .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
-.stat .s-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .s-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
 .stat .s-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.stat .s-sub { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.stat .s-sub { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .drivers { margin-top: 12px; }
 .driver { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
@@ -265,7 +342,9 @@ button { font-family: inherit; }
 .chart-tabs button {
   background: transparent; border: 1px solid var(--line); color: var(--muted);
   border-radius: 999px; padding: 3px 10px; font-size: 11px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
+.chart-tabs button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .chart-tabs button.active { color: var(--text); border-color: var(--accent-2); background: rgba(96, 165, 250, 0.12); }
 #chart { width: 100%; height: 230px; margin-top: 6px; }
 .chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
@@ -278,7 +357,9 @@ button { font-family: inherit; }
 .tab {
   background: transparent; border: 1px solid var(--line); color: var(--muted);
   border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
+.tab:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .tab.active { color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1); }
 .tab-content { font-size: 12px; line-height: 1.5; }
 
@@ -288,7 +369,7 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
    шестнадцать, из-за которых заголовок не помещается и колонка уезжает. */
 table.data th, table.data td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--line); }
 table.data th:first-child, table.data td:first-child { text-align: left; }
-table.data th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+table.data th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
 table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
 /* Ячейки, где не одно число, а фраза из нескольких: выравниваем по левому
    краю, иначе перенос рвёт её в неожиданных местах и читать приходится
@@ -314,8 +395,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px;
 }
 .modal {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  background: var(--panel); border: 1px solid rgba(148, 163, 184, 0.24); border-radius: 14px;
   padding: 22px; max-width: 620px; width: 100%; max-height: 86vh; overflow-y: auto;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 .modal h2 { margin: 0 0 10px; font-size: 20px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
@@ -351,7 +433,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .algo-tradeoff { color: #cbd5e1; font-size: 11px; line-height: 1.45; margin-top: 5px;
   border-left: 2px solid rgba(251, 191, 36, 0.5); padding-left: 7px; }
 .algo-param { margin-top: 7px; }
-.algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
+.algo-param input[type="range"] { width: 100%; --range-accent: var(--accent-2); margin: 3px 0 0; }
 .algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
 .algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
 
@@ -364,7 +446,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-next.alarm { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.09); }
 .weather-icon { font-size: 26px; line-height: 1; }
 .weather-body { min-width: 0; }
-.weather-when { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.weather-when { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .weather-name { font-weight: 700; font-size: 14px; }
 .weather-fx { color: var(--muted); font-size: 11px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .weather-fx b.up { color: var(--good); }
@@ -513,8 +595,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   padding: 5px 10px;
   font-size: 12px;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
-.pick button:hover { color: var(--text); }
+.pick button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .pick button.active { background: var(--accent-2); border-color: transparent; color: #06210f; font-weight: 700; }
 .commission-foot {
   display: flex;
@@ -561,6 +644,20 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   text-decoration: none;
 }
 .jump:hover { color: var(--text); border-bottom-color: var(--text); }
+
+/* Тач-цели телефона. Инлайн-ссылки остаются инлайновыми (иначе поедет
+   вёрстка), но их область нажатия расширяется псевдоэлементом — палец
+   попадает в 15-пиксельную строку не лучше, чем в игольное ушко. */
+@media (max-width: 560px) {
+  .jump, .todo-jump, a.small-link { position: relative; }
+  .jump::after, .todo-jump::after, a.small-link::after {
+    content: ''; position: absolute; inset: -9px -6px;
+  }
+  /* Кнопки шапки: минимальная ширина, чтобы иконка не превращалась в полоску */
+  .topbar-actions .btn, .topbar .btn { min-width: 40px; }
+  /* Флажки алгоритмов: 13 пикселей — это не тач-цель */
+  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+}
 
 /* Подсветка блока, к которому перешли: без неё непонятно, куда попал */
 @keyframes jump-flash {
@@ -674,7 +771,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .kpi { min-width: 0; padding: 5px 8px; }
   .kpi .k-value { font-size: 15px; }
-  .kpi .k-label, .kpi .k-delta { font-size: 10px; }
+  .kpi .k-label, .kpi .k-delta { font-size: 11px; }
   .layout { padding: 10px; gap: 10px; }
   .col-left, .col-right { position: static; max-height: none; }
 
@@ -796,6 +893,215 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   text-align: center;
 }
 
+/* ============================================================================
+   НОВОГРАД (games/ecosystem): собственные органы управления — сегментные
+   политики, бюджетная полоса, карта экосистемы. Только новые классы:
+   старые игры этих имён не используют, правки обратимо-совместимы.
+   ============================================================================ */
+.policy-seg { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.policy-seg button {
+  /* Не ужиматься уже текста: лучше перенос на новую строку, чем срезанная подпись */
+  flex: 1 0 auto; background: transparent; border: 1px solid var(--line);
+  color: var(--muted); border-radius: 8px; padding: 5px 6px; font-size: 11px;
+  cursor: pointer; line-height: 1.2; min-height: 30px;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.policy-seg button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
+.policy-seg button.active {
+  color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1);
+}
+.policy-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+.budget-bar {
+  display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+  margin: 6px 0 5px; background: rgba(148, 163, 184, 0.12);
+}
+.budget-bar span { display: block; height: 100%; min-width: 1px; }
+.budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
+.budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+
+/* Карта адаптивная: на узком контейнере она перестраивается вертикально
+   (класс map-v ставит рендер), поэтому ни прокрутки, ни ужатия текста нет. */
+.eco-map svg { width: 100%; height: auto; display: block; }
+.eco-map svg.map-v { max-width: 430px; margin: 0 auto; }
+.eco-map .node { cursor: pointer; }
+.eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
+.eco-map text { font-size: 12px; fill: var(--text); }
+/* На широком мониторе схема растягивалась на всю панель вместе с текстом:
+   при viewBox 700 и панели 1400 всё внутри удваивалось, подписи наезжали на
+   край и обрезались. Ширина схемы ограничена — на больших экранах она стоит
+   по центру в своём естественном масштабе. */
+.eco-map svg { display: block; max-width: 820px; margin: 0 auto; }
+.eco-map svg.map-v { max-width: 420px; }
+.eco-map .m-muted { fill: var(--muted); font-size: 11px; }
+.eco-map .m-num { font-weight: 700; }
+
+/* Карточки типов организаторов (БИЛЕТВИЛЬ): решение о канале продаж — это
+   не строка таблицы, а карточка с ценой, темпом и тем, что тип принесёт. */
+.org-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+.org-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+}
+.org-card.on { border-color: var(--accent); }
+.org-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.org-rows { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.org-rows > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.org-rows span { color: var(--muted); }
+.org-rows b { text-align: right; font-variant-numeric: tabular-nums; }
+.org-card .btn { margin-top: auto; }
+
+/* Карта города (НОВОЕДА): плитки районов по оси расстояния */
+/* Заливка полупрозрачностью, а не смешиванием цветов средствами CSS:
+   планка совместимости — Safari 14.1, а функция смешивания появилась только
+   в 16.2. Проверка сборок ловит её по имени, включая упоминание в
+   комментарии, — поэтому здесь оно и не написано. */
+.eco-map .m-name { fill: var(--text); font-size: 12px; font-weight: 600; }
+.eco-map .m-small { fill: var(--text); font-size: 11px; }
+.eco-map .m-axis { stroke: var(--line); }
+.map-scroll { overflow-x: auto; }
+.map-foot {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; margin-top: 6px;
+}
+
+/* Легенда сегментов под схемой месяца (КИНОРЕКА) */
+.flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
+.flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* Карта холдинга (НОВОГРАД): круги баз, связи, волны охвата */
+.holding .e-link { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 4 4; opacity: 0.5; }
+.holding .e-link.on { stroke-width: 2.6; stroke-dasharray: none; opacity: 0.8; }
+.holding .e-wave { fill: none; stroke: var(--line); opacity: 0.5; }
+/* Подписи лежат поверх связей и волн — отсюда обводка фоном панели */
+.holding text { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.holding .node { cursor: pointer; }
+
+
+
+/* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
+.city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
+/* Фон квартала и уровень «наша доля района» внутри него */
+.city-map .m-quarter-bg { fill: var(--panel-2, #16213a); fill-opacity: 0.5; stroke: none; }
+.city-map .m-share { fill-opacity: 0.55; }
+.city-map .m-share.m-good { fill: var(--good); }
+.city-map .m-share.m-bad, .city-map .m-share.m-closing { fill: var(--bad); }
+.city-map .m-quarter.m-good { fill: none; stroke: var(--good); }
+.city-map .m-quarter.m-bad { fill: none; stroke: var(--bad); }
+.city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
+.city-map .m-quarter.m-closing { fill: none; stroke: var(--bad); stroke-dasharray: 5 4; }
+.city-map .m-quarter.m-plan { fill: none; stroke: var(--accent); }
+/* Квартал — орган управления: нажатие открывает район */
+/* pointer-events: all — иначе незакрашенный квартал (закрытый район) не
+   ловит нажатие вовсе: по спецификации SVG прозрачная заливка не цель */
+/* Городская черта: край города, штрихпунктиром — как на карте */
+.city-map .m-border {
+  fill: var(--panel-2, #16213a); fill-opacity: 0.45;
+  stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 12 4 3 4;
+}
+
+/* Плечо доставки внутри квартала: ресторан, путь, клиент */
+.city-map .m-leg rect, .city-map .m-leg circle { fill: var(--text); fill-opacity: 0.8; }
+.city-map .m-leg line { stroke: var(--text); stroke-opacity: 0.7; stroke-width: 1.6; stroke-dasharray: 3 2; }
+/* Опоздание должно быть видно с расстояния вытянутой руки: ниточка в
+   ~20 px — самый мелкий орган карты, и прежнее покраснение при той же
+   толщине читалось только в упор (аудит 2026-08, ось визуала) */
+.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 1; }
+.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 1; stroke-width: 2.6; stroke-dasharray: 4 2; }
+.city-map .m-leader { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
+.city-map .m-hit { cursor: pointer; }
+.city-map .m-hit polygon { pointer-events: all; }
+.city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
+.map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
+.city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
+.city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
+.city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
+/* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
+.city-map .m-name, .city-map .m-small, .city-map .m-muted {
+  paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.city-map.narrow .m-name { font-size: 16px; font-weight: 800; }
+.city-map.narrow .m-muted { font-size: 18px; }
+/* Легенда карты под катом: полный разбор кодировок нужен один раз, а место
+   под картой занимает каждый ход */
+.map-legend { margin-top: 6px; }
+.map-legend summary {
+  cursor: pointer; color: var(--muted); font-size: 11px;
+  list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.map-legend summary::-webkit-details-marker { display: none; }
+.map-legend summary::before { content: '▸'; font-size: 10px; }
+.map-legend[open] summary::before { content: '▾'; }
+.map-legend summary:hover { color: var(--text); }
+.map-legend .funding-note { margin-top: 6px; }
+.map-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
+.map-list li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+.map-list li:last-child { border-bottom: 0; }
+
+/* Длинное объяснение под катом: раскрывашка в стиле «Как читать карту».
+   Справочный абзац нужен один раз, а место в панели занимает каждый ход. */
+.more { margin-top: 4px; }
+.more > summary {
+  cursor: pointer; color: var(--muted); font-size: 11px;
+  list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::before { content: '▸'; font-size: 10px; }
+.more[open] > summary::before { content: '▾'; }
+.more > summary:hover { color: var(--text); }
+.more > .funding-note { margin-top: 6px; }
+
+/* «Мультиплекс» КИНОРЕКИ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.plex[data-hl] .px { opacity: 0.15; transition: opacity 0.15s; }
+.plex[data-hl="premium"] .px-premium, .plex[data-hl="premium"] .px-down { opacity: 1; }
+.plex[data-hl="ads"] .px-ads, .plex[data-hl="ads"] .px-down { opacity: 1; }
+.plex[data-hl="rival"] .px-rival, .plex[data-hl="rival"] .px-net { opacity: 1; }
+.plex[data-hl="in"] .px-in { opacity: 1; }
+.plex[data-hl="out"] .px-out { opacity: 1; }
+.plex .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.plex .legend-item:hover, .plex .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* «Кварталы» БИЛЕТВИЛЯ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.quarters[data-hl] .qx { opacity: 0.15; transition: opacity 0.15s; }
+.quarters[data-hl] .qx-frame, .quarters[data-hl] .qx-name { opacity: 0.45; }
+.quarters[data-hl="share"] .qx-share { opacity: 1; }
+.quarters[data-hl="widget"] .qx-widget { opacity: 1; }
+.quarters[data-hl="own"] .qx-frame { opacity: 1; }
+.quarters[data-hl="loss"] .qx-loss { opacity: 1; }
+.quarters[data-hl="loss"] .qt:not(.qt-dead) .qx-frame { opacity: 1; }
+.quarters .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.quarters .legend-item:hover, .quarters .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* Полоса каналов в карточке типа организаторов (БИЛЕТВИЛЬ): те же три числа,
+   что раньше пыталась показать схема потоков, — одной 100%-полосой */
+.chan-bar {
+  display: flex; height: 11px; border-radius: 6px; overflow: hidden;
+  margin: 8px 0 3px; background: rgba(148, 163, 184, 0.12);
+}
+.chan-bar span { height: 100%; }
+.chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -868,6 +1174,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <div id="weather-slot"></div>
       <div id="event-slot"></div>
       <div id="report-slot"></div>
+      <!-- Карта города: расстояние — не подпись, а ось. Именно на ней видно
+           главный компромисс игры: дальний район больше, но дороже по времени. -->
+      <div id="map-slot"></div>
       <div id="news-slot"></div>
       <div class="panel charts">
         <div class="charts-head">
@@ -919,6 +1228,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -969,7 +1289,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -980,6 +1302,17 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
+  pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
+  pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
+  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
+  welcomeDifficultyNote: {
+    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
+  },
+  readoutFinance: {
+    ru: 'Финансовая команда: сила <b class="{cls}">{level}</b>. Прочие расходы — {misc} выручки, эквайринг — {pay}.',
+    en: 'Finance team: strength <b class="{cls}">{level}</b>. Miscellaneous costs {misc} of revenue; card processing {pay}.',
+  },
   // --- шапка ---
   brandTitle: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
   brandSub: { ru: 'экономический симулятор доставки еды · г. Новоград', en: 'food delivery economics simulator · city of Novograd' },
@@ -1028,7 +1361,7 @@ const STRINGS = {
   opsPerCourier: { ru: 'Курьер увезёт <b>{orders}</b> заказов/нед (плечо {km} км).', en: 'A courier delivers <b>{orders}</b> orders/wk (average leg {km} km).' },
   opsEarnings: {
     ru: 'Его заработок при 75% загрузки: <b>{pay}</b> против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
-    en: 'Their earnings at 75% utilisation: <b>{pay}</b> against {market} on the market (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+    en: 'Their earnings at 75% utilisation: <b>{pay}</b> vs the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
   },
   opsHiringQueue: { ru: 'очередь из кандидатов', en: 'a queue of applicants' },
   opsHiringSteady: { ru: 'наём идёт ровно', en: 'hiring runs smoothly' },
@@ -1040,11 +1373,11 @@ const STRINGS = {
   },
   opsCapacity: { ru: 'Штат {couriers} чел. увезёт <b>{capacity}</b> заказов/нед', en: 'A team of {couriers} delivers <b>{capacity}</b> orders/wk' },
   opsCapacityUtil: { ru: ', спрос прошлой недели {demand} → загрузка <b class="{cls}">{util}</b>', en: ', last week’s demand was {demand} → utilisation <b class="{cls}">{util}</b>' },
-  opsBatching: { ru: 'Батчинг: ставка за отдельный заказ снижена до <b>{pay} ₽</b>, но заказ едет дольше.', en: 'Batching: the rate for a single order drops to <b>₽{pay}</b>, but each order takes longer.' },
+  opsBatching: { ru: 'Батчинг: ставка за отдельный заказ снижена до <b>{pay}</b>, но заказ едет дольше.', en: 'Batching: the rate for a single order drops to <b>{pay}</b>, but each order takes longer.' },
   opsWeatherAhead: { ru: 'Расчёт уже учитывает прогноз ({weather}): спрос вырастет примерно на <b>{lift}</b>.', en: 'This already accounts for the forecast ({weather}): demand will rise by roughly <b>{lift}</b>.' },
   opsMinPay: {
-    ru: 'Наём начнётся от <b>{pay} ₽</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.',
-    en: 'Hiring starts at <b>₽{pay}</b> per order: the longer the delivery leg, the fewer orders a courier completes and the higher the rate has to be.',
+    ru: 'Наём начнётся от <b>{pay}</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.',
+    en: 'Hiring starts at <b>{pay}</b> per order: the longer the delivery leg, the fewer orders a courier completes and the higher the rate has to be.',
   },
 
   // --- погода ---
@@ -1078,7 +1411,7 @@ const STRINGS = {
   boardDone: { ru: 'Цели закончились — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
   goalQuarter: { ru: 'Квартал {quarter}', en: 'Quarter {quarter}' },
   goalOrders: { ru: 'Не меньше {target} заказов в неделю к концу квартала. Это про рост: покажите, что через вас вообще заказывают.', en: 'At least {target} orders a week by the end of the quarter. This one is about growth: show that people order through you at all.' },
-  goalUnit: { ru: 'Вклад с заказа не ниже {target} ₽ при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least ₽{target} per order at {floor} orders a week. The turnover is someone else’s, the contribution is yours — and growth alone will not get you there.' },
+  goalUnit: { ru: 'Вклад с заказа не ниже {target} при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least {target} per order at {floor} orders a week. The GMV is someone else’s money, the contribution is yours — and growth alone will not get you there.' },
   goalProfit: { ru: 'Не меньше {target} прибыльных недель из тринадцати, и база не ниже {floor} клиентов. Срезать расходы, растеряв город, не считается.', en: 'At least {target} profitable weeks out of thirteen, with a base of no less than {floor} customers. Cutting costs and losing the city does not count.' },
   goalShare: { ru: 'Доля города {target} при {floor} клиентах. Рынок делится не заказами, а людьми, которые к вам вернутся.', en: 'A city share of {target} with {floor} customers. The market is divided not by orders but by the people who come back.' },
   goalNow: { ru: 'сейчас {value}', en: 'now {value}' },
@@ -1097,11 +1430,15 @@ const STRINGS = {
   newsSeasonSummer: { ru: '<b>Начинается лето.</b> Половина города в отпуске, зато жара своё возьмёт: она бьёт не по спросу, а по курьерам.', en: '<b>Summer is starting.</b> Half the city is away, but the heat will take its toll — it hits the couriers, not the demand.' },
   newsSeasonAutumn: { ru: '<b>Начинается осень.</b> Дожди возвращаются, и вместе с ними самая доходная и самая нервная часть года.', en: '<b>Autumn is starting.</b> The rains are back, and with them the most profitable and most nerve-racking part of the year.' },
   newsCouriers: { ru: '<b>Курьеры за неделю: вышли на линию {hires}, ушли {left}.</b> {verdict}', en: '<b>{hires} couriers came on shift this week, {left} left.</b> {verdict}' },
-  newsCouriersGood: { ru: 'Набор обгоняет отток — на линии становится просторнее.', en: 'Hiring beats churn — the road is getting less crowded.' },
+  newsCouriersGood: { ru: 'Набор обгоняет отток — на линии становится просторнее.', en: 'Hiring beats churn — couriers get more breathing room.' },
   newsCouriersEven: { ru: 'Сколько ушло, столько и вышло: команда стоит на месте — она держится ровно на той оплате, что вы назначили.', en: 'As many came on as left: the team is standing still — it holds exactly at the pay you set.' },
   newsCouriersBad: { ru: 'Уходит больше, чем приходит. Смотрите, сколько курьер зарабатывает у вас против рынка.', en: 'More are leaving than arriving. Look at what a courier earns with you against the market.' },
   newsNoApplicants: { ru: '<b>На вакансии никто не откликается.</b> Курьеры уходят, а замены нет: при такой оплате в очереди пусто, и нанять некого ни за какие деньги на найм.', en: '<b>Nobody is answering the job ads.</b> Couriers leave and there is no replacement: at this pay the queue is empty, and no hiring budget will conjure one.' },
   newsUnserved: { ru: '<b>{share} заказов никто не повёз.</b> Спрос был, машины не нашлось — среднее время доставки {time} мин. Такие заказы не переносятся на следующую неделю: человек просто заказал в другом месте.', en: '<b>{share} of orders went undelivered.</b> The demand was there, the courier was not — average delivery time {time} min. Those orders do not roll over to next week: the customer simply ordered somewhere else.' },
+  newsExpansionOpen: {
+    ru: 'Совет согласовал выход во второй город: {city} открыт для входа. Разовый вход {cost}, городской офис {weekly}/нед — платится, пока там открыт хоть один район.',
+    en: 'The board has approved a second city: {city} is open to enter. A one-off {cost} entry fee and a {weekly}/wk city office, paid while at least one district there is open.',
+  },
   newsDistrictOpen: { ru: '<b>Открылся район: {name}.</b> Первые недели он будет убыточным — пока о вас там не знают, а ездить уже надо.', en: '<b>A new district is open: {name}.</b> The first weeks there will lose money — nobody knows you yet, but the driving starts at once.' },
   newsDistrictClosed: { ru: '<b>Район закрыт: {name}.</b> Клиенты, которых вы там набрали, потеряны — во второй раз они придут не сразу.', en: '<b>District closed: {name}.</b> The customers you gathered there are lost — they will not come back quickly.' },
   newsCustomers: { ru: '<b>Клиенты за неделю: пришли {came}, ушли {left}.</b> {verdict}', en: '<b>{came} customers arrived this week, {left} left.</b> {verdict}' },
@@ -1126,6 +1463,8 @@ const STRINGS = {
   algoPending: { ru: 'Будет внедрён при переходе к следующей неделе: разовые {cost}.', en: 'Will be rolled out when you run the next week: a one-off {cost}.' },
 
   // --- районы ---
+  districtClosing: { ru: 'закроется', en: 'closing' },
+  districtCloseToast: { ru: '{name} закроется в конце недели: клиенты и рестораны района обнулятся. Нажмите ещё раз, чтобы оставить район.', en: '{name} closes at the end of the week: its customers and restaurants are wiped. Click again to keep the district.' },
   districtLive: { ru: 'работает', en: 'live' },
   districtLaunch: { ru: 'запуск {cost}', en: 'launch {cost}' },
   // --- Экспансия во второй город ---
@@ -1136,7 +1475,62 @@ const STRINGS = {
   cityFixedNote: { ru: 'Вход {entry} платится с первым районом, офис города — {weekly}/нед, пока открыт хоть один район. После входа доля рынка считается по обоим городам, а хозяин ответит промо-войной.', en: 'The {entry} entry fee is paid with your first district; the city office costs {weekly}/wk while at least one district is open. After entry your market share covers both cities — and the incumbent will fight back.' },
   alertCityWar: { ru: '«СтароЕд» отвечает промо-войной: приток новых клиентов в Старгороде урезан, отток выше. Ещё {weeks} нед.', en: 'The local incumbent is fighting back: new-customer inflow in Stargorod is cut and churn is up. {weeks} more weeks.' },
   districtStatsLive: { ru: '{customers} клиентов · {restaurants} ресторанов · {time} мин · охват {reach}', en: '{customers} customers · {restaurants} restaurants · {time} min · reach {reach}' },
-  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} ₽ · плечо {km} км', en: '{potential} potential customers · basket ₽{aov} · leg {km} km' },
+  mapTitle: { ru: 'Карта города: {city}', en: 'City map: {city}' },
+  mapKmShort: { ru: 'км', en: 'km' },
+  mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
+  mapPerOrderTag: { ru: '/заказ', en: '/order' },
+  mapRefRing: { ru: 'Норма держится до плеча {km} км: дальше заказ перестаёт укладываться в {min} минут.', en: 'The norm holds up to a {km} km leg: beyond that an order stops fitting {min} minutes.' },
+  mapMin: { ru: ' мин', en: ' min' },
+  mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
+  mapLiveMeta: { ru: 'клиентов {customers} · ресторанов {restaurants}', en: '{customers} customers · {restaurants} restaurants' },
+  mapIdleMeta: { ru: 'потенциал {potential} · плечо {km} км', en: 'potential {potential} · {km} km leg' },
+  mapPlanned: { ru: 'откроется на этой неделе', en: 'opens this week' },
+  mapClosing: { ru: 'закроется в конце недели', en: 'closes at the end of the week' },
+  mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
+  mapUndelivered: { ru: 'спроса не довезли: {share}', en: 'demand not served: {share}' },
+  mapTipLive: {
+    ru: '{name}: потенциальных клиентов {potential}, ваших {customers} ({share}). Сейчас {time} мин и {cm} с заказа.',
+    en: '{name}: {potential} potential customers, {customers} of them yours ({share}). Right now {time} min and {cm} per order.',
+  },
+  mapTipIdle: {
+    ru: '{name}: потенциальных клиентов {potential}, вход {cost}, плечо {km} км.',
+    en: '{name}: {potential} potential customers, entry {cost}, a {km} km leg.',
+  },
+  mapTipShare: { ru: 'Ваши клиенты: {customers} — {share} района', en: 'Your customers: {customers} — {share} of the district' },
+  mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery leg {km} km · {time} min per order' },
+  mapTipHouses: { ru: 'Подключено ресторанов: {n}', en: 'Restaurants signed up: {n}' },
+  mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
+  // Легенда разобрана на элементы: наведение на пункт подсвечивает
+  // соответствующий орган карты (аудит 2026-08, ось визуала)
+  mapLegendArea: {
+    ru: 'Квартал — район, его площадь — рынок: во сколько раз больше потенциальных клиентов, во столько больше квартал.',
+    en: 'A block is a district and its area is the market: the more potential customers, the bigger the block.',
+  },
+  mapLegendShare: {
+    ru: 'Залито снизу — сколько этого рынка уже ваше.',
+    en: 'Filled from the bottom — how much of that market is already yours.',
+  },
+  mapLegendColor: {
+    ru: 'Цвет — вклад с заказа: зелёный приносит, красный съедает.',
+    en: 'Colour is contribution per order: green earns, red eats.',
+  },
+  mapLegendHouses: {
+    ru: 'Домики — подключённые рестораны, один на тридцать.',
+    en: 'Little houses are restaurants signed up, one per thirty.',
+  },
+  mapLegendLeg: {
+    ru: 'Ниточка — плечо доставки; красная — район не укладывается в эталонные минуты.',
+    en: 'The thread is the delivery leg; red means the district misses the reference time.',
+  },
+  mapLegendOutline: {
+    ru: 'Обводка пунктиром — про конец недели: зелёная откроется, красная закроется, серая ждёт входа.',
+    en: 'A dashed outline is about the end of the week: green opens, red closes, grey waits for its entry fee.',
+  },
+  mapLegendHint: {
+    ru: 'Наведите на пункт легенды — карта подсветит его. Клик по кварталу открывает район или убирает его из плана.',
+    en: 'Hover a legend item and the map highlights it. Clicking a block opens the district or drops it from the plan.',
+  },
+  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · AOV {aov} · leg {km} km' },
 
   // --- финансирование ---
   fundingTake: { ru: 'Взять', en: 'Take it' },
@@ -1185,7 +1579,7 @@ const STRINGS = {
   statWeatherNone: { ru: 'без влияния', en: 'no effect' },
   statWeatherSub: { ru: 'спрос {demand}, мощность {capacity}', en: 'demand {demand}, capacity {capacity}' },
   statCm: { ru: 'Вклад с заказа', en: 'Contribution / order' },
-  statCmSub: { ru: '{value} от чека', en: '{value} of basket' },
+  statCmSub: { ru: '{value} от чека', en: '{value} of the order value' },
   statProfit: { ru: 'Прибыль', en: 'Profit' },
   statProfitSub: { ru: 'постоянные {value}', en: 'fixed costs {value}' },
   statCacLtv: { ru: 'CAC / LTV', en: 'CAC / LTV' },
@@ -1209,20 +1603,20 @@ const STRINGS = {
 
   // --- предупреждения ---
   alertShortage: { ru: 'Курьеров не хватает: спрос покрыт на {fill}. Потеряно {lost} заказов, время доставки выросло до {time} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.', en: 'Not enough couriers: only {fill} of demand was served. {lost} orders lost and delivery time climbed to {time} min. A lost order hits you twice — revenue today, retention tomorrow.' },
-  alertIdle: { ru: 'Курьеры простаивают (загрузка {util}). Каждый лишний курьер стоит {cost} ₽/нед содержания, а заработок на человека падает — начнётся отток.', en: 'Couriers are idle (utilisation {util}). Every spare courier costs ₽{cost}/wk to keep, and per-person earnings fall — churn will follow.' },
-  alertNoApplicants: { ru: 'Никто не откликнулся на вакансию курьера: при ставке {pay} ₽ и {orders} заказах за смену заработок не дотягивает до рыночных {market}. Отклики пойдут примерно от {minPay} ₽ за заказ.', en: 'Nobody applied to be a courier: at ₽{pay} per order and {orders} orders a week the earnings fall short of the market rate of {market}. Applications start at roughly ₽{minPay} per order.' },
-  alertLowPay: { ru: 'Курьер зарабатывает {earnings}/нед против {market} на рынке. Отток {churn}, откликов почти нет.', en: 'A courier earns {earnings}/wk against {market} on the market. Churn is {churn} and applications have dried up.' },
-  alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value} ₽). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative (₽{value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
-  alertBreakEven: { ru: 'Каждый заказ приносит {cm} ₽ вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes ₽{cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
+  alertIdle: { ru: 'Курьеры простаивают (загрузка {util}). Каждый лишний курьер стоит {cost}/нед содержания, а заработок на человека падает — начнётся отток.', en: 'Couriers are idle (utilisation {util}). Every spare courier costs {cost}/wk to keep, and per-person earnings fall — churn will follow.' },
+  alertNoApplicants: { ru: 'Никто не откликнулся на вакансию курьера: при ставке {pay} и {orders} заказах в неделю заработок не дотягивает до рыночных {market}. Отклики пойдут примерно от {minPay} за заказ.', en: 'Nobody applied to be a courier: at {pay} per order and {orders} orders a week the earnings fall short of the market rate of {market}. Applications start at roughly {minPay} per order.' },
+  alertLowPay: { ru: 'Курьер зарабатывает {earnings}/нед против {market} на рынке. Отток {churn}, откликов почти нет.', en: 'A courier earns {earnings}/wk vs the market rate of {market}. Churn is {churn} and applications have dried up.' },
+  alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value}). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative ({value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
+  alertBreakEven: { ru: 'Каждый заказ приносит {cm} вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes {cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
   alertRunway: { ru: 'Денег на {weeks} недель при текущем сжигании {burn}/нед. Пора резать расходы или привлекать раунд.', en: '{weeks} weeks of cash left at the current burn of {burn}/wk. Time to cut costs or raise a round.' },
   alertNoDistricts: { ru: 'Не открыт ни один район — а значит, заказывать негде и заказов не будет. Неделя прошла вхолостую: расходы штаба списались, выручки не было. Начните с одного района: <a class="jump" data-jump="panel:districts">выбрать район</a>.', en: 'No district is open, so there is nowhere to order from and there will be no orders. The week ran empty: head-office costs were charged, revenue was zero. Start with one district: <a class="jump" data-jump="panel:districts">pick a district</a>.' },
-  alertNoRestaurants: { ru: 'Ресторанов нет и бюджет на подключение равен нулю. В маркетплейсе предложение первично: пока заказывать нечего, ни один рубль маркетинга не сработает.', en: 'No restaurants and no acquisition budget. In a marketplace supply comes first: until there is something to order, not one rouble of marketing will work.' },
+  alertNoRestaurants: { ru: 'Ресторанов нет и бюджет на подключение равен нулю. В маркетплейсе предложение первично: пока заказывать нечего, ни один рубль маркетинга не сработает.', en: 'No restaurants and no acquisition budget. In a marketplace supply comes first: until there is something to order, not a single marketing dollar will work.' },
   alertNoMarketing: { ru: 'Маркетинг выключен: узнаваемость тает на {decay} в неделю, приток новых клиентов почти иссяк (+{gained} против −{lost} ушедших). Ассортимент уже есть — самое время покупать спрос.', en: 'Marketing is off: awareness decays {decay} a week and new customers have all but stopped (+{gained} against −{lost} lost). The selection is already there — this is the moment to buy demand.' },
   alertFewRestaurants: { ru: 'Всего {count} ресторанов — ассортимент режет спрос множителем {factor}. Без выбора маркетинг работает вхолостую.', en: 'Only {count} restaurants — selection cuts demand by a factor of {factor}. Without choice, marketing spins its wheels.' },
   alertLtvCacBad: { ru: 'LTV/CAC = {value}: вы платите за клиента больше, чем он принесёт за всю жизнь.', en: 'LTV/CAC = {value}: you are paying more for a customer than they will ever bring in.' },
   alertLtvCacGood: { ru: 'LTV/CAC = {value} — привлечение окупается с запасом, есть смысл давить на маркетинг.', en: 'LTV/CAC = {value} — acquisition pays back with room to spare, so it is worth pushing marketing.' },
   alertWeatherCrunch: { ru: '{weather} совпал с нехваткой курьеров: спрос {demand}, мощность {capacity}. Это худшее сочетание в доставке — плохая погода поднимает спрос ровно тогда, когда везти его некому.', en: '{weather} coincided with a courier shortage: demand {demand}, capacity {capacity}. This is the worst combination in delivery — bad weather lifts demand exactly when there is nobody to carry it.' },
-  alertWeatherBonus: { ru: 'Надбавка за погоду обошлась в {cost} ({perOrder} ₽ на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.', en: 'The weather bonus cost {cost} (₽{perOrder} per order) and kept couriers on the road. In a clear week it would have cost nothing.' },
+  alertWeatherBonus: { ru: 'Надбавка за погоду обошлась в {cost} ({perOrder} на заказ) и удержала курьеров на линии. В ясную неделю она не стоила бы ничего.', en: 'The weather bonus cost {cost} ({perOrder} per order) and kept couriers on the road. In a clear week it would have cost nothing.' },
   alertRndIdle: { ru: 'Data Science стоит {cost}/нед, но ни один алгоритм не включён. Команда копит качество ({quality}), однако сама по себе она не приносит ни рубля — деньги делают внедрённые правила.', en: 'Data science costs {cost}/wk but no algorithm is switched on. The team is building quality ({quality}), yet on its own it earns nothing — the money comes from rules you actually deploy.' },
   alertAlgosReady: { ru: 'Доступно к внедрению: {names}. Качество алгоритмов {quality}.', en: 'Ready to roll out: {names}. Algorithm quality is {quality}.' },
   alertProfit: { ru: 'Неделя закрыта в плюс: {value}.', en: 'The week closed in the black: {value}.' },
@@ -1241,7 +1635,7 @@ const STRINGS = {
   chartCashCaption: { ru: 'Компания умирает не от убытка, а от нуля на счету. Следите за наклоном кривой, а не за её высотой.', en: 'Companies die of an empty account, not of a loss. Watch the slope of the curve, not its height.' },
   chartUnit: { ru: 'Юнит', en: 'Unit' },
   chartUnitCaption: { ru: 'Вклад с одного заказа — главный индикатор здоровья. Если он отрицателен, каждый новый заказ увеличивает убыток.', en: 'Contribution per order is the core health indicator. If it is negative, every new order deepens the loss.' },
-  seriesCmPerOrder: { ru: 'Вклад с заказа, ₽', en: 'Contribution per order, ₽' },
+  seriesCmPerOrder: { ru: 'Вклад с заказа, {cur}', en: 'Contribution per order, {cur}' },
   chartOps: { ru: 'Операции', en: 'Operations' },
   chartOpsCaption: { ru: 'Время доставки — производная от загрузки курьеров. Оно растёт нелинейно: при загрузке выше 90% минуты добавляются лавиной.', en: 'Delivery time is a function of courier utilisation, and it grows non-linearly: above 90% the minutes pile on in an avalanche.' },
   seriesDeliveryTime: { ru: 'Время доставки, мин', en: 'Delivery time, min' },
@@ -1271,9 +1665,9 @@ const STRINGS = {
   // --- юнит-экономика ---
   unitIntro: { ru: 'Экономика одного среднего заказа при текущих настройках ползунков — пересчитывается мгновенно, до перехода к следующей неделе.', en: 'The economics of one average order at your current slider settings — recalculated instantly, before you run the next week.' },
   unitColItem: { ru: 'Статья', en: 'Line' },
-  unitColPerOrder: { ru: '₽ / заказ', en: '₽ / order' },
+  unitColPerOrder: { ru: '{cur} / заказ', en: '{cur} / order' },
   unitColShare: { ru: '% от чека', en: '% of basket' },
-  unitAov: { ru: 'Средний чек (GMV)', en: 'Average basket (GMV)' },
+  unitAov: { ru: 'Средний чек (GMV)', en: 'Average order value (GMV)' },
   unitCommission: { ru: 'Комиссия с ресторана ({rate})', en: 'Restaurant commission ({rate})' },
   unitFee: { ru: 'Плата за доставку', en: 'Delivery fee' },
   unitRevenue: { ru: 'Выручка сервиса', en: 'Service revenue' },
@@ -1337,7 +1731,7 @@ const STRINGS = {
   // --- алгоритмы (вкладка) ---
   algosTabQuality: { ru: 'Качество алгоритмов: <b>{quality}</b> (данные {data} × команда {team}). Оно определяет и точность каждого алгоритма, и то, какие из них вообще доступны.', en: 'Algorithm quality: <b>{quality}</b> (data {data} × team {team}). It sets both the accuracy of each algorithm and which ones are available at all.' },
   algosColName: { ru: 'Алгоритм', en: 'Algorithm' },
-  algosColProfit: { ru: '₽ / нед', en: '₽ / wk' },
+  algosColProfit: { ru: '{cur} / нед', en: '{cur} / wk' },
   algosTotal: { ru: 'Итого от алгоритмов', en: 'Total from algorithms' },
   algosTeamCost: { ru: 'Стоимость команды', en: 'Cost of the team' },
   algosNet: { ru: 'Чистый эффект', en: 'Net effect' },
@@ -1345,7 +1739,7 @@ const STRINGS = {
   algosNone: { ru: 'Ни один алгоритм не включён — сравнивать нечего. Начните с бюджета на Data Science: качество алгоритмов растёт как √(данные × команда), а данные копятся только от выполненных заказов.', en: 'No algorithm is switched on, so there is nothing to compare. Start with a data science budget: quality grows as √(data × team), and data only accumulates from completed orders.' },
   algosZeroNote: { ru: '{names} сейчас ничего не меняет. Это не поломка: surge включается только при загрузке выше 70%, аллокация — только когда мощности не хватает, а прогноз бесполезен, если вы и так угадываете штат. Алгоритм стоит денег ровно столько же, работает он или нет.', en: '{names} currently changes nothing. That is not a bug: surge only engages above 70% utilisation, allocation only matters when capacity is short, and forecasting is useless if you already size the team correctly. The algorithm costs the same either way.' },
   algosVsSlider: { ru: 'Чем алгоритм отличается от ползунка', en: 'How an algorithm differs from a slider' },
-  algosVsSliderText: { ru: 'Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда. Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз). Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах. Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса, который для одного числа неразрешим.', en: 'An ordinary lever sets a <b>number</b>: a delivery fee of ₽149 for everyone, always. An algorithm sets a <b>rule</b>: price = f(utilisation), discount = f(customer), couriers = f(forecast). A rule can do what a number cannot — be different in different circumstances. That is why second-order optimisation can improve both ends of a trade-off that a single number cannot resolve.' },
+  algosVsSliderText: { ru: 'Обычный рычаг задаёт <b>число</b>: цена доставки 149 ₽ для всех и всегда. Алгоритм задаёт <b>правило</b>: цена = f(загрузка), скидка = f(клиент), курьеры = f(прогноз). Правило умеет то, чего не умеет число, — быть разным в разных обстоятельствах. Именно поэтому оптимизация второго порядка способна улучшить сразу оба конца компромисса, который для одного числа неразрешим.', en: 'An ordinary lever sets a <b>number</b>: a delivery fee of $1.49 for everyone, always. An algorithm sets a <b>rule</b>: price = f(utilisation), discount = f(customer), couriers = f(forecast). A rule can do what a number cannot — be different in different circumstances. That is why second-order optimisation can improve both ends of a trade-off that a single number cannot resolve.' },
 
   // --- справка ---
   helpWhatTitle: { ru: 'Что это такое', en: 'What this is' },
@@ -1396,7 +1790,7 @@ delivery time = base × (1 + 0.85 × utilisation³)`,
 команда = вложения в Data Science / (вложения + 25 млн ₽)`,
     en: `algorithm quality = √(data × team)
 data = cumulative orders / (orders + 400,000)
-team = data science spend / (spend + ₽25M)`,
+team = data science spend / (spend + $250K)`,
   },
   helpAlgosOrder: { ru: 'Ни данные, ни команда по отдельности не работают. Отсюда естественный порядок: сначала объём, потом алгоритмы. Data Science, купленный до того, как появились заказы, — просто строка расходов.', en: 'Neither data nor team works alone. Hence the natural order: volume first, algorithms second. Data science bought before the orders exist is simply a cost line.' },
   helpAlgosCheck: { ru: 'Проверяйте вкладку «Алгоритмы»: там каждая неделя пересчитана заново с выключенным алгоритмом, и видно, сколько он принёс на самом деле. Часто ответ — ноль.', en: 'Check the Algorithms tab: each week is re-simulated with the algorithm switched off, showing what it actually earned. Often the answer is zero.' },
@@ -1419,6 +1813,8 @@ score = valuation × your stake`,
   gameOverBankrupt: { ru: '💀 Деньги кончились', en: '💀 Out of money' },
   gameOverFinished: { ru: '🏁 Год пройден', en: '🏁 The year is over' },
   gameOverBankruptText: { ru: 'Касса ушла в минус на неделе {week}. В фудтехе это происходит быстро: постоянные расходы идут каждый день, а вклад с заказа появляется не сразу.', en: 'Cash went negative in week {week}. In food delivery this happens fast: fixed costs run every day, while contribution per order takes time to appear.' },
+  gameOverSold: { ru: '🏳️ Компания продана за долги', en: '🏳️ Sold to cover the debts' },
+  gameOverSoldText: { ru: 'Касса ушла в минус на неделе {week}. Совет не стал дожидаться настоящего нуля и продал компанию: покупатель заплатил 28% оценки, из выручки погашены долги, ваша доля остатка — {value}. Продажа за долги — не ноль, но и не победа: это цена построенного минус цена спешки.', en: 'Cash went negative in week {week}. The board did not wait for an actual zero and sold the company: the buyer paid 28% of the valuation, the debts were settled from the proceeds, and your share of the remainder is {value}. A distressed sale is not zero — but it is not a win either: it is the value of what you built, minus the price of urgency.' },
   gameOverFinishedText: { ru: '52 недели позади. Итоговая оценка компании и ваша доля в ней:', en: '52 weeks done. Here is the final valuation and your share of it:' },
   scoreValuation: { ru: 'Оценка компании', en: 'Company valuation' },
   scoreStake: { ru: 'Ваша доля', en: 'Your stake' },
@@ -1427,18 +1823,47 @@ score = valuation × your stake`,
   scoreCash: { ru: 'Касса', en: 'Cash' },
   scoreGrade: { ru: 'Оценка результата', en: 'Verdict' },
   gradeBankrupt: { ru: 'Банкротство', en: 'Bankruptcy' },
+  gradeSold: { ru: 'Продана за долги', en: 'Distressed sale' },
   gradeExcellent: { ru: 'Отличный результат', en: 'Excellent' },
   gradeSolid: { ru: 'Крепкий бизнес', en: 'A solid business' },
   gradeSurvived: { ru: 'Выжили', en: 'Survived' },
   gradeModest: { ru: 'Скромно', en: 'Modest' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом свыше 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market above ₽10B — surviving is easy, winning is not.' },
-  gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm} ₽, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, ₽{cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
+  unitChainDeal: { ru: 'Льготная ставка сети', en: 'Chain’s discounted rate' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Доведённые стратегии на этом рынке заканчивают партию с итогом 4.5–6.5 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Polished strategies finish this market at $45–65M — surviving is easy, winning is not.' },
+  gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm}, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, {cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
+  // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии. У каждого — цена, замеренная на 24 стандартных кодах.',
+    en: 'Automatic observations from this run\u2019s telemetry. Each comes with a price measured on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: шторма закрыты, алгоритмы работали, экспансия случилась. Сильная партия.',
+    en: 'The rules found no systematic misses: storms were covered, the algorithms ran, the expansion happened. A strong run.',
+  },
+  debriefStorms: {
+    ru: '{n} штормовых недель прошли без ответа — ни надбавки курьерам, ни прогнозного автонайма. Стратегии, отвечающие на шторм, берут на реакции до +87% к итогу.',
+    en: '{n} storm weeks went unanswered — no courier bonus and no forecast auto-hiring. Strategies that react to storms gain up to +87% on the final score.',
+  },
+  debriefAlgosIdle: {
+    ru: 'Алгоритмы почти не работали: {n} недель после 12-й — с одним включённым или меньше. Доведённая стратегия с алгоритмами даёт ~4.4 млрд против 1.3 у ручной опоры.',
+    en: 'The algorithms sat idle: {n} weeks after week 12 had one or none enabled. A polished strategy with algorithms makes ~$44M against $13M for the manual baseline.',
+  },
+  debriefNoExpansion: {
+    ru: 'Совет открыл второй город ещё на неделе {w}, но экспансии не случилось. Опора с алгоритмами — 4.4 млрд; она же со Старгородом — 6.4.',
+    en: 'The board opened the second city back on week {w}, but the expansion never happened. The algorithm baseline makes $44M; the same baseline with Stargorod — $64M.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась на неделе {w}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out on week {w}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
+
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
-  deathText: { ru: 'В кассе {cash}, за прошлую неделю сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'The till holds {cash}; last week burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the till is to zero, the worse the terms. You will only see this warning once.' },
+  deathText: { ru: 'В кассе {cash}, за прошлую неделю сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'You have {cash} in the bank; last week burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the balance is to zero, the worse the terms. You will only see this warning once.' },
   deathRunway: { ru: '{n} нед.', en: '{n} wk' },
   deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
   deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
@@ -1450,6 +1875,9 @@ score = valuation × your stake`,
   wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
   wfTurn: { ru: 'нед. {n}', en: 'wk {n}' },
   // --- Код партии и таблица рекордов ---
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'неделя', en: 'week' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -1461,6 +1889,7 @@ score = valuation × your stake`,
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   recordsRank: { ru: 'Эта партия — {rank}-я из {total} сыгранных на устройстве.', en: 'This game ranks {rank} of {total} played on this device.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
@@ -1468,6 +1897,9 @@ score = valuation × your stake`,
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -1497,12 +1929,12 @@ score = valuation × your stake`,
   chartChangeItem: { ru: 'нед. {turn}: {what}', en: 'wk {turn}: {what}' },
   chartChangeDistricts: { ru: 'зоны покрытия', en: 'coverage areas' },
   reportDelta: { ru: 'К прошлой неделе: заказы {orders}, прибыль {profit}, касса {cash}.', en: 'Versus last week: orders {orders}, profit {profit}, cash {cash}.' },
-  fundingRunway: { ru: 'При темпе прошлой недели кассы хватит примерно на {n} нед. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last week’s pace the till lasts about {n} weeks. A round is cheaper raised early, not at zero.' },
+  fundingRunway: { ru: 'При темпе прошлой недели кассы хватит примерно на {n} нед. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last week’s pace the cash lasts about {n} weeks. A round is cheaper raised early, not at zero.' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
   welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, рестораны и курьеры на самокатах. Вы решаете, сколько брать за доставку и с ресторанов, сколько платить курьерам, куда расти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, restaurants and couriers on scooters. You decide what to charge for delivery, what to keep from restaurants, what to pay couriers, where to grow and where the money goes.' },
   welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год, 52 хода: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year — 52 turns: move the sliders, press "Run week" and see what came of it.' },
-  welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Where the catch is.</b> A customer pays ₽149 for delivery while the courier gets ₽180 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Where the catch is.</b> A customer pays $1.49 for delivery while the courier gets $1.80 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> разориться и понять почему — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> going broke and understanding why teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
@@ -1520,6 +1952,26 @@ score = valuation × your stake`,
   restartText: { ru: 'Текущая партия будет потеряна, город сгенерируется с новым случайным набором событий.', en: 'The current game will be lost and the city will be regenerated with a new random run of events.' },
   restartYes: { ru: 'Да, заново', en: 'Yes, restart' },
   restartNo: { ru: 'Отмена', en: 'Cancel' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
+  metaConglomerateText: {
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
+  },
+  metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
+  metaReturnText: {
+    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал здесь — {best}. Следующая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
+    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+  },
+  metaReturnMaxed: {
+    ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
+    en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
+  },
+  metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
+  metaContinueText: {
+    ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
+    en: 'NOVOGRAD is the series endgame: the business you won here becomes the starting asset of a holding with ride-hailing, e-commerce and a subscription. Keep the result string above and enter it on NOVOGRAD’s welcome screen — a strong finale counts as a legacy and boosts your start.',
+  },
+  metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
 };
 
 
@@ -1647,6 +2099,34 @@ function windowGrowth(history, n, pick, fallback = 0.25) {
 }
 
 /**
+ * Устойчивый темп роста: короткое окно, подтверждённое длинным.
+ *
+ * Короткое окно (n против предыдущих n) реагирует быстро, но одноразовая
+ * ступенька выручки, попавшая в него целиком, читается как темп роста и
+ * умножается мультипликатором несоразмерно кассе. Аудит 2026-08 измерил
+ * цену этой дыры на контракте аэропорта в НОВОГРАДЕ: честная кассовая
+ * ценность годового контракта +2–3% итога, а перекрывший окно оценки —
+ * +23–31%. Тот же механизм — двигатель «рывка в конце».
+ *
+ * Лечение: инвестор верит короткому окну только в той мере, в какой его
+ * подтверждает длинное (2n против предыдущих 2n). Берётся минимум из двух
+ * темпов. Разовая ступенька гаснет, как только целиком входит в длинное
+ * окно; устойчивый рост показывает одинаковый темп в обоих окнах и не
+ * теряет ничего. Падение при этом видно по ХУДШЕМУ из окон — сжатие
+ * замечается сразу, и это сознательная асимметрия: рост докажи, спад
+ * очевиден.
+ *
+ * Пока истории на длинное окно не хватает, работает короткое — иначе
+ * первая треть партии жила бы на одном запасном значении.
+ */
+function windowGrowthStable(history, n, pick, fallback = 0.25) {
+  const short = windowGrowth(history, n, pick, fallback);
+  if (history.length < 4 * Math.max(1, n)) return short;
+  const long = windowGrowth(history, 2 * Math.max(1, n), pick, fallback);
+  return Math.min(short, long);
+}
+
+/**
  * Множитель к выручке.
  *
  * @param growth       прирост за окно (может быть отрицательным)
@@ -1671,6 +2151,24 @@ function revenueMultiple(growth, margin, k) {
       + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
     min, max,
   );
+}
+
+/**
+ * Продажа за долги: чего стоит компания, у которой кончились деньги.
+ *
+ * Раньше банкротство означало ноль, и на грани выживания счёт партии
+ * превращался в лотерею: одна и та же стратегия давала 0 или миллиарды
+ * в зависимости от кода партии. В жизни компанию на грани не выключают,
+ * а продают: покупатель платит долю оценки (дисконт за спешку и слабую
+ * переговорную позицию), из выручки гасятся долги, остаток делится по
+ * долям. Если долг больше цены продажи — вот это и есть настоящий ноль.
+ *
+ * Учебный смысл: ликвидационная стоимость. Компания с построенным
+ * активом и долгом — не то же самое, что компания без ничего, и финал
+ * «продались» отличается от финала «сгорели».
+ */
+function distressedSale(valuation, cash, share = 0.28) {
+  return Math.max(0, valuation * share + Math.min(0, cash));
 }
 
 /**
@@ -1767,6 +2265,474 @@ function bestRecord(key) {
 }
 
 
+// ===== ../../shared/difficulty.js ==================================
+// ============================================================================
+// Уровень сложности — настройка НАБОРА, а не отдельной игры.
+//
+// Выбранный уровень лежит в общем localStorage сайта и действует во всех
+// четырёх симуляторах сразу: играть НОВОЕДУ на лёгком, а НОВОГРАД на сложном
+// бессмысленно — это один курс, а не четыре разные игры.
+//
+// Механики на всех уровнях одинаковые. Меняется ровно одно: сколько стоит
+// финансовая команда — та, что режет строку «прочие расходы», лучше
+// упаковывает компанию к раунду и разбирает решения месяца. Всё остальное
+// (город, рынок, события, цели совета) не подменяется: сложность меняет
+// цену денег, а не правила.
+//
+//   лёгкий  — команда уже собрана и не стоит ничего: новичок видит игру,
+//             а не её бухгалтерию;
+//   обычный — команду покупают, и она дешёвая;
+//   сложный — та же команда стоит вчетверо дороже, и её приходится
+//             взвешивать против всего остального.
+//
+// Таблицы рекордов у каждого уровня свои: результаты, снятые при разной
+// цене денег, несравнимы. Тег партии получает суффикс уровня (у обычного
+// суффикса нет — так прежние рекорды остаются в своей таблице).
+// ============================================================================
+
+const DIFFICULTY_KEY = 'series-difficulty';
+
+const DIFFICULTIES = [
+  {
+    id: 'easy',
+    label: { ru: 'Лёгкий', en: 'Easy' },
+    short: { ru: 'тренировка', en: 'training' },
+    // Финансовая команда уже собрана и оплачена не игроком
+    financeFree: true,
+    // Множитель цены команды (см. финансовый блок конфига каждой игры)
+    saturationMult: 1,
+    // Множитель базовой ставки «прочих расходов»
+    miscMult: 0.8,
+    tagSuffix: '·лёгкий',
+    note: {
+      ru: 'Финансовая команда уже собрана и не стоит ничего: «прочие расходы» минимальны, отчётность полная, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию.',
+      en: 'The finance team is already in place and costs nothing: miscellaneous expenses are minimal, the reporting is complete and the team comments on your decisions. This shows you the game rather than its bookkeeping.',
+    },
+  },
+  {
+    id: 'normal',
+    label: { ru: 'Обычный', en: 'Normal' },
+    short: { ru: 'зачётный', en: 'ranked' },
+    financeFree: false,
+    saturationMult: 0.55,
+    miscMult: 1,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Это уровень, на котором игра откалибрована.',
+      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. This is the level the game is calibrated on.',
+    },
+  },
+  {
+    id: 'hard',
+    label: { ru: 'Сложный', en: 'Hard' },
+    short: { ru: 'вызов', en: 'challenge' },
+    financeFree: false,
+    saturationMult: 2.2,
+    miscMult: 1.35,
+    tagSuffix: '·сложный',
+    note: {
+      ru: 'Та же команда стоит вчетверо дороже, а «прочие расходы» выше на треть. Каждый рубль в финансы — рубль, не ушедший в маркетинг, качество и удержание.',
+      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every rouble spent on finance is a rouble not spent on marketing, quality and retention.',
+    },
+  },
+];
+
+const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
+
+// Текущий уровень набора. Значение по умолчанию — зачётный: на нём игра
+// откалибрована, и в него попадает всякий, кто ничего не выбирал.
+function currentDifficulty() {
+  try {
+    const saved = localStorage.getItem(DIFFICULTY_KEY);
+    return saved ? difficultyById(saved).id : 'normal';
+  } catch {
+    return 'normal';
+  }
+}
+
+function setDifficulty(id) {
+  const level = difficultyById(id).id;
+  try { localStorage.setItem(DIFFICULTY_KEY, level); } catch { /* приватный режим */ }
+  return level;
+}
+
+/**
+ * Тег партии для строки результата и мировой таблицы: у каждого уровня своя
+ * таблица. У обычного суффикса нет — прежние рекорды остаются на месте.
+ */
+function taggedGame(base, id = currentDifficulty()) {
+  return `${base}${difficultyById(id).tagSuffix}`;
+}
+
+
+// ===== ../../shared/finance.js =====================================
+// ============================================================================
+// Финансовая команда — общая механика набора.
+//
+// Единственный рычаг всех четырёх игр, который управляет не бизнесом, а тем,
+// как бизнес считают и показывают. Слабая финансовая служба стоит денег
+// молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы,
+// неразнесённая административка. Это строка «прочие расходы» — она растёт
+// сама, вместе с выручкой, и её режет не бизнес-решение, а служба.
+//
+// Сильная команда, помимо этой строки: лучше упаковывает компанию к раунду
+// (оценку считает рынок — упаковка меняет только отдаваемую долю), делает
+// читаемым разбор оценки и разбирает решения периода.
+//
+// Цена команды считается ДОЛЕЙ выручки, а не абсолютом: финансовая служба
+// растёт вместе с компанией. Первый замер с фиксированной ценой показал
+// мёртвый рычаг у маленького бизнеса — его не окупало ничто.
+//
+// Числа (доля выручки, ставка «прочих») у каждой игры свои и живут в её
+// конфиге: у доставки, стриминга и билетов разные выручки и маржи. Общей
+// остаётся форма механики и множители уровня сложности.
+//
+// conf = { saturationShare, saturationFloor, miscRateBase, miscRateCut,
+//          roundGain?, transparencyAt?, adviceAt? }
+// ============================================================================
+
+
+// Сколько стоит «половина силы» при текущем размере бизнеса
+function financeHalfCost(conf, difficulty, revenue) {
+  const d = difficultyById(difficulty);
+  return Math.max(conf.saturationFloor, (Number(revenue) || 0) * conf.saturationShare)
+    * d.saturationMult;
+}
+
+// Сила команды, 0…1. На лёгком уровне команда уже собрана и стоит ноль.
+function financeStrength(conf, difficulty, revenue, budget) {
+  if (difficultyById(difficulty).financeFree) return 1;
+  const b = Number(budget) || 0;
+  return b > 0 ? b / (b + financeHalfCost(conf, difficulty, revenue)) : 0;
+}
+
+// Доля выручки, уходящая «прочими расходами» при такой силе команды
+function financeMiscRate(conf, difficulty, strength) {
+  const d = difficultyById(difficulty);
+  return Math.max(
+    conf.miscFloor ?? 0.005,
+    conf.miscRateBase * (d.miscMult ?? 1) - conf.miscRateCut * strength,
+  );
+}
+
+// Что за команду платит игрок: на лёгком уровне её содержит не он
+function financeSpend(difficulty, budget) {
+  return difficultyById(difficulty).financeFree ? 0 : (Number(budget) || 0);
+}
+
+// Насколько лучше компания упакована к раунду
+function financeRoundGain(conf, strength) {
+  return 1 + (conf.roundGain ?? 0) * strength;
+}
+
+
+// ===== ../../shared/meta.js ========================================
+// ============================================================================
+// Мета-прогрессия набора: НОВОГРАД — «эндгейм», три игры — его пролог.
+//
+// Механизм — строки результата с контрольной суммой (shared/records.js)
+// плюс общий localStorage сайта. На том же устройстве финалы старых игр
+// видны автоматически (их локальные таблицы рекордов лежат рядом);
+// для другого устройства или офлайна строка результата вводится как код —
+// подделать счёт, не пересчитав сумму, не выйдет.
+//
+// Гейт мягкий: НОВОГРАД доступен всем сразу, заслуженный вход даёт
+// стартовое преимущество ВНУТРИ него:
+//   финал НОВОЕДЫ    -> «известный бренд еды»: дешевле возврат и органика;
+//   финал КИНОРЕКИ   -> скидка на лицензию стриминга в подписку Plus;
+//   финал БИЛЕТВИЛЯ  -> готовое партнёрство по билетам (без абонентки).
+// Бонусы ортогональны и складываются; их суммарный размер замерен по
+// правилу «чувствуется, но не решает партию» (~4–6% итога).
+//
+// Обратный бонус — строго неэкономический: успешный НОВОГРАД открывает
+// в старых играх бейдж и коды «городов-побратимов» на финальном
+// экране. Экономических бустов в зачётных партиях старых игр нет:
+// они сломали бы сравнимость лидерборда и калибровку целей совета.
+// ============================================================================
+
+
+// Лучший результат НОВОГРАДА на этом устройстве (для обратных бонусов)
+const META_BEST_KEY = 'novograd-meta';
+// Введённые вручную строки результата (офлайн-разблокировка)
+const META_LINES_KEY = 'novograd-meta-lines';
+
+// Две разные планки, и путать их нельзя:
+//
+//   threshold — ВХОД: игра пройдена прилично, актив в НОВОГРАДЕ открыт (★).
+//               Стоит ниже осторожной опоры каждой игры — это ворота, а не
+//               достижение.
+//   solid     — ЕДИНИЦА ПЕРЕНОСА: «крепкий финал» той игры. Отсюда считается
+//               ratio, то есть сколько клиентов, кассы и оценки перейдёт в
+//               НОВОГРАД. Замер опорных стратегий (6 сидов, банкротство = 0):
+//
+//     игра        осторожная  средняя  размашистая  доведённая
+//     НОВОЕДА       3.90        5.57      9.87         8.30   млрд
+//     КИНОРЕКА     15.29       15.49    банкрот       35.80   млрд
+//     БИЛЕТВИЛЬ     0.84        2.13      5.01         5.58   млрд
+//
+//   Правило шкалы: solid — средняя опора, потолок переноса (ratio 2) —
+//   доведённая. Тогда одинаково сыгранная партия даёт одинаковый перенос
+//   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
+//   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
+//   ничего (порог 30 млрд при средней игре 15.5).
+const LEGACY_GAMES = [
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
+];
+
+// Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
+const NOVOGRAD_WORTHY = 2e9;
+
+const safeGetJson = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+};
+const safeSetJson = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
+};
+
+// Разбор строки результата: «ИГРА|vX.Y.Z|код|счёт|ходов|#СУММА»
+function parseResultLine(line) {
+  const text = String(line ?? '').trim();
+  if (!verifyResult(text)) return null;
+  const parts = text.split('|');
+  if (parts.length < 6) return null;
+  const score = Number(parts[3]);
+  if (!Number.isFinite(score)) return null;
+  return { tag: parts[0], version: parts[1], seed: parts[2], score, turns: Number(parts[4]) };
+}
+
+function savedLines() {
+  const list = safeGetJson(META_LINES_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+// Добавляет введённую строку; отвергает мусор и дубли.
+function addResultLine(line) {
+  const parsed = parseResultLine(line);
+  if (!parsed) return { ok: false };
+  const lines = savedLines();
+  if (!lines.includes(String(line).trim())) {
+    lines.push(String(line).trim());
+    safeSetJson(META_LINES_KEY, lines);
+  }
+  return { ok: true, parsed };
+}
+
+// Метка игры в строке результата несёт уровень сложности: «НОВОЕДА·сложный».
+// Наследие смотрит на игру, а не на уровень: партия на сложном открывает
+// актив ровно так же, как на обычном. Локальные таблицы рекордов лежат в
+// одном ключе на игру и уже смешаны по уровням — строки должны вести себя
+// так же, иначе перенос молча пропадал бы у всех, кто играл не на обычном.
+const sameGame = (lineTag, gameTag) => lineTag === gameTag
+  || String(lineTag ?? '').startsWith(`${gameTag}·`);
+
+/**
+ * Что разблокировано на этом устройстве: локальные рекорды старых игр
+ * плюс введённые строки. { delivery: bool, streaming: bool, tickets: bool }
+ */
+function legacyUnlocks() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => sameGame(l.tag, g.tag))
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine) >= g.threshold;
+  }
+  return out;
+}
+
+/**
+ * Лучший счёт по каждой игре на этом устройстве (локальные рекорды плюс
+ * введённые строки). Нужен, чтобы в НОВОГРАД переносились не только «да/нет»,
+ * но и числа финала: касса победившей компании и её оценка.
+ * { delivery: number, streaming: number, tickets: number }
+ */
+function legacyScores() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => sameGame(l.tag, g.tag))
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine);
+  }
+  return out;
+}
+
+/**
+ * Насколько крупным был финал игры-источника относительно её «крепкого»
+ * финала. 1.0 — крепкая победа, 2.0 — вдвое лучше и потолок переноса:
+ * доведённая партия как раз туда и приходит. Сверху срезано, потому что
+ * перенос обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ */
+const LEGACY_RATIO_CAP = 2;
+function legacyRatio(assetId, scores = legacyScores()) {
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  const unit = game?.solid ?? game?.threshold ?? 0;
+  if (!unit) return 0;
+  const score = Number(scores[assetId]) || 0;
+  if (score <= 0) return 0;
+  return Math.min(LEGACY_RATIO_CAP, score / unit);
+}
+
+// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
+// плюс перенесённые числа финала своей игры (касса и оценка).
+function legacyFor(assetId, unlocks = legacyUnlocks(), scores = legacyScores()) {
+  return {
+    asset: Boolean(unlocks[assetId]),
+    cinema: Boolean(unlocks.streaming),
+    tickets: Boolean(unlocks.tickets),
+    // Счёт финала своей игры и его отношение к «крепкому» порогу
+    assetScore: Number(scores[assetId]) || 0,
+    assetRatio: legacyRatio(assetId, scores),
+  };
+}
+
+function novogradBest() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  return Number(saved?.best) || 0;
+}
+
+// Запоминает лучший финал НОВОГРАДА — старые игры читают его для
+// неэкономических обратных бонусов (бейдж, коды партий).
+//
+// «Достойность» зависит от стартового актива: у сложных активов оптимум
+// втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
+// уже флагом. Второй аргумент необязателен — без него работает общий
+// порог, как раньше.
+function rememberNovogradResult(score, worthyAt = NOVOGRAD_WORTHY) {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  const value = Number(score) || 0;
+  const best = Math.max(Number(saved?.best) || 0, value);
+  const worthy = Boolean(saved?.worthy) || value >= (Number(worthyAt) || NOVOGRAD_WORTHY);
+  safeSetJson(META_BEST_KEY, { best, worthy });
+  return best;
+}
+
+// Открыт ли обратный бонус (бейдж конгломерата в старых играх).
+// Записи прошлых версий несли только счёт — для них сравниваем с общим
+// порогом, чтобы уже заслуженный бейдж не пропал.
+function conglomerateUnlocked() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  if (saved && saved.worthy) return true;
+  return novogradBest() >= NOVOGRAD_WORTHY;
+}
+
+// Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
+// Строго косметика — множителя к счёту нет и не будет.
+function tripleCrown(unlocks = legacyUnlocks()) {
+  return Boolean(unlocks.delivery && unlocks.streaming && unlocks.tickets);
+}
+
+/**
+ * Табель серии: где игрок находится на пути из четырёх игр. Считается по
+ * локальным рекордам и введённым строкам, поэтому одинаково работает и на
+ * витрине, и внутри любой игры.
+ *
+ * Прогресс каждой игры нормируется её «крепким» порогом и срезается на
+ * LEGACY_RATIO_CAP — иначе одна рекордная партия делала бы табель бессмысленным.
+ * Возвращает { games: [...], filled, total, share, missing }.
+ */
+function seriesScorecard() {
+  const scores = legacyScores();
+  const best = novogradBest();
+  const games = LEGACY_GAMES.map((g) => {
+    const score = Number(scores[g.assetId]) || 0;
+    return {
+      assetId: g.assetId,
+      tag: g.tag,
+      score,
+      threshold: g.threshold,
+      solid: g.solid,
+      // Прогресс меряется «крепким финалом», а ворота — входным порогом:
+      // открыть актив легко, набрать полный перенос — нет.
+      ratio: legacyRatio(g.assetId, scores),
+      done: score >= g.threshold,
+    };
+  });
+  games.push({
+    assetId: 'ecosystem',
+    tag: 'НОВОГРАД',
+    score: best,
+    threshold: NOVOGRAD_WORTHY,
+    ratio: Math.min(LEGACY_RATIO_CAP, best / NOVOGRAD_WORTHY),
+    done: conglomerateUnlocked(),
+  });
+  const filled = games.filter((g) => g.done).length;
+  // Доля пути: у каждой игры равный вес, внутри игры — прогресс до «крепкого»
+  // финала. Сыграть все четыре крепко = 100%; дальше табель не растёт.
+  const share = games.reduce((a, g) => a + Math.min(1, g.ratio), 0) / games.length;
+  return {
+    games,
+    filled,
+    total: games.length,
+    share,
+    missing: games.filter((g) => !g.done).map((g) => g.tag),
+  };
+}
+
+/**
+ * Возвращение в базовую игру после экосистемы: что даст новый финал.
+ * Чисто справочный расчёт — экономику зачётной партии он не меняет
+ * (правило набора: обратные бонусы неэкономические). Нужен, чтобы у
+ * повторной партии была ясная цель, а не «сыграть ещё раз».
+ *
+ * Возвращает { played, best, ratio, nextRatio, target, maxed } или null,
+ * если НОВОГРАД ещё не открывали — тогда звать возвращаться не за чем.
+ */
+function returnTarget(assetId) {
+  if (!novogradBest()) return null;
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game) return null;
+  const best = Number(legacyScores()[assetId]) || 0;
+  const unit = game.solid ?? game.threshold;
+  const capped = legacyRatio(assetId);
+  // Следующая ступень наследия — целое число «крепких финалов»
+  const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
+  return {
+    played: best > 0,
+    best,
+    ratio: capped,
+    nextRatio,
+    target: Math.round(unit * nextRatio),
+    maxed: capped >= LEGACY_RATIO_CAP,
+  };
+}
+
+// Сохранение партии НОВОГРАДА — сбрасывается вместе с прогрессом набора
+const NOVOGRAD_SAVE_KEY = 'novograd-save-v1';
+
+/**
+ * Сброс экосистемного прогресса: введённые строки наследия, лучший финал
+ * НОВОГРАДА и его незаконченная партия. Нужен, чтобы пройти путь заново
+ * с чистого листа — например, показать группе игру «как в первый раз».
+ *
+ * Таблицы рекордов игр НЕ трогаются: они заработаны и остаются. По той же
+ * причине не трогается и мировая таблица — там результаты уже на сервере.
+ */
+function resetEcosystemProgress() {
+  const cleared = [];
+  for (const key of [META_BEST_KEY, META_LINES_KEY, NOVOGRAD_SAVE_KEY]) {
+    try {
+      if (localStorage.getItem(key) !== null) cleared.push(key);
+      localStorage.removeItem(key);
+    } catch { /* приватный режим */ }
+  }
+  return cleared;
+}
+
+// Коды «городов-побратимов» — символическая награда в старых играх
+const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
+
+
 // ===== ../../shared/leaderboard.js =================================
 // ============================================================================
 // Глобальная таблица результатов — общий клиент для всех трёх игр.
@@ -1792,10 +2758,15 @@ function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
 
-async function lbTop(game, limit = 10) {
+// seed передаётся и серверу: сервер второй версии фильтрует по коду партии
+// сам, а первой — просто не знает такого параметра и отдаёт обычный топ
+// (страховкой работает клиентский фильтр в lbMount).
+async function lbTop(game, limit = 10, seed = '') {
   const base = lbEndpoint();
   if (!base) return null;
-  const res = await fetch(`${base}?game=${encodeURIComponent(game)}&limit=${limit}`);
+  const url = `${base}?game=${encodeURIComponent(game)}&limit=${limit}`
+    + (seed ? `&seed=${encodeURIComponent(seed)}` : '');
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`leaderboard ${res.status}`);
   const data = await res.json();
   return Array.isArray(data.top) ? data.top : [];
@@ -1852,8 +2823,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -1867,7 +2843,8 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -1877,7 +2854,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -1912,19 +2889,44 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе (страховка для сервера
+  // первой версии; второй фильтрует сам по параметру seed)
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10, filterSeed)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -2063,6 +3065,17 @@ const CONFIG = {
   // Больше — но не бесконечно: иначе прицеливание делает скидку бесплатной.
   targetingLeverage: 2.0,
 
+  // Сделка с крупной сетью (событие big_chain): сеть подключается на своей
+  // льготной ставке, и скидка касается ТОЛЬКО её заказов. Прежняя реализация
+  // резала комиссию всему городу навсегда (−0.8 п.п. ≈ 12–22% итога) и
+  // расходилась с собственным текстом события «льготная комиссия 10%» —
+  // согласие не выигрывало никогда (0/72).
+  chain: {
+    rate: 0.10,        // ставка сети — столько она платит со своих заказов
+    popularity: 2.0,   // заказов на ресторан сети больше, чем на средний
+    fans: 0.04,        // фанаты сети: постоянная прибавка спроса, пока сеть на борту
+  },
+
   maxMarketShare: 0.90,       // потолок доли: часть города к нам не придёт никогда
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
   // Конкурент рядом, и его цена за нашей не идёт. Пока мы стоим как рынок,
@@ -2080,6 +3093,18 @@ const CONFIG = {
 
   // --- Операционные издержки ---
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // Числа свои: у доставки тонкая маржа и недельный шаг, поэтому строка
+  // «прочих» здесь меньше, чем у холдинга в НОВОГРАДЕ.
+  finance: {
+    saturationShare: 0.02,       // выручки в неделю до «половины» силы
+    saturationFloor: 60_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,          // сколько снимает полная команда
+    paymentCut: 0.006,           // и насколько сбивает ставку эквайринга
+    roundGain: 0.20,             // упаковка компании к раунду
+    adviceAt: 0.55,
+  },
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
   supportTechDiscount: 9,      // на сколько ₽ снижает поддержку максимальный уровень техно
   // Офис и менеджмент. Разработка и серверы вынесены отдельными статьями:
@@ -2170,7 +3195,11 @@ const CITIES = [
     name: { ru: 'Старгород', en: 'Stargorod' },
     home: false,
     entryCost: 30_000_000,
-    weeklyFixed: 1_200_000,
+    // Офис города: был 1.2 млн/нед. Замер показал, что второй город не
+    // окупался НИКОГДА — ни при каком сроке входа и ни при какой политике:
+    // 82% от домашней партии при входе на 16-й неделе и 78% на 22-й. Половина
+    // провала приходилась ровно на этот офис.
+    weeklyFixed: 600_000,
     hint: {
       ru: 'Соседний город-миллионник. Рынок больше половины новоградского, но там уже пять лет работает местный сервис «СтароЕд» — часть города вы не получите никогда, а каждого клиента придётся отбивать.',
       en: 'A neighbouring city of a million people. The market is more than half the size of Novograd — but a local service has been running there for five years: part of the city will never be yours, and every customer has to be won over.',
@@ -2232,7 +3261,7 @@ const DISTRICTS = [
     restaurantPool: 120, launchCost: 1_200_000, weeklyFixed: 180_000,
     hint: {
       ru: 'Студенты: заказывают часто, но крайне чувствительны к цене. Рай для промо, ад для маржи.',
-      en: 'Students order often and count every rouble. Heaven for promotions, hell for margin.',
+      en: 'Students order often and count every penny. Heaven for promotions, hell for margin.',
     },
   },
   {
@@ -2243,8 +3272,8 @@ const DISTRICTS = [
     elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
     restaurantPool: 90, launchCost: 1_000_000, weeklyFixed: 200_000,
     hint: {
-      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота.',
-      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency.',
+      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота. Плечо 6 км: пока не вложились в технологии и не подняли сбор, район съедает итог, а не добавляет.',
+      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency. A 6 km leg: until you have invested in technology and raised the fee, this district eats into the result rather than adding to it.',
     },
   },
   {
@@ -2255,8 +3284,8 @@ const DISTRICTS = [
     elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
     restaurantPool: 70, launchCost: 1_600_000, weeklyFixed: 240_000,
     hint: {
-      ru: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
-      en: 'Wealthy houses that never look at the price — but the delivery legs are enormous and couriers barely complete a shift.',
+      ru: 'Богатые коттеджи. Цену не замечают, но плечо 9 км — курьер делает мало заказов, а базовые 38 минут уже за эталоном. Это район поздней игры: сначала технологии и цена, потом сюда.',
+      en: 'Wealthy houses that never look at the price — but the leg is 9 km: a courier completes few orders, and the base 38 minutes are already past the reference. A late-game district: technology and pricing first, this place second.',
     },
   },
 
@@ -2264,13 +3293,20 @@ const DISTRICTS = [
   // Рынок в сумме ~55% новоградского, но конкурент здесь не «один из», а
   // хозяин: у него выше доля запертых клиентов, и каждый район стартует
   // с нулевой узнаваемости — маркетинг придётся делить на два города.
+  //
+  // Недельные фиксы районов урезаны на 40% вместе с офисом города: замер
+  // показал, что расширение не окупалось ни при каком сроке входа, и оба
+  // фикса вместе съедали ровно ту маржу, на которую падал множитель оценки
+  // (9.0% -> 3.3% при выручке +31%). Разовые запуски не трогали: платить за
+  // вход в город один раз — честная цена решения, а вот платить за него
+  // каждую неделю до конца партии было приговором.
   {
     id: 'st-center',
     city: 'stargorod',
     name: { ru: 'Старгород · Центр', en: 'Stargorod · Downtown' },
     potential: 90_000, income: 1.25, distanceKm: 2.6, baseTime: 20,
     elasticity: 1.1, baseFreq: 0.55, competitor: 0.80,
-    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 400_000,
+    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 240_000,
     hint: {
       ru: 'Витрина чужого города: экономика заказа хорошая, но «СтароЕд» держит центр крепче всего.',
       en: 'The rival’s shop window: order economics are good, but the local incumbent holds downtown hardest.',
@@ -2282,7 +3318,7 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Восточный', en: 'Stargorod · Eastside' },
     potential: 140_000, income: 0.95, distanceKm: 3.8, baseTime: 24,
     elasticity: 1.5, baseFreq: 0.42, competitor: 0.55,
-    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 320_000,
+    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 190_000,
     hint: {
       ru: 'Главный спальный массив Старгорода — основной объём второго города, если сумеете его разбудить.',
       en: 'Stargorod’s main residential belt — the second city’s volume, if you can wake it up.',
@@ -2294,10 +3330,10 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Портовый', en: 'Stargorod · Harbour' },
     potential: 80_000, income: 0.85, distanceKm: 5.5, baseTime: 29,
     elasticity: 1.7, baseFreq: 0.33, competitor: 0.35,
-    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 260_000,
+    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 155_000,
     hint: {
       ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
-      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
+      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the baskets are modest.',
     },
   },
   {
@@ -2306,7 +3342,7 @@ const DISTRICTS = [
     name: { ru: 'Старгород · Слобода', en: 'Stargorod · Old Quarter' },
     potential: 60_000, income: 1.30, distanceKm: 7.5, baseTime: 34,
     elasticity: 0.95, baseFreq: 0.32, competitor: 0.28,
-    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 270_000,
+    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 160_000,
     hint: {
       ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
       en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
@@ -2322,7 +3358,7 @@ const LEVERS = [
   {
     key: 'deliveryFee',
     label: { ru: 'Стоимость доставки', en: 'Delivery fee' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 399, step: 10, def: 149,
     tip: {
       ru: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
@@ -2342,7 +3378,7 @@ const LEVERS = [
   {
     key: 'courierPay',
     label: { ru: 'Оплата курьеру за заказ', en: 'Courier pay per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 60, max: 400, step: 10, def: 180,
     tip: {
       ru: 'Основная переменная себестоимость. Мало платите — курьеры уходят, растёт время доставки и падает удержание клиентов.',
@@ -2362,7 +3398,7 @@ const LEVERS = [
   {
     key: 'marketing',
     label: { ru: 'Маркетинг', en: 'Marketing' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 5_000_000, step: 100_000, def: 0,
     tip: {
       ru: 'Растит узнаваемость → приток новых клиентов. Работает с убывающей отдачей и «забывается» ~5% в неделю.',
@@ -2372,7 +3408,7 @@ const LEVERS = [
   {
     key: 'promo',
     label: { ru: 'Промо-скидка на заказ', en: 'Promo discount per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 300, step: 10, def: 0,
     tip: {
       ru: 'Скидка клиенту за ваш счёт. Мгновенно поднимает спрос и убивает маржу — классическая ловушка «покупки роста».',
@@ -2382,7 +3418,7 @@ const LEVERS = [
   {
     key: 'weatherBonus',
     label: { ru: 'Надбавка за плохую погоду', en: 'Bad-weather bonus' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 150, step: 10, def: 0,
     tip: {
       ru: 'Гарантированная доплата за заказ в плохую погоду. Треть платится и в ясные недели — обещание входит в ставку. Главное: включённая навсегда надбавка становится привычной и в настоящий шторм уже никого не выводит. Включайте её по прогнозу и выключайте в ясные недели.',
@@ -2392,7 +3428,7 @@ const LEVERS = [
   {
     key: 'sales',
     label: { ru: 'Подключение ресторанов', en: 'Restaurant acquisition' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
@@ -2402,7 +3438,7 @@ const LEVERS = [
   {
     key: 'tech',
     label: { ru: 'Технологии и логистика', en: 'Technology and logistics' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
@@ -2412,11 +3448,21 @@ const LEVERS = [
   {
     key: 'rnd',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 1_500_000, step: 50_000, def: 0,
     tip: {
       ru: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
       en: 'The team that builds your algorithms: surge pricing, targeted discounts, demand forecasting. Useless without data — and data only accumulates from completed orders.',
+    },
+  },
+  {
+    key: 'finance',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/нед', en: '$/wk' },
+    min: 0, max: 1_500_000, step: 50_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, переговоры с банком. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная сбивает ставку эквайринга, режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, cost control, talking to the bank. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one negotiates the processing rate down, cuts that line and packages the company better for a funding round. The series difficulty changes only its price.',
     },
   },
 ];
@@ -2887,6 +3933,7 @@ function neutralModifiers() {
     // дёшево то, что большой не по карману, и наоборот.
     oneOffCostPerCourier: 0,
     oneOffCostPerCustomer: 0,
+    chainDeal: false,       // крупная сеть подключается на своей льготной ставке
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -2988,7 +4035,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
         detail: {
           ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
           en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
@@ -3018,12 +4065,21 @@ const EVENTS = [
     },
     options: [
       {
+        // Переделано аудитом 2026-08. Раньше уступка резала комиссию всему
+        // городу навсегда (−0.8 п.п.), что противоречило собственному тексту
+        // события и стоило 12–22% итога — согласие не выигрывало никогда
+        // (0/72), и никакая выгода в рамках словаря эффектов это не
+        // компенсировала (проверены узнаваемость и вечный спрос до +12%).
+        // Теперь скидка касается только заказов самой сети: популярные
+        // рестораны оттягивают на себя долю заказов, и с этой доли платформа
+        // получает 10% вместо своей ставки. Дорого, когда сеть — большая
+        // часть вашей витрины; терпимо, когда ресторанов и так сотни.
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
-          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
+          ru: '+40 популярных ресторанов сразу и их постоянные клиенты. Но со своих заказов сеть платит 10% вместо вашей ставки — и чем заметнее она в витрине, тем больше оборота уходит по льготной цене.',
+          en: '+40 popular restaurants at once, and their regulars with them. But the chain pays 10% on its own orders instead of your rate — and the more it dominates your listings, the more volume moves at the discounted price.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, chainDeal: true, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },
@@ -3048,12 +4104,15 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
+        // Цена опущена с 350 ₽ после аудита доминации: промо не брали никогда
+        // (4/48) — раздача не окупала ни спрос недели, ни ставку оценки.
+        // На 200 ₽ выбор живой: 20/48, и ответ зависит от размера базы.
+        label: { ru: 'Залить рынок промо (200 ₽ на клиента базы)', en: 'Flood the market with promos ($2 per customer)' },
         detail: {
           ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
           en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
         },
-        effects: { oneOffCostPerCustomer: 350, demandMult: 1.09, valuationBonus: 0.003 },
+        effects: { oneOffCostPerCustomer: 200, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -3078,7 +4137,7 @@ const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now ($30 per courier)' },
         detail: {
           ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
           en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',
@@ -3197,7 +4256,39 @@ function reachableOf(district) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-function createInitialState(seed = 'novograd') {
+/**
+ * Финансовая команда: сила, цена и то, что она чинит. Цена считается долей
+ * недельной выручки — служба растёт вместе с компанией.
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].netRevenue : 0;
+}
+
+function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка
+function paymentRate(state, decisions) {
+  return Math.max(0.004,
+    CONFIG.paymentFeeRate - CONFIG.finance.paymentCut * financeLevel(state, decisions));
+}
+
+function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+function createInitialState(seed = 'novograd', difficulty = 'normal') {
   const rng = createRng(seed);
   // Погода первой недели и публичный прогноз на вторую
   const weather = rollWeather(rng, 1);
@@ -3205,6 +4296,9 @@ function createInitialState(seed = 'novograd') {
   const state = {
     seed,
     rngState: rng.state(),
+    // Уровень сложности — общая настройка набора: меняет только цену
+    // финансовой команды (см. shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     weather,
     weatherNext,
     week: 0,
@@ -3346,6 +4440,9 @@ function step(prevState, input = {}) {
   const choice = input.eventChoice ?? state.pendingChoice ?? 0;
   applyEvent(mods, event, choice);
   if (mods.commissionOverrideDelta) state.flags.commissionDelta += mods.commissionOverrideDelta;
+  if (mods.chainDeal) state.flags.chainOn = true;
+  // Фанаты сети заказывают у неё и после недели новости — пока сеть на борту
+  if (state.flags.chainOn) mods.demandMult *= 1 + CONFIG.chain.fans;
   if (mods.valuationBonus) state.flags.valuationBonus += mods.valuationBonus;
   if (mods.regulationRisk) state.flags.regulationRisk = true;
 
@@ -3593,13 +4690,25 @@ function step(prevState, input = {}) {
   const fillRate = effDemandTotal > 0 ? orders / effDemandTotal : (capacity > 0 ? 1 : 0);
 
   // --- 5. P&L недели ---
-  const commissionRevenue = gmv * commissionForRevenue;
+  // Сделка с сетью: её заказы идут по льготной ставке. Доля заказов сети —
+  // её рестораны с весом популярности против остальной витрины.
+  let chainDiscount = 0;
+  if (state.flags.chainOn) {
+    const totalRests = activeDefs.reduce(
+      (sum, d) => sum + state.districts[d.id].restaurants, 0);
+    const chainShare = totalRests > 0
+      ? Math.min(0.45, CONFIG.chain.popularity * 40 / totalRests) : 0;
+    chainDiscount = gmv * chainShare
+      * Math.max(0, commissionForRevenue - CONFIG.chain.rate);
+  }
+  const commissionRevenue = gmv * commissionForRevenue - chainDiscount;
   const feeRevenue = orders * decisions.deliveryFee * surgeFeeMult;
   const netRevenue = commissionRevenue + feeRevenue;
 
   const courierCost = orders * courierPayEff;
   const promoCost = orders * promoCostPerOrder;
-  const paymentCost = Math.max(0, paymentBase) * CONFIG.paymentFeeRate;
+  const payRate = paymentRate(state, decisions);
+  const paymentCost = Math.max(0, paymentBase) * payRate;
   const supportCost = orders * Math.max(2,
     CONFIG.supportCostPerOrder - CONFIG.supportTechDiscount * techLevel(state) + mods.variableCostAdd);
   const variableCost = courierCost + promoCost + paymentCost + supportCost;
@@ -3795,8 +4904,14 @@ function step(prevState, input = {}) {
   }
 
   // --- 9. Деньги ---
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая административка.
+  // Единственная строка, которая растёт сама — вместе с выручкой, — и
+  // единственная, которую режет не бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = netRevenue * rateMisc;
   const opex = districtFixed + hqCost + decisions.marketing + decisions.sales
-    + decisions.tech + (decisions.rnd ?? 0);
+    + decisions.tech + (decisions.rnd ?? 0) + financeBudget + miscCost;
   // Поштучные разовые расходы событий: «доплата всем курьерам» стоит по штату
   // на начало недели, «раздача по базе» — по числу клиентов. Цена решения
   // растёт вместе с компанией — это и делает выбор состояние-зависимым.
@@ -3893,6 +5008,11 @@ function step(prevState, input = {}) {
     opex,
     districtFixed,
     hqCost,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    paymentRate: payRate,
     techUpkeep,
     serverCost,
     oneOff,
@@ -3900,10 +5020,15 @@ function step(prevState, input = {}) {
     cityEntryCost,
     cityFixed,
     enteredCities,
+    // Ворота экспансии: совет согласовал второй город или ещё нет. В отчёте,
+    // а не только в панели районов, — иначе интерфейс не может отличить
+    // «уже можно» от «стало можно только что» и сообщить об этом новостью.
+    expansionOpen: expansionOpen(),
     // Сколько недель хозяину второго города осталось воевать (0 — мир)
     cityWarWeeks: Math.max(0, ...CITIES.map((c) => (state.cityWar?.[c.id] ?? 0) - week)),
     hiringCost,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
     couriers: state.couriers,
     hires,
@@ -3964,6 +5089,8 @@ function step(prevState, input = {}) {
     forecastDemand,
     commissionForRevenue,
     commissionPerceived,
+    chainDiscount,
+    chainOn: Boolean(state.flags.chainOn),
     avgPriceFactor: wGeo('priceFactor'),
     avgSpeedFactor: wGeo('speedFactor'),
     avgSelectionFactor: wGeo('selectionFactor'),
@@ -4070,7 +5197,7 @@ function valuation(state) {
   // купить рывком на один ход — задрать плату и обнулить вложения перед самым
   // концом партии. См. shared/valuation.js.
   const netRevenueRunRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue) * 52;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.orders, 0.5);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.netRevenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -4085,8 +5212,17 @@ function valuation(state) {
   return Math.max(40_000_000, base * bonus);
 }
 
+// Насколько лучше компания упакована к раунду: та же выручка, но с внятной
+// отчётностью и чистой юнит-экономикой стоит для инвестора дороже. На счёт
+// это не влияет — оценку считает рынок; влияет на отдаваемую долю.
+function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -4194,18 +5330,74 @@ function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     weeks: state.week,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
   };
+}
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Шторм без ответа: ни надбавки курьерам, ни прогнозного автонайма.
+  // Цена: реакция на погоду даёт опоре до +87% к итогу; с прогнозным
+  // автонаймом надбавка не нужна — обе механики закрывают один провал.
+  // Первые 12 недель — льготные: прогнозный автонайм открывается качеством
+  // к 9–13 неделе, и ранние шторма — не системный промах, а часть пути.
+  const severe = hist.filter((r) => r.week > 12 && (r.weatherSeverity ?? 0) >= 0.7);
+  const stormsIgnored = severe.filter((r) => !(r.decisions?.weatherBonus > 0)
+    && !r.algoActive?.forecast).length;
+  if (stormsIgnored >= 3 && stormsIgnored > severe.length / 2) {
+    out.push({ id: 'storms', n: stormsIgnored });
+  }
+
+  // Алгоритмы простаивали. Цена: доведённая стратегия с включёнными
+  // алгоритмами — 4.4 млрд против 1.3 у ручной опоры.
+  const lateWeeks = hist.filter((r) => r.week > 12);
+  const idleWeeks = lateWeeks.filter((r) => Object.values(r.algoActive ?? {})
+    .filter(Boolean).length <= 1).length;
+  if (lateWeeks.length >= 8 && idleWeeks > lateWeeks.length / 2) {
+    out.push({ id: 'algosIdle', n: idleWeeks });
+  }
+
+  // Ворота экспансии открыты, а второго города так и не случилось.
+  // Цена: опора с алгоритмами 4.4 млрд, она же со Старгородом — 6.4.
+  const firstOpen = hist.find((r) => r.expansionOpen);
+  const entered = Object.keys(state.cityEntered ?? {}).some((c) => c !== 'novograd');
+  if (firstOpen && !entered && state.week - firstOpen.week >= 10) {
+    out.push({ id: 'noExpansion', w: firstOpen.week });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', w: state.week });
+
+  return out.slice(0, 4);
 }
 
 
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -4213,30 +5405,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -4339,6 +5570,49 @@ function labelTables(root = document) {
 }
 
 
+// ===== ../../shared/sliders.js =====================================
+// ============================================================================
+// Заливка ползунков до ручки. В WebKit дорожку красит переменная --fill
+// (процент положения ручки), которую CSS подставляет в градиент; Firefox
+// рисует заливку сам через ::-moz-range-progress и в скрипте не нуждается,
+// но лишняя переменная ему не мешает.
+//
+// Один вызов на игру: слушатель ввода на документе плюс пересчёт всех
+// ползунков после любых перестроек DOM (панели пересобираются каждый ход,
+// а значения ползункам ставит скрипт — событий ввода при этом нет).
+// ============================================================================
+
+function setFill(input) {
+  const min = Number(input.min || 0);
+  const max = Number(input.max || 100);
+  const v = Number(input.value);
+  const p = max > min ? ((v - min) / (max - min)) * 100 : 0;
+  input.style.setProperty('--fill', `${Math.max(0, Math.min(100, p)).toFixed(1)}%`);
+}
+
+function watchSliders(root = document) {
+  root.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el && el.tagName === 'INPUT' && el.type === 'range') setFill(el);
+  }, true);
+
+  let queued = false;
+  const sweep = () => {
+    queued = false;
+    root.querySelectorAll('input[type="range"]').forEach(setFill);
+  };
+  // Пересчёт откладывается до кадра: перестройка панелей — это сотни
+  // мутаций подряд, а пройтись по трём десяткам ползунков хватит одного раза
+  const observer = new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(sweep);
+  });
+  observer.observe(root.body ?? root, { childList: true, subtree: true, attributes: true, attributeFilter: ['value'] });
+  sweep();
+}
+
+
 // ===== ../../shared/charts.js ======================================
 // Минималистичные графики на canvas — без внешних библиотек,
 // чтобы игра открывалась одним файлом и работала офлайн.
@@ -4362,9 +5636,13 @@ function niceTicks(min, max, count = 4) {
 /**
  * series: [{ label, color?, data: number[] }]
  * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
- *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
- * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
- * кривой» и становится дневником — видно, где решение, а где последствия.
+ *         markers?: number[], rounds?: number[] } — индексы ходов (0-базные).
+ * markers — ходы, где игрок менял решения или случилось событие с выбором:
+ * рисуются пунктирными вертикалями, график перестаёт быть «просто кривой»
+ * и становится дневником — видно, где решение, а где последствия.
+ * rounds — ходы, где привлекались деньги (раунд или вливание совета):
+ * рисуются ромбами по верхней кромке — «когда брать деньги» само по себе
+ * решение, и оно заслуживает собственного знака.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -4446,6 +5724,21 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.setLineDash([]);
   }
 
+  // раунды — ромбы по верхней кромке: деньги пришли в этот ход
+  for (const ri of (opts.rounds ?? [])) {
+    if (ri < 0 || ri >= n) continue;
+    const px = x(ri);
+    const py = padT + 5;
+    ctx.fillStyle = 'rgba(96,165,250,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px + 4, py);
+    ctx.lineTo(px, py + 4);
+    ctx.lineTo(px - 4, py);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   // линии
   visible.forEach((s, si) => {
     ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
@@ -4513,6 +5806,7 @@ let state = null;
 let chartTab = 'orders';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;                // обработчики уже навешаны
 
 // ----------------------------------------------------------------------------
@@ -4644,7 +5938,7 @@ function renderKpis() {
       kpi(t('kpiOrders'), compact(r.orders), dOrders, cOrders),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiCm'), `${num(r.cmPerOrder)} ₽`,
+      kpi(t('kpiCm'), `${amount(r.cmPerOrder)}`,
         t('kpiTakeRate', { value: pct(r.netRevenue / Math.max(1, r.gmv)) }),
         r.cmPerOrder >= 0 ? 'up' : 'down'),
       kpi(t('kpiDelivery'), t('minutes', { value: num(r.avgDeliveryTime) }),
@@ -4664,7 +5958,11 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 function buildLevers() {
-  el('levers').innerHTML = LEVERS.map((l) => `
+  // На лёгком уровне финансовая команда уже собрана и не стоит ничего —
+  // ползунок там не решение, а декорация
+  el('levers').innerHTML = LEVERS
+    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree))
+    .map((l) => `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
@@ -4677,7 +5975,9 @@ function buildLevers() {
   `).join('');
 
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
@@ -4691,6 +5991,7 @@ function buildLevers() {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverDisplay(l, raw) {
@@ -4698,7 +5999,7 @@ function leverDisplay(l, raw) {
   if (l.key === 'marketing' || l.key === 'sales' || l.key === 'tech' || l.key === 'rnd') return money(raw);
   if (unit === '%') return `${raw}%`;
   if (l.key === 'targetCouriers') return num(raw);
-  return `${num(raw)} ${unit}`;
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -4773,7 +6074,7 @@ function renderOpsReadout() {
       cls: ratio >= 1 ? 'pos' : 'neg', ratio: ratio.toFixed(2), hiring,
     })}</div>
     ${capacityLine}
-    ${batch > 0 ? `<div>${t('opsBatching', { pay: num(payEff) })}</div>` : ''}
+    ${batch > 0 ? `<div>${t('opsBatching', { pay: amount(payEff) })}</div>` : ''}
     ${(WEATHER[nextType]?.severity ?? 0) > 0
       ? `<div>${t('opsWeatherAhead', {
           weather: weatherName(nextType).toLowerCase(),
@@ -4781,7 +6082,7 @@ function renderOpsReadout() {
         })}</div>`
       : ''}
     ${ratio < CONFIG.courierHireThreshold
-      ? `<div class="neg">${t('opsMinPay', { pay: num(minPay) })}</div>` : ''}
+      ? `<div class="neg">${t('opsMinPay', { pay: amount(minPay) })}</div>` : ''}
   </div>`;
 }
 
@@ -4858,8 +6159,8 @@ function renderBoard() {
     text = t('goalOrders', { target: num(goal.target, 0) });
     now = num(p.value, 0);
   } else if (goal.type === 'unit') {
-    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
-    now = `${num(p.value, 0)} ₽`;
+    text = t('goalUnit', { target: amount(goal.target), floor: num(goal.ordersFloor, 0) });
+    now = `${amount(p.value)}`;
   } else if (goal.type === 'profit') {
     text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
     now = `${p.value} / ${goal.target}`;
@@ -4949,6 +6250,16 @@ function buildNews(r) {
   if (r && r.orders > 0 && r.fillRate < 0.92) {
     news.push([r.fillRate < 0.8 ? 'bad' : 'warn', t('newsUnserved', {
       share: pct(1 - r.fillRate, 0), time: r.avgDeliveryTime.toFixed(0),
+    })]);
+  }
+
+  // Совет согласовал второй город. Ровно на той неделе, когда согласовал:
+  // ворота открываются молча, а это решение на десятки миллионов, и узнавать
+  // о нём по бейджу в панели районов игрок не обязан.
+  const away = CITIES.find((c) => !c.home);
+  if (r?.expansionOpen && !prev()?.expansionOpen && away && !state.cityEntered?.[away.id]) {
+    news.push(['good', t('newsExpansionOpen', {
+      city: tx(away.name), cost: money(away.entryCost), weekly: money(away.weeklyFixed),
     })]);
   }
 
@@ -5071,9 +6382,391 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 // Районы
 // ----------------------------------------------------------------------------
-function renderDistricts() {
-  const chosen = new Set(state.decisions.districts ?? []);
+// ----------------------------------------------------------------------------
+// Карта города
+//
+// Первая версия была диаграммой: плитки в ряд и ось расстояний под ними.
+// Читалась она правильно, но выглядела таблицей, а не городом. Теперь это
+// карта: склад в центре, кварталы вокруг него, дороги и река. Расстояние
+// перестало быть подписью и стало геометрией — район, до которого дальше
+// ехать, и на карте дальше от центра.
+//
+// Главный смысловой элемент — пунктирный круг: граница, за которой доставка
+// перестаёт укладываться в эталонные 35 минут. Она не нарисована на глаз, а
+// посчитана по вашим же районам (линейная зависимость времени от плеча), и
+// потому двигается вместе с игрой: наняли курьеров — круг раздался, зажали
+// ставку и открыли дальний район — сжался.
+// ----------------------------------------------------------------------------
+// Какой город показан на карте. Живёт в модуле, а не в сохранении: это
+// настройка взгляда, а не решение игрока.
+let mapCity = null;
+
+const clampShare = (x) => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
+
+function renderCityMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
   const entered = state.cityEntered ?? { novograd: true };
+  // Карта показывает один город за раз. Пока город один — выбирать нечего;
+  // после входа во второй появляются вкладки, иначе половина бизнеса живёт
+  // без карты: раньше выбор молча падал на первый город с работающим
+  // районом, то есть всегда на домашний.
+  const open = CITIES.filter((c) => entered[c.id]);
+  const city = open.find((c) => c.id === mapCity)
+    ?? CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
+    ?? open[0] ?? CITIES[0];
+  const defs = DISTRICTS.filter((d) => d.city === city.id);
+  const byId = Object.fromEntries((r?.districts ?? []).map((d) => [d.id, d]));
+
+  // Имя района на карте без города: заголовок карты и так называет город,
+  // а «Старгород · Центр» в квартале налезает на числа соседей
+  const shortName = (d) => tx(d.name).split(' · ').pop();
+
+  const rows = defs.map((d) => {
+    const ds = state.districts[d.id] ?? {};
+    const rep = byId[d.id];
+    return {
+      d,
+      live: Boolean(ds.active),
+      time: rep?.deliveryTime ?? ds.deliveryTime ?? d.baseTime,
+      cm: rep?.cmPerOrder ?? 0,
+      orders: rep?.orders ?? 0,
+      customers: rep?.customers ?? ds.customers ?? 0,
+      restaurants: rep?.restaurants ?? ds.restaurants ?? 0,
+      reach: rep?.penetration ?? 0,
+    };
+  });
+
+  // Стороны света у кварталов свои: «Северный» обязан быть севернее, а
+  // «Заречье» — за рекой. Незнакомый район раскладывается по кругу.
+  const DIR = {
+    center: -90, sever: -90, univer: 190, zarechie: 15, promzona: 65, zagorod: 130,
+    'st-center': -90, 'st-vostok': 20, 'st-port': 110, 'st-sloboda': 205,
+  };
+  const W = 720;
+  const cx = 300;
+  const cy = 226;
+  const maxKm = Math.max(...defs.map((d) => d.distanceKm));
+  const maxPot = Math.max(...defs.map((d) => d.potential));
+  // Радиус на карте пропорционален корню расстояния: иначе загородный район
+  // на девяти километрах уносит все остальные в кучу у центра.
+  const rad = (km) => 40 + 178 * Math.sqrt(km / maxKm);
+  // Площадь квартала пропорциональна рынку района: радиус — корень из
+  // потенциала БЕЗ смещения, иначе разницу между районами съедала константа
+  // и все кварталы выглядели одинаковыми
+  const size = (pot) => 54 * Math.sqrt(pot / maxPot);
+
+  const placed = rows.map((row, i) => {
+    const ang = ((DIR[row.d.id] ?? (-90 + (360 / rows.length) * i)) * Math.PI) / 180;
+    const R = row.d.id === 'center' || row.d.id === 'st-center' ? 0 : rad(row.d.distanceKm);
+    return { ...row, x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) * 0.92, rr: size(row.d.potential) };
+  });
+
+  // Река рисуется не «где-нибудь справа», а между складом и Заречьем: иначе
+  // название района ничем не объясняется. В Старогорске воду держит порт.
+  const across = placed.find((p) => p.d.id.endsWith('zarechie'));
+  const port = placed.find((p) => p.d.id.endsWith('port'));
+  const riverX = across ? (cx + across.x) / 2 : (port ? port.x + port.rr * 1.15 : null);
+  if (riverX !== null) {
+    // Вода не должна накрывать кварталы: заречный уезжает за берег, остальные
+    // сдвигаются на ближний. Расстояния при этом не меняются — они в числах.
+    for (const p of placed) {
+      if (p === port) continue;
+      const clear = p.rr + 34;
+      if (p === across) p.x = Math.max(p.x, riverX + clear);
+      else if (Math.abs(p.x - riverX) < clear) p.x = riverX - clear;
+    }
+  }
+  const riverPath = (x) => `M ${x - 20} 0 C ${x - 38} 90, ${x + 6} 150, ${x - 22} 205
+    C ${x - 48} 258, ${x + 10} 320, ${x - 12} 400 L ${x + 30} 400
+    C ${x + 50} 318, ${x - 4} 258, ${x + 22} 205 C ${x + 48} 150, ${x + 6} 92, ${x + 22} 0 Z`;
+
+
+  // Где кончается норма: время линейно растёт с плечом (по вашим же районам),
+  // и мы решаем уравнение «время = эталон» относительно километров
+  const live = placed.filter((p) => p.live);
+  const pts = (live.length >= 2 ? live : placed).map((p) => [p.d.distanceKm, p.time]);
+  const n = pts.length;
+  const sx = pts.reduce((a, [x]) => a + x, 0) / n;
+  const sy = pts.reduce((a, [, y]) => a + y, 0) / n;
+  const denom = pts.reduce((a, [x]) => a + (x - sx) ** 2, 0);
+  const slope = denom > 0 ? pts.reduce((a, [x, y]) => a + (x - sx) * (y - sy), 0) / denom : 0;
+  const intercept = sy - slope * sx;
+  const kmAtRef = slope > 0.01 ? (CONFIG.refDeliveryTime - intercept) / slope : null;
+  const refShown = kmAtRef !== null && kmAtRef > 0 && kmAtRef <= maxKm * 1.35;
+
+  // Домики внутри квартала: их столько, сколько ресторанов на районе, но не
+  // больше девяти — застройка, а не гистограмма
+  // Домиков внутри квартала ровно столько, сколько в районе ресторанов, по
+  // одному на три десятка. Считать их долей от пула было бы враньём: район
+  // с двумя сотнями ресторанов из восьмисот выглядел бы реже, чем район с
+  // тремя десятками из шестидесяти.
+  // Двенадцати домиков хватает на самый большой пул района (340), поэтому
+  // счёт нигде не упирается в потолок и подпись под картой не врёт.
+  const PER_HOUSE = 30;
+  const blocks = (p) => {
+    const cnt = Math.min(12, Math.round((state.districts[p.d.id]?.restaurants ?? 0) / PER_HOUSE));
+    const k = p.rr;
+    // Домики стоят по краю квартала: середину занимает подпись
+    const spots = [[-0.55, 0.45], [0.45, 0.5], [-0.7, -0.32], [0.6, -0.38], [0, 0.62],
+      [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06],
+      [-0.12, -0.86], [0.62, 0.72], [-0.62, 0.74]];
+    return `<title>${t('mapTipHouses', {
+      n: num(Math.round(state.districts[p.d.id]?.restaurants ?? 0)) })}</title>`
+      + spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
+      y="${(p.y + ay * k - 4).toFixed(1)}" width="${i % 3 === 0 ? 12 : 9}" height="8"
+      rx="1.5" class="m-block"></rect>`).join('');
+  };
+
+  // Городская черта: замкнутая линия вокруг всех кварталов города. Она не
+  // условная граница чего-нибудь посчитанного, а просто край города — и
+  // именно поэтому нарисована как на карте, штрихпунктиром. Форма считается
+  // опорной функцией: по каждому направлению берётся самый дальний край
+  // квартала, плюс поле. Город растёт вместе с открытыми районами.
+  const cityEdge = () => {
+    const mx = placed.reduce((a, p) => a + p.x, 0) / placed.length;
+    const my = placed.reduce((a, p) => a + p.y, 0) / placed.length;
+    const pad = 30;
+    const N = 32;
+    const pts = [];
+    for (let k = 0; k < N; k++) {
+      const a = (2 * Math.PI * k) / N;
+      const ca = Math.cos(a); const sa = Math.sin(a);
+      // Опорная функция объединения кварталов: по направлению берётся самый
+      // дальний край. Так черта получается выпуклой — город с ровным краем,
+      // а не облако с вырезами между районами.
+      let R = 70;
+      for (const p of placed) {
+        R = Math.max(R, (p.x - mx) * ca + (p.y - my) * sa + p.rr + pad);
+      }
+      pts.push([mx + R * ca, my + R * sa]);
+    }
+    // Замкнутая кривая через точки: без сглаживания черта выглядит гайкой
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let k = 0; k < N; k++) {
+      const cur = pts[k]; const nxt = pts[(k + 1) % N];
+      const mid = [(cur[0] + nxt[0]) / 2, (cur[1] + nxt[1]) / 2];
+      d += ` Q ${cur[0].toFixed(1)} ${cur[1].toFixed(1)} ${mid[0].toFixed(1)} ${mid[1].toFixed(1)}`;
+    }
+    return { d: `${d} Z`, bottom: Math.max(...pts.map((q) => q[1])) };
+  };
+  const edge = cityEdge();
+
+  // Плечо доставки рисуется ВНУТРИ квартала: заказ едет от ресторана к
+  // клиенту того же района, а не из какой-то общей точки в центре карты.
+  // Длина ниточки — плечо в общем для всех районов масштабе, цвет — успевает
+  // ли район в эталонные минуты.
+  const legLine = (p) => {
+    const len = 6 + 38 * (p.d.distanceKm / maxKm);
+    // Верхняя половина квартала: снизу стоят числа района. У центрального
+    // квартала имя стоит вверху, поэтому его ниточка живёт под именем.
+    const y = p.d.id.endsWith('center') ? p.y + 8 : p.y - p.rr * 0.52;
+    const x1 = p.x - len / 2;
+    const late = p.time > CONFIG.refDeliveryTime;
+    return `<g class="m-leg${late ? ' late' : ''}">
+      <title>${t('mapTipLeg', { km: p.d.distanceKm, time: num(p.time) })}</title>
+      <rect x="${x1 - 4}" y="${y - 4}" width="8" height="8" rx="1.5"></rect>
+      <line x1="${x1 + 5}" y1="${y}" x2="${x1 + len - 4}" y2="${y}"></line>
+      <circle cx="${x1 + len}" cy="${y}" r="2.6"></circle>
+    </g>`;
+  };
+
+  // Доля района, которая уже ваша. Потолок доступного рынка на карте не
+  // рисуется: замер показал, что до него не доходит ни одна стратегия
+  // (24–32% доступного к концу партии), и черта показывала границу, которой
+  // игрок в своей партии не видит.
+  const shareOf = (p) => clampShare((p.customers ?? 0) / (p.d.potential || 1));
+
+  const chosen = new Set(state.decisions.districts ?? []);
+  // Четыре состояния, а не два. Снятый с плана работающий район — самое
+  // важное из них: модель закроет его в конце недели и обнулит клиентов с
+  // ресторанами, а на карте он до сих пор выглядел работающим, и нажатие
+  // казалось не сработавшим.
+  // Подписи считаются заранее и разводятся по вертикали: строк у квартала
+  // теперь две-три, и соседние районы налезали друг на друга подписями, а не
+  // кварталами. Простая раскладка сверху вниз: следующая подпись уезжает
+  // ниже, если попала в уже занятое место.
+  // Кварталы кладутся в раскладку первыми: подпись обязана обходить не только
+  // соседние подписи, но и сами кварталы — иначе числа ложатся на застройку
+  const boxes = placed.map((p) => ({ x: p.x, y: p.y - p.rr * 0.92, w: p.rr * 2, h: p.rr * 1.84 }));
+  const estWidth = (text) => text.length * 5.4;
+  for (const p of [...placed].sort((a, b) => a.y - b.y)) {
+    const planned = !p.live && chosen.has(p.d.id);
+    const closing = p.live && !chosen.has(p.d.id);
+    const bad = p.time > CONFIG.refDeliveryTime;
+    p.lines = closing ? [{ text: t('mapClosing'), cls: 'm-small neg' }]
+      : p.live
+        ? [
+          { text: `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}${t('mapPerOrderTag')}`,
+            cls: bad ? 'm-small neg' : 'm-small' },
+          { text: t('mapLiveMeta', {
+            customers: compact(p.customers), restaurants: num(Math.round(p.restaurants)),
+          }), cls: 'm-muted' },
+        ]
+        : planned
+          ? [{ text: t('mapPlanned'), cls: 'm-small' }]
+          : [
+            { text: t('mapOpenFor', { cost: money(p.d.launchCost) }), cls: 'm-muted' },
+            { text: t('mapIdleMeta', {
+              potential: compact(p.d.potential), km: p.d.distanceKm,
+            }), cls: 'm-muted' },
+          ];
+    const w = Math.max(...p.lines.map((l) => estWidth(l.text)));
+    const h = p.lines.length * 14;
+    let ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
+    for (let guard = 0; guard < 8; guard++) {
+      const hit = boxes.find((b) => Math.abs(b.x - p.x) < (b.w + w) / 2 - 6
+        && ly - 12 < b.y + b.h && ly + h > b.y - 12);
+      if (!hit) break;
+      ly = hit.y + hit.h + 8;
+    }
+    boxes.push({ x: p.x, y: ly, w, h });
+    p.ly = ly;
+    p.leader = ly > p.y + 30;   // подпись уехала — нужна ниточка к кварталу
+  }
+  // Высота карты подстраивается под самую нижнюю подпись: иначе разведённая
+  // подпись срезалась бы краем viewBox
+  const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14,
+    edge.bottom + 12);
+
+  // Подсказка на элементе: легенда свёрнута под кат, и наводка мышью должна
+  // отвечать на «что это?» без её раскрытия
+  const tip = (p) => (p.live
+    ? t('mapTipLive', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        customers: compact(p.customers), share: pct(shareOf(p), 0),
+        cm: amount(p.cm), time: num(p.time),
+      })
+    : t('mapTipIdle', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        cost: money(p.d.launchCost), km: p.d.distanceKm,
+      }));
+
+  const quarter = (p) => {
+    const planned = !p.live && chosen.has(p.d.id);
+    const closing = p.live && !chosen.has(p.d.id);
+    const cls = closing ? 'm-closing'
+      : p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad')
+        : (planned ? 'm-plan' : 'm-off');
+    // Квартал — не круг, а скруглённый многоугольник: так он читается
+    // застройкой, а не точкой на графике
+    const k = p.rr;
+    const shape = `${p.x - k},${p.y - k * 0.62} ${p.x - k * 0.35},${p.y - k * 0.92} `
+      + `${p.x + k * 0.72},${p.y - k * 0.78} ${p.x + k},${p.y - k * 0.1} `
+      + `${p.x + k * 0.62},${p.y + k * 0.86} ${p.x - k * 0.55},${p.y + k * 0.92} `
+      + `${p.x - k * 0.98},${p.y + k * 0.3}`;
+    // На телефоне карта ужимается втрое, и мелкие числа превращаются в шум:
+    // в кварталах остаются только названия, числа уходят в список под картой.
+    const label = narrow ? '' : p.lines.map((l, k) => `<text x="${p.x}" y="${p.ly + k * 14}"
+        text-anchor="middle" class="${l.cls}">${l.text}</text>`).join('');
+    // Заливка снизу — доля района, которая уже ваша; пунктир поперёк —
+    // потолок доступного. Квартал показывает сразу две вещи: сколько здесь
+    // рынка (площадь) и сколько вы из него взяли (уровень).
+    const top = p.y - k * 0.92;
+    const bottom = p.y + k * 0.92;
+    const height = bottom - top;
+    const level = bottom - height * shareOf(p);
+    const clipId = `q-${p.d.id}`;
+    return `<g class="m-hit" data-id="${p.d.id}">
+      ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
+        y2="${p.ly - 10}" class="m-leader"></line>` : ''}
+      <title>${tip(p)}</title>
+      <clipPath id="${clipId}"><polygon points="${shape}"></polygon></clipPath>
+      <g clip-path="url(#${clipId})">
+        <polygon points="${shape}" class="m-quarter-bg"></polygon>
+        ${p.live ? `<rect x="${(p.x - k * 1.1).toFixed(1)}" y="${level.toFixed(1)}"
+          width="${(k * 2.2).toFixed(1)}" height="${(bottom - level).toFixed(1)}"
+          class="m-share ${cls}"><title>${t('mapTipShare', {
+            customers: compact(p.customers), share: pct(shareOf(p), 0) })}</title></rect>` : ''}
+      </g>
+      <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
+      ${p.live ? blocks(p) + legLine(p) : ''}
+      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
+        text-anchor="middle" class="m-name">${shortName(p.d)}</text>
+      ${label}
+    </g>`;
+  };
+
+  const couriers = r?.couriers ?? state.couriers ?? 0;
+  const util = r?.utilization ?? 0;
+  const undelivered = r && r.demand > 0 ? 1 - r.orders / r.demand : 0;
+
+  // Список под картой нужен узкому экрану: на телефоне подписи внутри
+  // кварталов мельчают, а числа терять нельзя
+  const list = placed.map((p) => `<li data-id="${p.d.id}"><b>${shortName(p.d)}</b> · ${
+    p.d.distanceKm} ${t('mapKmShort')} · ${
+    p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
+      : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')} · ${
+        t('mapLiveMeta', { customers: compact(p.customers),
+          restaurants: num(Math.round(p.restaurants)) })}`
+        : (chosen.has(p.d.id) ? t('mapPlanned')
+          : `${t('mapOpenFor', { cost: money(p.d.launchCost) })} · ${
+            t('mapIdleMeta', { potential: compact(p.d.potential), km: p.d.distanceKm })}`)}</li>`).join('');
+
+  // Вкладка города показывает не только имя: сколько районов работает — это
+  // ровно тот вопрос, ради которого на вторую карту и переключаются
+  const tabs = open.length > 1 ? `<div class="tabs">${open.map((c) => {
+    const live = DISTRICTS.filter((d) => d.city === c.id && state.districts[d.id]?.active).length;
+    const all = DISTRICTS.filter((d) => d.city === c.id).length;
+    return `<button type="button" class="tab${c.id === city.id ? ' on' : ''}" data-map-city="${c.id}">${
+      tx(c.name)} · ${live}/${all}</button>`;
+  }).join('')}</div>` : '';
+
+  box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
+    <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
+    ${tabs}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
+      <path d="${edge.d}" class="m-border"></path>
+      ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
+
+      ${placed.map(quarter).join('')}
+    </svg>
+    <div class="map-foot">
+      <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
+        couriers: num(couriers), util: pct(util, 0) })}</span>
+      <span class="${undelivered > 0.06 ? 'neg' : ''}">${t('mapUndelivered', {
+        share: pct(Math.max(0, undelivered), 0) })}</span>
+    </div>
+    ${refShown ? `<div class="funding-note">${t('mapRefRing', {
+      min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</div>` : ''}
+    ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
+    <details class="map-legend">
+      <summary>${t('mapLegendTitle')}</summary>
+      <div class="funding-note">
+        ${[['area', 'mapLegendArea'], ['share', 'mapLegendShare'], ['color', 'mapLegendColor'],
+    ['houses', 'mapLegendHouses'], ['leg', 'mapLegendLeg'], ['outline', 'mapLegendOutline']]
+    .map(([k, key]) => `<span class="legend-item" data-hl="${k}" tabindex="0">${t(key)}</span>`).join(' ')}
+        <span>${t('mapLegendHint')}</span>
+      </div>
+    </details>
+  </div>`;
+
+  // Интерактивная легенда: наведение (или фокус с клавиатуры) на пункт
+  // приглушает карту и оставляет в полную силу только описанный орган
+  const mapPanel = box.querySelector('.city-map');
+  box.querySelectorAll('.legend-item').forEach((item) => {
+    const on = () => { if (mapPanel) mapPanel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (mapPanel) delete mapPanel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
+  // Карта — не картинка, а панель управления: район открывается нажатием
+  // прямо на квартал, как и на карточку в левой колонке.
+  box.querySelectorAll('[data-id]').forEach((node) => {
+    node.addEventListener('click', () => toggleDistrict(node.dataset.id));
+  });
+  box.querySelectorAll('[data-map-city]').forEach((node) => {
+    node.addEventListener('click', () => { mapCity = node.dataset.mapCity; renderCityMap(); });
+  });
+}
+
+function renderDistricts() {
+  const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
   const card = (d) => {
     const ds = state.districts[d.id] ?? { active: false, deliveryTime: d.baseTime };
     const on = chosen.has(d.id);
@@ -5084,13 +6777,14 @@ function renderDistricts() {
           time: num(ds.deliveryTime), reach: pct(ds.customers / d.potential, 1),
         })
       : t('districtStatsIdle', {
-          potential: compact(d.potential), aov: num(aovOf(d)), km: d.distanceKm,
+          potential: compact(d.potential), aov: amount(aovOf(d)), km: d.distanceKm,
         });
     return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
       <div class="district-head">
         <span class="district-name">${tx(d.name)}</span>
-        <span class="badge ${live ? 'on' : ''}">${live
-          ? t('districtLive') : t('districtLaunch', { cost: money(d.launchCost) })}</span>
+        <span class="badge ${live && on ? 'on' : ''}">${live
+          ? (on ? t('districtLive') : t('districtClosing'))
+          : t('districtLaunch', { cost: money(d.launchCost) })}</span>
       </div>
       <div class="district-meta">${stats}</div>
       <div class="district-meta">${tx(d.hint)}</div>
@@ -5129,25 +6823,42 @@ function renderDistricts() {
 
   el('districts').querySelectorAll('.district').forEach((node) => {
     node.addEventListener('click', () => {
-      const id = node.dataset.id;
-      const def = districtById(id);
-      const set = new Set(state.decisions.districts ?? []);
-      // В закрытый город заявку не принимаем: молча ждущая галочка, которая
-      // сама срабатывает через несколько недель, хуже честного отказа.
-      if (!set.has(id) && def && !entered[def.city] && !gateOpen) {
-        toast(t('cityLockedToast', {
-          week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
-        }));
-        return;
-      }
-      if (set.has(id)) set.delete(id); else set.add(id);
-      state.decisions.districts = [...set];
-      renderDistricts();
-      renderOpsReadout();
-      renderRightTab();
-      save();
+      toggleDistrict(node.dataset.id);
     });
   });
+}
+
+// Выбор района. Живёт отдельно от отрисовки, потому что нажать район можно
+// в двух местах: на карточке в панели и прямо на карте.
+function toggleDistrict(id) {
+  const def = districtById(id);
+  if (!def) return;
+  const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
+  const homeChosen = DISTRICTS
+    .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
+  const gateOpen = state.week + 1 >= CONFIG.expansion.minWeek
+    && homeChosen >= CONFIG.expansion.minHomeDistricts;
+  // В закрытый город заявку не принимаем: молча ждущая галочка, которая
+  // сама срабатывает через несколько недель, хуже честного отказа.
+  if (!chosen.has(id) && !entered[def.city] && !gateOpen) {
+    toast(t('cityLockedToast', {
+      week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+    }));
+    return;
+  }
+  if (chosen.has(id)) {
+    chosen.delete(id);
+    // Снять работающий район с плана — значит закрыть его в конце недели:
+    // клиенты и рестораны обнулятся. Молча такое не делается.
+    if (state.districts[id]?.active) toast(t('districtCloseToast', { name: tx(def.name) }));
+  } else chosen.add(id);
+  state.decisions.districts = [...chosen];
+  renderDistricts();
+  renderCityMap();
+  renderOpsReadout();
+  renderRightTab();
+  save();
 }
 
 // ----------------------------------------------------------------------------
@@ -5264,15 +6975,15 @@ function buildAlerts(r) {
     }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
-      util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
+      util: pct(r.utilization, 0), cost: amount(CONFIG.hqPerCourier),
     }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
       / (CONFIG.courierExpectedLoad * Math.max(1, r.perCourier)) / 10) * 10;
     alerts.push(['bad', t('alertNoApplicants', {
-      pay: num(r.decisions.courierPay), orders: num(r.perCourier),
-      market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
+      pay: amount(r.decisions.courierPay), orders: num(r.perCourier),
+      market: money(CONFIG.courierMarketWeeklyPay), minPay: amount(minPay),
     }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
@@ -5281,10 +6992,10 @@ function buildAlerts(r) {
     }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
+    alerts.push(['bad', t('alertNegativeCm', { value: amount(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
+      cm: amount(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
     }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
@@ -5317,7 +7028,7 @@ function buildAlerts(r) {
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
-      cost: money(r.weatherBonusCost), perOrder: num(r.weatherBonusPerOrder),
+      cost: money(r.weatherBonusCost), perOrder: amount(r.weatherBonusPerOrder),
     })]);
   }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
@@ -5454,10 +7165,10 @@ function renderReport() {
               demand: signedPct(r.weatherDemandMult - 1, 0),
               capacity: signedPct(r.weatherCapacityMult - 1, 0),
             }))}
-      ${stat(t('statCm'), `${num(r.cmPerOrder)} ₽`,
+      ${stat(t('statCm'), `${amount(r.cmPerOrder)}`,
         t('statCmSub', { value: pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders))) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.opex) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
@@ -5481,7 +7192,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.netRevenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -5489,12 +7200,11 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('seriesCmPerOrder'), data: h.map((r) => r.cmPerOrder), color: PALETTE[0] }],
   },
   ops: {
@@ -5547,7 +7257,27 @@ function decisionChanges() {
     for (const a of ALGORITHMS) {
       if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг:
+    // на дебрифе должно быть видно, во что обошёлся выбранный вариант
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].week, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке. «Когда брать деньги» —
+// половина игры, и этот момент должен быть виден на любой кривой.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -5575,7 +7305,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -5584,6 +7318,7 @@ function renderChart() {
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -5594,7 +7329,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
 
   const breakEven = r && u.contribution > 0 ? r.opex / u.contribution : null;
 
@@ -5603,16 +7338,18 @@ function renderUnitTab() {
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerOrder')}</th><th>${t('unitColShare')}</th></tr></thead>
       <tbody>
-        <tr><td><b>${t('unitAov')}</b></td><td><b>${num(u.aov)} ₽</b></td><td>100%</td></tr>
+        <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
         ${row(t('unitCommission', { rate: pct(u.commission, 0) }), u.commissionRevenue, 'pos', true)}
+        ${r && r.chainOn && r.orders > 0
+          ? row(t('unitChainDeal'), -r.chainDiscount / r.orders, 'neg', true) : ''}
         ${row(t('unitFee'), u.feeRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
         ${row(t('unitCourier'), -u.courier, 'neg', true)}
         ${row(t('unitPromo'), -u.promo, 'neg', true)}
         ${row(t('unitPayment'), -u.payment, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
       </tbody>
     </table>
@@ -5623,11 +7360,11 @@ function renderUnitTab() {
       ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitFrequency')}</td><td>${t('unitFrequencyValue', {
         value: (r.customers > 0 ? r.orders / r.customers : 0).toFixed(2),
       })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}
@@ -5660,6 +7397,8 @@ function renderPnlTab() {
         ${line(t('pnlSales'), -r.decisions.sales, 'neg', true)}
         ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
         ${line(t('pnlRnd'), -(r.decisions.rnd ?? 0), 'neg', true)}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -5907,7 +7646,7 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      outcome: s.bankrupt ? 'bankrupt' : s.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: s.weeks,
     });
@@ -5917,29 +7656,75 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и коды партий «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы честность общей таблицы и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+// Возвращение из экосистемы. Игрок, уже строивший НОВОГРАД, приходит сюда
+// не «сыграть ещё раз», а прокачать стартовый актив: его финал здесь —
+// это база, ARPU и казна холдинга там. Показываем следующую ступень
+// наследия числом. Строго справочно: экономика этой партии не меняется —
+// обратные бонусы набора неэкономические по правилу.
+function returnHtml() {
+  const r = returnTarget('delivery');
+  if (!r) return '';
+  const body = r.maxed
+    ? t('metaReturnMaxed')
+    : t('metaReturnText', {
+        ratio: r.ratio.toFixed(1),
+        next: String(r.nextRatio),
+        target: money(r.target),
+      });
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
+}
+
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.equityValue > 3e9 ? t('gradeExcellent')
-    : s.equityValue > 1e9 ? t('gradeSolid')
-    : s.equityValue > 3e8 ? t('gradeSurvived') : t('gradeModest');
+    : s.sold ? t('gradeSold')
+    // Шкала выставлена замером на 24 кодах (аудит 2026-08, пересчитана после
+    // сглаживания окна роста): опоры дают 1.32 / 0.87 / 0.36 млрд, опора с
+    // реакцией на погоду 2.4, алгоритмы без надбавки 4.4, алгоритмы +
+    // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
+    // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
+    // потолок доведённой стратегии выше, чем казалось с надбавкой.
+    : s.equityValue > 5e9 ? t('gradeExcellent')
+    : s.equityValue > 2.2e9 ? t('gradeSolid')
+    : s.equityValue > 0.8e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.weeks,
   });
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { week: s.weeks }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { week: s.weeks })
+      : s.sold ? t('gameOverSoldText', { week: s.weeks, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -5948,19 +7733,25 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(3e9), b: money(1e9), c: money(3e8) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
-      orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
+      orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
+    ${novogradInviteHtml()}
+    ${returnHtml()}
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
@@ -5970,10 +7761,11 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: taggedGame(GAME_TAG, state.difficulty),
     line,
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
@@ -5982,6 +7774,74 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
+}
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса. Раньше водопад показывался только банкроту —
+// а успешному финалу разбор нужен не меньше.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.netRevenue);
+  const costs = sum((r) => r.netRevenue - r.profit + r.oneOff);
+  const profit = sum((r) => r.profit - r.oneOff);
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+// Преподаватель строит свои графики в таблицах, ученик прикладывает партию
+// к отчёту. Разделитель — точка с запятой, кодировка с BOM: так файл
+// открывается таблицей, а не кашей, в русском Экселе.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.week,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `novoeda-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 
@@ -5993,13 +7853,24 @@ function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   let seedWanted = '';
+  // Сложность — настройка всего набора: выбранная здесь действует и в
+  // остальных играх. Меняет она только цену финансовой команды.
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
+    </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
+    ${returnHtml()}
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -6010,7 +7881,11 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+      if ((v && v !== state.seed) || diffWanted !== state.difficulty) {
+        state = createInitialState(v || state.seed, diffWanted);
+        save();
+        renderAll();
+      }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
@@ -6019,6 +7894,14 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = setDifficulty(b.dataset.diff);
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
 }
 
 function showHelp() {
@@ -6064,8 +7947,9 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
 }
 
@@ -6108,13 +7992,16 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt) buildLevers();
+  // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
+  // нет — она уже оплачена), поэтому смена уровня пересобирает панель
+  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
   renderChrome();
   syncLevers();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderDistricts();
+  renderCityMap();
   renderBoard();
   renderFunding();
   renderWeather();
@@ -6184,6 +8071,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);

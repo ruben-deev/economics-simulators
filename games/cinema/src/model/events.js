@@ -106,8 +106,8 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up (₽260M × talent index)' },
-        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: ₽260M early in the game, two or three times that by the end.' },
+        label: { ru: 'Заплатить (260 млн ₽ × индекс таланта)', en: 'Pay up ($2.6M × talent index)' },
+        detail: { ru: 'Запрос звезды растёт вместе с рынком: в начале партии это 260 млн, к концу — вдвое-втрое больше.', en: 'The star’s ask grows with the market: $2.6M early in the game, two or three times that by the end.' },
         effects: { oneOffCostTalent: 260_000_000, awarenessAdd: 0.03 },
       },
       {
@@ -130,7 +130,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights (₽500M)' },
+        label: { ru: 'Купить права (500 млн ₽)', en: 'Buy the rights ($5M)' },
         detail: { ru: 'Мощный приток и рост часов, но деньги ушли безвозвратно.', en: 'A strong inflow and more hours, but the money is gone for good.' },
         effects: { oneOffCost: 500_000_000, demandMult: 1.16, hoursMult: 1.08, awarenessAdd: 0.05 },
       },
@@ -154,7 +154,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale (₽80 off per subscriber)' },
+        label: { ru: 'Устроить распродажу (80 ₽ скидки на подписчика)', en: 'Run a sale ($0.80 off per subscriber)' },
         detail: { ru: 'Скидка достаётся и действующей базе: маленькой базе распродажа почти бесплатна, большой — очень дорога.', en: 'The discount reaches the existing base too: nearly free with a small base, very expensive with a large one.' },
         effects: { oneOffCostPerSub: 80, demandMult: 1.12, churnAdd: 0.01, valuationBonus: 0.005 },
       },
@@ -178,7 +178,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate (₽60 per subscriber)' },
+        label: { ru: 'Признать и компенсировать (60 ₽ на подписчика)', en: 'Own it and compensate ($0.60 per subscriber)' },
         detail: { ru: 'Компенсация каждому: цена растёт вместе с базой. Маленькому сервису честность почти ничего не стоит.', en: 'Compensation for everyone: the price grows with the base. For a small service honesty costs almost nothing.' },
         effects: { oneOffCostPerSub: 60, churnAdd: 0.006 },
       },

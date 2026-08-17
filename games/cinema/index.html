@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>КИНОРЕКА · streaming economics simulator</title>
+  <!-- Иконка вкладки: SVG в data-URI. Внешнего файла нет намеренно —
+       раздаваемая сборка одним файлом должна оставаться самодостаточной. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E🎬%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../../shared/styles.css" />
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -55,6 +58,7 @@
   <main class="layout">
     <aside class="panel col-left">
       <h2 class="panel-title" id="title-levers"></h2>
+      <div id="budget-slot"></div>
       <div id="levers"></div>
       <div id="ops-readout"></div>
 
@@ -72,6 +76,7 @@
       <!-- Порядок повторяет то, как играют: сначала читают, что вышло,
            потом решают срочное, потом планируют. -->
       <div id="report-slot"></div>
+      <div id="map-slot"></div>
       <div id="event-slot"></div>
       <div id="crisis-slot"></div>
       <div id="partner-slot"></div>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Ruben Deev" />
+  <title>НОВОГРАД · ecosystem economics simulator</title>
+  <!-- Иконка вкладки: SVG в data-URI. Внешнего файла нет намеренно —
+       раздаваемая сборка одним файлом должна оставаться самодостаточной. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E🏙️%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../../shared/styles.css" />
+  <script id="js-flag">
+    // Метка «скрипты работают». Ставится до всего остального: если страницу
+    // открыли в режиме предпросмотра (Быстрый просмотр на маке, «Готово» на
+    // айфоне), WebKit рисует HTML, но JavaScript не выполняет — и человек
+    // видит пустой каркас игры вместо игры. Без этой метки отличить такой
+    // случай от поломки невозможно: экран отказа тоже рисуется скриптом.
+    document.documentElement.className = 'js';
+  </script>
+</head>
+<body>
+  <div class="nojs-hint">
+    <div class="panel">
+      <h2 class="panel-title">Скрипты не выполняются</h2>
+      <p class="funding-note">Игра — это расчётная модель, она целиком живёт в JavaScript.
+        Сейчас он выключен, поэтому виден только пустой каркас.</p>
+      <p class="funding-note">Так бывает, когда файл открыт не в браузере, а в <b>просмотрщике</b>:
+        в Телеграме и других мессенджерах, в «Файлах» и почте на айфоне (кнопка «Готово» сверху),
+        в «Быстром просмотре» на маке (кнопка «Открыть в приложении Safari»).
+        Просмотрщик показывает разметку, но намеренно не запускает скрипты.</p>
+      <p class="funding-note"><b>Что делать сейчас:</b> открыть этот файл в браузере.
+        В Телеграме — значок «Поделиться» → «Открыть в Safari». На маке — «Открыть в
+        приложении Safari» вверху окна или перетащить файл на иконку браузера.</p>
+      <p class="funding-note"><b>Как не попадать в это впредь:</b> пересылать не файл, а ссылку.
+        По ссылке игра открывается даже во встроенном браузере Телеграма — скрипты там работают,
+        не работают они только в просмотре пересланных документов.</p>
+    </div>
+  </div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🏙️</span>
+      <div>
+        <div class="brand-title" id="brand-title"></div>
+        <div class="brand-sub" id="brand-sub"></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="topbar-actions">
+      <a id="btn-home" class="btn ghost" hidden></a>
+      <button id="btn-top" class="btn ghost" hidden>🏆</button>
+      <button id="btn-lang" class="btn ghost"></button>
+      <button id="btn-help" class="btn ghost">?</button>
+      <button id="btn-restart" class="btn ghost"></button>
+      <button id="btn-next" class="btn primary"></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ЛЕВАЯ КОЛОНКА: рычаги и вертикали -->
+    <aside class="panel col-left">
+      <h2 class="panel-title" id="title-levers"></h2>
+      <div id="budget-slot"></div>
+      <div id="levers"></div>
+
+      <h2 class="panel-title" id="title-verticals"></h2>
+      <div id="verticals" class="districts"></div>
+
+      <h2 class="panel-title" id="title-board"></h2>
+      <div id="board"></div>
+
+      <h2 class="panel-title" id="title-funding"></h2>
+      <div id="funding" class="funding"></div>
+    </aside>
+
+    <!-- ЦЕНТР: события, разбор месяца, графики -->
+    <section class="col-center">
+      <div id="event-slot"></div>
+      <div id="map-slot"></div>
+      <div id="report-slot"></div>
+      <div id="news-slot"></div>
+      <div class="panel charts">
+        <div class="charts-head">
+          <h2 class="panel-title inline" id="title-dynamics"></h2>
+          <div class="chart-tabs" id="chart-tabs"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend"></div>
+        <canvas id="chart" height="230"></canvas>
+        <div class="chart-caption" id="chart-caption"></div>
+      </div>
+    </section>
+
+    <!-- ПРАВАЯ КОЛОНКА: аналитика -->
+    <aside class="panel col-right">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="sop"></button>
+        <button class="tab" data-tab="pnl"></button>
+        <button class="tab" data-tab="base"></button>
+        <button class="tab" data-tab="help"></button>
+      </div>
+      <div id="tab-content" class="tab-content"></div>
+    </aside>
+  </main>
+
+  <!-- Постоянная оговорка о числах: видна и тому, кто попал в игру по ссылке
+       посреди партии и не открывал экран приветствия. Текст ставит app.js —
+       он меняется вместе с языком. -->
+  <footer class="app-foot" id="app-foot"></footer>
+
+  <div id="modal-root"></div>
+
+  <script type="module" src="./src/main.js"></script>
+  <!-- only-modular:start -->
+  <!-- Яндекс.Метрика. Считает только на сайте: этот блок живёт в странице-
+       обёртке и в раздаваемый однофайловый HTML не попадает. -->
+  <script>
+    window.__metrikaId = 111545020;
+    if (window.__metrikaId) {
+      (function (m, e, t, r, i, k, a) {
+        m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); };
+        m[i].l = 1 * new Date();
+        k = e.createElement(t); a = e.getElementsByTagName(t)[0];
+        k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
+      })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+      ym(window.__metrikaId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true });
+    }
+  </script>
+
+  <!-- Мировая таблица результатов. ВНИМАНИЕ: сервер должен знать тег
+       «НОВОГРАД» — добавьте его в GAMES в server/leaderboard.gs и
+       передеплойте скрипт (руками, см. server/README.md). До этого
+       отправка будет отвечать unknown game. -->
+  <script>
+    // Кнопка «Игры» в шапке: витрина есть только на сайте и при npm start,
+    // в раздаваемом однофайловом HTML её нет — и кнопки там тоже нет.
+    window.__homeUrl = '../../index.html';
+    window.__lbEndpoint = 'https://script.google.com/macros/s/AKfycbz47A5KW2B9i_Jwfd-rfH3Z2pC9OjH08mGlOCXxc2-RXTxISDg9bNsDWgajYswVnLvPyA/exec';
+  </script>
+
+  <!-- Модульная версия работает только по http(s): браузер не грузит ES-модули
+       с file://. Если страницу открыли двойным щелчком из папки, скрипт выше
+       не выполнится, и человек увидит объяснение вместо пустого экрана.
+       В сборку одним файлом этот блок не попадает: там модулей нет. -->
+  <div id="file-hint" class="crash" hidden>
+    <div class="panel">
+      <h2 class="panel-title">Страница открыта из папки</h2>
+      <p class="funding-note">Браузер не загружает модули с диска — это ограничение
+        безопасности, одинаковое в Safari и в Chrome. Открыть игру можно двумя способами:</p>
+      <p class="funding-note">1. Открыть <code>dist/novograd-ecosystem-simulator-v…html</code> — та же игра одним
+        файлом, она работает прямо из папки.<br>
+        2. Запустить локальный сервер: <code>npm start</code> в корне проекта.</p>
+    </div>
+  </div>
+  <script>
+    // Модуль не загрузился — показываем объяснение вместо пустой страницы.
+    // По сети модули могут ехать дольше секунды, поэтому подсказка не только
+    // появляется, но и прячется обратно, если игра всё-таки загрузилась.
+    (function () {
+      var hint = document.getElementById('file-hint');
+      var gameUp = function () {
+        return document.querySelector('#kpis .kpi') || document.querySelector('.crash:not([hidden])');
+      };
+      var delay = location.protocol === 'file:' ? 600 : 4000;
+      setTimeout(function tick() {
+        if (gameUp()) { hint.hidden = true; return; }
+        hint.hidden = false;
+        setTimeout(tick, 1000);
+      }, delay);
+    })();
+  </script>
+  <!-- only-modular:end -->
+</body>
+</html>

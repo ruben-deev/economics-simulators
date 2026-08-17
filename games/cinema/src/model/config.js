@@ -10,6 +10,15 @@
 export const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 export const CONFIG = {
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // Числа свои: у стриминга крупная выручка и месячный шаг.
+  finance: {
+    saturationShare: 0.02,       // выручки в месяц до «половины» силы
+    saturationFloor: 1_000_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,          // сколько снимает полная команда
+    roundGain: 0.20,
+  },
   monthsTotal: 36,          // партия — три года
   startCash: 4_000_000_000, // деньги инвестора на старте
 
@@ -44,6 +53,18 @@ export const CONFIG = {
   // прайс работал не как цена, а как переключатель тарифа.
   adTierCeiling: 0.72,
 
+  // Насколько премиальный выбор новичка чувствует собственную цену тарифа
+  // (множитель к эластичности сегмента). 0 — прежний мир, где спрос видел
+  // только смесь listPrice и оптимум прайса лежал на упоре 999. Замер
+  // аудита 2026-08: при 1.0 внутренний оптимум есть, но студийная опора
+  // разоряется на собственной цене; при 0.6 упор исчезает, но верх кривой
+  // плоский. 0.8 — середина: см. срезы в комментарии к LEVERS.priceNew.
+  premiumChoiceElasticity: 0.8,
+
+  // Выпуклость раздражения рекламой: pain = (adLoad/refAdLoad)^exponent.
+  // 1.0 — прежний линейный мир с оптимумом нагрузки в нуле.
+  adPainExponent: 1.6,
+
   // Какая доля действующих подписчиков, готовых к годовому тарифу, реально
   // переходит на него за месяц. Новичку решать проще: он и так выбирает.
   annualUpgradeRate: 0.28,
@@ -56,6 +77,9 @@ export const CONFIG = {
 
   // --- Реклама ---
   cpm: 640,                   // ₽ за 1000 показов
+  // Сезонность рекламного рынка: зимние бюджеты дороже летних.
+  // Совпадает по фазе с сезоном просмотра — зимой и смотрят, и платят больше.
+  cpmSeason: { winter: 1.25, spring: 0.95, summer: 0.75, autumn: 1.1 },
   adsPerHour: 4,              // сколько роликов помещается в час при нагрузке 1 мин/час
   refAdLoad: 4,               // эталонная рекламная нагрузка, мин/час
   // Рекламодателей конечное число. Столько показов в месяц — половина скидки
@@ -127,6 +151,32 @@ export const CONFIG = {
   // Это то, чего лицензией не купишь: у конкурента ровно те же лицензии.
   exclusivePull: 1.15,
   refExclusiveHours: 260,     // взвешенных часов своего для «половины» эффекта
+
+  // --- Совместный мегахит с конкурентом ---
+  // Единственное решение в игре, где рынок не делится, а растёт. Проект
+  // снимается вскладчину: каждый платит половину, часы получают оба — то
+  // есть предпочтение зрителя не сдвигается никуда, зато в категорию
+  // приходят те, кто вообще не подписывался. Кому это выгодно, зависит от
+  // того, кто заберёт большую долю прироста, — и это и есть урок.
+  coProduction: {
+    minMonth: 6,              // раньше о таком не договариваются
+    scale: 'season',          // масштаб проекта: только большой
+    costMult: 1.8,            // мегахит дороже обычного сезона
+    yourShare: 0.5,           // ваша половина бюджета
+    months: 7,                // производство дольше обычного
+    hoursMult: 1.6,           // и часов в нём больше
+    qualityFloor: 1.15,       // такие проекты не проваливаются: две команды и два бюджета
+    // Замер на 24 кодах партии (первый, на восьми, обманул: разброс по
+    // партиям шире самого эффекта). При 14% лучшая опора получала +26…34%
+    // медианы — это решает партию, а не «чувствуется». При 5% медиана
+    // +10…15%, и это при том, что в плюс выходит примерно половина партий:
+    // проект остаётся ставкой, а не улучшением.
+    marketLift: 0.05,         // насколько вырастает потолок КАТЕГОРИИ
+    liftMonths: 18,           // и на сколько месяцев (потом эффект тает)
+    liftDecay: 0.04,          // затухание после окончания окна
+    rivalAwareness: 0.35,     // насколько общий хит поднимает узнаваемость партнёра
+    rivalBuzz: 1.4,           // и сколько шума достаётся ему в месяц премьеры
+  },
   // Свободный рынок делится по привлекательности: при паритете каждому по
   // половине. База поднята вдвое, потому что раньше весь приток шёл вам одному.
   trialRate: 0.115,
@@ -225,7 +275,7 @@ export const SEGMENTS = [
     loyalty: 0.85,             // множитель базового оттока (меньше — лояльнее)
     hint: {
       ru: 'Самый большой сегмент. Приходит на громкую премьеру и уходит, когда её досмотрел. Считает каждый рубль.',
-      en: 'The biggest segment. Arrives for a loud premiere and leaves once it is finished. Counts every rouble.',
+      en: 'The biggest segment. Arrives for a loud premiere and leaves once it is finished. Counts every penny.',
     },
   },
   {
@@ -270,7 +320,7 @@ export const SEGMENTS = [
     loyalty: 1.30,
     hint: {
       ru: 'Готовы терпеть рекламу вместо оплаты, но уходят при первой скуке. Живут на бесплатном тарифе и в хайпе.',
-      en: 'Happy to trade ads for money, but they leave the moment they are bored. They live on the ad tier and on hype.',
+      en: 'Happy to sit through ads instead of paying, but they leave the moment they are bored. They live on the ad tier and on hype.',
     },
   },
 ];
@@ -361,11 +411,37 @@ export const GENRES = [
 
 export const LEVERS = [
   {
+    key: 'finance',
+    group: 'infra',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '$/mo' },
+    min: 0, max: 40_000_000, step: 1_000_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: комиссии платёжных систем, списания, штрафы, неразнесённая административка — всё это уходит в «прочие расходы». Сильная режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: payment commissions, write-offs, penalties, unallocated admin — all of it lands in “miscellaneous”. A strong one cuts that line and packages the company better for a round. The series difficulty changes only its price.',
+    },
+  },
+  {
     key: 'priceNew',
     group: 'money',
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 99, max: 999, step: 10, def: 399,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика цены острая
+    // (замер: 449 -> 24.5, 499 -> 40.9, 549 -> 35.8 млрд), и дискретизация
+    // тихо срезала бы верх стратегии. Режимы ставят значение, точное
+    // значение по-прежнему набирается ползунком.
+    policyMode: 'preset',
+    policy: [
+      { v: 249, label: { ru: 'Вход рублём', en: 'Cheap entry' },
+        note: { ru: 'Дешевле рынка: подписываются охотно, но каждый приносит мало, и поднять цену этой базе потом будет отдельным решением с оттоком.', en: 'Below market: people sign up readily but each brings little, and raising the price for that base later is a separate decision with churn attached.' } },
+      { v: 399, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: конкурируете каталогом и премьерами, а не рублём.', en: 'The same as your rival: you compete on catalogue and premieres, not on price.' } },
+      { v: 499, label: { ru: 'Уверенная', en: 'Confident' },
+        note: { ru: 'Выше рынка: подписка окупает контент быстрее, но каталог обязан это оправдывать — иначе новые не приходят.', en: 'Above market: the subscription pays back the content faster, but the catalogue has to justify it — otherwise new sign-ups dry up.' } },
+      { v: 649, label: { ru: 'Премиум', en: 'Premium' },
+        note: { ru: 'Дорого и штучно: приходят немногие, зато платят как за кино. Годится только с сильными оригиналами.', en: 'Expensive and selective: few come, but they pay cinema money. Only works with strong originals.' } },
+    ],
     tip: {
       ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',
       en: 'The price new subscribers sign up at. Your existing base keeps paying what it signed at — moving them to the new price is a separate decision, and some of them will leave over it.',
@@ -375,7 +451,7 @@ export const LEVERS = [
     key: 'priceAds',
     group: 'money',
     label: { ru: 'Цена с рекламой', en: 'Ad-tier price' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 499, step: 10, def: 149,
     tip: {
       ru: 'Дешёвый тариф приводит тех, кто иначе не заплатил бы вообще, и переманивает часть тех, кто заплатил бы полную цену. Это управление каннибализацией, а не «широкая линейка».',
@@ -388,6 +464,17 @@ export const LEVERS = [
     label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 40, step: 5, def: 0, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Только помесячно', en: 'Monthly only' },
+        note: { ru: 'Никаких годовых: выручка ровная, деньги приходят по мере просмотра.', en: 'No annual plans: revenue is even, money arrives as people watch.' } },
+      { v: 5, label: { ru: 'Мягкая', en: 'Gentle' },
+        note: { ru: 'Небольшая скидка: годовых немного, а те, кто перешёл, уходят заметно реже.', en: 'A small discount: few switch, and those who do churn noticeably less.' } },
+      { v: 15, label: { ru: 'Заметная', en: 'Real' },
+        note: { ru: 'Год вперёд берут охотно: касса сегодня, но цена этих людей зафиксирована и под повышения не попадёт.', en: 'People take the year willingly: cash today, but their price is locked and exempt from any rise.' } },
+      { v: 30, label: { ru: 'Агрессивная', en: 'Aggressive' },
+        note: { ru: 'Заём у собственной будущей выручки: деньги сейчас, тонкая выручка потом весь следующий год.', en: 'A loan against your own future revenue: cash now, thin revenue for the whole year after.' } },
+    ],
     tip: {
       ru: 'Годовая подписка приносит деньги сразу за двенадцать месяцев и защищает от оттока — но фиксирует цену и не попадает под повышения. Это заём у собственной будущей выручки.',
       en: 'An annual plan brings twelve months of cash at once and shields you from churn — but it locks the price and is exempt from any rise. It is a loan against your own future revenue.',
@@ -399,9 +486,20 @@ export const LEVERS = [
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Без рекламы', en: 'Ad-free' },
+        note: { ru: 'Чистый просмотр: вторая статья выручки закрыта, зато никого не раздражаете.', en: 'Clean viewing: your second revenue line is shut, but nobody is annoyed.' } },
+      { v: 2, label: { ru: 'Щадящая', en: 'Light' },
+        note: { ru: 'Пара минут в час: деньги появляются, отток почти не двигается.', en: 'A couple of minutes an hour: money appears while churn barely moves.' } },
+      { v: 6, label: { ru: 'Плотная', en: 'Heavy' },
+        note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее. Киноманы уходят первыми.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster. Cinephiles leave first.' } },
+      { v: 12, label: { ru: 'Как у бесплатных', en: 'Free-TV level' },
+        note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
+    ],
     tip: {
-      ru: 'Вторая статья выручки. Растёт линейно, а раздражение — быстрее: киноманы уходят первыми, молодёжь терпит дольше всех.',
-      en: 'Your second revenue line. It grows linearly while the irritation grows faster: cinephiles leave first, young viewers put up with it longest.',
+      ru: 'Вторая статья выручки. Пара минут в час почти не замечается, дальше раздражение растёт быстрее денег: киноманы уходят первыми, молодёжь терпит дольше всех. Показы сезонные: зимой CPM на четверть дороже, летом — на четверть дешевле.',
+      en: 'Your second revenue line. A couple of minutes an hour goes almost unnoticed; past that, irritation grows faster than the money — cinephiles leave first, the young put up with it longest. Impressions are seasonal: winter CPMs run about a quarter dearer, summer a quarter cheaper.',
     },
   },
 
@@ -409,8 +507,13 @@ export const LEVERS = [
     key: 'licensing',
     group: 'growth',
     label: { ru: 'Закупка лицензий', en: 'Licensing budget' },
-    unit: { ru: '₽', en: '₽' },
-    min: 0, max: 500_000_000, step: 10_000_000, def: 0,
+    unit: { ru: '₽', en: '$' },
+    // Максимум поднят с 500 млн: оптимум закупки лежал ровно на упоре
+    // ползунка, а падающая сторона кривой (перегретый индекс прав) игроку
+    // была не видна. Замер аудита 2026-08: 500 млн — 13.2 млрд итога,
+    // 650 — 8.4, 800 — 7.1. Перебор должен быть доступен, иначе урок
+    // «платишь дороже сам себе» останется за краем шкалы.
+    min: 0, max: 800_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Каталог появляется сразу, но истекает 4.5% в месяц, лежит и у конкурента и почти не считается новинкой. Когда за права торгуетесь вы оба, они дорожают для обоих.',
       en: 'The catalogue appears at once, but 4.5% expires monthly, the rival has the same titles, and it barely counts as new. When you both bid for rights, they get more expensive for both.',
@@ -420,7 +523,7 @@ export const LEVERS = [
     key: 'brandMarketing',
     group: 'growth',
     label: { ru: 'Маркетинг бренда', en: 'Brand marketing' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 300_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
@@ -465,7 +568,7 @@ export const LEVERS = [
     key: 'tech',
     group: 'infra',
     label: { ru: 'Технологии и платформа', en: 'Technology' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 120_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: дешевле час трафика и выше качество производимых проектов. Окупается не сразу и не сама.',
@@ -476,7 +579,7 @@ export const LEVERS = [
     key: 'rnd',
     group: 'infra',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 90_000_000, step: 5_000_000, def: 0,
     tip: {
       ru: 'Команда без данных бесполезна ровно так же, как данные без команды: качество алгоритмов — среднее геометрическое того и другого.',
@@ -486,9 +589,33 @@ export const LEVERS = [
 ];
 
 export const LEVER_GROUPS = [
-  { id: 'money', label: { ru: 'Деньги и цена', en: 'Money and price' }, open: true },
-  { id: 'growth', label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' }, open: true },
-  { id: 'infra', label: { ru: 'Инфраструктура', en: 'Infrastructure' }, open: false },
+  {
+    id: 'money',
+    label: { ru: 'Деньги и цена', en: 'Money and price' },
+    desc: {
+      ru: 'Две статьи выручки — подписка и реклама — и то, как вы их сочетаете. Цена берётся с новых, действующая база платит свою.',
+      en: 'Two revenue lines — subscription and advertising — and how you combine them. The price applies to new sign-ups; your existing base keeps paying what it signed at.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Каталог и маркетинг', en: 'Catalogue and marketing' },
+    desc: {
+      ru: 'Чем наполнена полка и знает ли о ней город. Лицензии дешевле и быстрее, но тают; своё производство дороже и медленнее, зато остаётся навсегда.',
+      en: 'What fills the shelf and whether the city knows about it. Licences are cheaper and faster but expire; your own production is dearer and slower but stays for good.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Инфраструктура', en: 'Infrastructure' },
+    desc: {
+      ru: 'Настраивается один раз и почти не трогается: качество картинки, платформа, данные.',
+      en: 'Set once and rarely touched: picture quality, platform, data.',
+    },
+    open: false,
+  },
 ];
 
 // ============================================================================

@@ -298,17 +298,44 @@ Each segment splits itself between the paid and the ad-supported tier:
 
 ```
 saving      = (ad_free_price − ad_tier_price) / ad_free_price
-ad_pain     = (ad_load / refAdLoad) / tolerance(segment)
+ad_pain     = (ad_load / refAdLoad)^1.6 / tolerance(segment)   — convex
 ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)
 ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)
 ```
 
-**The ceiling on the ad tier came out of measurement.** Without it the list price stopped
-being a price and became a switch: crank it to a thousand and you simply herded almost
-everyone onto the cheap tier, and demand barely noticed — the price optimum sat in the top
-third of the slider and that whole third was flat. Some viewers will not watch with ads at
-any price, and every segment has its own limit: cinephiles 32%, families 58%, the mass
-audience 83%, the young 90%.
+Ad pain is convex (2026-08 audit): a couple of minutes an hour goes almost unnoticed,
+and past that every extra spot annoys more than the previous one. With linear pain the
+load optimum sat at zero on every anchor — there was no lever; with convexity each
+anchor has an interior optimum at 2–4 min/hr, and heavy load is honestly expensive —
+through irritation and because the cheap tier stops counting as a way in (see Inflow).
+
+**The ceiling on the ad tier came out of measurement.** Some viewers will not watch with
+ads at any price, and every segment has its own limit: cinephiles 32%, families 58%, the
+mass audience 83%, the young 90%.
+
+**The cheap tier's weight in the entry price is intrinsic, not actual** (2026-08 audit).
+Demand used to look at a price blend weighted by the actual ad-tier share — and that
+share itself grows with the price gap: cranking the list price inflated the cheap tier's
+share, the blend got cheaper, and demand ROSE. The cheap blend printed demand faster
+than ARPU fell: the price optimum sat pinned at 999 on every anchor (+102% for the
+mid anchor). Now the weight is the share of the segment that considers watching with
+ads at all, and it fades with ad load: a tier you cannot stand to watch does not exist
+in a newcomer's eyes. The price gap helps entry only as far as the segment tolerates
+ads — the loop is broken, and price has an honest interior optimum (measured: peak at
+449, minus two-thirds of the outcome at 999).
+
+**The premium choice feels the full list price.** A newcomer taking the ad-free tier
+judges it by its own price, not by the blend:
+
+```
+premium_take = clamp((399 / premium_price)^(elasticity × 0.8), 0.10, 1)
+premium_new  = converted × (1 − ad_share) × premium_take
+downgraded   = (1 − premium_take) × (1 − ad_share) × converted
+               × clamp(0.5 × tolerance, 0, 0.9)   — onto the ad tier
+```
+
+Those scared off the premium tier partly step down to the cheap one (as far as the
+segment tolerates ads); the rest do not sign up at all.
 
 Hence a non-obvious consequence: **cutting the cheap tier's price poaches people from
 your own expensive one**. Cannibalisation is not a side effect, it is the main mechanism.
@@ -322,9 +349,11 @@ Inflow splits into two independent questions that must not be confused:
 2. **Which of the two gets them.** That is decided by preference (see section 6).
 
 ```
-list_price  = premium × (1 − ad_share) + ad_price × ad_share
+ad_weight   = clamp(0.5 × tolerance, 0.15, 0.75)
+              × clamp(1 − 0.12 × max(0, ad_pain − 1), 0, 1)
+entry_price = premium × (1 − ad_weight) + ad_price × ad_weight
 paid_price  = lockedPrice × (1 − ad_share) + ad_price × ad_share
-list_factor = (399 / list_price) ^ elasticity(segment)   — for new sign-ups
+list_factor = (399 / entry_price) ^ elasticity(segment)  — for new sign-ups
 paid_factor = (399 / paid_price) ^ elasticity(segment)   — for the existing base
 appeal      = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
 ad_penalty  = 1 − 0.16 × ad_pain × ad_share × (1 − relief)
@@ -412,12 +441,15 @@ bandwidth bill.
 subscriptions = ad_free_subs × premium_price + ad_subs × ad_price
 impressions   = ad_hours × ad_load × 2 × adaptive_ads_yield
 glut          = impressions / (impressions + adInventorySaturation)
-cpm           = base cpm × (1 − 0.45 × glut)
+cpm           = base cpm × cpm_season × (1 − 0.45 × glut)
 advertising   = impressions / 1000 × cpm
 revenue       = subscriptions + advertising
 ```
 
-`cpm = ₽480`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
+`base cpm = ₽640`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
+The ad market is seasonal (2026-08 audit): winter ×1.25, autumn ×1.1, spring ×0.95,
+summer ×0.75 — the same spot earns two-thirds more in winter than in July, turning
+ad load from set-and-forget into a tactical decision.
 
 There is a finite number of advertisers: the more impressions you dump, the cheaper each
 one gets. Without this, "crank the price and herd everyone onto the ad tier" was a free
@@ -457,6 +489,12 @@ exists. The right answer to "should I raise the price" depends on what the rival
 doing now and what he can still afford.
 
 ### His stances
+
+Viewers judge the rival with the same entry-price formula as you: two tiers with
+the segment's intrinsic weights, faded by his ad load (2026-08 audit; the old
+×0.82 eyeball multiplier acted as a hidden handicap in your favour). The one
+declared asymmetry: his ad tier is priced at 45% of his list price against your
+~37% — a corporation discounts its cheap tier less aggressively.
 
 The rival picks a stance from his market share and his cash runway, and holds it for
 **at least four months**. The hysteresis is not decoration: an opponent who changes
@@ -535,6 +573,56 @@ cannot be fully cancelled — sometimes the right move is not to answer at all b
 release into a quiet month and collect the whole effect.
 
 The season scales both sides: `winter 1.18`, `spring 1.00`, `autumn 1.06`, `summer 0.84`.
+
+---
+
+## 6d. The joint mega-hit: the one decision that grows the market
+
+Everything else in this game is a split: inflow is «how many people will
+subscribe at all» × «which of the two gets them». A joint project hits the
+first multiplier and leaves the second alone.
+
+**How it works.** Once per game, from month 6, you can shoot a mega-project
+together: you pay half the budget and hold a slot for seven months. At the
+premiere both services get the hours — the viewer's preference does not move.
+The ceiling does: every segment's `potential` grows by 5% for 18 months, then
+the bonus decays by 4 percentage points a month.
+
+**What you pay besides money.** It is his hit too: the rival's awareness jumps
+(35% of the remaining headroom) plus premiere buzz, and a joint project
+legitimises a weak partner. The bigger market then splits by the same
+preference — most of the growth goes to whoever the viewer was already choosing.
+
+**Measured** (24 game codes, medians, bankruptcy = 0; three anchors differing
+in how well you play). Next to each median is how many of the twenty-four
+games the project actually improved: the spread here is wider than the effect,
+and without that counter the median misleads.
+
+| position | no project | launch at 6 | at 12 | at 20 |
+|---|---|---|---|---|
+| leading (a spendthrift game) | ₽12.30bn | −8.0% (14/24) | +2.0% (15/24) | 0.0% (17/24) |
+| level (the best anchor) | ₽30.04bn | +9.5% (10/24) | **+14.7% (12/24)** | 0.0% (13/24) |
+| trailing | ₽10.25bn | +2.8% (15/24) | −4.4% (8/24) | +2.1% (7/24) |
+
+Read it as: **this is a bet, not an upgrade.** A solid game mid-way gains most
+from it, a trailing one gains almost nothing, and by month 20 the expansion
+window cannot pay back before the finale. It pays off in about half the games,
+but the wins are larger than the losses — hence the positive median. It never
+rescues a bad strategy: the spendthrift anchor stays below the best anchor
+without it.
+
+The expansion was cut from 14% to 5% after re-checking on 24 codes: at 14% the
+best anchor gained +26…34% of median, which decides the game rather than being
+felt in it.
+
+**What the decomposition showed.** Switching parts off one at a time: without
+the market expansion the best anchor's median falls from +15% to +7% at month
+12 and goes negative at month 6 — so what works is the category growth, not the cheap co-financed
+content (paying full price instead of half costs only 1–3 percentage points).
+The wartime truce was removed from the mechanic: measurement showed it is no
+gift — a rival who is not fighting on price quietly builds its catalogue, and
+that is worse for the player, not better. A mechanic whose effect contradicts
+its description cannot stay.
 
 ---
 

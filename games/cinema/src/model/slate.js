@@ -121,6 +121,34 @@ export function qualityEstimate(project) {
   };
 }
 
+/**
+ * Совместный с конкурентом мегапроект. Вы платите половину бюджета и
+ * получаете весь контент — как и он: часы достаются обоим, поэтому
+ * предпочтение зрителя не сдвигается. Растёт другое — сама категория.
+ */
+export function coProduce(genreId, talentIndex, conf) {
+  const g = genreById(genreId) ?? GENRES[0];
+  const total = projectPrice(genreId, conf.scale, talentIndex) * conf.costMult;
+  return {
+    id: nextId++,
+    genre: genreId,
+    scale: conf.scale,
+    segment: null,                  // мегахит снимают не под сегмент
+    joint: true,                    // метка совместного проекта
+    monthsLeft: conf.months,
+    monthsTotal: conf.months,
+    monthsHeld: 0,
+    hours: g.hours * scaleById(conf.scale).hours * conf.hoursMult,
+    // Две команды и два бюджета: такие проекты не проваливаются — но и
+    // сюрпризом не становятся, вся ставка здесь на размер, а не на удачу.
+    quality: conf.qualityFloor,
+    totalCost: total * conf.yourShare,
+    monthlyCost: Math.round((total * conf.yourShare) / conf.months),
+    paid: 0,
+    status: 'production',
+  };
+}
+
 /** Шум премьеры с учётом масштаба, качества и того, сколько проект пролежал. */
 export function releaseBuzz(project) {
   const g = genreById(project.genre) ?? GENRES[0];

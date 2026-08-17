@@ -56,6 +56,17 @@ export const CONFIG = {
   // Больше — но не бесконечно: иначе прицеливание делает скидку бесплатной.
   targetingLeverage: 2.0,
 
+  // Сделка с крупной сетью (событие big_chain): сеть подключается на своей
+  // льготной ставке, и скидка касается ТОЛЬКО её заказов. Прежняя реализация
+  // резала комиссию всему городу навсегда (−0.8 п.п. ≈ 12–22% итога) и
+  // расходилась с собственным текстом события «льготная комиссия 10%» —
+  // согласие не выигрывало никогда (0/72).
+  chain: {
+    rate: 0.10,        // ставка сети — столько она платит со своих заказов
+    popularity: 2.0,   // заказов на ресторан сети больше, чем на средний
+    fans: 0.04,        // фанаты сети: постоянная прибавка спроса, пока сеть на борту
+  },
+
   maxMarketShare: 0.90,       // потолок доли: часть города к нам не придёт никогда
   competitorLock: 0.6,         // какая доля «силы конкурента» полностью недоступна вам
   // Конкурент рядом, и его цена за нашей не идёт. Пока мы стоим как рынок,
@@ -73,6 +84,18 @@ export const CONFIG = {
 
   // --- Операционные издержки ---
   paymentFeeRate: 0.018,       // эквайринг, % от суммы платежа клиента
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // Числа свои: у доставки тонкая маржа и недельный шаг, поэтому строка
+  // «прочих» здесь меньше, чем у холдинга в НОВОГРАДЕ.
+  finance: {
+    saturationShare: 0.02,       // выручки в неделю до «половины» силы
+    saturationFloor: 60_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,          // сколько снимает полная команда
+    paymentCut: 0.006,           // и насколько сбивает ставку эквайринга
+    roundGain: 0.20,             // упаковка компании к раунду
+    adviceAt: 0.55,
+  },
   supportCostPerOrder: 14,     // поддержка + возвраты на заказ, ₽
   supportTechDiscount: 9,      // на сколько ₽ снижает поддержку максимальный уровень техно
   // Офис и менеджмент. Разработка и серверы вынесены отдельными статьями:
@@ -163,7 +186,11 @@ export const CITIES = [
     name: { ru: 'Старгород', en: 'Stargorod' },
     home: false,
     entryCost: 30_000_000,
-    weeklyFixed: 1_200_000,
+    // Офис города: был 1.2 млн/нед. Замер показал, что второй город не
+    // окупался НИКОГДА — ни при каком сроке входа и ни при какой политике:
+    // 82% от домашней партии при входе на 16-й неделе и 78% на 22-й. Половина
+    // провала приходилась ровно на этот офис.
+    weeklyFixed: 600_000,
     hint: {
       ru: 'Соседний город-миллионник. Рынок больше половины новоградского, но там уже пять лет работает местный сервис «СтароЕд» — часть города вы не получите никогда, а каждого клиента придётся отбивать.',
       en: 'A neighbouring city of a million people. The market is more than half the size of Novograd — but a local service has been running there for five years: part of the city will never be yours, and every customer has to be won over.',
@@ -225,7 +252,7 @@ export const DISTRICTS = [
     restaurantPool: 120, launchCost: 1_200_000, weeklyFixed: 180_000,
     hint: {
       ru: 'Студенты: заказывают часто, но крайне чувствительны к цене. Рай для промо, ад для маржи.',
-      en: 'Students order often and count every rouble. Heaven for promotions, hell for margin.',
+      en: 'Students order often and count every penny. Heaven for promotions, hell for margin.',
     },
   },
   {
@@ -236,8 +263,8 @@ export const DISTRICTS = [
     elasticity: 1.8, baseFreq: 0.30, competitor: 0.15,
     restaurantPool: 90, launchCost: 1_000_000, weeklyFixed: 200_000,
     hint: {
-      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота.',
-      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency.',
+      ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота. Плечо 6 км: пока не вложились в технологии и не подняли сбор, район съедает итог, а не добавляет.',
+      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency. A 6 km leg: until you have invested in technology and raised the fee, this district eats into the result rather than adding to it.',
     },
   },
   {
@@ -248,8 +275,8 @@ export const DISTRICTS = [
     elasticity: 0.8, baseFreq: 0.30, competitor: 0.10,
     restaurantPool: 70, launchCost: 1_600_000, weeklyFixed: 240_000,
     hint: {
-      ru: 'Богатые коттеджи. Цену не замечают, но плечо огромное — курьер делает мало заказов.',
-      en: 'Wealthy houses that never look at the price — but the delivery legs are enormous and couriers barely complete a shift.',
+      ru: 'Богатые коттеджи. Цену не замечают, но плечо 9 км — курьер делает мало заказов, а базовые 38 минут уже за эталоном. Это район поздней игры: сначала технологии и цена, потом сюда.',
+      en: 'Wealthy houses that never look at the price — but the leg is 9 km: a courier completes few orders, and the base 38 minutes are already past the reference. A late-game district: technology and pricing first, this place second.',
     },
   },
 
@@ -257,13 +284,20 @@ export const DISTRICTS = [
   // Рынок в сумме ~55% новоградского, но конкурент здесь не «один из», а
   // хозяин: у него выше доля запертых клиентов, и каждый район стартует
   // с нулевой узнаваемости — маркетинг придётся делить на два города.
+  //
+  // Недельные фиксы районов урезаны на 40% вместе с офисом города: замер
+  // показал, что расширение не окупалось ни при каком сроке входа, и оба
+  // фикса вместе съедали ровно ту маржу, на которую падал множитель оценки
+  // (9.0% -> 3.3% при выручке +31%). Разовые запуски не трогали: платить за
+  // вход в город один раз — честная цена решения, а вот платить за него
+  // каждую неделю до конца партии было приговором.
   {
     id: 'st-center',
     city: 'stargorod',
     name: { ru: 'Старгород · Центр', en: 'Stargorod · Downtown' },
     potential: 90_000, income: 1.25, distanceKm: 2.6, baseTime: 20,
     elasticity: 1.1, baseFreq: 0.55, competitor: 0.80,
-    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 400_000,
+    restaurantPool: 260, launchCost: 4_500_000, weeklyFixed: 240_000,
     hint: {
       ru: 'Витрина чужого города: экономика заказа хорошая, но «СтароЕд» держит центр крепче всего.',
       en: 'The rival’s shop window: order economics are good, but the local incumbent holds downtown hardest.',
@@ -275,7 +309,7 @@ export const DISTRICTS = [
     name: { ru: 'Старгород · Восточный', en: 'Stargorod · Eastside' },
     potential: 140_000, income: 0.95, distanceKm: 3.8, baseTime: 24,
     elasticity: 1.5, baseFreq: 0.42, competitor: 0.55,
-    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 320_000,
+    restaurantPool: 220, launchCost: 2_800_000, weeklyFixed: 190_000,
     hint: {
       ru: 'Главный спальный массив Старгорода — основной объём второго города, если сумеете его разбудить.',
       en: 'Stargorod’s main residential belt — the second city’s volume, if you can wake it up.',
@@ -287,10 +321,10 @@ export const DISTRICTS = [
     name: { ru: 'Старгород · Портовый', en: 'Stargorod · Harbour' },
     potential: 80_000, income: 0.85, distanceKm: 5.5, baseTime: 29,
     elasticity: 1.7, baseFreq: 0.33, competitor: 0.35,
-    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 260_000,
+    restaurantPool: 130, launchCost: 1_800_000, weeklyFixed: 155_000,
     hint: {
       ru: 'Рабочие кварталы у воды: конкурент сюда не дошёл, но плечо длинное и чек скромный.',
-      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the ticket is modest.',
+      en: 'Working-class blocks by the water: the incumbent never bothered — but the legs are long and the baskets are modest.',
     },
   },
   {
@@ -299,7 +333,7 @@ export const DISTRICTS = [
     name: { ru: 'Старгород · Слобода', en: 'Stargorod · Old Quarter' },
     potential: 60_000, income: 1.30, distanceKm: 7.5, baseTime: 34,
     elasticity: 0.95, baseFreq: 0.32, competitor: 0.28,
-    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 270_000,
+    restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 160_000,
     hint: {
       ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
       en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
@@ -315,7 +349,7 @@ export const LEVERS = [
   {
     key: 'deliveryFee',
     label: { ru: 'Стоимость доставки', en: 'Delivery fee' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 399, step: 10, def: 149,
     tip: {
       ru: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
@@ -335,7 +369,7 @@ export const LEVERS = [
   {
     key: 'courierPay',
     label: { ru: 'Оплата курьеру за заказ', en: 'Courier pay per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 60, max: 400, step: 10, def: 180,
     tip: {
       ru: 'Основная переменная себестоимость. Мало платите — курьеры уходят, растёт время доставки и падает удержание клиентов.',
@@ -355,7 +389,7 @@ export const LEVERS = [
   {
     key: 'marketing',
     label: { ru: 'Маркетинг', en: 'Marketing' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 5_000_000, step: 100_000, def: 0,
     tip: {
       ru: 'Растит узнаваемость → приток новых клиентов. Работает с убывающей отдачей и «забывается» ~5% в неделю.',
@@ -365,7 +399,7 @@ export const LEVERS = [
   {
     key: 'promo',
     label: { ru: 'Промо-скидка на заказ', en: 'Promo discount per order' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 300, step: 10, def: 0,
     tip: {
       ru: 'Скидка клиенту за ваш счёт. Мгновенно поднимает спрос и убивает маржу — классическая ловушка «покупки роста».',
@@ -375,7 +409,7 @@ export const LEVERS = [
   {
     key: 'weatherBonus',
     label: { ru: 'Надбавка за плохую погоду', en: 'Bad-weather bonus' },
-    unit: { ru: '₽', en: '₽' },
+    unit: { ru: '₽', en: '$' },
     min: 0, max: 150, step: 10, def: 0,
     tip: {
       ru: 'Гарантированная доплата за заказ в плохую погоду. Треть платится и в ясные недели — обещание входит в ставку. Главное: включённая навсегда надбавка становится привычной и в настоящий шторм уже никого не выводит. Включайте её по прогнозу и выключайте в ясные недели.',
@@ -385,7 +419,7 @@ export const LEVERS = [
   {
     key: 'sales',
     label: { ru: 'Подключение ресторанов', en: 'Restaurant acquisition' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Бюджет отдела продаж. Без ресторанов нет ассортимента, а без ассортимента клиенты не приходят вообще.',
@@ -395,7 +429,7 @@ export const LEVERS = [
   {
     key: 'tech',
     label: { ru: 'Технологии и логистика', en: 'Technology and logistics' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 2_000_000, step: 50_000, def: 0,
     tip: {
       ru: 'Накопительная инвестиция: улучшает маршрутизацию (больше заказов на курьера), ускоряет доставку и удешевляет поддержку.',
@@ -405,11 +439,21 @@ export const LEVERS = [
   {
     key: 'rnd',
     label: { ru: 'Data Science', en: 'Data science' },
-    unit: { ru: '₽/нед', en: '₽/wk' },
+    unit: { ru: '₽/нед', en: '$/wk' },
     min: 0, max: 1_500_000, step: 50_000, def: 0,
     tip: {
       ru: 'Команда, которая строит алгоритмы: динамическое ценообразование, персональные скидки, прогноз спроса. Без данных бесполезна, а данные копятся только от заказов.',
       en: 'The team that builds your algorithms: surge pricing, targeted discounts, demand forecasting. Useless without data — and data only accumulates from completed orders.',
+    },
+  },
+  {
+    key: 'finance',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/нед', en: '$/wk' },
+    min: 0, max: 1_500_000, step: 50_000, def: 0,
+    tip: {
+      ru: 'Казначейство, контроль расходов, переговоры с банком. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная сбивает ставку эквайринга, режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, cost control, talking to the bank. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one negotiates the processing rate down, cuts that line and packages the company better for a funding round. The series difficulty changes only its price.',
     },
   },
 ];

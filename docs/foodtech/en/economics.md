@@ -58,6 +58,38 @@ This is a ceiling on reach. Downtown has a competitor strength of 0.5, so at mos
 its 130,000 residents can ever be yours, no matter what you spend on marketing. The lesson:
 market share is limited not only by your budget but by the structure of the market.
 
+### The far districts: geography is bought with speed
+
+The Industrial district (a 6 km leg) and the Suburbs (9 km) are built so that
+ordinary play loses money on them — and that is by design, not an oversight.
+The Suburbs' base 38 minutes are already past the 35-minute reference: the
+district misses the norm before the first traffic jam.
+
+Measured over 24 codes, with four near districts as the base:
+
+| what was added | ordinary fee, little technology | high fee, technology invested |
+|---|---|---|
+| nothing (base) | ₽0.92B | ₽2.56B |
+| + Industrial | ₽0.58B · 51 min · ₽50 per order | ₽2.93B · 37 min · ₽110 |
+| + Suburbs | ₽0.79B · 60 min · ₽139 per order | ₽3.08B · 45 min · ₽200 |
+
+(Re-measured in the 2026-08 audit after the weather, events and goal reworks —
+the absolute values are lower than before, the shape is the same and even
+sharper: with technology a far district now adds rather than merely breaking
+even.)
+
+Note the third figure in each cell: contribution per order is positive in every
+case. What loses money is not the district itself but what it does to the whole
+company's speed — delivery time rises, satisfaction falls, churn grows, and the
+valuation multiple, computed from margin and growth, drags the entire holding
+down rather than a single line of it.
+
+Hence the rule: **a far district is a late purchase.** First the technology that
+cuts time and the fee that pays for the leg, then the geography. Since this is
+by design, it must be visible before the click: both districts' hints name the
+leg and the order of moves, and on the map the leg is drawn as a thread from a
+restaurant to a customer and turns red when the district misses the reference.
+
 ### The second city: Stargorod
 
 When Novograd approaches saturation (around week 20–25 for a played-in strategy),
@@ -72,7 +104,7 @@ Entry is a project, not a checkbox:
   Novograd districts running;
 * **a one-off entry fee** — ₽30M (legal entity, local team, logistics launch),
   paid together with the first district launch; never charged twice;
-* **a city office** — ₽1.2M/wk while at least one district is open;
+* **a city office** — ₽0.6M/wk while at least one district is open;
 * **a promo war** — for 16 weeks after entry the incumbent fights back:
   new-customer inflow in its city is cut by 55% and weekly churn is 3 pp higher;
 * **awareness starts at zero**, and the marketing budget is shared: every rouble
@@ -81,11 +113,37 @@ Entry is a project, not a checkbox:
   dilutes your share, which makes the fourth-quarter goal (45% share) noticeably
   harder after expansion.
 
-Measured on polished reference strategies (8 seeds, taking rounds): entering with
-all four districts on weeks 14–20 adds +28–34% to the mid base's final score and
-+30–36% to the wide base; Eastside alone adds +11–12%; entering on week 34 cannot
-pay back the war and the ramp-up (−11% to +5%). The narrow single-district
-strategy cannot expand at all — the gate demands home coverage.
+**A measurement that overturned the previous one.** This paragraph used to say
+«+28–34% to the mid base's final score» — a conclusion drawn from eight seeds,
+and it turned out to be noise. Over twenty-four game codes, entering Stargorod
+NEVER paid off: 82% of the home-only game when entering on week 16 and 78% on
+week 22, and no entry date or policy changed that.
+
+The decomposition showed where the value went. Revenue from the second city did
+grow (+31% a week), but the margin fell from 9.0% to 3.3% — and the valuation
+multiple is computed from margin and growth, so the falling multiple ate the
+added revenue. The two fixed costs together — the ₽1.2M/wk city office and the
+₽1.25M/wk of district weekly fixed costs — accounted for exactly the 6 pp of
+margin that was missing.
+
+So the fixed costs were cut: the office from ₽1.2M to ₽0.6M a week, and the
+Stargorod districts' weekly fixed costs by 40%. One-off payments were left
+alone: paying once to enter a city is an honest price for the decision, while
+paying for it every week to the end of the game was a death sentence. After the
+change (24 codes, both strategies polished over a grid of staffing, marketing
+and the delivery fee):
+
+| strategy | median | vs home-only |
+|---|---|---|
+| home, four districts | ₽4.24B | 100% |
+| all of Stargorod, entering week 16 | ₽4.18B | 99% |
+| Stargorod downtown only, week 16 | ₽3.56B | 88% |
+| all of Stargorod, entering week 26 | ₽3.63B | 90% |
+
+Expansion has stopped being a mistake and become a bet: on the median it equals
+the home game but with a higher ceiling (upper quartile ₽4.85B against ₽4.45B) —
+and it punishes half-measures and lateness. The narrow single-district strategy
+still cannot expand: the gate demands home coverage.
 
 ---
 
@@ -142,15 +200,24 @@ opposite. Now a permanent bonus is a permanent expense.
 **Habituation.** A bonus that is always on stops being an incentive: habit builds up over
 roughly eight to ten weeks and cuts the bonus's "freshness" to 20% of its power — in a real
 storm it no longer brings anyone extra onto the road. A switched-off bonus is forgotten at
-the same pace. Switching it on by forecast is both cheaper and more effective: on a
-re-optimised reference strategy, the policy "bonus only in heavy weather" measures +2%
-against the best constant, while playing it backwards — "bonus in clear weeks" — loses
-27%. The asymmetry is the lesson: the right timing earns a little, the wrong timing
-costs a lot.
+the same pace. Switching it on with the weather is both cheaper and more effective: on the
+reference strategy, the policy "bonus only in heavy weather" measures +87% against the
+best constant (a median of 2.36bn vs 1.26bn over 24 seeds), while playing it backwards —
+"bonus in clear weeks" — loses 28%. The right timing is rewarded generously and the wrong
+timing is punished. (An earlier measurement showed "+2%": its reaction policy keyed off
+NEXT week's forecast, while the bonus applies to the current — already announced — week.
+A reaction shifted by a week is indistinguishable from a random one, and that is what
+was being measured.)
 
 Economically it is an alternative to keeping spare couriers: permanent excess headcount
 costs money all 52 weeks, while the bonus only costs while it is switched on. With a thin
 roster the forecast-driven bonus wins; with a large buffer it becomes wasted spending.
+
+**With forecast auto-hiring the bonus is redundant** (2026-08 audit). The forecast
+algorithm already sizes the fleet to next week's weather-adjusted demand, and a bonus
+on top pays twice for the same job: a polished strategy with algorithms and no bonus
+measures ₽4.44B, with a heavy-weather reaction — ₽3.19B (−28%). The lesson reads:
+the bonus is a manual capacity tool; once an algorithm runs capacity, do not pay twice.
 
 ---
 
@@ -382,15 +449,19 @@ first thing to check whenever "we will grow into profitability" comes up.
 ### Event decisions are priced by your size
 
 Some weekly events demand a choice, and the expensive options are priced per head:
-paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽350 ×
+paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽200 ×
 your customer base, insurance ₽3,000 × headcount (and the fine for waiting out the
 law, ₽8,000 × the fleet you have on the day it lands). A hundred couriers make the
 strike payment a quarter of a million; fifteen hundred make it nearly four. So events
 have no memorised right answer: measured across three company sizes, the profitable
 option shifts with the state. Generosity is cheap for the small and dear for the
-large; the big chain's discounted commission cuts the other way — a bargain for a
-small city with a hundred restaurants, ruinous for a large one where the discount
-smears across the whole turnover.
+large; the big chain's discounted commission follows the same logic in a different
+currency — your listings: the chain pays 10% only on its own orders, and its share
+of your volume is larger the fewer other restaurants you have. A big marketplace
+barely notices the discount; in a small one the chain is a third of the shopfront
+(measured in the 2026-08 audit: accepting wins 23/72 — previously 0/72, because the
+discount used to cut the citywide commission forever, costing 12–22% of the final
+score).
 
 ---
 

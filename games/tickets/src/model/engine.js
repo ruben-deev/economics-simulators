@@ -28,7 +28,7 @@ import {
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep, infraCost } from '../../../../shared/upkeep.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import {
   seasonOf, eventSeason, demandSeason, rollHit, hitById,
 } from './market.js';
@@ -53,16 +53,55 @@ import {
   crisisById, crisisEffects, resolutionCost, rollCrisis, CRISIS_COOLDOWN,
 } from './crises.js';
 import { neutralModifiers, applyEvent, rollEvent, eventById } from './events.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 export { clamp, organizerById, audienceById };
 
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'biletville') {
+/**
+ * Финансовая команда: сила и цена. Цена — доля месячной выручки: служба
+ * растёт вместе с компанией (см. shared/finance.js).
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].revenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка. С оборота
+// она снимается целиком, поэтому десятые доли процента здесь — деньги.
+export function acquiringRate(state, decisions) {
+  return Math.max(0.008,
+    CONFIG.acquiringRate - CONFIG.finance.acquiringCut * financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'biletville', difficulty = 'normal') {
   const rng = createRng(seed);
   const state = {
     seed,
+    // Уровень сложности — общая настройка набора (shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     month: 0,
     cash: CONFIG.startCash,
     equity: 1,
@@ -602,7 +641,8 @@ export function step(prevState, input = {}) {
   const subscriptionRevenue = connectedCount * decisions.platformFee;
   const revenue = marketplaceRevenue + platformRevenue + subscriptionRevenue;
 
-  const acquiring = gmv * CONFIG.acquiringRate;
+  const acqRate = acquiringRate(state, decisions);
+  const acquiring = gmv * acqRate;
   const supportLoad = ticketsTotal * CONFIG.supportPerTicket
     * clamp(CONFIG.refSupport / Math.max(1, decisions.support), 0.35, 2.4);
   const variableCost = acquiring + supportLoad;
@@ -619,10 +659,16 @@ export function step(prevState, input = {}) {
   // вторая линия поддержки. Аккаунт-менеджеры — отдельный ползунок и другая
   // работа; этот штат в ноль не уведёшь — фикс-кост масштаба.
   const staffCost = orgTotal(state) * CONFIG.staffPerOrg;
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая
+  // административка. Растёт сама вместе с выручкой; режет её не
+  // бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const fixed = CONFIG.hqMonthly + staffCost + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
-    + onboardingSpend + techUpkeep + serverCost;
+    + onboardingSpend + techUpkeep + serverCost + financeBudget + miscCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -827,6 +873,11 @@ export function step(prevState, input = {}) {
     gmvPlatform,
     marketplaceShareOfGmv,
     revenue,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    acquiringRate: acqRate,
     marketplaceRevenue,
     platformRevenue,
     subscriptionRevenue,
@@ -848,6 +899,7 @@ export function step(prevState, input = {}) {
     refundHit,
     installedNow,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
 
     // --- Конкурент ---
@@ -1014,7 +1066,7 @@ export function valuation(state) {
   // из последнего месяца — и обнулив на нём маркетинг и разработку, множитель
   // можно было задрать рывком. См. shared/valuation.js.
   const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -1;
@@ -1035,8 +1087,16 @@ export function valuation(state) {
     * (1 + (state.flags?.valuationBonus ?? 0)));
 }
 
+// Упаковка к раунду: оценку считает рынок, финансовая команда меняет
+// только долю, которую вы отдаёте за те же деньги.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, valuation: terms.pre, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -1099,11 +1159,16 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
     orgShare: last?.orgShare ?? 0,
     gmv: last?.gmv ?? 0,
     takeRate: last?.takeRate ?? 0,
@@ -1114,3 +1179,40 @@ export function finalScore(state) {
 }
 
 export { STANCES, rivalOrgTotal, platformFit, feeFactor, hitById, eventById, crisisById };
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи; цены — из телеметрии самой партии и замеров аудита 2026-08.
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+  const sum = (fn) => hist.reduce((a, r) => a + (fn(r) ?? 0), 0);
+
+  // Авансы организаторам списывались чаще, чем возвращались: ставки на
+  // хиты без запаса. Цена — собственные списания партии.
+  const writtenOff = sum((r) => r.advanceWrittenOff);
+  const recouped = sum((r) => r.advanceRecouped);
+  if (writtenOff >= 30e6 && writtenOff > 0.35 * (writtenOff + recouped)) {
+    out.push({ id: 'advances', lost: writtenOff, back: recouped });
+  }
+
+  // Боты держали заметную долю продаж, а антибот-фильтр стоял на нуле:
+  // доверие зрителей — это спрос следующих месяцев. Порог 18%: фоновая
+  // доля ботов на опорах не поднимается выше 15% — правило ловит
+  // запущенное нашествие, а не обычный шум.
+  const botMonths = hist.filter((r) => (r.botShare ?? 0) >= 0.18
+    && (r.decisions?.antiBot ?? 0) === 0).length;
+  if (botMonths >= 3) out.push({ id: 'bots', n: botMonths });
+
+  // Касса жила ниже месяца расходов при убыточной операционке: любой шок
+  // в такой момент — продажа за долги (28% оценки минус долг).
+  const thinMonths = hist.filter((r) => r.profit < 0
+    && r.cash < (r.revenue - r.profit)).length;
+  if (thinMonths >= 3) out.push({ id: 'thinCash', n: thinMonths });
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}

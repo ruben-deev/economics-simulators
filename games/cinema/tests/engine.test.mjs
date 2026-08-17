@@ -5,14 +5,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CONFIG, DEFAULT_DECISIONS, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS } from '../src/model/config.js';
+import {
+  CONFIG, DEFAULT_DECISIONS, NO_ACTIONS, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS,
+} from '../src/model/config.js';
+import { DIFFICULTIES } from '../../../shared/difficulty.js';
 import {
   SCALES, scaleById, projectPrice, qualityEstimate, releaseBuzz, projectAppeal,
 } from '../src/model/slate.js';
+import { marketLiftOf, potentialOf } from '../src/model/engine.js';
 import { annualShare, raiseShock, annualSubs } from '../src/model/pricing.js';
 import { PARTNERS, partnerById, rollPartnerOffer, partnerTotals } from '../src/model/partners.js';
 import {
-  createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
+  createInitialState, step, financeLevel, financeHalf, miscRate, unitEconomics, valuation, fundingOffer, raise,
   explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, techLevel,
   algorithmImpact, catalogDepth, catalogFreshness, projectCost, genreById, segmentById,
 } from '../src/model/engine.js';
@@ -882,7 +886,9 @@ test('закрытие контракта не роняет базу на бум
       const kept = c.partnerExpired.reduce((s, e) => s + e.kept, 0);
       const lost = c.partnerExpired.reduce((s, e) => s + e.lost, 0);
       const drop = reports[i - 1].subs - c.subs;
-      assert.ok(drop < lost + kept * 0.02 + Math.max(1, c.subs * 0.05),
+      // Допуск на органику 8%: в новом мире месяц третьего акта двигает
+      // базу сильнее пяти процентов и без всякого контракта
+      assert.ok(drop < lost + kept * 0.02 + Math.max(1, c.subs * 0.08),
         `м${c.month}: контракт унёс ${Math.round(drop)} при потерянных ${Math.round(lost)}`
         + ` и удержанных ${Math.round(kept)}`);
     }
@@ -1101,11 +1107,15 @@ test('смешанный слейт бьёт однообразный', () => {
       const scale = mixScales ? (n++ % 2 ? 'pilot' : 'season') : 'season';
       const o = step(state, {
         decisions: decide({
-          priceNew: 799, priceAds: 120, adLoad: 2, annualDiscount: 0.15,
+          // 449 вместо прежних 799: после пересборки спроса (аудит 2026-08)
+          // задранный прайс разоряет, и на 799 тест мерил бы обрывы, а не слейт
+          priceNew: 449, priceAds: 166, adLoad: 2, annualDiscount: 0.15,
           licensing: 375_000_000, brandMarketing: 60_000_000, trialDays: 21,
-          tech: 20_000_000, rnd: 10_000_000, studioSlots: 2,
+          // Три слота, а не два: состав слейта решает тем сильнее, чем чаще
+          // выходят проекты — на двух слотах разница тонула в шуме сидов
+          tech: 20_000_000, rnd: 10_000_000, studioSlots: 3,
         }),
-        commission: producing < 2 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
+        commission: producing < 3 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
         release: state.slate.filter((p) => p.status === 'ready')
           .map((p) => ({ id: p.id, campaign: 25_000_000 })),
       });
@@ -1122,10 +1132,35 @@ test('смешанный слейт бьёт однообразный', () => {
 });
 
 
-test.skip('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
+test('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
   // Один и тот же seed, разная доля выручки в контент. Подписчиков больше
   // у агрессивной стратегии, но она добирает деньги раундами и размывается.
-  const modest = grown(CONFIG.monthsTotal, 'greed');
+  // Скромная сторона считана здесь же, а не через grown(): после пересборки
+  // спроса (аудит 2026-08) мир жёстче, и бюджет 90 млн + 50% выручки тоже
+  // выбирал все три раунда — обе стороны разводнялись до пола, и тест мерил
+  // потолок раундов, а не цену жадности.
+  let modest = createInitialState('greed');
+  {
+    let revenue = 0;
+    let raises = 0;
+    for (let i = 0; i < CONFIG.monthsTotal && !modest.over; i++) {
+      if (modest.cash < 900_000_000 && raises < CONFIG.fundingOptions.length) {
+        modest = raise(modest, CONFIG.fundingOptions[raises]).state;
+        raises += 1;
+      }
+      const budget = 60_000_000 + revenue * 0.4;
+      const res = step(modest, {
+        decisions: decide({
+          priceNew: 399, priceAds: 149, adLoad: 4,
+          licensing: Math.round(budget * 0.55), originals: Math.round(budget * 0.45),
+          brandMarketing: Math.round(35_000_000 + revenue * 0.15),
+          tech: 20_000_000, rnd: 20_000_000,
+        }),
+      });
+      modest = res.state;
+      revenue = res.report.revenue;
+    }
+  }
   let aggressive = createInitialState('greed');
   let revenue = 0;
   let raises = 0;
@@ -1162,7 +1197,9 @@ test('конкурент — не константа: он растёт, тра�
   const mid = state.history[11];
   const last = state.history[23];
   assert.ok(first.rivalSubs > 0, 'на старте рынок уже занят');
-  assert.ok(last.rivalPrice !== first.rivalPrice, 'цена конкурента менялась');
+  // Цена сравнивается по всей партии: конец может случайно совпасть с началом
+  const prices = new Set(state.history.map((r) => r.rivalPrice));
+  assert.ok(prices.size >= 2, `цена конкурента менялась: ${[...prices].slice(0, 5)}`);
   const stances = new Set(state.history.map((r) => r.rivalStance));
   assert.ok(stances.size >= 2, `конкурент должен менять позицию, а не стоять в одной: ${[...stances]}`);
   assert.ok(Number.isFinite(mid.duopolyShare) && mid.duopolyShare > 0 && mid.duopolyShare < 1);
@@ -1236,18 +1273,24 @@ test('цель года объявляется заранее и известн�
 });
 
 test('цели трёх лет тянут в разные стороны', () => {
+  // Аудит 2026-08 поменял годы 2 и 3 местами: доля — пока рынок делится,
+  // прибыльность — в год жатвы (в году 2 её не достигала ни одна доведённая
+  // опора на 72 партиях, см. комментарий в board.makeGoal).
   const s = createInitialState('goals');
   const y1 = makeGoal(1, s, 0, 1_000_000);
   const y2 = makeGoal(2, s, 1_500_000, 2_000_000);
   const y3 = makeGoal(3, s, 3_000_000, 3_000_000);
   assert.equal(y1.type, 'subscribers');
-  assert.equal(y2.type, 'profit');
-  assert.equal(y3.type, 'share');
-  // Год прибыльности требует и роста, и плюса — одного мало
-  const onlyProfit = goalProgress(y2, { subs: 100, rivalSubs: 0, profitableMonths: 12 });
-  assert.equal(onlyProfit.done, false, 'одной прибыли без роста не хватает');
-  const onlyGrowth = goalProgress(y2, { subs: 9_000_000, rivalSubs: 0, profitableMonths: 0 });
-  assert.equal(onlyGrowth.done, false, 'одного роста без прибыли тоже');
+  assert.equal(y2.type, 'share');
+  assert.equal(y3.type, 'profit');
+  // Год прибыльности требует и плюса, и удержания базы — одного мало
+  const onlyProfit = goalProgress(y3, { subs: 100, rivalSubs: 0, profitableMonths: 12 });
+  assert.equal(onlyProfit.done, false, 'одной прибыли без базы не хватает');
+  const onlyBase = goalProgress(y3, { subs: 9_000_000, rivalSubs: 0, profitableMonths: 0 });
+  assert.equal(onlyBase.done, false, 'одной базы без прибыли тоже');
+  // Год доли требует и доли, и не сжаться
+  const onlyShare = goalProgress(y2, { subs: 100, rivalSubs: 10, profitableMonths: 0 });
+  assert.equal(onlyShare.done, false, 'доля при съёжившейся базе не считается');
 });
 
 test('провал цели имеет последствия, а не просто грустную надпись', () => {
@@ -1572,14 +1615,18 @@ test('цели совета берутся не всеми и не никем', 
   const y2 = makeGoal(2, null, 4_000_000, 3_000_000);
   assert.ok(y2.subsFloor <= 4_000_000 * 1.1,
     'второй год не должен требовать роста, недостижимого для девяти из десяти');
+  // Замер аудита 2026-08 (24 кода × 3 доведённые опоры): медиана доли на
+  // 24-м месяце 0.49, 90-й процентиль 0.60. Планка обязана лежать между:
+  // ниже — берут все, выше — не берёт никто.
+  assert.ok(y2.target > 0.49 - 1e-9 && y2.target <= 0.60,
+    `планка доли ${y2.target} должна лежать между медианой и 90-м процентилем`);
   const y3 = makeGoal(3, null, 4_000_000, 3_000_000);
   assert.ok(y3.subsFloor < 4_000_000,
     'третий год — год обороны: требовать роста базы в нём нельзя');
-  // Замер после перебалансировки каталога: медиана доли на конец партии 0.43,
-  // 75-й процентиль 0.59, 90-й — 0.70. Планка обязана лежать между медианой
-  // и девяностым процентилем: ниже — её берут все, выше — не берёт никто.
-  assert.ok(y3.target > 0.43 && y3.target <= 0.70,
-    `планка ${y3.target} должна лежать между медианой и 90-м процентилем`);
+  // Прибыльных месяцев ≥2 достигают 26/72 партий доведённых опор —
+  // сознательно самая жёсткая цель, но живая
+  assert.ok(y3.target >= 1 && y3.target <= 3,
+    `планка прибыльных месяцев ${y3.target} должна быть жёсткой, но живой`);
 });
 
 // ----------------------------------------------------------------------------
@@ -1626,4 +1673,93 @@ test('финальный рывок: конкурент получает кас�
   // Война держится и на следующий месяц, вопреки гистерезису позиций
   const o2 = step(o.state, { decisions: decide(), eventChoice: 0 });
   assert.equal(o2.state.rivalState.stance, 'war', 'война не заканчивается через месяц');
+});
+
+// ----------------------------------------------------------------------------
+// Финансовая команда и уровни сложности набора
+// ----------------------------------------------------------------------------
+
+test('финансовая команда: цена растёт с выручкой, «прочие расходы» падают', () => {
+  const s = createInitialState('fin', 'normal');
+  assert.equal(financeLevel(s, decide({ finance: 0 })), 0, 'без бюджета команды нет');
+  const half = financeHalf(s);
+  assert.ok(Math.abs(financeLevel(s, decide({ finance: half })) - 0.5) < 1e-9,
+    'на насыщении ровно половина силы');
+  assert.ok(miscRate(s, decide({ finance: 0 })) > miscRate(s, decide({ finance: half * 4 })),
+    'сильная служба режет «прочие расходы»');
+
+  const r = step(s, { decisions: decide({ finance: half }), eventChoice: 0, ...NO_ACTIONS }).report;
+  assert.ok(Math.abs(r.miscCost - r.revenue * r.miscRate) < 1, 'строка считается от выручки');
+  assert.ok(r.financeCost > 0, 'бюджет команды виден в P&L');
+});
+
+test('уровни сложности: одни механики, разная цена команды', () => {
+  const level = {}; const misc = {};
+  for (const dd of DIFFICULTIES) {
+    const s = createInitialState('diff', dd.id);
+    assert.equal(s.difficulty, dd.id);
+    level[dd.id] = financeLevel(s, decide({ finance: 8_000_000 }));
+    misc[dd.id] = miscRate(s, decide({ finance: 8_000_000 }));
+  }
+  assert.equal(level.easy, 1, 'на лёгком команда уже собрана');
+  assert.ok(level.normal > level.hard, 'за те же деньги на сложном покупается меньше');
+  assert.ok(misc.easy < misc.normal && misc.normal < misc.hard);
+  const easy = step(createInitialState('diff', 'easy'), { decisions: decide({ finance: 8_000_000 }), eventChoice: 0, ...NO_ACTIONS }).report;
+  assert.equal(easy.financeCost, 0, 'на лёгком команду содержит не игрок');
+  assert.equal(easy.financeLevel, 1);
+});
+
+test('совместный мегахит: рынок растёт обоим, договориться можно один раз', () => {
+  const decide = (over = {}) => ({ ...DEFAULT_DECISIONS, ...over });
+  // NO_ACTIONS ставим ПЕРВЫМ: он обнуляет заказы и релизы, и если положить
+  // его после, он затрёт то, что тест как раз и проверяет.
+  const propose = (st, genre = 'family') => step(st, {
+    ...NO_ACTIONS, decisions: decide({ studioSlots: 3 }), coProduce: { genre }, eventChoice: 0,
+  });
+
+  // До назначенного месяца договориться не с кем: слишком рано
+  let s = createInitialState('совместный');
+  const early = propose(s);
+  assert.equal(early.report.jointStarted, null, 'раньше срока проекта нет');
+
+  // Доводим партию до месяца, когда такое предложение возможно
+  s = createInitialState('совместный');
+  for (let i = 0; i < CONFIG.coProduction.minMonth; i++) {
+    s = step(s, { decisions: decide({ studioSlots: 3 }), eventChoice: 0, ...NO_ACTIONS }).state;
+  }
+  const started = propose(s);
+  assert.ok(started.report.jointStarted, 'предложение принято');
+  s = started.state;
+  assert.ok(s.coProduction, 'проект записан в состояние');
+  const project = s.slate.find((p) => p.joint);
+  assert.ok(project, 'совместный проект попал в конвейер');
+  assert.equal(project.status, 'production');
+
+  // Второй раз так не договориться
+  const again = propose(s);
+  assert.equal(again.report.jointStarted, null, 'совместный проект бывает один за партию');
+
+  // Доводим до премьеры: часы должны достаться обоим, рынок — вырасти
+  const rivalBefore = s.rivalState.catalogOriginal;
+  const potentialBefore = potentialOf(SEGMENTS[0], s);
+  // Кризисы гасятся первым решением: тест меряет совместный проект, а не
+  // невезение — шоураннерский кризис останавливает конвейер, и без
+  // урегулирования мегахит не выйдет никогда (шанс кризиса растёт с базой).
+  const firstResolution = (id) => CRISES.find((c) => c.id === id)?.resolutions?.[0]?.id ?? null;
+  for (let i = 0; i < CONFIG.coProduction.months + 5 && !s.over; i++) {
+    const ready = s.slate.filter((p) => p.status === 'ready').map((p) => ({ id: p.id, campaign: 0 }));
+    s = step(s, {
+      ...NO_ACTIONS, decisions: decide({ studioSlots: 3 }), release: ready, eventChoice: 0,
+      crisisChoice: s.crisis ? firstResolution(s.crisis.id) : null,
+    }).state;
+  }
+  assert.ok(s.coProduction.released, 'проект вышел');
+  assert.ok(s.rivalState.catalogOriginal > rivalBefore, 'часы достались и конкуренту');
+  assert.ok(marketLiftOf(s) > 1, 'рынок вырос');
+  assert.ok(potentialOf(SEGMENTS[0], s) > potentialBefore, 'и потолок сегмента вместе с ним');
+
+  // Прибавка не вечная: после окна она тает
+  const inWindow = marketLiftOf(s);
+  const later = { ...s, month: s.marketLiftUntil + 30 };
+  assert.ok(marketLiftOf(later) < inWindow, 'после окна расширение тает');
 });

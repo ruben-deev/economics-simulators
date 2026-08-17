@@ -132,8 +132,11 @@ How it goes:
 4. Discuss why "set the bonus to ₽80 and forget it" does not work. Two reasons, both visible
    in the game: the promise is paid for (35% of the bonus reaches the courier even in a clear
    week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
-   panel shows habit eating its effect over eight to ten weeks. A forecast-driven bonus is
-   both cheaper and stronger, and a mistimed one is ruinous: measured, playing it
+   panel shows habit eating its effect over eight to ten weeks. A weather-driven bonus is
+   both cheaper and stronger: measured, "bonus only in heavy weeks" earns +87% over the
+   best constant — though with forecast auto-hiring on, the bonus becomes redundant
+   (the fleet is already weather-sized, and paying twice costs 28% of the outcome) —
+   and playing it
    backwards loses a quarter of the final score.
 
 The core idea: the weather forecast is public and every competitor sees it. The advantage
@@ -245,5 +248,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.10.5.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.14.0.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.

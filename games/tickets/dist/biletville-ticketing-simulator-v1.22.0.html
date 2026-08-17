@@ -2,11 +2,14 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.15.2" />
-  <meta name="app-build-date" content="2026-08-13" />
+  <meta name="app-version" content="1.22.0" />
+  <meta name="app-build-date" content="2026-08-17" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>БИЛЕТВИЛЬ · ticketing marketplace simulator</title>
+  <!-- Иконка вкладки: SVG в data-URI. Внешнего файла нет намеренно —
+       раздаваемая сборка одним файлом должна оставаться самодостаточной. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E🎟️%3C/text%3E%3C/svg%3E" />
   <style>
 :root {
   --bg: #0b1120;
@@ -24,6 +27,16 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Атрибут hidden обязан прятать даже то, чему классы задали display:
+   у кнопки-ссылки «Игры» display: inline-flex из .btn перебивал hidden,
+   и в офлайн-файле в шапке висел пустой квадрат без подписи. */
+[hidden] { display: none !important; }
+
+/* Видимый фокус для клавиатуры — на всех интерактивных элементах разом.
+   Safari 14.1 не знает :focus-visible: правило стоит отдельно, чтобы он
+   отбросил только его, а мышиные нажатия колец не рисуют нигде. */
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 
 html, body {
   margin: 0;
@@ -65,9 +78,9 @@ button { font-family: inherit; }
   padding: 5px 10px;
   min-width: 96px;
 }
-.kpi .k-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.kpi .k-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .kpi .k-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
-.kpi .k-delta { font-size: 10px; font-variant-numeric: tabular-nums; }
+.kpi .k-delta { font-size: 11px; font-variant-numeric: tabular-nums; }
 .up { color: var(--good); }
 .down { color: var(--bad); }
 .neutral { color: var(--muted); }
@@ -101,12 +114,15 @@ button { font-family: inherit; }
   font-weight: 600;
   transition: 0.15s;
 }
-.btn:hover { border-color: rgba(148, 163, 184, 0.4); }
-.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; }
-.btn.primary:hover { filter: brightness(1.08); }
+.btn:hover { border-color: rgba(148, 163, 184, 0.4); background: #1b2946; }
+/* Нажатие отвечает телом кнопки: без сдвига клик по тёмной кнопке немой */
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: linear-gradient(180deg, #22c55e, #16a34a); border-color: #16a34a; color: #04240f; box-shadow: 0 2px 12px rgba(34, 197, 94, 0.25); }
+.btn.primary:hover { filter: brightness(1.08); background: linear-gradient(180deg, #22c55e, #16a34a); box-shadow: 0 3px 16px rgba(34, 197, 94, 0.35); }
 .btn.ghost { background: transparent; }
+.btn.ghost:hover { background: rgba(148, 163, 184, 0.08); }
 .btn.small { padding: 5px 9px; font-size: 12px; font-weight: 500; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ------------------------------- Сетка ---------------------------------- */
 .layout {
@@ -154,13 +170,68 @@ button { font-family: inherit; }
 .lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .lever-label { font-weight: 600; font-size: 13px; }
 .lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
-.lever input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent); }
+.lever input[type="range"] { width: 100%; margin: 6px 0 2px; }
 .lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
 .lever.open .lever-tip { display: block; }
+/* «Зачем это?» — раскрывашка, а не ссылка: каретка вместо пунктира, как у
+   «Как читать карту». Двенадцать пунктирных подчёркиваний в столбце рычагов
+   читались как двенадцать ссылок наружу. */
 .lever-why {
   background: none; border: none; color: var(--muted); cursor: pointer;
-  font-size: 11px; padding: 0; text-decoration: underline dotted;
+  font-size: 11px; padding: 0; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
 }
+.lever-why::before { content: '▸'; font-size: 9px; transition: transform 0.15s ease; }
+.lever.open .lever-why::before { content: '▾'; }
+.lever-why:hover { color: var(--text); }
+
+/* ------------------------------ Ползунки ---------------------------------
+   Свой вид вместо системного: на планке совместимости Safari 14.1 нет
+   accent-color, и ползунки там оставались белыми системными. Дорожка
+   заливается до ручки цветом акцента: в WebKit процент заливки задаёт
+   переменная --fill (её ставит shared/sliders.js), в Firefox заливку рисует
+   ::-moz-range-progress без всякого скрипта. Синие ползунки алгоритмов
+   задают свой цвет переменной --range-accent. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 22px;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--range-accent, var(--accent)) var(--fill, 0%),
+    rgba(148, 163, 184, 0.22) var(--fill, 0%));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--range-accent, var(--accent));
+  border: 2px solid #0b1120;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  transition: transform 0.12s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.18); }
+input[type="range"]:disabled::-webkit-slider-thumb { transform: none; }
+input[type="range"]::-moz-range-track {
+  height: 6px; border-radius: 999px; background: rgba(148, 163, 184, 0.22);
+}
+input[type="range"]::-moz-range-progress {
+  height: 6px; border-radius: 999px; background: var(--range-accent, var(--accent));
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--range-accent, var(--accent));
+  border: 2px solid #0b1120;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+input[type="range"]:disabled { opacity: 0.45; }
 
 /* ------------------------------- Районы --------------------------------- */
 .districts { display: flex; flex-direction: column; gap: 8px; }
@@ -172,7 +243,7 @@ button { font-family: inherit; }
   cursor: pointer;
   transition: 0.15s;
 }
-.district:hover { border-color: rgba(148, 163, 184, 0.35); }
+.district:hover { border-color: rgba(148, 163, 184, 0.35); background: #1a2540; }
 .district.active { border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.07); }
 /* Шапка второго города в панели районов: выглядит как карточка, но не кликается —
    вход в город платится сам, вместе с запуском первого района. */
@@ -187,9 +258,14 @@ button { font-family: inherit; }
 .district-name { font-weight: 700; font-size: 13px; }
 .district-meta { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.45; }
 .badge {
-  font-size: 10px; padding: 2px 6px; border-radius: 999px;
+  font-size: 11px; padding: 2px 6px; border-radius: 999px;
   border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
 }
+/* Длинный бейдж (например, условия ворот совета) обязан переноситься:
+   с nowrap он уезжал за правый край панели, и прочитать его можно было
+   только горизонтальной прокруткой внутри колонки. */
+.badge.wrap { white-space: normal; text-align: right; }
+.district-head { flex-wrap: wrap; }
 .badge.on { color: var(--good); border-color: rgba(74, 222, 128, 0.4); }
 
 /* ------------------------------ Инвестиции ------------------------------ */
@@ -211,8 +287,9 @@ button { font-family: inherit; }
 .event-option {
   flex: 1 1 200px; text-align: left; border: 1px solid var(--line); border-radius: 10px;
   padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
+  transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
 }
-.event-option:hover { border-color: var(--warn); }
+.event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
@@ -237,9 +314,9 @@ button { font-family: inherit; }
 .report-head h3 { margin: 0; font-size: 15px; }
 .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
 .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
-.stat .s-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .s-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
 .stat .s-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.stat .s-sub { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.stat .s-sub { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .drivers { margin-top: 12px; }
 .driver { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
@@ -265,7 +342,9 @@ button { font-family: inherit; }
 .chart-tabs button {
   background: transparent; border: 1px solid var(--line); color: var(--muted);
   border-radius: 999px; padding: 3px 10px; font-size: 11px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
+.chart-tabs button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .chart-tabs button.active { color: var(--text); border-color: var(--accent-2); background: rgba(96, 165, 250, 0.12); }
 #chart { width: 100%; height: 230px; margin-top: 6px; }
 .chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
@@ -278,7 +357,9 @@ button { font-family: inherit; }
 .tab {
   background: transparent; border: 1px solid var(--line); color: var(--muted);
   border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
+.tab:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .tab.active { color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1); }
 .tab-content { font-size: 12px; line-height: 1.5; }
 
@@ -288,7 +369,7 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
    шестнадцать, из-за которых заголовок не помещается и колонка уезжает. */
 table.data th, table.data td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--line); }
 table.data th:first-child, table.data td:first-child { text-align: left; }
-table.data th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+table.data th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
 table.data tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
 /* Ячейки, где не одно число, а фраза из нескольких: выравниваем по левому
    краю, иначе перенос рвёт её в неожиданных местах и читать приходится
@@ -314,8 +395,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px;
 }
 .modal {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  background: var(--panel); border: 1px solid rgba(148, 163, 184, 0.24); border-radius: 14px;
   padding: 22px; max-width: 620px; width: 100%; max-height: 86vh; overflow-y: auto;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 .modal h2 { margin: 0 0 10px; font-size: 20px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
@@ -351,7 +433,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .algo-tradeoff { color: #cbd5e1; font-size: 11px; line-height: 1.45; margin-top: 5px;
   border-left: 2px solid rgba(251, 191, 36, 0.5); padding-left: 7px; }
 .algo-param { margin-top: 7px; }
-.algo-param input[type="range"] { width: 100%; accent-color: var(--accent-2); margin: 3px 0 0; }
+.algo-param input[type="range"] { width: 100%; --range-accent: var(--accent-2); margin: 3px 0 0; }
 .algo-param-head { display: flex; justify-content: space-between; font-size: 11px; }
 .algo-param-head b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
 
@@ -364,7 +446,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .weather-next.alarm { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.09); }
 .weather-icon { font-size: 26px; line-height: 1; }
 .weather-body { min-width: 0; }
-.weather-when { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.weather-when { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .weather-name { font-weight: 700; font-size: 14px; }
 .weather-fx { color: var(--muted); font-size: 11px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .weather-fx b.up { color: var(--good); }
@@ -513,8 +595,9 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   padding: 5px 10px;
   font-size: 12px;
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
-.pick button:hover { color: var(--text); }
+.pick button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
 .pick button.active { background: var(--accent-2); border-color: transparent; color: #06210f; font-weight: 700; }
 .commission-foot {
   display: flex;
@@ -561,6 +644,20 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   text-decoration: none;
 }
 .jump:hover { color: var(--text); border-bottom-color: var(--text); }
+
+/* Тач-цели телефона. Инлайн-ссылки остаются инлайновыми (иначе поедет
+   вёрстка), но их область нажатия расширяется псевдоэлементом — палец
+   попадает в 15-пиксельную строку не лучше, чем в игольное ушко. */
+@media (max-width: 560px) {
+  .jump, .todo-jump, a.small-link { position: relative; }
+  .jump::after, .todo-jump::after, a.small-link::after {
+    content: ''; position: absolute; inset: -9px -6px;
+  }
+  /* Кнопки шапки: минимальная ширина, чтобы иконка не превращалась в полоску */
+  .topbar-actions .btn, .topbar .btn { min-width: 40px; }
+  /* Флажки алгоритмов: 13 пикселей — это не тач-цель */
+  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+}
 
 /* Подсветка блока, к которому перешли: без неё непонятно, куда попал */
 @keyframes jump-flash {
@@ -674,7 +771,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .kpi { min-width: 0; padding: 5px 8px; }
   .kpi .k-value { font-size: 15px; }
-  .kpi .k-label, .kpi .k-delta { font-size: 10px; }
+  .kpi .k-label, .kpi .k-delta { font-size: 11px; }
   .layout { padding: 10px; gap: 10px; }
   .col-left, .col-right { position: static; max-height: none; }
 
@@ -796,6 +893,215 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   text-align: center;
 }
 
+/* ============================================================================
+   НОВОГРАД (games/ecosystem): собственные органы управления — сегментные
+   политики, бюджетная полоса, карта экосистемы. Только новые классы:
+   старые игры этих имён не используют, правки обратимо-совместимы.
+   ============================================================================ */
+.policy-seg { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.policy-seg button {
+  /* Не ужиматься уже текста: лучше перенос на новую строку, чем срезанная подпись */
+  flex: 1 0 auto; background: transparent; border: 1px solid var(--line);
+  color: var(--muted); border-radius: 8px; padding: 5px 6px; font-size: 11px;
+  cursor: pointer; line-height: 1.2; min-height: 30px;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.policy-seg button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.45); }
+.policy-seg button.active {
+  color: var(--text); border-color: var(--accent); background: rgba(74, 222, 128, 0.1);
+}
+.policy-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+.budget-bar {
+  display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+  margin: 6px 0 5px; background: rgba(148, 163, 184, 0.12);
+}
+.budget-bar span { display: block; height: 100%; min-width: 1px; }
+.budget-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; color: var(--muted); }
+.budget-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+
+/* Карта адаптивная: на узком контейнере она перестраивается вертикально
+   (класс map-v ставит рендер), поэтому ни прокрутки, ни ужатия текста нет. */
+.eco-map svg { width: 100%; height: auto; display: block; }
+.eco-map svg.map-v { max-width: 430px; margin: 0 auto; }
+.eco-map .node { cursor: pointer; }
+.eco-map .flow { fill: none; stroke-width: 1.5; opacity: 0.75; }
+.eco-map text { font-size: 12px; fill: var(--text); }
+/* На широком мониторе схема растягивалась на всю панель вместе с текстом:
+   при viewBox 700 и панели 1400 всё внутри удваивалось, подписи наезжали на
+   край и обрезались. Ширина схемы ограничена — на больших экранах она стоит
+   по центру в своём естественном масштабе. */
+.eco-map svg { display: block; max-width: 820px; margin: 0 auto; }
+.eco-map svg.map-v { max-width: 420px; }
+.eco-map .m-muted { fill: var(--muted); font-size: 11px; }
+.eco-map .m-num { font-weight: 700; }
+
+/* Карточки типов организаторов (БИЛЕТВИЛЬ): решение о канале продаж — это
+   не строка таблицы, а карточка с ценой, темпом и тем, что тип принесёт. */
+.org-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+.org-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+}
+.org-card.on { border-color: var(--accent); }
+.org-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.org-rows { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.org-rows > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.org-rows span { color: var(--muted); }
+.org-rows b { text-align: right; font-variant-numeric: tabular-nums; }
+.org-card .btn { margin-top: auto; }
+
+/* Карта города (НОВОЕДА): плитки районов по оси расстояния */
+/* Заливка полупрозрачностью, а не смешиванием цветов средствами CSS:
+   планка совместимости — Safari 14.1, а функция смешивания появилась только
+   в 16.2. Проверка сборок ловит её по имени, включая упоминание в
+   комментарии, — поэтому здесь оно и не написано. */
+.eco-map .m-name { fill: var(--text); font-size: 12px; font-weight: 600; }
+.eco-map .m-small { fill: var(--text); font-size: 11px; }
+.eco-map .m-axis { stroke: var(--line); }
+.map-scroll { overflow-x: auto; }
+.map-foot {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; margin-top: 6px;
+}
+
+/* Легенда сегментов под схемой месяца (КИНОРЕКА) */
+.flow-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 2px; font-size: 11px; }
+.flow-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.flow-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* Карта холдинга (НОВОГРАД): круги баз, связи, волны охвата */
+.holding .e-link { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 4 4; opacity: 0.5; }
+.holding .e-link.on { stroke-width: 2.6; stroke-dasharray: none; opacity: 0.8; }
+.holding .e-wave { fill: none; stroke: var(--line); opacity: 0.5; }
+/* Подписи лежат поверх связей и волн — отсюда обводка фоном панели */
+.holding text { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.holding .node { cursor: pointer; }
+
+
+
+/* Условная карта города (НОВОЕДА): кварталы, дороги, граница нормы */
+.city-map .m-quarter { fill: var(--panel-2, #1b2333); stroke: var(--line); stroke-width: 1.5; }
+/* Фон квартала и уровень «наша доля района» внутри него */
+.city-map .m-quarter-bg { fill: var(--panel-2, #16213a); fill-opacity: 0.5; stroke: none; }
+.city-map .m-share { fill-opacity: 0.55; }
+.city-map .m-share.m-good { fill: var(--good); }
+.city-map .m-share.m-bad, .city-map .m-share.m-closing { fill: var(--bad); }
+.city-map .m-quarter.m-good { fill: none; stroke: var(--good); }
+.city-map .m-quarter.m-bad { fill: none; stroke: var(--bad); }
+.city-map .m-quarter.m-off { fill: none; stroke: var(--line); }
+.city-map .m-quarter.m-closing { fill: none; stroke: var(--bad); stroke-dasharray: 5 4; }
+.city-map .m-quarter.m-plan { fill: none; stroke: var(--accent); }
+/* Квартал — орган управления: нажатие открывает район */
+/* pointer-events: all — иначе незакрашенный квартал (закрытый район) не
+   ловит нажатие вовсе: по спецификации SVG прозрачная заливка не цель */
+/* Городская черта: край города, штрихпунктиром — как на карте */
+.city-map .m-border {
+  fill: var(--panel-2, #16213a); fill-opacity: 0.45;
+  stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 12 4 3 4;
+}
+
+/* Плечо доставки внутри квартала: ресторан, путь, клиент */
+.city-map .m-leg rect, .city-map .m-leg circle { fill: var(--text); fill-opacity: 0.8; }
+.city-map .m-leg line { stroke: var(--text); stroke-opacity: 0.7; stroke-width: 1.6; stroke-dasharray: 3 2; }
+/* Опоздание должно быть видно с расстояния вытянутой руки: ниточка в
+   ~20 px — самый мелкий орган карты, и прежнее покраснение при той же
+   толщине читалось только в упор (аудит 2026-08, ось визуала) */
+.city-map .m-leg.late rect, .city-map .m-leg.late circle { fill: var(--bad); fill-opacity: 1; }
+.city-map .m-leg.late line { stroke: var(--bad); stroke-opacity: 1; stroke-width: 2.6; stroke-dasharray: 4 2; }
+.city-map .m-leader { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
+.city-map .m-hit { cursor: pointer; }
+.city-map .m-hit polygon { pointer-events: all; }
+.city-map .m-hit:hover .m-quarter { stroke-width: 2.4; }
+.map-list li { cursor: pointer; }
+
+/* Интерактивная легенда карты: пункт подсвечивает свой орган, остальное гаснет */
+.map-legend .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.map-legend .legend-item:hover, .map-legend .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+.city-map[data-hl] .m-quarter, .city-map[data-hl] .m-quarter-bg, .city-map[data-hl] .m-share,
+.city-map[data-hl] .m-block, .city-map[data-hl] .m-leg, .city-map[data-hl] .m-name { opacity: 0.18; transition: opacity 0.15s; }
+.city-map[data-hl="area"] .m-quarter-bg, .city-map[data-hl="area"] .m-quarter, .city-map[data-hl="area"] .m-name { opacity: 1; }
+.city-map[data-hl="share"] .m-share, .city-map[data-hl="share"] .m-quarter { opacity: 1; }
+.city-map[data-hl="color"] .m-quarter, .city-map[data-hl="color"] .m-share { opacity: 1; }
+.city-map[data-hl="houses"] .m-block, .city-map[data-hl="houses"] .m-quarter { opacity: 1; }
+.city-map[data-hl="leg"] .m-leg, .city-map[data-hl="leg"] .m-quarter { opacity: 1; }
+.city-map[data-hl="outline"] .m-quarter { opacity: 1; }
+.city-map .m-water { fill: var(--accent); fill-opacity: 0.13; stroke: var(--accent); stroke-opacity: 0.3; }
+.city-map .m-block { fill: var(--text); fill-opacity: 0.42; }
+.city-map .m-hub rect, .city-map .m-hub path { fill: var(--accent); }
+/* Подписи в кварталах читаются поверх застройки — отсюда обводка фоном */
+.city-map .m-name, .city-map .m-small, .city-map .m-muted {
+  paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.city-map.narrow .m-name { font-size: 16px; font-weight: 800; }
+.city-map.narrow .m-muted { font-size: 18px; }
+/* Легенда карты под катом: полный разбор кодировок нужен один раз, а место
+   под картой занимает каждый ход */
+.map-legend { margin-top: 6px; }
+.map-legend summary {
+  cursor: pointer; color: var(--muted); font-size: 11px;
+  list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.map-legend summary::-webkit-details-marker { display: none; }
+.map-legend summary::before { content: '▸'; font-size: 10px; }
+.map-legend[open] summary::before { content: '▾'; }
+.map-legend summary:hover { color: var(--text); }
+.map-legend .funding-note { margin-top: 6px; }
+.map-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
+.map-list li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+.map-list li:last-child { border-bottom: 0; }
+
+/* Длинное объяснение под катом: раскрывашка в стиле «Как читать карту».
+   Справочный абзац нужен один раз, а место в панели занимает каждый ход. */
+.more { margin-top: 4px; }
+.more > summary {
+  cursor: pointer; color: var(--muted); font-size: 11px;
+  list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::before { content: '▸'; font-size: 10px; }
+.more[open] > summary::before { content: '▾'; }
+.more > summary:hover { color: var(--text); }
+.more > .funding-note { margin-top: 6px; }
+
+/* «Мультиплекс» КИНОРЕКИ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.plex[data-hl] .px { opacity: 0.15; transition: opacity 0.15s; }
+.plex[data-hl="premium"] .px-premium, .plex[data-hl="premium"] .px-down { opacity: 1; }
+.plex[data-hl="ads"] .px-ads, .plex[data-hl="ads"] .px-down { opacity: 1; }
+.plex[data-hl="rival"] .px-rival, .plex[data-hl="rival"] .px-net { opacity: 1; }
+.plex[data-hl="in"] .px-in { opacity: 1; }
+.plex[data-hl="out"] .px-out { opacity: 1; }
+.plex .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.plex .legend-item:hover, .plex .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* «Кварталы» БИЛЕТВИЛЯ: подсветка группы с легенды, как на карте НОВОЕДЫ */
+.quarters[data-hl] .qx { opacity: 0.15; transition: opacity 0.15s; }
+.quarters[data-hl] .qx-frame, .quarters[data-hl] .qx-name { opacity: 0.45; }
+.quarters[data-hl="share"] .qx-share { opacity: 1; }
+.quarters[data-hl="widget"] .qx-widget { opacity: 1; }
+.quarters[data-hl="own"] .qx-frame { opacity: 1; }
+.quarters[data-hl="loss"] .qx-loss { opacity: 1; }
+.quarters[data-hl="loss"] .qt:not(.qt-dead) .qx-frame { opacity: 1; }
+.quarters .legend-item { cursor: help; border-bottom: 1px dotted var(--line); }
+.quarters .legend-item:hover, .quarters .legend-item:focus { color: var(--text); border-bottom-color: var(--text); outline: none; }
+
+/* Полоса каналов в карточке типа организаторов (БИЛЕТВИЛЬ): те же три числа,
+   что раньше пыталась показать схема потоков, — одной 100%-полосой */
+.chan-bar {
+  display: flex; height: 11px; border-radius: 6px; overflow: hidden;
+  margin: 8px 0 3px; background: rgba(148, 163, 184, 0.12);
+}
+.chan-bar span { height: 100%; }
+.chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -846,6 +1152,7 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
   <main class="layout">
     <aside class="panel col-left">
       <h2 class="panel-title" id="title-levers"></h2>
+      <div id="budget-slot"></div>
       <div id="levers"></div>
 
       <h2 class="panel-title" id="title-board"></h2>
@@ -859,12 +1166,15 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
       <!-- Порядок повторяет то, как играют: сначала читают, что вышло,
            потом решают срочное, потом планируют. -->
       <div id="report-slot"></div>
+      <div id="map-slot"></div>
       <div id="event-slot"></div>
       <div id="crisis-slot"></div>
       <div id="exclusive-slot"></div>
       <div id="turn-slot"></div>
-      <div id="news-slot"></div>
+      <!-- Каналы продаж — заглавное решение игры, поэтому они стоят выше
+           ленты новостей, а не под ней. -->
       <div id="channel-slot"></div>
+      <div id="news-slot"></div>
       <div id="supply-slot"></div>
       <div id="rival-slot"></div>
       <div class="panel charts">
@@ -916,6 +1226,17 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 const LANGS = ['ru', 'en'];
 const STORAGE_KEY = 'game-lang';
 
+// Валюта показа. Модель считает в рублях всегда — курс трогает только то,
+// что видит игрок (см. shared/format.js). Таблица живёт здесь, а не в
+// форматтере, чтобы t() умела подставлять знак валюты в подписи ({cur})
+// без кольцевого импорта.
+const CURRENCY = {
+  ru: { symbol: '₽', rate: 1, prefix: false },
+  en: { symbol: '$', rate: 100, prefix: true },
+};
+const currency = () => CURRENCY[current] ?? CURRENCY.ru;
+const curSymbol = () => currency().symbol;
+
 let current = 'ru';
 let dictionary = {};
 
@@ -966,7 +1287,9 @@ function t(key, vars) {
       out = out.replaceAll(`{${name}}`, String(value));
     }
   }
-  return out;
+  // Знак валюты подставляется всегда: подписи вроде «ARPU, {cur}» не должны
+  // требовать от каждого места вызова помнить про курс.
+  return out.includes('{cur}') ? out.replaceAll('{cur}', curSymbol()) : out;
 }
 
 
@@ -978,6 +1301,54 @@ function t(key, vars) {
 // ============================================================================
 
 const STRINGS = {
+  mapSwitched: { ru: 'к конкуренту', en: 'to the rival' },
+  mapOutage: { ru: '{share} спроса не поместилось на он-сейле', en: '{share} of demand did not fit at on-sale' },
+  leverInertPlatform: {
+    ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
+    en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',
+  },
+  marketMapTitle: { ru: 'Двусторонний рынок', en: 'The two-sided market' },
+  mapOrgs: { ru: 'организаторы', en: 'organisers' },
+  mapOrgsSub: { ru: 'с виджетом {connected}', en: '{connected} with the widget' },
+  mapBuyers: { ru: 'зрители', en: 'buyers' },
+  mapBuyersSub: { ru: 'ваша доля рынка {share}', en: 'your market share {share}' },
+  // Внутри SVG нельзя HTML-теги: <b> выбрасывает парсер из режима SVG,
+  // и вся схема разваливается в строку текста (проверено вживую).
+  readoutTake: {
+    ru: 'Вы забираете <b>{rate}</b> оборота — {perTicket} с билета. Эквайринг съедает {acquiring} оборота, и берётся он до вас.',
+    en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card processing eats {acquiring} of turnover, and it is charged before you.',
+  },
+  readoutTakeSplit: {
+    ru: 'Из них через афишу {market}, через виджет {widget}. Сбор и комиссия идут вместе: зритель платит один, организатор — другую.',
+    en: 'Of that, {market} comes through the listings and {widget} through the widget. Fee and commission travel together: the buyer pays one, the organiser the other.',
+  },
+  readoutSides: {
+    ru: 'Организаторов <b>{orgs}</b>, из них с виджетом {connected}. Ваша доля рынка организаторов — {share}.',
+    en: 'Organisers: <b>{orgs}</b>, {connected} of them with the widget. Your share of the organiser market is {share}.',
+  },
+  readoutFill: {
+    ru: 'Заполняемость залов <b class="{cls}">{fill}</b>, перекупщики забрали {bots} билетов.',
+    en: 'Hall fill rate <b class="{cls}">{fill}</b>; resellers took {bots} of tickets.',
+  },
+  readoutTrust: {
+    ru: 'Доверие <b class="{cls}">{trust}</b>, уровень сервиса {service}. Копится медленно, рушится быстро.',
+    en: 'Trust <b class="{cls}">{trust}</b>, service level {service}. Slow to build, quick to break.',
+  },
+  budgetTitle: { ru: 'Расходы этого месяца при текущих настройках: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
+  budgetDemand: { ru: 'спрос', en: 'demand' },
+  budgetSupply: { ru: 'организаторы', en: 'organisers' },
+  budgetProduct: { ru: 'продукт и поддержка', en: 'product and support' },
+  budgetTech: { ru: 'технологии', en: 'technology' },
+  budgetFixed: { ru: 'фикс и штат', en: 'fixed and staff' },
+  budgetNet: { ru: 'Вклад прошлого месяца {contribution} → итог примерно <b class="{cls}">{net}</b>.', en: 'Last month’s contribution {contribution} → roughly <b class="{cls}">{net}</b>.' },
+  policyCustom: { ru: 'своё значение', en: 'custom value' },
+  pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
+  pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
+  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
+  welcomeDifficultyNote: {
+    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
+    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
+  },
   brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
@@ -997,7 +1368,7 @@ const STRINGS = {
   kpiGmv: { ru: 'Оборот', en: 'Turnover' },
   kpiGmvSub: { ru: 'ваша выручка {revenue}', en: 'your revenue {revenue}' },
   kpiProfit: { ru: 'Прибыль / мес', en: 'Profit / mo' },
-  kpiProfitSub: { ru: 'маржа {value}', en: 'contribution {value}' },
+  kpiProfitSub: { ru: 'вклад {value}', en: 'contribution {value}' },
   kpiEquity: { ru: 'Оценка × доля', en: 'Valuation × stake' },
   kpiEquitySub: { ru: 'ваша доля {value}', en: 'your stake {value}' },
   kpiStart: { ru: 'Старт', en: 'Start' },
@@ -1015,7 +1386,7 @@ const STRINGS = {
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
   welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years — 36 turns. The year starts in September, with the opening of the theatre season.' },
-  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The billions in turnover are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The tens of millions flowing through you are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
@@ -1027,7 +1398,7 @@ const STRINGS = {
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 10 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around ₽10B — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Доведённые стратегии на этом рынке заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Polished strategies finish this market around $60M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -1079,7 +1450,7 @@ const STRINGS = {
   statGmv: { ru: 'Оборот', en: 'Turnover' },
   statGmvSub: { ru: 'через афишу {share}', en: '{share} via listings' },
   statTake: { ru: 'Ваша доля оборота', en: 'Your take rate' },
-  statTakeSub: { ru: 'эквайринг съедает {acq}', en: 'acquiring eats {acq}' },
+  statTakeSub: { ru: 'эквайринг съедает {acq}', en: 'card fees eat {acq}' },
   statFill: { ru: 'Заполняемость', en: 'Fill rate' },
   statFillSub: { ru: 'мест выставлено {seats}', en: '{seats} seats listed' },
   statReach: { ru: 'Охват', en: 'Reach' },
@@ -1117,7 +1488,7 @@ const STRINGS = {
   alertNoListings: { ru: 'Афиша почти пуста: мест {seats}. Маркетинг сейчас сгорает впустую — приводить зрителя некуда.', en: 'The listings are nearly empty: {seats} seats. Marketing burns for nothing right now — there is nowhere to bring buyers.' },
   alertLowFill: { ru: 'Заполняемость {fill}: организаторы видят пустые залы и уходят. Либо больше спроса, либо меньше афиши.', en: 'Fill rate {fill}: organisers see empty halls and leave. Either more demand or fewer listings.' },
   alertOverloaded: { ru: 'Менеджеры перегружены: качество обслуживания {service}. На каждого приходится {perManager} организаторов.', en: 'The managers are overloaded: service level {service}. Each one carries {perManager} organisers.' },
-  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival {rival}. Buyers compare the final price: demand is already {pref} of parity.' },
+  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival {rival}. Buyers compare the final price: demand is already {pref} of what it would be at price parity.' },
   alertCommissionHigh: { ru: 'Комиссия {value} — организаторы считают каждый процент, и конкурент это знает.', en: 'Commission at {value} — organisers count every percent, and the rival knows it.' },
   alertTrustLow: { ru: 'Доверие упало до {value}. Оно возвращается месяцами, а тратится за один плохой старт продаж.', en: 'Trust has fallen to {value}. It comes back over months and is spent in one bad on-sale.' },
   alertBots: { ru: 'Перекупщики забрали {share} билетов на хитах. Оборот это даже поднимает, доверие — нет.', en: 'Resellers took {share} of tickets on the hits. It even lifts turnover; it does not lift trust.' },
@@ -1154,7 +1525,28 @@ const STRINGS = {
   todoFeeText: { ru: 'Зритель сравнивает итоговую цену и уходит туда, где дешевле.', en: 'Buyers compare the final price and go where it is cheaper.' },
 
   // --- Каналы и платформа ---
-  channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
+  mapTitle: { ru: 'Кварталы рынка: типы организаторов', en: 'The market quarters: organiser types' },
+  qtShare: { ru: 'ваша доля {p}', en: 'your share {p}' },
+  qtOwn: { ru: 'мимо вас {p}', en: 'past you {p}' },
+  qtWidget: { ru: 'виджет ✓ {p}', en: 'widget ✓ {p}' },
+  qtNoWidget: { ru: 'виджета нет', en: 'no widget' },
+  qtLoss: { ru: '−{n} орг. за месяц', en: '−{n} orgs this month' },
+  qtTotal: {
+    ru: 'Оборот рынка за месяц {all}; через вас — {mine} ({share}).',
+    en: 'Monthly market turnover {all}; {mine} of it went through you ({share}).',
+  },
+  qtKeyShare: { ru: 'заливка — ваша доля оборота', en: 'fill — your share of turnover' },
+  qtKeyWidget: { ru: 'виджет развёрнут', en: 'widget deployed' },
+  qtKeyOwn: { ru: 'мимо вас — своя касса', en: 'past you — their box office' },
+  qtKeyLoss: { ru: 'тип теряет организаторов', en: 'the type is losing organisers' },
+  mapNoOrgs: { ru: 'вы с ними не работаете', en: 'you do not work with them' },
+  mapOrgsShort: { ru: 'орг.', en: "orgs" },
+  mapCaption: {
+    ru: 'Ширина квартала — оборот типа за месяц, зелёная заливка снизу — сколько из него прошло через вас. Рамка: зелёная — работаете, бирюзовая — виджет развёрнут, красный пунктир — организаторы уходят, тёмный квартал — тип, который вы не берёте.',
+    en: 'Quarter width is the type’s monthly turnover; the green fill from below is how much of it went through you. The frame: green — you serve it, teal — the widget is deployed, red dashes — organisers are leaving, a dark quarter is a type you do not take.',
+  },  channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
+  moreHow: { ru: 'Как это устроено', en: 'How it works' },
+  moreMoney: { ru: 'Куда уходят деньги с билета', en: 'Where the ticket money goes' },
   channelCaption: {
     ru: '<b>Билетный виджет</b> — это ваша продажа билетов, встроенная в сайт самого организатора: его домен, его брендинг, ваш движок под ними. На своей афише цену для покупателя назначаете вы и берёте с неё и сбор, и комиссию. На чужом сайте цену назначает хозяин сайта: сервисного сбора там нет, вам достаётся только ставка платформы — в разы меньше. Но без виджета организатор продаёт со своего сайта сам, и весь этот оборот идёт мимо вас целиком.<br><br><b>Кнопка не ставит виджет, а запускает переезд.</b> У каждого организатора уже что-то стоит — своё самописное или платформа конкурента, — и переезд стоит денег и месяцев: интеграция, перенос схем залов и абонементов, обучение кассиров, у крупных ещё и аванс под мероприятия. Скорость покупается <a class="jump" data-jump="lever:onboarding">бюджетом на подключения</a>, а тех, кто уже сидит у конкурента, переманить не выйдет вовсе.',
     en: 'A <b>ticketing widget</b> is your ticket sales embedded in the organiser\'s own site: their domain, their branding, your engine underneath. On your own listings you set the price the buyer sees and take both the fee and the commission from it. On someone else\'s site the owner sets the price: there is no service fee there, and all you get is the platform rate — several times less. But without the widget the organiser sells from their site on their own, and all of that turnover goes past you entirely.<br><br><b>The button does not install the widget, it starts the migration.</b> Every organiser already runs something — their own build or the rival\'s platform — and moving costs money and months: integration, porting seat maps and season tickets, training the box office, and an advance against events for the big ones. Speed is bought with the <a class="jump" data-jump="lever:onboarding">onboarding budget</a>, and those already sitting on the rival\'s platform cannot be won over at all.',
@@ -1164,11 +1556,29 @@ const STRINGS = {
   needMid: { ru: 'виджет желателен', en: 'widget welcome' },
   needLow: { ru: 'обойдутся без виджета', en: 'fine without a widget' },
   channelColSplit: { ru: 'Куда уходят продажи', en: 'Where the sales go' },
-  channelSplitValue: { ru: '{market} через афишу · {widget} через виджет', en: '{market} via listings · {widget} via widget' },
   channelSplitLost: { ru: '{lost} мимо вас', en: '{lost} past you' },
   channelColMoney: { ru: 'Ваши деньги с билета', en: 'What a ticket earns you' },
-  channelMoneyValue: { ru: '{market} ₽ с афиши', en: '₽{market} from listings' },
-  channelMoneyWidget: { ru: '{widget} ₽ с виджета', en: '₽{widget} from the widget' },
+  channelMoneyValue: { ru: '{market} с афиши', en: '{market} from listings' },
+  channelMoneyWidget: { ru: '{widget} с виджета', en: '{widget} from the widget' },
+  orgCardGmv: { ru: 'Оборот за месяц', en: 'Turnover per month' },
+  orgCardMoney: { ru: 'С билета вам', en: 'You get per ticket' },
+  orgCardSplit: { ru: 'Куда уходят продажи', en: 'Where sales go' },
+  chanMarket: { ru: 'афиша {p}', en: 'listings {p}' },
+  chanWidget: { ru: 'виджет {p}', en: 'widget {p}' },
+  chanOwn: { ru: 'мимо {p}', en: 'past you {p}' },
+  orgCardPrice: { ru: 'Переезд', en: 'Roll-out' },
+  orgCardPriceValue: { ru: '{per} на организатора · {eta}', en: '{per} per organiser · {eta}' },
+  orgCardPriceOff: { ru: 'не подключаем', en: 'not rolling out' },
+  orgCardEta: { ru: 'все переедут за {n} мес', en: 'all move over in {n} mo' },
+  orgCardEtaNever: { ru: 'при этом бюджете не переедут', en: 'at this budget they will not move' },
+  channelOnboardSplit: {
+    ru: 'бюджет переезда делится на {types} типа: {per} на организатора',
+    en: 'the roll-out budget is split across {types} types: {per} per organiser',
+  },
+  channelOnboardNone: {
+    ru: 'бюджет переезда сейчас никому не достаётся: тип не выбран',
+    en: 'the roll-out budget goes nowhere: no type selected',
+  },
   channelColMoneyNote: {
     ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свои 2.2% с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
     en: 'After acquiring. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
@@ -1218,7 +1628,7 @@ const STRINGS = {
   shareYou: { ru: 'Вы', en: 'You' },
   shareThem: { ru: 'Он', en: 'Rival' },
   shareBarHint: { ru: 'Доля рынка по числу организаторов', en: 'Market share by organiser count' },
-  shareCaption: { ru: 'У вас {you} организаторов, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} organisers, he has {them}. Net switching this month: {flow}.' },
+  shareCaption: { ru: 'У вас {you} организаторов, у него {them}. Переток за месяц: {flow}.', en: 'You have {you} organisers, the rival has {them}. Net switching this month: {flow}.' },
   stanceGone: { ru: 'Ушёл с рынка', en: 'Left the market' },
   stanceGoneHint: { ru: 'Рынок ваш целиком. Теперь только от вас зависит, каким его увидят зрители.', en: 'The market is entirely yours. What buyers see on it is now up to you alone.' },
   rivalExclusive: { ru: 'Держит эксклюзив: {types}', en: 'Holds exclusives on: {types}' },
@@ -1272,7 +1682,7 @@ const STRINGS = {
   seriesGmvPlatform: { ru: 'Через виджет на их сайтах', en: 'Via widget on their sites' },
 
   chartMoney: { ru: 'Деньги', en: 'Money' },
-  chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and acquiring still comes out of it.' },
+  chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and card fees still come out of it.' },
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
   seriesContribution: { ru: 'Маржа', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
@@ -1287,12 +1697,12 @@ const STRINGS = {
   seriesSold: { ru: 'Продано', en: 'Sold' },
 
   chartTake: { ru: 'Доля оборота', en: 'Take rate' },
-  chartTakeCaption: { ru: 'Сколько процентов оборота остаётся вам. Эквайринг вычитается из этого же числа, а не из оборота организатора.', en: 'What percentage of turnover stays with you. Acquiring comes out of this number, not out of the organiser’s.' },
+  chartTakeCaption: { ru: 'Сколько процентов оборота остаётся вам. Эквайринг вычитается из этого же числа, а не из оборота организатора.', en: 'What percentage of turnover stays with you. Card fees come out of this number, not out of the organiser’s.' },
   seriesTake: { ru: 'Ваша доля, %', en: 'Your take, %' },
-  seriesAcq: { ru: 'Эквайринг, %', en: 'Acquiring, %' },
+  seriesAcq: { ru: 'Эквайринг, %', en: 'Card fees, %' },
 
   chartTrust: { ru: 'Доверие', en: 'Trust' },
-  chartTrustCaption: { ru: 'Единственный актив билетного сервиса, который нельзя купить в тот месяц, когда он понадобился.', en: 'The one asset a ticketing service cannot buy in the month it turns out to be needed.' },
+  chartTrustCaption: { ru: 'Единственный актив билетного сервиса, который нельзя купить в тот месяц, когда он понадобился. Рядом нарисована конверсия: когда доверие проседает, она откликается первой.', en: 'The one asset a ticketing service cannot buy in the month it turns out to be needed. Conversion is drawn beside it: when trust sags, it is the first to follow.' },
   seriesTrust: { ru: 'Доверие, %', en: 'Trust, %' },
   seriesConv: { ru: 'Конверсия, %', en: 'Conversion, %' },
 
@@ -1316,7 +1726,7 @@ const STRINGS = {
   unitMarket: { ru: 'Через афишу: сбор + комиссия', en: 'Via listings: fee + commission' },
   unitPlatform: { ru: 'Через виджет на сайте организатора', en: 'Via widget on the organiser\'s site' },
   unitBlended: { ru: 'Ваша выручка с билета', en: 'Your revenue per ticket' },
-  unitAcquiring: { ru: 'Эквайринг', en: 'Acquiring' },
+  unitAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   unitSupport: { ru: 'Поддержка', en: 'Support' },
   unitContribution: { ru: 'Маржа с билета', en: 'Contribution per ticket' },
   unitBreakEven: { ru: 'Чтобы выйти в ноль, нужно {value} билетов в месяц.', en: 'To break even you need {value} tickets a month.' },
@@ -1326,7 +1736,7 @@ const STRINGS = {
   pnlMarketplace: { ru: 'Афиша: сбор и комиссия', en: 'Listings: fee and commission' },
   pnlPlatform: { ru: 'Платформа: ставка', en: 'Platform: rate' },
   pnlSubscription: { ru: 'Платформа: абонплата', en: 'Platform: subscriptions' },
-  pnlAcquiring: { ru: 'Эквайринг', en: 'Acquiring' },
+  pnlAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   pnlSupport: { ru: 'Поддержка', en: 'Support' },
   pnlContribution: { ru: 'Маржа', en: 'Contribution' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
@@ -1373,7 +1783,7 @@ const STRINGS = {
   },
   helpGmv: {
     ru: '<b>Оборот и выручка — разные числа.</b> Через вас проходят миллиарды, ваши из них — проценты. Эквайринг вычитается из этих процентов, а не из оборота.',
-    en: '<b>Turnover and revenue are different numbers.</b> Billions pass through you; percentages of it are yours. Acquiring comes out of those percentages, not out of the turnover.',
+    en: '<b>Turnover and revenue are different numbers.</b> Vast sums pass through you; only a few percent are yours. Card fees come out of those percentages, not out of the turnover.',
   },
   helpTrust: {
     ru: '<b>Доверие.</b> Перекупщики, упавший сайт и скрытый сбор бьют по одному счёту. Оборот при этом держится — и в этом ловушка: цифры выглядят нормально ровно до месяца, когда становится поздно.',
@@ -1384,6 +1794,7 @@ const STRINGS = {
   // --- Финал ---
   overTitle: { ru: 'Партия окончена', en: 'The game is over' },
   overBankrupt: { ru: 'Деньги кончились на {month}-м месяце.', en: 'The money ran out in month {month}.' },
+  overSold: { ru: 'Деньги кончились на {month}-м месяце. Совет продал сервис: 28% оценки минус долги — ваша доля остатка {value}. Продажа за долги — не ноль, но и не победа.', en: 'The money ran out in month {month}. The board sold the service: 28% of the valuation minus the debts — your share of the remainder is {value}. A distressed sale is not zero, but it is not a win either.' },
   overFinished: { ru: 'Три года позади.', en: 'Three years are behind you.' },
   overStats: {
     ru: 'Оценка компании {valuation}, ваша доля {equity} — это {value}. Организаторов {orgs}, доля рынка {share}, оборот {gmv}, доверие {trust}.',
@@ -1392,10 +1803,37 @@ const STRINGS = {
   overGoals: { ru: 'Цели: {list}', en: 'Goals: {list}' },
   overAgain: { ru: 'Сыграть заново', en: 'Play again' },
   overQuestions: { ru: '<b>Вопросы для разбора:</b> кто на самом деле ваш клиент — зритель или организатор? Какая часть оборота держалась на одном крупном промоутере? Что стоило дороже — уступки организаторам или потерянное доверие зрителей?', en: '<b>Questions for the debrief:</b> who is your real customer — the buyer or the organiser? How much of the turnover rested on one large promoter? Which cost more — concessions to organisers or the buyers’ lost trust?' },
+
+  // --- персональный разбор: правила по телеметрии партии (аудит 2026-08) ---
+  debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
+  debriefNote: {
+    ru: 'Автоматические наблюдения по телеметрии партии: цены взяты из самих цифр партии и замеров на 24 стандартных кодах.',
+    en: 'Automatic observations from this run’s telemetry: prices come from the run’s own numbers and from measurements on the 24 standard game codes.',
+  },
+  debriefClean: {
+    ru: 'Системных промахов правила не нашли: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
+    en: 'The rules found no systematic misses: advances came back, bots never took over, cash kept its cushion. A strong run.',
+  },
+  debriefAdvances: {
+    ru: 'Авансы организаторам списаны на {lost} — вернулось только {back}. Ставка на хиты без запаса: каждый списанный аванс — это чужой концерт, оплаченный вашей кассой.',
+    en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a margin: every written-off advance is someone else’s show paid from your cash.',
+  },
+  debriefBots: {
+    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: фоновая доля ботов у опор не поднимается выше 15%.',
+    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: the background bot share on the baselines never tops 15%.',
+  },
+  debriefThinCash: {
+    ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
+    en: 'Cash sat below one month of costs for {n} months while operations ran at a loss. Any shock at such a moment means a distressed sale — it returns only 28% of the valuation.',
+  },
+  debriefRanDry: {
+    ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
+    en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
+  },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'Look at the charts' },
   // --- Развилка перед смертью и разбор краха ---
   deathTitle: { ru: '⚠️ Деньги на исходе', en: '⚠️ Running out of money' },
-  deathText: { ru: 'В кассе {cash}, за прошлый месяц сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'The till holds {cash}; last month burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the till is to zero, the worse the terms. You will only see this warning once.' },
+  deathText: { ru: 'В кассе {cash}, за прошлый месяц сожгли {burn}. Таким темпом денег хватит примерно на {runway}. Раунд ещё можно поднять — но чем ближе касса к нулю, тем хуже условия. Это предупреждение показывается один раз.', en: 'You have {cash} in the bank; last month burned {burn}. At this pace the money lasts about {runway}. A round can still be raised — but the closer the balance is to zero, the worse the terms. You will only see this warning once.' },
   deathRunway: { ru: '{n} мес.', en: '{n} mo' },
   deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
   deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
@@ -1407,6 +1845,11 @@ const STRINGS = {
   wfCash: { ru: 'Касса на конец', en: 'Cash at end' },
   wfTurn: { ru: 'мес. {n}', en: 'mo {n}' },
   // --- Код партии и таблица рекордов ---
+  scoreRaised: { ru: 'Привлечено', en: 'Raised' },
+  scoreCash: { ru: 'Касса', en: 'Cash' },
+  totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
+  csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
+  csvTurn: { ru: 'месяц', en: 'month' },
   resultTitle: { ru: 'Строка результата', en: 'Result string' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
@@ -1418,12 +1861,16 @@ const STRINGS = {
   recordsOutcome: { ru: 'Исход', en: 'Outcome' },
   recordsOutcomeFinished: { ru: 'финиш', en: 'finished' },
   recordsOutcomeBankrupt: { ru: 'банкрот', en: 'bankrupt' },
+  recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
+  lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
+  lbSeedMine: { ru: 'Мой город', en: 'My city' },
+  lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -1453,15 +1900,15 @@ const STRINGS = {
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
   chartChangePlatform: { ru: 'типы площадок платформы', en: 'platform venue types' },
   reportDelta: { ru: 'К прошлому месяцу: оборот {gmv}, прибыль {profit}, касса {cash}.', en: 'Versus last month: turnover {gmv}, profit {profit}, cash {cash}.' },
-  fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the till lasts about {n} months. A round is cheaper raised early, not at zero.' },
+  fundingRunway: { ru: 'При темпе прошлого месяца кассы хватит примерно на {n} мес. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last month’s pace the cash lasts about {n} months. A round is cheaper raised early, not at zero.' },
   gradeBankrupt: { ru: 'Банкротство. Оборот в билетном бизнесе растёт легко — платит по счетам выручка.', en: 'Bankruptcy. Turnover in ticketing grows easily — it is revenue that pays the bills.' },
+  gradeSold: { ru: 'Продана за долги. Партнёрская сеть чего-то стоила даже в спешке.', en: 'Distressed sale. The partner network was worth something even in a hurry.' },
   gradeExcellent: { ru: 'Отличный результат: рынок ваш, и он вам ещё и платит.', en: 'An excellent result: the market is yours, and it pays you too.' },
   gradeSolid: { ru: 'Крепкий результат. Бизнес стоит на ногах и растёт.', en: 'A solid result. The business stands on its own and grows.' },
   gradeSurvived: { ru: 'Вы выжили. Но оборот так и не стал выручкой.', en: 'You survived. But turnover never turned into revenue.' },
   gradeModest: { ru: 'Скромно. Рынок остался за конкурентом.', en: 'Modest. The market stayed with the rival.' },
 
   eventChoiceNeeded: { ru: 'Сначала выберите вариант в событии', en: 'Choose an option in the event first' },
-  crisisChoiceHint: { ru: 'Кризис можно не решать — но он станет дороже.', en: 'You can leave the crisis alone — it will get more expensive.' },
 
   seasonAutumn: { ru: 'осень', en: 'autumn' },
   seasonWinter: { ru: 'зима', en: 'winter' },
@@ -1493,6 +1940,26 @@ const STRINGS = {
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
   unitOrgs: { ru: 'организаторов', en: 'organisers' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
+  metaConglomerateText: {
+    ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
+  },
+  metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
+  metaReturnText: {
+    ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал здесь — {best}. Следующая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
+    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+  },
+  metaReturnMaxed: {
+    ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
+    en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
+  },
+  metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
+  metaContinueText: {
+    ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
+    en: 'NOVOGRAD is the series endgame: the business you won here becomes the starting asset of a holding with ride-hailing, e-commerce and a subscription. Keep the result string above and enter it on NOVOGRAD’s welcome screen — a strong finale counts as a legacy and boosts your start.',
+  },
+  metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
 };
 
 
@@ -1620,6 +2087,34 @@ function windowGrowth(history, n, pick, fallback = 0.25) {
 }
 
 /**
+ * Устойчивый темп роста: короткое окно, подтверждённое длинным.
+ *
+ * Короткое окно (n против предыдущих n) реагирует быстро, но одноразовая
+ * ступенька выручки, попавшая в него целиком, читается как темп роста и
+ * умножается мультипликатором несоразмерно кассе. Аудит 2026-08 измерил
+ * цену этой дыры на контракте аэропорта в НОВОГРАДЕ: честная кассовая
+ * ценность годового контракта +2–3% итога, а перекрывший окно оценки —
+ * +23–31%. Тот же механизм — двигатель «рывка в конце».
+ *
+ * Лечение: инвестор верит короткому окну только в той мере, в какой его
+ * подтверждает длинное (2n против предыдущих 2n). Берётся минимум из двух
+ * темпов. Разовая ступенька гаснет, как только целиком входит в длинное
+ * окно; устойчивый рост показывает одинаковый темп в обоих окнах и не
+ * теряет ничего. Падение при этом видно по ХУДШЕМУ из окон — сжатие
+ * замечается сразу, и это сознательная асимметрия: рост докажи, спад
+ * очевиден.
+ *
+ * Пока истории на длинное окно не хватает, работает короткое — иначе
+ * первая треть партии жила бы на одном запасном значении.
+ */
+function windowGrowthStable(history, n, pick, fallback = 0.25) {
+  const short = windowGrowth(history, n, pick, fallback);
+  if (history.length < 4 * Math.max(1, n)) return short;
+  const long = windowGrowth(history, 2 * Math.max(1, n), pick, fallback);
+  return Math.min(short, long);
+}
+
+/**
  * Множитель к выручке.
  *
  * @param growth       прирост за окно (может быть отрицательным)
@@ -1644,6 +2139,24 @@ function revenueMultiple(growth, margin, k) {
       + marginWeight * Math.max(0, marginScore) + marginPenalty * Math.min(0, marginScore),
     min, max,
   );
+}
+
+/**
+ * Продажа за долги: чего стоит компания, у которой кончились деньги.
+ *
+ * Раньше банкротство означало ноль, и на грани выживания счёт партии
+ * превращался в лотерею: одна и та же стратегия давала 0 или миллиарды
+ * в зависимости от кода партии. В жизни компанию на грани не выключают,
+ * а продают: покупатель платит долю оценки (дисконт за спешку и слабую
+ * переговорную позицию), из выручки гасятся долги, остаток делится по
+ * долям. Если долг больше цены продажи — вот это и есть настоящий ноль.
+ *
+ * Учебный смысл: ликвидационная стоимость. Компания с построенным
+ * активом и долгом — не то же самое, что компания без ничего, и финал
+ * «продались» отличается от финала «сгорели».
+ */
+function distressedSale(valuation, cash, share = 0.28) {
+  return Math.max(0, valuation * share + Math.min(0, cash));
 }
 
 /**
@@ -1740,6 +2253,568 @@ function bestRecord(key) {
 }
 
 
+// ===== ../../shared/difficulty.js ==================================
+// ============================================================================
+// Уровень сложности — настройка НАБОРА, а не отдельной игры.
+//
+// Выбранный уровень лежит в общем localStorage сайта и действует во всех
+// четырёх симуляторах сразу: играть НОВОЕДУ на лёгком, а НОВОГРАД на сложном
+// бессмысленно — это один курс, а не четыре разные игры.
+//
+// Механики на всех уровнях одинаковые. Меняется ровно одно: сколько стоит
+// финансовая команда — та, что режет строку «прочие расходы», лучше
+// упаковывает компанию к раунду и разбирает решения месяца. Всё остальное
+// (город, рынок, события, цели совета) не подменяется: сложность меняет
+// цену денег, а не правила.
+//
+//   лёгкий  — команда уже собрана и не стоит ничего: новичок видит игру,
+//             а не её бухгалтерию;
+//   обычный — команду покупают, и она дешёвая;
+//   сложный — та же команда стоит вчетверо дороже, и её приходится
+//             взвешивать против всего остального.
+//
+// Таблицы рекордов у каждого уровня свои: результаты, снятые при разной
+// цене денег, несравнимы. Тег партии получает суффикс уровня (у обычного
+// суффикса нет — так прежние рекорды остаются в своей таблице).
+// ============================================================================
+
+const DIFFICULTY_KEY = 'series-difficulty';
+
+const DIFFICULTIES = [
+  {
+    id: 'easy',
+    label: { ru: 'Лёгкий', en: 'Easy' },
+    short: { ru: 'тренировка', en: 'training' },
+    // Финансовая команда уже собрана и оплачена не игроком
+    financeFree: true,
+    // Множитель цены команды (см. финансовый блок конфига каждой игры)
+    saturationMult: 1,
+    // Множитель базовой ставки «прочих расходов»
+    miscMult: 0.8,
+    tagSuffix: '·лёгкий',
+    note: {
+      ru: 'Финансовая команда уже собрана и не стоит ничего: «прочие расходы» минимальны, отчётность полная, команда разбирает ваши решения. Так видно саму игру, а не её бухгалтерию.',
+      en: 'The finance team is already in place and costs nothing: miscellaneous expenses are minimal, the reporting is complete and the team comments on your decisions. This shows you the game rather than its bookkeeping.',
+    },
+  },
+  {
+    id: 'normal',
+    label: { ru: 'Обычный', en: 'Normal' },
+    short: { ru: 'зачётный', en: 'ranked' },
+    financeFree: false,
+    saturationMult: 0.55,
+    miscMult: 1,
+    tagSuffix: '',
+    note: {
+      ru: 'Финансовую команду нанимаете вы, и она недорогая: половина силы примерно за 3% выручки в месяц. Это уровень, на котором игра откалибрована.',
+      en: 'You hire the finance team yourself, and it is cheap: half its strength for roughly 3% of monthly revenue. This is the level the game is calibrated on.',
+    },
+  },
+  {
+    id: 'hard',
+    label: { ru: 'Сложный', en: 'Hard' },
+    short: { ru: 'вызов', en: 'challenge' },
+    financeFree: false,
+    saturationMult: 2.2,
+    miscMult: 1.35,
+    tagSuffix: '·сложный',
+    note: {
+      ru: 'Та же команда стоит вчетверо дороже, а «прочие расходы» выше на треть. Каждый рубль в финансы — рубль, не ушедший в маркетинг, качество и удержание.',
+      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every rouble spent on finance is a rouble not spent on marketing, quality and retention.',
+    },
+  },
+];
+
+const difficultyById = (id) => DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1];
+
+// Текущий уровень набора. Значение по умолчанию — зачётный: на нём игра
+// откалибрована, и в него попадает всякий, кто ничего не выбирал.
+function currentDifficulty() {
+  try {
+    const saved = localStorage.getItem(DIFFICULTY_KEY);
+    return saved ? difficultyById(saved).id : 'normal';
+  } catch {
+    return 'normal';
+  }
+}
+
+function setDifficulty(id) {
+  const level = difficultyById(id).id;
+  try { localStorage.setItem(DIFFICULTY_KEY, level); } catch { /* приватный режим */ }
+  return level;
+}
+
+/**
+ * Тег партии для строки результата и мировой таблицы: у каждого уровня своя
+ * таблица. У обычного суффикса нет — прежние рекорды остаются на месте.
+ */
+function taggedGame(base, id = currentDifficulty()) {
+  return `${base}${difficultyById(id).tagSuffix}`;
+}
+
+
+// ===== ../../shared/finance.js =====================================
+// ============================================================================
+// Финансовая команда — общая механика набора.
+//
+// Единственный рычаг всех четырёх игр, который управляет не бизнесом, а тем,
+// как бизнес считают и показывают. Слабая финансовая служба стоит денег
+// молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы,
+// неразнесённая административка. Это строка «прочие расходы» — она растёт
+// сама, вместе с выручкой, и её режет не бизнес-решение, а служба.
+//
+// Сильная команда, помимо этой строки: лучше упаковывает компанию к раунду
+// (оценку считает рынок — упаковка меняет только отдаваемую долю), делает
+// читаемым разбор оценки и разбирает решения периода.
+//
+// Цена команды считается ДОЛЕЙ выручки, а не абсолютом: финансовая служба
+// растёт вместе с компанией. Первый замер с фиксированной ценой показал
+// мёртвый рычаг у маленького бизнеса — его не окупало ничто.
+//
+// Числа (доля выручки, ставка «прочих») у каждой игры свои и живут в её
+// конфиге: у доставки, стриминга и билетов разные выручки и маржи. Общей
+// остаётся форма механики и множители уровня сложности.
+//
+// conf = { saturationShare, saturationFloor, miscRateBase, miscRateCut,
+//          roundGain?, transparencyAt?, adviceAt? }
+// ============================================================================
+
+
+// Сколько стоит «половина силы» при текущем размере бизнеса
+function financeHalfCost(conf, difficulty, revenue) {
+  const d = difficultyById(difficulty);
+  return Math.max(conf.saturationFloor, (Number(revenue) || 0) * conf.saturationShare)
+    * d.saturationMult;
+}
+
+// Сила команды, 0…1. На лёгком уровне команда уже собрана и стоит ноль.
+function financeStrength(conf, difficulty, revenue, budget) {
+  if (difficultyById(difficulty).financeFree) return 1;
+  const b = Number(budget) || 0;
+  return b > 0 ? b / (b + financeHalfCost(conf, difficulty, revenue)) : 0;
+}
+
+// Доля выручки, уходящая «прочими расходами» при такой силе команды
+function financeMiscRate(conf, difficulty, strength) {
+  const d = difficultyById(difficulty);
+  return Math.max(
+    conf.miscFloor ?? 0.005,
+    conf.miscRateBase * (d.miscMult ?? 1) - conf.miscRateCut * strength,
+  );
+}
+
+// Что за команду платит игрок: на лёгком уровне её содержит не он
+function financeSpend(difficulty, budget) {
+  return difficultyById(difficulty).financeFree ? 0 : (Number(budget) || 0);
+}
+
+// Насколько лучше компания упакована к раунду
+function financeRoundGain(conf, strength) {
+  return 1 + (conf.roundGain ?? 0) * strength;
+}
+
+
+// ===== ../../shared/controls.js ====================================
+// ============================================================================
+// Общие органы управления набора: полоса бюджета и политики.
+//
+// Оба появились в НОВОГРАДЕ и оказались нужны всем играм: инвентаризация
+// показала, что у КИНОРЕКИ и БИЛЕТВИЛЯ расходных рычагов больше, а ни полосы
+// «куда уходят деньги», ни решений с именами нет вовсе — двенадцать
+// одинаковых ползунков подряд читаются как экран настроек, а не как решения.
+//
+// Разница между режимами политики:
+//   'replace' — режимы ЗАМЕНЯЮТ ползунок (так в НОВОГРАДЕ: решение уровня
+//               совета директоров не имеет промежуточных значений);
+//   'preset'  — режимы стоят НАД ползунком и просто ставят значение. Так в
+//               старых играх: их кривые отклика острые (у цены подписки
+//               КИНОРЕКИ соседние 50 ₽ дают разницу в десятки процентов),
+//               и дискретизация тихо срезала бы верх стратегии. Имена и
+//               последствия появляются, достижимые значения — прежние.
+//
+// Модуль без состояния: строит разметку и синхронизирует её с числом.
+// ============================================================================
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * Разметка политики: ряд названных режимов и строка последствий выбранного.
+ * lever: { key, policy: [{ v, label, note }], scale? }
+ * tx: разворачиватель двуязычных полей.
+ */
+function policyHtml(lever, tx) {
+  return `<div class="policy-seg" data-policy="${esc(lever.key)}">
+      ${lever.policy.map((p) => `<button type="button" data-policy-value="${p.v}">${tx(p.label)}</button>`).join('')}
+    </div>
+    <div class="policy-note" id="note-${esc(lever.key)}"></div>`;
+}
+
+/**
+ * Подсветить выбранный режим и показать его последствия. Работает и когда
+ * точное значение выставлено ползунком мимо режимов: тогда не подсвечен
+ * никто, а строка последствий берётся от ближайшего режима — иначе игрок
+ * теряет объяснение, стоит чуть сдвинуть ползунок.
+ */
+function syncPolicy(root, lever, value, tx, customLabel = '') {
+  const box = root.querySelector(`[data-policy="${lever.key}"]`);
+  if (!box) return null;
+  const raw = value / (lever.scale ?? 1);
+  let exact = null;
+  let nearest = lever.policy[0];
+  for (const p of lever.policy) {
+    if (Math.abs(p.v - raw) < 1e-9) exact = p;
+    if (Math.abs(p.v - raw) < Math.abs(nearest.v - raw)) nearest = p;
+  }
+  box.querySelectorAll('[data-policy-value]').forEach((b) => {
+    b.classList.toggle('active', exact !== null && Math.abs(Number(b.dataset.policyValue) - raw) < 1e-9);
+  });
+  const note = root.querySelector(`#note-${lever.key}`);
+  if (note) {
+    note.innerHTML = exact
+      ? tx(exact.note)
+      : `${customLabel ? `<b>${esc(customLabel)}</b> · ` : ''}${tx(nearest.note)}`;
+  }
+  return exact ?? nearest;
+}
+
+/**
+ * Полоса бюджета: куда уходят деньги этого хода.
+ * items: [{ key, label, value, color }] — нулевые статьи не показываются.
+ * note — готовая строка под полосой (вклад, остаток), необязательна.
+ */
+function budgetBarHtml({ title, items, note = '' }) {
+  const shown = items.filter((i) => i.value > 0);
+  const total = shown.reduce((s, i) => s + i.value, 0);
+  if (total <= 0) return '';
+  const seg = (i) => `<span style="width:${(100 * i.value / total).toFixed(1)}%;background:${i.color}"></span>`;
+  const leg = (i, money) => `<span><i style="background:${i.color}"></i>${i.label} ${money(i.value)}</span>`;
+  return { total, shown, seg, leg };
+}
+
+/**
+ * Готовая разметка полосы. money — форматтер набора (shared/format.js).
+ */
+function renderBudgetBar({ title, items, note = '', money }) {
+  const parts = budgetBarHtml({ title, items });
+  if (!parts) return '';
+  const { shown, seg, leg } = parts;
+  return `<div class="hint-box" style="margin-bottom:12px">
+    <div>${title}</div>
+    <div class="budget-bar">${shown.map(seg).join('')}</div>
+    <div class="budget-legend">${shown.map((i) => leg(i, money)).join('')}</div>
+    ${note ? `<div class="funding-note" style="margin-top:4px">${note}</div>` : ''}
+  </div>`;
+}
+
+
+// ===== ../../shared/meta.js ========================================
+// ============================================================================
+// Мета-прогрессия набора: НОВОГРАД — «эндгейм», три игры — его пролог.
+//
+// Механизм — строки результата с контрольной суммой (shared/records.js)
+// плюс общий localStorage сайта. На том же устройстве финалы старых игр
+// видны автоматически (их локальные таблицы рекордов лежат рядом);
+// для другого устройства или офлайна строка результата вводится как код —
+// подделать счёт, не пересчитав сумму, не выйдет.
+//
+// Гейт мягкий: НОВОГРАД доступен всем сразу, заслуженный вход даёт
+// стартовое преимущество ВНУТРИ него:
+//   финал НОВОЕДЫ    -> «известный бренд еды»: дешевле возврат и органика;
+//   финал КИНОРЕКИ   -> скидка на лицензию стриминга в подписку Plus;
+//   финал БИЛЕТВИЛЯ  -> готовое партнёрство по билетам (без абонентки).
+// Бонусы ортогональны и складываются; их суммарный размер замерен по
+// правилу «чувствуется, но не решает партию» (~4–6% итога).
+//
+// Обратный бонус — строго неэкономический: успешный НОВОГРАД открывает
+// в старых играх бейдж и коды «городов-побратимов» на финальном
+// экране. Экономических бустов в зачётных партиях старых игр нет:
+// они сломали бы сравнимость лидерборда и калибровку целей совета.
+// ============================================================================
+
+
+// Лучший результат НОВОГРАДА на этом устройстве (для обратных бонусов)
+const META_BEST_KEY = 'novograd-meta';
+// Введённые вручную строки результата (офлайн-разблокировка)
+const META_LINES_KEY = 'novograd-meta-lines';
+
+// Две разные планки, и путать их нельзя:
+//
+//   threshold — ВХОД: игра пройдена прилично, актив в НОВОГРАДЕ открыт (★).
+//               Стоит ниже осторожной опоры каждой игры — это ворота, а не
+//               достижение.
+//   solid     — ЕДИНИЦА ПЕРЕНОСА: «крепкий финал» той игры. Отсюда считается
+//               ratio, то есть сколько клиентов, кассы и оценки перейдёт в
+//               НОВОГРАД. Замер опорных стратегий (6 сидов, банкротство = 0):
+//
+//     игра        осторожная  средняя  размашистая  доведённая
+//     НОВОЕДА       3.90        5.57      9.87         8.30   млрд
+//     КИНОРЕКА     15.29       15.49    банкрот       35.80   млрд
+//     БИЛЕТВИЛЬ     0.84        2.13      5.01         5.58   млрд
+//
+//   Правило шкалы: solid — средняя опора, потолок переноса (ratio 2) —
+//   доведённая. Тогда одинаково сыгранная партия даёт одинаковый перенос
+//   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
+//   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
+//   ничего (порог 30 млрд при средней игре 15.5).
+const LEGACY_GAMES = [
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
+];
+
+// Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
+const NOVOGRAD_WORTHY = 2e9;
+
+const safeGetJson = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+};
+const safeSetJson = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ }
+};
+
+// Разбор строки результата: «ИГРА|vX.Y.Z|код|счёт|ходов|#СУММА»
+function parseResultLine(line) {
+  const text = String(line ?? '').trim();
+  if (!verifyResult(text)) return null;
+  const parts = text.split('|');
+  if (parts.length < 6) return null;
+  const score = Number(parts[3]);
+  if (!Number.isFinite(score)) return null;
+  return { tag: parts[0], version: parts[1], seed: parts[2], score, turns: Number(parts[4]) };
+}
+
+function savedLines() {
+  const list = safeGetJson(META_LINES_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+// Добавляет введённую строку; отвергает мусор и дубли.
+function addResultLine(line) {
+  const parsed = parseResultLine(line);
+  if (!parsed) return { ok: false };
+  const lines = savedLines();
+  if (!lines.includes(String(line).trim())) {
+    lines.push(String(line).trim());
+    safeSetJson(META_LINES_KEY, lines);
+  }
+  return { ok: true, parsed };
+}
+
+// Метка игры в строке результата несёт уровень сложности: «НОВОЕДА·сложный».
+// Наследие смотрит на игру, а не на уровень: партия на сложном открывает
+// актив ровно так же, как на обычном. Локальные таблицы рекордов лежат в
+// одном ключе на игру и уже смешаны по уровням — строки должны вести себя
+// так же, иначе перенос молча пропадал бы у всех, кто играл не на обычном.
+const sameGame = (lineTag, gameTag) => lineTag === gameTag
+  || String(lineTag ?? '').startsWith(`${gameTag}·`);
+
+/**
+ * Что разблокировано на этом устройстве: локальные рекорды старых игр
+ * плюс введённые строки. { delivery: bool, streaming: bool, tickets: bool }
+ */
+function legacyUnlocks() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => sameGame(l.tag, g.tag))
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine) >= g.threshold;
+  }
+  return out;
+}
+
+/**
+ * Лучший счёт по каждой игре на этом устройстве (локальные рекорды плюс
+ * введённые строки). Нужен, чтобы в НОВОГРАД переносились не только «да/нет»,
+ * но и числа финала: касса победившей компании и её оценка.
+ * { delivery: number, streaming: number, tickets: number }
+ */
+function legacyScores() {
+  const out = {};
+  const lines = savedLines().map(parseResultLine).filter(Boolean);
+  for (const g of LEGACY_GAMES) {
+    const records = safeGetJson(g.recordsKey, []);
+    const bestLocal = Array.isArray(records)
+      ? records.reduce((best, r) => Math.max(best, Number(r?.score) || 0), 0) : 0;
+    const bestLine = lines
+      .filter((l) => sameGame(l.tag, g.tag))
+      .reduce((best, l) => Math.max(best, l.score), 0);
+    out[g.assetId] = Math.max(bestLocal, bestLine);
+  }
+  return out;
+}
+
+/**
+ * Насколько крупным был финал игры-источника относительно её «крепкого»
+ * финала. 1.0 — крепкая победа, 2.0 — вдвое лучше и потолок переноса:
+ * доведённая партия как раз туда и приходит. Сверху срезано, потому что
+ * перенос обязан оставаться ощутимым, но не решающим партию НОВОГРАДА.
+ */
+const LEGACY_RATIO_CAP = 2;
+function legacyRatio(assetId, scores = legacyScores()) {
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  const unit = game?.solid ?? game?.threshold ?? 0;
+  if (!unit) return 0;
+  const score = Number(scores[assetId]) || 0;
+  if (score <= 0) return 0;
+  return Math.min(LEGACY_RATIO_CAP, score / unit);
+}
+
+// Бонусы для конкретной партии НОВОГРАДА: свой актив + лицензия + партнёрство,
+// плюс перенесённые числа финала своей игры (касса и оценка).
+function legacyFor(assetId, unlocks = legacyUnlocks(), scores = legacyScores()) {
+  return {
+    asset: Boolean(unlocks[assetId]),
+    cinema: Boolean(unlocks.streaming),
+    tickets: Boolean(unlocks.tickets),
+    // Счёт финала своей игры и его отношение к «крепкому» порогу
+    assetScore: Number(scores[assetId]) || 0,
+    assetRatio: legacyRatio(assetId, scores),
+  };
+}
+
+function novogradBest() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  return Number(saved?.best) || 0;
+}
+
+// Запоминает лучший финал НОВОГРАДА — старые игры читают его для
+// неэкономических обратных бонусов (бейдж, коды партий).
+//
+// «Достойность» зависит от стартового актива: у сложных активов оптимум
+// втрое ниже, поэтому НОВОГРАД передаёт свой порог, а сюда она попадает
+// уже флагом. Второй аргумент необязателен — без него работает общий
+// порог, как раньше.
+function rememberNovogradResult(score, worthyAt = NOVOGRAD_WORTHY) {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  const value = Number(score) || 0;
+  const best = Math.max(Number(saved?.best) || 0, value);
+  const worthy = Boolean(saved?.worthy) || value >= (Number(worthyAt) || NOVOGRAD_WORTHY);
+  safeSetJson(META_BEST_KEY, { best, worthy });
+  return best;
+}
+
+// Открыт ли обратный бонус (бейдж конгломерата в старых играх).
+// Записи прошлых версий несли только счёт — для них сравниваем с общим
+// порогом, чтобы уже заслуженный бейдж не пропал.
+function conglomerateUnlocked() {
+  const saved = safeGetJson(META_BEST_KEY, null);
+  if (saved && saved.worthy) return true;
+  return novogradBest() >= NOVOGRAD_WORTHY;
+}
+
+// Секретная концовка: финалы всех трёх игр + достойный НОВОГРАД.
+// Строго косметика — множителя к счёту нет и не будет.
+function tripleCrown(unlocks = legacyUnlocks()) {
+  return Boolean(unlocks.delivery && unlocks.streaming && unlocks.tickets);
+}
+
+/**
+ * Табель серии: где игрок находится на пути из четырёх игр. Считается по
+ * локальным рекордам и введённым строкам, поэтому одинаково работает и на
+ * витрине, и внутри любой игры.
+ *
+ * Прогресс каждой игры нормируется её «крепким» порогом и срезается на
+ * LEGACY_RATIO_CAP — иначе одна рекордная партия делала бы табель бессмысленным.
+ * Возвращает { games: [...], filled, total, share, missing }.
+ */
+function seriesScorecard() {
+  const scores = legacyScores();
+  const best = novogradBest();
+  const games = LEGACY_GAMES.map((g) => {
+    const score = Number(scores[g.assetId]) || 0;
+    return {
+      assetId: g.assetId,
+      tag: g.tag,
+      score,
+      threshold: g.threshold,
+      solid: g.solid,
+      // Прогресс меряется «крепким финалом», а ворота — входным порогом:
+      // открыть актив легко, набрать полный перенос — нет.
+      ratio: legacyRatio(g.assetId, scores),
+      done: score >= g.threshold,
+    };
+  });
+  games.push({
+    assetId: 'ecosystem',
+    tag: 'НОВОГРАД',
+    score: best,
+    threshold: NOVOGRAD_WORTHY,
+    ratio: Math.min(LEGACY_RATIO_CAP, best / NOVOGRAD_WORTHY),
+    done: conglomerateUnlocked(),
+  });
+  const filled = games.filter((g) => g.done).length;
+  // Доля пути: у каждой игры равный вес, внутри игры — прогресс до «крепкого»
+  // финала. Сыграть все четыре крепко = 100%; дальше табель не растёт.
+  const share = games.reduce((a, g) => a + Math.min(1, g.ratio), 0) / games.length;
+  return {
+    games,
+    filled,
+    total: games.length,
+    share,
+    missing: games.filter((g) => !g.done).map((g) => g.tag),
+  };
+}
+
+/**
+ * Возвращение в базовую игру после экосистемы: что даст новый финал.
+ * Чисто справочный расчёт — экономику зачётной партии он не меняет
+ * (правило набора: обратные бонусы неэкономические). Нужен, чтобы у
+ * повторной партии была ясная цель, а не «сыграть ещё раз».
+ *
+ * Возвращает { played, best, ratio, nextRatio, target, maxed } или null,
+ * если НОВОГРАД ещё не открывали — тогда звать возвращаться не за чем.
+ */
+function returnTarget(assetId) {
+  if (!novogradBest()) return null;
+  const game = LEGACY_GAMES.find((g) => g.assetId === assetId);
+  if (!game) return null;
+  const best = Number(legacyScores()[assetId]) || 0;
+  const unit = game.solid ?? game.threshold;
+  const capped = legacyRatio(assetId);
+  // Следующая ступень наследия — целое число «крепких финалов»
+  const nextRatio = Math.min(LEGACY_RATIO_CAP, Math.floor(capped) + 1);
+  return {
+    played: best > 0,
+    best,
+    ratio: capped,
+    nextRatio,
+    target: Math.round(unit * nextRatio),
+    maxed: capped >= LEGACY_RATIO_CAP,
+  };
+}
+
+// Сохранение партии НОВОГРАДА — сбрасывается вместе с прогрессом набора
+const NOVOGRAD_SAVE_KEY = 'novograd-save-v1';
+
+/**
+ * Сброс экосистемного прогресса: введённые строки наследия, лучший финал
+ * НОВОГРАДА и его незаконченная партия. Нужен, чтобы пройти путь заново
+ * с чистого листа — например, показать группе игру «как в первый раз».
+ *
+ * Таблицы рекордов игр НЕ трогаются: они заработаны и остаются. По той же
+ * причине не трогается и мировая таблица — там результаты уже на сервере.
+ */
+function resetEcosystemProgress() {
+  const cleared = [];
+  for (const key of [META_BEST_KEY, META_LINES_KEY, NOVOGRAD_SAVE_KEY]) {
+    try {
+      if (localStorage.getItem(key) !== null) cleared.push(key);
+      localStorage.removeItem(key);
+    } catch { /* приватный режим */ }
+  }
+  return cleared;
+}
+
+// Коды «городов-побратимов» — символическая награда в старых играх
+const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
+
+
 // ===== ../../shared/leaderboard.js =================================
 // ============================================================================
 // Глобальная таблица результатов — общий клиент для всех трёх игр.
@@ -1765,10 +2840,15 @@ function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
 
-async function lbTop(game, limit = 10) {
+// seed передаётся и серверу: сервер второй версии фильтрует по коду партии
+// сам, а первой — просто не знает такого параметра и отдаёт обычный топ
+// (страховкой работает клиентский фильтр в lbMount).
+async function lbTop(game, limit = 10, seed = '') {
   const base = lbEndpoint();
   if (!base) return null;
-  const res = await fetch(`${base}?game=${encodeURIComponent(game)}&limit=${limit}`);
+  const url = `${base}?game=${encodeURIComponent(game)}&limit=${limit}`
+    + (seed ? `&seed=${encodeURIComponent(seed)}` : '');
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`leaderboard ${res.status}`);
   const data = await res.json();
   return Array.isArray(data.top) ? data.top : [];
@@ -1825,8 +2905,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -1840,7 +2925,8 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -1850,7 +2936,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -1885,19 +2971,44 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе (страховка для сервера
+  // первой версии; второй фильтрует сам по параметру seed)
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10, filterSeed)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');
@@ -1994,6 +3105,18 @@ function weightedPick(rng, items) {
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 const CONFIG = {
+  // --- Финансовая команда (общая механика набора, см. shared/finance.js) ---
+  // У билетного маркетплейса выручка — тонкий take rate поверх крупного GMV,
+  // поэтому команда здесь чинит в первую очередь эквайринг: он снимается
+  // с оборота, а не с вашей комиссии.
+  finance: {
+    saturationShare: 0.03,       // выручки в месяц до «половины» силы
+    saturationFloor: 300_000,
+    miscRateBase: 0.020,         // прочие расходы без службы, доля выручки
+    miscRateCut: 0.014,
+    acquiringCut: 0.005,         // насколько сбивается ставка эквайринга с GMV
+    roundGain: 0.20,
+  },
   monthsTotal: 36,        // партия — три года
   startCash: 1_500_000_000, // деньги инвестора на старте
 
@@ -2161,7 +3284,7 @@ const ORGANIZERS = [
     eventsPerMonth: 11,
     seats: 380,
     avgPrice: 1600,
-    commissionSensitivity: 1.5, // насколько больно берут комиссию
+    commissionSensitivity: 1.25, // насколько больно берут комиссию
     feeAwareness: 0.9,          // насколько организатор замечает ваш сбор с покупателя
     loyalty: 0.55,              // множитель оттока: меньше — консервативнее
     platformNeed: 0.55,         // насколько ему нужен билетный виджет
@@ -2180,7 +3303,7 @@ const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 2_600,
     avgPrice: 3_800,
-    commissionSensitivity: 2.4,
+    commissionSensitivity: 2.0,
     feeAwareness: 1.3,
     loyalty: 1.7,
     platformNeed: 0.30,
@@ -2199,7 +3322,7 @@ const ORGANIZERS = [
     eventsPerMonth: 6,
     seats: 150,
     avgPrice: 1_400,
-    commissionSensitivity: 0.85,
+    commissionSensitivity: 0.7,
     feeAwareness: 0.6,
     loyalty: 1.25,
     platformNeed: 1.75,
@@ -2218,7 +3341,7 @@ const ORGANIZERS = [
     eventsPerMonth: 2.2,
     seats: 7_000,
     avgPrice: 1_100,
-    commissionSensitivity: 3.1,
+    commissionSensitivity: 2.6,
     feeAwareness: 1.5,
     loyalty: 0.75,
     platformNeed: 1.40,
@@ -2243,7 +3366,7 @@ const AUDIENCES = [
     id: 'regulars',
     name: { ru: 'Театралы', en: 'Theatre regulars' },
     potential: 3_400_000,
-    feeElasticity: 0.8,        // насколько больно бьёт сервисный сбор
+    feeElasticity: 1.5,        // насколько больно бьёт сервисный сбор
     trustWeight: 1.4,          // насколько важна репутация сервиса
     discovery: 0.45,           // насколько зависит от рекомендаций и подборок
     affinity: { theatre: 2.3, concert: 0.6, club: 0.5, sport: 0.15 },
@@ -2256,7 +3379,7 @@ const AUDIENCES = [
     id: 'music',
     name: { ru: 'Меломаны', en: 'Music fans' },
     potential: 6_000_000,
-    feeElasticity: 1.7,
+    feeElasticity: 3.0,
     trustWeight: 0.9,
     discovery: 0.75,
     affinity: { theatre: 0.35, concert: 2.5, club: 1.7, sport: 0.25 },
@@ -2269,7 +3392,7 @@ const AUDIENCES = [
     id: 'fans',
     name: { ru: 'Болельщики', en: 'Sports fans' },
     potential: 4_200_000,
-    feeElasticity: 2.1,
+    feeElasticity: 3.7,
     trustWeight: 1.1,
     discovery: 0.20,
     affinity: { theatre: 0.1, concert: 0.45, club: 0.2, sport: 3.0 },
@@ -2282,7 +3405,7 @@ const AUDIENCES = [
     id: 'casual',
     name: { ru: 'За компанию', en: 'Casual buyers' },
     potential: 8_000_000,
-    feeElasticity: 2.6,
+    feeElasticity: 4.5,
     trustWeight: 1.0,
     discovery: 1.35,
     affinity: { theatre: 0.9, concert: 1.0, club: 0.85, sport: 0.8 },
@@ -2300,18 +3423,67 @@ const audienceById = (id) => AUDIENCES.find((a) => a.id === id);
 // ============================================================================
 
 const LEVER_GROUPS = [
-  { id: 'take', label: { ru: 'Комиссия и сборы', en: 'Fees and commission' }, open: true },
-  { id: 'growth', label: { ru: 'Спрос и предложение', en: 'Demand and supply' }, open: true },
-  { id: 'infra', label: { ru: 'Продукт и поддержка', en: 'Product and support' }, open: false },
+  {
+    id: 'take',
+    label: { ru: 'Комиссия и сборы', en: 'Fees and commission' },
+    desc: {
+      ru: 'С кого вы берёте деньги: со зрителя сбором, который он видит, или с организатора комиссией, которую он видит в договоре. Обе стороны нужны одновременно.',
+      en: 'Whom you charge: the buyer through a fee they see, or the organiser through a commission they see in the contract. You need both sides at once.',
+    },
+    open: true,
+  },
+  {
+    id: 'growth',
+    label: { ru: 'Спрос и предложение', en: 'Demand and supply' },
+    desc: {
+      ru: 'Двусторонний рынок растёт только с обоих концов: зрители приходят за афишей, организаторы — за зрителями. Маркетинг зовёт первых, менеджеры приводят вторых.',
+      en: 'A two-sided market only grows from both ends: buyers come for the listings, organisers come for the buyers. Marketing calls the former, account managers bring the latter.',
+    },
+    open: true,
+  },
+  {
+    id: 'infra',
+    label: { ru: 'Продукт и поддержка', en: 'Product and support' },
+    desc: {
+      ru: 'То, что держит доверие и выдерживает он-сейл: витрина, поддержка, ёмкость. Настраивается редко, но именно здесь ломается всё остальное.',
+      en: 'What holds trust and survives the on-sale: the storefront, support, capacity. Rarely adjusted — and exactly where everything else breaks.',
+    },
+    open: false,
+  },
 ];
 
 const LEVERS = [
+  {
+    key: 'finance',
+    group: 'infra',
+    label: { ru: 'Финансовая команда', en: 'Finance team' },
+    unit: { ru: '₽/мес', en: '$/mo' },
+    min: 0, max: 12_000_000, step: 250_000, def: 0,
+    tip: {
+      ru: 'Казначейство, переговоры с банком, контроль расходов. Здесь она важнее, чем кажется: эквайринг снимается с оборота, а зарабатываете вы тонкий процент — сбитая ставка бьёт прямо в вашу маржу. Плюс режет «прочие расходы» и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
+      en: 'Treasury, bank negotiations, cost control. It matters more here than it looks: card processing is charged on turnover while you earn a thin percentage — a lower rate goes straight into your margin. It also cuts “miscellaneous” and packages the company better for a round. The series difficulty changes only its price.',
+    },
+  },
   {
     key: 'buyerFee',
     group: 'take',
     label: { ru: 'Сервисный сбор с покупателя', en: 'Buyer service fee' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 22, step: 0.5, def: 10, scale: 0.01,
+    // Режимы — имена решению, ползунок остаётся: кривая отклика сбора
+    // пологая, но с изломом наверху (замер: 15% -> 7.34, 20% -> 8.05,
+    // 25% -> 7.61 млрд), и точная настройка здесь уместна.
+    policyMode: 'preset',
+    policy: [
+      { v: 5, label: { ru: 'Почти без сбора', en: 'Barely a fee' },
+        note: { ru: 'Зритель видит почти цену билета: конверсия лучшая на рынке, выручки с билета почти нет.', en: 'The buyer sees almost the ticket price: best conversion on the market, almost no revenue per ticket.' } },
+      { v: 10, label: { ru: 'Рыночный', en: 'Market' },
+        note: { ru: 'Как у всех: зритель ворчит, но платит. Средний путь между оборотом и выручкой.', en: 'Same as everyone: the buyer grumbles and pays. The middle road between turnover and revenue.' } },
+      { v: 15, label: { ru: 'Плотный', en: 'Firm' },
+        note: { ru: 'Выше рынка: с каждого билета берёте заметно больше, часть корзин бросают на оплате.', en: 'Above market: you take visibly more per ticket, and some baskets are abandoned at checkout.' } },
+      { v: 20, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'На пороге терпения: выручка максимальная, но ещё шаг — и зритель уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue peaks, but one more step and the buyer leaves for a rival — taking the organiser along.' } },
+    ],
     tip: {
       ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку.',
       en: 'The mark-up on top of the ticket price that the buyer sees at checkout. The most visible line of your revenue — and the most visible reason to close the tab.',
@@ -2323,6 +3495,17 @@ const LEVERS = [
     label: { ru: 'Комиссия с организатора', en: 'Organiser commission' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 14, step: 0.5, def: 5, scale: 0.01,
+    policyMode: 'preset',
+    policy: [
+      { v: 1, label: { ru: 'Заманить', en: 'Court them' },
+        note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
+      { v: 3, label: { ru: 'Умеренная', en: 'Moderate' },
+        note: { ru: 'Заметно в договоре, но терпимо: организатор сравнивает с конкурентом и остаётся.', en: 'Visible in the contract but tolerable: the organiser compares with a rival and stays.' } },
+      { v: 5, label: { ru: 'Рыночная', en: 'Market' },
+        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
+      { v: 8, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'Дороже рынка: крупные площадки начинают считать и уходить — вместе со своими залами.', en: 'Above market: big venues start doing the maths and leaving — with their halls.' } },
+    ],
     tip: {
       ru: 'Ваша доля из выручки организатора. Зритель её не видит совсем, зато организатор видит в договоре — и держит в голове предложение конкурента.',
       en: 'Your share of the organiser revenue. The buyer never sees it; the organiser sees it in the contract — and keeps the rival offer in mind.',
@@ -2336,15 +3519,24 @@ const LEVERS = [
     min: 0, max: 7, step: 0.25, def: 2.5, scale: 0.01,
     tip: {
       ru: 'Сколько вы берёте с продаж через виджет на сайте организатора. Сервисного сбора там нет: цену для покупателя на своём сайте назначает он, а не вы, — так что это вся ваша выручка с такого билета. Плюс эквайринг банк снимает и с неё тоже.',
-      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its acquiring out of it too.',
+      en: 'What you take from sales through the widget on the organiser site. There is no buyer fee there: on their own site they set the price the buyer sees, not you — so this is all the revenue you get from such a ticket. And the bank takes its card fees out of it too.',
     },
   },
   {
     key: 'platformFee',
     group: 'take',
     label: { ru: 'Абонплата платформы', en: 'Platform subscription' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 120_000, step: 5_000, def: 20_000,
+    policyMode: 'preset',
+    policy: [
+      { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
+        note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },
+      { v: 20_000, label: { ru: 'Символическая', en: 'Token' },
+        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already a reason to think for the small.' } },
+      { v: 60_000, label: { ru: 'Полная', en: 'Full' },
+        note: { ru: 'Деньги, не зависящие от оборота, — но длинный хвост маленьких площадок останется у конкурента.', en: 'Money independent of turnover — but the long tail of small venues stays with your rival.' } },
+    ],
     tip: {
       ru: 'Фиксированная плата с подключённого организатора. Деньги, не зависящие от оборота, — но для маленького клуба это и есть причина не подключаться.',
       en: 'A flat fee per connected organiser. Money that does not depend on turnover — and for a small club, exactly the reason not to connect.',
@@ -2354,7 +3546,7 @@ const LEVERS = [
     key: 'marketing',
     group: 'growth',
     label: { ru: 'Маркетинг на зрителей', en: 'Marketing to buyers' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
       ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
@@ -2376,7 +3568,7 @@ const LEVERS = [
     key: 'onboarding',
     group: 'growth',
     label: { ru: 'Бюджет на подключения', en: 'Onboarding budget' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
@@ -2387,7 +3579,7 @@ const LEVERS = [
     key: 'platformDev',
     group: 'growth',
     label: { ru: 'Разработка платформы', en: 'Platform development' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Билетный виджет на сайте организатора, схемы залов, абонементы, отчёты. Чем сильнее платформа, тем больше организаторов вообще способны с вами работать.',
@@ -2398,7 +3590,7 @@ const LEVERS = [
     key: 'product',
     group: 'infra',
     label: { ru: 'Продукт и приложение', en: 'Product and app' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 80_000_000, step: 2_000_000, def: 8_000_000,
     tip: {
       ru: 'Скорость оплаты, поиск, карта зала. Влияет на конверсию: сколько дошедших до корзины действительно платят.',
@@ -2409,7 +3601,7 @@ const LEVERS = [
     key: 'support',
     group: 'infra',
     label: { ru: 'Поддержка', en: 'Support' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 6_000_000,
     tip: {
       ru: 'Возвраты, потерянные билеты, вопросы на входе. Плохая поддержка бьёт по доверию зрителей и по терпению организаторов одновременно.',
@@ -2420,7 +3612,7 @@ const LEVERS = [
     key: 'capacityTech',
     group: 'infra',
     label: { ru: 'Запас мощности', en: 'Capacity headroom' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 50_000_000, step: 1_000_000, def: 3_000_000,
     tip: {
       ru: 'Серверы под старт продаж на хит. В обычный месяц это выброшенные деньги — ровно до того месяца, когда сайт ляжет на глазах у ста тысяч человек.',
@@ -2431,7 +3623,7 @@ const LEVERS = [
     key: 'rnd',
     group: 'infra',
     label: { ru: 'Команда данных', en: 'Data team' },
-    unit: { ru: '₽/мес', en: '₽/mo' },
+    unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 30_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Качество алгоритмов. Без неё умные механики работают наугад и вредят чаще, чем помогают.',
@@ -2506,6 +3698,26 @@ const ALGORITHMS = [
       label: { ru: 'Жёсткость проверок', en: 'Check strictness' },
       unit: { ru: '%', en: '%' },
       min: 0, max: 100, step: 5, def: 50, scale: 0.01,
+      // Борьба с перекупщиками — это политика, а не ползунок «сделай лучше»:
+      // у неё есть внутренний оптимум. Замер на 24 кодах партии (медианы, к
+      // «алгоритм не куплен»): 0% даёт +11.8%, 25% — +13.8%, 50% — +2.8%,
+      // 75% — −4.6%, 100% — +1.1%. Доверие растёт монотонно (53% -> 65%),
+      // итог — нет: за жёсткостью платят отказы живых зрителей.
+      //
+      // Первый замер был на восьми кодах и указывал на 50%. Он ошибся:
+      // разброс по партиям шире разницы между режимами, и на восьми кодах
+      // оптимум гуляет. Отсюда правило набора — такие срезы снимать не
+      // меньше чем на 24 кодах.
+      policy: [
+        { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
+          note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
+        { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
+          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is bought with real refusals.' } },
+        { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
+          note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: по замеру итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: measured, the result is already below a simple limit, even though trust is higher.' } },
+        { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
+          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is barely better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+      ],
     },
     what: {
       ru: 'Очередь, лимиты и проверки на старте продаж хита — чтобы билеты достались людям, а не перекупщикам.',
@@ -3769,7 +4981,7 @@ const EVENTS = [
     options: [
       {
         label: { ru: 'Подключиться', en: 'Join the programme' },
-        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off ₽80M of work. Demand grows noticeably.' },
+        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off $800K of work. Demand grows noticeably.' },
         effects: { oneOffCost: 80_000_000, demandMult: 1.11, awarenessAdd: 0.015 },
       },
       {
@@ -3817,7 +5029,7 @@ const EVENTS = [
     options: [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
-        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '₽75M one-off, and the venue and its events are yours.' },
+        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '$750K one-off, and the venue and its events are yours.' },
         effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {
@@ -3962,10 +5174,45 @@ function applyEvent(mods, event, optionIndex) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-function createInitialState(seed = 'biletville') {
+/**
+ * Финансовая команда: сила и цена. Цена — доля месячной выручки: служба
+ * растёт вместе с компанией (см. shared/finance.js).
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].revenue : 0;
+}
+
+function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+// Ставка эквайринга: сильная служба выторговывает её у банка. С оборота
+// она снимается целиком, поэтому десятые доли процента здесь — деньги.
+function acquiringRate(state, decisions) {
+  return Math.max(0.008,
+    CONFIG.acquiringRate - CONFIG.finance.acquiringCut * financeLevel(state, decisions));
+}
+
+function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+function createInitialState(seed = 'biletville', difficulty = 'normal') {
   const rng = createRng(seed);
   const state = {
     seed,
+    // Уровень сложности — общая настройка набора (shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     month: 0,
     cash: CONFIG.startCash,
     equity: 1,
@@ -4505,7 +5752,8 @@ function step(prevState, input = {}) {
   const subscriptionRevenue = connectedCount * decisions.platformFee;
   const revenue = marketplaceRevenue + platformRevenue + subscriptionRevenue;
 
-  const acquiring = gmv * CONFIG.acquiringRate;
+  const acqRate = acquiringRate(state, decisions);
+  const acquiring = gmv * acqRate;
   const supportLoad = ticketsTotal * CONFIG.supportPerTicket
     * clamp(CONFIG.refSupport / Math.max(1, decisions.support), 0.35, 2.4);
   const variableCost = acquiring + supportLoad;
@@ -4522,10 +5770,16 @@ function step(prevState, input = {}) {
   // вторая линия поддержки. Аккаунт-менеджеры — отдельный ползунок и другая
   // работа; этот штат в ноль не уведёшь — фикс-кост масштаба.
   const staffCost = orgTotal(state) * CONFIG.staffPerOrg;
+  // Прочие расходы: комиссии, списания, штрафы, неразнесённая
+  // административка. Растёт сама вместе с выручкой; режет её не
+  // бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const fixed = CONFIG.hqMonthly + staffCost + decisions.marketing + managerCost
     + decisions.platformDev + decisions.product + decisions.support
     + decisions.capacityTech + decisions.rnd + platformSeats
-    + onboardingSpend + techUpkeep + serverCost;
+    + onboardingSpend + techUpkeep + serverCost + financeBudget + miscCost;
 
   const refundHit = crisisMods.refundHit ?? 0;
   const oneOff = installCost + crisisCost + refundHit
@@ -4730,6 +5984,11 @@ function step(prevState, input = {}) {
     gmvPlatform,
     marketplaceShareOfGmv,
     revenue,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
+    acquiringRate: acqRate,
     marketplaceRevenue,
     platformRevenue,
     subscriptionRevenue,
@@ -4751,6 +6010,7 @@ function step(prevState, input = {}) {
     refundHit,
     installedNow,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
 
     // --- Конкурент ---
@@ -4917,7 +6177,7 @@ function valuation(state) {
   // из последнего месяца — и обнулив на нём маркетинг и разработку, множитель
   // можно было задрать рывком. См. shared/valuation.js.
   const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.gmv, 0.25);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -1;
@@ -4938,8 +6198,16 @@ function valuation(state) {
     * (1 + (state.flags?.valuationBonus ?? 0)));
 }
 
+// Упаковка к раунду: оценку считает рынок, финансовая команда меняет
+// только долю, которую вы отдаёте за те же деньги.
+function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, valuation: terms.pre, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -5002,11 +6270,16 @@ function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
     orgShare: last?.orgShare ?? 0,
     gmv: last?.gmv ?? 0,
     takeRate: last?.takeRate ?? 0,
@@ -5017,10 +6290,55 @@ function finalScore(state) {
 }
 
 
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи; цены — из телеметрии самой партии и замеров аудита 2026-08.
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+  const sum = (fn) => hist.reduce((a, r) => a + (fn(r) ?? 0), 0);
+
+  // Авансы организаторам списывались чаще, чем возвращались: ставки на
+  // хиты без запаса. Цена — собственные списания партии.
+  const writtenOff = sum((r) => r.advanceWrittenOff);
+  const recouped = sum((r) => r.advanceRecouped);
+  if (writtenOff >= 30e6 && writtenOff > 0.35 * (writtenOff + recouped)) {
+    out.push({ id: 'advances', lost: writtenOff, back: recouped });
+  }
+
+  // Боты держали заметную долю продаж, а антибот-фильтр стоял на нуле:
+  // доверие зрителей — это спрос следующих месяцев. Порог 18%: фоновая
+  // доля ботов на опорах не поднимается выше 15% — правило ловит
+  // запущенное нашествие, а не обычный шум.
+  const botMonths = hist.filter((r) => (r.botShare ?? 0) >= 0.18
+    && (r.decisions?.antiBot ?? 0) === 0).length;
+  if (botMonths >= 3) out.push({ id: 'bots', n: botMonths });
+
+  // Касса жила ниже месяца расходов при убыточной операционке: любой шок
+  // в такой момент — продажа за долги (28% оценки минус долг).
+  const thinMonths = hist.filter((r) => r.profit < 0
+    && r.cash < (r.revenue - r.profit)).length;
+  if (thinMonths >= 3) out.push({ id: 'thinCash', n: thinMonths });
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}
+
 
 // ===== ../../shared/format.js ======================================
 // Форматирование чисел для интерфейса.
 // Разделители разрядов и суффиксы («млн» / «M») зависят от языка.
+//
+// Валюта тоже зависит от языка. Модель считает в рублях — все константы
+// баланса, все замеры и все счёты в таблице рекордов рублёвые, и это не
+// меняется. Меняется только показ: английская версия показывает доллары по
+// зафиксированному курсу 100 ₽ = $1. Курс round-number намеренно: игрок
+// должен уметь пересчитать в уме, а не гадать, по какому дню он взят.
+// Единственное место, где число остаётся рублёвым, — строка результата и
+// лидерборд: иначе одна таблица содержала бы две шкалы.
 
 
 const LOCALE = { ru: 'ru-RU', en: 'en-US' };
@@ -5028,30 +6346,69 @@ const SUFFIX = {
   ru: { thousand: 'тыс', million: 'млн', billion: 'млрд', k: 'к', m: 'м' },
   en: { thousand: 'K', million: 'M', billion: 'B', k: 'K', m: 'M' },
 };
-
 const locale = () => LOCALE[getLang()] ?? 'ru-RU';
 const suffix = () => SUFFIX[getLang()] ?? SUFFIX.ru;
 const group = (x) => Math.round(x).toLocaleString(locale());
+
+/** Рублёвая величина модели в валюте показа. */
+const cash = (x) => (Number.isFinite(x) ? x / currency().rate : x);
+
+// Приписывает знак валюты с той стороны, с какой его пишут в этом языке.
+const withCur = (text, sign = '') => {
+  const c = currency();
+  return c.prefix ? `${sign}${c.symbol}${text}` : `${sign}${text} ${c.symbol}`;
+};
+
+/**
+ * Сумма-ставка — небольшая величина, которую показывают рядом с числом
+ * («149 ₽ за доставку»). После пересчёта в доллары такие суммы становятся
+ * дробными, поэтому знаков после запятой столько, сколько нужно, чтобы
+ * ставка не схлопнулась в ноль.
+ */
+function amount(x, digits = null) {
+  if (!Number.isFinite(x)) return '—';
+  const abs = Math.abs(cash(x));
+  // В рублях модель оперирует целыми: копейки в интерфейсе — шум. В долларах
+  // ставка вроде 22 ₽ превращается в 0.22, и без знаков после запятой она бы
+  // схлопнулась в ноль.
+  const d = digits ?? (currency().rate === 1 || abs === 0 || abs >= 10 ? 0 : 2);
+  return withCur(num(abs, d), x < 0 ? '−' : '');
+}
 
 function num(x, digits = 0) {
   if (!Number.isFinite(x)) return '—';
   return x.toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
+/** Валютная ли это единица рычага: «₽», «₽/мес», «$/wk». */
+const isCurUnit = (unit) => /^[₽$]/.test(String(unit ?? ''));
+
+/**
+ * Сумма с единицей рычага: «149 ₽/нед» и «$1.49/wk». Знак валюты живёт в
+ * price(), а из единицы берётся только хвост — иначе в английской версии
+ * рядом оказались бы два знака.
+ */
+function amountIn(x, unit) {
+  const tail = String(unit ?? '').replace(/^[₽$]/, '').trimStart();
+  return `${amount(x)}${tail}`;
+}
+
 function money(x) {
   if (!Number.isFinite(x)) return '—';
-  const abs = Math.abs(x);
+  const abs = Math.abs(cash(x));
   const sign = x < 0 ? '−' : '';
   const s = suffix();
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)} ${s.billion} ₽`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2)} ${s.million} ₽`;
-  if (abs >= 1e3) return `${sign}${group(abs)} ₽`;
-  return `${sign}${abs.toFixed(0)} ₽`;
+  const c = currency();
+  const scaled = (v, unit) => (c.prefix ? `${v}${unit}` : `${v} ${unit}`);
+  if (abs >= 1e9) return withCur(scaled((abs / 1e9).toFixed(2), s.billion), sign);
+  if (abs >= 1e6) return withCur(scaled((abs / 1e6).toFixed(abs >= 1e7 ? 1 : 2), s.million), sign);
+  if (abs >= 1e3) return withCur(group(abs), sign);
+  return withCur(abs.toFixed(c.rate > 1 && abs > 0 && abs < 10 ? 2 : 0), sign);
 }
 
 function moneyExact(x) {
   if (!Number.isFinite(x)) return '—';
-  return `${x < 0 ? '−' : ''}${group(Math.abs(x))} ₽`;
+  return withCur(group(Math.abs(cash(x))), x < 0 ? '−' : '');
 }
 
 // Короткие подписи на осях графиков
@@ -5154,6 +6511,49 @@ function labelTables(root = document) {
 }
 
 
+// ===== ../../shared/sliders.js =====================================
+// ============================================================================
+// Заливка ползунков до ручки. В WebKit дорожку красит переменная --fill
+// (процент положения ручки), которую CSS подставляет в градиент; Firefox
+// рисует заливку сам через ::-moz-range-progress и в скрипте не нуждается,
+// но лишняя переменная ему не мешает.
+//
+// Один вызов на игру: слушатель ввода на документе плюс пересчёт всех
+// ползунков после любых перестроек DOM (панели пересобираются каждый ход,
+// а значения ползункам ставит скрипт — событий ввода при этом нет).
+// ============================================================================
+
+function setFill(input) {
+  const min = Number(input.min || 0);
+  const max = Number(input.max || 100);
+  const v = Number(input.value);
+  const p = max > min ? ((v - min) / (max - min)) * 100 : 0;
+  input.style.setProperty('--fill', `${Math.max(0, Math.min(100, p)).toFixed(1)}%`);
+}
+
+function watchSliders(root = document) {
+  root.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el && el.tagName === 'INPUT' && el.type === 'range') setFill(el);
+  }, true);
+
+  let queued = false;
+  const sweep = () => {
+    queued = false;
+    root.querySelectorAll('input[type="range"]').forEach(setFill);
+  };
+  // Пересчёт откладывается до кадра: перестройка панелей — это сотни
+  // мутаций подряд, а пройтись по трём десяткам ползунков хватит одного раза
+  const observer = new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(sweep);
+  });
+  observer.observe(root.body ?? root, { childList: true, subtree: true, attributes: true, attributeFilter: ['value'] });
+  sweep();
+}
+
+
 // ===== ../../shared/charts.js ======================================
 // Минималистичные графики на canvas — без внешних библиотек,
 // чтобы игра открывалась одним файлом и работала офлайн.
@@ -5177,9 +6577,13 @@ function niceTicks(min, max, count = 4) {
 /**
  * series: [{ label, color?, data: number[] }]
  * opts: { format?: (v)=>string, zeroLine?: boolean, title?: string,
- *         markers?: number[] } — индексы ходов (0-базные), где игрок менял
- * решения. Рисуются пунктирными вертикалями: график перестаёт быть «просто
- * кривой» и становится дневником — видно, где решение, а где последствия.
+ *         markers?: number[], rounds?: number[] } — индексы ходов (0-базные).
+ * markers — ходы, где игрок менял решения или случилось событие с выбором:
+ * рисуются пунктирными вертикалями, график перестаёт быть «просто кривой»
+ * и становится дневником — видно, где решение, а где последствия.
+ * rounds — ходы, где привлекались деньги (раунд или вливание совета):
+ * рисуются ромбами по верхней кромке — «когда брать деньги» само по себе
+ * решение, и оно заслуживает собственного знака.
  */
 function drawLineChart(canvas, series, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -5261,6 +6665,21 @@ function drawLineChart(canvas, series, opts = {}) {
     ctx.setLineDash([]);
   }
 
+  // раунды — ромбы по верхней кромке: деньги пришли в этот ход
+  for (const ri of (opts.rounds ?? [])) {
+    if (ri < 0 || ri >= n) continue;
+    const px = x(ri);
+    const py = padT + 5;
+    ctx.fillStyle = 'rgba(96,165,250,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px + 4, py);
+    ctx.lineTo(px, py + 4);
+    ctx.lineTo(px - 4, py);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   // линии
   visible.forEach((s, si) => {
     ctx.strokeStyle = s.color ?? PALETTE[si % PALETTE.length];
@@ -5333,6 +6752,7 @@ let state = null;
 let chartTab = 'market';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;
 let openGroups = { take: true, growth: true, infra: false };
 let pendingExclusive = null;   // 'accept' | 'decline'
@@ -5516,10 +6936,238 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Полоса бюджета: куда уходят деньги этого месяца. Орган общий для набора
+// (shared/controls.js). У маркетплейса статей больше всех в наборе, и до
+// сих пор они читались только построчно в P&L.
+const BUDGET_COLORS = {
+  demand: PALETTE[1],
+  supply: PALETTE[2],
+  product: PALETTE[4],
+  tech: PALETTE[0],
+  fixed: '#64748b',
+};
+// ----------------------------------------------------------------------------
+// Кварталы рынка
+//
+// Прежняя схема отвечала потоками-жгутами, толщину которых глаз сравнивать
+// не умеет: один толстый и три волосяных, вся суть — в трёх процентах подписи
+// (пересборка визуала 2026-08, PROPOSALS-VIZ). Теперь грамматика карты
+// НОВОЕДЫ: каждый тип организаторов — квартал, ширина квартала — оборот типа,
+// зелёная заливка снизу — ваша доля этого оборота, рамка — состояние
+// (бирюзовая — виджет развёрнут, красный пунктир — тип теряет организаторов).
+// ----------------------------------------------------------------------------
+function renderMarketMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  if (!r) { box.innerHTML = ''; return; }
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
+
+  const rows = ORGANIZERS.map((def) => {
+    const row = (r.organizers ?? []).find((o) => o.id === def.id);
+    const market = row?.marketSold ?? 0;
+    const platform = row?.platformSold ?? 0;
+    // «Мимо вас» модель считает сама (ownSold): выводить это вычитанием из
+    // спроса нельзя — спрос там свой у каждой стороны, и разность врала нулём
+    const own = row?.lostSold ?? 0;
+    const total = market + platform + own;
+    return {
+      def,
+      count: row?.count ?? 0,
+      turnover: total * def.avgPrice,
+      mineShare: total > 0 ? (market + platform) / total : 0,
+      ownShare: total > 0 ? own / total : 0,
+      widgetShare: clamp(state.platformShare?.[def.id] ?? 0, 0, 1),
+      gained: row?.gained ?? 0,
+    };
+  });
+  // Типы, с которыми вы не работаете, из схемы не убираются: тёмный квартал —
+  // это и есть ответ на вопрос «а что я не беру», а он в этой игре главный.
+
+  const W = narrow ? 360 : 700;
+  const sumTurn = Math.max(1, rows.reduce((a, x) => a + x.turnover, 0));
+  const gap = 8;
+  const pad = 6;
+
+  // Ширина квартала — доля оборота (мекко-раскладка): на десктопе один ряд,
+  // на телефоне два ряда по два квартала. Минимум держит подписи читаемыми.
+  const layoutRow = (list, y, rowW, h) => {
+    const rowSum = Math.max(1, list.reduce((a, x) => a + x.turnover, 0));
+    const free = rowW - gap * (list.length - 1);
+    const minW = narrow ? 96 : 118;
+    let widths = list.map((x) => Math.max(minW, free * (x.turnover / rowSum)));
+    const over = widths.reduce((a, w) => a + w, 0) - free;
+    if (over > 0) {
+      const shrinkable = widths.map((w) => w - minW);
+      const shrinkSum = Math.max(1e-6, shrinkable.reduce((a, w) => a + w, 0));
+      widths = widths.map((w, i) => w - over * (shrinkable[i] / shrinkSum));
+    }
+    let x = pad;
+    return list.map((row, i) => {
+      const out = { row, x, y, w: widths[i], h };
+      x += widths[i] + gap;
+      return out;
+    });
+  };
+  const tileH = narrow ? 108 : 150;
+  const tiles = narrow
+    ? [...layoutRow(rows.slice(0, 2), 8, W - pad * 2, tileH),
+      ...layoutRow(rows.slice(2), tileH + 18, W - pad * 2, tileH)]
+    : layoutRow(rows, 8, W - pad * 2, tileH);
+  const H = narrow ? tileH * 2 + 28 : tileH + 18;
+
+  const tile = ({ row, x, y, w, h }) => {
+    const live = row.count > 0;
+    const losing = row.gained < 0;
+    const hasWidget = row.widgetShare > 0.005;
+    const stroke = !live ? 'var(--line)'
+      : losing ? 'rgba(248, 113, 113, 0.75)'
+      : hasWidget ? 'rgba(45, 212, 191, 0.8)' : 'rgba(74, 222, 128, 0.6)';
+    const fillH = Math.round((h - 8) * clamp(row.mineShare, 0, 1));
+    const name = tx(w < 200 ? row.def.short : row.def.name);
+    return `<g class="qt${live ? '' : ' qt-dead'}">
+      ${fillH > 1 ? `<rect class="qx qx-share" x="${x + 1.5}" y="${y + h - 1.5 - fillH}"
+        width="${w - 3}" height="${fillH}" rx="7" fill="var(--good)" fill-opacity="0.16"></rect>` : ''}
+      <rect class="qx qx-frame" x="${x}" y="${y}" width="${w}" height="${h}" rx="9"
+        fill="${live ? 'none' : 'rgba(148, 163, 184, 0.05)'}" stroke="${stroke}"
+        stroke-width="1.6"${losing || !live ? ' stroke-dasharray="6 4"' : ''}></rect>
+      <text class="qx qx-name" x="${x + 10}" y="${y + 20}" font-size="13" font-weight="700" fill="var(--text)">${name}</text>
+      <text class="qx qx-meta" x="${x + 10}" y="${y + 36}" font-size="10" fill="var(--muted)">${live
+        ? (w >= 165 ? `${compact(row.count)} ${t('mapOrgsShort')} · ${money(row.turnover)}` : money(row.turnover))
+        : t('mapNoOrgs')}</text>
+      ${live ? `<text class="qx qx-share" x="${x + 10}" y="${y + h - 10}" font-size="11"
+        font-weight="700" fill="var(--good)">${t('qtShare', { p: pct(row.mineShare, 0) })}</text>` : ''}
+      ${live ? `<text class="qx qx-widget" x="${x + w - 8}" y="${y + h - 26}" text-anchor="end" font-size="10"
+        fill="${hasWidget ? '#2dd4bf' : 'var(--muted)'}">${hasWidget
+          ? t('qtWidget', { p: pct(row.widgetShare, 0) }) : t('qtNoWidget')}</text>` : ''}
+      ${losing ? `<text class="qx qx-loss" x="${x + w - 8}" y="${y + 36}" text-anchor="end"
+        font-size="10" fill="var(--bad)">${t('qtLoss', { n: compact(-row.gained) })}</text>` : ''}
+    </g>`;
+  };
+
+  const KEY_CHIPS = {
+    share: 'background:rgba(74, 222, 128, 0.5)',
+    widget: 'background:#2dd4bf',
+    own: 'background:transparent;border:1.5px solid var(--line)',
+    loss: 'background:transparent;border:1.5px dashed var(--bad)',
+  };
+  const legend = [['share', 'qtKeyShare'], ['widget', 'qtKeyWidget'], ['own', 'qtKeyOwn'], ['loss', 'qtKeyLoss']]
+    .map(([k, key]) => `<span class="flow-key legend-item" data-hl="${k}" tabindex="0"><i style="${KEY_CHIPS[k]}"></i>${t(key)}</span>`).join('');
+
+  const mineMoney = rows.reduce((a, x) => a + x.turnover * x.mineShare, 0);
+  box.innerHTML = `<div class="panel eco-map quarters">
+    <h2 class="panel-title">${t('mapTitle')}</h2>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle')}">
+      ${tiles.map(tile).join('')}
+    </svg>
+    <div class="funding-note">${t('qtTotal', {
+    mine: money(mineMoney), all: money(sumTurn), share: pct(mineMoney / sumTurn, 0),
+  })}</div>
+    <div class="flow-legend map-legend">${legend}</div>
+    <div class="chart-caption">${t('mapCaption')}</div>
+  </div>`;
+
+  const panel = box.querySelector('.quarters');
+  box.querySelectorAll('.legend-item[data-hl]').forEach((item) => {
+    const on = () => { if (panel) panel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (panel) delete panel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
+}
+
+// Живые сводки групп: что механика группы делает прямо сейчас. Считаются от
+// последнего отчёта — тех же чисел, что игрок видит в центре экрана.
+function renderGroupReadouts() {
+  const r = last();
+  const take = el('readout-take');
+  if (take) {
+    take.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTake', {
+        rate: pct(r.takeRate ?? 0, 1),
+        perTicket: money(r.revenuePerTicket ?? 0),
+        acquiring: pct((r.gmv ?? 0) > 0 ? (r.acquiring ?? 0) / r.gmv : 0, 1),
+      })}</div>
+      <div>${t('readoutTakeSplit', {
+        market: money(r.marketplaceRevenue ?? 0),
+        widget: money((r.platformRevenue ?? 0) + (r.subscriptionRevenue ?? 0)),
+      })}</div>
+    </div>` : '';
+  }
+  const growth = el('readout-growth');
+  if (growth) {
+    growth.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutSides', {
+        orgs: num(Math.round(orgTotal(state))),
+        connected: num(r.connectedCount ?? 0),
+        share: pct(r.orgShare ?? 0, 0),
+      })}</div>
+      <div>${t('readoutFill', {
+        fill: pct(r.fill ?? 0, 0),
+        cls: (r.fill ?? 0) >= 0.7 ? 'pos' : 'neg',
+        bots: pct(r.botShare ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+  const infra = el('readout-infra');
+  if (infra) {
+    infra.innerHTML = r ? `<div class="hint-box" style="margin-bottom:10px">
+      <div>${t('readoutTrust', {
+        trust: pct(state.trust ?? 0, 0),
+        cls: (state.trust ?? 0) >= 0.6 ? 'pos' : 'neg',
+        service: pct(r.service ?? 0, 0),
+      })}</div>
+    </div>` : '';
+  }
+}
+
+function renderBudget() {
+  const box = el('budget-slot');
+  if (!box) return;
+  const d = state.decisions;
+  const r = last();
+  const items = [
+    { key: 'demand', label: t('budgetDemand'), value: d.marketing ?? 0, color: BUDGET_COLORS.demand },
+    { key: 'supply', label: t('budgetSupply'), value: (r?.managerCost ?? 0) + (r?.onboardingSpend ?? 0), color: BUDGET_COLORS.supply },
+    { key: 'product', label: t('budgetProduct'), value: (d.product ?? 0) + (d.support ?? 0), color: BUDGET_COLORS.product },
+    { key: 'tech', label: t('budgetTech'), value: (d.platformDev ?? 0) + (d.capacityTech ?? 0) + (d.rnd ?? 0) + (d.finance ?? 0), color: BUDGET_COLORS.tech },
+    { key: 'fixed', label: t('budgetFixed'), value: CONFIG.hqMonthly + (r?.staffCost ?? 0) + (r?.techUpkeep ?? 0) + (r?.serverCost ?? 0) + (r?.miscCost ?? 0), color: BUDGET_COLORS.fixed },
+  ];
+  const total = items.reduce((a, i) => a + i.value, 0);
+  const contribution = r ? r.contribution : 0;
+  const net = contribution - total;
+  box.innerHTML = renderBudgetBar({
+    title: t('budgetTitle', { total: money(total) }),
+    items,
+    money,
+    note: r ? t('budgetNet', {
+      contribution: money(contribution),
+      net: (net >= 0 ? '+' : '') + money(net),
+      cls: net >= 0 ? 'pos' : 'neg',
+    }) : '',
+  });
+}
+
+// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
+// Молча неработающий ползунок — худший вид обучения: игрок двигает его и
+// не понимает, почему ничего не происходит.
+function inertNote(l) {
+  const connected = last()?.connectedCount ?? 0;
+  if ((l.key === 'platformRate' || l.key === 'platformFee') && connected === 0) {
+    return `<div class="policy-note">🔒 ${t('leverInertPlatform')}</div>`;
+  }
+  return '';
+}
+
 function buildLevers() {
-  if (leversBuilt) return;
+  // Смена уровня сложности меняет состав рычагов: на лёгком финансовой
+  // команды нет — она уже оплачена
+  if (leversBuilt && leversDiff === state.difficulty) return;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
-    const items = LEVERS.filter((l) => l.group === g.id);
+    const items = LEVERS.filter((l) => l.group === g.id
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
     if (!items.length) return '';
     return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
       <button class="lever-group-head" type="button">
@@ -5527,12 +7175,16 @@ function buildLevers() {
         <span class="lg-count">${items.length}</span>
       </button>
       <div class="lever-group-body">
+        ${g.desc ? `<div class="funding-note" style="margin:2px 0 8px">${tx(g.desc)}</div>` : ''}
+        <div id="readout-${g.id}"></div>
         ${items.map((l) => `
           <div class="lever" data-key="${l.key}">
             <div class="lever-head">
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
+            ${inertNote(l)}
+            ${l.policy ? policyHtml(l, tx) : ''}
             <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
             <button class="lever-why" type="button" data-why="${l.key}">${t('leverWhy')}</button>
             <div class="lever-tip">${tx(l.tip)}</div>
@@ -5549,14 +7201,38 @@ function buildLevers() {
       group.classList.toggle('open', openGroups[id]);
     });
   });
+  // Режимы политики: кнопка ставит значение, ползунок остаётся для точной
+  // настройки (см. shared/controls.js)
+  el('levers').querySelectorAll('[data-policy] [data-policy-value]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.closest('[data-policy]').dataset.policy;
+      const lever = LEVERS.find((l) => l.key === key);
+      if (!lever) return;
+      state.decisions[key] = Number(b.dataset.policyValue) * (lever.scale ?? 1);
+      syncLevers();
+      renderTurn();
+      renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
+      renderRightTab();
+      save();
+    });
+  });
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (на лёгком уровне финансовой команды
+    // нет — она уже оплачена), тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       const raw = Number(input.value);
       state.decisions[l.key] = raw * (l.scale ?? 1);
       syncLevers();
       renderTurn();
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
       renderRightTab();
     });
     el('levers').querySelector(`[data-why="${l.key}"]`).addEventListener('click', (e) => {
@@ -5564,13 +7240,15 @@ function buildLevers() {
     });
   }
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverText(l, value) {
   if (l.scale === 0.01) return `${num(value * 100, value * 100 % 1 ? 1 : 0)} ${tx(l.unit)}`;
   if (l.key === 'managers') return `${num(value)} ${tx(l.unit)}`;
   if (value >= 1_000_000) return money(value);
-  return `${num(value)} ${tx(l.unit)}`;
+  const unit = tx(l.unit);
+  return isCurUnit(unit) ? amountIn(value, unit) : `${num(value)} ${unit}`;
 }
 
 function syncLevers() {
@@ -5581,6 +7259,7 @@ function syncLevers() {
     if (input && Number(input.value) !== raw) input.value = String(raw);
     const label = el(`val-${l.key}`);
     if (label) label.textContent = leverText(l, value);
+    if (l.policy) syncPolicy(el('levers'), l, value, tx, t('policyCustom'));
   }
 }
 
@@ -5761,7 +7440,7 @@ function renderReport() {
       <h3>${t('reportTitle', { month: r.month })}</h3>
       <span class="funding-note">${t('reportHeadStats', {
         gmv: money(r.gmv), revenue: money(r.revenue),
-        perTicket: `${num(r.revenuePerTicket)} ₽` })}</span>
+        perTicket: `${amount(r.revenuePerTicket)}` })}</span>
     </div>
     ${deltaLine}
     <div class="report-grid">
@@ -6023,12 +7702,28 @@ function renderTurn() {
 }
 
 // ----------------------------------------------------------------------------
-// Каналы продаж — главная развилка этой игры
+// Каналы продаж — главная развилка этой игры.
+//
+// Это не список с галочками, а карточки решения: у каждого типа своя цена
+// подключения (бюджет переезда делится на всех, кого вы подключаете —
+// значит, каждый следующий тип замедляет остальные), свой темп переезда и
+// свой ответ на вопрос «что он вообще принесёт».
 // ----------------------------------------------------------------------------
 function renderChannels() {
   const d = state.decisions;
   const level = platformLevel(state);
-  const rows = ORGANIZERS.map((def) => {
+  const r = last();
+  const riv = state.rivalState;
+  const rivalP = rivalPlatformLevel(riv);
+  // Цена переезда: бюджет онбординга делится на всех организаторов
+  // подключаемых типов. Поэтому «подключить ещё один тип» — это решение с
+  // ценой, а не бесплатная галочка.
+  const wantedOrgs = ORGANIZERS
+    .filter((def) => d.platformFor?.[def.id])
+    .reduce((sum, def) => sum + (state.orgs[def.id] ?? 0), 0);
+  const spendPerOrg = wantedOrgs > 0 ? (d.onboarding ?? 0) / wantedOrgs : 0;
+
+  const cards = ORGANIZERS.map((def) => {
     const targeted = Boolean(d.platformFor?.[def.id]);
     const share = clamp(state.platformShare?.[def.id] ?? 0, 0, 1);
     const split = channelSplit(def, share, level);
@@ -6039,44 +7734,80 @@ function renderChannels() {
     const acquiring = def.avgPrice * CONFIG.acquiringRate;
     const perMarket = def.avgPrice * (d.buyerFee + d.orgCommission) - acquiring;
     const perPlatform = def.avgPrice * d.platformRate - acquiring;
-    // «Нужен виджет 28%» — процент непонятно чего. Человеку нужна не шкала
-    // модели, а вывод: без виджета этот тип до вас не дойдёт или дойдёт.
     const need = def.platformNeed >= 1.3 ? 'bad' : def.platformNeed >= 0.5 ? 'warn' : '';
     const needWord = def.platformNeed >= 1.3 ? t('needHigh')
       : def.platformNeed >= 0.5 ? t('needMid') : t('needLow');
-    return `<tr>
-      <td><b>${tx(def.name)}</b><div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
-        · <span class="${need}">${needWord}</span></div></td>
-      <td class="mono wide">${t('channelSplitValue', {
-        market: pct(split.market, 0), widget: pct(split.platform, 0),
-      })} · <span class="neg">${t('channelSplitLost', { lost: pct(split.lost, 0) })}</span></td>
-      <td class="mono wide">${t('channelMoneyValue', { market: num(perMarket) })} · <span
-        class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${t('channelMoneyWidget', { widget: num(perPlatform) })}</span></td>
-      <td class="mono">${share > 0.005
-        ? `${pct(share, 0)}<div class="funding-note">${t('channelMoved', {
-            moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
-            total: compact(state.orgs[def.id] ?? 0) })}</div>`
-        : (targeted ? t('channelQueued') : t('channelOff'))}</td>
-      <td class="wide"><button class="btn small ghost" data-platform="${def.id}">${
-        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button></td>
-    </tr>`;
+
+    // Оборот типа: прошлый месяц, а до первого отчёта — расчётный по
+    // дескриптору. Это и есть ответ «что он принесёт», а не абстрактный пул.
+    const row = r?.organizers?.find((o) => o.id === def.id);
+    const gmv = row ? (row.marketSold + row.platformSold) * def.avgPrice
+      : (state.orgs[def.id] ?? 0) * def.eventsPerMonth * def.seats * def.avgPrice * CONFIG.refFill;
+
+    // Темп переезда при ТЕКУЩЕМ бюджете: сколько месяцев до конца очереди.
+    // Считается тем же кодом, что и ход, — иначе карточка обещала бы своё.
+    const hold = rivalHoldOf(def, rivalP, riv?.orgs?.[def.id] ?? 0, state.orgs[def.id] ?? 0);
+    const pace = targeted
+      ? widgetAdoption(def, share, spendPerOrg, level, hold, d.platformRate) : 0;
+    const left = clamp(1 - hold - share, 0, 1);
+    const eta = pace > 0.004 ? Math.ceil(left / pace) : null;
+
+    const stateWord = share > 0.005
+      ? t('channelMoved', {
+        moved: compact(Math.round((state.orgs[def.id] ?? 0) * share)),
+        total: compact(state.orgs[def.id] ?? 0),
+      })
+      : (targeted ? t('channelQueued') : t('channelOff'));
+
+    return `<div class="org-card${targeted ? ' on' : ''}">
+      <div class="org-head">
+        <b>${tx(def.name)}</b>
+        <span class="badge wrap ${share > 0.005 ? 'ok' : ''}">${stateWord}</span>
+      </div>
+      <div class="funding-note">${compact(state.orgs[def.id] ?? 0)} ${t('unitOrgs')}
+        · <span class="${need}">${needWord}</span></div>
+      <div class="org-rows">
+        <div><span>${t('orgCardGmv')}</span><b>${money(gmv)}</b></div>
+        <div><span>${t('orgCardMoney')}</span><b>${amount(perMarket)} / <span
+          class="${perPlatform < perMarket / 4 ? 'neg' : ''}">${amount(perPlatform)}</span></b></div>
+      </div>
+      <div class="chan-bar" role="img" aria-label="${t('orgCardSplit')}">
+        <span style="width:${(100 * split.market).toFixed(1)}%;background:var(--accent-2)"></span>
+        <span style="width:${(100 * split.platform).toFixed(1)}%;background:#2dd4bf"></span>
+        <span style="width:${(100 * split.lost).toFixed(1)}%;background:rgba(148, 163, 184, 0.35)"></span>
+      </div>
+      <div class="chan-lbl">
+        <span style="color:var(--accent-2)">${t('chanMarket', { p: pct(split.market, 0) })}</span>
+        <span style="color:#2dd4bf">${t('chanWidget', { p: pct(split.platform, 0) })}</span>
+        <span>${t('chanOwn', { p: pct(split.lost, 0) })}</span>
+      </div>
+      <div class="org-rows">
+        <div><span>${t('orgCardPrice')}</span><b>${targeted
+          ? t('orgCardPriceValue', { per: money(spendPerOrg), eta: eta ? t('orgCardEta', { n: eta }) : t('orgCardEtaNever') })
+          : t('orgCardPriceOff')}</b></div>
+      </div>
+      <button class="btn small ${targeted ? 'ghost' : ''}" data-platform="${def.id}">${
+        t(targeted ? 'channelDisconnect' : 'channelConnect')}</button>
+    </div>`;
   }).join('');
 
   el('channel-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('channelPanel')}</h2>
-    <div class="funding-note" style="margin-bottom:8px">${t('channelCaption')}</div>
+    <details class="more" style="margin:0 0 8px"><summary>${t('moreHow')}</summary>
+      <div class="funding-note">${t('channelCaption')}</div>
+    </details>
     ${level <= 0.02 ? `<div class="alert warn">${t('channelNoPlatform')}
       <a class="jump" data-jump="lever:platformDev">${t('jumpGo')}</a></div>` : ''}
-    <table class="data">
-      <thead><tr>
-        <th>${t('channelColType')}</th>
-        <th>${t('channelColSplit')}</th><th>${t('channelColMoney')}</th>
-        <th>${t('channelColState')}</th><th></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="funding-note" style="margin-top:8px">${t('channelColMoneyNote')}</div>
-    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}</div>
+    <div class="org-cards">${cards}</div>
+    <details class="more" style="margin-top:8px"><summary>${t('moreMoney')}</summary>
+      <div class="funding-note">${t('channelColMoneyNote')}</div>
+    </details>
+    <div class="funding-note">${t('channelLevel', { level: pct(level, 0) })}
+      · ${wantedOrgs > 0 ? t('channelOnboardSplit', {
+        types: ORGANIZERS.filter((def) => d.platformFor?.[def.id]).length,
+        per: money(spendPerOrg),
+      }) : t('channelOnboardNone')}
+      <a class="jump" data-jump="lever:onboarding">${t('jumpGo')}</a></div>
   </div>`;
 
   el('channel-slot').querySelectorAll('[data-platform]').forEach((b) => {
@@ -6086,6 +7817,9 @@ function renderChannels() {
       state.decisions.platformFor = { ...state.decisions.platformFor, [id]: !was };
       if (was) toast(t('channelDisconnectWarn'));
       renderChannels();
+      renderBudget();
+      renderGroupReadouts();
+      renderMarketMap();
       renderTurn();
       renderRightTab();
     });
@@ -6271,7 +8005,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.revenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -6279,7 +8013,7 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   fill: {
@@ -6334,7 +8068,25 @@ function decisionChanges() {
     const platformDiff = ['theatre', 'concert', 'club', 'sport']
       .some((k) => Boolean(cur.platformFor?.[k]) !== Boolean(prev.platformFor?.[k]));
     if (platformDiff) names.push(t('chartChangePlatform'));
+    // Событие с выбором — такое же решение, как сдвинутый рычаг
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].month, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -6360,13 +8112,18 @@ function renderChart() {
     b.addEventListener('click', () => { chartTab = b.dataset.chart; renderChart(); });
   });
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
   drawLineChart(el('chart'), series, {
     zeroLine: conf.zeroLine, format: conf.format ?? axisNum, emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -6377,21 +8134,21 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td></tr>`;
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
   return `
     <p class="funding-note">${t('unitIntro')}</p>
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerTicket')}</th></tr></thead>
       <tbody>
-        <tr><td>${t('unitPrice')}</td><td class="mono">${num(u.avgPrice)} ₽</td></tr>
+        <tr><td>${t('unitPrice')}</td><td class="mono">${amount(u.avgPrice)}</td></tr>
         ${row(t('unitMarket'), u.marketRevenue, 'pos', true)}
         ${row(t('unitPlatform'), u.platformRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${num(u.blended)} ₽</td></tr>
+        <tr class="total"><td>${t('unitBlended')}</td><td class="pos">${amount(u.blended)}</td></tr>
         ${row(t('unitAcquiring'), -u.acquiring, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td></tr>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table>
     ${breakEven ? `<p class="funding-note">${t('unitBreakEven', { value: compact(breakEven) })}</p>` : ''}`;
@@ -6427,6 +8184,8 @@ function renderPnlTab() {
         ${line(t('pnlUpkeep'), -(r.techUpkeep ?? 0), 'neg', true)}
         ${line(t('pnlServers'), -(r.serverCost ?? 0), 'neg', true)}
         ${line(t('pnlHq'), -CONFIG.hqMonthly, 'neg', true)}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlProfit')}</td>
           <td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff !== 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
@@ -6470,6 +8229,15 @@ function renderSidesTab() {
     </table>`;
 }
 
+// Ползунок под политикой никуда не делся: между названными режимами есть
+// промежуточные значения, и подпись обязана объяснять то, где стоит ручка,
+// а не то, какую кнопку нажали в прошлый раз.
+function nearestMode(algo, value) {
+  const raw = value / (algo.param.scale ?? 1);
+  return algo.param.policy.reduce((best, m) => (
+    Math.abs(m.v - raw) < Math.abs(best.v - raw) ? m : best), algo.param.policy[0]);
+}
+
 function renderAlgosTab() {
   const quality = algoQuality(state);
   // Купленный, но ещё не внедрённый алгоритм обязан выглядеть купленным:
@@ -6501,6 +8269,13 @@ function renderAlgosTab() {
             <span class="lever-label">${tx(a.param.label)}</span>
             <span class="lever-value">${num(param / (a.param.scale ?? 1))} ${tx(a.param.unit)}</span>
           </div>
+          ${a.param.policy ? `
+            <div class="policy-seg" data-algo-policy="${a.key}">
+              ${a.param.policy.map((m) => `<button type="button" data-mode="${m.v}"${
+                nearestMode(a, param).v === m.v ? ' class="active"' : ''
+              }>${tx(m.label)}</button>`).join('')}
+            </div>
+            <div class="policy-note">${tx(nearestMode(a, param).note)}</div>` : ''}
           <input type="range" data-param="${a.key}" min="${a.param.min}" max="${a.param.max}"
             step="${a.param.step}" value="${param / (a.param.scale ?? 1)}" />
         </div>` : ''}
@@ -6565,6 +8340,18 @@ function renderRightTab() {
       const key = b.dataset.cancelInstall;
       state.pendingInstall = (state.pendingInstall ?? []).filter((k) => k !== key);
       state.decisions.algoOn = { ...state.decisions.algoOn, [key]: false };
+      save();
+      renderRightTab();
+      renderTurn();
+    });
+  });
+  el('tab-content').querySelectorAll('[data-algo-policy] [data-mode]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const algo = algorithmByKey(b.closest('[data-algo-policy]').dataset.algoPolicy);
+      state.decisions.algoParam = {
+        ...state.decisions.algoParam,
+        [algo.key]: Number(b.dataset.mode) * (algo.param.scale ?? 1),
+      };
       save();
       renderRightTab();
       renderTurn();
@@ -6661,8 +8448,11 @@ function waterfallHtml(rows) {
 
 function gradeOf(score) {
   if (score.bankrupt) return t('gradeBankrupt');
+  if (score.sold) return t('gradeSold');
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return t('gradeExcellent');
-  if (score.equityValue >= 4_000_000_000) return t('gradeSolid');
+  // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
+  // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
+  if (score.equityValue >= 2_500_000_000) return t('gradeSolid');
   if (score.orgShare < 0.25) return t('gradeModest');
   return t('gradeSurvived');
 }
@@ -6677,7 +8467,7 @@ function recordsBlockHtml(score) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: score.bankrupt ? 0 : Math.round(score.equityValue),
-      outcome: score.bankrupt ? 'bankrupt' : 'finished',
+      outcome: score.bankrupt ? 'bankrupt' : score.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: score.months,
     });
@@ -6687,11 +8477,48 @@ function recordsBlockHtml(score) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
+}
+
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и коды партий «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы честность общей таблицы и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+// Возвращение из экосистемы. Игрок, уже строивший НОВОГРАД, приходит сюда
+// не «сыграть ещё раз», а прокачать стартовый актив: его финал здесь —
+// это база, ARPU и казна холдинга там. Показываем следующую ступень
+// наследия числом. Строго справочно: экономика этой партии не меняется —
+// обратные бонусы набора неэкономические по правилу.
+function returnHtml() {
+  const r = returnTarget('tickets');
+  if (!r) return '';
+  const body = r.maxed
+    ? t('metaReturnMaxed')
+    : t('metaReturnText', {
+        ratio: r.ratio.toFixed(1),
+        next: String(r.nextRatio),
+        target: money(r.target),
+      });
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
+}
+
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
 }
 
 function showGameOver() {
@@ -6699,12 +8526,14 @@ function showGameOver() {
   const goals = (state.board?.history ?? [])
     .map((h) => `${t('goalYear', { year: h.year })} ${h.passed ? '✓' : '✗'}`).join(' · ');
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
     score: score.bankrupt ? 0 : score.equityValue, turns: score.months,
   });
   modal(`<h2>${t('overTitle')}</h2>
-    <p>${state.over === 'bankrupt'
-      ? t('overBankrupt', { month: state.month }) : t('overFinished')}</p>
+    <p>${score.bankrupt
+      ? t('overBankrupt', { month: state.month })
+      : score.sold ? t('overSold', { month: state.month, value: money(score.equityValue) })
+      : t('overFinished')}</p>
     <p class="funding-note">${t('overStats', {
       valuation: money(score.valuation), equity: pct(score.equity, 1),
       value: money(score.equityValue), orgs: num(state.history.at(-1)?.orgs ?? 0, 0),
@@ -6712,15 +8541,21 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
-    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
-    ${state.over === 'bankrupt' ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(score)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
+    ${novogradInviteHtml()}
+    ${returnHtml()}
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(score)}
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
@@ -6728,10 +8563,11 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: taggedGame(GAME_TAG, state.difficulty),
     line,
     myScore: score.bankrupt ? 0 : score.equityValue,
     submitted: Boolean(state.lbSent),
@@ -6740,6 +8576,7 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
 function restart() {
@@ -6760,13 +8597,24 @@ function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   let seedWanted = '';
+  // Сложность — настройка всего набора: выбранная здесь действует и в
+  // остальных играх. Меняет она только цену финансовой команды.
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
+    </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
+    ${returnHtml()}
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -6777,7 +8625,7 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); clearActions(); save(); renderAll(); }
+      if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
@@ -6786,6 +8634,14 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = setDifficulty(b.dataset.diff);
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
 }
 
 function showHelp() {
@@ -6803,8 +8659,9 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
 }
 
@@ -6850,6 +8707,9 @@ function renderAll() {
   renderTurn();
   renderNews();
   renderChannels();
+  renderBudget();
+  renderGroupReadouts();
+  renderMarketMap();
   renderSupply();
   renderRival();
   renderChart();
@@ -6916,6 +8776,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextMonth);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);
@@ -6936,6 +8797,76 @@ function boot() {
   renderAll();
   // Первый запуск: сохранения нет — человек здесь впервые
   if (!saved) showWelcome();
+}
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+// Денежные параметры правил приводятся к валюте показа заранее:
+// шаблону строки достаётся готовый текст.
+function fmtDebrief(f) {
+  const out = { ...f };
+  if (out.lost != null) out.lost = money(out.lost);
+  if (out.back != null) out.back = money(out.back);
+  return out;
+}
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса — разбор нужен не только банкроту.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.revenue);
+  const costs = sum((r) => r.revenue - r.profit + (r.oneOff ?? 0));
+  const profit = sum((r) => r.profit - (r.oneOff ?? 0));
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.month,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `biletville-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 

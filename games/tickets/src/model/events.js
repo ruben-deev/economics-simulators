@@ -78,7 +78,7 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Подключиться', en: 'Join the programme' },
-        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off ₽80M of work. Demand grows noticeably.' },
+        detail: { ru: 'Разово 80 млн ₽ на доработку. Спрос заметно вырастет.', en: 'A one-off $800K of work. Demand grows noticeably.' },
         effects: { oneOffCost: 80_000_000, demandMult: 1.11, awarenessAdd: 0.015 },
       },
       {
@@ -126,7 +126,7 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
-        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '₽75M one-off, and the venue and its events are yours.' },
+        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '$750K one-off, and the venue and its events are yours.' },
         effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {

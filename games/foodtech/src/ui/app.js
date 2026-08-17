@@ -10,16 +10,23 @@ import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
-  fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById,
+  fundingOffer, raise, finalScore, aovOf, ordersPerCourier, districtById, debrief,
   algoQuality, dataLevel, rndLevel, algorithmImpact,
 } from '../model/engine.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
+import { watchSliders } from '../../../../shared/sliders.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
+import {
+  conglomerateUnlocked, TWIN_CITY_SEEDS, returnTarget, novogradBest,
+} from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
+import {
+  DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
+} from '../../../../shared/difficulty.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'novoeda-save-v3';
@@ -49,6 +56,7 @@ let state = null;
 let chartTab = 'orders';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversDiff = null;
 let bound = false;                // обработчики уже навешаны
 
 // ----------------------------------------------------------------------------
@@ -180,7 +188,7 @@ function renderKpis() {
       kpi(t('kpiOrders'), compact(r.orders), dOrders, cOrders),
       kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
         r.profit >= 0 ? 'up' : 'down'),
-      kpi(t('kpiCm'), `${num(r.cmPerOrder)} ₽`,
+      kpi(t('kpiCm'), `${amount(r.cmPerOrder)}`,
         t('kpiTakeRate', { value: pct(r.netRevenue / Math.max(1, r.gmv)) }),
         r.cmPerOrder >= 0 ? 'up' : 'down'),
       kpi(t('kpiDelivery'), t('minutes', { value: num(r.avgDeliveryTime) }),
@@ -200,7 +208,11 @@ function renderKpis() {
 // Рычаги
 // ----------------------------------------------------------------------------
 function buildLevers() {
-  el('levers').innerHTML = LEVERS.map((l) => `
+  // На лёгком уровне финансовая команда уже собрана и не стоит ничего —
+  // ползунок там не решение, а декорация
+  el('levers').innerHTML = LEVERS
+    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree))
+    .map((l) => `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
@@ -213,7 +225,9 @@ function buildLevers() {
   `).join('');
 
   for (const l of LEVERS) {
+    // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего
     const input = el(`in-${l.key}`);
+    if (!input) continue;
     input.addEventListener('input', () => {
       state.decisions[l.key] = Number(input.value) * (l.scale ?? 1);
       syncLevers();
@@ -227,6 +241,7 @@ function buildLevers() {
     b.addEventListener('click', () => b.closest('.lever').classList.toggle('open'));
   });
   leversBuilt = true;
+  leversDiff = state.difficulty;
 }
 
 function leverDisplay(l, raw) {
@@ -234,7 +249,7 @@ function leverDisplay(l, raw) {
   if (l.key === 'marketing' || l.key === 'sales' || l.key === 'tech' || l.key === 'rnd') return money(raw);
   if (unit === '%') return `${raw}%`;
   if (l.key === 'targetCouriers') return num(raw);
-  return `${num(raw)} ${unit}`;
+  return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
 
 function syncLevers() {
@@ -309,7 +324,7 @@ function renderOpsReadout() {
       cls: ratio >= 1 ? 'pos' : 'neg', ratio: ratio.toFixed(2), hiring,
     })}</div>
     ${capacityLine}
-    ${batch > 0 ? `<div>${t('opsBatching', { pay: num(payEff) })}</div>` : ''}
+    ${batch > 0 ? `<div>${t('opsBatching', { pay: amount(payEff) })}</div>` : ''}
     ${(WEATHER[nextType]?.severity ?? 0) > 0
       ? `<div>${t('opsWeatherAhead', {
           weather: weatherName(nextType).toLowerCase(),
@@ -317,7 +332,7 @@ function renderOpsReadout() {
         })}</div>`
       : ''}
     ${ratio < CONFIG.courierHireThreshold
-      ? `<div class="neg">${t('opsMinPay', { pay: num(minPay) })}</div>` : ''}
+      ? `<div class="neg">${t('opsMinPay', { pay: amount(minPay) })}</div>` : ''}
   </div>`;
 }
 
@@ -394,8 +409,8 @@ function renderBoard() {
     text = t('goalOrders', { target: num(goal.target, 0) });
     now = num(p.value, 0);
   } else if (goal.type === 'unit') {
-    text = t('goalUnit', { target: num(goal.target, 0), floor: num(goal.ordersFloor, 0) });
-    now = `${num(p.value, 0)} ₽`;
+    text = t('goalUnit', { target: amount(goal.target), floor: num(goal.ordersFloor, 0) });
+    now = `${amount(p.value)}`;
   } else if (goal.type === 'profit') {
     text = t('goalProfit', { target: goal.target, floor: num(goal.customersFloor, 0) });
     now = `${p.value} / ${goal.target}`;
@@ -485,6 +500,16 @@ function buildNews(r) {
   if (r && r.orders > 0 && r.fillRate < 0.92) {
     news.push([r.fillRate < 0.8 ? 'bad' : 'warn', t('newsUnserved', {
       share: pct(1 - r.fillRate, 0), time: r.avgDeliveryTime.toFixed(0),
+    })]);
+  }
+
+  // Совет согласовал второй город. Ровно на той неделе, когда согласовал:
+  // ворота открываются молча, а это решение на десятки миллионов, и узнавать
+  // о нём по бейджу в панели районов игрок не обязан.
+  const away = CITIES.find((c) => !c.home);
+  if (r?.expansionOpen && !prev()?.expansionOpen && away && !state.cityEntered?.[away.id]) {
+    news.push(['good', t('newsExpansionOpen', {
+      city: tx(away.name), cost: money(away.entryCost), weekly: money(away.weeklyFixed),
     })]);
   }
 
@@ -607,9 +632,391 @@ function renderAlgos() {
 // ----------------------------------------------------------------------------
 // Районы
 // ----------------------------------------------------------------------------
-function renderDistricts() {
-  const chosen = new Set(state.decisions.districts ?? []);
+// ----------------------------------------------------------------------------
+// Карта города
+//
+// Первая версия была диаграммой: плитки в ряд и ось расстояний под ними.
+// Читалась она правильно, но выглядела таблицей, а не городом. Теперь это
+// карта: склад в центре, кварталы вокруг него, дороги и река. Расстояние
+// перестало быть подписью и стало геометрией — район, до которого дальше
+// ехать, и на карте дальше от центра.
+//
+// Главный смысловой элемент — пунктирный круг: граница, за которой доставка
+// перестаёт укладываться в эталонные 35 минут. Она не нарисована на глаз, а
+// посчитана по вашим же районам (линейная зависимость времени от плеча), и
+// потому двигается вместе с игрой: наняли курьеров — круг раздался, зажали
+// ставку и открыли дальний район — сжался.
+// ----------------------------------------------------------------------------
+// Какой город показан на карте. Живёт в модуле, а не в сохранении: это
+// настройка взгляда, а не решение игрока.
+let mapCity = null;
+
+const clampShare = (x) => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
+
+function renderCityMap() {
+  const box = el('map-slot');
+  if (!box) return;
+  const r = last();
+  const narrow = (box.clientWidth || window.innerWidth) < 620;
   const entered = state.cityEntered ?? { novograd: true };
+  // Карта показывает один город за раз. Пока город один — выбирать нечего;
+  // после входа во второй появляются вкладки, иначе половина бизнеса живёт
+  // без карты: раньше выбор молча падал на первый город с работающим
+  // районом, то есть всегда на домашний.
+  const open = CITIES.filter((c) => entered[c.id]);
+  const city = open.find((c) => c.id === mapCity)
+    ?? CITIES.find((c) => DISTRICTS.some((d) => d.city === c.id && state.districts[d.id]?.active))
+    ?? open[0] ?? CITIES[0];
+  const defs = DISTRICTS.filter((d) => d.city === city.id);
+  const byId = Object.fromEntries((r?.districts ?? []).map((d) => [d.id, d]));
+
+  // Имя района на карте без города: заголовок карты и так называет город,
+  // а «Старгород · Центр» в квартале налезает на числа соседей
+  const shortName = (d) => tx(d.name).split(' · ').pop();
+
+  const rows = defs.map((d) => {
+    const ds = state.districts[d.id] ?? {};
+    const rep = byId[d.id];
+    return {
+      d,
+      live: Boolean(ds.active),
+      time: rep?.deliveryTime ?? ds.deliveryTime ?? d.baseTime,
+      cm: rep?.cmPerOrder ?? 0,
+      orders: rep?.orders ?? 0,
+      customers: rep?.customers ?? ds.customers ?? 0,
+      restaurants: rep?.restaurants ?? ds.restaurants ?? 0,
+      reach: rep?.penetration ?? 0,
+    };
+  });
+
+  // Стороны света у кварталов свои: «Северный» обязан быть севернее, а
+  // «Заречье» — за рекой. Незнакомый район раскладывается по кругу.
+  const DIR = {
+    center: -90, sever: -90, univer: 190, zarechie: 15, promzona: 65, zagorod: 130,
+    'st-center': -90, 'st-vostok': 20, 'st-port': 110, 'st-sloboda': 205,
+  };
+  const W = 720;
+  const cx = 300;
+  const cy = 226;
+  const maxKm = Math.max(...defs.map((d) => d.distanceKm));
+  const maxPot = Math.max(...defs.map((d) => d.potential));
+  // Радиус на карте пропорционален корню расстояния: иначе загородный район
+  // на девяти километрах уносит все остальные в кучу у центра.
+  const rad = (km) => 40 + 178 * Math.sqrt(km / maxKm);
+  // Площадь квартала пропорциональна рынку района: радиус — корень из
+  // потенциала БЕЗ смещения, иначе разницу между районами съедала константа
+  // и все кварталы выглядели одинаковыми
+  const size = (pot) => 54 * Math.sqrt(pot / maxPot);
+
+  const placed = rows.map((row, i) => {
+    const ang = ((DIR[row.d.id] ?? (-90 + (360 / rows.length) * i)) * Math.PI) / 180;
+    const R = row.d.id === 'center' || row.d.id === 'st-center' ? 0 : rad(row.d.distanceKm);
+    return { ...row, x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) * 0.92, rr: size(row.d.potential) };
+  });
+
+  // Река рисуется не «где-нибудь справа», а между складом и Заречьем: иначе
+  // название района ничем не объясняется. В Старогорске воду держит порт.
+  const across = placed.find((p) => p.d.id.endsWith('zarechie'));
+  const port = placed.find((p) => p.d.id.endsWith('port'));
+  const riverX = across ? (cx + across.x) / 2 : (port ? port.x + port.rr * 1.15 : null);
+  if (riverX !== null) {
+    // Вода не должна накрывать кварталы: заречный уезжает за берег, остальные
+    // сдвигаются на ближний. Расстояния при этом не меняются — они в числах.
+    for (const p of placed) {
+      if (p === port) continue;
+      const clear = p.rr + 34;
+      if (p === across) p.x = Math.max(p.x, riverX + clear);
+      else if (Math.abs(p.x - riverX) < clear) p.x = riverX - clear;
+    }
+  }
+  const riverPath = (x) => `M ${x - 20} 0 C ${x - 38} 90, ${x + 6} 150, ${x - 22} 205
+    C ${x - 48} 258, ${x + 10} 320, ${x - 12} 400 L ${x + 30} 400
+    C ${x + 50} 318, ${x - 4} 258, ${x + 22} 205 C ${x + 48} 150, ${x + 6} 92, ${x + 22} 0 Z`;
+
+
+  // Где кончается норма: время линейно растёт с плечом (по вашим же районам),
+  // и мы решаем уравнение «время = эталон» относительно километров
+  const live = placed.filter((p) => p.live);
+  const pts = (live.length >= 2 ? live : placed).map((p) => [p.d.distanceKm, p.time]);
+  const n = pts.length;
+  const sx = pts.reduce((a, [x]) => a + x, 0) / n;
+  const sy = pts.reduce((a, [, y]) => a + y, 0) / n;
+  const denom = pts.reduce((a, [x]) => a + (x - sx) ** 2, 0);
+  const slope = denom > 0 ? pts.reduce((a, [x, y]) => a + (x - sx) * (y - sy), 0) / denom : 0;
+  const intercept = sy - slope * sx;
+  const kmAtRef = slope > 0.01 ? (CONFIG.refDeliveryTime - intercept) / slope : null;
+  const refShown = kmAtRef !== null && kmAtRef > 0 && kmAtRef <= maxKm * 1.35;
+
+  // Домики внутри квартала: их столько, сколько ресторанов на районе, но не
+  // больше девяти — застройка, а не гистограмма
+  // Домиков внутри квартала ровно столько, сколько в районе ресторанов, по
+  // одному на три десятка. Считать их долей от пула было бы враньём: район
+  // с двумя сотнями ресторанов из восьмисот выглядел бы реже, чем район с
+  // тремя десятками из шестидесяти.
+  // Двенадцати домиков хватает на самый большой пул района (340), поэтому
+  // счёт нигде не упирается в потолок и подпись под картой не врёт.
+  const PER_HOUSE = 30;
+  const blocks = (p) => {
+    const cnt = Math.min(12, Math.round((state.districts[p.d.id]?.restaurants ?? 0) / PER_HOUSE));
+    const k = p.rr;
+    // Домики стоят по краю квартала: середину занимает подпись
+    const spots = [[-0.55, 0.45], [0.45, 0.5], [-0.7, -0.32], [0.6, -0.38], [0, 0.62],
+      [-0.28, -0.6], [0.28, -0.62], [0.72, 0.08], [-0.82, 0.06],
+      [-0.12, -0.86], [0.62, 0.72], [-0.62, 0.74]];
+    return `<title>${t('mapTipHouses', {
+      n: num(Math.round(state.districts[p.d.id]?.restaurants ?? 0)) })}</title>`
+      + spots.slice(0, cnt).map(([ax, ay], i) => `<rect x="${(p.x + ax * k - 5).toFixed(1)}"
+      y="${(p.y + ay * k - 4).toFixed(1)}" width="${i % 3 === 0 ? 12 : 9}" height="8"
+      rx="1.5" class="m-block"></rect>`).join('');
+  };
+
+  // Городская черта: замкнутая линия вокруг всех кварталов города. Она не
+  // условная граница чего-нибудь посчитанного, а просто край города — и
+  // именно поэтому нарисована как на карте, штрихпунктиром. Форма считается
+  // опорной функцией: по каждому направлению берётся самый дальний край
+  // квартала, плюс поле. Город растёт вместе с открытыми районами.
+  const cityEdge = () => {
+    const mx = placed.reduce((a, p) => a + p.x, 0) / placed.length;
+    const my = placed.reduce((a, p) => a + p.y, 0) / placed.length;
+    const pad = 30;
+    const N = 32;
+    const pts = [];
+    for (let k = 0; k < N; k++) {
+      const a = (2 * Math.PI * k) / N;
+      const ca = Math.cos(a); const sa = Math.sin(a);
+      // Опорная функция объединения кварталов: по направлению берётся самый
+      // дальний край. Так черта получается выпуклой — город с ровным краем,
+      // а не облако с вырезами между районами.
+      let R = 70;
+      for (const p of placed) {
+        R = Math.max(R, (p.x - mx) * ca + (p.y - my) * sa + p.rr + pad);
+      }
+      pts.push([mx + R * ca, my + R * sa]);
+    }
+    // Замкнутая кривая через точки: без сглаживания черта выглядит гайкой
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let k = 0; k < N; k++) {
+      const cur = pts[k]; const nxt = pts[(k + 1) % N];
+      const mid = [(cur[0] + nxt[0]) / 2, (cur[1] + nxt[1]) / 2];
+      d += ` Q ${cur[0].toFixed(1)} ${cur[1].toFixed(1)} ${mid[0].toFixed(1)} ${mid[1].toFixed(1)}`;
+    }
+    return { d: `${d} Z`, bottom: Math.max(...pts.map((q) => q[1])) };
+  };
+  const edge = cityEdge();
+
+  // Плечо доставки рисуется ВНУТРИ квартала: заказ едет от ресторана к
+  // клиенту того же района, а не из какой-то общей точки в центре карты.
+  // Длина ниточки — плечо в общем для всех районов масштабе, цвет — успевает
+  // ли район в эталонные минуты.
+  const legLine = (p) => {
+    const len = 6 + 38 * (p.d.distanceKm / maxKm);
+    // Верхняя половина квартала: снизу стоят числа района. У центрального
+    // квартала имя стоит вверху, поэтому его ниточка живёт под именем.
+    const y = p.d.id.endsWith('center') ? p.y + 8 : p.y - p.rr * 0.52;
+    const x1 = p.x - len / 2;
+    const late = p.time > CONFIG.refDeliveryTime;
+    return `<g class="m-leg${late ? ' late' : ''}">
+      <title>${t('mapTipLeg', { km: p.d.distanceKm, time: num(p.time) })}</title>
+      <rect x="${x1 - 4}" y="${y - 4}" width="8" height="8" rx="1.5"></rect>
+      <line x1="${x1 + 5}" y1="${y}" x2="${x1 + len - 4}" y2="${y}"></line>
+      <circle cx="${x1 + len}" cy="${y}" r="2.6"></circle>
+    </g>`;
+  };
+
+  // Доля района, которая уже ваша. Потолок доступного рынка на карте не
+  // рисуется: замер показал, что до него не доходит ни одна стратегия
+  // (24–32% доступного к концу партии), и черта показывала границу, которой
+  // игрок в своей партии не видит.
+  const shareOf = (p) => clampShare((p.customers ?? 0) / (p.d.potential || 1));
+
+  const chosen = new Set(state.decisions.districts ?? []);
+  // Четыре состояния, а не два. Снятый с плана работающий район — самое
+  // важное из них: модель закроет его в конце недели и обнулит клиентов с
+  // ресторанами, а на карте он до сих пор выглядел работающим, и нажатие
+  // казалось не сработавшим.
+  // Подписи считаются заранее и разводятся по вертикали: строк у квартала
+  // теперь две-три, и соседние районы налезали друг на друга подписями, а не
+  // кварталами. Простая раскладка сверху вниз: следующая подпись уезжает
+  // ниже, если попала в уже занятое место.
+  // Кварталы кладутся в раскладку первыми: подпись обязана обходить не только
+  // соседние подписи, но и сами кварталы — иначе числа ложатся на застройку
+  const boxes = placed.map((p) => ({ x: p.x, y: p.y - p.rr * 0.92, w: p.rr * 2, h: p.rr * 1.84 }));
+  const estWidth = (text) => text.length * 5.4;
+  for (const p of [...placed].sort((a, b) => a.y - b.y)) {
+    const planned = !p.live && chosen.has(p.d.id);
+    const closing = p.live && !chosen.has(p.d.id);
+    const bad = p.time > CONFIG.refDeliveryTime;
+    p.lines = closing ? [{ text: t('mapClosing'), cls: 'm-small neg' }]
+      : p.live
+        ? [
+          { text: `${num(p.time)}${t('mapMin')} · ${amount(p.cm)}${t('mapPerOrderTag')}`,
+            cls: bad ? 'm-small neg' : 'm-small' },
+          { text: t('mapLiveMeta', {
+            customers: compact(p.customers), restaurants: num(Math.round(p.restaurants)),
+          }), cls: 'm-muted' },
+        ]
+        : planned
+          ? [{ text: t('mapPlanned'), cls: 'm-small' }]
+          : [
+            { text: t('mapOpenFor', { cost: money(p.d.launchCost) }), cls: 'm-muted' },
+            { text: t('mapIdleMeta', {
+              potential: compact(p.d.potential), km: p.d.distanceKm,
+            }), cls: 'm-muted' },
+          ];
+    const w = Math.max(...p.lines.map((l) => estWidth(l.text)));
+    const h = p.lines.length * 14;
+    let ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
+    for (let guard = 0; guard < 8; guard++) {
+      const hit = boxes.find((b) => Math.abs(b.x - p.x) < (b.w + w) / 2 - 6
+        && ly - 12 < b.y + b.h && ly + h > b.y - 12);
+      if (!hit) break;
+      ly = hit.y + hit.h + 8;
+    }
+    boxes.push({ x: p.x, y: ly, w, h });
+    p.ly = ly;
+    p.leader = ly > p.y + 30;   // подпись уехала — нужна ниточка к кварталу
+  }
+  // Высота карты подстраивается под самую нижнюю подпись: иначе разведённая
+  // подпись срезалась бы краем viewBox
+  const H = Math.max(452, Math.max(...placed.map((p) => p.ly + p.lines.length * 14)) + 14,
+    edge.bottom + 12);
+
+  // Подсказка на элементе: легенда свёрнута под кат, и наводка мышью должна
+  // отвечать на «что это?» без её раскрытия
+  const tip = (p) => (p.live
+    ? t('mapTipLive', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        customers: compact(p.customers), share: pct(shareOf(p), 0),
+        cm: amount(p.cm), time: num(p.time),
+      })
+    : t('mapTipIdle', {
+        name: tx(p.d.name), potential: compact(p.d.potential),
+        cost: money(p.d.launchCost), km: p.d.distanceKm,
+      }));
+
+  const quarter = (p) => {
+    const planned = !p.live && chosen.has(p.d.id);
+    const closing = p.live && !chosen.has(p.d.id);
+    const cls = closing ? 'm-closing'
+      : p.live ? (p.cm >= 0 ? 'm-good' : 'm-bad')
+        : (planned ? 'm-plan' : 'm-off');
+    // Квартал — не круг, а скруглённый многоугольник: так он читается
+    // застройкой, а не точкой на графике
+    const k = p.rr;
+    const shape = `${p.x - k},${p.y - k * 0.62} ${p.x - k * 0.35},${p.y - k * 0.92} `
+      + `${p.x + k * 0.72},${p.y - k * 0.78} ${p.x + k},${p.y - k * 0.1} `
+      + `${p.x + k * 0.62},${p.y + k * 0.86} ${p.x - k * 0.55},${p.y + k * 0.92} `
+      + `${p.x - k * 0.98},${p.y + k * 0.3}`;
+    // На телефоне карта ужимается втрое, и мелкие числа превращаются в шум:
+    // в кварталах остаются только названия, числа уходят в список под картой.
+    const label = narrow ? '' : p.lines.map((l, k) => `<text x="${p.x}" y="${p.ly + k * 14}"
+        text-anchor="middle" class="${l.cls}">${l.text}</text>`).join('');
+    // Заливка снизу — доля района, которая уже ваша; пунктир поперёк —
+    // потолок доступного. Квартал показывает сразу две вещи: сколько здесь
+    // рынка (площадь) и сколько вы из него взяли (уровень).
+    const top = p.y - k * 0.92;
+    const bottom = p.y + k * 0.92;
+    const height = bottom - top;
+    const level = bottom - height * shareOf(p);
+    const clipId = `q-${p.d.id}`;
+    return `<g class="m-hit" data-id="${p.d.id}">
+      ${p.leader && !narrow ? `<line x1="${p.x}" y1="${p.y + p.rr * 0.9}" x2="${p.x}"
+        y2="${p.ly - 10}" class="m-leader"></line>` : ''}
+      <title>${tip(p)}</title>
+      <clipPath id="${clipId}"><polygon points="${shape}"></polygon></clipPath>
+      <g clip-path="url(#${clipId})">
+        <polygon points="${shape}" class="m-quarter-bg"></polygon>
+        ${p.live ? `<rect x="${(p.x - k * 1.1).toFixed(1)}" y="${level.toFixed(1)}"
+          width="${(k * 2.2).toFixed(1)}" height="${(bottom - level).toFixed(1)}"
+          class="m-share ${cls}"><title>${t('mapTipShare', {
+            customers: compact(p.customers), share: pct(shareOf(p), 0) })}</title></rect>` : ''}
+      </g>
+      <polygon points="${shape}" class="m-quarter ${cls}"${p.live ? '' : ' stroke-dasharray="5 4"'}></polygon>
+      ${p.live ? blocks(p) + legLine(p) : ''}
+      <text x="${p.x}" y="${p.d.id.endsWith('center') ? p.y - k * 0.45 : p.y + (narrow ? 6 : -4)}"
+        text-anchor="middle" class="m-name">${shortName(p.d)}</text>
+      ${label}
+    </g>`;
+  };
+
+  const couriers = r?.couriers ?? state.couriers ?? 0;
+  const util = r?.utilization ?? 0;
+  const undelivered = r && r.demand > 0 ? 1 - r.orders / r.demand : 0;
+
+  // Список под картой нужен узкому экрану: на телефоне подписи внутри
+  // кварталов мельчают, а числа терять нельзя
+  const list = placed.map((p) => `<li data-id="${p.d.id}"><b>${shortName(p.d)}</b> · ${
+    p.d.distanceKm} ${t('mapKmShort')} · ${
+    p.live && !chosen.has(p.d.id) ? `<span class="neg">${t('mapClosing')}</span>`
+      : p.live ? `${num(p.time)}${t('mapMin')} · ${amount(p.cm)} ${t('mapPerOrderShort')} · ${
+        t('mapLiveMeta', { customers: compact(p.customers),
+          restaurants: num(Math.round(p.restaurants)) })}`
+        : (chosen.has(p.d.id) ? t('mapPlanned')
+          : `${t('mapOpenFor', { cost: money(p.d.launchCost) })} · ${
+            t('mapIdleMeta', { potential: compact(p.d.potential), km: p.d.distanceKm })}`)}</li>`).join('');
+
+  // Вкладка города показывает не только имя: сколько районов работает — это
+  // ровно тот вопрос, ради которого на вторую карту и переключаются
+  const tabs = open.length > 1 ? `<div class="tabs">${open.map((c) => {
+    const live = DISTRICTS.filter((d) => d.city === c.id && state.districts[d.id]?.active).length;
+    const all = DISTRICTS.filter((d) => d.city === c.id).length;
+    return `<button type="button" class="tab${c.id === city.id ? ' on' : ''}" data-map-city="${c.id}">${
+      tx(c.name)} · ${live}/${all}</button>`;
+  }).join('')}</div>` : '';
+
+  box.innerHTML = `<div class="panel eco-map city-map${narrow ? ' narrow' : ''}">
+    <h2 class="panel-title">${t('mapTitle', { city: tx(city.name) })}</h2>
+    ${tabs}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('mapTitle', { city: tx(city.name) })}">
+      <path d="${edge.d}" class="m-border"></path>
+      ${riverX !== null ? `<path d="${riverPath(riverX)}" class="m-water"></path>` : ''}
+
+      ${placed.map(quarter).join('')}
+    </svg>
+    <div class="map-foot">
+      <span class="${util > 1 ? 'neg' : ''}">${t('mapCouriers', {
+        couriers: num(couriers), util: pct(util, 0) })}</span>
+      <span class="${undelivered > 0.06 ? 'neg' : ''}">${t('mapUndelivered', {
+        share: pct(Math.max(0, undelivered), 0) })}</span>
+    </div>
+    ${refShown ? `<div class="funding-note">${t('mapRefRing', {
+      min: num(CONFIG.refDeliveryTime), km: num(kmAtRef, 1) })}</div>` : ''}
+    ${narrow ? `<ul class="map-list">${list}</ul>` : ''}
+    <details class="map-legend">
+      <summary>${t('mapLegendTitle')}</summary>
+      <div class="funding-note">
+        ${[['area', 'mapLegendArea'], ['share', 'mapLegendShare'], ['color', 'mapLegendColor'],
+    ['houses', 'mapLegendHouses'], ['leg', 'mapLegendLeg'], ['outline', 'mapLegendOutline']]
+    .map(([k, key]) => `<span class="legend-item" data-hl="${k}" tabindex="0">${t(key)}</span>`).join(' ')}
+        <span>${t('mapLegendHint')}</span>
+      </div>
+    </details>
+  </div>`;
+
+  // Интерактивная легенда: наведение (или фокус с клавиатуры) на пункт
+  // приглушает карту и оставляет в полную силу только описанный орган
+  const mapPanel = box.querySelector('.city-map');
+  box.querySelectorAll('.legend-item').forEach((item) => {
+    const on = () => { if (mapPanel) mapPanel.dataset.hl = item.dataset.hl; };
+    const off = () => { if (mapPanel) delete mapPanel.dataset.hl; };
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('focus', on);
+    item.addEventListener('blur', off);
+  });
+  // Карта — не картинка, а панель управления: район открывается нажатием
+  // прямо на квартал, как и на карточку в левой колонке.
+  box.querySelectorAll('[data-id]').forEach((node) => {
+    node.addEventListener('click', () => toggleDistrict(node.dataset.id));
+  });
+  box.querySelectorAll('[data-map-city]').forEach((node) => {
+    node.addEventListener('click', () => { mapCity = node.dataset.mapCity; renderCityMap(); });
+  });
+}
+
+function renderDistricts() {
+  const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
   const card = (d) => {
     const ds = state.districts[d.id] ?? { active: false, deliveryTime: d.baseTime };
     const on = chosen.has(d.id);
@@ -620,13 +1027,14 @@ function renderDistricts() {
           time: num(ds.deliveryTime), reach: pct(ds.customers / d.potential, 1),
         })
       : t('districtStatsIdle', {
-          potential: compact(d.potential), aov: num(aovOf(d)), km: d.distanceKm,
+          potential: compact(d.potential), aov: amount(aovOf(d)), km: d.distanceKm,
         });
     return `<div class="district ${on ? 'active' : ''}" data-id="${d.id}">
       <div class="district-head">
         <span class="district-name">${tx(d.name)}</span>
-        <span class="badge ${live ? 'on' : ''}">${live
-          ? t('districtLive') : t('districtLaunch', { cost: money(d.launchCost) })}</span>
+        <span class="badge ${live && on ? 'on' : ''}">${live
+          ? (on ? t('districtLive') : t('districtClosing'))
+          : t('districtLaunch', { cost: money(d.launchCost) })}</span>
       </div>
       <div class="district-meta">${stats}</div>
       <div class="district-meta">${tx(d.hint)}</div>
@@ -665,25 +1073,42 @@ function renderDistricts() {
 
   el('districts').querySelectorAll('.district').forEach((node) => {
     node.addEventListener('click', () => {
-      const id = node.dataset.id;
-      const def = districtById(id);
-      const set = new Set(state.decisions.districts ?? []);
-      // В закрытый город заявку не принимаем: молча ждущая галочка, которая
-      // сама срабатывает через несколько недель, хуже честного отказа.
-      if (!set.has(id) && def && !entered[def.city] && !gateOpen) {
-        toast(t('cityLockedToast', {
-          week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
-        }));
-        return;
-      }
-      if (set.has(id)) set.delete(id); else set.add(id);
-      state.decisions.districts = [...set];
-      renderDistricts();
-      renderOpsReadout();
-      renderRightTab();
-      save();
+      toggleDistrict(node.dataset.id);
     });
   });
+}
+
+// Выбор района. Живёт отдельно от отрисовки, потому что нажать район можно
+// в двух местах: на карточке в панели и прямо на карте.
+function toggleDistrict(id) {
+  const def = districtById(id);
+  if (!def) return;
+  const entered = state.cityEntered ?? { novograd: true };
+  const chosen = new Set(state.decisions.districts ?? []);
+  const homeChosen = DISTRICTS
+    .filter((d) => d.city === 'novograd' && chosen.has(d.id)).length;
+  const gateOpen = state.week + 1 >= CONFIG.expansion.minWeek
+    && homeChosen >= CONFIG.expansion.minHomeDistricts;
+  // В закрытый город заявку не принимаем: молча ждущая галочка, которая
+  // сама срабатывает через несколько недель, хуже честного отказа.
+  if (!chosen.has(id) && !entered[def.city] && !gateOpen) {
+    toast(t('cityLockedToast', {
+      week: CONFIG.expansion.minWeek, n: CONFIG.expansion.minHomeDistricts,
+    }));
+    return;
+  }
+  if (chosen.has(id)) {
+    chosen.delete(id);
+    // Снять работающий район с плана — значит закрыть его в конце недели:
+    // клиенты и рестораны обнулятся. Молча такое не делается.
+    if (state.districts[id]?.active) toast(t('districtCloseToast', { name: tx(def.name) }));
+  } else chosen.add(id);
+  state.decisions.districts = [...chosen];
+  renderDistricts();
+  renderCityMap();
+  renderOpsReadout();
+  renderRightTab();
+  save();
 }
 
 // ----------------------------------------------------------------------------
@@ -800,15 +1225,15 @@ function buildAlerts(r) {
     }), 'lever:targetCouriers']);
   } else if (r.utilization < 0.55 && r.couriers > 20) {
     alerts.push(['warn', t('alertIdle', {
-      util: pct(r.utilization, 0), cost: num(CONFIG.hqPerCourier),
+      util: pct(r.utilization, 0), cost: amount(CONFIG.hqPerCourier),
     }), 'lever:targetCouriers']);
   }
   if (r.applicants < 1 && r.couriers < r.decisions.targetCouriers) {
     const minPay = Math.ceil((CONFIG.courierHireThreshold * CONFIG.courierMarketWeeklyPay)
       / (CONFIG.courierExpectedLoad * Math.max(1, r.perCourier)) / 10) * 10;
     alerts.push(['bad', t('alertNoApplicants', {
-      pay: num(r.decisions.courierPay), orders: num(r.perCourier),
-      market: money(CONFIG.courierMarketWeeklyPay), minPay: num(minPay),
+      pay: amount(r.decisions.courierPay), orders: num(r.perCourier),
+      market: money(CONFIG.courierMarketWeeklyPay), minPay: amount(minPay),
     }), 'lever:courierPay']);
   } else if (r.courierAttractiveness < 1) {
     alerts.push(['warn', t('alertLowPay', {
@@ -817,10 +1242,10 @@ function buildAlerts(r) {
     }), 'lever:courierPay']);
   }
   if (r.cmPerOrder < 0) {
-    alerts.push(['bad', t('alertNegativeCm', { value: num(r.cmPerOrder) }), 'tab:unit']);
+    alerts.push(['bad', t('alertNegativeCm', { value: amount(r.cmPerOrder) }), 'tab:unit']);
   } else if (r.cmPerOrder > 0 && r.profit < 0) {
     alerts.push(['warn', t('alertBreakEven', {
-      cm: num(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
+      cm: amount(r.cmPerOrder), opex: money(r.opex), orders: compact(r.opex / r.cmPerOrder),
     }), 'tab:unit']);
   }
   if (runway < 8 && state.cash >= 0) {
@@ -853,7 +1278,7 @@ function buildAlerts(r) {
   }
   if (r.weatherBonusCost > 0) {
     alerts.push(['good', t('alertWeatherBonus', {
-      cost: money(r.weatherBonusCost), perOrder: num(r.weatherBonusPerOrder),
+      cost: money(r.weatherBonusCost), perOrder: amount(r.weatherBonusPerOrder),
     })]);
   }
   const anyAlgoOn = Object.values(r.algoActive ?? {}).some(Boolean);
@@ -990,10 +1415,10 @@ function renderReport() {
               demand: signedPct(r.weatherDemandMult - 1, 0),
               capacity: signedPct(r.weatherCapacityMult - 1, 0),
             }))}
-      ${stat(t('statCm'), `${num(r.cmPerOrder)} ₽`,
+      ${stat(t('statCm'), `${amount(r.cmPerOrder)}`,
         t('statCmSub', { value: pct(r.cmPerOrder / Math.max(1, r.gmv / Math.max(1, r.orders))) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.opex) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${num(r.cac)} ₽` : '—',
+      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
         r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
     </div>
     ${installNote}
@@ -1017,7 +1442,7 @@ const CHART_TABS = {
     ],
   },
   money: {
-    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true,
+    label: 'chartMoney', caption: 'chartMoneyCaption', zeroLine: true, money: true,
     series: (h) => [
       { label: t('seriesRevenue'), data: h.map((r) => r.netRevenue), color: PALETTE[1] },
       { label: t('seriesContribution'), data: h.map((r) => r.contribution), color: PALETTE[0] },
@@ -1025,12 +1450,11 @@ const CHART_TABS = {
     ],
   },
   cash: {
-    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true,
+    label: 'chartCash', caption: 'chartCashCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('chartCash'), data: h.map((r) => r.cash), color: PALETTE[2] }],
   },
   unit: {
-    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true,
-    format: (v) => `${Math.round(v)}`,
+    label: 'chartUnit', caption: 'chartUnitCaption', zeroLine: true, money: true,
     series: (h) => [{ label: t('seriesCmPerOrder'), data: h.map((r) => r.cmPerOrder), color: PALETTE[0] }],
   },
   ops: {
@@ -1083,7 +1507,27 @@ function decisionChanges() {
     for (const a of ALGORITHMS) {
       if (Boolean(cur.algoOn?.[a.key]) !== Boolean(prev.algoOn?.[a.key])) names.push(tx(a.name));
     }
+    // Событие с выбором — такое же решение, как сдвинутый рычаг:
+    // на дебрифе должно быть видно, во что обошёлся выбранный вариант
+    const ev = hist[i].event;
+    if (ev) {
+      const def = eventById(ev.id);
+      if (def && def.options) names.push('⚡ ' + tx(def.title));
+    }
     if (names.length) out.push({ index: i, turn: hist[i].week, names });
+  }
+  return out;
+}
+
+// Ходы, в которые в кассу приходили деньги инвесторов (раунд или вливание
+// совета): на графике — ромбы по верхней кромке. «Когда брать деньги» —
+// половина игры, и этот момент должен быть виден на любой кривой.
+function roundTurns() {
+  const hist = state.history ?? [];
+  const out = [];
+  for (let i = 0; i < hist.length; i += 1) {
+    const prev = i > 0 ? (hist[i - 1].raisedTotal ?? 0) : 0;
+    if ((hist[i].raisedTotal ?? 0) > prev) out.push(i);
   }
   return out;
 }
@@ -1111,7 +1555,11 @@ function renderChart() {
   });
 
   const conf = CHART_TABS[chartTab];
-  const series = conf.series(state.history);
+  // Денежные ряды рисуются в валюте показа: ось и подписи должны совпадать
+  // с числами в отчёте, иначе график живёт в другой валюте, чем интерфейс.
+  const series = conf.money
+    ? conf.series(state.history).map((s) => ({ ...s, data: s.data.map(cash) }))
+    : conf.series(state.history);
   const changes = decisionChanges();
   el('chart-legend').innerHTML = legendHtml(series);
   el('chart-caption').innerHTML = t(conf.caption) + changesHtml(changes);
@@ -1120,6 +1568,7 @@ function renderChart() {
     format: conf.format ?? axisNum,
     emptyText: t('pnlEmpty'),
     markers: changes.map((c) => c.index),
+    rounds: roundTurns(),
   });
 }
 
@@ -1130,7 +1579,7 @@ function renderUnitTab() {
   const u = unitEconomics(state, state.decisions);
   const r = last();
   const row = (name, value, cls = '', sub = false) =>
-    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${num(value)} ₽</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
+    `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${amount(value)}</td><td class="${cls}">${pct(value / u.aov, 1)}</td></tr>`;
 
   const breakEven = r && u.contribution > 0 ? r.opex / u.contribution : null;
 
@@ -1139,16 +1588,18 @@ function renderUnitTab() {
     <table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerOrder')}</th><th>${t('unitColShare')}</th></tr></thead>
       <tbody>
-        <tr><td><b>${t('unitAov')}</b></td><td><b>${num(u.aov)} ₽</b></td><td>100%</td></tr>
+        <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
         ${row(t('unitCommission', { rate: pct(u.commission, 0) }), u.commissionRevenue, 'pos', true)}
+        ${r && r.chainOn && r.orders > 0
+          ? row(t('unitChainDeal'), -r.chainDiscount / r.orders, 'neg', true) : ''}
         ${row(t('unitFee'), u.feeRevenue, 'pos', true)}
-        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${num(u.revenue)} ₽</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
+        <tr class="total"><td>${t('unitRevenue')}</td><td class="pos">${amount(u.revenue)}</td><td class="pos">${pct(u.takeRate, 1)}</td></tr>
         ${row(t('unitCourier'), -u.courier, 'neg', true)}
         ${row(t('unitPromo'), -u.promo, 'neg', true)}
         ${row(t('unitPayment'), -u.payment, 'neg', true)}
         ${row(t('unitSupport'), -u.support, 'neg', true)}
         <tr class="total"><td>${t('unitContribution')}</td>
-          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${num(u.contribution)} ₽</td>
+          <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
       </tbody>
     </table>
@@ -1159,11 +1610,11 @@ function renderUnitTab() {
       ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
     <table class="data"><tbody>
-      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${num(r.cac)} ₽` : '—'}</td></tr>
+      <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitFrequency')}</td><td>${t('unitFrequencyValue', {
         value: (r.customers > 0 ? r.orders / r.customers : 0).toFixed(2),
       })}</td></tr>
-      <tr><td>${t('unitLtv')}</td><td>${num(r.ltv)} ₽</td></tr>
+      <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
     </tbody></table>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}
@@ -1196,6 +1647,8 @@ function renderPnlTab() {
         ${line(t('pnlSales'), -r.decisions.sales, 'neg', true)}
         ${line(t('pnlTech'), -r.decisions.tech, 'neg', true)}
         ${line(t('pnlRnd'), -(r.decisions.rnd ?? 0), 'neg', true)}
+        ${r.financeCost > 0 ? line(t('pnlFinance'), -r.financeCost, 'neg', true) : ''}
+        ${line(t('pnlMisc', { rate: pct(r.miscRate ?? 0, 1) }), -(r.miscCost ?? 0), 'neg', true)}
         <tr class="total"><td>${t('pnlOperatingProfit')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
@@ -1443,7 +1896,7 @@ function recordsBlockHtml(s) {
       date: new Date().toISOString().slice(0, 10),
       seed: state.seed,
       score: s.bankrupt ? 0 : Math.round(s.equityValue),
-      outcome: s.bankrupt ? 'bankrupt' : 'finished',
+      outcome: s.bankrupt ? 'bankrupt' : s.sold ? 'sold' : 'finished',
       version: APP_VERSION,
       turns: s.weeks,
     });
@@ -1453,29 +1906,75 @@ function recordsBlockHtml(s) {
   if (!top.length) return '';
   const rows = top.map((rec, i) => `<tr${rec.id === state.recordId ? ' class="total"' : ''}>
     <td>${i + 1}</td><td>${rec.date}</td><td>${rec.seed}</td><td>${money(rec.score)}</td>
-    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
+    <td>${t(rec.outcome === 'bankrupt' ? 'recordsOutcomeBankrupt' : rec.outcome === 'sold' ? 'recordsOutcomeSold' : 'recordsOutcomeFinished')}${rec.id === state.recordId ? ` ${t('recordsYou')}` : ''}</td></tr>`).join('');
   return `<h3 style="margin:12px 0 6px">${t('recordsTitle')}</h3>
     <div style="overflow-x:auto"><table class="data">
     <thead><tr><th>#</th><th>${t('recordsDate')}</th><th>${t('recordsCode')}</th><th>${t('recordsScore')}</th><th>${t('recordsOutcome')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
+// Обратный бонус мета-прогрессии набора: достойный финал НОВОГРАДА
+// открывает бейдж и коды партий «городов-побратимов». Строго
+// косметика: экономика зачётных партий не меняется — экономический буст
+// сломал бы честность общей таблицы и калибровку целей совета.
+function conglomerateBadgeHtml() {
+  if (!conglomerateUnlocked()) return '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaConglomerate')}</b> ${t('metaConglomerateText', { seeds: TWIN_CITY_SEEDS.join(' · ') })}</div>`;
+}
+
+// Приглашение продолжить партию в НОВОГРАДЕ: финал этой игры — стартовый
+// актив экосистемы. Кнопка-ссылка есть только на сайте: офлайн-файл не знает,
+// где у человека лежит соседняя игра.
+// Возвращение из экосистемы. Игрок, уже строивший НОВОГРАД, приходит сюда
+// не «сыграть ещё раз», а прокачать стартовый актив: его финал здесь —
+// это база, ARPU и казна холдинга там. Показываем следующую ступень
+// наследия числом. Строго справочно: экономика этой партии не меняется —
+// обратные бонусы набора неэкономические по правилу.
+function returnHtml() {
+  const r = returnTarget('delivery');
+  if (!r) return '';
+  const body = r.maxed
+    ? t('metaReturnMaxed')
+    : t('metaReturnText', {
+        ratio: r.ratio.toFixed(1),
+        next: String(r.nextRatio),
+        target: money(r.target),
+      });
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
+}
+
+function novogradInviteHtml() {
+  const link = window.__homeUrl
+    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    : '';
+  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+}
+
 function showGameOver() {
   const s = finalScore(state);
   const r = last();
   const grade = s.bankrupt ? t('gradeBankrupt')
-    : s.equityValue > 3e9 ? t('gradeExcellent')
-    : s.equityValue > 1e9 ? t('gradeSolid')
-    : s.equityValue > 3e8 ? t('gradeSurvived') : t('gradeModest');
+    : s.sold ? t('gradeSold')
+    // Шкала выставлена замером на 24 кодах (аудит 2026-08, пересчитана после
+    // сглаживания окна роста): опоры дают 1.32 / 0.87 / 0.36 млрд, опора с
+    // реакцией на погоду 2.4, алгоритмы без надбавки 4.4, алгоритмы +
+    // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
+    // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
+    // потолок доведённой стратегии выше, чем казалось с надбавкой.
+    : s.equityValue > 5e9 ? t('gradeExcellent')
+    : s.equityValue > 2.2e9 ? t('gradeSolid')
+    : s.equityValue > 0.8e9 ? t('gradeSurvived') : t('gradeModest');
 
   const line = resultString({
-    tag: GAME_TAG, version: APP_VERSION, seed: state.seed,
+    tag: taggedGame(GAME_TAG, state.difficulty), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.weeks,
   });
   modal(`
-    <h2>${s.bankrupt ? t('gameOverBankrupt') : t('gameOverFinished')}</h2>
+    <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
-      ? t('gameOverBankruptText', { week: s.weeks }) : t('gameOverFinishedText')}</p>
+      ? t('gameOverBankruptText', { week: s.weeks })
+      : s.sold ? t('gameOverSoldText', { week: s.weeks, value: money(s.equityValue) })
+      : t('gameOverFinishedText')}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -1484,19 +1983,25 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(3e9), b: money(1e9), c: money(3e8) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
-      orders: compact(r.orders), cm: num(r.cmPerOrder), profit: money(r.profit),
+      orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
     })}</p>` : ''}
-    ${s.bankrupt ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
+    ${gameTotalsHtml(s)}
+    ${debriefHtml()}
     <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
     <p class="funding-note">${t('resultNote')}</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
+    ${novogradInviteHtml()}
+    ${returnHtml()}
+    ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
@@ -1506,10 +2011,11 @@ function showGameOver() {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
-    game: GAME_TAG,
+    game: taggedGame(GAME_TAG, state.difficulty),
     line,
     myScore: s.bankrupt ? 0 : s.equityValue,
     submitted: Boolean(state.lbSent),
@@ -1518,6 +2024,74 @@ function showGameOver() {
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
+  el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
+}
+
+
+// Персональный разбор: правила из модели (engine.debrief) с замеренной
+// ценой каждого промаха. Пустой список — тоже результат: сильная партия.
+function debriefHtml() {
+  const found = debrief(state);
+  const key = (id) => 'debrief' + id[0].toUpperCase() + id.slice(1);
+  const items = found.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0">${found
+      .map((f) => `<li style="margin-bottom:6px">${t(key(f.id), fmtDebrief(f))}</li>`).join('')}</ul>`
+    : `<p class="funding-note" style="margin-top:4px">${t('debriefClean')}</p>`;
+  return `<h3 style="margin:12px 0 6px">${t('debriefTitle')}</h3>
+    <p class="funding-note">${t('debriefNote')}</p>${items}`;
+}
+
+function fmtDebrief(f) { return f; }
+
+// Вся партия одной строкой цифр: выручка, расходы, операционный итог,
+// привлечённые деньги, касса. Раньше водопад показывался только банкроту —
+// а успешному финалу разбор нужен не меньше.
+function gameTotalsHtml(s) {
+  const hist = state.history ?? [];
+  if (!hist.length) return '';
+  const sum = (fn) => hist.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const revenue = sum((r) => r.netRevenue);
+  const costs = sum((r) => r.netRevenue - r.profit + r.oneOff);
+  const profit = sum((r) => r.profit - r.oneOff);
+  const rows = [
+    [t('wfRevenue'), revenue], [t('wfCosts'), costs], [t('wfProfit'), profit],
+    [t('scoreRaised'), s.raised], [t('scoreCash'), s.cash],
+  ];
+  return `<h3 style="margin:12px 0 6px">${t('totalsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+    ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// Экспорт истории партии: те же ряды, что на графиках, — по колонке на серию.
+// Преподаватель строит свои графики в таблицах, ученик прикладывает партию
+// к отчёту. Разделитель — точка с запятой, кодировка с BOM: так файл
+// открывается таблицей, а не кашей, в русском Экселе.
+function exportCsv() {
+  const hist = state.history ?? [];
+  if (!hist.length) return;
+  const cols = [];
+  const seen = new Set();
+  for (const conf of Object.values(CHART_TABS)) {
+    for (const sr of conf.series(hist)) {
+      if (!sr.data || seen.has(sr.label)) continue;
+      seen.add(sr.label);
+      cols.push(sr);
+    }
+  }
+  const esc = (x) => `"${String(x).replace(/"/g, '""')}"`;
+  const head = [t('csvTurn'), ...cols.map((c) => c.label)].map(esc).join(';');
+  const rows = hist.map((r, i) => [r.week,
+    ...cols.map((c) => (Number.isFinite(c.data[i]) ? Math.round(c.data[i] * 100) / 100 : ''))]
+    .map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + [head, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `novoeda-${state.seed}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 
@@ -1529,13 +2103,24 @@ function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   let seedWanted = '';
+  // Сложность — настройка всего набора: выбранная здесь действует и в
+  // остальных играх. Меняет она только цену финансовой команды.
+  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
+  const diffCards = () => DIFFICULTIES.map((dd) => `
+    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
+      <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
+    </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
+    ${returnHtml()}
+    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
+    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
+    <div class="event-options" id="diff-options">${diffCards()}</div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -1546,7 +2131,11 @@ function showWelcome() {
   [{ label: t('welcomeStart'), primary: true, onClick: () => {
       track('game_start');
       const v = seedWanted.trim();
-      if (v && v !== state.seed) { state = createInitialState(v); save(); renderAll(); }
+      if ((v && v !== state.seed) || diffWanted !== state.difficulty) {
+        state = createInitialState(v || state.seed, diffWanted);
+        save();
+        renderAll();
+      }
     } },
    { label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
@@ -1555,6 +2144,14 @@ function showWelcome() {
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
+    b.addEventListener('click', () => {
+      diffWanted = setDifficulty(b.dataset.diff);
+      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
+        x.classList.toggle('selected', x.dataset.diff === diffWanted);
+      });
+    });
+  });
 }
 
 function showHelp() {
@@ -1600,8 +2197,9 @@ function showWorldTop() {
   modal(`<h2>${t('lbTitle')}</h2><div id="lb-root"></div>`,
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
+    seed: state.seed,
     root: el('modal-root').querySelector('#lb-root'),
-    t, money, game: GAME_TAG, viewOnly: true,
+    t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
 }
 
@@ -1644,13 +2242,16 @@ function renderChrome() {
 }
 
 function renderAll() {
-  if (!leversBuilt) buildLevers();
+  // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
+  // нет — она уже оплачена), поэтому смена уровня пересобирает панель
+  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
   renderChrome();
   syncLevers();
   renderAlgos();
   renderOpsReadout();
   renderKpis();
   renderDistricts();
+  renderCityMap();
   renderBoard();
   renderFunding();
   renderWeather();
@@ -1720,6 +2321,7 @@ function boot() {
     // На телефоне таблицы показываются карточками; подписи ячейкам берутся
     // из шапки и обновляются сами при любой перерисовке.
     watchTables();
+    watchSliders();
     el('btn-next').addEventListener('click', nextWeek);
     el('btn-top')?.addEventListener('click', showWorldTop);
     el('btn-help').addEventListener('click', showHelp);

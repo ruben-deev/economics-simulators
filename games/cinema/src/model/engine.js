@@ -34,7 +34,7 @@ import {
 import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep } from '../../../../shared/upkeep.js';
-import { windowAvg, windowGrowth, revenueMultiple, roundTerms } from '../../../../shared/valuation.js';
+import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
 import { neutralModifiers, applyEvent, rollEvent } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
@@ -45,7 +45,7 @@ import {
   rollCrisis, crisisEffects, crisisById, resolutionById, resolutionCost,
 } from './crises.js';
 import {
-  SCALES, scaleById, projectPrice, projectMonths, commission, advanceProduction,
+  SCALES, scaleById, projectPrice, projectMonths, commission, coProduce, advanceProduction,
   releaseBuzz, projectAppeal, inProduction, readyToRelease, slotsUsed, resetProjectIds,
 } from './slate.js';
 import {
@@ -54,6 +54,10 @@ import {
 import {
   PARTNERS, partnerById, rollPartnerOffer, partnerInflow, partnerRevenue, partnerTotals,
 } from './partners.js';
+import { difficultyById } from '../../../../shared/difficulty.js';
+import {
+  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+} from '../../../../shared/finance.js';
 
 // Справочники и clamp живут в config.js; здесь они переэкспортируются,
 // чтобы у интерфейса и тестов была одна точка входа в модель.
@@ -97,13 +101,41 @@ function lastSubs(state) {
 // ----------------------------------------------------------------------------
 // Начальное состояние
 // ----------------------------------------------------------------------------
-export function createInitialState(seed = 'kinoreka') {
+/**
+ * Финансовая команда: сила и цена. Цена — доля месячной выручки: служба
+ * растёт вместе с компанией (см. shared/finance.js).
+ */
+function financeRevenue(state) {
+  const h = state.history ?? [];
+  return h.length ? h[h.length - 1].revenue : 0;
+}
+
+export function financeHalf(state) {
+  return financeHalfCost(CONFIG.finance, state.difficulty, financeRevenue(state));
+}
+
+export function financeLevel(state, decisions) {
+  return financeStrength(CONFIG.finance, state.difficulty,
+    financeRevenue(state), decisions?.finance ?? 0);
+}
+
+export function miscRate(state, decisions) {
+  return financeMiscRate(CONFIG.finance, state.difficulty, financeLevel(state, decisions));
+}
+
+export function financeCost(state, decisions) {
+  return financeSpend(state.difficulty, decisions?.finance ?? 0);
+}
+
+export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
   const rng = createRng(seed);
   resetProjectIds(1);
   const rival = createRival(rng);
   const state = {
     seed,
     rngState: rng.state(),
+    // Уровень сложности — общая настройка набора (shared/difficulty.js)
+    difficulty: difficultyById(difficulty).id,
     month: 0,
     cash: CONFIG.startCash,
     equity: 1,
@@ -114,6 +146,13 @@ export function createInitialState(seed = 'kinoreka') {
     installed: {},
     catalogLicensed: 900,  // стартовая библиотека, доставшаяся от прежнего владельца
     catalogOriginal: 0,
+    // Совместный проект с конкурентом: запускается один раз за партию.
+    // marketLiftUntil — до какого месяца потолок категории поднят, дальше
+    // эффект тает: зритель, которого привёл общий хит, никуда не исчезает
+    // мгновенно, но и держится не вечно.
+    coProduction: null,
+    marketLift: 0,
+    marketLiftUntil: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
     slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
@@ -206,6 +245,21 @@ export function weightedOriginals(originalsByGenre) {
  * Учитывает не только объём, но и то, для кого вы снимали: гора реалити
  * не удержит киноманов, сколько бы её ни было.
  */
+/**
+ * Потолок сегмента с учётом расширения категории. Совместный мегахит
+ * приводит в онлайн-кино тех, кто вообще не подписывался, — и приводит их
+ * обоим сервисам сразу. После окончания окна прибавка тает, а не исчезает:
+ * привычка смотреть остаётся дольше, чем идёт сериал.
+ */
+export function marketLiftOf(state) {
+  if (!state.marketLift) return 1;
+  const over = state.month - (state.marketLiftUntil ?? 0);
+  if (over <= 0) return 1 + state.marketLift;
+  return 1 + state.marketLift * Math.max(0, 1 - CONFIG.coProduction.liftDecay * over);
+}
+
+export const potentialOf = (segDef, state) => segDef.potential * marketLiftOf(state);
+
 export function exclusivePullOf(weightedHours, segDef, byGenre) {
   let relevant = weightedHours;
   if (byGenre) {
@@ -373,6 +427,19 @@ export function step(prevState, input = {}) {
     started.push({ id: project.id, genre: project.genre, scale: project.scale, segment: project.segment });
   }
 
+  // --- Совместный мегахит с конкурентом ---
+  // Договориться можно один раз за партию и только если конкурент жив:
+  // с мёртвым рынок не расширишь, а с воюющим не сядешь за стол.
+  const jointConf = CONFIG.coProduction;
+  let jointStarted = null;
+  if (input.coProduce && !state.coProduction && state.rivalState.alive
+    && month >= jointConf.minMonth && slotsUsed(state.slate) < slots) {
+    const project = coProduce(input.coProduce.genre ?? GENRES[0].id, talentIndex, jointConf);
+    state.slate.push(project);
+    state.coProduction = { id: project.id, startedMonth: month, released: false };
+    jointStarted = { id: project.id, genre: project.genre };
+  }
+
   // Ход производства. Кризис с уходом команды останавливает конвейер.
   const stall = crisisMods.pipelineStall ?? 0;
   const { spent: productionSpend, finished } = advanceProduction(state.slate, {
@@ -398,6 +465,21 @@ export function step(prevState, input = {}) {
     project.campaign = campaign;
     state.originalsByGenre[project.genre] = (state.originalsByGenre[project.genre] ?? 0) + project.hours;
     state.freshHours += project.hours;
+    if (project.joint) {
+      // Часы получают оба — предпочтение не сдвигается. Растёт категория:
+      // общий хит приводит тех, кто не подписывался ни на кого.
+      state.rivalState.catalogOriginal += project.hours;
+      // И это ЕГО хит тоже: про конкурента говорят столько же, сколько про
+      // вас. Совместный проект легитимизирует партнёра — тем сильнее, чем
+      // он был слабее. Это главная цена решения, и она не в деньгах.
+      state.rivalState.awareness = clamp(
+        state.rivalState.awareness
+        + (1 - state.rivalState.awareness) * CONFIG.coProduction.rivalAwareness, 0, 1);
+      state.rivalState.buzz = (state.rivalState.buzz ?? 0) + CONFIG.coProduction.rivalBuzz;
+      state.marketLift = CONFIG.coProduction.marketLift;
+      state.marketLiftUntil = month + CONFIG.coProduction.liftMonths;
+      if (state.coProduction) state.coProduction.released = true;
+    }
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
@@ -506,7 +588,7 @@ export function step(prevState, input = {}) {
   // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
   // наравне с розничными, иначе рынок начинает считаться дважды.
   const partnerBefore = partnerTotals(state.partners).subs;
-  const marketPotential = SEGMENTS.reduce((s, x) => s + x.potential, 0);
+  const marketPotential = SEGMENTS.reduce((s, x) => s + potentialOf(x, state), 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
   // Повторять его каждый месяц нельзя: у людей есть память.
   const wantRaise = Boolean(input.raisePrice);
@@ -519,6 +601,11 @@ export function step(prevState, input = {}) {
   let newSubs = 0;
   let lostSubs = 0;
   let trialsTotal = 0;
+  // Приток по тарифам — для схемы «Мультиплекс»: сколько новичков выбрали
+  // полный прайс, сколько рекламный, и сколько спустились вниз от цены
+  let premiumNewTotal = 0;
+  let adsNewTotal = 0;
+  let downgradedTotal = 0;
   let winbackCost = 0;
   let switchedIn = 0;
   let switchedOut = 0;
@@ -551,7 +638,19 @@ export function step(prevState, input = {}) {
     // тем охотнее он идёт на дешёвый тариф с рекламой.
     const saving = decisions.priceNew > 0
       ? clamp((decisions.priceNew - decisions.priceAds) / decisions.priceNew, 0, 1) : 0;
-    const adLoadPain = clamp((decisions.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3);
+    // Раздражение выпуклое: пару минут рекламы в час зритель почти не
+    // замечает, дальше каждый ролик злит сильнее предыдущего. При линейном
+    // раздражении оптимум нагрузки лежал в нуле на всех опорах — рычага не
+    // было, а пресеты рычага при этом обещали ровно выпуклый мир («пара
+    // минут в час: деньги появляются, отток почти не двигается»). Замер
+    // аудита 2026-08: с выпуклостью внутренний оптимум на 2 мин/час у всех
+    // трёх опор (студийная 17.0 против 13.7 млрд в нуле).
+    // Потолок боли поднят с 3 до 6: раньше за клампом каждая следующая
+    // минута рекламы была бесплатной, и упор ползунка возвращался — только
+    // теперь справа (оптимум на 16 мин/час, замер аудита 2026-08).
+    const adLoadPain = clamp(
+      Math.pow(decisions.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
     // Потолок на долю рекламного тарифа. Без него прайс переставал быть ценой
     // и становился переключателем: задрав его до тысячи, вы просто перегоняли
     // почти всех на дешёвый тариф с рекламой, а спрос этого не замечал.
@@ -565,8 +664,26 @@ export function step(prevState, input = {}) {
     const listPrice = decisions.priceNew * (1 - adShare) + decisions.priceAds * adShare;
     const paidPrice = pricing.lockedPrice * (1 - adShare) + decisions.priceAds * adShare;
     const blendedPrice = listPrice;
-    // Новый смотрит на прайс — он решает, подписываться ли вообще
-    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, listPrice), def.elasticity), 0.15, 2.6);
+    // Новый решает, подписываться ли вообще, глядя на воспринимаемую цену
+    // входа — смесь цен двух тарифов с ВНУТРЕННИМИ весами сегмента: какая
+    // его часть вообще рассматривает просмотр с рекламой (доля терпимости),
+    // а не с весом фактического разбора тарифов. Раньше вес в смеси был
+    // adShare, который сам растёт от разрыва цен: задирание прайса раздувало
+    // долю дешёвого тарифа, смесь ДЕШЕВЕЛА, и спрос категории РОС — дешёвая
+    // смесь печатала спрос быстрее, чем падал ARPU. Замер аудита 2026-08:
+    // оптимум прайса лежал на упоре 999 у всех опор (+102% у «ровной»).
+    // С внутренними весами разрыв цен помогает спросу ровно настолько,
+    // насколько сегмент вообще готов смотреть с рекламой, — петля разомкнута.
+    // Вес дешёвого тарифа гаснет с рекламной нагрузкой: тариф, который
+    // невозможно смотреть, в глазах новичка не существует, и вход дорожает
+    // до полного прайса. Важно, что вес НЕ зависит от разрыва цен — иначе
+    // плотная реклама становится трюком «премиум по цене смеси».
+    // Порог: боль ниже 1 (для сегмента) восприятие входа не трогает —
+    // «пара минут в час почти не замечается», как и обещают пресеты рычага.
+    const adConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, adLoadPain - 1), 0, 1);
+    const entryPrice = decisions.priceNew * (1 - adConsider) + decisions.priceAds * adConsider;
+    const priceFactor = clamp(Math.pow(refPrice / Math.max(30, entryPrice), def.elasticity), 0.15, 2.6);
     // Действующий подписчик злится на ту цену, которую платит сам. Пока база
     // не переведена на новый прайс, повышение её не раздражает — и в этом
     // весь смысл разрыва: он даёт расти цене, не платя оттоком сразу.
@@ -582,7 +699,7 @@ export function step(prevState, input = {}) {
     // Реклама раздражает тем сильнее, чем меньше её терпит сегмент.
     // Адаптивная реклама перераспределяет нагрузку и снимает часть раздражения.
     const adRelief = 1 - 0.45 * adSpread * quality;
-    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.45, 1);
+    const adPenalty = clamp(1 - 0.16 * adLoadPain * adShare * adRelief, 0.35, 1);
 
     // Премьера тянет к себе именно свой сегмент — и тем точнее, чем прицельнее
     // она снята. Проект «под киноманов» соберёт их и оставит равнодушными всех
@@ -593,15 +710,16 @@ export function step(prevState, input = {}) {
     // Узнаваемость — накопительный запас. Маркетинг насыщается: чем глубже
     // проникновение, тем дороже обходится следующий зритель.
     const subsBefore = seg.premium + seg.ads;
-    const penetration = clamp(subsBefore / def.potential, 0, 1);
+    const segPotential = potentialOf(def, state);
+    const penetration = clamp(subsBefore / segPotential, 0, 1);
     const saturation = 1 / (1 + CONFIG.marketingSaturation * penetration * penetration);
-    const shareOfMarket = def.potential / SEGMENTS.reduce((s, x) => s + x.potential, 0);
+    const shareOfMarket = segPotential / marketPotential;
     // Кампания под релиз считается маркетингом именно того сегмента,
     // под который снят проект: реклама сериала — это не реклама бренда.
     const targetedCampaign = premieres.reduce(
       (s, p) => s + (p.campaign ?? 0) * (p.segment === def.id ? 0.75 : p.segment ? 0.08 : 0.25), 0);
     const segMarketing = decisions.brandMarketing * shareOfMarket + targetedCampaign;
-    const spendPerViewer = segMarketing / def.potential;
+    const spendPerViewer = segMarketing / segPotential;
     const gain = clamp(
       0.28 * Math.pow(spendPerViewer / CONFIG.refMarketingPerViewer, 0.55) * saturation,
       0, CONFIG.awarenessMaxGain);
@@ -613,8 +731,8 @@ export function step(prevState, input = {}) {
 
     // --- Рынок один на двоих ---
     const rivalSegSubs = riv.segments[def.id] ?? 0;
-    const partnerHere = partnerBefore * (def.potential / marketPotential);
-    const untapped = Math.max(0, def.potential - subsBefore - rivalSegSubs - partnerHere);
+    const partnerHere = partnerBefore * (segPotential / marketPotential);
+    const untapped = Math.max(0, segPotential - subsBefore - rivalSegSubs - partnerHere);
 
     // Оба сервиса описываются одним и тем же набором характеристик, и оба
     // приводят зрителя по одной и той же формуле. Симметрия здесь принципиальна:
@@ -623,12 +741,29 @@ export function step(prevState, input = {}) {
       priceFactor, appeal, adPenalty, awareness: seg.awareness, buzz,
       exclusive: exclusivePullOf(weightedOriginal, def, state.originalsByGenre),
     };
+    // Конкурент проходит через ту же формулу цены входа, что и вы: два
+    // тарифа с внутренними весами сегмента и гашением от его рекламной
+    // нагрузки. Прежний множитель ×0.82 был форой «на глазок» — при
+    // симметричной формуле фора не нужна (его рекламный тариф считается
+    // по той же связке 37% от прайса, что и его выручка ниже).
+    const rivalPain = clamp(
+      Math.pow(riv.adLoad / CONFIG.refAdLoad, CONFIG.adPainExponent)
+      / Math.max(0.2, def.adTolerance), 0, 6);
+    const rivalConsider = clamp(0.5 * def.adTolerance, 0.15, 0.75)
+      * clamp(1 - 0.12 * Math.max(0, rivalPain - 1), 0, 1);
+    // Его рекламный тариф считается по 45% от прайса против ваших ~37%:
+    // конкурент-корпорация дисконтирует свой дешёвый тариф менее агрессивно.
+    // Это единственная несимметрия пары, и она объявлена: при полностью
+    // равных формулах разумная константная стратегия опускалась ниже
+    // конкурентоспособной доли (тест «игра выигрываема»), потому что прежний
+    // скрытый гандикап ×0.82 на его цене работал в пользу игрока.
+    const rivalEntry = riv.price * (1 - rivalConsider) + riv.price * 0.45 * rivalConsider;
     const rivalSide = {
-      priceFactor: clamp(Math.pow(refPrice / Math.max(30, riv.price * 0.82), def.elasticity), 0.15, 2.6),
+      priceFactor: clamp(Math.pow(refPrice / Math.max(30, rivalEntry), def.elasticity), 0.15, 2.6),
       appeal: clamp(
         Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
         * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
-      adPenalty: clamp(1 - 0.16 * clamp((riv.adLoad / CONFIG.refAdLoad) / Math.max(0.2, def.adTolerance), 0, 3) * 0.45, 0.45, 1),
+      adPenalty: clamp(1 - 0.16 * rivalPain * 0.45, 0.35, 1),
       awareness: riv.awareness,
       buzz: riv.buzz,
       exclusive: exclusivePullOf(riv.catalogOriginal * CONFIG.originalDepthWeight, def, null),
@@ -653,7 +788,23 @@ export function step(prevState, input = {}) {
     const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
     const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
-    const converted = trials * CONFIG.trialConversion * trialFactor;
+    let converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
+    // на смесь listPrice, и премиальная доля новичков (1 − adShare, не меньше
+    // 28%) платила задранный прайс, никак не отвечая спросом: оптимум цены
+    // лежал на упоре ползунка (999), «ровная» опора выигрывала от него +102%.
+    // Теперь новичок, выбирающий тариф без рекламы, оценивает его по
+    // собственной цене: часть отпугнутых спускается на тариф с рекламой
+    // (настолько, насколько сегмент её терпит), остальные не подписываются.
+    const premiumTake = clamp(
+      Math.pow(refPrice / Math.max(30, decisions.priceNew),
+        def.elasticity * CONFIG.premiumChoiceElasticity), 0.10, 1);
+    const premiumRaw = converted * (1 - adShare);
+    const premiumNew = premiumRaw * premiumTake;
+    const downgraded = (premiumRaw - premiumNew) * clamp(0.5 * def.adTolerance, 0, 0.9);
+    const adsNew = converted * adShare + downgraded;
+    converted = premiumNew + adsNew;
 
     // Конкурент забирает вторую половину той же поляны
     const rivalConverted = riv.alive
@@ -726,7 +877,7 @@ export function step(prevState, input = {}) {
     // Часть новых берёт годовой тариф: деньги приходят сразу за двенадцать
     // месяцев, но цена фиксируется и повышения их не касаются.
     const annualPortion = annualShare(decisions.annualDiscount, def);
-    const annualTakers = converted * (1 - adShare) * annualPortion;
+    const annualTakers = premiumNew * annualPortion;
     if (annualTakers > 0) {
       const annualPrice = decisions.priceNew * (1 - decisions.annualDiscount);
       annualCash += addAnnualCohort(pricing, annualTakers, annualPrice);
@@ -749,7 +900,7 @@ export function step(prevState, input = {}) {
     // Средняя цена базы дрейфует к прайсу по мере обновления: старые уходят
     // со своей ценой, новые приходят с прайсом. Именно поэтому разрыв
     // закрывается сам — но медленно, за время оборота базы.
-    const monthlyNew = Math.max(0, converted * (1 - adShare) - annualTakers);
+    const monthlyNew = Math.max(0, premiumNew - annualTakers);
     const monthlyStaying = Math.max(0, survivorsBeforeSwitch + flow - lockedIn) * (1 - survivorAdShareGuess);
     const monthlyTotal = monthlyStaying + monthlyNew;
     if (monthlyTotal > 0 && monthlyNew > 0) {
@@ -763,8 +914,8 @@ export function step(prevState, input = {}) {
     const lockedNow = annualSubs(pricing);
     const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
-    seg.ads = Math.max(0, movable * survivorAdShare + converted * adShare);
-    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + converted * (1 - adShare));
+    seg.ads = Math.max(0, movable * survivorAdShare + adsNew);
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + premiumNew);
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
@@ -773,6 +924,9 @@ export function step(prevState, input = {}) {
     newSubs += converted;
     lostSubs += leaving;
     trialsTotal += trials;
+    premiumNewTotal += premiumNew;
+    adsNewTotal += adsNew;
+    downgradedTotal += downgraded;
 
     perSegment.push({
       def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
@@ -933,7 +1087,11 @@ export function step(prevState, input = {}) {
   // тариф» было бесплатной стратегией — прайс работал не как цена, а как
   // переключатель, и его верхняя половина ничего не меняла.
   const glut = impressions / (impressions + CONFIG.adInventorySaturation);
-  const cpm = CONFIG.cpm * (1 - CONFIG.adGlutDiscount * glut);
+  // Рекламный рынок сезонный: к зиме бюджеты рекламодателей раздуваются,
+  // летом показы дешевеют. Это делает нагрузку тактическим решением —
+  // тот же ролик приносит зимой на треть больше, чем в июле.
+  const cpmSeason = CONFIG.cpmSeason[seasonOf(month)] ?? 1;
+  const cpm = CONFIG.cpm * cpmSeason * (1 - CONFIG.adGlutDiscount * glut);
   const adRevenue = (impressions / 1000) * cpm;
   const revenue = subscriptionRevenue + adRevenue;
 
@@ -951,8 +1109,15 @@ export function step(prevState, input = {}) {
   // Ползунки технологий можно увести в ноль, но команду, обслуживающую
   // миллионы подписчиков, в ноль не уведёшь — это фикс-кост масштаба.
   const staffCost = subsAtStart * CONFIG.staffPerSub;
+  // Прочие расходы: комиссии платёжных систем, списания, штрафы,
+  // неразнесённая административка. Растёт сама вместе с выручкой; режет её
+  // не бизнес-решение, а финансовая служба.
+  const financeBudget = financeCost(state, decisions);
+  const rateMisc = miscRate(state, decisions);
+  const miscCost = revenue * rateMisc;
   const fixed = CONFIG.hqMonthly + staffCost + contentSpend + slotCost
-    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep;
+    + marketingSpend + decisions.tech + decisions.rnd + techUpkeep
+    + financeBudget + miscCost;
   // Поштучные расходы событий: компенсации «каждому подписчику» считаются
   // от базы на начало месяца, запросы звёзд индексируются ценой таланта.
   const perUnitCost = (mods.oneOffCostPerSub ?? 0) * subsAtStart
@@ -1043,6 +1208,9 @@ export function step(prevState, input = {}) {
     adSubs,
     newSubs,
     lostSubs,
+    premiumNew: premiumNewTotal,
+    adsNew: adsNewTotal,
+    downgraded: downgradedTotal,
     switchedIn,
     switchedOut,
     netSwitch: switchedIn - switchedOut,
@@ -1070,6 +1238,10 @@ export function step(prevState, input = {}) {
     freshness,
 
     revenue,
+    financeLevel: financeLevel(state, decisions),
+    financeCost: financeBudget,
+    miscRate: rateMisc,
+    miscCost,
     subscriptionRevenue,
     adRevenue,
     arpu,
@@ -1090,6 +1262,7 @@ export function step(prevState, input = {}) {
     crisisCost,
     installedNow,
     profit,
+    raisedTotal: state.raisedTotal,
     cash: state.cash,
 
     // --- Конкурент ---
@@ -1168,6 +1341,9 @@ export function step(prevState, input = {}) {
     raiseApplied,
     raiseLost,
     annualCash,
+    jointStarted,
+    jointReleased: premieres.some((p) => state.slate.find((x) => x.id === p.id)?.joint),
+    marketLift: marketLiftOf(state) - 1,
     annualNew,
     annualExpired,
     annualSubs: perSegment.reduce((s, p) => s + annualSubs(p.pricing), 0),
@@ -1221,10 +1397,14 @@ export function step(prevState, input = {}) {
     segments: perSegment.map((p) => ({
       id: p.def.id,
       subs: p.subs,
+      // Приток и отток по сегментам: без них схема месяца показывает итог,
+      // но не отвечает на вопрос «кто пришёл и кто ушёл»
+      joined: p.converted,
+      left: p.leaving,
       premium: p.seg.premium,
       ads: p.seg.ads,
       adShare: p.adShare,
-      penetration: p.subs / p.def.potential,
+      penetration: p.subs / potentialOf(p.def, state),
       awareness: p.seg.awareness,
       churnRate: p.churnRate,
       hours: p.hours,
@@ -1332,7 +1512,7 @@ export function valuation(state) {
   // можно купить рывком на один ход — задрать прайс и обнулить контент перед
   // самым концом партии. См. shared/valuation.js.
   const runRate = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue) * 12;
-  const growth = windowGrowth(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
+  const growth = windowGrowthStable(h, CONFIG.growthWindow, (r) => r.subs, 0.4);
   const marginWindow = windowAvg(h, CONFIG.valuationWindow, (r) => r.revenue);
   const margin = marginWindow > 0
     ? windowAvg(h, CONFIG.valuationWindow, (r) => r.profit) / marginWindow : -0.5;
@@ -1360,8 +1540,16 @@ export function valuation(state) {
   return Math.max(300_000_000, base * bonus);
 }
 
+// Упаковка к раунду: оценку считает рынок, финансовая команда меняет
+// только долю, которую вы отдаёте за те же деньги.
+export function financeRoundMult(state) {
+  return financeRoundGain(CONFIG.finance,
+    financeLevel(state, state.decisions ?? DEFAULT_DECISIONS));
+}
+
 export function fundingOffer(state, amount) {
-  const terms = roundTerms(valuation(state), amount, { floor: CONFIG.valuationFloor });
+  const terms = roundTerms(valuation(state) * financeRoundMult(state), amount,
+    { floor: CONFIG.valuationFloor });
   return { ...terms, newEquity: state.equity * (1 - terms.dilution) };
 }
 
@@ -1430,11 +1618,16 @@ export function finalScore(state) {
   return {
     valuation: v,
     equity: state.equity,
-    equityValue: (v + Math.max(0, state.cash)) * state.equity,
+    equityValue: (state.over === 'bankrupt'
+      ? distressedSale(v, state.cash)
+      : v + Math.max(0, state.cash)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
-    bankrupt: state.over === 'bankrupt',
+    // Кончились деньги — компанию продали за долги: 28% оценки минус долг,
+    // остаток по долям. «Банкротство» остаётся только когда долг съел и это.
+    bankrupt: state.over === 'bankrupt' && distressedSale(v, state.cash) <= 0,
+    sold: state.over === 'bankrupt' && distressedSale(v, state.cash) > 0,
     duopolyShare: last?.duopolyShare ?? 0,
     rivalAlive: state.rivalState?.alive ?? true,
     goals: state.board?.history ?? [],
@@ -1442,3 +1635,47 @@ export function finalScore(state) {
 }
 
 export { STANCES, rivalSubs };
+
+// Персональный разбор партии: правила читают историю и называют системные
+// промахи, каждый — с ценой, замеренной на 24 кодах (аудит 2026-08).
+// Возвращает список { id, ...числа для подстановки }; тексты — в strings.js.
+export function debrief(state) {
+  const hist = state.history ?? [];
+  if (hist.length < 8) return [];
+  const out = [];
+
+  // Рекламная полка простояла закрытой. Цена: на опорах рекламный тариф
+  // добавляет 0.3–0.5 млрд и открывает дешёвый вход чувствительным к цене.
+  const noAdMonths = hist.filter((r) => (r.adSubs ?? 0) < 0.02 * Math.max(1, r.subs)).length;
+  if (noAdMonths > hist.length * 0.8) out.push({ id: 'noAdTier', n: noAdMonths });
+
+  // Закупка каталога стояла на нуле. Цена: лицензионная опора с закупкой
+  // 300 млн/мес — 14.1 млрд; она же с закупкой 0 — 0.4 млрд: полка тает,
+  // отток съедает базу быстрее, чем экономия копится.
+  const noBuyMonths = hist.filter((r) => (r.decisions?.licensing ?? 0) === 0).length;
+  if (noBuyMonths >= 6) out.push({ id: 'licenseStall', n: noBuyMonths });
+
+  // Премиум держался дорогим больше полупартии. Цена: на опоре 399₽
+  // обгоняет 449₽ на 0.7 млрд — эластичность режет приток раньше,
+  // чем дорастает ARPU.
+  const pricyMonths = hist.filter((r) => (r.decisions?.priceNew ?? 0) >= 449).length;
+  if (pricyMonths > hist.length / 2) out.push({ id: 'pricyPremium', n: pricyMonths });
+
+  // Рекламная загрузка летом выше зимней — против сезона CPM
+  // (лето ×0.75, зима ×1.25: та же минута летом приносит на 40% меньше).
+  const meanLoad = (season) => {
+    const rows = hist.filter((r) => r.season === season && (r.adSubs ?? 0) > 0);
+    return rows.length
+      ? rows.reduce((a, r) => a + (r.decisions?.adLoad ?? 0), 0) / rows.length : null;
+  };
+  const summer = meanLoad('summer');
+  const winter = meanLoad('winter');
+  if (summer != null && winter != null && summer > winter + 0.5) {
+    out.push({ id: 'summerAds' });
+  }
+
+  // Партия кончилась продажей за долги: напомнить цену пустой кассы.
+  if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
+
+  return out.slice(0, 4);
+}

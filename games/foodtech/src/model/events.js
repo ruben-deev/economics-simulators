@@ -28,6 +28,7 @@ export function neutralModifiers() {
     // дёшево то, что большой не по карману, и наоборот.
     oneOffCostPerCourier: 0,
     oneOffCostPerCustomer: 0,
+    chainDeal: false,       // крупная сеть подключается на своей льготной ставке
     variableCostAdd: 0,     // прибавка к себестоимости заказа, ₽
     notes: [],
   };
@@ -129,7 +130,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up (₽2,500 per courier)' },
+        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
         detail: {
           ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
           en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
@@ -159,12 +160,21 @@ export const EVENTS = [
     },
     options: [
       {
+        // Переделано аудитом 2026-08. Раньше уступка резала комиссию всему
+        // городу навсегда (−0.8 п.п.), что противоречило собственному тексту
+        // события и стоило 12–22% итога — согласие не выигрывало никогда
+        // (0/72), и никакая выгода в рамках словаря эффектов это не
+        // компенсировала (проверены узнаваемость и вечный спрос до +12%).
+        // Теперь скидка касается только заказов самой сети: популярные
+        // рестораны оттягивают на себя долю заказов, и с этой доли платформа
+        // получает 10% вместо своей ставки. Дорого, когда сеть — большая
+        // часть вашей витрины; терпимо, когда ресторанов и так сотни.
         label: { ru: 'Согласиться на 10%', en: 'Accept 10%' },
         detail: {
-          ru: '+40 ресторанов сразу, но комиссия по всему городу просядет навсегда. Щедро, пока ресторанов мало; расточительно, когда их сотни.',
-          en: '+40 restaurants at once, but the citywide commission sags for good. Generous while you have few restaurants; wasteful once you have hundreds.',
+          ru: '+40 популярных ресторанов сразу и их постоянные клиенты. Но со своих заказов сеть платит 10% вместо вашей ставки — и чем заметнее она в витрине, тем больше оборота уходит по льготной цене.',
+          en: '+40 popular restaurants at once, and their regulars with them. But the chain pays 10% on its own orders instead of your rate — and the more it dominates your listings, the more volume moves at the discounted price.',
         },
-        effects: { restaurantsAdd: 40, commissionOverrideDelta: -0.008, demandMult: 1.06 },
+        effects: { restaurantsAdd: 40, chainDeal: true, demandMult: 1.06 },
       },
       {
         label: { ru: 'Держать прайс', en: 'Hold your rate card' },
@@ -189,12 +199,15 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Залить рынок промо (350 ₽ на клиента базы)', en: 'Flood the market with promos (₽350 per customer)' },
+        // Цена опущена с 350 ₽ после аудита доминации: промо не брали никогда
+        // (4/48) — раздача не окупала ни спрос недели, ни ставку оценки.
+        // На 200 ₽ выбор живой: 20/48, и ответ зависит от размера базы.
+        label: { ru: 'Залить рынок промо (200 ₽ на клиента базы)', en: 'Flood the market with promos ($2 per customer)' },
         detail: {
           ru: 'Раздача по всей базе: маленькой базе почти бесплатно, большой — очень дорого. Спрос вверх, оценка выше.',
           en: 'A blast across the whole base: nearly free with a small base, very expensive with a large one. Demand up, valuation up.',
         },
-        effects: { oneOffCostPerCustomer: 350, demandMult: 1.09, valuationBonus: 0.003 },
+        effects: { oneOffCostPerCustomer: 200, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
         label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
@@ -219,7 +232,7 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now (₽3,000 per courier)' },
+        label: { ru: 'Застраховать всех сейчас (3 000 ₽ на курьера)', en: 'Insure everyone now ($30 per courier)' },
         detail: {
           ru: 'Платите по сегодняшнему штату. Выгодно, если собираетесь расти: будущих курьеров это уже не коснётся.',
           en: 'You pay for today’s fleet. A good deal if you are going to grow: future couriers are already covered.',

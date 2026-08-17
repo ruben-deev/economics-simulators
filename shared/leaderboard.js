@@ -22,10 +22,15 @@ export function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
 
-export async function lbTop(game, limit = 10) {
+// seed передаётся и серверу: сервер второй версии фильтрует по коду партии
+// сам, а первой — просто не знает такого параметра и отдаёт обычный топ
+// (страховкой работает клиентский фильтр в lbMount).
+export async function lbTop(game, limit = 10, seed = '') {
   const base = lbEndpoint();
   if (!base) return null;
-  const res = await fetch(`${base}?game=${encodeURIComponent(game)}&limit=${limit}`);
+  const url = `${base}?game=${encodeURIComponent(game)}&limit=${limit}`
+    + (seed ? `&seed=${encodeURIComponent(seed)}` : '');
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`leaderboard ${res.status}`);
   const data = await res.json();
   return Array.isArray(data.top) ? data.top : [];
@@ -82,8 +87,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false }) {
+export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
+
+  // Фильтр по коду партии: класс играет один город — сравнение честное
+  // по построению. Фильтруется на клиенте по расширенному топу: сервер
+  // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -97,7 +107,8 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   };
 
   const tableHtml = (top) => {
-    if (!top.length) return `<p class="funding-note">${t('lbEmpty')}</p>`;
+    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+    if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
     const rows = top.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -107,7 +118,7 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
     </tr>`);
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
-    if (!inTop && mine) {
+    if (!inTop && mine && !filterSeed) {
       rows.push(`<tr class="total"><td>${mine.rank}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
@@ -142,19 +153,44 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
 
   // В режиме просмотра заголовок не рисуется: блок открывается в модалке,
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
+  const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
+    <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+    ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
+  </div>`;
+
   root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
+    ${filterHtml}
     <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
   const statusEl = root.querySelector('#lb-status');
-  const refreshTop = () => lbTop(game)
+  // С фильтром топ запрашивается глубже: код партии — редкая строка,
+  // и в первой десятке его может не оказаться вовсе (страховка для сервера
+  // первой версии; второй фильтрует сам по параметру seed)
+  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10, filterSeed)
     .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  const seedInput = root.querySelector('#lb-seed');
+  let seedTimer = null;
+  seedInput?.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(() => {
+      filterSeed = seedInput.value.trim();
+      refreshTop();
+    }, 350);
+  });
+  root.querySelector('#lb-seed-mine')?.addEventListener('click', () => {
+    seedInput.value = seed;
+    filterSeed = seed;
+    refreshTop();
+  });
 
   root.querySelector('#lb-send')?.addEventListener('click', async () => {
     const btn = root.querySelector('#lb-send');

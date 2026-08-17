@@ -1,0 +1,118 @@
+// Аудит интерфейса: четыре игры × два языка × широкий и телефон.
+//
+// Ищет ровно то, что модельные тесты поймать не могут: переполнение страницы,
+// незаполненные подстановки {…}, сырые ключи строк, кириллицу в английской
+// версии, пустые панели, мелкие цели нажатия и ошибки консоли.
+//
+// Требует поднятого сервера и браузера:
+//   node shared/tools/serve.js &
+//   node shared/tools/audit-ui.mjs
+//
+// Ловушки прогона, на которых уже обжигались: кнопка хода живёт в шапке, и
+// если спрятать .topbar ради скриншота — ход перестанет нажиматься; первая
+// кнопка финальной модалки начинает НОВУЮ партию, поэтому разорившийся прогон
+// молча стартует заново; язык переключается ключом game-lang в localStorage.
+import pw from '/opt/node22/lib/node_modules/playwright/index.js';
+const { chromium } = pw;
+const ROOT = process.env.AUDIT_ROOT ?? 'http://127.0.0.1:8899/games';
+const GAMES = [
+  { name: 'НОВОЕДА', url: `${ROOT}/foodtech/dist/novoeda-delivery-simulator-v1.14.0.html`, turns: 14,
+    warm: async (page) => {
+      for (const id of ['center', 'sever', 'zarechie']) {
+        await page.locator(`#districts [data-id="${id}"]`).first().click({ timeout: 400 }).catch(() => {});
+      }
+      await page.evaluate(() => {
+        for (const [k, v] of [['targetCouriers', 600], ['marketing', 900000], ['sales', 400000], ['courierPay', 190]]) {
+          const el = document.getElementById(`in-${k}`);
+          if (el) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }
+        }
+      });
+    } },
+  { name: 'КИНОРЕКА', url: `${ROOT}/cinema/dist/kinoreka-streaming-simulator-v1.19.0.html`, turns: 14, warm: async () => {} },
+  { name: 'БИЛЕТВИЛЬ', url: `${ROOT}/tickets/dist/biletville-ticketing-simulator-v1.22.0.html`, turns: 14,
+    warm: async (page) => {
+      for (const id of ['club', 'theatre']) {
+        await page.locator(`[data-platform="${id}"]`).first().click({ timeout: 400 }).catch(() => {});
+      }
+    } },
+  { name: 'НОВОГРАД', url: `${ROOT}/ecosystem/dist/novograd-ecosystem-simulator-v1.13.0.html`, turns: 14,
+    warm: async (page) => {
+      await page.locator('[data-vertical="taxi"]').first().click({ timeout: 400 }).catch(() => {});
+    } },
+];
+const problems = [];
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+
+for (const g of GAMES) {
+  for (const lang of ['ru', 'en']) {
+    for (const [tag, w, h] of [['широкий', 1440, 900], ['телефон', 390, 844]]) {
+      const ctx = await b.newContext({ viewport: { width: w, height: h } });
+      const page = await ctx.newPage();
+      const errs = [];
+      page.on('pageerror', (e) => errs.push(e.message));
+      page.on('console', (m) => {
+        if (m.type() === 'error' && !/lbEndpoint|Failed to fetch|net::|favicon/.test(m.text())) errs.push(m.text());
+      });
+      const where = `${g.name} · ${lang} · ${tag}`;
+      await page.goto(g.url);
+      await page.evaluate((l) => localStorage.setItem('game-lang', l), lang);
+      await page.reload();
+      await page.waitForTimeout(350);
+      for (let k = 0; k < 3; k++) {
+        const btn = page.locator('#modal-root [data-act="0"]').first();
+        if (await btn.count()) { await btn.click({ timeout: 500 }).catch(() => {}); await page.waitForTimeout(80); }
+      }
+      await g.warm(page);
+      for (let i = 0; i < g.turns; i++) {
+        const inline = page.locator('#event-slot .event-option').first();
+        if (await inline.count()) await inline.click({ timeout: 250 }).catch(() => {});
+        await page.locator('#btn-next').click({ timeout: 600 }).catch(() => {});
+        await page.waitForTimeout(60);
+        const modal = page.locator('#modal-root [data-act="0"]').first();
+        if (await modal.count()) await modal.click({ timeout: 250 }).catch(() => {});
+      }
+      await page.waitForTimeout(250);
+
+      // 1. Горизонтальное переполнение страницы
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (overflow > 2) problems.push(`${where}: страница шире экрана на ${overflow}px`);
+
+      // 2. Незаполненные подстановки и сырые ключи
+      const text = await page.evaluate(() => document.body.innerText);
+      const holes = text.match(/\{[a-zA-Z]+\}/g);
+      if (holes) problems.push(`${where}: незаполненные подстановки ${[...new Set(holes)].join(' ')}`);
+      const rawKeys = text.match(/\b(map|flow|hall|district|lever|event|board)[A-Z][a-zA-Z]{3,}\b/g);
+      if (rawKeys) problems.push(`${where}: сырые ключи строк ${[...new Set(rawKeys)].slice(0, 5).join(' ')}`);
+
+      // 3. Кириллица в английской версии (кроме имён собственных игр)
+      if (lang === 'en') {
+        const cyr = text.split('\n').filter((l) => /[а-яё]/i.test(l)
+          && !/НОВОЕДА|КИНОРЕКА|БИЛЕТВИЛЬ|НОВОГРАД/.test(l));
+        if (cyr.length) problems.push(`${where}: непереведённые строки — ${cyr.slice(0, 3).map((x) => x.slice(0, 40)).join(' | ')}`);
+      }
+
+      // 4. Пустые панели
+      const empty = await page.evaluate(() => Array.from(document.querySelectorAll('.panel'))
+        .filter((p) => p.innerText.trim().length < 12)
+        .map((p) => (p.querySelector('.panel-title')?.innerText ?? p.id ?? '?')));
+      if (empty.length) problems.push(`${where}: пустые панели — ${empty.join(', ')}`);
+
+      // 5. Мелкие цели нажатия на телефоне
+      if (tag === 'телефон') {
+        const small = await page.evaluate(() => Array.from(document.querySelectorAll('button, .district, .event-option, [data-vertical], [data-platform]'))
+          .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 28; })
+          .map((el) => `${el.tagName}.${el.className}`.slice(0, 40)).slice(0, 4));
+        if (small.length) problems.push(`${where}: цели нажатия мельче 28px — ${small.join(', ')}`);
+      }
+
+      // 6. Ошибки в консоли
+      if (errs.length) problems.push(`${where}: ошибки — ${errs.slice(0, 2).join(' | ')}`);
+      await ctx.close();
+    }
+  }
+  console.log(`${g.name}: проверен`);
+}
+await b.close();
+console.log('\n=== НАЙДЕНО ===');
+if (!problems.length) console.log('чисто');
+for (const p of problems) console.log('•', p);
