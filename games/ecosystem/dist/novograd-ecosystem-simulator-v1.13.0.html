@@ -1473,6 +1473,12 @@ const STRINGS = {
   },
   vertLaunch: { ru: 'запустить за {cost}', en: 'launch for {cost}' },
   vertPlanned: { ru: 'заявка подана — ворота пока закрыты', en: 'requested — the gate is still closed' },
+  // Ворота е-кома показывают живое число: игрок должен видеть, чего
+  // именно не хватает, а не гадать (замечание владельца)
+  vertLockedEcom: {
+    ru: 'ворота совета: с месяца {month}, если еда в среднем за {n} мес в плюсе после ваших бюджетов на неё. Сейчас: {avg}/мес',
+    en: 'board gate: from month {month}, once food averages above zero over {n} months after your food budgets. Now: {avg}/mo',
+  },
   vertLocked: {
     ru: 'ворота совета: с месяца {month} и при прибыльном стартовом активе ({n} мес подряд)',
     en: 'board gate: from month {month}, with the starting asset profitable ({n} months running)',
@@ -1957,6 +1963,15 @@ const STRINGS = {
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы', en: 'One-off costs' },
   pnlCashChange: { ru: 'Изменение кассы', en: 'Cash change' },
+  pnlSvcTitle: { ru: 'Полный вклад по сервисам', en: 'Full contribution by service' },
+  pnlSvcNote: {
+    ru: 'Выручка сервиса минус его переменные, фиксы и ваши бюджеты на него. У еды именно это среднее за 3 месяца открывает ворота е-кома.',
+    en: 'A service’s revenue minus its variable costs, its fixed costs and your budgets for it. For food, the 3-month average of exactly this opens the e-commerce gate.',
+  },
+  pnlSvcFood: { ru: 'Еда (стартовый актив)', en: 'Food (the starting asset)' },
+  pnlSvcTaxi: { ru: 'Такси', en: 'Taxi' },
+  pnlSvcEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  pnlSvcPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
   pnlNote: {
     ru: 'Вклад — выручка минус переменные расходы вертикалей. Ниже — постоянные и бюджеты: они не зависят от того, сколько заказов и поездок случилось.',
     en: 'Contribution is revenue minus the verticals’ variable costs. Below come fixed costs and budgets: they do not depend on how many orders and rides happened.',
@@ -3995,8 +4010,8 @@ const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
-      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Сильная управляющая компания выкупает этот штраф. Пока вертикаль одна, она почти не нужна.',
-      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A strong management company buys that penalty back. With a single vertical you barely need it.',
+      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение, ещё четверть остатка снимает сооснователь. Пока вертикаль одна, команда почти не нужна.',
+      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here, and a co-founder removes another quarter of the rest. With a single vertical you barely need it.',
     },
   },
   {
@@ -7641,9 +7656,15 @@ function renderVerticals() {
       ? `<span class="badge">${t('vertPlanned')}</span>`
       : ecomGateOpen
         ? `<span class="badge">${t('vertLaunch', { cost: money(ecomCost) })}</span>`
-        : `<span class="badge wrap">${t('vertLocked', {
-            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
-          })}</span>`;
+        : (() => {
+            const n = ecomDef.gate.assetContributionMonths;
+            const h = state.history.slice(-n);
+            const avg = h.length === n
+              ? h.reduce((acc, x) => acc + (x.foodFullContribution ?? 0), 0) / n : null;
+            return `<span class="badge wrap">${t('vertLockedEcom', {
+              month: ecomDef.gate.minMonth, n, avg: avg === null ? '—' : moneyExact(avg),
+            })}</span>`;
+          })();
   const logisticsNote = hasPerk(asset, 'courier-logistics')
     ? `<div class="district-meta pos">${t('vertLogistics', {
         discount: pct(1 - (asset.launchCostMult?.ecom ?? 1), 0) })}</div>` : '';
@@ -8393,7 +8414,15 @@ function renderPnlTab() {
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table></div>
-    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
+    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>
+    <h4 style="margin:14px 0 6px;font-size:13px">${t('pnlSvcTitle')}</h4>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+      ${line(t('pnlSvcFood'), r.foodFullContribution ?? 0, (r.foodFullContribution ?? 0) >= 0 ? 'pos' : 'neg')}
+      ${r.taxiOn ? line(t('pnlSvcTaxi'), r.taxiFullContribution ?? 0, (r.taxiFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+      ${r.ecomOn ? line(t('pnlSvcEcom'), r.ecomFullContribution ?? 0, (r.ecomFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+      ${r.plusOn ? line(t('pnlSvcPlus'), r.plusFullContribution ?? 0, (r.plusFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+    </tbody></table></div>
+    <p class="funding-note">${t('pnlSvcNote')}</p>`;
 }
 
 function renderBaseTab() {

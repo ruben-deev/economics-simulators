@@ -852,9 +852,15 @@ function renderVerticals() {
       ? `<span class="badge">${t('vertPlanned')}</span>`
       : ecomGateOpen
         ? `<span class="badge">${t('vertLaunch', { cost: money(ecomCost) })}</span>`
-        : `<span class="badge wrap">${t('vertLocked', {
-            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
-          })}</span>`;
+        : (() => {
+            const n = ecomDef.gate.assetContributionMonths;
+            const h = state.history.slice(-n);
+            const avg = h.length === n
+              ? h.reduce((acc, x) => acc + (x.foodFullContribution ?? 0), 0) / n : null;
+            return `<span class="badge wrap">${t('vertLockedEcom', {
+              month: ecomDef.gate.minMonth, n, avg: avg === null ? '—' : moneyExact(avg),
+            })}</span>`;
+          })();
   const logisticsNote = hasPerk(asset, 'courier-logistics')
     ? `<div class="district-meta pos">${t('vertLogistics', {
         discount: pct(1 - (asset.launchCostMult?.ecom ?? 1), 0) })}</div>` : '';
@@ -1604,7 +1610,15 @@ function renderPnlTab() {
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
     </table></div>
-    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
+    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>
+    <h4 style="margin:14px 0 6px;font-size:13px">${t('pnlSvcTitle')}</h4>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+      ${line(t('pnlSvcFood'), r.foodFullContribution ?? 0, (r.foodFullContribution ?? 0) >= 0 ? 'pos' : 'neg')}
+      ${r.taxiOn ? line(t('pnlSvcTaxi'), r.taxiFullContribution ?? 0, (r.taxiFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+      ${r.ecomOn ? line(t('pnlSvcEcom'), r.ecomFullContribution ?? 0, (r.ecomFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+      ${r.plusOn ? line(t('pnlSvcPlus'), r.plusFullContribution ?? 0, (r.plusFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+    </tbody></table></div>
+    <p class="funding-note">${t('pnlSvcNote')}</p>`;
 }
 
 function renderBaseTab() {
