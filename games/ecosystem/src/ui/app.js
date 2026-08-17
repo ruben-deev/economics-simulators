@@ -17,6 +17,7 @@ import {
   startingCash, startingUsers, legacyValuationFloor, legacyReputationMult,
   enterEndless, endlessScore, endlessGrowth,
   financeLevel, financeSaturation, miscRate,
+  scooterFleet, scooterResidualValue, seasonScooters,
 } from '../model/engine.js';
 import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
@@ -923,17 +924,114 @@ function renderVerticals() {
     ticketsFee > 0 ? t('perMonth', { value: money(ticketsFee) }) : t('partnerFree'),
     ticketsActive);
 
-  // Будущие фазы: видны, но заперты — дисциплина скоупа наглядно
-  const future = FUTURE_VERTICALS.map((v) => `<div class="district" style="opacity:.55">
-    <div class="district-head">
-      <span class="district-name">${v.icon} ${tx(v.name)}</span>
-      <span class="badge">🔒 ${t('vertFuture')}</span>
-    </div>
-    <div class="district-meta">${tx(v.hint)}</div>
-  </div>`).join('');
+  // Самокаты: в основной партии — запертая витрина (дисциплина скоупа),
+  // в год конгломерата — живая вертикаль с планом года улица/склад
+  const scootDef = FUTURE_VERTICALS[0];
+  let future = '';
+  if (state.endless) {
+    const sc = CONFIG.scooters;
+    const fleet = scooterFleet(state);
+    const residual = scooterResidualValue(state);
+    const batchCost = sc.batchUnits * sc.unitCost;
+    const queuedBuy = Math.floor(state.decisions.scooterBuy ?? 0);
+    const queuedSell = Math.floor(state.decisions.scooterSell ?? 0);
+    const plan = Array.isArray(state.decisions.scooterPlan)
+      && state.decisions.scooterPlan.length === 12
+      ? state.decisions.scooterPlan : Array(12).fill('street');
+    // Клетка «сейчас» — месяц, который сыграет следующий ход
+    const nowIdx = state.month - CONFIG.monthsTotal;
+    const letters = t('scootMonthLetters').split(' ');
+    const maxSeason = Math.max(...sc.season);
+    const cells = plan.map((mode, i) => {
+      const cls = [mode === 'store' ? 'store' : 'street',
+        i < nowIdx ? 'past' : '', i === nowIdx ? 'now' : ''].join(' ');
+      const h = Math.max(12, Math.round((sc.season[i] / maxSeason) * 100));
+      return `<div class="scoot-cell ${cls}" data-scoot-cell="${i}"
+        title="${t(mode === 'store' ? 'scootCellStore' : 'scootCellStreet')}">
+        <div class="scoot-bar"><i style="height:${h}%"></i></div>
+        <span>${letters[i] ?? ''}</span>
+        <b>${mode === 'store' ? '📦' : '🛴'}</b>
+      </div>`;
+    }).join('');
+    const wearAvg = fleet > 0
+      ? state.scoot.cohorts.reduce((s, c) => s + c.units * c.wear, 0)
+        / (fleet * sc.streetLifeMonths) : 0;
+    const badge = fleet > 0
+      ? `<span class="badge on">${t('vertLive')} · ${num(fleet)} 🛴</span>`
+      : `<span class="badge">${t('scootReady')}</span>`;
+    future = `<div class="district ${fleet > 0 ? 'active' : ''}" data-role="scoot">
+      <div class="district-head">
+        <span class="district-name">${scootDef.icon} ${tx(scootDef.name)}</span>
+        ${badge}
+      </div>
+      <div class="district-meta">${t('scootHint', { life: sc.streetLifeMonths })}</div>
+      ${fleet > 0 ? `<div class="district-meta">${t('scootStats', {
+        units: num(fleet), wear: pct(wearAvg, 0),
+        riders: compact(state.scoot?.users ?? 0), residual: money(residual),
+      })}</div>` : ''}
+      <div class="scoot-actions">
+        <button class="btn tiny" data-scoot-buy>${t('scootBuy', {
+          units: sc.batchUnits, cost: money(batchCost) })}</button>
+        <button class="btn tiny" data-scoot-sell ${fleet > 0 || queuedSell > 0 ? '' : 'disabled'}>
+          ${t('scootSell', { units: sc.batchUnits })}</button>
+      </div>
+      ${queuedBuy > 0 || queuedSell > 0 ? `<div class="district-meta pos">${t('scootQueued', {
+        buy: num(queuedBuy * sc.batchUnits), sell: num(queuedSell * sc.batchUnits),
+      })}</div>` : ''}
+      <div class="district-meta" style="margin-top:6px">${t('scootPlanTitle')}</div>
+      <div class="scoot-plan">${cells}</div>
+      <div class="district-meta">${t('scootPlanHint')}</div>
+    </div>`;
+  } else {
+    future = `<div class="district" style="opacity:.55">
+      <div class="district-head">
+        <span class="district-name">${scootDef.icon} ${tx(scootDef.name)}</span>
+        <span class="badge">🔒 ${t('vertFuture')}</span>
+      </div>
+      <div class="district-meta">${tx(scootDef.hint)}</div>
+    </div>`;
+  }
 
   el('verticals').innerHTML = assetCard + taxiCard + ecomCard + plusCard
     + cinemaCard + ticketsCard + future;
+
+  // Управление самокатами: очередь закупки/продажи и план года
+  const scootRoot = el('verticals').querySelector('[data-role="scoot"]');
+  if (scootRoot) {
+    const buyBtn = scootRoot.querySelector('[data-scoot-buy]');
+    if (buyBtn) buyBtn.addEventListener('click', () => {
+      const q = Math.floor(state.decisions.scooterBuy ?? 0);
+      if (q >= CONFIG.scooters.maxBatchesPerMonth) {
+        toast(t('scootBuyMax', { n: CONFIG.scooters.maxBatchesPerMonth })); return;
+      }
+      // Раундов в этом акте нет: заказ дороже кассы — это банкротство,
+      // а не смелость. Такой заказ не принимаем.
+      const batchCost = CONFIG.scooters.batchUnits * CONFIG.scooters.unitCost;
+      if ((q + 1) * batchCost > state.cash) {
+        toast(t('scootNoCash', { cost: money(batchCost) })); return;
+      }
+      state.decisions.scooterBuy = q + 1;
+      renderVerticals(); save();
+    });
+    const sellBtn = scootRoot.querySelector('[data-scoot-sell]');
+    if (sellBtn) sellBtn.addEventListener('click', () => {
+      state.decisions.scooterSell = Math.floor(state.decisions.scooterSell ?? 0) + 1;
+      renderVerticals(); save();
+    });
+    scootRoot.querySelectorAll('[data-scoot-cell]').forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const i = Number(cell.dataset.scootCell);
+        const nowIdx = state.month - CONFIG.monthsTotal;
+        if (i < nowIdx) return; // прошлое не переигрывается
+        const plan = Array.isArray(state.decisions.scooterPlan)
+          && state.decisions.scooterPlan.length === 12
+          ? [...state.decisions.scooterPlan] : Array(12).fill('street');
+        plan[i] = plan[i] === 'store' ? 'street' : 'store';
+        state.decisions.scooterPlan = plan;
+        renderVerticals(); save();
+      });
+    });
+  }
 
   el('verticals').querySelectorAll('[data-vertical]').forEach((node) => {
     node.addEventListener('click', () => {
@@ -1617,6 +1715,7 @@ function renderPnlTab() {
       ${r.taxiOn ? line(t('pnlSvcTaxi'), r.taxiFullContribution ?? 0, (r.taxiFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
       ${r.ecomOn ? line(t('pnlSvcEcom'), r.ecomFullContribution ?? 0, (r.ecomFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
       ${r.plusOn ? line(t('pnlSvcPlus'), r.plusFullContribution ?? 0, (r.plusFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
+      ${r.scootOn ? line(t('pnlSvcScoot'), r.scootFullContribution ?? 0, (r.scootFullContribution ?? 0) >= 0 ? 'pos' : 'neg') : ''}
     </tbody></table></div>
     <p class="funding-note">${t('pnlSvcNote')}</p>`;
 }
@@ -1840,14 +1939,19 @@ function showEndlessOver() {
     tag: gameTag(`${GAME_TAG}+`), version: APP_VERSION, seed: state.seed,
     score: Math.round(e.equityValue), turns: e.months,
   });
-  modal(`<h2>🏙️ ${t('endlessOverTitle')}</h2>
-    <p class="funding-note">${t(e.goalDone ? 'endlessWon' : 'endlessLost')}</p>
+  const failed = e.bankrupt || e.sold;
+  modal(`<h2>🏙️ ${t(failed ? 'endlessBankruptTitle' : 'endlessOverTitle')}</h2>
+    <p class="funding-note">${t(failed ? 'endlessBankrupt'
+      : e.goalDone ? 'endlessWon' : 'endlessLost')}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('endlessRanked')}</div><div class="s-value">${money(e.rankedValue)}</div></div>
       <div class="stat"><div class="s-label">${t('endlessNow')}</div><div class="s-value">${money(e.equityValue)}</div></div>
       <div class="stat"><div class="s-label">${t('endlessGrowth')}</div><div class="s-value">${signedPct(e.growth, 1)}</div></div>
       <div class="stat"><div class="s-label">${t('endlessGlue')}</div><div class="s-value">${pct(e.multiShare, 1)}</div></div>
     </div>
+    ${scooterFleet(state) > 0 ? `<p class="funding-note">${t('endlessFleetNote', {
+      units: num(scooterFleet(state)), value: money(scooterResidualValue(state)),
+    })}</p>` : ''}
     <p class="funding-note">${t('endlessScaleNote', {
       glue: pct(CONFIG.endless.multiShareTarget, 0),
       growth: pct(CONFIG.endless.growthTarget, 0),
@@ -1869,6 +1973,10 @@ function showEndlessOver() {
 
 function showGameOver() {
   if (state.over === 'endless-done') { showEndlessOver(); return; }
+  // Касса кончилась посреди года конгломерата: показываем итог самого акта,
+  // а не замороженный финал партии — иначе экран заново предлагал бы
+  // «Играть год конгломерата» после уже проигранного года.
+  if (state.endless && state.over === 'bankrupt') { showEndlessOver(); return; }
   // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
@@ -1983,7 +2091,10 @@ function showGameOver() {
           glue: pct(CONFIG.endless.multiShareTarget, 0),
           growth: pct(CONFIG.endless.growthTarget, 0),
         })}</p>
-        <p class="funding-note">${t('endlessRule')}</p>`,
+        <p class="funding-note">${t('endlessRule')}</p>
+        <p class="funding-note">🛴 ${t('endlessScootNote', {
+          life: CONFIG.scooters.streetLifeMonths,
+        })}</p>`,
         [{ label: t('helpModalOk'), primary: true, onClick: () => {} }]);
     } }]),
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
