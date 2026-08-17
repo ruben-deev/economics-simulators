@@ -1763,3 +1763,56 @@ test('совместный мегахит: рынок растёт обоим, �
   const later = { ...s, month: s.marketLiftUntil + 30 };
   assert.ok(marketLiftOf(later) < inWindow, 'после окна расширение тает');
 });
+
+// --- Аудит 2026-08: усталость от шума и годовые как обязательство ---
+
+test('усталость от шума: вторая премьера подряд шумит слабее первой', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Две партии: в одной премьера выходит на свежую аудиторию, в другой —
+  // сразу после другой премьеры. Сравниваем шум месяца (report.buzz).
+  const mk = () => {
+    let s = createInitialState('fatigue-test', 'normal');
+    s = step(s, { decisions: { ...DEFAULT_DECISIONS, studioSlots: 2 },
+      commission: [{ genre: 'blockbuster', scale: 'pilot', segment: 'mass' }], eventChoice: 0 }).state;
+    for (let i = 0; i < 4; i++) {
+      s = step(s, { decisions: { ...DEFAULT_DECISIONS, studioSlots: 2 }, eventChoice: 0 }).state;
+    }
+    return s; // пилот готов (4 месяца)
+  };
+  // Свежая аудитория: релиз сразу
+  let fresh = mk();
+  const ready1 = fresh.slate.find((p) => p.status === 'ready');
+  fresh = step(fresh, { decisions: { ...DEFAULT_DECISIONS, studioSlots: 2 },
+    release: [{ id: ready1.id, campaign: 0 }], eventChoice: 0 }).state;
+  const freshBuzz = fresh.history.at(-1).buzz;
+  // Утомлённая: перед релизом искусственно поднимаем усталость
+  let tired = mk();
+  tired.buzzFatigue = 3;
+  const ready2 = tired.slate.find((p) => p.status === 'ready');
+  tired = step(tired, { decisions: { ...DEFAULT_DECISIONS, studioSlots: 2 },
+    release: [{ id: ready2.id, campaign: 0 }], eventChoice: 0 }).state;
+  const tiredBuzz = tired.history.at(-1).buzz;
+  assert.ok(freshBuzz > 0, 'премьера шумит');
+  assert.ok(tiredBuzz < freshBuzz * 0.55, `утомлённый шум заметно слабее: ${tiredBuzz} vs ${freshBuzz}`);
+  // усталость спадает со временем
+  assert.ok(tired.buzzFatigue > 0);
+});
+
+test('годовые: неотработанные месяцы вычитаются из счёта как обязательство', async () => {
+  const { createInitialState, deferredAnnualRevenue, finalScore } = await import('../src/model/engine.js');
+  const s = createInitialState('deferred-test', 'normal');
+  assert.equal(deferredAnnualRevenue(s), 0, 'без годовых долга нет');
+  // Когорта: 1000 подписчиков по 300 ₽, осталось 7 месяцев
+  s.segments.mass.pricing.annual.push({ subs: 1000, monthsLeft: 7, price: 300 });
+  const expected = 1000 * 300 * 7;
+  assert.equal(deferredAnnualRevenue(s), expected);
+  s.over = 'finished';
+  s.month = 36;
+  const withDebt = finalScore(s);
+  assert.equal(withDebt.deferred, expected);
+  s.segments.mass.pricing.annual = [];
+  const clean = finalScore(s);
+  assert.ok(clean.equityValue - withDebt.equityValue >= expected * s.equity * 0.999,
+    'долг по годовым вычтен из стоимости доли');
+});

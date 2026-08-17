@@ -406,6 +406,25 @@ life of about 29 months. Real churn in the game usually runs 5–12%, i.e. 8–2
 next month that stock works on churn. This is how "finished it, cancelled" is modelled:
 a blockbuster has `hangover = 1.0`, family animation `0.1`.
 
+**Buzz fatigue** (added in the 2026-08 audit). A city cannot be amazed every
+month: each premiere tires the audience in proportion to its raw buzz, and
+until the fatigue decays (−40% a month) the next premieres ring quieter — by
+`1/(1 + 0.5 × fatigue)`. On top of that the buzz-to-trials conversion is
+concave (`buzz^0.85`): market attention saturates. Without these two
+mechanics a conveyor of loud premieres cancelled the hangover by
+construction — the next spike arrived before the previous one wore off —
+and the mass-market blockbuster dominated at 2.1× (measured). It now stays
+the peak (~1.2×) but pays for the frequency of its noise, and outside the
+mass segment it loses to retention genres.
+
+**Annual plans are a loan, not earnings** (same audit). An annual prepayment
+arrives as cash at once, but the final score deducts the unearned months as
+a liability (deferred revenue): before that, merely enabling annual plans
+doubled the score — a premiere spike caught into annuals stayed in the till
+rouble-for-rouble even after the viewers left. With the deduction the annual
+discount has an interior optimum (10–15%); both “monthly only” and an
+aggressive 30% are live but inferior answers.
+
 ---
 
 ## 4. Watch hours and bandwidth

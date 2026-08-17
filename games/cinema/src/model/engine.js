@@ -453,6 +453,15 @@ export function step(prevState, input = {}) {
   const releaseOrders = input.release ?? [];
   const premieres = [];
   let campaignSpend = 0;
+  // Усталость от шума: город не умеет удивляться каждый месяц. Каждая
+  // премьера утомляет аудиторию пропорционально своему шуму, и пока
+  // усталость не спала, следующие премьеры шумят слабее. Без этого конвейер
+  // громких премьер гасил «похмельный» отток по построению: новый всплеск
+  // приходил раньше, чем осыпался прошлый, — и блокбастеры доминировали
+  // с двукратным перевесом (замер, аудит 2026-08). Редкой громкой премьере
+  // усталость почти не мешает — наказывается именно частота шума.
+  const buzzFatigueMult = 1 / (1 + CONFIG.buzzFatigueBite * (state.buzzFatigue ?? 0));
+  let buzzFatigueRaw = 0;
   for (const order of releaseOrders) {
     const project = state.slate.find((p) => p.id === order.id && p.status === 'ready');
     if (!project) continue;
@@ -484,6 +493,8 @@ export function step(prevState, input = {}) {
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
+    const rawPremiereBuzz = releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower);
+    buzzFatigueRaw += rawPremiereBuzz;
     premieres.push({
       id: project.id,
       genre: project.genre,
@@ -494,9 +505,15 @@ export function step(prevState, input = {}) {
       held: project.monthsHeld,
       campaign,
       season,
-      buzz: releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower),
+      // Шум с поправкой на усталость: всё дальше (приток, охват, похмелье)
+      // считается от него — утомлённая премьера и приводит, и роняет меньше
+      buzz: rawPremiereBuzz * buzzFatigueMult,
     });
   }
+  // Усталость копится от сырого шума: город услышал ещё одну громкую
+  // премьеру независимо от того, насколько устал к её началу
+  state.buzzFatigue = (state.buzzFatigue ?? 0) * (1 - CONFIG.buzzFatigueDecay)
+    + buzzFatigueRaw;
 
   const vault = readyToRelease(state.slate);
   const producing = inProduction(state.slate);
@@ -788,7 +805,11 @@ export function step(prevState, input = {}) {
 
     const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
-    const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
+    // Внимание рынка насыщается: конверсия шума в пробы вогнутая, а не
+    // линейная. Линейная делала тройную премьерную тягу блокбастера тройным
+    // притоком за те же деньги — доминация 2× по замеру (аудит 2026-08).
+    const trials = categoryTrials * preference
+      * (1 + CONFIG.premiereTrialGain * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower));
     let converted = trials * CONFIG.trialConversion * trialFactor;
 
     // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
@@ -1615,19 +1636,34 @@ export function explainFactors(prev, cur) {
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
 }
 
+// Неотработанные годовые: деньги за месяцы, которые сервис ещё должен
+// отдать контентом. Пришли кассой вперёд — но это обязательство, а не
+// заработок: в счёте партии они вычитаются, как deferred revenue в
+// отчётности. Без этого годовые были «обязательным ответом»: их включение
+// удваивало счёт (замер, аудит 2026-08 — премьерный всплеск, пойманный
+// в годовые, оставался в кассе рубль-в-рубль, даже когда зрители ушли).
+export function deferredAnnualRevenue(state) {
+  return SEGMENTS.reduce((sum, def) => {
+    const cohorts = state.segments?.[def.id]?.pricing?.annual ?? [];
+    return sum + cohorts.reduce((s, c) => s + c.subs * c.price * Math.max(0, c.monthsLeft), 0);
+  }, 0);
+}
+
 export function finalScore(state) {
   const v = valuation(state);
   const last = state.history[state.history.length - 1];
-  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
-  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
-  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
-  // в конце партии были бы бесплатными.
+  const deferred = deferredAnnualRevenue(state);
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету − долг по
+  // годовым). Кэш в кассе принадлежит акционерам: рубль, не потраченный к
+  // финалу, стоит рубль, а потраченный обязан вернуться ростом оценки. Но
+  // рубль, полученный за ещё не отданные месяцы подписки, — заём у зрителя.
   return {
     valuation: v,
     equity: state.equity,
+    deferred,
     equityValue: (state.over === 'bankrupt'
       ? distressedSale(v, state.cash)
-      : v + Math.max(0, state.cash)) * state.equity,
+      : Math.max(0, v + Math.max(0, state.cash) - deferred)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
