@@ -1945,9 +1945,10 @@ function returnHtml() {
 
 function novogradInviteHtml() {
   const link = window.__homeUrl
-    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html">${t('metaContinueLink')}</a></div>`
     : '';
-  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+  return `<div class="alert good" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b>
+    ${t('metaContinueText')}${link}</div>`;
 }
 
 function showGameOver() {
@@ -1984,6 +1985,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
+    ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
@@ -1999,7 +2001,6 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
-    ${novogradInviteHtml()}
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}

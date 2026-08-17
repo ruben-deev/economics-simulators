@@ -2020,7 +2020,7 @@ score = valuation × your stake`,
   lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
   lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---
-  welcomeNumbers: { ru: '<b>О числах.</b> Модель — из рабочего опыта, числа условные, подобранные для играбельности: не бенчмарки и не данные реальных компаний. Игра иллюстрирует механику связей, а не величины; оценивать по ней настоящий бизнес нельзя.', en: '<b>About the numbers.</b> The model comes from working experience; the numbers are notional, chosen for playability — not benchmarks, not real companies’ data. The game illustrates the mechanics of the relationships, not the magnitudes; it is not a tool for valuing a real business.' },
+  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is no tool for valuing a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же рынок ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same market again.' },
   alertHarvest: { ru: '<b>Прибыль при тающей базе — это дожинание, а не рост.</b> За три месяца ушло {lost} подписчиков. Оценка компании платит за рост: сжимающийся сервис стоит дёшево даже в плюсе.', en: '<b>Profit on a melting base is harvesting, not growth.</b> {lost} subscribers left over three months. Markets pay for growth: a shrinking service is valued cheaply even in the black.' },
@@ -2067,10 +2067,10 @@ score = valuation × your stake`,
     ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
     en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
   },
-  metaContinueTitle: { ru: 'Продолжить за экосистему?', en: 'Continue as the ecosystem?' },
+  metaContinueTitle: { ru: 'Продолжить в НОВОГРАДЕ?', en: 'Continue in NOVOGRAD?' },
   metaContinueText: {
-    ru: 'НОВОГРАД — финал серии: выигранный здесь бизнес становится стартовым активом холдинга с такси, е-комом и подпиской. Сохраните строку результата выше и введите её на экране приветствия НОВОГРАДА — сильный финал засчитается как наследие и усилит старт.',
-    en: 'NOVOGRAD is the series endgame: the business you won here becomes the starting asset of a holding with ride-hailing, e-commerce and a subscription. Keep the result string above and enter it on NOVOGRAD’s welcome screen — a strong finale counts as a legacy and boosts your start.',
+    ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Сильный финал засчитается как наследие — сохраните строку результата ниже.',
+    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. A strong finale counts as a legacy — keep the result string below.',
   },
   metaContinueLink: { ru: 'Открыть НОВОГРАД →', en: 'Open NOVOGRAD →' },
 };
@@ -9605,9 +9605,10 @@ function returnHtml() {
 
 function novogradInviteHtml() {
   const link = window.__homeUrl
-    ? ` <a class="btn small" href="../ecosystem/index.html" style="margin-top:6px;display:inline-block">${t('metaContinueLink')}</a>`
+    ? `<div style="margin-top:8px"><a class="btn small primary" href="../ecosystem/index.html">${t('metaContinueLink')}</a></div>`
     : '';
-  return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b> ${t('metaContinueText')}${link}</div>`;
+  return `<div class="alert good" style="margin-top:10px"><b>🏙️ ${t('metaContinueTitle')}</b>
+    ${t('metaContinueText')}${link}</div>`;
 }
 
 function showGameOver() {
@@ -9647,6 +9648,7 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
     <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
+    ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
@@ -9661,7 +9663,6 @@ function showGameOver() {
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>
-    ${novogradInviteHtml()}
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
     ${recordsBlockHtml(s)}
