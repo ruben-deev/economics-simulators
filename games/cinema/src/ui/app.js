@@ -190,25 +190,36 @@ function renderStudioMap() {
   const floor = narrow ? 148 : 168;
   const H = floor + (narrow ? 78 : 74);
 
-  // Площадь зала пропорциональна базе: сторона растёт корнем, чтобы зал
-  // конкурента в 20 раз больше не выдавливал ваши залы в точки
+  // Площадь зала пропорциональна базе. Ширины нормируются так, чтобы три
+  // зала с зазорами ВСЕГДА помещались в кадр: прежняя раскладка ставила
+  // рекламный зал от края премиума, а конкурента — от правого края, и при
+  // двух больших базах залы наезжали друг на друга (жалоба игрока,
+  // аудит 2026-08). Теперь перекрытие невозможно по построению.
   const subsMax = Math.max(premium, ads, rival, 1);
-  const areaMax = narrow ? 8200 : 19000;
-  const hallDims = (subs) => {
+  const outSpace = narrow ? 52 : 72;   // место слева под стрелку оттока
+  const gapPA = narrow ? 46 : 56;      // зазор премиум-реклама (стрелка даунгрейда)
+  const gapAR = narrow ? 46 : 64;      // зазор реклама-конкурент (переток рынка)
+  const avail = W - outSpace - gapPA - gapAR - 14;
+  const wRaw = [premium, ads, rival].map((s) => Math.sqrt(Math.max(s, subsMax * 0.02)));
+  const wSum = wRaw[0] + wRaw[1] + wRaw[2];
+  const widths = wRaw.map((w) => Math.max(34, avail * (w / wSum)));
+  // Если минимумы растянули сумму — ужимаем пропорционально обратно
+  const wTotal = widths[0] + widths[1] + widths[2];
+  if (wTotal > avail) for (let i = 0; i < 3; i++) widths[i] *= avail / wTotal;
+  const maxH = floor - (narrow ? 26 : 30);
+  const areaMax = (narrow ? 8200 : 19000);
+  const hallDims = (subs, w) => {
     const a = areaMax * (subs / subsMax);
-    const w = Math.max(30, Math.sqrt(a * 1.9));
-    const h = Math.max(20, a / Math.max(1, w));
-    return { w, h };
+    return { w, h: Math.min(maxH, Math.max(20, a / Math.max(1, w))) };
   };
-  const dP = hallDims(premium);
-  const dA = hallDims(ads);
-  const dR = hallDims(rival);
+  const dP = hallDims(premium, widths[0]);
+  const dA = hallDims(ads, widths[1]);
+  const dR = hallDims(rival, widths[2]);
 
-  // Три колонки: премиум, рекламный, конкурент. Ваши залы прижаты влево,
-  // конкурент — вправо; между рекламным и конкурентом живёт стрелка перетока.
-  const xP = narrow ? 56 : 78;
-  const xA = xP + dP.w + (narrow ? 78 : 64);
-  const xR = W - dR.w - 10;
+  // Колонки идут подряд: премиум, рекламный, конкурент
+  const xP = outSpace;
+  const xA = xP + dP.w + gapPA;
+  const xR = xA + dA.w + gapAR;
   const hall = (x, d, cls, stroke, fill) => `
     <g class="px ${cls}">
       ${d.h >= 46 ? `<path d="M ${x + 4} ${floor - d.h - 8} Q ${x + d.w / 2} ${floor - d.h - (narrow ? 14 : 20)} ${x + d.w - 4} ${floor - d.h - 8}"
@@ -270,9 +281,9 @@ function renderStudioMap() {
     ${hall(xA, dA, 'px-ads', 'rgba(45, 212, 191, 0.7)', 'rgba(45, 212, 191, 0.18)')}
     ${hall(xR, dR, 'px-rival', 'rgba(148, 163, 184, 0.55)', 'var(--panel-2)')}
     <line x1="6" y1="${floor}" x2="${W - 6}" y2="${floor}" stroke="var(--line)"></line>
-    ${cap(xP, dP, narrow ? t('plexPremiumShort') : t('plexPremium', { price: priceP }), compact(premium), 'var(--warn)')}
-    ${cap(xA, dA, narrow ? t('plexAdsShort') : t('plexAds', { price: priceA }), compact(ads), '#2dd4bf')}
-    ${cap(xR, dR, narrow ? t('plexRivalShort') : t('plexRival', { price: amount(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
+    ${cap(xP, dP, narrow || dP.w < 92 ? t('plexPremiumShort') : t('plexPremium', { price: priceP }), compact(premium), 'var(--warn)')}
+    ${cap(xA, dA, narrow || dA.w < 92 ? t('plexAdsShort') : t('plexAds', { price: priceA }), compact(ads), '#2dd4bf')}
+    ${cap(xR, dR, narrow || dR.w < 92 ? t('plexRivalShort') : t('plexRival', { price: amount(r.rivalPrice ?? 0) }), compact(rival), 'var(--muted)')}
     ${arrowV(xP + dP.w * 0.35, true, 'var(--good)', 'px-in')}
     ${flowLbl(xP + dP.w * 0.35, '+' + compact(premiumNew), 'var(--good)', 'px-in')}
     ${arrowV(xA + dA.w * 0.4, true, 'var(--good)', 'px-in')}
@@ -1039,6 +1050,21 @@ function renderSlate() {
             data-segment="${sg.id}" title="${tx(sg.hint)}">${tx(sg.name)}</button>`).join('')}
         </div>
       </div>
+      ${(() => {
+        // Живая строка под выбором адресата: премьера и кампания бьют в
+        // выбранный сегмент, и цена промаха измерена — до трети итога.
+        // Показываем, в кого целимся: базу, потолок и отток сегмента.
+        if (!commissionDraft.segment) {
+          return `<div class="funding-note">${t('slateSegBroadNote')}</div>`;
+        }
+        const segRow = last()?.segments?.find((x) => x.id === commissionDraft.segment);
+        const def = segmentById(commissionDraft.segment);
+        return segRow && def ? `<div class="funding-note">${t('slateSegNote', {
+          name: tx(def.name), subs: compact(segRow.subs),
+          pen: pct(segRow.penetration, 0), pot: compact(def.potential),
+          churn: pct(segRow.churnRate, 1),
+        })}</div>` : '';
+      })()}
       <div class="commission-foot">
         <span>${t('slatePrice', { price: money(price), months: scaleById(commissionDraft.scale).months })}</span>
         <button class="btn primary" id="btn-commission" ${free > 0 && affordable ? '' : 'disabled'}>
@@ -2033,11 +2059,21 @@ function renderSegmentsTab() {
   const r = last();
   if (!r || !r.segments.length) return `<p class="funding-note">${t('segmentsEmpty')}</p>`;
   const name = (s) => tx(segmentById(s.id)?.name);
+  // Динамика месяца: без неё таблица читалась как справочник, а не как
+  // ответ на вопрос «на кого сейчас работает моя афиша» (жалоба игрока)
+  const prev = state.history.length > 1 ? state.history[state.history.length - 2] : null;
+  const deltaCell = (s) => {
+    const before = prev?.segments?.find((x) => x.id === s.id)?.subs;
+    if (before == null) return '<td>—</td>';
+    const d = s.subs - before;
+    if (Math.abs(d) < 100) return '<td>≈0</td>';
+    return `<td class="${d >= 0 ? 'pos' : 'neg'}">${d >= 0 ? '+' : '−'}${compact(Math.abs(d))}</td>`;
+  };
   return `
     <div style="overflow-x:auto"><table class="data">
-      <thead><tr><th>${t('colSegment')}</th><th>${t('colSubs')}</th><th>${t('colAdShare')}</th><th>${t('colChurn')}</th><th>${t('colArpu')}</th></tr></thead>
+      <thead><tr><th>${t('colSegment')}</th><th>${t('colSubs')}</th><th>${t('colSegDelta')}</th><th>${t('colAdShare')}</th><th>${t('colChurn')}</th><th>${t('colArpu')}</th></tr></thead>
       <tbody>${r.segments.map((s) => `<tr>
-        <td>${name(s)}</td><td>${compact(s.subs)}</td><td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
+        <td>${name(s)}</td><td>${compact(s.subs)}</td>${deltaCell(s)}<td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
         <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}</td>
         <td>${amount(s.arpu)}</td></tr>`).join('')}</tbody>
     </table></div>

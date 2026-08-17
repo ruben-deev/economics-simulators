@@ -557,7 +557,16 @@ export const STRINGS = {
     ru: 'Три причины, по которым сегмент подписывается охотнее или неохотнее. <b>1.00 — норма.</b> Больше единицы — фактор работает на вас в этом сегменте, меньше — против. Охват — доля сегмента, которая о вас вообще слышала.',
     en: 'The three reasons a segment signs up more or less readily. <b>1.00 is normal.</b> Above one the factor works for you in that segment, below one against. Reach is the share of the segment that has heard of you at all.',
   },
-  segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь.', en: 'The same lever behaves differently by segment: an extra dollar on the price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched.' },
+  segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь. Это не справочник, а прицел: премьера и её кампания бьют в сегмент проекта — по замеру снимать «не для своих» стоит до трети итога партии.', en: 'The same lever behaves differently by segment: an extra dollar on the price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched. This table is a scope, not a directory: a premiere and its campaign hit the project’s segment — measured, shooting for the wrong crowd costs up to a third of the final score.' },
+  colSegDelta: { ru: '± месяц', en: '± month' },
+  slateSegBroadNote: {
+    ru: 'Премьера «для всех» бьёт слабее, но по всем: кампания размазывается по сегментам. Прицельная премьера почти весь бюджет кампании тратит на свой сегмент — по замеру выбор адресата стоит до трети итога.',
+    en: 'A broad premiere hits softer but everywhere: the campaign spreads across segments. A targeted premiere spends almost the whole campaign on its own crowd — measured, the choice of audience is worth up to a third of the final score.',
+  },
+  slateSegNote: {
+    ru: 'Прицел: {name} — сейчас {subs} подписчиков ({pen} из {pot} возможных), отток {churn}/мес. Премьера и кампания ударят сюда.',
+    en: 'Aim: {name} — {subs} subscribers now ({pen} of {pot} possible), churn {churn}/mo. The premiere and its campaign will hit here.',
+  },
 
   // --- алгоритмы (вкладка) ---
   algosTabQuality: { ru: 'Качество алгоритмов: <b>{quality}</b> (данные {data} × команда {team}).', en: 'Algorithm quality: <b>{quality}</b> (data {data} × team {team}).' },
