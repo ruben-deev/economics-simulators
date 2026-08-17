@@ -1944,9 +1944,15 @@ function showWelcome() {
     <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
       <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
     </button>`).join('');
+  const startGame = () => {
+    track('game_start');
+    const v = seedWanted.trim();
+    if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
+  };
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
-    <p style="margin:12px 0"><button type="button" class="btn primary" data-act="0">${t('welcomeStart')}</button></p>
+    <p style="margin:14px 0 4px"><button type="button" class="btn primary" id="welcome-start"
+      style="width:100%;padding:12px 16px;font-size:15px">${t('welcomeStart')}</button></p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
@@ -1962,18 +1968,21 @@ function showWelcome() {
     <p class="funding-note">${t('seedNote')}</p>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
-  [{ label: t('welcomeStart'), primary: true, onClick: () => {
-      track('game_start');
-      const v = seedWanted.trim();
-      if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
-    } },
-   { label: t('welcomeMore'), onClick: showHelp },
+  [{ label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  // Единственная кнопка старта — крупная, сразу под первым абзацем:
+  // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
+  // так же, как кнопки нижнего ряда.
+  el('modal-root').querySelector('#welcome-start')?.addEventListener('click', () => {
+    el('modal-root').innerHTML = '';
+    startGame();
+  });
+
   el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
     b.addEventListener('click', () => {
       diffWanted = setDifficulty(b.dataset.diff);
