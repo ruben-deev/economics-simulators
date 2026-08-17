@@ -597,6 +597,23 @@ originals: premiere in 6 months, stay forever, yours alone
 depth = saturation(licensed × 0.5 + originals × 6)
 freshness = √(new releases / reference), a release ages out in ~4 months`,
   },
+  helpContentTitle: { ru: 'Виды контента', en: 'Content types' },
+  helpContentText: {
+    ru: 'Жанр решает, КТО придёт и надолго ли: у каждого своя цена часа, свой шум премьеры, своя «глубина» каталога и свой отток после того, как премьеру досмотрели. Жанр проекта — это ещё и прицел: рекламная кампания релиза бьёт в сегмент, под который он снят.',
+    en: 'The genre decides WHO comes and for how long: each has its own cost per hour, premiere buzz, catalogue “depth” and post-premiere churn. A project’s genre is also an aim: the release campaign hits the segment the project was made for.',
+  },
+  helpContentGenreStats: {
+    ru: '(час ×{cost}, часов с сезона {hours}, шум премьеры ×{buzz})',
+    en: '(hour ×{cost}, {hours} hours per season, premiere buzz ×{buzz})',
+  },
+  helpContentScales: {
+    ru: 'Масштаб проекта — рычаг риска и времени: чем крупнее, тем громче премьера и тем страшнее провал, а деньги уже потрачены.',
+    en: 'The project scale is a lever of risk and time: the bigger it is, the louder the premiere and the scarier a flop — with the money already spent.',
+  },
+  helpContentLicense: {
+    ru: 'И третья развилка — своё против лицензий: лицензионный час приходит сразу, но истекает по 4.5% в месяц и почти не даёт глубины; час оригинала в разы «глубже», не истекает никогда и остаётся активом. Синяя и золотая полки на схеме каталога — ровно про это.',
+    en: 'The third fork is originals versus licences: a licensed hour arrives instantly but expires at 4.5% a month and adds almost no depth; an original hour is several times “deeper”, never expires and stays an asset. The blue and gold shelves on the catalogue diagram are exactly this.',
+  },
   helpCatalogText: { ru: 'Час собственной премьеры удерживает как несколько часов библиотеки, но стоит в полсотни раз дороже. Ни одна из крайностей не работает: на одних лицензиях нечем удерживать, на одних оригиналах нечего смотреть.', en: 'An hour of your own premiere retains like several hours of library, but costs fifty times more. Neither extreme works: licences alone give you nothing to hold people with, originals alone give them nothing to watch.' },
   helpMoneyTitle: { ru: 'Почему трафик — главное', en: 'Why bandwidth is the thing to watch' },
   helpMoneyText: { ru: 'В подписке выручка с человека фиксирована, а расходы растут вместе с просмотром. Самый лояльный зритель — самый дорогой. Это переворачивает привычную логику: здесь рост вовлечённости надо считать, а не праздновать.', en: 'In a subscription business revenue per person is fixed while cost grows with viewing. Your most loyal viewer is your most expensive one. That inverts the usual logic: here engagement growth is something to calculate, not to celebrate.' },

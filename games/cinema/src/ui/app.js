@@ -1038,11 +1038,22 @@ function renderSlate() {
           <button class="${g.id === commissionDraft.genre ? 'active' : ''}" data-genre="${g.id}"
             title="${tx(g.hint)}">${tx(g.name)}</button>`).join('')}</div>
       </div>
+      ${(() => {
+        // Подсказка выбранного жанра — видимой строкой, а не hover-тултипом:
+        // на телефоне title не существует, и виды контента оставались
+        // неописанными (жалоба игрока, аудит 2026-08)
+        const g = genreById(commissionDraft.genre);
+        return g ? `<div class="funding-note">${tx(g.hint)}</div>` : '';
+      })()}
       <div class="commission-row">
         <div class="pick" data-pick="scale">${SCALES.map((sc) => `
           <button class="${sc.id === commissionDraft.scale ? 'active' : ''}" data-scale="${sc.id}"
             title="${tx(sc.hint)}">${tx(sc.name)} · ${sc.months} ${t('unitMonthsShort')}</button>`).join('')}</div>
       </div>
+      ${(() => {
+        const sc = scaleById(commissionDraft.scale);
+        return sc ? `<div class="funding-note">${tx(sc.hint)}</div>` : '';
+      })()}
       <div class="commission-row">
         <div class="pick" data-pick="segment">
           <button class="${commissionDraft.segment === null ? 'active' : ''}" data-segment="">${t('slateBroad')}</button>
@@ -2138,6 +2149,14 @@ function renderHelpTab() {
     <h4>${t('helpCatalogTitle')}</h4>
     <div class="formula">${t('helpCatalogFormula')}</div>
     <p>${t('helpCatalogText')}</p>
+    <h4>${t('helpContentTitle')}</h4>
+    <p>${t('helpContentText')}</p>
+    <ul>${GENRES.map((g) => `<li><b>${tx(g.name)}.</b> ${tx(g.hint)} ${t('helpContentGenreStats', {
+      hours: g.hours, cost: g.costPerHour.toFixed(2), buzz: g.buzz.toFixed(1),
+    })}</li>`).join('')}</ul>
+    <p>${t('helpContentScales')}</p>
+    <ul>${SCALES.map((sc) => `<li><b>${tx(sc.name)}</b> · ${sc.months} ${t('unitMonthsShort')}. ${tx(sc.hint)}</li>`).join('')}</ul>
+    <p>${t('helpContentLicense')}</p>
     <h4>${t('helpMoneyTitle')}</h4><p>${t('helpMoneyText')}</p>
     <h4>${t('helpChurnTitle')}</h4>
     <ul>
