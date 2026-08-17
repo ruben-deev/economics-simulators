@@ -1,4 +1,4 @@
-# Economics simulators for the classroom
+# Novograd Business Simulators
 
 *[Русская версия](README.md)* · made by **[Ruben Deev](https://www.linkedin.com/in/ruben-deev)**
 
