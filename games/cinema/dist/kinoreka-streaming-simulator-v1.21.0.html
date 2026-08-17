@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.20.0" />
+  <meta name="app-version" content="1.21.0" />
   <meta name="app-build-date" content="2026-08-17" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2112,7 +2112,11 @@ score = valuation × your stake`,
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 6–14 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $60–140M — surviving is easy, winning is not.' },
+  scoreDeferredNote: {
+    ru: 'Из итога вычтены неотработанные годовые: {value} получены вперёд за месяцы, которые сервис ещё должен отдать контентом. Это заём у зрителя, а не заработок.',
+    en: 'Unearned annual months are deducted from the score: {value} was received up front for months the service still owes in content. That is a loan from the viewer, not earnings.',
+  },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 5–9 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $50–90M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
@@ -2769,6 +2773,12 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
 //   в НОВОГРАД не должны дорожать задним числом.
 //
+//   КИНОРЕКА пересчитана после усталости от шума и вычета неотработанных
+//   годовых из счёта (аудит 2026-08): опоры теперь 8.23 / 4.88 / 1.78 млрд.
+//   Вход 1.5 млрд (ниже слабейшей опоры), solid 5 млрд (средняя опора).
+//   Старые финалы, сыгранные в щедром мире, получат перенос по потолку —
+//   это цена честной пересборки, потолок (x2) её ограничивает.
+//
 //   Входы (threshold) пересчитаны под сегодняшние коридоры опор (аудит
 //   2026-08): правило «вход ниже ЛЮБОЙ опоры» после пересборок баланса
 //   нарушалось у двух игр из трёх. Коридоры сегодня: НОВОЕДА
@@ -2780,7 +2790,7 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   не тронуты: сколько переносится — по-прежнему вопрос силы финала.
 const LEGACY_GAMES = [
   { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 5.5e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 5e9, solid: 1.6e10 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.5e9, solid: 5e9 },
   { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 
@@ -3620,6 +3630,20 @@ const CONFIG = {
   // Зимняя премьера слышнее летней: зритель дома и ищет, что посмотреть.
   // Это и делает придерживание готового проекта осмысленным решением.
   seasonBuzzPower: 2.2,
+  // Усталость от шума (аудит 2026-08): каждая премьера утомляет аудиторию
+  // пропорционально сырому шуму, следующая шумит слабее в 1/(1+bite×усталость)
+  // раз; усталость спадает на decay в месяц. Наказывается частота шума, а не
+  // громкость: редкая премьера почти не теряет, конвейер — заметно. Числа
+  // подобраны замером — цель: блокбастер на массовом остаётся вершиной
+  // (~1.2×), но перестаёт быть викторинным ответом (было 2.1×).
+  buzzFatigueBite: 0.5,
+  buzzFatigueDecay: 0.4,
+  // Конверсия шума в пробы: вогнутая (power < 1) — внимание рынка
+  // насыщается, и третья громкая премьера приводит меньше второй.
+  premiereTrialGain: 0.6,
+  // 0.85 по замеру: блокбастер на массовом остаётся вершиной (~1.2×),
+  // но перестаёт быть викторинным ответом (при 1.0 было 2.1×).
+  premiereTrialPower: 0.85,
   // Прицельно снятый под сегмент проект попадает в него точнее, но остальным
   // интересен меньше: фокус — это всегда и отказ.
   targetedAppealBonus: 2.0,
@@ -6024,6 +6048,15 @@ function step(prevState, input = {}) {
   const releaseOrders = input.release ?? [];
   const premieres = [];
   let campaignSpend = 0;
+  // Усталость от шума: город не умеет удивляться каждый месяц. Каждая
+  // премьера утомляет аудиторию пропорционально своему шуму, и пока
+  // усталость не спала, следующие премьеры шумят слабее. Без этого конвейер
+  // громких премьер гасил «похмельный» отток по построению: новый всплеск
+  // приходил раньше, чем осыпался прошлый, — и блокбастеры доминировали
+  // с двукратным перевесом (замер, аудит 2026-08). Редкой громкой премьере
+  // усталость почти не мешает — наказывается именно частота шума.
+  const buzzFatigueMult = 1 / (1 + CONFIG.buzzFatigueBite * (state.buzzFatigue ?? 0));
+  let buzzFatigueRaw = 0;
   for (const order of releaseOrders) {
     const project = state.slate.find((p) => p.id === order.id && p.status === 'ready');
     if (!project) continue;
@@ -6055,6 +6088,8 @@ function step(prevState, input = {}) {
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
+    const rawPremiereBuzz = releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower);
+    buzzFatigueRaw += rawPremiereBuzz;
     premieres.push({
       id: project.id,
       genre: project.genre,
@@ -6065,9 +6100,15 @@ function step(prevState, input = {}) {
       held: project.monthsHeld,
       campaign,
       season,
-      buzz: releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower),
+      // Шум с поправкой на усталость: всё дальше (приток, охват, похмелье)
+      // считается от него — утомлённая премьера и приводит, и роняет меньше
+      buzz: rawPremiereBuzz * buzzFatigueMult,
     });
   }
+  // Усталость копится от сырого шума: город услышал ещё одну громкую
+  // премьеру независимо от того, насколько устал к её началу
+  state.buzzFatigue = (state.buzzFatigue ?? 0) * (1 - CONFIG.buzzFatigueDecay)
+    + buzzFatigueRaw;
 
   const vault = readyToRelease(state.slate);
   const producing = inProduction(state.slate);
@@ -6359,7 +6400,11 @@ function step(prevState, input = {}) {
 
     const prevConverted = seg.lastConverted ?? 0;
     const trialFactor = clamp(0.55 + 0.45 * (decisions.trialDays / CONFIG.refTrialDays), 0.5, 1.45);
-    const trials = categoryTrials * preference * (1 + premiereAppeal * 0.6);
+    // Внимание рынка насыщается: конверсия шума в пробы вогнутая, а не
+    // линейная. Линейная делала тройную премьерную тягу блокбастера тройным
+    // притоком за те же деньги — доминация 2× по замеру (аудит 2026-08).
+    const trials = categoryTrials * preference
+      * (1 + CONFIG.premiereTrialGain * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower));
     let converted = trials * CONFIG.trialConversion * trialFactor;
 
     // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
@@ -7186,19 +7231,34 @@ function explainFactors(prev, cur) {
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect));
 }
 
+// Неотработанные годовые: деньги за месяцы, которые сервис ещё должен
+// отдать контентом. Пришли кассой вперёд — но это обязательство, а не
+// заработок: в счёте партии они вычитаются, как deferred revenue в
+// отчётности. Без этого годовые были «обязательным ответом»: их включение
+// удваивало счёт (замер, аудит 2026-08 — премьерный всплеск, пойманный
+// в годовые, оставался в кассе рубль-в-рубль, даже когда зрители ушли).
+function deferredAnnualRevenue(state) {
+  return SEGMENTS.reduce((sum, def) => {
+    const cohorts = state.segments?.[def.id]?.pricing?.annual ?? [];
+    return sum + cohorts.reduce((s, c) => s + c.subs * c.price * Math.max(0, c.monthsLeft), 0);
+  }, 0);
+}
+
 function finalScore(state) {
   const v = valuation(state);
   const last = state.history[state.history.length - 1];
-  // Стоимость доли = доля × (оценка бизнеса + деньги на счету). Кэш в кассе
-  // принадлежит акционерам: рубль, не потраченный к финалу, стоит рубль,
-  // а потраченный обязан вернуться ростом оценки. Без этого разовые расходы
-  // в конце партии были бы бесплатными.
+  const deferred = deferredAnnualRevenue(state);
+  // Стоимость доли = доля × (оценка бизнеса + деньги на счету − долг по
+  // годовым). Кэш в кассе принадлежит акционерам: рубль, не потраченный к
+  // финалу, стоит рубль, а потраченный обязан вернуться ростом оценки. Но
+  // рубль, полученный за ещё не отданные месяцы подписки, — заём у зрителя.
   return {
     valuation: v,
     equity: state.equity,
+    deferred,
     equityValue: (state.over === 'bankrupt'
       ? distressedSale(v, state.cash)
-      : v + Math.max(0, state.cash)) * state.equity,
+      : Math.max(0, v + Math.max(0, state.cash) - deferred)) * state.equity,
     raised: state.raisedTotal,
     cash: state.cash,
     months: state.month,
@@ -9946,17 +10006,15 @@ function showGameOver() {
   // подпись gradeQuip*
   const gradeTier = s.bankrupt ? 'Bankrupt'
     : s.sold ? 'Sold'
-    // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
-    // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
-    // (80 млрд) была недостижима ни одной опорой.
-    // Шкала переснята аудитом 2026-08 после пересборки спроса, симметричного
-    // конкурента и сглаживания окна роста: доведённые опоры дают
-    // 6.0 / 10.9 / 14.1 млрд. «Выжили» достаёт любая живая стратегия,
-    // «крепко» — доведённый конвейер, «отлично» — лучшая опора. Прежние
-    // пороги (32/16/8) были из мира, где прайс 999 был бесплатным.
-    : s.equityValue > 12e9 ? 'Excellent'
-    : s.equityValue > 6e9 ? 'Solid'
-    : s.equityValue > 2.5e9 ? 'Survived' : 'Modest';
+    // Шкала пересчитывается с балансом; правило неизменно: «выжили» достаёт
+    // любая живая стратегия, «крепко» — доведённый конвейер, «отлично» —
+    // лучшая опора. Переснято после усталости от шума и вычета годовых
+    // (аудит 2026-08): опоры дают 8.23 / 4.88 / 1.78 млрд (24 кода) —
+    // весь мир стал скромнее, потому что годовая касса больше не считается
+    // заработком, а конвейер премьер не гасит похмелье бесплатно.
+    : s.equityValue > 8e9 ? 'Excellent'
+    : s.equityValue > 4.5e9 ? 'Solid'
+    : s.equityValue > 1.5e9 ? 'Survived' : 'Modest';
   const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
@@ -9978,7 +10036,9 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
+    ${s.deferred > 0 ? `<p class="funding-note">${t('scoreDeferredNote', {
+      value: money(s.deferred) })}</p>` : ''}
+    <p class="funding-note">${t('gradeScale', { a: money(8e9), b: money(4.5e9), c: money(1.5e9) })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}

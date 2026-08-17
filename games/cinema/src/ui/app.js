@@ -2331,17 +2331,15 @@ function showGameOver() {
   // подпись gradeQuip*
   const gradeTier = s.bankrupt ? 'Bankrupt'
     : s.sold ? 'Sold'
-    // Шкала выставлена замером опорных стратегий (6 сидов): осторожная и
-    // средняя дают ~15 млрд, доведённая 35.8. Старая планка «отлично»
-    // (80 млрд) была недостижима ни одной опорой.
-    // Шкала переснята аудитом 2026-08 после пересборки спроса, симметричного
-    // конкурента и сглаживания окна роста: доведённые опоры дают
-    // 6.0 / 10.9 / 14.1 млрд. «Выжили» достаёт любая живая стратегия,
-    // «крепко» — доведённый конвейер, «отлично» — лучшая опора. Прежние
-    // пороги (32/16/8) были из мира, где прайс 999 был бесплатным.
-    : s.equityValue > 12e9 ? 'Excellent'
-    : s.equityValue > 6e9 ? 'Solid'
-    : s.equityValue > 2.5e9 ? 'Survived' : 'Modest';
+    // Шкала пересчитывается с балансом; правило неизменно: «выжили» достаёт
+    // любая живая стратегия, «крепко» — доведённый конвейер, «отлично» —
+    // лучшая опора. Переснято после усталости от шума и вычета годовых
+    // (аудит 2026-08): опоры дают 8.23 / 4.88 / 1.78 млрд (24 кода) —
+    // весь мир стал скромнее, потому что годовая касса больше не считается
+    // заработком, а конвейер премьер не гасит похмелье бесплатно.
+    : s.equityValue > 8e9 ? 'Excellent'
+    : s.equityValue > 4.5e9 ? 'Solid'
+    : s.equityValue > 1.5e9 ? 'Survived' : 'Modest';
   const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
@@ -2363,7 +2361,9 @@ function showGameOver() {
       <div class="stat"><div class="s-label">${t('scoreLibrary')}</div><div class="s-value">${compact(state.catalogOriginal)} ${t('unitHours')}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
-    <p class="funding-note">${t('gradeScale', { a: money(12e9), b: money(6e9), c: money(2.5e9) })}</p>
+    ${s.deferred > 0 ? `<p class="funding-note">${t('scoreDeferredNote', {
+      value: money(s.deferred) })}</p>` : ''}
+    <p class="funding-note">${t('gradeScale', { a: money(8e9), b: money(4.5e9), c: money(1.5e9) })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}

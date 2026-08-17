@@ -140,13 +140,15 @@ These measurements produce two different bars — and it matters not to
 confuse them:
 
 * **entry** (`threshold`) — the asset is unlocked, ★ on the card. It sits
-  below each game’s weakest anchor: $3M / $50M / $12M. A gate, not an
+  below each game’s weakest anchor: $3M / $15M / $12M. A gate, not an
   achievement: a run finished by any reasonable strategy without going
   bankrupt unlocks the asset. Entries were recalculated in the 2026-08
   audit — after the rebalances the old gates ($10M / $120M / $12M) sat
   above two anchors out of three for NOVOEDA and KINOREKA, and an honestly
   finished run did not light the ★;
-* **the unit of carry** (`solid`) — a solid finale: $55M / $160M / $40M.
+* **the unit of carry** (`solid`) — a solid finale: $55M / $50M / $40M.
+  KINOREKA was recalculated after buzz fatigue and the deduction of unearned
+  annual months from the score: its whole world became roughly twice as modest.
   The ceiling (×2) is a polished run. BILETVILLE was recalculated after the
   crisis revival: resolving crises lifted its whole scale nearly twofold.
 

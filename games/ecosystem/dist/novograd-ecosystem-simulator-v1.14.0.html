@@ -2903,6 +2903,12 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
 //   в НОВОГРАД не должны дорожать задним числом.
 //
+//   КИНОРЕКА пересчитана после усталости от шума и вычета неотработанных
+//   годовых из счёта (аудит 2026-08): опоры теперь 8.23 / 4.88 / 1.78 млрд.
+//   Вход 1.5 млрд (ниже слабейшей опоры), solid 5 млрд (средняя опора).
+//   Старые финалы, сыгранные в щедром мире, получат перенос по потолку —
+//   это цена честной пересборки, потолок (x2) её ограничивает.
+//
 //   Входы (threshold) пересчитаны под сегодняшние коридоры опор (аудит
 //   2026-08): правило «вход ниже ЛЮБОЙ опоры» после пересборок баланса
 //   нарушалось у двух игр из трёх. Коридоры сегодня: НОВОЕДА
@@ -2914,7 +2920,7 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   не тронуты: сколько переносится — по-прежнему вопрос силы финала.
 const LEGACY_GAMES = [
   { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 5.5e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 5e9, solid: 1.6e10 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.5e9, solid: 5e9 },
   { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 

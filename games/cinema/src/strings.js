@@ -769,7 +769,11 @@ score = valuation × your stake`,
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 6–14 млрд — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $60–140M — surviving is easy, winning is not.' },
+  scoreDeferredNote: {
+    ru: 'Из итога вычтены неотработанные годовые: {value} получены вперёд за месяцы, которые сервис ещё должен отдать контентом. Это заём у зрителя, а не заработок.',
+    en: 'Unearned annual months are deducted from the score: {value} was received up front for months the service still owes in content. That is a loan from the viewer, not earnings.',
+  },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 5–9 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish this market at $50–90M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
