@@ -22,6 +22,7 @@ const {
   rememberNovogradResult, novogradBest, conglomerateUnlocked, tripleCrown,
   LEGACY_GAMES, NOVOGRAD_WORTHY, META_BEST_KEY, legacyRatio, LEGACY_RATIO_CAP,
   resetEcosystemProgress, NOVOGRAD_SAVE_KEY,
+  markProtocolChoice, protocolFlags, secretEndingUnlocked,
 } = await import('../meta.js');
 const { resultString } = await import('../records.js');
 
@@ -192,4 +193,30 @@ test('сброс пути: наследие и партии стираются, 
   // Запись без меток времени (древний формат) после сброса тоже не считается
   localStorage.setItem(g.recordsKey, JSON.stringify([{ score: g.threshold * 3 }]));
   assert.equal(legacyUnlocks().delivery, false, 'безвременная запись считается древней');
+});
+
+test('протокол «СКРЕПКА»: четыре доверия плюс весь пройденный путь', () => {
+  store.clear();
+  assert.equal(secretEndingUnlocked(), false, 'на чистом устройстве концовки нет');
+  markProtocolChoice('delivery');
+  markProtocolChoice('streaming');
+  markProtocolChoice('tickets');
+  const { count } = markProtocolChoice('ecosystem');
+  assert.equal(count, 4, 'счётчик доверий для хлебной крошки в тосте');
+  assert.equal(secretEndingUnlocked(), false, 'доверие без побед концовку не открывает');
+
+  addResultLine(line('НОВОЕДА', 1.5e9));
+  addResultLine(line('КИНОРЕКА', 4e10));
+  addResultLine(line('БИЛЕТВИЛЬ', 5e9));
+  rememberNovogradResult(5e9);
+  assert.equal(secretEndingUnlocked(), true, 'четыре победы и четыре доверия — концовка открыта');
+
+  // Мусорная метка игры молча не пишется
+  markProtocolChoice('чужая-игра');
+  assert.equal(Object.keys(protocolFlags()).length, 4, 'посторонние метки не копятся');
+
+  // Сброс пути закрывает и секретную концовку
+  resetEcosystemProgress();
+  assert.equal(secretEndingUnlocked(), false, 'после сброса путь и протокол начинаются заново');
+  assert.equal(Object.keys(protocolFlags()).length, 0, 'отметки доверия стёрты');
 });

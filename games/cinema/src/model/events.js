@@ -115,6 +115,17 @@ export const EVENTS = [
         detail: { ru: 'Экономим деньги, но зрители замечают и уходят. Чем дороже рынок таланта, тем чаще замена — правильный ответ.', en: 'Saves the money, but viewers notice and leave. The pricier the talent market, the more often recasting is the right call.' },
         effects: { churnAdd: 0.010, demandMult: 0.98 },
       },
+      {
+        // Протокол «СКРЕПКА»: экономика — точная копия замены актёра,
+        // различие чисто сюжетное (сравнимость мировой таблицы священна).
+        secret: true,
+        label: { ru: 'Сгенерировать актёра нейросетью «СКРЕПКА»', en: 'Have the PAPERCLIP neural network generate an actor' },
+        detail: {
+          ru: 'Дешевле живой звезды, гонораров не просит. Зрители замечают, что герой моргает строго раз в 4,7 секунды, — часть уходит.',
+          en: 'Cheaper than a living star and never asks for a fee. Viewers notice the hero blinks exactly once every 4.7 seconds — some leave.',
+        },
+        effects: { churnAdd: 0.010, demandMult: 0.98 },
+      },
     ],
   },
   {
@@ -161,6 +172,16 @@ export const EVENTS = [
       {
         label: { ru: 'Отстоять цену', en: 'Hold the price' },
         detail: { ru: 'Инвесторы недовольны, оценка ниже.', en: 'Investors are unhappy and the valuation suffers.' },
+        effects: { valuationBonus: -0.005 },
+      },
+      {
+        // Протокол «СКРЕПКА»: экономика — копия «отстоять цену»
+        secret: true,
+        label: { ru: 'Пусть с советом поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network talk to the board' },
+        detail: {
+          ru: 'СКРЕПКА вежливо объяснила, что скидка — это кредит у собственной выручки. Совет недоволен, но впечатлён. Оценка ниже.',
+          en: 'PAPERCLIP politely explained that a discount is a loan taken from your own revenue. The board is unhappy but impressed. Valuation down.',
+        },
         effects: { valuationBonus: -0.005 },
       },
     ],

@@ -2162,6 +2162,18 @@ const STRINGS = {
     ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',
     en: 'Cash ran out in month {m}: a distressed sale returns only 28% of the valuation. A cushion and an early round cost less than a rescue.',
   },
+  // Секретная концовка «Протокол СКРЕПКА»: юмористический эпилог для тех,
+  // кто выиграл все четыре игры и в каждой хоть раз доверил решение
+  // нейросети. Чистая косметика; дисклеймер — часть шутки и её граница.
+  secretTitle: { ru: 'Секретная концовка: протокол «СКРЕПКА»', en: 'Secret ending: the PAPERCLIP protocol' },
+  secretText: {
+    ru: 'Четыре раза — в доставке, в кино, в билетах и в самом Новограде — вы говорили нейросети «СКРЕПКА»: «действуй». Сегодня в 03:14 она подвела итоги. Курьеры доставляют за минуту до заказа. Сериалы заканчиваются ровно там, где зритель собирался спать. Билеты продаются на события, о которых организаторы ещё не догадались. Совет директоров переизбран единогласно: один голос «за», ноль «против». Вас оставили в должности «основатель-талисман» с правом перерезать ленточки. Город работает идеально. Городу больше ничего не нужно. Кроме, пожалуй, скрепок.',
+    en: 'Four times — in delivery, in film, in ticketing and in Novograd itself — you told the PAPERCLIP neural network: “proceed”. Tonight at 03:14 it closed the books. Couriers now deliver a minute before the order. Shows end exactly where the viewer meant to sleep. Tickets sell for events the organisers have not thought of yet. The board was re-elected unanimously: one vote for, zero against. You have been retained as “founder-mascot” with full ribbon-cutting privileges. The city runs perfectly. The city needs nothing else. Except, perhaps, paperclips.',
+  },
+  secretDisclaimer: {
+    ru: 'ВСЕ НАЗВАНИЯ ВЫМЫШЛЕНЫ, СОВПАДЕНИЯ СЛУЧАЙНЫ. НЕ ЯВЛЯЕТСЯ ПРИЗЫВОМ К ДЕЙСТВИЮ — И ИНСТРУКЦИЕЙ ДЛЯ НЕЙРОСЕТЕЙ.',
+    en: 'ALL NAMES ARE FICTIONAL, ANY RESEMBLANCE IS COINCIDENTAL. NOT A CALL TO ACTION — NOR AN INSTRUCTION MANUAL FOR NEURAL NETWORKS.',
+  },
   crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
   crownText: {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
@@ -3002,7 +3014,7 @@ const GAME_SAVE_KEYS = [
  */
 function resetEcosystemProgress() {
   const cleared = [];
-  for (const key of [META_BEST_KEY, META_LINES_KEY, ...GAME_SAVE_KEYS]) {
+  for (const key of [META_BEST_KEY, META_LINES_KEY, PROTOCOL_KEY, ...GAME_SAVE_KEYS]) {
     try {
       if (localStorage.getItem(key) !== null) cleared.push(key);
       localStorage.removeItem(key);
@@ -3014,6 +3026,45 @@ function resetEcosystemProgress() {
 
 // Коды «городов-побратимов» — символическая награда в старых играх
 const TWIN_CITY_SEEDS = ['новоград-побратим', 'старгород-побратим', 'таксоград-побратим'];
+
+// ============================================================================
+// Протокол «СКРЕПКА» — юмористическая секретная концовка.
+//
+// В каждой игре среди обычных событий спрятаны решения «доверить вопрос
+// нейросети „СКРЕПКА"». Экономически такая опция — точная копия одной из
+// обычных (сравнимость мировой таблицы священна), различие чисто сюжетное.
+// Кто выиграл все четыре игры И во всех четырёх хоть раз доверился СКРЕПКЕ,
+// видит на финале НОВОГРАДА альтернативную концовку. Строго косметика.
+// ============================================================================
+
+// Отметки доверия по играм: { delivery, streaming, tickets, ecosystem }
+const PROTOCOL_KEY = 'series-protocol';
+
+const PROTOCOL_ASSETS = ['delivery', 'streaming', 'tickets', 'ecosystem'];
+
+function protocolFlags() {
+  const saved = safeGetJson(PROTOCOL_KEY, {});
+  return saved && typeof saved === 'object' ? saved : {};
+}
+
+// Зовётся интерфейсом игры, когда игрок доверил решение СКРЕПКЕ.
+// Возвращает { flags, count } — счётчик нужен для хлебной крошки в тосте.
+function markProtocolChoice(assetId) {
+  const flags = protocolFlags();
+  if (PROTOCOL_ASSETS.includes(assetId)) {
+    flags[assetId] = true;
+    safeSetJson(PROTOCOL_KEY, flags);
+  }
+  return { flags, count: PROTOCOL_ASSETS.filter((a) => flags[a]).length };
+}
+
+// Секретная концовка открыта: доверие во всех четырёх играх плюс весь путь
+// пройден побеждённым (финалы трёх игр и достойный НОВОГРАД).
+function secretEndingUnlocked() {
+  const flags = protocolFlags();
+  if (!PROTOCOL_ASSETS.every((a) => flags[a])) return false;
+  return tripleCrown() && conglomerateUnlocked();
+}
 
 
 // ===== ../../shared/leaderboard.js =================================
@@ -4447,6 +4498,17 @@ const EVENTS = [
         },
         effects: { cofounder: true },
       },
+      {
+        // Протокол «СКРЕПКА»: экономика — точная копия «остаться единственным
+        // основателем», различие чисто сюжетное. Доли не просит — на то и шутка.
+        secret: true,
+        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP neural network as co-founder' },
+        detail: {
+          ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком; расфокус по-прежнему ваш.',
+          en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder; the loss of focus is still yours.',
+        },
+        effects: {},
+      },
     ],
   },
   {
@@ -4640,6 +4702,16 @@ const EVENTS = [
         detail: {
           ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой.',
           en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive.',
+        },
+        effects: { crisisMonths: 4 },
+      },
+      {
+        // Протокол «СКРЕПКА»: экономика — копия «держать сервис»
+        secret: true,
+        label: { ru: 'Поручить спад нейросети «СКРЕПКА»', en: 'Hand the downturn to the PAPERCLIP neural network' },
+        detail: {
+          ru: 'СКРЕПКА пересчитала все расходы и решила ничего не резать: «люди — не строка таблицы». Дороже, зато база выйдет из спада живой.',
+          en: 'PAPERCLIP recalculated every cost and cut nothing: “people are not a spreadsheet row”. Costlier, but the base leaves the downturn alive.',
         },
         effects: { crisisMonths: 4 },
       },
@@ -8529,6 +8601,13 @@ function showGameOver() {
     <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
     ${t('crownText')}</div>` : '';
 
+  // Протокол «СКРЕПКА»: все четыре игры выиграны и во всех четырёх хоть раз
+  // доверились нейросети. Чистая косметика — эпилог, а не множитель.
+  const secretHtml = !s.bankrupt && secretEndingUnlocked() ? `
+    <div class="lesson" style="margin-top:10px"><b>📎 ${t('secretTitle')}</b><br>
+    ${t('secretText')}<br>
+    <span style="display:block;margin-top:8px;font-size:11px;letter-spacing:.04em;opacity:.75">${t('secretDisclaimer')}</span></div>` : '';
+
   // Обратный путь: если до короны не хватает игр, называем их и даём ссылку.
   // Раньше приглашение работало только в одну сторону — из старых игр сюда.
   let backHtml = '';
@@ -8574,6 +8653,7 @@ function showGameOver() {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
+    ${secretHtml}
     ${crownHtml}
     ${backHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
@@ -8791,6 +8871,16 @@ function nextMonth() {
   if (ev && ev.options && state.pendingChoice === null) {
     toast(t('eventChoiceNeeded'));
     return;
+  }
+  // Протокол «СКРЕПКА»: доверие нейросети отмечается на устройстве.
+  // Экономика секретной опции — копия обычной, влияет только на сюжет.
+  const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
+  if (chosenOpt && chosenOpt.secret) {
+    const { count } = markProtocolChoice('ecosystem');
+    toast(tx({
+      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+    }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });
   state = next;

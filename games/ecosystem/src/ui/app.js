@@ -22,6 +22,7 @@ import {
   legacyUnlocks, legacyFor, legacyScores, addResultLine, rememberNovogradResult,
   seriesScorecard, resetEcosystemProgress,
   tripleCrown, NOVOGRAD_WORTHY, LEGACY_GAMES,
+  markProtocolChoice, secretEndingUnlocked,
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
@@ -1868,6 +1869,13 @@ function showGameOver() {
     <div class="lesson" style="margin-top:10px"><b>👑 ${t('crownTitle')}</b><br>
     ${t('crownText')}</div>` : '';
 
+  // Протокол «СКРЕПКА»: все четыре игры выиграны и во всех четырёх хоть раз
+  // доверились нейросети. Чистая косметика — эпилог, а не множитель.
+  const secretHtml = !s.bankrupt && secretEndingUnlocked() ? `
+    <div class="lesson" style="margin-top:10px"><b>📎 ${t('secretTitle')}</b><br>
+    ${t('secretText')}<br>
+    <span style="display:block;margin-top:8px;font-size:11px;letter-spacing:.04em;opacity:.75">${t('secretDisclaimer')}</span></div>` : '';
+
   // Обратный путь: если до короны не хватает игр, называем их и даём ссылку.
   // Раньше приглашение работало только в одну сторону — из старых игр сюда.
   let backHtml = '';
@@ -1913,6 +1921,7 @@ function showGameOver() {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
+    ${secretHtml}
     ${crownHtml}
     ${backHtml}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
@@ -2130,6 +2139,16 @@ function nextMonth() {
   if (ev && ev.options && state.pendingChoice === null) {
     toast(t('eventChoiceNeeded'));
     return;
+  }
+  // Протокол «СКРЕПКА»: доверие нейросети отмечается на устройстве.
+  // Экономика секретной опции — копия обычной, влияет только на сюжет.
+  const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
+  if (chosenOpt && chosenOpt.secret) {
+    const { count } = markProtocolChoice('ecosystem');
+    toast(tx({
+      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+    }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });
   state = next;
