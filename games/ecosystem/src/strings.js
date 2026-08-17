@@ -163,6 +163,12 @@ export const STRINGS = {
   },
   vertLaunch: { ru: 'запустить за {cost}', en: 'launch for {cost}' },
   vertPlanned: { ru: 'заявка подана — ворота пока закрыты', en: 'requested — the gate is still closed' },
+  // Ворота е-кома показывают живое число: игрок должен видеть, чего
+  // именно не хватает, а не гадать (замечание владельца)
+  vertLockedEcom: {
+    ru: 'ворота совета: с месяца {month}, если еда в среднем за {n} мес в плюсе после ваших бюджетов на неё. Сейчас: {avg}/мес',
+    en: 'board gate: from month {month}, once food averages above zero over {n} months after your food budgets. Now: {avg}/mo',
+  },
   vertLocked: {
     ru: 'ворота совета: с месяца {month} и при прибыльном стартовом активе ({n} мес подряд)',
     en: 'board gate: from month {month}, with the starting asset profitable ({n} months running)',
@@ -647,6 +653,15 @@ export const STRINGS = {
   pnlOperatingProfit: { ru: 'Операционная прибыль', en: 'Operating profit' },
   pnlOneOff: { ru: 'Разовые расходы', en: 'One-off costs' },
   pnlCashChange: { ru: 'Изменение кассы', en: 'Cash change' },
+  pnlSvcTitle: { ru: 'Полный вклад по сервисам', en: 'Full contribution by service' },
+  pnlSvcNote: {
+    ru: 'Выручка сервиса минус его переменные, фиксы и ваши бюджеты на него. У еды именно это среднее за 3 месяца открывает ворота е-кома.',
+    en: 'A service’s revenue minus its variable costs, its fixed costs and your budgets for it. For food, the 3-month average of exactly this opens the e-commerce gate.',
+  },
+  pnlSvcFood: { ru: 'Еда (стартовый актив)', en: 'Food (the starting asset)' },
+  pnlSvcTaxi: { ru: 'Такси', en: 'Taxi' },
+  pnlSvcEcom: { ru: 'Е-ком', en: 'E-commerce' },
+  pnlSvcPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
   pnlNote: {
     ru: 'Вклад — выручка минус переменные расходы вертикалей. Ниже — постоянные и бюджеты: они не зависят от того, сколько заказов и поездок случилось.',
     en: 'Contribution is revenue minus the verticals’ variable costs. Below come fixed costs and budgets: they do not depend on how many orders and rides happened.',

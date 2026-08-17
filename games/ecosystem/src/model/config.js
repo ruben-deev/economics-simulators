@@ -596,8 +596,8 @@ export const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
-      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Сильная управляющая компания выкупает этот штраф. Пока вертикаль одна, она почти не нужна.',
-      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A strong management company buys that penalty back. With a single vertical you barely need it.',
+      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение, ещё четверть остатка снимает сооснователь. Пока вертикаль одна, команда почти не нужна.',
+      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here, and a co-founder removes another quarter of the rest. With a single vertical you barely need it.',
     },
   },
   {
