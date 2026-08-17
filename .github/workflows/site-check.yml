@@ -79,6 +79,20 @@ jobs:
             say(res.status === 404, `${path} не опубликован (HTTP ${res.status})`);
           }
 
+          // Свежесть: опубликованное совпадает с репозиторием байт в байт.
+          // Раннер стоит на той же ветке, из которой собирается корень сайта,
+          // поэтому любое расхождение означает недокаченный деплой.
+          const { readFileSync } = await import('node:fs');
+          for (const game of GAMES) {
+            const dir = `games/${game}/dist`;
+            const file = readdirSync(dir).find((f) => f.endsWith('.html'));
+            if (!file) continue;
+            const local = readFileSync(`${dir}/${file}`, 'utf-8');
+            const remote = await get(`/games/${game}/dist/${file}`, 2);
+            say(remote.text === local,
+              `${file}: опубликованное совпадает с репозиторием (${Math.round(local.length / 1024)} КБ)`);
+          }
+
           if (failed) process.exit(1);
           console.log('\nСайт опубликован: обе версии отвечают, новая стоит в корне.');
           EOF
