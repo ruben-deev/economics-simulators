@@ -71,8 +71,6 @@
       background: linear-gradient(180deg, rgba(74, 222, 128, 0.06), var(--panel) 55%); }
     .eco-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .eco-head .card-icon { font-size: 30px; align-self: center; }
-    .eco-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #06210f;
-      background: var(--accent); border-radius: 999px; padding: 3px 10px; text-transform: uppercase; }
     @media (min-width: 720px) {
       .eco-card ul { columns: 2; column-gap: 32px; }
       .eco-card ul li { break-inside: avoid; }
@@ -106,7 +104,7 @@
           <a href="games/foodtech/index.html">НОВОЕДА — доставка еды</a> ·
           <a href="games/cinema/index.html">КИНОРЕКА — онлайн-кинотеатр</a> ·
           <a href="games/tickets/index.html">БИЛЕТВИЛЬ — билетный сервис</a> ·
-          <a href="games/ecosystem/index.html">НОВОГРАД — экосистема (бета)</a></p>
+          <a href="games/ecosystem/index.html">НОВОГРАД — экосистема</a></p>
       </div>
     </div>
   </noscript>
@@ -166,7 +164,6 @@
       <div class="eco-head">
         <div class="card-icon">🏙️</div>
         <h2 id="eco-title"></h2>
-        <span class="eco-badge" id="eco-badge"></span>
       </div>
       <p class="sub" id="eco-sub"></p>
       <p id="eco-text"></p>
@@ -363,7 +360,6 @@
       },
       ecoLabel: { ru: 'Финал серии', en: 'The series endgame' },
       ecoTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
-      ecoBadge: { ru: 'бета', en: 'beta' },
       ecoSub: { ru: 'экосистема сервисов · ход = месяц · 36 месяцев', en: 'a service ecosystem · turn = month · 36 months' },
       ecoText: {
         ru: 'Продолжение любой из трёх игр: ваш выигранный бизнес становится стартовым активом холдинга. Свой рынок он уже насытил — дальше рост не числом клиентов, а новыми сервисами для тех же людей: такси, е-ком, подписка «Плюс». Инвестор оценивает холдинг по сумме частей, и убыточная вертикаль без роста тянет оценку вниз.',
@@ -412,7 +408,6 @@
       list('cinema-list', 'cinemaList');
       set('eco-label', t('ecoLabel'));
       set('eco-title', t('ecoTitle'));
-      set('eco-badge', t('ecoBadge'));
       set('eco-sub', t('ecoSub'));
       set('eco-text', t('ecoText'));
       list('eco-list', 'ecoList');
