@@ -251,6 +251,14 @@ appeal = commission factor
 `audience pull` is the core of the cross-side effect: the argument "we have an
 audience" works exactly as far as that audience exists.
 
+The reach → organisers → listings → buyers flywheel has a critical mass: the
+brand is forgotten at 7.5% a month, and until marketing outruns forgetting
+with a margin, equilibrium reach stays small and gives no pull. Measured on
+the platform anchor: $400K/mo of marketing ends at $30M, $500K/mo at $63M.
+Below roughly $450K/mo the flywheel never starts, and almost every other
+investment runs at a loss — the most common answer to "why does nothing
+grow for me".
+
 `fill factor` is what the organiser sees with their own eyes:
 
 ```
@@ -365,6 +373,29 @@ to the month it is too late.
 that is the whole lesson: turnover and trust are different accounts.
 **Capacity** is held all year and pays off in a single day, if that day comes
 at all.
+
+## 7a. Crises
+
+A crisis is not a one-month multiplier but a problem that hangs on the
+company, escalates every month (up to severity 5) and demands an explicit,
+costly decision. The chance of a new one grows with turnover — a successful
+service gets judged, written about and hunted:
+
+```
+monthly chance = 0.05 + 0.10 × min(1, GMV / $20M)
+```
+
+A three-month cool-down follows a resolution. A run sees 2–4 of them
+(measured, 24 codes). Resolving is mandatory: the same anchor strategy ends
+at a median of ~$40M with crises resolved and ~$8M with them ignored, often
+in a distressed sale. Nearly every crisis hits trust while turnover holds up
+for a while — the numbers look fine right up to the month it is too late.
+
+Before the 2026-08 recalibration full frequency required a monthly GMV of
+$60M, which runs never reached — nineteen written crises almost never fired.
+Absolute figures in any measurement taken before that change are roughly half
+of today's (crises are now part of normal play); the ratios between variants
+still hold.
 
 ---
 

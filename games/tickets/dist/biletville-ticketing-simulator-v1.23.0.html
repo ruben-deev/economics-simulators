@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.22.0" />
+  <meta name="app-version" content="1.23.0" />
   <meta name="app-build-date" content="2026-08-17" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1458,7 +1458,7 @@ const STRINGS = {
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players finish this market around $60M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки доводят платформенную партию до 15–20 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players push a platform run to $150–200M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -2621,10 +2621,16 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
 //   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
 //   ничего (порог 30 млрд при средней игре 15.5).
+//
+//   БИЛЕТВИЛЬ пересчитан после оживления кризисов (аудит 2026-08): решение
+//   кризисов — теперь обязательная часть нормальной игры, и вся шкала
+//   поднялась почти вдвое. Средняя опора «сбор с организатора» — 4.13 млрд
+//   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
+//   в НОВОГРАД не должны дорожать задним числом.
 const LEGACY_GAMES = [
   { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
   { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
-  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 
 // Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
@@ -3691,8 +3697,8 @@ const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
-      ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
-      en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser.',
+      ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором. У охвата есть критическая масса: город либо помнит вас, либо нет — ниже ~45 млн/мес бренд забывают быстрее, чем вы его строите, и маховик «охват → организаторы → афиша → зрители» не заводится.',
+      en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser. Reach has a critical mass: the city either remembers you or it does not — below ~$450K/mo the brand is forgotten faster than you build it, and the flywheel of reach → organisers → listings → buyers never starts.',
     },
   },
   {
@@ -5021,6 +5027,12 @@ function resolutionCost(active, resolutionId) {
 /**
  * Кризисы приходят тем чаще, чем крупнее оборот: успешный сервис судят,
  * о нём пишут и на него охотятся. Это не наказание за успех, а его цена.
+ *
+ * Шкала масштаба перекалибрована аудитом 2026-08: прежний порог «полной»
+ * частоты (GMV 6 млрд/мес) партии не достигали никогда, и медианное число
+ * кризисов за партию равнялось нулю — девятнадцать написанных кризисов
+ * лежали мёртвым грузом. Теперь пол 5% в месяц и полная частота от
+ * GMV 2 млрд/мес: у решающего кризисы игрока их 2–4 за партию (замер).
  */
 function rollCrisis(rng, month, { gmv, active, lastResolved = -99 }) {
   if (active) return null;
@@ -5028,8 +5040,8 @@ function rollCrisis(rng, month, { gmv, active, lastResolved = -99 }) {
   const pool = CRISES.filter((c) => month >= c.minMonth);
   if (!pool.length) return null;
 
-  const scale = clamp(gmv / 6_000_000_000, 0, 1);
-  const chance = 0.02 + 0.12 * scale;
+  const scale = clamp(gmv / 2_000_000_000, 0, 1);
+  const chance = 0.05 + 0.10 * scale;
   if (rng() > chance) return null;
 
   const total = pool.reduce((s, c) => s + c.weight, 0);
@@ -8632,9 +8644,11 @@ function gradeTierOf(score) {
   if (score.bankrupt) return 'Bankrupt';
   if (score.sold) return 'Sold';
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return 'Excellent';
-  // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
-  // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
-  if (score.equityValue >= 2_500_000_000) return 'Solid';
+  // Планка «крепко» — средняя опора. Пересчитана после оживления кризисов
+  // (аудит 2026-08): решение кризисов подняло все опоры почти вдвое —
+  // сбор с покупателя 3.87, сбор с организатора 4.13, платформенная
+  // 19.05 млрд (24 кода). Отсюда «крепко» = 4 млрд.
+  if (score.equityValue >= 4_000_000_000) return 'Solid';
   if (score.orgShare < 0.25) return 'Modest';
   return 'Survived';
 }
@@ -8724,7 +8738,7 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
-    <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}

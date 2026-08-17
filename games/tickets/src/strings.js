@@ -116,7 +116,7 @@ export const STRINGS = {
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки заканчивают партию с итогом около 6 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players finish this market around $60M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки доводят платформенную партию до 15–20 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players push a platform run to $150–200M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },

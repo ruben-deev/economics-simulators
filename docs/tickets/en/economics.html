@@ -54,10 +54,11 @@
     <a href="#s-9">6b. The hit of the month is announced in advance</a>
     <a href="#s-10">6c. An advance is a loan, not a fee</a>
     <a href="#s-11">7. Trust</a>
-    <a href="#s-12">8. Algorithms</a>
-    <a href="#s-13">9. Shareholder goals</a>
-    <a href="#s-14">10. What the model leaves out</a>
-    <a href="#s-15">The cost of what is already built</a>
+    <a href="#s-12">7a. Crises</a>
+    <a href="#s-13">8. Algorithms</a>
+    <a href="#s-14">9. Shareholder goals</a>
+    <a href="#s-15">10. What the model leaves out</a>
+    <a href="#s-16">The cost of what is already built</a>
   </nav>
     <h1>The ticketing model: formulas and assumptions</h1>
 <p>"BILETVILLE" is a teaching model of a two-sided market. This page collects the formulas it computes with and the assumptions it makes. All numbers live in <code>games/tickets/src/model/config.js</code> and can be changed without touching logic.</p>
@@ -152,6 +153,7 @@ wide          11.16      16.60       15.32 B   (organisers 1746 → 1128)</code>
        × fill factor
        × trust factor</code></pre>
 <p><code>audience pull</code> is the core of the cross-side effect: the argument "we have an audience" works exactly as far as that audience exists.</p>
+<p>The reach → organisers → listings → buyers flywheel has a critical mass: the brand is forgotten at 7.5% a month, and until marketing outruns forgetting with a margin, equilibrium reach stays small and gives no pull. Measured on the platform anchor: $400K/mo of marketing ends at $30M, $500K/mo at $63M. Below roughly $450K/mo the flywheel never starts, and almost every other investment runs at a loss — the most common answer to "why does nothing grow for me".</p>
 <p><code>fill factor</code> is what the organiser sees with their own eyes:</p>
 <pre class="doc-pre"><code>factor = clamp(fill / 0.62, 0.15, 1.6) ^ 0.9</code></pre>
 <p>An empty hall is not beaten by any commission: even at a zero rate an organiser with 25% fill leaves.</p>
@@ -194,26 +196,31 @@ not repaid by then -&gt; written off as a loss</code></pre>
 recovery = 0.055 × (0.4 + 0.6 × support quality) × (1 − trust)</code></pre>
 <p>Trust enters both conversion and appeal to organisers. The trap is that turnover holds up for a while as trust falls: the numbers look fine right up to the month it is too late.</p>
 <p><b>Resellers</b> buy faster than people on the hits, and turnover even grows — that is the whole lesson: turnover and trust are different accounts. <b>Capacity</b> is held all year and pays off in a single day, if that day comes at all.</p>
+<h2 id="s-12">7a. Crises</h2>
+<p>A crisis is not a one-month multiplier but a problem that hangs on the company, escalates every month (up to severity 5) and demands an explicit, costly decision. The chance of a new one grows with turnover — a successful service gets judged, written about and hunted:</p>
+<pre class="doc-pre"><code>monthly chance = 0.05 + 0.10 × min(1, GMV / $20M)</code></pre>
+<p>A three-month cool-down follows a resolution. A run sees 2–4 of them (measured, 24 codes). Resolving is mandatory: the same anchor strategy ends at a median of ~$40M with crises resolved and ~$8M with them ignored, often in a distressed sale. Nearly every crisis hits trust while turnover holds up for a while — the numbers look fine right up to the month it is too late.</p>
+<p>Before the 2026-08 recalibration full frequency required a monthly GMV of $60M, which runs never reached — nineteen written crises almost never fired. Absolute figures in any measurement taken before that change are roughly half of today's (crises are now part of normal play); the ratios between variants still hold.</p>
 <hr>
-<h2 id="s-12">8. Algorithms</h2>
+<h2 id="s-13">8. Algorithms</h2>
 <p>Quality = <code>sqrt(data × team)</code>: data without a team is useless, and so is a team without data.</p>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Algorithm</th><th>What it gives</th><th>What you pay</th></tr></thead>
 <tbody><tr><td>Personal listings</td><td>casual buyers find somewhere to go; the long tail starts selling</td><td>with weak data the feed collapses into a dozen hits and small organisers stop selling</td></tr><tr><td>Dynamic fee</td><td>more revenue from the same turnover, weak events fill up</td><td>buyers see the fee was different yesterday</td></tr><tr><td>Bot protection</td><td>tickets go to people</td><td>strict checks cut off real buyers too</td></tr><tr><td>Fee at the last step</td><td>conversion rises at once and visibly</td><td>trust falls just as reliably, and it compounds over months</td></tr></tbody>
 </table></div>
 <hr>
-<h2 id="s-13">9. Shareholder goals</h2>
+<h2 id="s-14">9. Shareholder goals</h2>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Year</th><th>Goal</th><th>Failure</th></tr></thead>
 <tbody><tr><td>1</td><td>monthly turnover of ₽1.2B or more</td><td>shareholders inject money themselves, your stake is cut by 18%</td></tr><tr><td>2</td><td>at least 3 profitable months with turnover above ₽700M</td><td>marketing capped for six months</td></tr><tr><td>3</td><td>65% market share with 420+ organisers</td><td>valuation drops by 15%</td></tr></tbody>
 </table></div>
 <p>The strategy that wins year one (low rates for turnover) fails year two. That is the point: the take rate is a decision for the year, not a setting.</p>
 <hr>
-<h2 id="s-14">10. What the model leaves out</h2>
+<h2 id="s-15">10. What the model leaves out</h2>
 <ul><li><b>Money held on account.</b> In reality tickets are paid for now and the organiser is paid after the event, and half the industry lives on that gap. Here revenue is recognised at the moment of sale; cancellations appear only as a crisis.</li><li><b>Individual events.</b> Organisers are averaged into types: there is no specific tour with a specific sales curve.</li><li><b>The secondary market.</b> Resellers are a parameter, not a side of the market with its own economics.</li><li><b>Regions and currency.</b> One market, one season, one currency.</li><li><b>More than two operators.</b> There is one rival; an oligopoly of five behaves differently.</li></ul>
 <p>The model shows the <b>structure</b> of a two-sided market, not a forecast of any particular ticketing business.</p>
 <hr>
-<h2 id="s-15">The cost of what is already built</h2>
+<h2 id="s-16">The cost of what is already built</h2>
 <p>What you have built has a cost of ownership. If the spend were written off once while the accumulated level stayed forever and cost nothing, the "invest in technology" lever would be dishonest: pay once, enjoy the advantage forever. That is not how it works, and two cost lines carry that price.</p>
 <p><b>Upkeep.</b> Every feature built has to be maintained: libraries updated, breakage from other changes fixed, new people taught. The bill arrives every month and does not depend on whether anyone uses the feature:</p>
 <pre class="doc-pre"><code>upkeep = cumulative investment × 1.25% в месяц</code></pre>

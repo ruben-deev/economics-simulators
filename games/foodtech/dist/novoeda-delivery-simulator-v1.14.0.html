@@ -2549,10 +2549,16 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   в любой из трёх игр. До этой правки НОВОЕДА упиралась в потолок всегда
 //   (порог был 1 млрд при средней игре 5.6), а КИНОРЕКА не переносила
 //   ничего (порог 30 млрд при средней игре 15.5).
+//
+//   БИЛЕТВИЛЬ пересчитан после оживления кризисов (аудит 2026-08): решение
+//   кризисов — теперь обязательная часть нормальной игры, и вся шкала
+//   поднялась почти вдвое. Средняя опора «сбор с организатора» — 4.13 млрд
+//   (24 кода), отсюда solid 4 млрд. Вход (threshold) не тронут: ворота
+//   в НОВОГРАД не должны дорожать задним числом.
 const LEGACY_GAMES = [
   { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 1e9, solid: 5.5e9 },
   { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.2e10, solid: 1.6e10 },
-  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 2.5e9 },
+  { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 
 // Порог «достойного НОВОГРАДА» для обратных бонусов и секретной концовки
