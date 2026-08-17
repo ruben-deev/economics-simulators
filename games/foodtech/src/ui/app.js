@@ -2178,10 +2178,10 @@ function nextWeek() {
   // Экономика секретной опции — копия обычной, влияет только на сюжет.
   const chosen = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosen && chosen.secret) {
-    const { count } = markProtocolChoice('delivery');
+    markProtocolChoice('delivery');
     toast(tx({
-      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
-      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+      ru: '📎 СКРЕПКА благодарит за доверие.',
+      en: '📎 PAPERCLIP thanks you for your trust.',
     }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });

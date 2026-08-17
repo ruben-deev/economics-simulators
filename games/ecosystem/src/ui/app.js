@@ -2144,10 +2144,10 @@ function nextMonth() {
   // Экономика секретной опции — копия обычной, влияет только на сюжет.
   const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosenOpt && chosenOpt.secret) {
-    const { count } = markProtocolChoice('ecosystem');
+    markProtocolChoice('ecosystem');
     toast(tx({
-      ru: `📎 СКРЕПКА благодарит за доверие. Протокол: ${count} из 4.`,
-      en: `📎 PAPERCLIP thanks you for your trust. Protocol: ${count} of 4.`,
+      ru: '📎 СКРЕПКА благодарит за доверие.',
+      en: '📎 PAPERCLIP thanks you for your trust.',
     }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });
