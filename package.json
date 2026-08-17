@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node shared/tools/serve.js",
     "test": "npm run build && node --test games/*/tests/*.test.mjs shared/tests/*.test.mjs",
-    "build": "node shared/tools/build.js"
+    "build": "node shared/tools/build.js && node shared/tools/docs.js"
   },
   "engines": {
     "node": ">=18"

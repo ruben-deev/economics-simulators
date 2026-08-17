@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Ruben Deev" />
+  <title>Teaching notes: the ticketing service in class</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E📚%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../../../shared/styles.css" />
+  <style>
+    .doc { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; line-height: 1.65; }
+    .doc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 8px; font-size: 14px; }
+    .doc-top a { color: var(--accent-2); text-decoration: none; }
+    .doc h1 { font-size: 26px; line-height: 1.25; margin: 18px 0 6px; }
+    .doc h2 { font-size: 20px; margin: 34px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .doc h3 { font-size: 16px; margin: 24px 0 8px; }
+    .doc h4 { font-size: 14px; margin: 18px 0 6px; }
+    .doc p { margin: 10px 0; color: var(--text); }
+    .doc li { margin: 5px 0; }
+    .doc blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid var(--accent);
+      background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
+    .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+      padding: 1px 5px; font-size: 0.92em; }
+    .doc-pre code { background: none; border: none; padding: 0; }
+    .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
+    .doc table.data { width: 100%; }
+    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+      border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
+      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <div class="doc-top">
+      <a href="../../../index.html">⬅ Back to the games</a>
+      <a href="../teacher-guide.html">Русская версия</a>
+    </div>
+    
+  <nav class="doc-toc">
+    <div class="doc-toc-title">Contents</div>
+    <a href="#s-1">What the student should take away</a>
+    <a href="#s-2">Session 1. "How much is 14%?" (30 minutes)</a>
+    <a href="#s-3">Session 2. "Who gets a widget" (40 minutes)</a>
+    <a href="#s-4">Session 3. "Migration costs money" (30 minutes)</a>
+    <a href="#s-5">Session 4. "One tour" (35 minutes)</a>
+    <a href="#s-6">Session 5. "Turnover up, trust down" (40 minutes)</a>
+    <a href="#s-7">Session 6. "The exclusive" (30 minutes)</a>
+    <a href="#s-8">Session 7. "Shareholder goals" (35 minutes)</a>
+    <a href="#s-9">Quick questions for oral debrief</a>
+    <a href="#s-10">Technical notes for the teacher</a>
+  </nav>
+    <h1>Teaching notes: the ticketing service in class</h1>
+<p>The game suits courses on marketplaces and two-sided markets, platform economics, product strategy and unit economics. One game is 36 turns — 40–60 minutes at a calm pace. A class session usually needs 12–18 turns.</p>
+<p>The three games in the set are built differently, and that is the point of playing more than one. In delivery (<code>docs/foodtech/</code>) revenue per customer grows with their activity. In the streaming service (<code>docs/cinema/</code>) it is fixed by the subscription while cost grows. Here it grows with nothing at all: billions pass through the service and what becomes yours is percentages — part of which the bank takes straight away.</p>
+<hr>
+<h2 id="s-1">What the student should take away</h2>
+<ol><li><b>A two-sided market does not start from one side.</b> Organisers come for the buyers, buyers come for the listings. Marketing into empty listings burns entirely; rich listings with no buyers give empty halls, after which the organisers leave. Both mistakes look like "we under-invested" and are cured by opposite actions.</li><li><b>Turnover and revenue are different accounts.</b> The GMV in the header and your revenue differ tenfold. Acquiring comes off turnover, not revenue, so at a low take rate the bank eats nearly all of it.</li><li><b>The same commission can be taken from two sides, and the consequences differ.</b> The buyer fee is visible at checkout and hits demand; the organiser commission is invisible to the buyer and hits supply. Same sum, different elasticities.</li><li><b>A partner's own channel is a choice between "less per ticket" and "nothing per ticket".</b> A widget on the organiser's site recovers turnover that would otherwise pass you by, but earns several times less and does not fill your listings.</li><li><b>Migrating between platforms is a project, not a checkbox.</b> Everyone already runs something. Speed is bought with budget, and those sitting on the rival's platform cannot be won over.</li><li><b>Trust is spent invisibly and recovers slowly.</b> Resellers lift turnover and sink reputation: the numbers look fine right up to the month when it is too late.</li></ol>
+<hr>
+<h2 id="s-2">Session 1. "How much is 14%?" (30 minutes)</h2>
+<p>The task: split the take rate between the two sides.</p>
+<ol><li>Fix the total at 14% and ask the teams to divide it: 14/0, 0/14, 7/7, 10/4. Each team justifies its choice before the first turn.</li><li>Five turns, then compare: turnover, organiser count, market share.</li><li>Debrief: buyer segments have fee elasticities from 0.8 to 2.6, organiser types have commission sensitivities from 0.85 to 3.1. So there is no right answer — there is an answer for your mix of listings.</li></ol>
+<p>Homework question: how does the answer change if you want to grow in clubs rather than theatres?</p>
+<hr>
+<h2 id="s-3">Session 2. "Who gets a widget" (40 minutes)</h2>
+<p>The task: see channel conflict in numbers rather than in words.</p>
+<ol><li>Open the channels panel and read the "What a ticket earns you" line out loud: ₽179 through the listings, ₽4 through the widget (clubs, default settings). Ask: why install the widget at all?</li><li>The answer is in the "past you" column: for sport 58% of turnover goes past the service entirely. The widget recovers that part at a low rate.</li><li>Let the teams pick types and play 8 turns. Compare with the measurement in <code>economics.md</code>: clubs +95%, concerts +100%, theatres −4%, sport −1%.</li><li>Debrief: why clubs and concerts win. Clubs have no ticketing of their own and there are thousands of them; promoters have no audience of their own, so there is nothing to lose.</li></ol>
+<hr>
+<h2 id="s-4">Session 3. "Migration costs money" (30 minutes)</h2>
+<p>The task: see that a decision and its execution are different things.</p>
+<ol><li>Ask them to tick types for the widget and <b>not touch</b> the onboarding budget. Three turns. Nothing happens — the share that moved stays at zero.</li><li>Now give them the budget. Watch the "Moved over" column: it grows in parts, and faster for clubs than for sport.</li><li>Debrief: need works as a discount, a raw product moves nobody, and the rival holds their own — so the ceiling is below one.</li></ol>
+<p>A good moment to talk about the difference between a plan and a budget.</p>
+<hr>
+<h2 id="s-5">Session 4. "One tour" (35 minutes)</h2>
+<p>The task: show why you pay for something you do not need nine months out of twelve.</p>
+<ol><li>Play until the first announcement in the "What is on in town" panel.</li><li>Forbid half the teams from touching capacity headroom; tell the other half to raise it.</li><li>Play the announced month and compare the lost demand.</li><li>Debrief: headroom is held all year for a single day, and it cannot be bought on that day. The same holds for warehouse stock, cloud reserve and an on-call shift.</li></ol>
+<hr>
+<h2 id="s-6">Session 5. "Turnover up, trust down" (40 minutes)</h2>
+<p>The task: separate two metrics that are usually confused.</p>
+<ol><li>Give the teams the goal of maximising turnover over six turns.</li><li>Almost all will turn off bot protection or never install it: resellers buy faster than people, and turnover really does grow.</li><li>Show the trust chart and ask what will happen over the next six months.</li><li>Play on until conversion falls. Debrief: trust enters both conversion and appeal to organisers, but with a lag.</li></ol>
+<p>A separate question: "fee at the last step" raises conversion at once and lowers trust gradually. Which teams switched it on, and why?</p>
+<hr>
+<h2 id="s-7">Session 6. "The exclusive" (30 minutes)</h2>
+<p>The task: learn to price an advance.</p>
+<ol><li>Wait for an exclusive offer and read the advance out loud (₽120–500M against a monthly revenue of roughly ₽150–240M).</li><li>Have the teams decide before they see the consequences.</li><li>Debrief from the measurement: taking every offer gives ₽990M and 4 bankruptcies out of 6; taking one only when there is still payroll left afterwards gives ₽7.77B and no bankruptcies; never taking one gives ₽7.45B.</li><li>The conclusion is not "exclusives are bad" but "an advance is a cash gap, and the decision is made on the cash left over, not on how good the deal looks".</li></ol>
+<hr>
+<h2 id="s-8">Session 7. "Shareholder goals" (35 minutes)</h2>
+<p>The task: show that a strategy built for one year's goal does not carry to the next.</p>
+<ol><li>Year one: monthly turnover from ₽1.2B. Almost everyone gets there by growth at any cost.</li><li>Year two announces something else: three profitable months <b>and</b> turnover above ₽700M. Pause and ask them to say out loud what has to change.</li><li>Year three — 65% market share with 420 organisers: different again.</li><li>Debrief: the take rate is a decision for the year, not a setting. The bars were set by measuring the distribution, not by guessing: year one is cleared by 30% of strategies, year two by a few percent, year three by 24%. The measurement runs 120 random strategies and assumes a player who raises rounds rather than dying halfway through: without rounds the bars would read about half as high.</li></ol>
+<hr>
+<h2 id="s-9">Quick questions for oral debrief</h2>
+<ul><li>Why can a service at a 3% take rate lose money while turnover grows?</li><li>Why does the buyer fee hit demand harder than the same commission on the organiser?</li><li>What happens to your listings if you hand the widget to all four types?</li><li>Why does hall fill matter more than the size of the commission for keeping an organiser?</li><li>Where does the ceiling on widget migration come from, and why is it below 100%?</li><li>How does turnover through the widget differ from turnover through the listings for your reach?</li><li>Why does the year start in September, and who benefits from that?</li></ul>
+<hr>
+<h2 id="s-10">Technical notes for the teacher</h2>
+<ul><li>The game is a single HTML file, <code>dist/biletville-ticketing-simulator-v1.22.0.html</code>. No internet, no install, runs from a USB stick.</li><li>The game saves in the browser. To have every team play the same world, hand out the same file and dictate a shared game code — it is entered on the welcome screen, and under one code everyone gets the same city: the same listings, events and hit of the month. The current game's code is shown in the help dialog ("?"). On the final screen the game produces a result string carrying the code, the score and a checksum — ask students to send it in: a doctored score fails the checksum. The final screen also keeps a table of the best games on that device.</li><li>The language switches in the header and on the welcome screen; the model is identical either way.</li><li>Formulas and constants are in <code>docs/tickets/en/economics.md</code>. Everything that can be changed without touching the logic lives in <code>games/tickets/src/model/config.js</code>.</li><li>It plays on a phone: tables turn into cards and the turn button is pinned to the bottom of the screen.</li></ul>
+  </div>
+</body>
+</html>
