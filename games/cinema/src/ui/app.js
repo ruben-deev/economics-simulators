@@ -2254,9 +2254,8 @@ function returnHtml() {
   if (!r) return '';
   const body = r.maxed
     ? t('metaReturnMaxed')
-    : t('metaReturnText', {
-        ratio: r.ratio.toFixed(1),
-        next: String(r.nextRatio),
+    : t(r.played ? 'metaReturnText' : 'metaReturnNone', {
+        best: money(r.best),
         target: money(r.target),
       });
   return `<div class="lesson" style="margin-top:10px"><b>🏙️ ${t('metaReturnTitle')}</b> ${body}</div>`;
