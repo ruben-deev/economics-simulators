@@ -64,11 +64,8 @@ month.
 
 ### Originals: a slate, not a budget
 
-Production used to be a slider: the player set an amount and the engine decided
-how many projects to start and when to release them. There was nothing to manage
-there — and nothing to understand either.
-
-Now a project is an object, and it carries three decisions:
+Production is not a budget slider but a slate: every project is an object,
+and it carries three decisions:
 
 1. **What to commission** — genre × scale × the segment you are aiming at.
 2. **When to release it** — a finished project sits in the vault until you say so.
@@ -147,18 +144,16 @@ depth     = saturation(weighted / refCatalogHours)
 own_share = weighted_own / weighted
 ```
 
-**The weight of an own hour was raised from 6 to 9 and `refCatalogHours` lowered from
-9,000 to 7,500 — both by measurement, and here is why.** An hour of licence costs ₽600k
-and weighs 0.5, so ₽1.2M per effective hour. An hour of your own at weight 6 cost
-₽31M / 6 = ₽5.2M for the same effective hour — four times more. And the old catalogue
-reference of 9,000 hours stood above anything you can build in a game with your own
-production, so depth never saturated and the next licensed hour always paid off.
-
-The result was unambiguous: buying won outright on every reference strategy, the optimum
-sat at the stop of the slider, and the share of own content there fell to 11–14%. That
-is, the central lesson of the game — licences buy a base quickly, your own stays an asset
-— was not confirmed by measurement, while the teacher's guide promised the opposite.
-After the fix the optimum sits inside the range and the own share at it is around 20%.
+**Why an own hour weighs 9 and the catalogue reference sits at 7,500 hours.** An hour
+of licence costs ₽600k and weighs 0.5, so ₽1.2M per effective hour. Your own hour is
+far more expensive to produce, so without a large weight it would never pay off at
+all — the weight of 9 puts its effective price in a comparable range. And the 7,500-hour
+catalogue reference is reachable within a game, so depth does saturate: past some point
+the next licensed hour stops paying off, which is exactly what makes "licences or
+originals" a real choice. Measured, the buying optimum sits inside the slider's range,
+and the share of own content in a polished strategy is around 20% — the central lesson
+of the game (licences buy a base quickly, your own stays an asset) is confirmed by
+measurement, not just by the teacher's guide.
 
 | Genre | Value per hour | Monthly ageing | Cost per hour | Hangover |
 |---|---|---|---|---|
@@ -303,7 +298,7 @@ ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)
 ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)
 ```
 
-Ad pain is convex (2026-08 audit): a couple of minutes an hour goes almost unnoticed,
+Ad pain is convex: a couple of minutes an hour goes almost unnoticed,
 and past that every extra spot annoys more than the previous one. With linear pain the
 load optimum sat at zero on every anchor — there was no lever; with convexity each
 anchor has an interior optimum at 2–4 min/hr, and heavy load is honestly expensive —
@@ -313,16 +308,16 @@ through irritation and because the cheap tier stops counting as a way in (see In
 ads at any price, and every segment has its own limit: cinephiles 32%, families 58%, the
 mass audience 83%, the young 90%.
 
-**The cheap tier's weight in the entry price is intrinsic, not actual** (2026-08 audit).
-Demand used to look at a price blend weighted by the actual ad-tier share — and that
-share itself grows with the price gap: cranking the list price inflated the cheap tier's
-share, the blend got cheaper, and demand ROSE. The cheap blend printed demand faster
-than ARPU fell: the price optimum sat pinned at 999 on every anchor (+102% for the
-mid anchor). Now the weight is the share of the segment that considers watching with
-ads at all, and it fades with ad load: a tier you cannot stand to watch does not exist
-in a newcomer's eyes. The price gap helps entry only as far as the segment tolerates
-ads — the loop is broken, and price has an honest interior optimum (measured: peak at
-449, minus two-thirds of the outcome at 999).
+**The cheap tier's weight in the entry price is intrinsic, not actual.** A newcomer
+judges "how much does trying this cost" by the blend of tiers they would consider
+for themselves, not by the actual distribution of your base. The ad tier's weight
+in that blend is the share of the segment that considers watching with ads at all,
+and it fades with ad load: a tier you cannot stand to watch does not exist in a
+newcomer's eyes. Were the weight actual, a vicious loop would open: cranking the
+list price would inflate the cheap tier's share, the blend would get cheaper — and
+demand would rise with the price. With the intrinsic weight the loop is broken, and
+price has an honest interior optimum (measured: peak at ₽449, minus two-thirds of
+the outcome at ₽999).
 
 **The premium choice feels the full list price.** A newcomer taking the ad-free tier
 judges it by its own price, not by the blend:
@@ -373,9 +368,9 @@ themselves pay.** Until the base is moved onto the new list price, a rise does n
 irritate them — that is the whole point of the gap: it lets the price grow without
 paying in churn straight away. Churn uses `paid_factor`, inflow uses `list_factor`.
 
-The split matters. In the first version service quality entered both the inflow and the
-choice between services, i.e. it was effectively squared. Any imbalance instantly turned
-into a rout, and the decision landscape became not steep but chaotic: you could not learn
+The split matters: service quality must enter the viewer's decision once. If it
+entered both the inflow and the choice between services, it would effectively be
+squared — any imbalance would instantly turn into a rout, and you could not learn
 anything from an experiment.
 
 ### Awareness
@@ -447,12 +442,13 @@ revenue       = subscriptions + advertising
 ```
 
 `base cpm = ₽640`, a spot is 30 seconds, hence the factor of 2 (spots per minute).
-The ad market is seasonal (2026-08 audit): winter ×1.25, autumn ×1.1, spring ×0.95,
+The ad market is seasonal: winter ×1.25, autumn ×1.1, spring ×0.95,
 summer ×0.75 — the same spot earns two-thirds more in winter than in July, turning
 ad load from set-and-forget into a tactical decision.
 
 There is a finite number of advertisers: the more impressions you dump, the cheaper each
-one gets. Without this, "crank the price and herd everyone onto the ad tier" was a free
+one gets. This saturation — together with the ad-tier share ceiling — closes the loophole
+where "crank the price and herd everyone onto the ad tier" would be a free
 strategy — together with the ceiling on the ad tier this is what gave the price back its
 meaning as a price.
 
@@ -482,17 +478,15 @@ There is one market for the two of you. The rival has its own state — cash, ca
 subscriber base, production pipeline — and a policy that reads your decisions and
 answers them.
 
-This is the main difference from the first version of the game. The rival used to be
-a constant in the formula: the environment never changed, so the optimal decision never
-changed either — one setting of the sliders won the whole game. That setting no longer
-exists. The right answer to "should I raise the price" depends on what the rival is
-doing now and what he can still afford.
+A living rival is what keeps the game from collapsing into one winning setting of
+the sliders: since the environment changes, the right answer to "should I raise the
+price" depends on what the rival is doing now and what he can still afford.
 
 ### His stances
 
 Viewers judge the rival with the same entry-price formula as you: two tiers with
-the segment's intrinsic weights, faded by his ad load (2026-08 audit; the old
-×0.82 eyeball multiplier acted as a hidden handicap in your favour). The one
+the segment's intrinsic weights, faded by his ad load — no hidden handicap in
+your favour. The one
 declared asymmetry: his ad tier is priced at 45% of his list price against your
 ~37% — a corporation discounts its cheap tier less aggressively.
 
@@ -674,9 +668,9 @@ of the war chest a month on licensing, production and marketing. A small rival w
 a big cheque becomes big for a while — and when the cheque runs out, the runway logic
 walks it into retreat. That is how the third act ends.
 
-Measured after the change: a constant strategy loses ~17% of its outcome to the third
-act; the share of the outcome "decided" by turn 24 fell from 78% to 74%, by turn 30
-from 94% to 87%. The rest is bounded by the valuation windows (§9), which smooth late
+Measured: a constant strategy loses ~17% of its outcome to the third act; the share
+of the outcome "decided" by turn 24 is 74%, by turn 30 — 87%, so the endgame stays
+playable. The rest is bounded by the valuation windows (§9), which smooth late
 mistakes and late manipulation alike — a deliberate trade in favour of blocking the
 last-turn dash.
 
@@ -857,9 +851,9 @@ month can be bought with one decision: crank the price and zero out content and 
 one turn before the end. The business falls apart and the score goes up — measured, that
 dash was worth +92%. The window closes it.
 
-**The lower bound on growth is below zero.** It used to be zero: a shrinking subscription
-was valued as one standing still, so "harvest and lose the base" cost nothing. The same
-fix was made long ago in the delivery game next door — it never travelled here.
+**The lower bound on growth is below zero.** A shrinking subscription is valued below
+one standing still, so "harvest and lose the base" is never free. Valuation works the
+same way in the delivery game next door.
 
 A funding round:
 
@@ -907,9 +901,10 @@ the value of your stake are not the same thing.
 
 ## The cost of what is already built
 
-The "invest in technology" lever used to be dishonest: the spend was written off
-once, the accumulated level stayed forever and cost nothing. That is not how it
-works. Two lines were missing from the model.
+What you have built has a cost of ownership. If the spend were written off once
+while the accumulated level stayed forever and cost nothing, the "invest in
+technology" lever would be dishonest: pay once, enjoy the advantage forever.
+That is not how it works, and two cost lines carry that price.
 
 **Upkeep.** Every feature built has to be maintained: libraries updated, breakage
 from other changes fixed, new people taught. The bill arrives every month and
@@ -925,19 +920,18 @@ a one-off cost but a permanent obligation.
 
 **Infrastructure.** Load-driven infrastructure already exists here and is called traffic: `cdn = watch hours × cost per hour`. It grows with audience loyalty and gets cheaper with technology and encoding — see the watch-hours section.
 
-Both lines used to hide inside "office and administration" and grew with neither
-the product nor the load. The base fixed line was reduced by exactly what these
-two add under the reference strategy, so the balance did not shift — but the
-behaviour did: costs now grow together with the business.
+The point of splitting these two lines out of "office and administration" is
+behavioural: the base fixed part is small, while upkeep and traffic grow with
+the product and the audience. Costs breathe together with the business, and
+every "invest more" decision carries a tail of future obligations.
 
 ---
 
 ## The price of a free month
 
-The free trial used to lift conversion and cost nothing — so the best answer was
-always the maximum 30 days, which means the slider effectively did not exist. Two
-things were missing from the model, and both are obvious if you look at the cash
-rather than at the subscriber chart.
+A gifted month has two prices, and both are obvious if you look at the cash rather
+than at the subscriber chart. Without them the best answer would always be the
+maximum 30 days — and the slider would effectively not exist.
 
 **Given-away days are an invoice never sent.** Someone who arrives this month
 watches free for the first `trialDays` days and pays only for the remainder:
@@ -959,6 +953,6 @@ churn += greed × fresh share × 0.55
 ```
 
 The usual two weeks are the reference point: there the surcharge is exactly zero.
-After the fix the optimum sits right there and falls off on both sides — a short
+The optimum sits right there and falls off on both sides — a short
 trial loses the people who never got a taste, a long one buys people who leave at
 the first charge.

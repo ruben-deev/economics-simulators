@@ -73,11 +73,6 @@ Measured over 24 codes, with four near districts as the base:
 | + Industrial | ₽0.58B · 51 min · ₽50 per order | ₽2.93B · 37 min · ₽110 |
 | + Suburbs | ₽0.79B · 60 min · ₽139 per order | ₽3.08B · 45 min · ₽200 |
 
-(Re-measured in the 2026-08 audit after the weather, events and goal reworks —
-the absolute values are lower than before, the shape is the same and even
-sharper: with technology a far district now adds rather than merely breaking
-even.)
-
 Note the third figure in each cell: contribution per order is positive in every
 case. What loses money is not the district itself but what it does to the whole
 company's speed — delivery time rises, satisfaction falls, churn grows, and the
@@ -113,24 +108,14 @@ Entry is a project, not a checkbox:
   dilutes your share, which makes the fourth-quarter goal (45% share) noticeably
   harder after expansion.
 
-**A measurement that overturned the previous one.** This paragraph used to say
-«+28–34% to the mid base's final score» — a conclusion drawn from eight seeds,
-and it turned out to be noise. Over twenty-four game codes, entering Stargorod
-NEVER paid off: 82% of the home-only game when entering on week 16 and 78% on
-week 22, and no entry date or policy changed that.
-
-The decomposition showed where the value went. Revenue from the second city did
-grow (+31% a week), but the margin fell from 9.0% to 3.3% — and the valuation
-multiple is computed from margin and growth, so the falling multiple ate the
-added revenue. The two fixed costs together — the ₽1.2M/wk city office and the
-₽1.25M/wk of district weekly fixed costs — accounted for exactly the 6 pp of
-margin that was missing.
-
-So the fixed costs were cut: the office from ₽1.2M to ₽0.6M a week, and the
-Stargorod districts' weekly fixed costs by 40%. One-off payments were left
-alone: paying once to enter a city is an honest price for the decision, while
-paying for it every week to the end of the game was a death sentence. After the
-change (24 codes, both strategies polished over a grid of staffing, marketing
+**The economics of expansion, measured.** The main risk of a second city is
+not revenue but margin: Stargorod's sales ramp fast (about +31% a week early
+on), yet the city's and districts' fixed costs weigh on the whole company's
+margin — and the valuation multiple is computed from margin and growth. That
+is why the recurring costs of expansion are deliberately much lighter than the
+one-off ones: paying once to enter a city is the price of the decision, while
+the weekly burden is calibrated not to eat the entire gain. Measured over
+24 game codes (both strategies polished over a grid of staffing, marketing
 and the delivery fee):
 
 | strategy | median | vs home-only |
@@ -140,7 +125,7 @@ and the delivery fee):
 | Stargorod downtown only, week 16 | ₽3.56B | 88% |
 | all of Stargorod, entering week 26 | ₽3.63B | 90% |
 
-Expansion has stopped being a mistake and become a bet: on the median it equals
+Expansion is a bet, not a mistake: on the median it equals
 the home game but with a higher ceiling (upper quartile ₽4.85B against ₽4.45B) —
 and it punishes half-measures and lateness. The narrow single-district strategy
 still cannot expand: the gate demands home coverage.
@@ -192,10 +177,10 @@ Two rules make the bonus a decision rather than a setting.
 
 **The promise is paid for.** A guarantee has an unconditional part (35%): a courier who
 was promised weather pay receives its base even in a clear week — otherwise it is not a
-guarantee but a lottery, and it never enters their expected earnings. The bonus used to be
-conditional: it cost nothing in clear weeks, so "set ₽80 and forget" was a free automatic
-strategy, and measurement showed reacting to the forecast was no better than doing the
-opposite. Now a permanent bonus is a permanent expense.
+guarantee but a lottery, and it never enters their expected earnings. The unconditional
+part is also the price of the decision: were the bonus conditional and free in clear
+weeks, "set ₽80 and forget" would be a free automatic strategy. A permanent bonus is
+a permanent expense.
 
 **Habituation.** A bonus that is always on stops being an incentive: habit builds up over
 roughly eight to ten weeks and cuts the bonus's "freshness" to 20% of its power — in a real
@@ -204,16 +189,15 @@ the same pace. Switching it on with the weather is both cheaper and more effecti
 reference strategy, the policy "bonus only in heavy weather" measures +87% against the
 best constant (a median of 2.36bn vs 1.26bn over 24 seeds), while playing it backwards —
 "bonus in clear weeks" — loses 28%. The right timing is rewarded generously and the wrong
-timing is punished. (An earlier measurement showed "+2%": its reaction policy keyed off
-NEXT week's forecast, while the bonus applies to the current — already announced — week.
-A reaction shifted by a week is indistinguishable from a random one, and that is what
-was being measured.)
+timing is punished. One important detail: the bonus applies to the current — already
+announced — weather, so that is what you react to; keying off next week's forecast
+lags by a turn and is indistinguishable from acting at random.
 
 Economically it is an alternative to keeping spare couriers: permanent excess headcount
 costs money all 52 weeks, while the bonus only costs while it is switched on. With a thin
 roster the forecast-driven bonus wins; with a large buffer it becomes wasted spending.
 
-**With forecast auto-hiring the bonus is redundant** (2026-08 audit). The forecast
+**With forecast auto-hiring the bonus is redundant.** The forecast
 algorithm already sizes the fleet to next week's weather-adjusted demand, and a bonus
 on top pays twice for the same job: a polished strategy with algorithms and no bonus
 measures ₽4.44B, with a heavy-weather reaction — ₽3.19B (−28%). The lesson reads:
@@ -458,10 +442,9 @@ option shifts with the state. Generosity is cheap for the small and dear for the
 large; the big chain's discounted commission follows the same logic in a different
 currency — your listings: the chain pays 10% only on its own orders, and its share
 of your volume is larger the fewer other restaurants you have. A big marketplace
-barely notices the discount; in a small one the chain is a third of the shopfront
-(measured in the 2026-08 audit: accepting wins 23/72 — previously 0/72, because the
-discount used to cut the citywide commission forever, costing 12–22% of the final
-score).
+barely notices the discount; in a small one the chain is a third of the shopfront —
+measured, accepting wins in 23 cases out of 72: the choice is alive and depends on
+how much the chain dominates your listings.
 
 ---
 
@@ -516,12 +499,11 @@ satisfaction penalty = (1 − reach)² × (1 − precision) × 0.35 × min(1, pr
 At 40% reach and 0.8 precision you pay 0.4 of the promo and get an effect of 0.88 — the
 same lift in demand for half the money. This is price discrimination in its purest form.
 
-**The leverage term was added after measurement.** The effect used to be bounded only by
-"no more than discounting everyone", so at a narrow reach a targeted discount became almost
-free: you pay for a twentieth of the orders and it works on all of them. Because of that the
-discount slider went to its stop under every other setting — there was no lever. Now the
-effect cannot exceed what you paid by more than 2.5× (and only with a perfect model), and
-the discount has an interior optimum again.
+**Why the second term — leverage — exists.** Without it, at a narrow reach a targeted
+discount would be almost free: you pay for a twentieth of the orders while demand grows
+for all of them — and the discount slider would go to its stop under every other setting.
+Leverage closes that hole: the effect cannot exceed what you paid by more than 2.5× (and
+only with a perfect model), so the discount has an interior optimum.
 
 Three constraints stop you from shrinking reach to nothing: a ceiling on the effect, the tie
 between effect and money actually spent, and a quadratic penalty for perceived unfairness.
@@ -682,9 +664,10 @@ formula in a couple of steps. For a teaching tool, that matters more than realis
 
 ## The cost of what is already built
 
-The "invest in technology" lever used to be dishonest: the spend was written off
-once, the accumulated level stayed forever and cost nothing. That is not how it
-works. Two lines were missing from the model.
+What you have built has a cost of ownership. If the spend were written off once
+while the accumulated level stayed forever and cost nothing, the "invest in
+technology" lever would be dishonest: pay once, enjoy the advantage forever.
+That is not how it works, and two cost lines carry that price.
 
 **Upkeep.** Every feature built has to be maintained: libraries updated, breakage
 from other changes fixed, new people taught. The bill arrives every week and
@@ -700,16 +683,16 @@ a one-off cost but a permanent obligation.
 
 **Infrastructure.** Servers grow not from your decision but from orders: `servers = orders × ₽1.9 × (1 − 0.35 × tech level)`. It is the one line that gets more expensive exactly when things go well — and the one technology pays back directly.
 
-Both lines used to hide inside "office and administration" and grew with neither
-the product nor the load. The base fixed line was reduced by exactly what these
-two add under the reference strategy, so the balance did not shift — but the
-behaviour did: costs now grow together with the business.
+The point of splitting these two lines out of "office and administration" is
+behavioural: the base fixed part is small, while upkeep and servers grow with
+the product and the load. Costs breathe together with the business, and every
+"invest more" decision carries a tail of future obligations.
 
 ---
 
 ## What limits greed
 
-Three places where the model used to let you take money for free, and no longer does.
+Three mechanisms that stop you from maxing out the sliders for free.
 
 **The delivery fee is more visible than the same money inside the basket.** A
 hundred roubles spread across the price of a pizza passes unnoticed; the same
@@ -722,8 +705,9 @@ reference       = basket + 149 × 2.5
 ```
 
 At ₽149 the multiplier does nothing: only the deviation from the reference
-matters. Without it, raising the price was free — order frequency fell smoothly
-while margin rose faster, and the top of the slider was always the best move.
+matters. It is what makes the delivery fee a real decision: without the 2.5
+weight, raising the price would be nearly free — frequency would fall smoothly,
+margin would rise faster, and the top of the slider would always be the best move.
 
 **A commission above the usual one ends up in the menu price.** A restaurant does
 not work at a loss: everything you take above 20% goes into the menu on your own
@@ -748,6 +732,6 @@ Order frequency falls smoothly; leaving for the rival is a lost customer, and
 winning one back costs more than holding on would have.
 
 **And finally: a shrinking business earns a lower multiple.** The growth term in
-the valuation used to be clamped at zero from below — a company losing customers
-every week was valued like a flat one. Now shrinkage counts: `growth − 1` is
-clamped to −0.5…1 rather than 0…1.
+shrinkage counts honestly: `growth − 1` is clamped to −0.5…1, so a company
+losing customers every week is valued below a flat one — shrinking a business
+is never free.
