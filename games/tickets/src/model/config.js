@@ -458,8 +458,8 @@ export const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 200_000_000, step: 5_000_000, def: 15_000_000,
     tip: {
-      ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором.',
-      en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser.',
+      ru: 'Растит охват: сколько людей вообще помнят, где покупать билеты. Охват — это и есть аргумент в разговоре с организатором. У охвата есть критическая масса: город либо помнит вас, либо нет — ниже ~45 млн/мес бренд забывают быстрее, чем вы его строите, и маховик «охват → организаторы → афиша → зрители» не заводится.',
+      en: 'Grows reach: how many people remember where to buy tickets at all. Reach is exactly the argument you bring to an organiser. Reach has a critical mass: the city either remembers you or it does not — below ~$450K/mo the brand is forgotten faster than you build it, and the flywheel of reach → organisers → listings → buyers never starts.',
     },
   },
   {

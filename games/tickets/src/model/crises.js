@@ -224,6 +224,12 @@ export function resolutionCost(active, resolutionId) {
 /**
  * Кризисы приходят тем чаще, чем крупнее оборот: успешный сервис судят,
  * о нём пишут и на него охотятся. Это не наказание за успех, а его цена.
+ *
+ * Шкала масштаба перекалибрована аудитом 2026-08: прежний порог «полной»
+ * частоты (GMV 6 млрд/мес) партии не достигали никогда, и медианное число
+ * кризисов за партию равнялось нулю — девятнадцать написанных кризисов
+ * лежали мёртвым грузом. Теперь пол 5% в месяц и полная частота от
+ * GMV 2 млрд/мес: у решающего кризисы игрока их 2–4 за партию (замер).
  */
 export function rollCrisis(rng, month, { gmv, active, lastResolved = -99 }) {
   if (active) return null;
@@ -231,8 +237,8 @@ export function rollCrisis(rng, month, { gmv, active, lastResolved = -99 }) {
   const pool = CRISES.filter((c) => month >= c.minMonth);
   if (!pool.length) return null;
 
-  const scale = clamp(gmv / 6_000_000_000, 0, 1);
-  const chance = 0.02 + 0.12 * scale;
+  const scale = clamp(gmv / 2_000_000_000, 0, 1);
+  const chance = 0.05 + 0.10 * scale;
   if (rng() > chance) return null;
 
   const total = pool.reduce((s, c) => s + c.weight, 0);

@@ -1786,9 +1786,11 @@ function gradeTierOf(score) {
   if (score.bankrupt) return 'Bankrupt';
   if (score.sold) return 'Sold';
   if (score.orgShare >= 0.45 && score.takeRate >= 0.09) return 'Excellent';
-  // Замер опор (6 сидов): осторожная 0.84 млрд, средняя 2.13,
-  // размашистая 5.01, доведённая 5.58. Планка «крепко» — средняя опора.
-  if (score.equityValue >= 2_500_000_000) return 'Solid';
+  // Планка «крепко» — средняя опора. Пересчитана после оживления кризисов
+  // (аудит 2026-08): решение кризисов подняло все опоры почти вдвое —
+  // сбор с покупателя 3.87, сбор с организатора 4.13, платформенная
+  // 19.05 млрд (24 кода). Отсюда «крепко» = 4 млрд.
+  if (score.equityValue >= 4_000_000_000) return 'Solid';
   if (score.orgShare < 0.25) return 'Modest';
   return 'Survived';
 }
@@ -1878,7 +1880,7 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
-    <p class="funding-note">${t('gradeScale', { a: money(2.5e9) })}</p>
+    <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     ${novogradInviteHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
