@@ -7238,7 +7238,8 @@ function syncLevers() {
         b.classList.toggle('active', Number(b.dataset.policyValue) === current.v);
       });
       const val = el(`val-${l.key}`);
-      if (val) val.textContent = `${tx(current.label)} · ${raw}%`;
+      // Обратное деление на scale даёт плавающий хвост — срезаем
+      if (val) val.textContent = `${tx(current.label)} · ${+raw.toFixed(2)}%`;
       const note = el(`note-${l.key}`);
       if (note) note.textContent = tx(current.note);
       continue;

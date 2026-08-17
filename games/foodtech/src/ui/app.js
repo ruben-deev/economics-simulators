@@ -248,7 +248,8 @@ function buildLevers() {
 function leverDisplay(l, raw) {
   const unit = tx(l.unit);
   if (l.key === 'marketing' || l.key === 'sales' || l.key === 'tech' || l.key === 'rnd') return money(raw);
-  if (unit === '%') return `${raw}%`;
+  // Обратное деление на scale даёт плавающий хвост — срезаем
+  if (unit === '%') return `${+raw.toFixed(2)}%`;
   if (l.key === 'targetCouriers') return num(raw);
   return isCurUnit(unit) ? amountIn(raw, unit) : `${num(raw)} ${unit}`;
 }
@@ -586,7 +587,7 @@ function renderAlgos() {
         : `<span class="badge">${t('algoNeedQuality', { value: pct(a.unlock, 0) })}</span>`;
 
     const slider = installed && on ? `<div class="algo-param">
-        <div class="algo-param-head"><span>${tx(a.param.label)}</span><b>${raw}${tx(a.param.unit)}</b></div>
+        <div class="algo-param-head"><span>${tx(a.param.label)}</span><b>${+raw.toFixed(2)}${tx(a.param.unit)}</b></div>
         <input type="range" data-algo-param="${a.key}"
           min="${a.param.min}" max="${a.param.max}" step="${a.param.step}" value="${raw}" />
       </div>` : '';
