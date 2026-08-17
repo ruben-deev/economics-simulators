@@ -194,6 +194,7 @@ export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     decisions: deepClone(DEFAULT_DECISIONS),
     flags: { valuationBonus: 0 },
     pendingEvent: null,
+    seenEvents: [],
     pendingChoice: null,
     history: [],
     lastSnapshot: null,
@@ -1429,7 +1430,13 @@ export function step(prevState, input = {}) {
   state.lastSnapshot = snapshot;
   state.history.push(report);
   state.pendingChoice = null;
-  state.pendingEvent = rollEvent(rng, month + 1, state.flags);
+  // Показанные события запоминаются: каждое случается не больше раза за
+  // партию. У старых сейвов списка нет — начинаем с пустого.
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
+  state.pendingEvent = rollEvent(rng, month + 1, state.flags, state.seenEvents ?? []);
   state.rngState = rng.state();
 
   if (state.cash < 0) state.over = 'bankrupt';

@@ -216,11 +216,16 @@ export function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
-// Вероятность события ~30% в месяц
-export function rollEvent(rng, month, flags = {}) {
+// Вероятность события ~30% в месяц. Каждое событие случается не больше
+// раза за партию: «права на лигу» трижды за игру (аудит 2026-08, жалоба
+// игрока) превращали сюжетный выбор в лотерейный билет — прежний rollEvent
+// вообще не помнил показанного. Пул к концу партии тает — это нормально:
+// поздние месяцы и так решают накопленным, а не событиями.
+export function rollEvent(rng, month, flags = {}, seenIds = []) {
   if (month < 3) return null;
   if (rng() > 0.30) return null;
-  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  const seen = new Set(seenIds);
+  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0) && !seen.has(e.id));
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
