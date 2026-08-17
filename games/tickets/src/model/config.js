@@ -379,19 +379,20 @@ export const LEVERS = [
     label: { ru: 'Сервисный сбор с покупателя', en: 'Buyer service fee' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 22, step: 0.5, def: 10, scale: 0.01,
-    // Режимы — имена решению, ползунок остаётся: кривая отклика сбора
-    // пологая, но с изломом наверху (замер: 15% -> 7.34, 20% -> 8.05,
-    // 25% -> 7.61 млрд), и точная настройка здесь уместна.
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08): кривая отклика пологая, и
+    // точность тоньше шага режимов не окупалась — двойное управление было
+    // перегрузом. «Плотный» стоит в замеренной вершине: 12% -> 4.38,
+    // 14% -> 4.28 (24 кода), 15% -> 4.05, дальше спад до 2.2 на 22%.
+    policyMode: 'replace',
     policy: [
       { v: 5, label: { ru: 'Почти без сбора', en: 'Barely a fee' },
         note: { ru: 'Зритель видит почти цену билета: конверсия лучшая на рынке, выручки с билета почти нет.', en: 'The buyer sees almost the ticket price: best conversion on the market, almost no revenue per ticket.' } },
       { v: 10, label: { ru: 'Рыночный', en: 'Market' },
         note: { ru: 'Как у всех: зритель ворчит, но платит. Средний путь между оборотом и выручкой.', en: 'Same as everyone: the buyer grumbles and pays. The middle road between turnover and revenue.' } },
-      { v: 15, label: { ru: 'Плотный', en: 'Firm' },
+      { v: 14, label: { ru: 'Плотный', en: 'Firm' },
         note: { ru: 'Выше рынка: с каждого билета берёте заметно больше, часть корзин бросают на оплате.', en: 'Above market: you take visibly more per ticket, and some baskets are abandoned at checkout.' } },
       { v: 20, label: { ru: 'Дожим', en: 'Squeeze' },
-        note: { ru: 'На пороге терпения: выручка максимальная, но ещё шаг — и зритель уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue peaks, but one more step and the buyer leaves for a rival — taking the organiser along.' } },
+        note: { ru: 'На пороге терпения: кажется, что выручка максимальная, — но зритель уже уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue looks maximal — but the buyer is already leaving for a rival, taking the organiser along.' } },
     ],
     tip: {
       ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку.',
@@ -404,16 +405,23 @@ export const LEVERS = [
     label: { ru: 'Комиссия с организатора', en: 'Organiser commission' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 14, step: 0.5, def: 5, scale: 0.01,
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08). Сетка расширена вверх по
+    // замеру на 24 кодах: у чистого маркетплейса вершина на 12–13%
+    // (4.62–4.65 млрд), у платформенной сборки — на 10% (19.2 млрд против
+    // 16.7 на 8%): чем больше оборота идёт через виджет по своей ставке,
+    // тем раньше комиссия начинает выгонять организаторов.
+    policyMode: 'replace',
     policy: [
       { v: 1, label: { ru: 'Заманить', en: 'Court them' },
         note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
-      { v: 3, label: { ru: 'Умеренная', en: 'Moderate' },
-        note: { ru: 'Заметно в договоре, но терпимо: организатор сравнивает с конкурентом и остаётся.', en: 'Visible in the contract but tolerable: the organiser compares with a rival and stays.' } },
       { v: 5, label: { ru: 'Рыночная', en: 'Market' },
         note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
-      { v: 8, label: { ru: 'Дожим', en: 'Squeeze' },
-        note: { ru: 'Дороже рынка: крупные площадки начинают считать и уходить — вместе со своими залами.', en: 'Above market: big venues start doing the maths and leaving — with their halls.' } },
+      { v: 8, label: { ru: 'Плотная', en: 'Firm' },
+        note: { ru: 'Дороже рынка: организатор ворчит и сравнивает, но зал и зрители пока перевешивают.', en: 'Above market: the organiser grumbles and compares, but the hall and the audience still outweigh it.' } },
+      { v: 10, label: { ru: 'Дожим', en: 'Squeeze' },
+        note: { ru: 'Дорого: крупные площадки начинают считать. Работает, только пока вы приводите зрителей, которых им больше негде взять.', en: 'Expensive: big venues start doing the maths. It works only while you bring an audience they cannot get anywhere else.' } },
+      { v: 13, label: { ru: 'На пределе', en: 'To the limit' },
+        note: { ru: 'Верх терпения рынка: каждый следующий процент уже выгоняет организаторов вместе с залами.', en: 'The market’s upper limit: every further percent drives organisers away, halls and all.' } },
     ],
     tip: {
       ru: 'Ваша доля из выручки организатора. Зритель её не видит совсем, зато организатор видит в договоре — и держит в голове предложение конкурента.',
@@ -437,7 +445,10 @@ export const LEVERS = [
     label: { ru: 'Абонплата платформы', en: 'Platform subscription' },
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 120_000, step: 5_000, def: 20_000,
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08): вершина по замеру — «Полная»
+    // (60 тыс. = 21.0 млрд на платформенной опоре, 50 тыс. = 20.8, 70 тыс. —
+    // уже 18.3: дальше длинный хвост клубов уходит к конкуренту).
+    policyMode: 'replace',
     policy: [
       { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
         note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },

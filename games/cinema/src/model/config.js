@@ -427,11 +427,12 @@ export const LEVERS = [
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 99, max: 999, step: 10, def: 399,
-    // Режимы — имена решению, ползунок остаётся: кривая отклика цены острая
-    // (замер: 449 -> 24.5, 499 -> 40.9, 549 -> 35.8 млрд), и дискретизация
-    // тихо срезала бы верх стратегии. Режимы ставят значение, точное
-    // значение по-прежнему набирается ползунком.
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08): после пересборки спроса
+    // вершина кривой легла ровно на «Рыночную» (замер по сетке шага 10:
+    // 399 -> 15.06 млрд — максимум, 429 -> 14.34, 499 -> 11.40), и точность
+    // тоньше режимов перестала окупаться — двойное управление было
+    // перегрузом. Старый пик на 499 остался в прошлом балансе.
+    policyMode: 'replace',
     policy: [
       { v: 249, label: { ru: 'Вход рублём', en: 'Cheap entry' },
         note: { ru: 'Дешевле рынка: подписываются охотно, но каждый приносит мало, и поднять цену этой базе потом будет отдельным решением с оттоком.', en: 'Below market: people sign up readily but each brings little, and raising the price for that base later is a separate decision with churn attached.' } },
@@ -464,7 +465,9 @@ export const LEVERS = [
     label: { ru: 'Скидка за год вперёд', en: 'Annual plan discount' },
     unit: { ru: '%', en: '%' },
     min: 0, max: 40, step: 5, def: 0, scale: 0.01,
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08): вершина на «Заметной»
+    // (15% -> 15.13 млрд, 10% -> 15.06, 20% -> 14.63) — сетка её накрывает.
+    policyMode: 'replace',
     policy: [
       { v: 0, label: { ru: 'Только помесячно', en: 'Monthly only' },
         note: { ru: 'Никаких годовых: выручка ровная, деньги приходят по мере просмотра.', en: 'No annual plans: revenue is even, money arrives as people watch.' } },
@@ -486,14 +489,21 @@ export const LEVERS = [
     label: { ru: 'Рекламная нагрузка', en: 'Ad load' },
     unit: { ru: 'мин/час', en: 'min/hr' },
     min: 0, max: 16, step: 1, def: 4,
-    policyMode: 'preset',
+    // Режимы заменяют ползунок (аудит 2026-08), сетка пересобрана по замеру
+    // на 24 кодах: вершина у всех трёх опор лежит на 3–4 мин/час (студийная:
+    // 4 -> 6.40 млрд против 3 -> 5.52), прежняя «Плотная 6» стояла уже на
+    // спуске — добавлена «Рабочая 4», «Плотная» сдвинута на 8, где спад
+    // честно виден.
+    policyMode: 'replace',
     policy: [
       { v: 0, label: { ru: 'Без рекламы', en: 'Ad-free' },
         note: { ru: 'Чистый просмотр: вторая статья выручки закрыта, зато никого не раздражаете.', en: 'Clean viewing: your second revenue line is shut, but nobody is annoyed.' } },
       { v: 2, label: { ru: 'Щадящая', en: 'Light' },
         note: { ru: 'Пара минут в час: деньги появляются, отток почти не двигается.', en: 'A couple of minutes an hour: money appears while churn barely moves.' } },
-      { v: 6, label: { ru: 'Плотная', en: 'Heavy' },
-        note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее. Киноманы уходят первыми.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster. Cinephiles leave first.' } },
+      { v: 4, label: { ru: 'Рабочая', en: 'Working' },
+        note: { ru: 'Столько крутят те, кто живёт рекламой всерьёз: вторая выручка уже ощутима, раздражение ещё терпимо. Киноманы хмурятся первыми.', en: 'What serious ad businesses run: the second revenue line is already real while irritation is still bearable. Cinephiles frown first.' } },
+      { v: 8, label: { ru: 'Плотная', en: 'Heavy' },
+        note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее, и отток съедает больше, чем приносят показы.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster — and churn eats more than the impressions bring.' } },
       { v: 12, label: { ru: 'Как у бесплатных', en: 'Free-TV level' },
         note: { ru: 'Телевизионная нагрузка: подписка перестаёт отличаться от эфира, и её перестают ценить.', en: 'Broadcast levels: the subscription stops feeling different from free TV, and stops being valued.' } },
     ],
