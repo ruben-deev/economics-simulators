@@ -24,6 +24,31 @@ jobs:
           const GAMES = ['НОВОЕДА', 'КИНОРЕКА', 'БИЛЕТВИЛЬ'];
           let failed = false;
 
+          // Диагностика развёртки. Когда вместо JSON приходит страница Google,
+          // важно понять какая: вход в аккаунт (значит, у развёртывания не
+          // стоит доступ «Все»), запрос разрешений (владелец не подтвердил
+          // новые права) или ошибка самого скрипта. Ответ на ?ping=1 у нового
+          // сервера — маленький JSON, поэтому по нему это и видно.
+          {
+            const res = await fetch(`${EP}?ping=1`);
+            const text = await res.text();
+            const title = (text.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || '';
+            console.log(`пинг: HTTP ${res.status}, конечный адрес: ${res.url}`);
+            if (text.trim().startsWith('{')) {
+              console.log(`пинг ответил JSONом: ${text.slice(0, 300)}`);
+            } else {
+              console.log(`пинг ответил страницей, заголовок: «${title}»`);
+              const marks = [
+                ['вход в аккаунт Google', /accounts\.google\.com|ServiceLogin|Sign in|Войдите/i],
+                ['запрос разрешений', /authoriz|Требуется авторизация|разрешени/i],
+                ['ошибка скрипта', /Exception|TypeError|ошибка сценария|Script function/i],
+                ['страница «нет доступа»', /denied|Отказано|не найден|not found/i],
+              ];
+              for (const [name, re] of marks) if (re.test(text)) console.log(`  признак: ${name}`);
+              console.log(`  первые 300 знаков: ${text.replace(/\s+/g, ' ').slice(0, 300)}`);
+            }
+          }
+
           // GET с ретраями и диагностикой: Apps Script иногда отвечает
           // HTML-страницей (холодный старт / перегрузка) — покажем, чем именно.
           for (const game of GAMES) {
