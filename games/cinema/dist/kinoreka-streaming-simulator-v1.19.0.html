@@ -1714,7 +1714,9 @@ const STRINGS = {
   statTrafficSub: { ru: '{perHour} за час', en: '{perHour} per hour' },
   statProfit: { ru: 'Прибыль', en: 'Profit' },
   statProfitSub: { ru: 'постоянные {value}', en: 'fixed costs {value}' },
-  statCacLtv: { ru: 'CAC / LTV', en: 'CAC / LTV' },
+  // Плитка показывает один CAC, отношение LTV/CAC живёт в подписи —
+  // заголовок «CAC / LTV» читался как отношение с долларовым знаком
+  statCacLtv: { ru: 'CAC', en: 'CAC' },
   statCacOff: { ru: 'маркетинг выключен', en: 'marketing is off' },
 
   premiereNote: { ru: 'Премьера: {list}. Шум привёл подписчиков — но через месяц те, кто пришёл только ради неё, начнут уходить.', en: 'Premiere: {list}. The buzz brought subscribers in — but a month from now the ones who came only for it will start leaving.' },
