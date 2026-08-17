@@ -2045,9 +2045,24 @@ function showWelcome() {
         <div class="funding-note" style="margin-top:4px">${t('welcomeCarryUnit')}</div></div>`
     : `<div class="hint-box" style="margin-top:6px">${t('welcomeCarryEmpty')}</div>`;
 
+  const startGame = () => {
+    track('game_start');
+    const v = seedWanted.trim();
+    const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
+    // Партия пересоздаётся, если поменяли сид или актив — или если это
+    // свежая партия (ход ещё не сделан): наследие должно примениться
+    if (v !== state.seed || assetWanted !== state.assetId
+      || diffWanted !== state.difficulty || state.month === 0) {
+      state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
+        assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
+      save();
+      renderAll();
+    }
+  };
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
-    <p style="margin:12px 0"><button type="button" class="btn primary" data-act="0">${t('welcomeStart')}</button></p>
+    <p style="margin:14px 0 4px"><button type="button" class="btn primary" id="welcome-start"
+      style="width:100%;padding:12px 16px;font-size:15px">${t('welcomeStart')}</button></p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
@@ -2076,26 +2091,20 @@ function showWelcome() {
     <p class="funding-note">${t('seedNote')}</p>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
-  [{ label: t('welcomeStart'), primary: true, onClick: () => {
-      track('game_start');
-      const v = seedWanted.trim();
-      const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
-      // Партия пересоздаётся, если поменяли сид или актив — или если это
-      // свежая партия (ход ещё не сделан): наследие должно примениться
-      if (v !== state.seed || assetWanted !== state.assetId
-        || diffWanted !== state.difficulty || state.month === 0) {
-        state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-          assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
-        save();
-        renderAll();
-      }
-    } },
-   { label: t('welcomeMore'), onClick: showHelp },
+  [{ label: t('welcomeMore'), onClick: showHelp },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
   el('modal-root').querySelector('#seed-input')
     ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  // Единственная кнопка старта — крупная, сразу под первым абзацем:
+  // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
+  // так же, как кнопки нижнего ряда.
+  el('modal-root').querySelector('#welcome-start')?.addEventListener('click', () => {
+    el('modal-root').innerHTML = '';
+    startGame();
+  });
+
   el('modal-root').querySelectorAll('[data-asset]').forEach((b) => {
     b.addEventListener('click', () => {
       assetWanted = b.dataset.asset;
