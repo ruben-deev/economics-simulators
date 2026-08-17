@@ -11,6 +11,10 @@ globalThis.localStorage = {
   getItem: (k) => (store.has(k) ? store.get(k) : null),
   setItem: (k, v) => store.set(k, String(v)),
   removeItem: (k) => store.delete(k),
+  // length и key(i) нужны полному сбросу: он перебирает хранилище,
+  // выискивая ключи lb-mine-*. Без них перебор молча не находит ничего.
+  key: (i) => Array.from(store.keys())[i] ?? null,
+  get length() { return store.size; },
 };
 
 const {
@@ -144,25 +148,33 @@ test('порог достойного финала приходит от акт�
   assert.equal(conglomerateUnlocked(), true, 'старая запись читается по общему порогу');
 });
 
-test('сброс экосистемного прогресса не трогает таблицы рекордов', () => {
+test('сброс пути — полный: партии, рекорды и наследие стираются', () => {
   store.clear();
   const g = LEGACY_GAMES[0];
-  // Заработанные рекорды игр и строка наследия, плюс сохранение НОВОГРАДА
+  // Заработанные рекорды игр, строка наследия, сохранения и место в таблице
   localStorage.setItem(g.recordsKey, JSON.stringify([{ score: g.threshold * 2 }]));
   addResultLine(line(g.tag, g.threshold * 2));
   rememberNovogradResult(5e9);
   localStorage.setItem(NOVOGRAD_SAVE_KEY, '{"state":{}}');
+  localStorage.setItem('novoeda-save-v3', '{"state":{}}');
+  localStorage.setItem('lb-mine-НОВОЕДА', '{"rank":3}');
+  // А имя, язык и уровень сложности сброс пережить обязаны
+  localStorage.setItem('lb-name', 'Аня');
+  localStorage.setItem('series-difficulty', 'hard');
   assert.equal(legacyUnlocks().delivery, true);
 
   const cleared = resetEcosystemProgress();
-  assert.ok(cleared.length >= 2, 'сброшены строки, лучший финал и сохранение');
+  assert.ok(cleared.length >= 5, 'сброшено всё перечисленное');
   assert.equal(novogradBest(), 0, 'лучший финал НОВОГРАДА забыт');
   assert.equal(savedLines().length, 0, 'введённые строки наследия забыты');
   assert.equal(localStorage.getItem(NOVOGRAD_SAVE_KEY), null, 'партия НОВОГРАДА сброшена');
+  assert.equal(localStorage.getItem('novoeda-save-v3'), null, 'партия НОВОЕДЫ сброшена');
   assert.equal(conglomerateUnlocked(), false, 'обратный бонус закрыт заново');
-
-  // А вот заработанное в самих играх остаётся
-  assert.ok(localStorage.getItem(g.recordsKey), 'таблица рекордов игры цела');
-  assert.equal(legacyUnlocks().delivery, true,
-    'наследие из локального рекорда остаётся: игра-то сыграна');
+  // Рекорды тоже стёрты: наследие НОВОГРАДА читается и из них, и без этого
+  // «перенос из прошлой игры» переживал сброс (замечание владельца)
+  assert.equal(localStorage.getItem(g.recordsKey), null, 'таблица рекордов стёрта');
+  assert.equal(legacyUnlocks().delivery, false, 'наследие после сброса пусто');
+  assert.equal(localStorage.getItem('lb-mine-НОВОЕДА'), null, 'место в таблице забыто');
+  assert.equal(localStorage.getItem('lb-name'), 'Аня', 'имя игрока пережило сброс');
+  assert.equal(localStorage.getItem('series-difficulty'), 'hard', 'уровень пережил сброс');
 });
