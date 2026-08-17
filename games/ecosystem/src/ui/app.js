@@ -1539,7 +1539,7 @@ function renderSopTab() {
 
   return `
     <p class="funding-note">${t('sopIntro')}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('sopColPart')}</th><th>${t('sopColRunRate')}</th><th>${t('sopColGrowth')}</th><th>${t('sopColMargin')}</th>${openMultiple ? `<th>${t('sopColMultiple')}</th>` : ''}<th>${t('sopColValue')}</th></tr></thead>
       <tbody>
         ${rows}
@@ -1549,7 +1549,7 @@ function renderSopTab() {
           <td class="${sop.bonus >= 1 ? 'pos' : 'neg'}">×${sop.bonus.toFixed(2)}</td></tr>
         <tr class="total"><td colspan="${openMultiple ? 5 : 4}">${t('sopTotal')}</td><td>${money(sop.total)}</td></tr>
       </tbody>
-    </table>
+    </table></div>
     ${openMultiple
       ? `<p class="funding-note">${t('sopMultipleNote')}</p>`
       : `<div class="hint-box" style="margin-top:8px">${t('sopMultipleLocked')}</div>`}
@@ -1564,7 +1564,7 @@ function renderPnlTab() {
     `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${moneyExact(v)}</td></tr>`;
   const d = r.decisions;
   return `
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <tbody>
         ${line(t('pnlRevenueFood'), r.revenueFood, 'pos', true)}
         ${r.taxiOn ? line(t('pnlRevenueTaxi'), r.revenueTaxi, 'pos', true) : ''}
@@ -1602,7 +1602,7 @@ function renderPnlTab() {
           ? line(t('pnlOneOff'), -(r.oneOff - (r.ecomWorkingCapital ?? 0)), 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
 }
 
@@ -1618,7 +1618,7 @@ function renderBaseTab() {
   const pool = r ? r.returnPool : asset.returnPool;
 
   const segments = `
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('baseColWho')}</th><th>${t('baseColCount')}</th></tr></thead>
       <tbody>
         <tr><td>${t('baseFood')}</td><td>${compact(foodU)}</td></tr>
@@ -1630,13 +1630,13 @@ function renderBaseTab() {
         <tr class="sub"><td>${t('baseMultiShare')}</td><td>${pct(unique > 0 ? multiU / unique : 0, 1)}</td></tr>
         <tr class="sub"><td>${t('baseReturnPool')}</td><td>${compact(pool)}</td></tr>
       </tbody>
-    </table>`;
+    </table></div>`;
 
   let channels = '';
   if (r && (state.taxi.on || state.ecom.on)) {
     channels = `
       <h4 style="margin:14px 0 6px;font-size:13px">${t('baseAcqTitle')}</h4>
-      <table class="data">
+      <div style="overflow-x:auto"><table class="data">
         <thead><tr><th>${t('baseColChannel')}</th><th>${t('baseColPeople')}</th><th>${t('baseColCac')}</th></tr></thead>
         <tbody>
           <tr><td>${t('baseChCross')}</td><td>${num(r.crossConv, 0)}</td><td rowspan="3">${r.crossCac > 0 ? `${amount(r.crossCac)}` : '—'}</td></tr>
@@ -1647,7 +1647,7 @@ function renderBaseTab() {
           <tr><td>${t('baseChWinback')}</td><td>${num(r.wonBack, 0)}</td><td>${r.wonBack > 0 ? `${amount((r.decisions.foodMarketing ?? 0) / r.wonBack)}` : '—'}</td></tr>
           <tr><td>${t('baseChOrganic')}</td><td>${num(r.organicFood, 0)}</td><td>—</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <p class="funding-note" style="margin-top:8px">${t('baseAcqNote')}</p>`;
   } else {
     channels = `<div class="hint-box" style="margin-top:10px">${t('baseNoTaxi')}</div>`;
@@ -2047,6 +2047,7 @@ function showWelcome() {
 
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
+    <p style="margin:12px 0"><button type="button" class="btn primary" data-act="0">${t('welcomeStart')}</button></p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>

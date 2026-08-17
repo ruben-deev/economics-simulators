@@ -7484,7 +7484,7 @@ function renderUnitTab() {
 
   return `
     <p class="funding-note">${t('unitIntro')}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerOrder')}</th><th>${t('unitColShare')}</th></tr></thead>
       <tbody>
         <tr><td><b>${t('unitAov')}</b></td><td><b>${amount(u.aov)}</b></td><td>100%</td></tr>
@@ -7501,21 +7501,21 @@ function renderUnitTab() {
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${pct(u.marginOfGmv, 1)}</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:10px">${t('unitTakeRateNote', { value: pct(u.takeRate, 1) })}</p>
     ${breakEven ? `<div class="hint-box" style="margin-top:10px">${t('unitBreakEven', {
       opex: money(r.opex), orders: compact(breakEven), current: compact(r.orders),
     })}</div>` : u.contribution <= 0
       ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
     ${r ? `<h4 style="margin:14px 0 6px;font-size:13px">${t('unitAcquisition')}</h4>
-    <table class="data"><tbody>
+    <div style="overflow-x:auto"><table class="data"><tbody>
       <tr><td>${t('unitCac')}</td><td>${r.cac > 0 ? `${amount(r.cac)}` : '—'}</td></tr>
       <tr><td>${t('unitFrequency')}</td><td>${t('unitFrequencyValue', {
         value: (r.customers > 0 ? r.orders / r.customers : 0).toFixed(2),
       })}</td></tr>
       <tr><td>${t('unitLtv')}</td><td>${amount(r.ltv)}</td></tr>
       <tr class="total"><td>LTV / CAC</td><td class="${(r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : ''}">${r.ltvCac ? r.ltvCac.toFixed(2) : '—'}</td></tr>
-    </tbody></table>
+    </tbody></table></div>
     <p class="funding-note">${t('unitLtvCacNote')}</p>` : ''}
   `;
 }
@@ -7526,7 +7526,7 @@ function renderPnlTab() {
   const line = (name, v, cls = '', sub = false) =>
     `<tr class="${sub ? 'sub' : ''}"><td>${name}</td><td class="${cls}">${moneyExact(v)}</td></tr>`;
   return `
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <tbody>
         <tr><td><b>${t('pnlGmv')}</b></td><td>${moneyExact(r.gmv)}</td></tr>
         ${line(t('pnlCommission'), r.commissionRevenue, 'pos', true)}
@@ -7552,7 +7552,7 @@ function renderPnlTab() {
         ${r.oneOff > 0 ? line(t('pnlOneOff'), -r.oneOff, 'neg', true) : ''}
         <tr class="total"><td>${t('pnlCashChange')}</td><td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
 }
 
@@ -7561,7 +7561,7 @@ function renderDistrictsTab() {
   if (!r || !r.districts.length) return `<p class="funding-note">${t('districtsEmpty')}</p>`;
   const name = (d) => tx(districtById(d.id)?.name);
   return `
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('colDistrict')}</th><th>${t('colOrders')}</th><th>${t('colMinutes')}</th><th>${t('colReach')}</th><th>${t('colContribution')}</th></tr></thead>
       <tbody>
         ${r.districts.map((d) => `<tr>
@@ -7572,9 +7572,9 @@ function renderDistrictsTab() {
           <td class="${d.contribution >= 0 ? 'pos' : 'neg'}">${money(d.contribution)}</td>
         </tr>`).join('')}
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:8px">${t('districtsNote')}</p>
-    <table class="data" style="margin-top:10px">
+    <div style="overflow-x:auto;margin-top:10px"><table class="data">
       <thead><tr><th>${t('colDistrict')}</th><th>${t('colPriceFactor')}</th><th>${t('colSpeedFactor')}</th><th>${t('colSelectionFactor')}</th><th>${t('colAwareness')}</th></tr></thead>
       <tbody>
         ${r.districts.map((d) => `<tr>
@@ -7585,7 +7585,7 @@ function renderDistrictsTab() {
           <td>${pct(d.awareness, 0)}</td>
         </tr>`).join('')}
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:8px">${t('factorsNote')}</p>
     <p class="funding-note">${t('districtsFactorsNote')}</p>`;
 }
@@ -7598,7 +7598,7 @@ function renderAlgosTab() {
   const rndSpend = state.decisions.rnd ?? 0;
 
   const table = impact.length ? `
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('algosColName')}</th><th>${t('algosColProfit')}</th><th>${t('colOrders')}</th><th>${t('colMinutes')}</th></tr></thead>
       <tbody>
         ${impact.map((i) => `<tr>
@@ -7616,7 +7616,7 @@ function renderAlgosTab() {
           <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td>
           <td colspan="2"></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p class="funding-note" style="margin-top:8px">${t('algosCounterfactual')}</p>`
     : `<p class="funding-note">${t('algosNone')}</p>`;
 
@@ -8017,6 +8017,7 @@ function showWelcome() {
     </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
+    <p style="margin:12px 0"><button type="button" class="btn primary" data-act="0">${t('welcomeStart')}</button></p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>

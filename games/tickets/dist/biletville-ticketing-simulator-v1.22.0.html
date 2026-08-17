@@ -7981,13 +7981,13 @@ function renderSupply() {
   el('supply-slot').innerHTML = `<div class="panel">
     <h2 class="panel-title">${t('supplyPanel')}</h2>
     <div class="funding-note" style="margin-bottom:8px">${t('supplyCaption')}</div>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr>
         <th>${t('channelColType')}</th><th>${t('supplyColCount')}</th>
         <th>${t('supplyColFill')}</th><th>${t('supplyColAppeal')}</th><th>${t('supplyColGmv')}</th>
       </tr></thead>
       <tbody>${rows}</tbody>
-    </table>
+    </table></div>
   </div>`;
 }
 
@@ -8272,7 +8272,7 @@ function renderUnitTab() {
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
   return `
     <p class="funding-note">${t('unitIntro')}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerTicket')}</th></tr></thead>
       <tbody>
         <tr><td>${t('unitPrice')}</td><td class="mono">${amount(u.avgPrice)}</td></tr>
@@ -8284,7 +8284,7 @@ function renderUnitTab() {
         <tr class="total"><td>${t('unitContribution')}</td>
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
-    </table>
+    </table></div>
     ${breakEven ? `<p class="funding-note">${t('unitBreakEven', { value: compact(breakEven) })}</p>` : ''}`;
 }
 
@@ -8296,7 +8296,7 @@ function renderPnlTab() {
   const d = r.decisions;
   return `
     <p class="funding-note">${t('pnlGmvNote', { gmv: money(r.gmv), take: pct(r.takeRate, 1) })}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <tbody>
         ${line(t('pnlMarketplace'), r.marketplaceRevenue, 'pos', true)}
         ${line(t('pnlPlatform'), r.platformRevenue, 'pos', true)}
@@ -8326,7 +8326,7 @@ function renderPnlTab() {
         <tr class="total"><td>${t('pnlNet')}</td>
           <td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
       </tbody>
-    </table>`;
+    </table></div>`;
 }
 
 function renderSidesTab() {
@@ -8348,19 +8348,19 @@ function renderSidesTab() {
   return `
     <div class="panel-title">${t('sidesSupply')}</div>
     <p class="funding-note">${t('supplyCaption')}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('channelColType')}</th><th>${t('supplyColCount')}</th>
         <th>${t('supplyColFill')}</th><th>${t('unitSeats')}</th></tr></thead>
       <tbody>${supply}</tbody>
-    </table>
+    </table></div>
     <div class="panel-title" style="margin-top:14px">${t('sidesDemand')}</div>
     <p class="funding-note">${t('audienceCaption')}</p>
-    <table class="data">
+    <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('audiencePanel')}</th><th>${t('audienceColReach')}</th>
         <th>${t('audienceColInterest')}</th><th>${t('audienceColConv')}</th>
         <th>${t('audienceColDemand')}</th></tr></thead>
       <tbody>${demand}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 // Ползунок под политикой никуда не делся: между названными режимами есть
@@ -8756,6 +8756,7 @@ function showWelcome() {
     </button>`).join('');
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
+    <p style="margin:12px 0"><button type="button" class="btn primary" data-act="0">${t('welcomeStart')}</button></p>
     <p class="funding-note">${t('welcomeTurn')}</p>
     <p class="funding-note">${t('welcomeTension')}</p>
     <p class="funding-note">${t('welcomeGoal')}</p>
