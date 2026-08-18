@@ -470,7 +470,7 @@ export const LEVERS = [
     min: 0, max: 499, step: 10, def: 149,
     tip: {
       ru: 'Дешёвый тариф приводит тех, кто иначе не заплатил бы вообще, и переманивает часть тех, кто заплатил бы полную цену. Это управление каннибализацией, а не «широкая линейка».',
-      en: 'The cheap tier brings in people who would not have paid at all and poaches some who would have paid full price. This is cannibalisation management, not a "broad line-up".',
+      en: 'The cheap tier brings in people who would not have paid at all and poaches some who would have paid full price. This is cannibalisation management, not a “broad line-up”.',
     },
   },
   {
@@ -713,7 +713,7 @@ export const ALGORITHMS = [
     },
     tradeoff: {
       ru: 'Отток падает за небольшие деньги. Но модель ошибается и дарит скидку тем, кто и так остался бы, а слухи о «скидке для уходящих» учат зрителей уходить.',
-      en: 'Churn falls for modest money. But the model misfires and hands discounts to people who would have stayed, and word of a "leavers’ discount" teaches viewers to leave.',
+      en: 'Churn falls for modest money. But the model misfires and hands discounts to people who would have stayed, and word of a “leavers’ discount” teaches viewers to leave.',
     },
     lesson: {
       ru: 'Удерживать дешевле, чем привлекать, — правда ровно до тех пор, пока скидка не становится известной всем.',

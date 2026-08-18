@@ -95,14 +95,14 @@ export const STRINGS = {
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
-  welcomeHint: { ru: '<b>Первый ход</b> можно сделать, ничего не трогая. У каждого ползунка есть «зачем это?», разбор хода игра пишет сама, подробности — за кнопкой «?».', en: '<b>Your first turn</b> can be played without touching anything. Every slider has a "why does this matter?", the game explains each turn itself, and the "?" button has the rest.' },
+  welcomeHint: { ru: '<b>Первый ход</b> можно сделать, ничего не трогая. У каждого ползунка есть «зачем это?», разбор хода игра пишет сама, подробности — за кнопкой «?».', en: '<b>Your first turn</b> can be played without touching anything. Every slider has a “why does this matter?”, the game explains each turn itself, and the “?” button has the rest.' },
   helpModalTitle: { ru: 'Как устроена игра', en: 'How the game works' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpAuthor: { ru: 'Игру сделал <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>. Лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.', en: 'Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>. Licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.' },
   helpVersion: { ru: 'Сборка {version} от {date}.', en: 'Build {version}, {date}.' },
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
   algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'It will be installed and charged when the month is run. Click again to cancel.' },
-  algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
+  algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '“{name}” will be installed when the month runs.' },
   // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
   // шкалу. Тексты одинаковы во всех играх набора — это голос города.
   // Тихий ход: показывается изредка, чтобы тишина была частью мира,
@@ -116,7 +116,7 @@ export const STRINGS = {
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки доводят платформенную партию до 15–20 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" is 45%+ market share at a 9%+ take rate; "solid" starts at {a}. Strong players push a platform run to $150–200M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки доводят платформенную партию до 15–20 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: “excellent” is 45%+ market share at a 9%+ take rate; “solid” starts at {a}. Strong players push a platform run to $150–200M — surviving is easy, winning is not.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
   crashTitle: { ru: 'Игра не смогла запуститься', en: 'The game failed to start' },
   crashText: { ru: 'Скорее всего, браузер слишком старый или сохранение осталось от другой версии. Сохранение уже сброшено — попробуйте перезапустить.', en: 'Most likely the browser is too old, or the save is left over from another version. The save has been cleared — try restarting.' },
@@ -227,7 +227,7 @@ export const STRINGS = {
   alertGoalFailed_dilution: { ru: 'Цель первого года провалена. Акционеры вводят деньги сами и режут вашу долю.', en: 'The first year goal was missed. The shareholders put money in themselves and cut your stake.' },
   alertGoalFailed_marketingCap: { ru: 'Цель второго года провалена. Маркетинг урезан на полгода.', en: 'The second year goal was missed. Marketing is capped for six months.' },
   alertGoalFailed_valuation: { ru: 'Цель третьего года провалена. Оценка компании падает.', en: 'The third year goal was missed. The valuation falls.' },
-  alertCrisisResolved: { ru: '«{name}» улажено. Обошлось в {cost}.', en: '"{name}" is settled. It cost {cost}.' },
+  alertCrisisResolved: { ru: '«{name}» улажено. Обошлось в {cost}.', en: '“{name}” is settled. It cost {cost}.' },
 
   // --- Ход ---
   turnTitle: { ru: 'Месяц {month}: ваш ход', en: 'Month {month}: your move' },
@@ -355,7 +355,7 @@ export const STRINGS = {
   exclusiveTitle: { ru: 'Предложение об эксклюзиве', en: 'An exclusivity offer' },
   exclusiveText: {
     ru: 'Организаторы категории «{type}» готовы работать только с вами {months} месяцев за аванс {advance}. Пока контракт действует, конкурент их не тронет — но и деньги вернутся не сразу.',
-    en: 'Organisers in the "{type}" category will work with you exclusively for {months} months in exchange for a {advance} advance. While it lasts the rival cannot touch them — and the money comes back slowly.',
+    en: 'Organisers in the “{type}” category will work with you exclusively for {months} months in exchange for a {advance} advance. While it lasts the rival cannot touch them — and the money comes back slowly.',
   },
   exclusiveAccept: { ru: 'Подписать', en: 'Sign' },
   exclusiveDecline: { ru: 'Отказаться', en: 'Decline' },

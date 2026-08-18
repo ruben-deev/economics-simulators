@@ -459,7 +459,7 @@ export const EVENTS = [
     },
     lesson: {
       ru: 'Инфраструктурные контракты платятся вперёд, а действуют срок — это капитальное решение, и считать его надо против цены денег и остатка партии.',
-      en: 'Infrastructure contracts are paid up front and run for a term — a capital decision, to be weighed against the price of money and the time left.',
+      en: 'Infrastructure contracts are paid up front and run for a term — a capital decision, to be weighed against the cost of money and the time left.',
     },
     options: [
       {

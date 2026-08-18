@@ -609,7 +609,7 @@ export const STRINGS = {
   pnlFoodMarketing: { ru: 'Возврат клиентов хаба', en: 'Hub win-back' },
   pnlTaxiSupply: { ru: 'Привлечение водителей', en: 'Driver acquisition' },
   pnlTaxiMarketing: { ru: 'Маркетинг такси', en: 'Taxi marketing' },
-  pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+  pnlEcomOps: { ru: 'Ассортимент и обработка заказов', en: 'Assortment and order handling' },
   pnlWorkingCapital: { ru: 'Оборотный капитал склада', en: 'Warehouse working capital' },
   readoutEcomModel: {
     ru: 'Модель торговли: <b>{model}</b>. Оборотный капитал в этом месяце — {wc}.',
@@ -679,7 +679,7 @@ export const STRINGS = {
     ru: 'Уровень: <b>{level}</b>. {note}',
     en: 'Level: <b>{level}</b>. {note}',
   },
-  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level keeps its own high-score table: games played at a different price of money are not comparable.' },
+  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level keeps its own high-score table: games played at a different cost of money are not comparable.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },
