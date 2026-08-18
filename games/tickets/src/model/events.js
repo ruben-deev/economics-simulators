@@ -113,7 +113,7 @@ export const EVENTS = [
       {
         // Протокол «СКРЕПКА»: экономика — копия отказа
         secret: true,
-        label: { ru: 'Пусть переговоры ведёт нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network negotiate' },
+        label: { ru: 'Пусть переговоры ведёт нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP AI negotiate' },
         detail: {
           ru: 'СКРЕПКА торговалась девять часов и свела уступки к нулю. Промоутер ушёл, хлопнув дверью, — но с уважением.',
           en: 'PAPERCLIP bargained for nine hours and brought the concessions to zero. The promoter slammed the door on his way out — respectfully.',
@@ -172,7 +172,7 @@ export const EVENTS = [
         // Протокол «СКРЕПКА»: экономика — точная копия «показать сбор в
         // афише», различие чисто сюжетное (сравнимость таблицы священна).
         secret: true,
-        label: { ru: 'Доверить ответ нейросети «СКРЕПКА»', en: 'Let the PAPERCLIP neural network answer' },
+        label: { ru: 'Доверить ответ нейросети «СКРЕПКА»', en: 'Let the PAPERCLIP AI answer' },
         detail: {
           ru: 'СКРЕПКА опубликовала все сборы, себестоимость и зарплату директора. Прозрачность — так прозрачность: конверсия просядет, доверие вырастет.',
           en: 'PAPERCLIP published every fee, the unit costs and the CEO’s salary. Transparency means transparency: conversion drops, trust rises.',

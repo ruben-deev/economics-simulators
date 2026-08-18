@@ -119,7 +119,7 @@ export const EVENTS = [
         // Протокол «СКРЕПКА»: экономика — точная копия замены актёра,
         // различие чисто сюжетное (сравнимость мировой таблицы священна).
         secret: true,
-        label: { ru: 'Сгенерировать актёра нейросетью «СКРЕПКА»', en: 'Have the PAPERCLIP neural network generate an actor' },
+        label: { ru: 'Сгенерировать актёра нейросетью «СКРЕПКА»', en: 'Have the PAPERCLIP AI generate an actor' },
         detail: {
           ru: 'Дешевле живой звезды, гонораров не просит. Зрители замечают, что герой моргает строго раз в 4,7 секунды, — часть уходит.',
           en: 'Cheaper than a living star and never asks for a fee. Viewers notice the hero blinks exactly once every 4.7 seconds — some leave.',
@@ -177,7 +177,7 @@ export const EVENTS = [
       {
         // Протокол «СКРЕПКА»: экономика — копия «отстоять цену»
         secret: true,
-        label: { ru: 'Пусть с советом поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network talk to the board' },
+        label: { ru: 'Пусть с советом поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP AI talk to the board' },
         detail: {
           ru: 'СКРЕПКА вежливо объяснила, что скидка — это кредит у собственной выручки. Совет недоволен, но впечатлён. Оценка ниже.',
           en: 'PAPERCLIP politely explained that a discount is a loan taken from your own revenue. The board is unhappy but impressed. Valuation down.',

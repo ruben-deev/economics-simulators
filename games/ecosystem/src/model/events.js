@@ -205,7 +205,7 @@ export const EVENTS = [
         // Протокол «СКРЕПКА»: экономика — точная копия «остаться единственным
         // основателем», различие чисто сюжетное. Доли не просит — на то и шутка.
         secret: true,
-        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP neural network as co-founder' },
+        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP AI on as a co-founder' },
         detail: {
           ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком; расфокус по-прежнему ваш.',
           en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder; the loss of focus is still yours.',
@@ -411,7 +411,7 @@ export const EVENTS = [
       {
         // Протокол «СКРЕПКА»: экономика — копия «держать сервис»
         secret: true,
-        label: { ru: 'Поручить спад нейросети «СКРЕПКА»', en: 'Hand the downturn to the PAPERCLIP neural network' },
+        label: { ru: 'Поручить спад нейросети «СКРЕПКА»', en: 'Hand the downturn to the PAPERCLIP AI' },
         detail: {
           ru: 'СКРЕПКА пересчитала все расходы и решила ничего не резать: «люди — не строка таблицы». Дороже, зато база выйдет из спада живой.',
           en: 'PAPERCLIP recalculated every cost and cut nothing: “people are not a spreadsheet row”. Costlier, but the base leaves the downturn alive.',
