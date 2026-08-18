@@ -12,11 +12,25 @@
 // если спрятать .topbar ради скриншота — ход перестанет нажиматься; первая
 // кнопка финальной модалки начинает НОВУЮ партию, поэтому разорившийся прогон
 // молча стартует заново; язык переключается ключом game-lang в localStorage.
+import { readdirSync } from 'node:fs';
 import pw from '/opt/node22/lib/node_modules/playwright/index.js';
 const { chromium } = pw;
 const ROOT = process.env.AUDIT_ROOT ?? 'http://127.0.0.1:8899/games';
+
+// Имя сборки берём с диска, а не вписываем сюда: вписанное однажды устаревает
+// при первом же поднятии версии, и аудит начинает добросовестно проверять
+// страницу 404 — она не переполняется, не показывает сырых ключей и молча
+// получает «чисто». На этом уже обожглись: три игры из четырёх проверялись
+// вхолостую целый релиз.
+const dist = (dir) => {
+  const path = new URL(`../../games/${dir}/dist`, import.meta.url).pathname;
+  const files = readdirSync(path).filter((f) => f.endsWith('.html'));
+  if (files.length !== 1) throw new Error(`${dir}/dist: ожидали одну сборку, нашли ${files.length}`);
+  return `${ROOT}/${dir}/dist/${files[0]}`;
+};
+
 const GAMES = [
-  { name: 'НОВОЕДА', url: `${ROOT}/foodtech/dist/novoeda-delivery-simulator-v1.14.0.html`, turns: 14,
+  { name: 'НОВОЕДА', url: dist('foodtech'), turns: 14,
     warm: async (page) => {
       for (const id of ['center', 'sever', 'zarechie']) {
         await page.locator(`#districts [data-id="${id}"]`).first().click({ timeout: 400 }).catch(() => {});
@@ -28,14 +42,14 @@ const GAMES = [
         }
       });
     } },
-  { name: 'КИНОРЕКА', url: `${ROOT}/cinema/dist/kinoreka-streaming-simulator-v1.19.0.html`, turns: 14, warm: async () => {} },
-  { name: 'БИЛЕТВИЛЬ', url: `${ROOT}/tickets/dist/biletville-ticketing-simulator-v1.22.0.html`, turns: 14,
+  { name: 'КИНОРЕКА', url: dist('cinema'), turns: 14, warm: async () => {} },
+  { name: 'БИЛЕТВИЛЬ', url: dist('tickets'), turns: 14,
     warm: async (page) => {
       for (const id of ['club', 'theatre']) {
         await page.locator(`[data-platform="${id}"]`).first().click({ timeout: 400 }).catch(() => {});
       }
     } },
-  { name: 'НОВОГРАД', url: `${ROOT}/ecosystem/dist/novograd-ecosystem-simulator-v1.13.0.html`, turns: 14,
+  { name: 'НОВОГРАД', url: dist('ecosystem'), turns: 14,
     warm: async (page) => {
       await page.locator('[data-vertical="taxi"]').first().click({ timeout: 400 }).catch(() => {});
     } },
