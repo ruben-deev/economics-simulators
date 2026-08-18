@@ -264,7 +264,7 @@ export const DISTRICTS = [
     restaurantPool: 90, launchCost: 1_000_000, weeklyFixed: 200_000,
     hint: {
       ru: 'Дешёвый вход и почти нет конкурентов, но мало ресторанов и низкая частота. Плечо 6 км: пока не вложились в технологии и не подняли сбор, район съедает итог, а не добавляет.',
-      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency. A 6 km leg: until you have invested in technology and raised the fee, this district eats into the result rather than adding to it.',
+      en: 'Cheap to enter and almost no competition — but few restaurants and low order frequency. A 6 km leg: until you have invested in technology and raised the fee, this district eats into your bottom line rather than adding to it.',
     },
   },
   {
@@ -276,7 +276,7 @@ export const DISTRICTS = [
     restaurantPool: 70, launchCost: 1_600_000, weeklyFixed: 240_000,
     hint: {
       ru: 'Богатые коттеджи. Цену не замечают, но плечо 9 км — курьер делает мало заказов, а базовые 38 минут уже за эталоном. Это район поздней игры: сначала технологии и цена, потом сюда.',
-      en: 'Wealthy houses that never look at the price — but the leg is 9 km: a courier completes few orders, and the base 38 minutes are already past the reference. A late-game district: technology and pricing first, this place second.',
+      en: 'Wealthy houses that never look at the price — but the leg is 9 km: a courier completes few orders, and the base 38 minutes already exceed the benchmark. A late-game district: technology and pricing first, this place second.',
     },
   },
 
@@ -336,7 +336,7 @@ export const DISTRICTS = [
     restaurantPool: 90, launchCost: 1_600_000, weeklyFixed: 160_000,
     hint: {
       ru: 'Частный сектор побогаче: платят не глядя, но ездить далеко и ресторанов мало.',
-      en: 'The wealthier private quarter: they pay without looking, but the rides are long and restaurants are few.',
+      en: 'The wealthier private quarter: they never look at the price, but the rides are long and restaurants are few.',
     },
   },
 ];

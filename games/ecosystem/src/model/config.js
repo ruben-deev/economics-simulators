@@ -565,7 +565,7 @@ export const FUTURE_VERTICALS = [
     name: { ru: 'Самокаты', en: 'Scooters' },
     hint: {
       ru: 'Короткие поездки, жёсткая сезонность, парк как капитал, который стареет. Совет разрешит после зачёта партии.',
-      en: 'Short rides, brutal seasonality, a fleet of capital that ages. The board will allow it once the run is in the books.',
+      en: 'Short rides, brutal seasonality, a fleet that is capital — and it ages. The board will allow it once the run is in the books.',
     },
   },
 ];
@@ -708,7 +708,7 @@ export const LEVERS = [
     unit: { ru: '%', en: '%' },
     min: 85, max: 125, step: 1, def: 100, scale: 0.01,
     policy: [
-      { v: 88, label: { ru: 'Демпинг', en: 'Dumping' },
+      { v: 88, label: { ru: 'Демпинг', en: 'Undercut' },
         note: { ru: 'Часть каждой поездки субсидируете вы: покупаете рост, сжигая маржу.', en: 'You subsidise part of every ride: buying growth by burning margin.' } },
       { v: 95, label: { ru: 'Ниже рынка', en: 'Below market' },
         note: { ru: 'Заметно дешевле «Таксограда»: рост быстрее, вклад с поездки тоньше.', en: 'Visibly cheaper than Taxograd: faster growth, thinner per-trip contribution.' } },
@@ -721,7 +721,7 @@ export const LEVERS = [
     ],
     tip: {
       ru: 'Цена относительно рынка. Дешевле — быстрее набираете клиентов и злите юнит-экономику; дороже — маржа сейчас, рост потом. Во время войны рынок продавлен демпингом «Таксограда», и высокий тариф бьёт больнее.',
-      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the war the market is dumped down by Taxograd, and a high fare hurts twice as much.',
+      en: 'Price versus the market. Cheaper grows the base faster and hurts unit economics; dearer means margin now, growth later. During the war Taxograd’s predatory pricing pushes the whole market down, and a high fare hurts twice as much.',
     },
   },
   {
@@ -805,7 +805,7 @@ export const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 199, max: 399, step: 100, def: 299, scale: 1,
     policy: [
-      { v: 199, label: { ru: '199 ₽ — массовая', en: '$1.99 — mass' },
+      { v: 199, label: { ru: '199 ₽ — массовая', en: '$1.99 — mass-market' },
         note: { ru: 'Подписка почти в убыток: выгоды стоят дороже цены. Ставка на массовость и удержание.', en: 'The subscription runs near a loss: perks cost more than the price. A bet on scale and retention.' } },
       { v: 299, label: { ru: '299 ₽ — базовая', en: '$2.99 — standard' },
         note: { ru: 'Выгоды примерно окупаются: подписка зарабатывает на частоте и удержании, а не на цене.', en: 'Perks roughly break even: the subscription earns through frequency and retention, not price.' } },

@@ -31,7 +31,7 @@ export const EVENTS = [
     title: { ru: 'Ваш сериал взял главный приз фестиваля', en: 'Your series wins the festival’s top prize' },
     text: {
       ru: 'Пресса неделю обсуждает вашу драму. Подписки идут сами, без единого рубля маркетинга.',
-      en: 'The press spends a week discussing your drama. Sign-ups arrive on their own, without a rouble of marketing.',
+      en: 'The press spends a week discussing your drama. Sign-ups arrive on their own, without a dollar of marketing.',
     },
     effects: { awarenessAdd: 0.07, demandMult: 1.15 },
     lesson: {

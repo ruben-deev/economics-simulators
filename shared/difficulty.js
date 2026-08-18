@@ -64,7 +64,7 @@ export const DIFFICULTIES = [
     tagSuffix: '·сложный',
     note: {
       ru: 'Та же команда стоит вчетверо дороже, а «прочие расходы» выше на треть. Каждый рубль в финансы — рубль, не ушедший в маркетинг, качество и удержание.',
-      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every rouble spent on finance is a rouble not spent on marketing, quality and retention.',
+      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every dollar spent on finance is a dollar not spent on marketing, quality and retention.',
     },
   },
 ];

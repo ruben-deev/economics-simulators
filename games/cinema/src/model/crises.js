@@ -32,7 +32,7 @@ export const CRISES = [
     resolutions: [
       {
         id: 'pr',
-        label: { ru: 'Кампания и публичный ответ', en: 'A campaign and a public answer' },
+        label: { ru: 'Кампания и публичный ответ', en: 'A campaign and a public response' },
         detail: { ru: 'Стоит тем дороже, чем дольше вы молчали.', en: 'Costs more the longer you stayed silent.' },
         cost: (m) => 70_000_000 * m,
         resolves: true,
@@ -129,7 +129,7 @@ export const CRISES = [
       {
         id: 'invest',
         label: { ru: 'Экстренно вложиться в платформу', en: 'Emergency platform investment' },
-        detail: { ru: 'Разовые расходы, зато часть уходит в технологический запас.', en: 'A one-off cost, but part of it lands in your technology stock.' },
+        detail: { ru: 'Разовые расходы, зато часть уходит в технологический запас.', en: 'A one-off cost, but part of it adds to your accumulated technology.' },
         cost: (m) => 90_000_000 + 30_000_000 * m,
         resolves: true,
         techGain: 0.6,

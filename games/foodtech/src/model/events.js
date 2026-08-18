@@ -55,7 +55,7 @@ export const EVENTS = [
     title: { ru: 'Конкурент раздаёт промокоды', en: 'A rival floods the city with promo codes' },
     text: {
       ru: 'Крупный конкурент залил рынок скидками — часть ваших клиентов ушла пробовать.',
-      en: 'A large competitor has drowned the market in discounts, and some of your customers went to try it.',
+      en: 'A large competitor has drowned the market in discounts, and some of your customers went off to give it a try.',
     },
     effects: { demandMult: 0.88, satisfactionAdd: -0.08 },
     lesson: {
@@ -133,7 +133,7 @@ export const EVENTS = [
         label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
         detail: {
           ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
-          en: 'The price scales with the fleet: a quarter of a million for a hundred couriers, nearly four for fifteen hundred.',
+          en: 'The price scales with the fleet: $2,500 for a hundred couriers, nearly $40K for fifteen hundred.',
         },
         effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },

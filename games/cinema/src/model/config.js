@@ -304,7 +304,7 @@ export const SEGMENTS = [
     loyalty: 0.70,
     hint: {
       ru: 'Платят охотно и смотрят много, но требуют глубокий каталог и не выносят рекламу. Самый дорогой трафик.',
-      en: 'They pay willingly and watch a lot, but demand a deep catalogue and cannot stand ads. The most expensive traffic.',
+      en: 'They pay willingly and watch a lot, but demand a deep catalogue and cannot stand ads. The most expensive bandwidth of any segment.',
     },
   },
   {
@@ -319,7 +319,7 @@ export const SEGMENTS = [
     loyalty: 0.55,
     hint: {
       ru: 'Самая лояльная аудитория: подписку держат ради детей и почти не уходят. Но смотрят много — трафик дорогой.',
-      en: 'The most loyal audience: they keep the subscription for the children and rarely leave. But they watch a lot, and traffic costs money.',
+      en: 'The most loyal audience: they keep the subscription for the children and rarely leave. But they watch a lot, and bandwidth costs money.',
     },
   },
   {
@@ -487,7 +487,7 @@ export const LEVERS = [
         note: { ru: 'Никаких годовых: выручка ровная, деньги приходят по мере просмотра.', en: 'No annual plans: revenue is even, money arrives as people watch.' } },
       { v: 5, label: { ru: 'Мягкая', en: 'Gentle' },
         note: { ru: 'Небольшая скидка: годовых немного, а те, кто перешёл, уходят заметно реже.', en: 'A small discount: few switch, and those who do churn noticeably less.' } },
-      { v: 15, label: { ru: 'Заметная', en: 'Real' },
+      { v: 15, label: { ru: 'Заметная', en: 'Noticeable' },
         note: { ru: 'Год вперёд берут охотно: касса сегодня, но цена этих людей зафиксирована и под повышения не попадёт.', en: 'People take the year willingly: cash today, but their price is locked and exempt from any rise.' } },
       { v: 30, label: { ru: 'Агрессивная', en: 'Aggressive' },
         note: { ru: 'Заём у собственной будущей выручки: деньги сейчас, тонкая выручка потом весь следующий год.', en: 'A loan against your own future revenue: cash now, thin revenue for the whole year after.' } },
@@ -514,7 +514,7 @@ export const LEVERS = [
         note: { ru: 'Чистый просмотр: вторая статья выручки закрыта, зато никого не раздражаете.', en: 'Clean viewing: your second revenue line is shut, but nobody is annoyed.' } },
       { v: 2, label: { ru: 'Щадящая', en: 'Light' },
         note: { ru: 'Пара минут в час: деньги появляются, отток почти не двигается.', en: 'A couple of minutes an hour: money appears while churn barely moves.' } },
-      { v: 4, label: { ru: 'Рабочая', en: 'Working' },
+      { v: 4, label: { ru: 'Рабочая', en: 'Standard' },
         note: { ru: 'Столько крутят те, кто живёт рекламой всерьёз: вторая выручка уже ощутима, раздражение ещё терпимо. Киноманы хмурятся первыми.', en: 'What serious ad businesses run: the second revenue line is already real while irritation is still bearable. Cinephiles frown first.' } },
       { v: 8, label: { ru: 'Плотная', en: 'Heavy' },
         note: { ru: 'Заметно для зрителя: выручка растёт линейно, раздражение — быстрее, и отток съедает больше, чем приносят показы.', en: 'Noticeable to the viewer: revenue grows linearly, irritation faster — and churn eats more than the impressions bring.' } },
@@ -551,7 +551,7 @@ export const LEVERS = [
     min: 0, max: 300_000_000, step: 10_000_000, def: 0,
     tip: {
       ru: 'Ровный фон узнаваемости. Работает медленно, забывается быстро и при пустом каталоге сгорает впустую: приводить зрителя некуда.',
-      en: 'The steady background of awareness. It works slowly, decays quickly, and against an empty catalogue it burns for nothing: there is nowhere to bring the viewer.',
+      en: 'A steady background level of awareness. It works slowly, decays quickly, and against an empty catalogue it burns for nothing: there is nowhere to bring the viewer.',
     },
   },
 

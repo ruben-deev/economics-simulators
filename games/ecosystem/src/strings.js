@@ -6,14 +6,14 @@
 export const STRINGS = {
   // --- шапка ---
   brandTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
-  brandSub: { ru: 'симулятор экосистемы · финал серии', en: 'ecosystem simulator · the finale of the series' },
+  brandSub: { ru: 'симулятор экосистемы · финал серии', en: 'ecosystem simulator · the series finale' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
   btnHome: { ru: 'Игры', en: 'Games' },
-  btnHomeTitle: { ru: 'Ко всем играм набора', en: 'All games of the set' },
+  btnHomeTitle: { ru: 'Ко всем играм набора', en: 'All games in the series' },
   langToggle: { ru: 'EN', en: 'RU' },
   langTitle: { ru: 'Switch to English', en: 'Переключить на русский' },
 
@@ -151,7 +151,7 @@ export const STRINGS = {
 
   // --- вертикали ---
   vertAsset: { ru: 'стартовый актив', en: 'starting asset' },
-  vertAssetFrom: { ru: 'финал игры {game}', en: 'the endgame of {game}' },
+  vertAssetFrom: { ru: 'финал игры {game}', en: 'your {game} run' },
   vertAssetStats: {
     ru: '{users} клиентов · ARPU {arpu}/мес · маржа {margin}',
     en: '{users} customers · ARPU {arpu}/mo · margin {margin}',
@@ -167,7 +167,7 @@ export const STRINGS = {
   // именно не хватает, а не гадать (замечание владельца)
   vertLockedEcom: {
     ru: 'ворота совета: с месяца {month}, если еда в среднем за {n} мес в плюсе после ваших бюджетов на неё. Сейчас: {avg}/мес',
-    en: 'board gate: from month {month}, once food averages above zero over {n} months after your food budgets. Now: {avg}/mo',
+    en: 'board gate: from month {month}, once food averages above zero over {n} months net of your food budgets. Now: {avg}/mo',
   },
   vertLocked: {
     ru: 'ворота совета: с месяца {month} и при прибыльном стартовом активе ({n} мес подряд)',
@@ -200,7 +200,7 @@ export const STRINGS = {
   },
   scootNoCash: {
     ru: 'На ещё одну партию ({cost}) кассы не хватает, а раундов в этом акте нет.',
-    en: 'The till cannot cover another batch ({cost}), and there are no rounds in this act.',
+    en: 'Cash will not cover another batch ({cost}), and there are no rounds in this act.',
   },
   scootQueued: {
     ru: 'заказ на этот ход: купить {buy} · продать {sell}',
@@ -209,11 +209,11 @@ export const STRINGS = {
   scootPlanTitle: { ru: 'План года: улица или склад', en: 'Year plan: street or storage' },
   scootPlanHint: {
     ru: 'Клик по месяцу переключает 🛴 улицу и 📦 склад. Столбик — сезонный спрос: июль возит в десятки раз больше января, а зимняя улица изнашивает парк вдвое быстрее — реагенты и морозы.',
-    en: 'Click a month to switch between 🛴 street and 📦 storage. The bar is seasonal demand: July carries dozens of times more than January, and a winter street month wears the fleet twice as fast — road salt and frost.',
+    en: 'Click a month to switch between 🛴 street and 📦 storage. The bar is seasonal demand: July carries an order of magnitude more than January, and a winter street month wears the fleet twice as fast — road salt and frost.',
   },
   scootCellStreet: { ru: 'улица: парк зарабатывает и изнашивается', en: 'street: the fleet earns and wears out' },
   scootCellStore: { ru: 'склад: парк цел, но не возит и теряет райдеров', en: 'storage: the fleet is safe, carries no one and sheds riders' },
-  vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch {discount} cheaper.' },
+  vertLogistics: { ru: 'Ваша курьерская логистика: запуск дешевле на {discount}.', en: 'Your courier logistics: launch costs {discount} less.' },
   vertEcomStats: { ru: '{users} клиентов · маржа {margin}', en: '{users} customers · margin {margin}' },
   plusName: { ru: 'Подписка «Новоград Plus»', en: 'Novograd Plus subscription' },
   plusHint: {
@@ -244,7 +244,7 @@ export const STRINGS = {
     ru: 'Афиши и события для мульти-клиентов: событийная выручка и чуть крепче подписка. Билеты входят партнёрством — микроменеджмент остался в БИЛЕТВИЛЕ.',
     en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in BILETVILLE.',
   },
-  vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (customers and fleet are released)' },
+  vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (the customer base disperses, the fleet is disbanded)' },
   vertLockedToast: {
     ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльный стартовый актив {n} месяца подряд. Заявка сохранена.',
     en: 'The board will not approve the launch yet: you need month {month} and the starting asset profitable for {n} straight months. The request is saved.',
@@ -267,7 +267,7 @@ export const STRINGS = {
   goalNow: { ru: 'Сейчас: {value}', en: 'Now: {value}' },
   goalPassed: { ru: 'выполнена', en: 'met' },
   goalFailed: { ru: 'провалена', en: 'missed' },
-  goalDone: { ru: 'Целей больше нет: год решающий, совет ждёт итогов партии.', en: 'No more goals: it is the final year, the board is waiting for the endgame.' },
+  goalDone: { ru: 'Целей больше нет: год решающий, совет ждёт итогов партии.', en: 'No more goals: it is the final year, the board is waiting for the final results.' },
   goalCapped: {
     ru: 'Совет урезал бюджеты привлечения до {cap} в месяц (до месяца {until}).',
     en: 'The board has capped every acquisition budget at {cap} a month (until month {until}).',
@@ -294,7 +294,7 @@ export const STRINGS = {
   eventChoiceNeeded: { ru: 'Сначала выберите, как ответить на событие месяца.', en: 'First choose your answer to this month’s event.' },
 
   // --- отчёт ---
-  reportMonth0: { ru: 'Месяц 0 · перед первым ходом', en: 'Month 0 · before the first move' },
+  reportMonth0: { ru: 'Месяц 0 · перед первым ходом', en: 'Month 0 · before the first turn' },
   reportStartTitle: { ru: 'Вы выиграли прошлую игру.', en: 'You won the previous game.' },
   reportStartIntro: {
     ru: 'Ваш стартовый актив — {asset} — выиграл свой рынок: Новоград насыщен, расти числом клиентов больше некуда. В казне {cash}, совет ждёт экосистему. Первый настоящий ход — куда идти дальше, и у каждого пути своя цена:',
@@ -358,7 +358,7 @@ export const STRINGS = {
   },
   closeNote: {
     ru: 'Вертикаль такси закрыта: клиенты и парк распущены, фикс больше не платится.',
-    en: 'The taxi vertical is shut down: customers and fleet released, the fixed cost is gone.',
+    en: 'The taxi vertical is shut down: the customer base disperses, the fleet is disbanded, the fixed cost is gone.',
   },
 
   driversTitle: { ru: 'Почему выручка изменилась на {delta}', en: 'Why revenue moved by {delta}' },
@@ -422,7 +422,7 @@ export const STRINGS = {
   },
   alertCrisis: {
     ru: 'Экономический спад: рынок сжат ещё {months} мес. Переменные расходы сжимаются сами — следите за постоянными.',
-    en: 'The downturn: the market stays shrunk for {months} more months. Variable costs shrink on their own — watch the fixed ones.',
+    en: 'The downturn: the market stays depressed for {months} more months. Variable costs shrink on their own — watch the fixed ones.',
   },
   alertCrisisCut: {
     ru: 'Спад ещё {months} мес.: фиксы срезаны на 25%, но исполнение страдает — отток выше обычного.',
@@ -486,7 +486,7 @@ export const STRINGS = {
   },
   newsCrisis: {
     ru: 'Экономический спад: горожане экономят ещё {months} мес.',
-    en: 'The downturn: the city keeps saving for {months} more months.',
+    en: 'The downturn: residents keep cutting back for {months} more months.',
   },
   newsCrisisOver: {
     ru: 'Спад закончился: спрос вернулся к обычному уровню.',
@@ -746,7 +746,7 @@ export const STRINGS = {
   helpAssetTitle: { ru: 'Стартовый актив — «класс персонажа»', en: 'The starting asset is your character class' },
   helpAssetText: {
     ru: 'Стартовый актив задаёт форму экосистемы: у доставки дешёвая синергия с е-комом (курьеры уже ездят по городу), у стриминга — подписка и свой контент, у билетов — партнёрская сеть, удешевляющая любое привлечение. Amazon, Яндекс и Сбер построили разные экосистемы, потому что начинали с разного. Все три старта играбельны; сыгранный финал соответствующей игры усиливает свой актив.',
-    en: 'The starting asset dictates the ecosystem’s shape: delivery has cheap synergy with e-commerce (the couriers already roam the city), streaming brings the subscription habit and its own content, ticketing a partner network that cheapens all acquisition. Amazon, Yandex and Sber built different ecosystems because they started from different assets. All three starts are playable; a finished endgame of the matching game boosts its asset.',
+    en: 'The starting asset dictates the ecosystem’s shape: delivery has cheap synergy with e-commerce (the couriers already roam the city), streaming brings the subscription habit and its own content, ticketing a partner network that makes all acquisition cheaper. Amazon, Yandex and Sber built different ecosystems because they started from different assets. All three starts are playable; a finished run of the matching game boosts its asset.',
   },
   helpCrossTitle: { ru: 'Кросс-селл против маркетинга', en: 'Cross-sell versus marketing' },
   helpCrossFormula: {
@@ -770,7 +770,7 @@ export const STRINGS = {
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
     ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но подобраны так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
-    en: 'The old games’ endgames unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
+    en: 'Finished runs of the earlier games unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
   },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
@@ -813,7 +813,7 @@ export const STRINGS = {
   lbSeedMine: { ru: 'Мой город', en: 'My city' },
   lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
-  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
+  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the leaderboard…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
   lbColPlayer: { ru: 'Игрок', en: 'Player' },
   lbColScore: { ru: 'Счёт', en: 'Score' },
@@ -822,14 +822,14 @@ export const STRINGS = {
   lbNamePlaceholder: { ru: 'Ваше имя или ник', en: 'Your name or nickname' },
   lbSubmit: { ru: 'Отправить результат', en: 'Submit result' },
   lbConsent: { ru: 'Отправляются только имя и строка результата: игра, версия, код партии, счёт и ходы.', en: 'Only your name and the result string are sent: game, version, game code, score and turns.' },
-  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the table needs a signed result.' },
+  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the leaderboard needs a name on the result.' },
   lbSending: { ru: 'Отправляю…', en: 'Sending…' },
   lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
   lbYou: { ru: '(вы)', en: '(you)' },
-  lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the table is shared by everyone playing online.' },
+  lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the leaderboard is shared by everyone playing online.' },
   lbYourPlace: { ru: 'Ваш лучший отправленный результат: {score} — место {rank} из {total} на момент отправки.', en: 'Your best submitted result: {score} — rank {rank} of {total} at submission time.' },
-  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
-  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
+  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the leaderboard.' },
+  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The leaderboard is unreachable right now. You can submit later while this screen is open.' },
   helpSeed: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же город ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same city again.' },
   helpVersion: { ru: 'Сборка {version} от {date}.', en: 'Build {version}, {date}.' },
   helpVersionDev: { ru: 'Сборка из исходников (не раздаваемый файл).', en: 'Built from source (not a distributed file).' },
@@ -848,39 +848,39 @@ export const STRINGS = {
   welcomeAsset: { ru: 'Стартовый актив — класс персонажа', en: 'Starting asset — your character class' },
   welcomeAssetChoice: {
     ru: 'Форма экосистемы диктуется тем, с чего вы начинаете: у доставки дешёвый е-ком (курьеры), у стриминга — подписка, у билетов — партнёрская сеть. ★ — финал этой игры сыгран, актив усилен.',
-    en: 'The ecosystem’s shape follows what you start from: delivery gets cheap e-commerce (couriers), streaming gets the subscription, ticketing gets the partner network. ★ — that game’s endgame is played; the asset is boosted.',
+    en: 'The ecosystem’s shape follows what you start from: delivery gets cheap e-commerce (couriers), streaming gets the subscription, ticketing gets the partner network. ★ — that game has been finished; the asset is boosted.',
   },
-  welcomeLegacy: { ru: 'Наследие набора', en: 'The set’s legacy' },
+  welcomeLegacy: { ru: 'Наследие набора', en: 'The series legacy' },
   welcomeLegacyNote: {
     ru: 'Финалы, сыгранные на этом устройстве, засчитываются сами — вводить ничего не нужно. ★ усиливает старт соответствующим активом: клиенты, касса и репутация переносятся из вашего финала.',
-    en: 'Endgames played on this device are picked up automatically — nothing to type in. A ★ strengthens the matching starting asset: customers, cash and reputation carry over from your finale.',
+    en: 'Runs finished on this device are picked up automatically — nothing to type in. A ★ strengthens the matching starting asset: customers, cash and reputation carry over from your run.',
   },
   welcomeLegacyFound: {
     ru: 'финал {score} найден и засчитан',
-    en: 'a {score} finale found and counted',
+    en: 'a {score} run found and counted',
   },
   welcomeLegacyShort: {
     ru: 'найден финал {score} — для ★ нужен от {need}',
-    en: 'a {score} finale found — ★ needs {need} or more',
+    en: 'a {score} run found — ★ needs {need} or more',
   },
-  welcomeLegacyNone: { ru: 'финалов пока не найдено', en: 'no finales found yet' },
+  welcomeLegacyNone: { ru: 'финалов пока не найдено', en: 'no finished runs yet' },
   welcomeLegacyOther: {
     ru: 'Играли на другом устройстве?',
     en: 'Played on another device?',
   },
   welcomeLegacyOtherNote: {
     ru: 'Вставьте строку результата с финального экрана той игры — финал засчитается и здесь.',
-    en: 'Paste the result string from that game’s finale screen — the finale will count here too.',
+    en: 'Paste the result string from that game’s final screen — the run will count here too.',
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
     ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} к дескриптору) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и вторую ногу построить большую.',
-    en: 'A {game} finale worth {score} — that is {ratio} of that game’s solid finale. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} over the descriptor) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
+    en: 'A {game} run worth {score} — that is {ratio} of a solid result in that game. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} over the descriptor) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
   },
-  welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid finale' },
+  welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid result' },
   welcomeCarryUnit: {
     ru: 'Единица переноса — «крепкий финал» игры-источника; потолок — финал вдвое крупнее.',
-    en: 'The unit of carry-over is the source game’s solid finale; the ceiling is twice that.',
+    en: 'The unit of carry-over is a solid result in the source game; the ceiling is twice that.',
   },
   welcomeCarryEmpty: {
     ru: 'У выбранного актива наследия нет: его игра-источник на этом устройстве ещё не пройдена. Сыграйте её — и в НОВОГРАД перейдут ваши клиенты, касса и оценка, а не только отметка «сыграно».',
@@ -891,12 +891,12 @@ export const STRINGS = {
   welcomeLegacyReset: { ru: 'Сбросить путь', en: 'Reset path' },
   welcomeLegacyResetAsk: {
     ru: 'Пройти путь набора заново? Забудутся введённые строки результатов, лучший финал НОВОГРАДА и текущая партия. Таблицы рекордов всех игр останутся на месте.',
-    en: 'Start the set’s path over? This forgets entered result strings, your best NOVOGRAD finale and the current game. Every game’s record table stays.',
+    en: 'Start the series over? This clears entered result strings, your best NOVOGRAD result and the current game. Every game’s record table stays intact.',
   },
-  welcomeLegacyResetDone: { ru: 'Путь набора сброшен. Рекорды игр не тронуты.', en: 'The set’s path is reset. Game records are untouched.' },
+  welcomeLegacyResetDone: { ru: 'Путь набора сброшен. Рекорды игр не тронуты.', en: 'The series path is reset. Game records are untouched.' },
   welcomeLegacyAdded: { ru: 'Строка принята: {tag}. Наследие обновлено.', en: 'String accepted: {tag}. Legacy updated.' },
   welcomeLegacyBad: { ru: 'Строка не прошла проверку контрольной суммы.', en: 'The string failed its checksum.' },
-  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is no tool for valuing a real business.' },
+  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is not a way to judge a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
@@ -954,7 +954,7 @@ export const STRINGS = {
   debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
   debriefNote: {
     ru: 'Что игра заметила в вашей партии — и сколько это стоило. Цены проверены на контрольных партиях.',
-    en: 'What the game noticed in your run — and what it cost. The prices are verified on control runs.',
+    en: 'What the game noticed in your run — and what it cost. The costs are measured against control runs.',
   },
   debriefClean: {
     ru: 'Системных промахов не нашлось: подписка склеила вертикали, менеджмент поспевал за ростом, касса держала подушку. Сильная партия.',
@@ -962,11 +962,11 @@ export const STRINGS = {
   },
   debriefNoPlus: {
     ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: с Плюсом такая же партия приносит 8.7 млрд, без него — 6.7.',
-    en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: with Plus the same run makes $87M; without — $67M.',
+    en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: with Plus the same run makes $87M; without it, $67M.',
   },
   debriefUnfocused: {
     ru: 'Штраф расфокуса держался {n} месяцев (в среднем −{pct}% к качеству): вертикали открывались быстрее, чем рос менеджмент. Качество — это удержание, а удержание — вся юнит-экономика.',
-    en: 'The focus penalty persisted for {n} months (−{pct}% quality on average): verticals opened faster than management grew. Quality is retention, and retention is the whole unit economics.',
+    en: 'The focus penalty persisted for {n} months (−{pct}% quality on average): verticals opened faster than management grew. Quality is retention, and retention is the whole of your unit economics.',
   },
   debriefThinCash: {
     ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
@@ -991,7 +991,7 @@ export const STRINGS = {
   crownTitle: { ru: 'Конгломерат Новограда', en: 'The Novograd Conglomerate' },
   crownText: {
     ru: 'Вы прошли весь путь: победили в доставке, стриминге и билетах — и собрали из побед экосистему, которой гордился бы любой совет директоров. Город просыпается под ваши уведомления: еда к завтраку, такси к подъезду, посылка к вечеру, кино к ночи. Титул остаётся в ваших рекордах. Это чистая косметика: к счёту он не прибавляет ни рубля — конгломераты строят не ради множителей.',
-    en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is pure cosmetics: not a dollar is added to the score — conglomerates are not built for multipliers.',
+    en: 'You walked the whole road: won delivery, streaming and ticketing — and forged the victories into an ecosystem any board would be proud of. The city wakes to your notifications: breakfast delivered, a taxi at the door, a parcel by evening, a film at night. The title stays in your records. It is purely cosmetic: it adds not a dollar to the score — conglomerates are not built for multipliers.',
   },
   // --- после финала: год конгломерата ---
   endlessStart: { ru: 'Играть год конгломерата', en: 'Play the conglomerate year' },
@@ -1026,7 +1026,7 @@ export const STRINGS = {
   endlessBankruptTitle: { ru: 'Год конгломерата оборвался', en: 'The conglomerate year cut short' },
   endlessBankrupt: {
     ru: 'Касса кончилась посреди года конгломерата, а раундов в этом акте нет — холдинг ушёл за долги. Зачётный счёт партии не пострадал: он заморожен в момент финала. Но год зрелости провален.',
-    en: 'The till ran dry in the middle of the conglomerate year, and this act has no rounds — the holding went for its debts. Your scored result is safe: it was frozen at the finale. But the year of maturity is failed.',
+    en: 'Cash ran dry in the middle of the conglomerate year, and this act has no rounds — the holding was sold off to cover its debts. Your scored result is safe: it was frozen when the three years ended. But the year of maturity is failed.',
   },
   endlessWon: {
     ru: 'Совет удовлетворён: холдинг вырос сам и склейка выдержала. Это и есть зрелая экосистема — она больше не нуждается в чужих деньгах, чтобы становиться дороже.',
@@ -1051,7 +1051,7 @@ export const STRINGS = {
   backTitle: { ru: 'До «Конгломерата Новограда» осталось немного.', en: 'The Novograd Conglomerate is within reach.' },
   backText: {
     ru: 'Секретную концовку открывают финалы всех трёх игр набора плюс достойный НОВОГРАД. Вам не хватает: {games}. Каждый выигранный там финал заодно усиливает старт здесь.',
-    en: 'The secret ending needs finales of all three games of the set plus a worthy NOVOGRAD. You are missing: {games}. Each finale you win there also strengthens your start here.',
+    en: 'The secret ending needs finished runs of all three games in the series plus a worthy NOVOGRAD. You are missing: {games}. Each run you win there also strengthens your start here.',
   },
   gameOverPlayAgain: { ru: 'Сыграть ещё раз', en: 'Play again' },
   gameOverCharts: { ru: 'Посмотреть графики', en: 'See the charts' },

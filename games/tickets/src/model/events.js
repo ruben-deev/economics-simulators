@@ -136,7 +136,7 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
-        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '$750K one-off, and the venue and its events are yours.' },
+        detail: { ru: '55 млн ₽ разово, но площадка и её события ваши.', en: '$550K one-off, and the venue and its events are yours.' },
         effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {

@@ -48,7 +48,7 @@ export const PARTNERS = [
     name: { ru: 'Банковская подписка', en: 'Bank subscription bundle' },
     text: {
       ru: 'Банк добавляет вас в свою программу привилегий. Аудитория меньше, зато платёжеспособная и доля выручки заметно выше.',
-      en: 'A bank is adding you to its perks programme. A smaller audience, but a solvent one — and the revenue share is noticeably better.',
+      en: 'A bank is adding you to its perks programme. A smaller audience, but an affluent one — and the revenue share is noticeably better.',
     },
     lesson: {
       ru: 'Условия дистрибуции — это переговоры о доле, а не о числе людей. Меньшая аудитория с лучшей долей часто приносит больше денег.',
