@@ -149,7 +149,7 @@ export const EVENTS = [
         // Протокол «СКРЕПКА»: экономика — точная копия доплаты выше,
         // различие чисто сюжетное (сравнимость мировой таблицы священна).
         secret: true,
-        label: { ru: 'Пусть с курьерами поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP neural network talk to the couriers' },
+        label: { ru: 'Пусть с курьерами поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP AI talk to the couriers' },
         detail: {
           ru: 'СКРЕПКА сутки читала курьерский чат, прониклась и перевела каждому по 2 500 ₽ с пометкой «держитесь там». Экономически — та же доплата.',
           en: 'PAPERCLIP read the courier chat for a day, was moved, and wired each of them $25 with the note “hang in there”. Economically the same payout.',
@@ -231,7 +231,7 @@ export const EVENTS = [
       {
         // Протокол «СКРЕПКА»: экономика — копия «отстоять юнит-экономику»
         secret: true,
-        label: { ru: 'Отправить на совет нейросеть «СКРЕПКА»', en: 'Send the PAPERCLIP neural network to the board' },
+        label: { ru: 'Отправить на совет нейросеть «СКРЕПКА»', en: 'Send the PAPERCLIP AI to the board' },
         detail: {
           ru: 'СКРЕПКА подготовила 4 000 слайдов о юнит-экономике. Совет сдался на 812-м. Оценка ниже, зато принципы целы.',
           en: 'PAPERCLIP prepared 4,000 slides on unit economics. The board surrendered at slide 812. Valuation down, principles intact.',
