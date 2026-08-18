@@ -84,6 +84,13 @@ subscriptions    = connected organisers × monthly fee</code></pre>
 <pre class="doc-pre"><code>commission factor = ((0.05 + 0.035) / (commission + 0.035)) ^ (sensitivity × 0.45)</code></pre>
 <p>Sensitivity: clubs 0.85, theatres 1.5, concerts 2.4, sport 3.1. A sports club with a billion in turnover haggles over tenths of a percent; a 150-seat club barely cares.</p>
 <p><b>The sum can be identical and the consequences are not.</b> That is the first decision of the game: 14% can be taken as 14/0, as 0/14, or anything between. The model is built so that splitting evenly is the worst option: you subsidise one side — and which one depends on how your channels are set up.</p>
+<p>Measured over 24 game codes (pure marketplace, median result in $M) the optimum runs as a diagonal ridge:</p>
+<div class="doc-tablewrap"><table class="data">
+<thead><tr><th>commission \ fee</th><th>0%</th><th>5%</th><th>10%</th><th>14%</th><th>20%</th></tr></thead>
+<tbody><tr><td><b>1%</b></td><td>1.7</td><td>10.9</td><td>29.9</td><td><b>43.2</b></td><td>31.8</td></tr><tr><td><b>5%</b></td><td>11.4</td><td>28.0</td><td><b>33.7</b></td><td>26.3</td><td>15.2</td></tr><tr><td><b>8%</b></td><td>22.1</td><td><b>38.0</b></td><td>29.0</td><td>19.7</td><td>10.3</td></tr><tr><td><b>10%</b></td><td><b>46.9</b></td><td>41.3</td><td>25.3</td><td>16.7</td><td>8.6</td></tr><tr><td><b>13%</b></td><td><b>63.7</b></td><td>45.9</td><td>21.3</td><td>13.8</td><td>7.1</td></tr></tbody>
+</table></div>
+<p>The same 13% total yields $38M as 8/5 and $63.7M as 13/0. The asymmetry is not an accident: the buyer fee is subtracted twice — first from the buyer's conversion, then from the organiser's willingness to work with a platform where their tickets sell slower. The commission is subtracted once. That is why "switch the service fee off entirely" is a real differentiation strategy — but only paired with a high commission: at a 1% commission the same zero produces the worst result in the table.</p>
+<p>In the platform build the answer flips: there zero is worse than a small fee ($177M against $191M at 2–5%). The widget and the subscription already carry the revenue, turnover flows past your own listings, and a fee on what is left behaves almost like pure upside.</p>
 <hr>
 <h2 id="s-3">3. Channel conflict</h2>
 <h3 id="s-4">A migration, not a checkbox</h3>
