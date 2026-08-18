@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.23.0" />
+  <meta name="app-version" content="1.24.0" />
   <meta name="app-build-date" content="2026-08-18" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3636,11 +3636,33 @@ const LEVERS = [
     min: 0, max: 22, step: 0.5, def: 10, scale: 0.01,
     // Режимы заменяют ползунок (аудит 2026-08): кривая отклика пологая, и
     // точность тоньше шага режимов не окупалась — двойное управление было
-    // перегрузом. «Плотный» стоит в замеренной вершине: 12% -> 4.38,
-    // 14% -> 4.28 (24 кода), 15% -> 4.05, дальше спад до 2.2 на 22%.
+    // перегрузом. «Плотный» стоит в вершине для сборки с дешёвой комиссией:
+    // 12% -> 4.38, 14% -> 4.28 (24 кода), 15% -> 4.05, спад до 2.2 на 22%.
+    //
+    // Ноль добавлен по игровому отзыву: «отключить сбор целиком» — понятная
+    // стратегия дифференциации, а сетка её не пускала. Замер показал, что это
+    // не поблажка, а связанное решение — оптимум идёт гребнем по диагонали
+    // (медиана итога, 24 кода, чистый маркетплейс, млрд ₽):
+    //
+    //   комиссия \ сбор    0%     5%    10%    14%    20%
+    //              1%    0.17   1.09   2.99   4.32   3.18
+    //              5%    1.14   2.80   3.37   2.63   1.52
+    //              8%    2.21   3.80   2.90   1.97   1.03
+    //             10%    4.69   4.13   2.53   1.67   0.86
+    //             13%    6.37   4.59   2.13   1.38   0.71
+    //
+    // Читается так: нулевой сбор — лучший ход при комиссии от 10% и худший
+    // из возможных при комиссии 1% (0.17 млрд). Сбор с покупателя бьёт
+    // дважды — по конверсии зрителя и по желанию организатора работать с
+    // вами, — поэтому забрать своё с одной стороны выгоднее, чем с двух
+    // понемногу. В платформенной сборке ответ другой: там ноль хуже
+    // небольшого сбора (17.7 против 19.1 млрд на 2–5%), потому что виджет
+    // и абонплата уже держат выручку, а сбор работает чистой прибавкой.
     policyMode: 'replace',
     policy: [
-      { v: 5, label: { ru: 'Почти без сбора', en: 'Barely a fee' },
+      { v: 0, label: { ru: 'Без сбора', en: 'No fee' },
+        note: { ru: 'Зритель видит ровно цену билета — сильнейшая позиция на витрине, и организатору с вами продаётся лучше всех. Но всю выручку теперь платит организатор: без высокой комиссии это партия в минус. Алгоритм «сбор в конце оплаты» при нуле бесполезен — прятать нечего.', en: 'The buyer sees exactly the ticket price — the strongest possible shop window, and the organiser sells better with you than with anyone. But the organiser now pays for everything: without a high commission this is a losing run. The “fee at the last step” algorithm is useless at zero — there is nothing left to hide.' } },
+      { v: 5, label: { ru: 'Символический', en: 'Token' },
         note: { ru: 'Зритель видит почти цену билета: конверсия лучшая на рынке, выручки с билета почти нет.', en: 'The buyer sees almost the ticket price: best conversion on the market, almost no revenue per ticket.' } },
       { v: 10, label: { ru: 'Рыночный', en: 'Market' },
         note: { ru: 'Как у всех: зритель ворчит, но платит. Средний путь между оборотом и выручкой.', en: 'Same as everyone: the buyer grumbles and pays. The middle road between turnover and revenue.' } },
@@ -3650,8 +3672,8 @@ const LEVERS = [
         note: { ru: 'На пороге терпения: кажется, что выручка максимальная, — но зритель уже уходит к конкуренту вместе с организатором.', en: 'At the tolerance threshold: revenue looks maximal — but the buyer is already leaving for a rival, taking the organiser along.' } },
     ],
     tip: {
-      ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку.',
-      en: 'The mark-up on top of the ticket price that the buyer sees at checkout. The most visible line of your revenue — and the most visible reason to close the tab.',
+      ru: 'Надбавка к цене билета, которую видит зритель на оплате. Самая заметная строка вашей выручки — и самая заметная причина закрыть вкладку. Бьёт дважды: зритель хуже конвертируется, а организатор видит, что его билеты продаются медленнее, и уходит туда, где надбавки нет. Поэтому ноль — рабочая позиция, но только если своё вы берёте комиссией с организатора.',
+      en: 'The mark-up on top of the ticket price that the buyer sees at checkout. The most visible line of your revenue — and the most visible reason to close the tab. It hits twice: buyers convert worse, and the organiser sees their tickets selling slower and leaves for a platform without the mark-up. That is why zero is a real position — but only if you take your share as organiser commission instead.',
     },
   },
   {

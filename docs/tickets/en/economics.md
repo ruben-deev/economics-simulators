@@ -77,6 +77,30 @@ decision of the game: 14% can be taken as 14/0, as 0/14, or anything between.
 The model is built so that splitting evenly is the worst option: you subsidise
 one side — and which one depends on how your channels are set up.
 
+Measured over 24 game codes (pure marketplace, median result in $M) the optimum
+runs as a diagonal ridge:
+
+| commission \ fee | 0% | 5% | 10% | 14% | 20% |
+|---|---|---|---|---|---|
+| **1%** | 1.7 | 10.9 | 29.9 | **43.2** | 31.8 |
+| **5%** | 11.4 | 28.0 | **33.7** | 26.3 | 15.2 |
+| **8%** | 22.1 | **38.0** | 29.0 | 19.7 | 10.3 |
+| **10%** | **46.9** | 41.3 | 25.3 | 16.7 | 8.6 |
+| **13%** | **63.7** | 45.9 | 21.3 | 13.8 | 7.1 |
+
+The same 13% total yields $38M as 8/5 and $63.7M as 13/0. The asymmetry is not
+an accident: the buyer fee is subtracted twice — first from the buyer's
+conversion, then from the organiser's willingness to work with a platform where
+their tickets sell slower. The commission is subtracted once. That is why
+"switch the service fee off entirely" is a real differentiation strategy — but
+only paired with a high commission: at a 1% commission the same zero produces
+the worst result in the table.
+
+In the platform build the answer flips: there zero is worse than a small fee
+($177M against $191M at 2–5%). The widget and the subscription already carry
+the revenue, turnover flows past your own listings, and a fee on what is left
+behaves almost like pure upside.
+
 ---
 
 ## 3. Channel conflict
