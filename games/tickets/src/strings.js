@@ -286,7 +286,7 @@ export const STRINGS = {
   chanOwn: { ru: 'мимо {p}', en: 'past you {p}' },
   orgCardPrice: { ru: 'Переезд', en: 'Onboarding' },
   orgCardPriceValue: { ru: '{per} на организатора · {eta}', en: '{per} per organiser · {eta}' },
-  orgCardPriceOff: { ru: 'не подключаем', en: 'not rolling out' },
+  orgCardPriceOff: { ru: 'не подключаем', en: 'not onboarding' },
   orgCardEta: { ru: 'все переедут за {n} мес', en: 'all move over in {n} mo' },
   orgCardEtaNever: { ru: 'при этом бюджете не переедут', en: 'at this budget they will not move' },
   channelOnboardSplit: {
@@ -653,7 +653,7 @@ export const STRINGS = {
   newsOutage: { ru: '<b>Сайт не выдержал старта продаж:</b> потеряно {share} спроса. Запас мощности держат весь год ради одного такого дня.', en: '<b>The site went down at the on-sale:</b> {share} of demand lost. Capacity headroom is held all year for a single day like this one.' },
   newsGrowth: { ru: '<b>Организаторы за месяц: пришли {joined}, ушли {left}.</b> {verdict}', en: '<b>{joined} organisers joined this month, {left} left.</b> {verdict}' },
   newsGrowthGood: { ru: 'Приток обгоняет отток — рынок идёт к вам.', en: 'Inflow beats outflow — the market is coming your way.' },
-  newsGrowthEven: { ru: 'Сколько пришло, столько и ушло: база стоит на месте. Это не покой, а равновесие двух сильных потоков.', en: 'As many joined as left: the base is standing still. That is not calm, it is two strong flows cancelling out.' },
+  newsGrowthEven: { ru: 'Сколько пришло, столько и ушло: база стоит на месте. Это не покой, а равновесие двух сильных потоков.', en: 'As many joined as left: the base is flat. That is not calm, it is two strong flows cancelling out.' },
   newsGrowthBad: { ru: 'Уходит больше, чем приходит. Смотрите на заполняемость залов и на то, сколько вы забираете.', en: 'More are leaving than arriving. Look at hall fill and at how much you take.' },
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
