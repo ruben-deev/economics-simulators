@@ -1348,7 +1348,7 @@ function t(key, vars) {
 
 const STRINGS = {
   mapSwitched: { ru: 'к конкуренту', en: 'to the rival' },
-  mapOutage: { ru: '{share} спроса не поместилось на он-сейле', en: '{share} of demand did not fit at on-sale' },
+  mapOutage: { ru: '{share} спроса не поместилось на он-сейле', en: '{share} of demand never got through at on-sale' },
   leverInertPlatform: {
     ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
     en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',
@@ -1362,7 +1362,7 @@ const STRINGS = {
   // и вся схема разваливается в строку текста (проверено вживую).
   readoutTake: {
     ru: 'Вы забираете <b>{rate}</b> оборота — {perTicket} с билета. Эквайринг съедает {acquiring} оборота, и берётся он до вас.',
-    en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card processing eats {acquiring} of turnover, and it is charged before you.',
+    en: 'You keep <b>{rate}</b> of turnover — {perTicket} per ticket. Card fees eat {acquiring} of turnover, and they come off the top, before your share.',
   },
   readoutTakeSplit: {
     ru: 'Из них через афишу {market}, через виджет {widget}. Сбор и комиссия идут вместе: зритель платит один, организатор — другую.',
@@ -1433,7 +1433,7 @@ const STRINGS = {
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
   welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years — 36 turns. The year starts in September, with the opening of the theatre season.' },
-  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Where the catch is.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The tens of millions flowing through you are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
+  welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Here is the catch.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The tens of millions flowing through you are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
@@ -1443,7 +1443,7 @@ const STRINGS = {
   helpAuthor: { ru: 'Игру сделал <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>. Лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.', en: 'Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b>. Licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.' },
   helpVersion: { ru: 'Сборка {version} от {date}.', en: 'Build {version}, {date}.' },
   algosPending: { ru: '✓ Будет внедрён', en: '✓ Installing' },
-  algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'Installed and charged when the month runs. Click again to cancel.' },
+  algosPendingHint: { ru: 'Внедрение и списание произойдут при расчёте месяца. Нажмите ещё раз, чтобы отменить.', en: 'It will be installed and charged when the month is run. Click again to cancel.' },
   algosPendingToast: { ru: '«{name}» будет внедрён при расчёте месяца.', en: '"{name}" will be installed when the month runs.' },
   // Ироничные подписи к вердиктам: шутка подсвечивает исход, не заменяя
   // шкалу. Тексты одинаковы во всех играх набора — это голос города.
@@ -1529,12 +1529,12 @@ const STRINGS = {
   statPlatformSub: { ru: 'подключено {count} организаторов', en: '{count} organisers connected' },
 
   // --- Разбор месяца ---
-  driversTitle: { ru: 'Из чего сложилось изменение числа организаторов ({delta})', en: 'What the change in organiser count is made of ({delta})' },
+  driversTitle: { ru: 'Из чего сложилось изменение числа организаторов ({delta})', en: 'What drove the change in organiser count ({delta})' },
   driversNet: { ru: 'Итого', en: 'Net' },
   flowJoined: { ru: 'Новые договоры', en: 'New contracts' },
   flowLeft: { ru: 'Ушли', en: 'Left' },
-  flowSwitch: { ru: 'Переток с конкурентом', en: 'Switching with the rival' },
-  factorsIntro: { ru: 'Условия месяца изменились так:', en: 'Conditions changed like this:' },
+  flowSwitch: { ru: 'Переток с конкурентом', en: 'Net switching with the rival' },
+  factorsIntro: { ru: 'Условия месяца изменились так:', en: 'This month’s conditions changed as follows:' },
   factorAppeal: { ru: 'привлекательность для организаторов', en: 'appeal to organisers' },
   factorStanding: { ru: 'позиция против конкурента', en: 'standing against the rival' },
   factorFill: { ru: 'заполняемость', en: 'fill rate' },
@@ -1548,7 +1548,7 @@ const STRINGS = {
   alertNoListings: { ru: 'Афиша почти пуста: мест {seats}. Маркетинг сейчас сгорает впустую — приводить зрителя некуда.', en: 'The listings are nearly empty: {seats} seats. Marketing burns for nothing right now — there is nowhere to bring buyers.' },
   alertLowFill: { ru: 'Заполняемость {fill}: организаторы видят пустые залы и уходят. Либо больше спроса, либо меньше афиши.', en: 'Fill rate {fill}: organisers see empty halls and leave. Either more demand or fewer listings.' },
   alertOverloaded: { ru: 'Менеджеры перегружены: качество обслуживания {service}. На каждого приходится {perManager} организаторов.', en: 'The managers are overloaded: service level {service}. Each one carries {perManager} organisers.' },
-  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival {rival}. Buyers compare the final price: demand is already {pref} of what it would be at price parity.' },
+  alertFeeHigh: { ru: 'Ваш сбор {fee} против {rival} у конкурента. Зритель сравнивает итоговую цену: спрос уже {pref} от паритета.', en: 'Your fee is {fee} against the rival’s {rival}. Buyers compare the final price: demand is already {pref} of what it would be at price parity.' },
   alertCommissionHigh: { ru: 'Комиссия {value} — организаторы считают каждый процент, и конкурент это знает.', en: 'Commission at {value} — organisers count every percent, and the rival knows it.' },
   alertTrustLow: { ru: 'Доверие упало до {value}. Оно возвращается месяцами, а тратится за один плохой старт продаж.', en: 'Trust has fallen to {value}. It comes back over months and is spent in one bad on-sale.' },
   alertBots: { ru: 'Перекупщики забрали {share} билетов на хитах. Оборот это даже поднимает, доверие — нет.', en: 'Resellers took {share} of tickets on the hits. It even lifts turnover; it does not lift trust.' },
@@ -1556,7 +1556,7 @@ const STRINGS = {
   alertPlatformThin: { ru: 'Через афишу идёт только {share} оборота. Виджеты удержали организаторов, но с билета, проданного на их сайте, вы получаете в разы меньше.', en: 'Only {share} of turnover goes through your listings. The widgets kept the organisers, but a ticket sold on their own site earns you several times less.' },
   alertNoOnboarding: { ru: 'Тип выбран, а бюджет на подключения нулевой — переезд не идёт. Виджет не включается кнопкой: у каждого организатора уже что-то стоит, и за интеграцию, перенос залов и обучение кассиров надо платить. Пока не платите, всё остаётся как было.', en: 'You picked the type but the onboarding budget is zero, so nobody is moving. The widget does not switch on with a button: every organiser already runs something, and integration, porting the halls and training the box office all have to be paid for. Until you pay, nothing changes.' },
   alertNoPlatform: { ru: 'Клубам и стендапу нужен билетный виджет: их тысячи, и вручную их не обслужить. Сейчас они идут к конкуренту.', en: 'Clubs and stand-up need a ticketing widget: there are thousands of them and no way to serve them by hand. Right now they go to the rival.' },
-  alertTakeThin: { ru: 'Ваша доля оборота {take} при эквайринге {acq}. На вас остаётся почти ничего.', en: 'Your take rate is {take} against {acq} of acquiring. Almost nothing is left for you.' },
+  alertTakeThin: { ru: 'Ваша доля оборота {take} при эквайринге {acq}. На вас остаётся почти ничего.', en: 'Your take rate is {take} against {acq} in card fees. Almost nothing is left for you.' },
   alertProfit: { ru: 'Месяц закрыт в плюс: {value}.', en: 'The month closed in the black: {value}.' },
   alertRivalCut: { ru: 'Конкурент срезал комиссию до {value}. Организаторы уже считают.', en: 'The rival cut commission to {value}. Organisers are already doing the maths.' },
   alertRivalDead: { ru: 'Конкурент ушёл с рынка. Рынок ваш — и теперь только вы отвечаете за то, что на нём происходит.', en: 'The rival has left the market. It is yours — and now you alone answer for what happens on it.' },
@@ -1581,11 +1581,11 @@ const STRINGS = {
   todoManagersText: { ru: 'На каждого приходится {perManager} организаторов вместо {norm}. Они уходят молча.', en: 'Each carries {perManager} organisers instead of {norm}. They leave without a word.' },
   todoCapacityTitle: { ru: 'Нет запаса мощности', en: 'No capacity headroom' },
   todoCapacityText: { ru: 'В месяц с хитом сайт ляжет на старте продаж, и это увидят все сразу.', en: 'In a month with a hit the site will go down at on-sale, and everyone will see it at once.' },
-  todoFeeTitle: { ru: 'Сбор выше, чем у конкурента', en: 'Your fee is above the rival' },
+  todoFeeTitle: { ru: 'Сбор выше, чем у конкурента', en: 'Your fee is above the rival’s' },
   todoFeeText: { ru: 'Зритель сравнивает итоговую цену и уходит туда, где дешевле.', en: 'Buyers compare the final price and go where it is cheaper.' },
 
   // --- Каналы и платформа ---
-  mapTitle: { ru: 'Кварталы рынка: типы организаторов', en: 'The market quarters: organiser types' },
+  mapTitle: { ru: 'Кварталы рынка: типы организаторов', en: 'City blocks of the market: organiser types' },
   qtShare: { ru: 'ваша доля {p}', en: 'your share {p}' },
   qtOwn: { ru: 'мимо вас {p}', en: 'past you {p}' },
   qtWidget: { ru: 'виджет ✓ {p}', en: 'widget ✓ {p}' },
@@ -1603,7 +1603,7 @@ const STRINGS = {
   mapOrgsShort: { ru: 'орг.', en: "orgs" },
   mapCaption: {
     ru: 'Ширина квартала — оборот типа за месяц, зелёная заливка снизу — сколько из него прошло через вас. Рамка: зелёная — работаете, бирюзовая — виджет развёрнут, красный пунктир — организаторы уходят, тёмный квартал — тип, который вы не берёте.',
-    en: 'Quarter width is the type’s monthly turnover; the green fill from below is how much of it went through you. The frame: green — you serve it, teal — the widget is deployed, red dashes — organisers are leaving, a dark quarter is a type you do not take.',
+    en: 'Block width is the type’s monthly turnover; the green fill from below is how much of it went through you. The frame: green — you serve it, teal — the widget is deployed, red dashes — organisers are leaving, a dark block is a type you do not serve.',
   },  channelPanel: { ru: 'Каналы продаж: афиша и виджет', en: 'Sales channels: listings and widget' },
   moreHow: { ru: 'Как это устроено', en: 'How it works' },
   moreMoney: { ru: 'Куда уходят деньги с билета', en: 'Where the ticket money goes' },
@@ -1613,7 +1613,7 @@ const STRINGS = {
   },
   channelColType: { ru: 'Тип', en: 'Type' },
   needHigh: { ru: 'виджет необходим', en: 'widget essential' },
-  needMid: { ru: 'виджет желателен', en: 'widget welcome' },
+  needMid: { ru: 'виджет желателен', en: 'widget desirable' },
   needLow: { ru: 'обойдутся без виджета', en: 'fine without a widget' },
   channelColSplit: { ru: 'Куда уходят продажи', en: 'Where the sales go' },
   channelSplitLost: { ru: '{lost} мимо вас', en: '{lost} past you' },
@@ -1626,31 +1626,31 @@ const STRINGS = {
   chanMarket: { ru: 'афиша {p}', en: 'listings {p}' },
   chanWidget: { ru: 'виджет {p}', en: 'widget {p}' },
   chanOwn: { ru: 'мимо {p}', en: 'past you {p}' },
-  orgCardPrice: { ru: 'Переезд', en: 'Roll-out' },
+  orgCardPrice: { ru: 'Переезд', en: 'Onboarding' },
   orgCardPriceValue: { ru: '{per} на организатора · {eta}', en: '{per} per organiser · {eta}' },
   orgCardPriceOff: { ru: 'не подключаем', en: 'not rolling out' },
   orgCardEta: { ru: 'все переедут за {n} мес', en: 'all move over in {n} mo' },
   orgCardEtaNever: { ru: 'при этом бюджете не переедут', en: 'at this budget they will not move' },
   channelOnboardSplit: {
     ru: 'бюджет переезда делится на {types} типа: {per} на организатора',
-    en: 'the roll-out budget is split across {types} types: {per} per organiser',
+    en: 'the onboarding budget is split across {types} types: {per} per organiser',
   },
   channelOnboardNone: {
     ru: 'бюджет переезда сейчас никому не достаётся: тип не выбран',
-    en: 'the roll-out budget goes nowhere: no type selected',
+    en: 'the onboarding budget goes nowhere: no type selected',
   },
   channelColMoneyNote: {
     ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свои 2.2% с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
-    en: 'After acquiring. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
+    en: 'Net of card fees. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
   },
   channelColState: { ru: 'Переехали', en: 'Moved over' },
   channelOn: { ru: 'виджет стоит', en: 'widget installed' },
   channelOff: { ru: 'виджета нет', en: 'no widget' },
-  channelConnect: { ru: 'Подключать этот тип', en: 'Roll out to this type' },
-  channelDisconnect: { ru: 'Перестать подключать', en: 'Stop rolling out' },
-  channelQueued: { ru: 'подключаем', en: 'rolling out' },
+  channelConnect: { ru: 'Подключать этот тип', en: 'Onboard this type' },
+  channelDisconnect: { ru: 'Перестать подключать', en: 'Stop onboarding' },
+  channelQueued: { ru: 'подключаем', en: 'onboarding' },
   channelMoved: { ru: '{moved} из {total} переехали', en: '{moved} of {total} moved' },
-  channelDisconnectWarn: { ru: 'Снятый виджет организаторы запоминают: часть уйдёт — и тем больше, чем больше их успело переехать. Обратный переезд мгновенный: выключить чужой сайт можно сразу, а вот включить — нет.', en: 'Organisers remember a widget being taken away: some will leave — the more of them had moved over, the worse. Going back is instant: switching off someone else\'s site takes a moment, switching it on does not.' },
+  channelDisconnectWarn: { ru: 'Снятый виджет организаторы запоминают: часть уйдёт — и тем больше, чем больше их успело переехать. Обратный переезд мгновенный: выключить чужой сайт можно сразу, а вот включить — нет.', en: 'Organisers remember a widget being taken away: some will leave — and the more of them that had moved over, the worse it is. Going back is instant: switching off someone else\'s site takes a moment, switching it on does not.' },
   channelNoPlatform: { ru: 'Платформы пока нет — вложитесь в разработку, иначе виджет будет пустым обещанием.', en: 'There is no platform yet — invest in development, otherwise the widget is an empty promise.' },
   channelLevel: { ru: 'Уровень платформы {level}', en: 'Platform level {level}' },
 
@@ -1661,8 +1661,8 @@ const STRINGS = {
     en: 'Fill rate is what the organiser sees with their own eyes. No commission beats an empty hall.',
   },
   supplyColCount: { ru: 'У вас', en: 'Yours' },
-  supplyColFill: { ru: 'Зал заполнен на', en: 'Hall filled' },
-  supplyColAppeal: { ru: 'Кого выбирают новые', en: 'Whom new ones pick' },
+  supplyColFill: { ru: 'Зал заполнен на', en: 'Hall fill' },
+  supplyColAppeal: { ru: 'Кого выбирают новые', en: 'Who new organisers pick' },
   supplyPickYou: { ru: 'вас {share}', en: 'you {share}' },
   supplyColGmv: { ru: 'Оборот', en: 'Turnover' },
 
@@ -1673,7 +1673,7 @@ const STRINGS = {
     en: 'Listings of a single genre gather a single audience — and hit its ceiling no matter how much marketing you buy.',
   },
   audienceColReach: { ru: 'Охват', en: 'Reach' },
-  audienceColInterest: { ru: 'Афиша подходит', en: 'Listings suit' },
+  audienceColInterest: { ru: 'Афиша подходит', en: 'Listing fit' },
   audienceColConv: { ru: 'Конверсия', en: 'Conversion' },
   audienceColDemand: { ru: 'Спрос', en: 'Demand' },
 
@@ -1782,7 +1782,7 @@ const STRINGS = {
   unitIntro: { ru: 'Сколько остаётся с одного проданного билета. Средняя цена считается по вашей афише, а не по рынку.', en: 'What is left from one ticket sold. The average price is taken from your listings, not from the market.' },
   unitColItem: { ru: 'Статья', en: 'Item' },
   unitColPerTicket: { ru: 'На билет', en: 'Per ticket' },
-  unitPrice: { ru: 'Цена билета (не ваша)', en: 'Ticket price (not yours)' },
+  unitPrice: { ru: 'Цена билета (не ваша)', en: 'Ticket price (you do not set it)' },
   unitMarket: { ru: 'Через афишу: сбор + комиссия', en: 'Via listings: fee + commission' },
   unitPlatform: { ru: 'Через виджет на сайте организатора', en: 'Via widget on the organiser\'s site' },
   unitBlended: { ru: 'Ваша выручка с билета', en: 'Your revenue per ticket' },
@@ -1822,11 +1822,11 @@ const STRINGS = {
   algosIntro: { ru: 'Умные механики. Каждая что-то улучшает и что-то ломает — и почти каждая тем сильнее вредит, чем хуже данные.', en: 'The smart mechanics. Each improves something and breaks something — and almost every one hurts more the worse your data is.' },
   algosQuality: { ru: 'Качество алгоритмов {quality} · данные {data} · команда {team}', en: 'Algorithm quality {quality} · data {data} · team {team}' },
   algosLocked: { ru: 'Откроется при качестве {unlock}', en: 'Unlocks at quality {unlock}' },
-  algosInstall: { ru: 'Внедрить за {cost}', en: 'Roll out for {cost}' },
+  algosInstall: { ru: 'Внедрить за {cost}', en: 'Install for {cost}' },
   algosOn: { ru: 'включено', en: 'on' },
   algosOff: { ru: 'выключено', en: 'off' },
-  algosNone: { ru: 'Ни один алгоритм пока не внедрён.', en: 'No algorithm has been rolled out yet.' },
-  installNote: { ru: 'Внедрено: {names} — разовые {cost}.', en: 'Rolled out: {names} — a one-off {cost}.' },
+  algosNone: { ru: 'Ни один алгоритм пока не внедрён.', en: 'No algorithm has been installed yet.' },
+  installNote: { ru: 'Внедрено: {names} — разовые {cost}.', en: 'Installed: {names} — a one-off {cost}.' },
 
   helpTitle: { ru: 'Что здесь происходит', en: 'What is going on here' },
   helpIntro: {
@@ -1868,7 +1868,7 @@ const STRINGS = {
   debriefTitle: { ru: 'Разбор партии', en: 'Game debrief' },
   debriefNote: {
     ru: 'Что игра заметила в вашей партии — и сколько это стоило. Цены — из цифр самой партии и контрольных партий.',
-    en: 'What the game noticed in your run — and what it cost. The prices come from the run’s own numbers and from control runs.',
+    en: 'What the game noticed in your run — and what it cost. The costs shown come from the run’s own numbers and from control runs.',
   },
   debriefClean: {
     ru: 'Системных промахов не нашлось: авансы возвращались, боты не хозяйничали, касса держала подушку. Сильная партия.',
@@ -1876,11 +1876,11 @@ const STRINGS = {
   },
   debriefAdvances: {
     ru: 'Авансы организаторам списаны на {lost} — вернулось только {back}. Ставка на хиты без запаса: каждый списанный аванс — это чужой концерт, оплаченный вашей кассой.',
-    en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a margin: every written-off advance is someone else’s show paid from your cash.',
+    en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a cushion: every written-off advance is someone else’s show paid from your cash.',
   },
   debriefBots: {
     ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: в здоровой партии доля ботов не поднимается выше 15%.',
-    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is next months’ demand: in a healthy run the bot share never tops 15%.',
+    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is the coming months’ demand: in a healthy run the bot share never tops 15%.',
   },
   debriefThinCash: {
     ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
@@ -1897,7 +1897,7 @@ const STRINGS = {
   deathRunway: { ru: '{n} мес.', en: '{n} mo' },
   deathRaise: { ru: 'Поднять {amount} (доля −{dilution})', en: 'Raise {amount} (stake −{dilution})' },
   deathIgnore: { ru: 'Продолжить как есть', en: 'Carry on as is' },
-  deathRaised: { ru: 'Раунд закрыт: +{amount} в кассу, доля снизилась до {equity}.', en: 'Round closed: +{amount} in the till, stake now {equity}.' },
+  deathRaised: { ru: 'Раунд закрыт: +{amount} в кассу, доля снизилась до {equity}.', en: 'Round closed: +{amount} in the bank, stake now {equity}.' },
   deathWaterfall: { ru: 'Последние месяцы: куда ушли деньги', en: 'The final months: where the money went' },
   wfRevenue: { ru: 'Выручка', en: 'Revenue' },
   wfCosts: { ru: 'Расходы', en: 'Costs' },
@@ -1932,7 +1932,7 @@ const STRINGS = {
   lbSeedMine: { ru: 'Мой город', en: 'My city' },
   lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
-  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the table…' },
+  lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the leaderboard…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
   lbColPlayer: { ru: 'Игрок', en: 'Player' },
   lbColScore: { ru: 'Счёт', en: 'Score' },
@@ -1941,18 +1941,18 @@ const STRINGS = {
   lbNamePlaceholder: { ru: 'Ваше имя или ник', en: 'Your name or nickname' },
   lbSubmit: { ru: 'Отправить результат', en: 'Submit result' },
   lbConsent: { ru: 'Отправляются только имя и строка результата: игра, версия, код партии, счёт и ходы.', en: 'Only your name and the result string are sent: game, version, game code, score and turns.' },
-  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the table needs a signed result.' },
+  lbNameNeeded: { ru: 'Напишите имя: таблице нужен подписанный результат.', en: 'Enter a name: the leaderboard needs a name on the result.' },
   lbSending: { ru: 'Отправляю…', en: 'Sending…' },
   lbSent: { ru: 'Готово: вы на {rank}-м месте из {total}.', en: 'Done: you are #{rank} of {total}.' },
   lbYou: { ru: '(вы)', en: '(you)' },
   btnHome: { ru: 'Игры', en: 'Games' },
   btnHomeTitle: { ru: 'К списку игр', en: 'Back to all games' },
-  lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the table is shared by everyone playing online.' },
+  lbInvite: { ru: 'Впишите свой результат — таблица общая для всех, кто играет по ссылке.', en: 'Add your result — the leaderboard is shared by everyone playing online.' },
   lbYourPlace: { ru: 'Ваш лучший отправленный результат: {score} — место {rank} из {total} на момент отправки.', en: 'Your best submitted result: {score} — rank {rank} of {total} at submission time.' },
-  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the table.' },
-  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The table is unreachable right now. You can submit later while this screen is open.' },
+  lbAlreadySent: { ru: 'Результат этой партии уже в таблице.', en: 'This game’s result is already on the leaderboard.' },
+  lbError: { ru: 'Таблица сейчас недоступна. Результат можно отправить позже, пока открыт этот экран.', en: 'The leaderboard is unreachable right now. You can submit later while this screen is open.' },
   // --- Оговорка о числах: одинаковая во всех трёх играх ---
-  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is no tool for valuing a real business.' },
+  welcomeNumbers: { ru: '<b>О числах.</b> Все числа условные, подобранные для играбельности, — не бенчмарки и не данные реальных компаний; оценивать по игре настоящий бизнес нельзя.', en: '<b>About the numbers.</b> All numbers are notional, chosen for playability — not benchmarks, not real companies’ data; the game is not a way to judge a real business.' },
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   helpSeedCode: { ru: 'Код этой партии: <b>{seed}</b> — введите его на экране приветствия, чтобы сыграть тот же город ещё раз.', en: 'This game’s code: <b>{seed}</b> — enter it on the welcome screen to play the same city again.' },
   // --- Дневник решений на графике ---
@@ -2000,7 +2000,7 @@ const STRINGS = {
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
   unitOrgs: { ru: 'организаторов', en: 'organisers' },
-  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The NOVOGRAD Conglomerate.' },
   metaConglomerateText: {
     ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
     en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
@@ -2008,20 +2008,20 @@ const STRINGS = {
   metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
   metaReturnText: {
     ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработали здесь. Ваш лучший финал здесь — {best}. Следующая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
-    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best finale here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+    en: 'In NOVOGRAD this game’s final result becomes the holding’s starting asset: the base, ARPU and treasury there are what you earned here. Your best result here is {best}. The next legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
   },
   metaReturnNone: {
     ru: 'В НОВОГРАДЕ финал этой игры становится стартовым активом холдинга: ваша база, ARPU и казна там — это то, что вы заработаете здесь. Доигранных финалов здесь у вас пока нет — первая ступень наследия открывается с {target}. На эту партию правило не влияет: наследие работает в НОВОГРАДЕ, а не здесь.',
-    en: 'In NOVOGRAD this game’s finale becomes the holding’s starting asset: the base, ARPU and treasury there are what you earn here. You have no finished finales here yet — the first legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
+    en: 'In NOVOGRAD this game’s final result becomes the holding’s starting asset: the base, ARPU and treasury there are what you earn here. You have no completed runs here yet — the first legacy step opens at {target}. It does not affect this game: the legacy works in NOVOGRAD, not here.',
   },
   metaReturnMaxed: {
     ru: 'Ваш финал этой игры уже даёт наследию максимум — выше шкала переноса не идёт: рекордная прошлая партия не должна решать новую. Возвращайтесь сюда за самой игрой, а не за бонусом.',
-    en: 'Your finale here already gives the legacy its maximum — the carry-over scale goes no higher: a record past game must not decide a new one. Come back for the game itself, not the bonus.',
+    en: 'Your best result here already gives the legacy its maximum — the carry-over scale goes no higher: a record past run should not decide a new one. Come back for the game itself, not the bonus.',
   },
   metaContinueTitle: { ru: 'Продолжить в НОВОГРАДЕ?', en: 'Continue in NOVOGRAD?' },
   metaContinueText: {
     ru: 'Выигранный бизнес становится стартовым активом холдинга: такси, е-ком, подписка «Плюс». Этот финал засчитается там сам — по кнопке НОВОГРАД откроется сразу с вашим активом. Строка результата ниже нужна, только если продолжать на другом устройстве.',
-    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. This finale counts there automatically — the button opens NOVOGRAD with your asset preselected. The result string below is only needed to continue on another device.',
+    en: 'The business you win becomes the starting asset of a holding: ride-hailing, e-commerce, the Plus subscription. This result counts there automatically — the button opens NOVOGRAD with your asset preselected. The result string below is only needed to continue on another device.',
   },
   metaContinueLink: { ru: 'Продолжить этим активом в НОВОГРАДЕ →', en: 'Continue with this asset in NOVOGRAD →' },
 };
@@ -2384,7 +2384,7 @@ const DIFFICULTIES = [
     tagSuffix: '·сложный',
     note: {
       ru: 'Та же команда стоит вчетверо дороже, а «прочие расходы» выше на треть. Каждый рубль в финансы — рубль, не ушедший в маркетинг, качество и удержание.',
-      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every rouble spent on finance is a rouble not spent on marketing, quality and retention.',
+      en: 'The same team costs four times as much, and miscellaneous expenses run a third higher. Every dollar spent on finance is a dollar not spent on marketing, quality and retention.',
     },
   },
 ];
@@ -3494,7 +3494,7 @@ const ORGANIZERS = [
     serviceWeight: 0.35,
     hint: {
       ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без билетного виджета они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
-      en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without self-service they never reach you at all. In exchange they barely care about commission.',
+      en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without the ticketing widget they never reach you at all. On the other hand, they barely care about commission.',
     },
   },
   {
@@ -3670,7 +3670,7 @@ const LEVERS = [
       { v: 1, label: { ru: 'Заманить', en: 'Court them' },
         note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
       { v: 5, label: { ru: 'Рыночная', en: 'Market' },
-        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
+        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and a full hall, not price.' } },
       { v: 8, label: { ru: 'Плотная', en: 'Firm' },
         note: { ru: 'Дороже рынка: организатор ворчит и сравнивает, но зал и зрители пока перевешивают.', en: 'Above market: the organiser grumbles and compares, but the hall and the audience still outweigh it.' } },
       { v: 10, label: { ru: 'Дожим', en: 'Squeeze' },
@@ -3708,7 +3708,7 @@ const LEVERS = [
       { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
         note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },
       { v: 20_000, label: { ru: 'Символическая', en: 'Token' },
-        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already a reason to think for the small.' } },
+        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already something for the small ones to think about.' } },
       { v: 60_000, label: { ru: 'Полная', en: 'Full' },
         note: { ru: 'Деньги, не зависящие от оборота, — но длинный хвост маленьких площадок останется у конкурента.', en: 'Money independent of turnover — but the long tail of small venues stays with your rival.' } },
     ],
@@ -3747,7 +3747,7 @@ const LEVERS = [
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
-      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
+      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the less it costs to win them over; a stadium with its own system costs the most.',
     },
   },
   {
@@ -3887,11 +3887,11 @@ const ALGORITHMS = [
         { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
           note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
         { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
-          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is bought with real refusals.' } },
+          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is paid for by real buyers giving up.' } },
         { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
           note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: по замеру итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: measured, the result is already below a simple limit, even though trust is higher.' } },
         { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
-          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is barely better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is no better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
       ],
     },
     what: {
@@ -3910,7 +3910,7 @@ const ALGORITHMS = [
   {
     key: 'dripPricing',
     name: { ru: 'Сбор в конце оплаты', en: 'Fee at the last step' },
-    short: { ru: 'сбор в конце', en: 'late fee reveal' },
+    short: { ru: 'сбор в конце', en: 'fee shown late' },
     unlock: 0.06,
     install: 12_000_000,
     param: {
@@ -4511,7 +4511,7 @@ const STANCES = {
     name: { ru: 'Ровный ход', en: 'Steady' },
     hint: {
       ru: 'Держит линию: средние ставки, умеренный маркетинг. Опасен тем, что не ошибается.',
-      en: 'Holds the line: average rates, moderate marketing. Dangerous because he makes no mistakes.',
+      en: 'Holds the line: average rates, moderate marketing. Dangerous because it makes no mistakes.',
     },
     commission: 0.052, buyerFee: 0.105, marketing: 1.0, platform: 0.5,
   },
@@ -4520,7 +4520,7 @@ const STANCES = {
     name: { ru: 'Демпинг комиссии', en: 'Commission dumping' },
     hint: {
       ru: 'Сбросил комиссию для организаторов и забирает тех, кто считает каждый процент. Своей маржой платит за чужие договоры.',
-      en: 'Slashed the organiser commission and is taking everyone who counts percentages. He pays for those contracts out of his own margin.',
+      en: 'Slashed the organiser commission and is taking everyone who counts percentages. It pays for those contracts out of its own margin.',
     },
     commission: 0.022, buyerFee: 0.125, marketing: 0.85, platform: 0.4,
   },
@@ -4529,7 +4529,7 @@ const STANCES = {
     name: { ru: 'Скупка эксклюзивов', en: 'Buying exclusives' },
     hint: {
       ru: 'Платит промоутерам авансы за эксклюзив. Крупные туры уходят к нему целиком, и вернуть их до конца контракта нельзя.',
-      en: 'Pays promoters advances for exclusivity. Big tours go to him entirely, and you cannot get them back before the contract ends.',
+      en: 'Pays promoters advances for exclusivity. Big tours go to it entirely, and you cannot get them back before the contract ends.',
     },
     commission: 0.045, buyerFee: 0.135, marketing: 1.15, platform: 0.35,
   },
@@ -4547,7 +4547,7 @@ const STANCES = {
     name: { ru: 'Отступление', en: 'Retreat' },
     hint: {
       ru: 'Режет расходы и держится за то, что осталось. Сейчас его можно двигать — потом он либо соберётся, либо уйдёт с рынка.',
-      en: 'Cutting costs and holding on to what is left. He can be pushed around now — later he either regroups or leaves the market.',
+      en: 'Cutting costs and holding on to what is left. It can be pushed around now — later it either regroups or leaves the market.',
     },
     commission: 0.075, buyerFee: 0.145, marketing: 0.45, platform: 0.3,
   },
@@ -5220,7 +5220,7 @@ const EVENTS = [
     options: [
       {
         label: { ru: 'Сделать интеграцию', en: 'Build the integration' },
-        detail: { ru: '75 млн ₽ разово, но площадка и её события ваши.', en: '$750K one-off, and the venue and its events are yours.' },
+        detail: { ru: '55 млн ₽ разово, но площадка и её события ваши.', en: '$550K one-off, and the venue and its events are yours.' },
         effects: { oneOffCost: 55_000_000, orgJoinMult: 1.3 },
       },
       {

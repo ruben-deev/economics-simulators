@@ -239,7 +239,7 @@ export const ORGANIZERS = [
     serviceWeight: 0.35,
     hint: {
       ru: 'Длинный хвост: их тысячи, каждый крошечный. Вручную обслуживать нерентабельно — без билетного виджета они к вам просто не дойдут. Зато к комиссии почти равнодушны.',
-      en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without self-service they never reach you at all. In exchange they barely care about commission.',
+      en: 'The long tail: thousands of them, each tiny. Serving them by hand does not pay — without the ticketing widget they never reach you at all. On the other hand, they barely care about commission.',
     },
   },
   {
@@ -415,7 +415,7 @@ export const LEVERS = [
       { v: 1, label: { ru: 'Заманить', en: 'Court them' },
         note: { ru: 'Почти даром: организаторы идут охотно, зарабатываете вы на зрителе, а не на них.', en: 'Almost free: organisers come readily and you earn from the buyer, not from them.' } },
       { v: 5, label: { ru: 'Рыночная', en: 'Market' },
-        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and audience, not price.' } },
+        note: { ru: 'Как у конкурента: удерживать придётся сервисом и залом, а не ценой.', en: 'The same as your rival: you will have to hold them with service and a full hall, not price.' } },
       { v: 8, label: { ru: 'Плотная', en: 'Firm' },
         note: { ru: 'Дороже рынка: организатор ворчит и сравнивает, но зал и зрители пока перевешивают.', en: 'Above market: the organiser grumbles and compares, but the hall and the audience still outweigh it.' } },
       { v: 10, label: { ru: 'Дожим', en: 'Squeeze' },
@@ -453,7 +453,7 @@ export const LEVERS = [
       { v: 0, label: { ru: 'Бесплатно', en: 'Free' },
         note: { ru: 'Виджет даром: подключаются даже клубы, денег он приносит только оборотом.', en: 'The widget is free: even small clubs connect, and it earns only through turnover.' } },
       { v: 20_000, label: { ru: 'Символическая', en: 'Token' },
-        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already a reason to think for the small.' } },
+        note: { ru: 'Небольшая абонплата: крупным незаметна, маленьким уже повод подумать.', en: 'A small subscription: invisible to the big ones, already something for the small ones to think about.' } },
       { v: 60_000, label: { ru: 'Полная', en: 'Full' },
         note: { ru: 'Деньги, не зависящие от оборота, — но длинный хвост маленьких площадок останется у конкурента.', en: 'Money independent of turnover — but the long tail of small venues stays with your rival.' } },
     ],
@@ -492,7 +492,7 @@ export const LEVERS = [
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Виджет не включается кнопкой: у каждого организатора уже что-то стоит — своё или конкурента. Это деньги на переезд: интеграция, перенос схем залов и абонементов, обучение кассиров, аванс под мероприятия. Чем нужнее организатору виджет, тем дешевле он соглашается; стадион со своей системой стоит дороже всех.',
-      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the cheaper they agree; a stadium with its own system costs the most.',
+      en: 'The widget does not switch on with a button: every organiser already runs something — their own or the rival\'s. This is the money for moving them: integration, porting seat maps and season tickets, training the box office, an advance against events. The more an organiser needs the widget, the less it costs to win them over; a stadium with its own system costs the most.',
     },
   },
   {
@@ -632,11 +632,11 @@ export const ALGORITHMS = [
         { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
           note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
         { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
-          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is bought with real refusals.' } },
+          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is paid for by real buyers giving up.' } },
         { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
           note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: по замеру итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: measured, the result is already below a simple limit, even though trust is higher.' } },
         { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
-          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is barely better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
+          note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is no better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
       ],
     },
     what: {
@@ -655,7 +655,7 @@ export const ALGORITHMS = [
   {
     key: 'dripPricing',
     name: { ru: 'Сбор в конце оплаты', en: 'Fee at the last step' },
-    short: { ru: 'сбор в конце', en: 'late fee reveal' },
+    short: { ru: 'сбор в конце', en: 'fee shown late' },
     unlock: 0.06,
     install: 12_000_000,
     param: {

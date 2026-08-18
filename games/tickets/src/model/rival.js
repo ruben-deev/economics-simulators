@@ -20,7 +20,7 @@ export const STANCES = {
     name: { ru: 'Ровный ход', en: 'Steady' },
     hint: {
       ru: 'Держит линию: средние ставки, умеренный маркетинг. Опасен тем, что не ошибается.',
-      en: 'Holds the line: average rates, moderate marketing. Dangerous because he makes no mistakes.',
+      en: 'Holds the line: average rates, moderate marketing. Dangerous because it makes no mistakes.',
     },
     commission: 0.052, buyerFee: 0.105, marketing: 1.0, platform: 0.5,
   },
@@ -29,7 +29,7 @@ export const STANCES = {
     name: { ru: 'Демпинг комиссии', en: 'Commission dumping' },
     hint: {
       ru: 'Сбросил комиссию для организаторов и забирает тех, кто считает каждый процент. Своей маржой платит за чужие договоры.',
-      en: 'Slashed the organiser commission and is taking everyone who counts percentages. He pays for those contracts out of his own margin.',
+      en: 'Slashed the organiser commission and is taking everyone who counts percentages. It pays for those contracts out of its own margin.',
     },
     commission: 0.022, buyerFee: 0.125, marketing: 0.85, platform: 0.4,
   },
@@ -38,7 +38,7 @@ export const STANCES = {
     name: { ru: 'Скупка эксклюзивов', en: 'Buying exclusives' },
     hint: {
       ru: 'Платит промоутерам авансы за эксклюзив. Крупные туры уходят к нему целиком, и вернуть их до конца контракта нельзя.',
-      en: 'Pays promoters advances for exclusivity. Big tours go to him entirely, and you cannot get them back before the contract ends.',
+      en: 'Pays promoters advances for exclusivity. Big tours go to it entirely, and you cannot get them back before the contract ends.',
     },
     commission: 0.045, buyerFee: 0.135, marketing: 1.15, platform: 0.35,
   },
@@ -56,7 +56,7 @@ export const STANCES = {
     name: { ru: 'Отступление', en: 'Retreat' },
     hint: {
       ru: 'Режет расходы и держится за то, что осталось. Сейчас его можно двигать — потом он либо соберётся, либо уйдёт с рынка.',
-      en: 'Cutting costs and holding on to what is left. He can be pushed around now — later he either regroups or leaves the market.',
+      en: 'Cutting costs and holding on to what is left. It can be pushed around now — later it either regroups or leaves the market.',
     },
     commission: 0.075, buyerFee: 0.145, marketing: 0.45, platform: 0.3,
   },

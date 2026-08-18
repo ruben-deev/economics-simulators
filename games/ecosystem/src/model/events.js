@@ -80,7 +80,7 @@ export const EVENTS = [
     title: { ru: 'Топливо подорожало', en: 'Fuel prices jump' },
     text: {
       ru: 'Бензин вырос в цене — экономика поездки просела у всего рынка, водители требуют компенсаций.',
-      en: 'Petrol prices are up: trip economics sagged across the market, and drivers are demanding compensation.',
+      en: 'Petrol prices are up: trip economics have sagged across the market, and drivers are demanding compensation.',
     },
     effects: { costPerTripAdd: 9, driverChurnAdd: 0.02 },
     lesson: {
@@ -108,7 +108,7 @@ export const EVENTS = [
     title: { ru: 'Водители готовят забастовку', en: 'Drivers threaten to strike' },
     text: {
       ru: 'Чат водителей кипит: комиссия платформы съедает заработок, подача в спальные районы не окупается. Требуют разовую выплату.',
-      en: 'The driver chat is boiling: the platform’s take eats their earnings and suburban pickups do not pay. They want a one-off payment.',
+      en: 'The drivers’ group chat is boiling over: the platform’s take eats their earnings and suburban pickups do not pay. They want a one-off payment.',
     },
     lesson: {
       ru: 'Труд в гиг-экономике — рынок, а не ресурс: цена предложения меняется быстрее ваших планов.',
@@ -119,7 +119,7 @@ export const EVENTS = [
         label: { ru: 'Выплатить (3 000 ₽ на водителя)', en: 'Pay up ($30 per driver)' },
         detail: {
           ru: 'Цена растёт со штатом: тысяче водителей — три миллиона, пяти тысячам — пятнадцать.',
-          en: 'The price scales with the fleet: three million for a thousand drivers, fifteen for five thousand.',
+          en: 'The price scales with the fleet: $30K for a thousand drivers, $150K for five thousand.',
         },
         effects: { oneOffCostPerDriver: 3_000, driverChurnAdd: -0.02, driverSupplyMult: 1.2 },
       },
@@ -273,7 +273,7 @@ export const EVENTS = [
         label: { ru: 'Воевать дальше', en: 'Fight on' },
         detail: {
           ru: 'Демпинг продолжается до конца войны, но потолок рынка остаётся вашим.',
-          en: 'The dumping continues to the end of the war, but the market ceiling stays yours.',
+          en: 'The predatory pricing continues to the end of the war, but the market ceiling stays yours.',
         },
         effects: {},
       },
@@ -568,7 +568,7 @@ export const EVENTS = [
     title: { ru: 'Сбой в приложении такси', en: 'Taxi app outage' },
     text: {
       ru: 'Диспетчеризация лежала вечер пятницы — самые дорогие часы недели. Заказы уходили к конкуренту.',
-      en: 'Dispatch was down on Friday evening — the dearest hours of the week. Orders went to the incumbent.',
+      en: 'Dispatch was down on Friday evening — the most lucrative hours of the week. Orders went to the incumbent.',
     },
     effects: { taxiDemandMult: 0.88, taxiChurnAdd: 0.012, oneOffCost: 4_000_000 },
     lesson: {
@@ -588,7 +588,7 @@ export const EVENTS = [
     title: { ru: 'Аномально тёплая зима', en: 'Freak warm winter' },
     text: {
       ru: 'Синоптики разводят руками: плюс десять в разгар зимы, и весь город хочет кататься прямо сейчас. А ваш парк, скорее всего, зимует по плану.',
-      en: 'Forecasters shrug: ten above zero in the dead of winter, and the whole city wants to ride right now. Your fleet, most likely, is wintering according to plan.',
+      en: 'Forecasters shrug: ten above zero in the dead of winter, and the whole city wants to ride right now. Your fleet is most likely wintering according to plan.',
     },
     // Погода поднимает спрос независимо от решения — вопрос лишь в том,
     // стоит ли парк там, где этот спрос можно собрать
@@ -613,7 +613,7 @@ export const EVENTS = [
     ],
     lesson: {
       ru: 'Сезонность — это ожидание, погода — реализация: капитал зарабатывает, только когда он на улице в правильный месяц.',
-      en: 'Seasonality is the expectation, weather is the realization: capital earns only when it is on the street in the right month.',
+      en: 'Seasonality is the expectation, weather is the realisation: capital earns only when it is on the street in the right month.',
     },
   },
 ];
@@ -671,7 +671,7 @@ const vanityDecline = {
 
 const vanityLesson = {
   ru: 'Признак престижной траты — её не к чему привязать: нет метрики, которая изменится настолько, чтобы окупить чек. Считается это до покупки, а не после: цена известна, отдача обещана словами. Такие расходы окупаются только в презентации — и растут вместе с компанией, потому что просят у того, у кого есть.',
-  en: 'The mark of a vanity spend is that there is nothing to tie it to: no metric moves enough to repay the cheque. The arithmetic is available before you buy, not after: the price is known, the return is promised in adjectives. Spending like this pays off only in a presentation — and it scales with the company, because they ask those who have.',
+  en: 'The mark of a vanity spend is that there is nothing to tie it to: no metric moves enough to repay the cheque. The arithmetic is available before you buy, not after: the price is known, the return is promised in adjectives. Spending like this pays off only in a presentation — and it scales with the company, because they ask the people who already have the money.',
 };
 
 export const VANITY_EVENTS = [
