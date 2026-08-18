@@ -61,7 +61,7 @@ export const STRINGS = {
     ru: 'Ни один район не выбран: заказов не будет. Начните с одного района — запуск списывается разово, а содержание идёт каждую неделю.',
     en: 'No district is selected, so there will be no orders. Start with one — the launch is a one-off cost, but running it is charged every week.',
   },
-  opsPerCourier: { ru: 'Курьер увезёт <b>{orders}</b> заказов/нед (плечо {km} км).', en: 'A courier delivers <b>{orders}</b> orders/wk (average leg {km} km).' },
+  opsPerCourier: { ru: 'Курьер увезёт <b>{orders}</b> заказов/нед (плечо {km} км).', en: 'A courier delivers <b>{orders}</b> orders/wk (average distance {km} km).' },
   opsEarnings: {
     ru: 'Его заработок при 75% загрузки: <b>{pay}</b> против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
     en: 'Their earnings at 75% utilisation: <b>{pay}</b> vs the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
@@ -80,7 +80,7 @@ export const STRINGS = {
   opsWeatherAhead: { ru: 'Расчёт уже учитывает прогноз ({weather}): спрос вырастет примерно на <b>{lift}</b>.', en: 'This already accounts for the forecast ({weather}): demand will rise by roughly <b>{lift}</b>.' },
   opsMinPay: {
     ru: 'Наём начнётся от <b>{pay}</b> за заказ: чем длиннее плечо, тем меньше заказов успевает курьер и тем выше должна быть ставка.',
-    en: 'Hiring starts at <b>{pay}</b> per order: the longer the delivery leg, the fewer orders a courier completes and the higher the rate has to be.',
+    en: 'Hiring starts at <b>{pay}</b> per order: the longer the delivery distance, the fewer orders a courier completes and the higher the rate has to be.',
   },
 
   // --- погода ---
@@ -190,11 +190,11 @@ export const STRINGS = {
   mapKmShort: { ru: 'км', en: 'km' },
   mapPerOrderShort: { ru: 'с заказа', en: 'per order' },
   mapPerOrderTag: { ru: '/заказ', en: '/order' },
-  mapRefRing: { ru: 'Норма держится до плеча {km} км: дальше заказ перестаёт укладываться в {min} минут.', en: 'The benchmark holds up to a {km} km leg: beyond that an order no longer fits within {min} minutes.' },
+  mapRefRing: { ru: 'Норма держится до плеча {km} км: дальше заказ перестаёт укладываться в {min} минут.', en: 'The benchmark holds up to {km} km: beyond that an order no longer fits within {min} minutes.' },
   mapMin: { ru: ' мин', en: ' min' },
   mapOpenFor: { ru: 'вход {cost}', en: 'entry {cost}' },
   mapLiveMeta: { ru: 'клиентов {customers} · ресторанов {restaurants}', en: '{customers} customers · {restaurants} restaurants' },
-  mapIdleMeta: { ru: 'потенциал {potential} · плечо {km} км', en: 'potential {potential} · {km} km leg' },
+  mapIdleMeta: { ru: 'потенциал {potential} · плечо {km} км', en: 'potential {potential} · distance {km} km' },
   mapPlanned: { ru: 'откроется на этой неделе', en: 'opens this week' },
   mapClosing: { ru: 'закроется в конце недели', en: 'closes at the end of the week' },
   mapCouriers: { ru: 'Курьеров {couriers}, загрузка {util}', en: '{couriers} couriers, {util} utilisation' },
@@ -205,10 +205,10 @@ export const STRINGS = {
   },
   mapTipIdle: {
     ru: '{name}: потенциальных клиентов {potential}, вход {cost}, плечо {km} км.',
-    en: '{name}: {potential} potential customers, entry {cost}, a {km} km leg.',
+    en: '{name}: {potential} potential customers, entry {cost}, distance {km} km.',
   },
   mapTipShare: { ru: 'Ваши клиенты: {customers} — {share} района', en: 'Your customers: {customers} — {share} of the district' },
-  mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery leg {km} km · {time} min per order' },
+  mapTipLeg: { ru: 'Плечо доставки {km} км · {time} мин на заказ', en: 'Delivery distance {km} km · {time} min per order' },
   mapTipHouses: { ru: 'Подключено ресторанов: {n}', en: 'Restaurants signed up: {n}' },
   mapLegendTitle: { ru: 'Как читать карту', en: 'How to read the map' },
   // Легенда разобрана на элементы: наведение на пункт подсвечивает
@@ -231,7 +231,7 @@ export const STRINGS = {
   },
   mapLegendLeg: {
     ru: 'Ниточка — плечо доставки; красная — район не укладывается в эталонные минуты.',
-    en: 'The thread is the delivery leg; red means the district misses the reference time.',
+    en: 'The thread is the delivery distance; red means the district misses the reference time.',
   },
   mapLegendOutline: {
     ru: 'Обводка пунктиром — про конец недели: зелёная откроется, красная закроется, серая ждёт входа.',
@@ -241,7 +241,7 @@ export const STRINGS = {
     ru: 'Наведите на пункт легенды — карта подсветит его. Клик по кварталу открывает район или убирает его из плана.',
     en: 'Hover a legend item and the map highlights it. Clicking a block opens the district or drops it from the plan.',
   },
-  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · AOV {aov} · leg {km} km' },
+  districtStatsIdle: { ru: '{potential} потенц. клиентов · чек {aov} · плечо {km} км', en: '{potential} potential customers · AOV {aov} · distance {km} km' },
 
   // --- финансирование ---
   fundingTake: { ru: 'Взять', en: 'Take it' },
@@ -555,7 +555,7 @@ score = valuation × your stake`,
   gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board politely checks its watch.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с итогом 4.5–6.5 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: "excellent" starts at {a}, "a solid business" at {b}, "survived" at {c}. Strong players finish a run at $45–65M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с итогом 4.5–6.5 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: “excellent” starts at {a}, “a solid business” at {b}, “survived” at {c}. Strong players finish a run at $45–65M — surviving is easy, winning is not.' },
   gameOverLastWeek: { ru: 'Последняя неделя: {orders} заказов, вклад с заказа {cm}, прибыль {profit}, доля рынка {share}, время доставки {time} мин.', en: 'Final week: {orders} orders, {cm} contribution per order, {profit} profit, {share} market share, {time} min delivery time.' },
   gameOverQuestions: { ru: '<b>Вопросы для разбора:</b> в какой момент рост перестал улучшать прибыль? Что было узким местом — курьеры, рестораны или спрос? Дешевле ли обошёлся бы тот же результат без привлечённых раундов?', en: '<b>Questions for the debrief:</b> at what point did growth stop improving profit? What was the bottleneck — couriers, restaurants or demand? Would the same result have been cheaper without the funding rounds?' },
   // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
@@ -659,12 +659,12 @@ score = valuation × your stake`,
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
   welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, рестораны и курьеры на самокатах. Вы решаете, сколько брать за доставку и с ресторанов, сколько платить курьерам, куда расти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, restaurants and couriers on scooters. You decide what to charge for delivery, what commission to take from restaurants, what to pay couriers, where to grow and where the money goes.' },
-  welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год, 52 хода: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year — 52 turns: move the sliders, press "Run week" and see what came of it.' },
+  welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год, 52 хода: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year — 52 turns: move the sliders, press “Run week” and see what came of it.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Here is the catch.</b> A customer pays $1.49 for delivery while the courier gets $1.80 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> разориться и понять почему — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> going broke and understanding why teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
   welcomeMore: { ru: 'Подробнее', en: 'Details' },
-  welcomeHint: { ru: '<b>Первый ход</b> можно сделать, ничего не трогая. У каждого ползунка есть «зачем это?», разбор хода игра пишет сама, подробности — за кнопкой «?».', en: '<b>Your first turn</b> can be played without touching anything. Every slider has a "why does this matter?", the game explains each turn itself, and the "?" button has the rest.' },
+  welcomeHint: { ru: '<b>Первый ход</b> можно сделать, ничего не трогая. У каждого ползунка есть «зачем это?», разбор хода игра пишет сама, подробности — за кнопкой «?».', en: '<b>Your first turn</b> can be played without touching anything. Every slider has a “why does this matter?”, the game explains each turn itself, and the “?” button has the rest.' },
   helpModalTitle: { ru: 'Как играть', en: 'How to play' },
   helpModalOk: { ru: 'Понятно', en: 'Got it' },
   helpVersion: { ru: 'Сборка {version} от {date}.', en: 'Build {version}, {date}.' },

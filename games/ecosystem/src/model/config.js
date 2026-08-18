@@ -749,12 +749,12 @@ export const LEVERS = [
   {
     key: 'ecomOps',
     group: 'ecom',
-    label: { ru: 'Ассортимент и обработка заказов', en: 'Range and order handling' },
+    label: { ru: 'Ассортимент и обработка заказов', en: 'Assortment and order handling' },
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 12_000_000, step: 500_000, def: 3_000_000,
     tip: {
       ru: 'Качество е-кома: глубина ассортимента, сроки, возвраты. Против федеральных маркетплейсов удержание — единственная защита: их ассортимент вам не переплюнуть.',
-      en: 'E-commerce quality: range depth, delivery times, returns. Against national marketplaces retention is your only defence — you will not out-range them.',
+      en: 'E-commerce quality: assortment depth, delivery times, returns. Against national marketplaces retention is your only defence — you will never carry more than they do.',
     },
   },
   {

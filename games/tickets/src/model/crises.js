@@ -61,7 +61,7 @@ export const CRISES = [
     title: { ru: 'Сайт лёг на старте продаж', en: 'The site went down at on-sale' },
     text: {
       ru: 'Сто тысяч человек нажали «купить» в одну секунду. Половина увидела ошибку, часть заплатила дважды.',
-      en: 'A hundred thousand people pressed "buy" in the same second. Half saw an error, some paid twice.',
+      en: 'A hundred thousand people pressed “buy” in the same second. Half saw an error, some paid twice.',
     },
     lesson: {
       ru: 'Мощность покупается заранее и выглядит выброшенными деньгами ровно до того дня, когда она нужна.',
