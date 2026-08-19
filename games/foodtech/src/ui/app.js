@@ -5,7 +5,7 @@
 // tx() для двуязычных полей модели (районы, рычаги, события, алгоритмы).
 // ============================================================================
 
-import { CONFIG, DISTRICTS, CITIES, LEVERS, ALGORITHMS } from '../model/config.js';
+import { CONFIG, DISTRICTS, CITIES, LEVERS, ALGORITHMS, VERDICT } from '../model/config.js';
 import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import {
@@ -1977,9 +1977,9 @@ function showGameOver() {
     // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
     // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
     // потолок доведённой стратегии выше, чем казалось с надбавкой.
-    : s.equityValue > 5e9 ? 'Excellent'
-    : s.equityValue > 2.2e9 ? 'Solid'
-    : s.equityValue > 0.8e9 ? 'Survived' : 'Modest';
+    : s.equityValue > VERDICT.excellent ? 'Excellent'
+    : s.equityValue > VERDICT.solid ? 'Solid'
+    : s.equityValue > VERDICT.survived ? 'Survived' : 'Modest';
   const grade = t(`grade${gradeTier}`);
 
   const line = resultString({

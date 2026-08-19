@@ -12,8 +12,7 @@
 
 import {
   CONFIG, ORGANIZERS, AUDIENCES, LEVERS, LEVER_GROUPS, ALGORITHMS,
-  organizerById, audienceById, algorithmByKey, clamp,
-} from '../model/config.js';
+  organizerById, audienceById, algorithmByKey, clamp,, VERDICT } from '../model/config.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
   explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, debrief,
@@ -1790,7 +1789,7 @@ function gradeTierOf(score) {
   // (аудит 2026-08): решение кризисов подняло все опоры почти вдвое —
   // сбор с покупателя 3.87, сбор с организатора 4.13, платформенная
   // 19.05 млрд (24 кода). Отсюда «крепко» = 4 млрд.
-  if (score.equityValue >= 4_000_000_000) return 'Solid';
+  if (score.equityValue >= VERDICT.solid) return 'Solid';
   if (score.orgShare < 0.25) return 'Modest';
   return 'Survived';
 }

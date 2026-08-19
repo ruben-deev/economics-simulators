@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.14.0" />
+  <meta name="app-version" content="1.15.0" />
   <meta name="app-build-date" content="2026-08-19" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2562,6 +2562,17 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   Старые финалы, сыгранные в щедром мире, получат перенос по потолку —
 //   это цена честной пересборки, потолок (x2) её ограничивает.
 //
+//   ЕДИНИЦЫ ПЕРЕНОСА ПРИВЯЗАНЫ К ВЕРДИКТАМ ИГР (аудит 2026-08). Правило
+//   «solid — средняя опора» разъехалось с жизнью: опорные стратегии — это
+//   измерительный инструмент, они нарочно простые и не равны «крепкой игре».
+//   У НОВОЕДЫ это дало прямое противоречие на экранах: игра писала «крепкий
+//   бизнес» уже с 2.2 млрд, а НОВОГРАД на том же результате — «до крепкого
+//   финала не дотянуло», потому что единицей переноса стояли 5.5 млрд от
+//   давно пересобранного баланса. Теперь единица переноса — тот самый порог
+//   «крепко», который игрок видит в финале своей игры (VERDICT.solid в
+//   конфиге каждой игры), и разъехаться им больше нельзя: сверяет тест.
+//   НОВОЕДА 5.5 -> 2.2 млрд, КИНОРЕКА 5 -> 4.5, БИЛЕТВИЛЬ 4 -> без изменений.
+//
 //   Входы (threshold) пересчитаны под сегодняшние коридоры опор (аудит
 //   2026-08): правило «вход ниже ЛЮБОЙ опоры» после пересборок баланса
 //   нарушалось у двух игр из трёх. Коридоры сегодня: НОВОЕДА
@@ -2572,8 +2583,8 @@ const META_LINES_KEY = 'novograd-meta-lines';
 //   любой разумной стратегией открывает актив. Единицы переноса (solid)
 //   не тронуты: сколько переносится — по-прежнему вопрос силы финала.
 const LEGACY_GAMES = [
-  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 5.5e9 },
-  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.5e9, solid: 5e9 },
+  { assetId: 'delivery', tag: 'НОВОЕДА', recordsKey: 'novoeda-records', threshold: 0.3e9, solid: 2.2e9 },
+  { assetId: 'streaming', tag: 'КИНОРЕКА', recordsKey: 'kinoreka-records', threshold: 1.5e9, solid: 4.5e9 },
   { assetId: 'tickets', tag: 'БИЛЕТВИЛЬ', recordsKey: 'biletville-records', threshold: 1.2e9, solid: 4e9 },
 ];
 
@@ -3799,6 +3810,13 @@ const ALGORITHMS = [
     },
   },
 ];
+
+// Пороги вердикта финала. Лежат здесь, а не в интерфейсе, потому что от них
+// зависит не только надпись на экране: «крепкий финал» этой игры — единица
+// переноса наследия в НОВОГРАД (shared/meta.js). Пока числа жили в двух
+// местах, они разъехались, и игра говорила «крепкий бизнес», а НОВОГРАД на
+// том же результате — «до крепкого финала не дотянуло». Тест сверяет их.
+const VERDICT = { excellent: 5e9, solid: 2.2e9, survived: 0.8e9 };
 
 const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
@@ -7921,9 +7939,9 @@ function showGameOver() {
     // Старгород 6.4. Важное открытие калибровки: с прогнозным автонаймом
     // надбавка за погоду ЛИШНЯЯ (две механики делают одну работу), поэтому
     // потолок доведённой стратегии выше, чем казалось с надбавкой.
-    : s.equityValue > 5e9 ? 'Excellent'
-    : s.equityValue > 2.2e9 ? 'Solid'
-    : s.equityValue > 0.8e9 ? 'Survived' : 'Modest';
+    : s.equityValue > VERDICT.excellent ? 'Excellent'
+    : s.equityValue > VERDICT.solid ? 'Solid'
+    : s.equityValue > VERDICT.survived ? 'Survived' : 'Modest';
   const grade = t(`grade${gradeTier}`);
 
   const line = resultString({
