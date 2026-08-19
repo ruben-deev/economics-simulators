@@ -794,6 +794,13 @@ export const ALGORITHMS = [
   },
 ];
 
+// Пороги вердикта финала. Лежат здесь, а не в интерфейсе, потому что от них
+// зависит не только надпись на экране: «крепкий финал» этой игры — единица
+// переноса наследия в НОВОГРАД (shared/meta.js). Пока числа жили в двух
+// местах, они разъехались, и игра говорила «крепкий бизнес», а НОВОГРАД на
+// том же результате — «до крепкого финала не дотянуло». Тест сверяет их.
+export const VERDICT = { excellent: 8e9, solid: 4.5e9, survived: 1.5e9 };
+
 export const DEFAULT_DECISIONS = {
   ...Object.fromEntries(LEVERS.map((l) => [l.key, l.def * (l.scale ?? 1)])),
   algoOn: Object.fromEntries(ALGORITHMS.map((a) => [a.key, false])),

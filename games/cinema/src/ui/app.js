@@ -4,7 +4,7 @@
 // Текст берётся из src/strings.js через t() и tx().
 // ============================================================================
 
-import { CONFIG, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS } from '../model/config.js';
+import { CONFIG, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS, VERDICT } from '../model/config.js';
 import { RIVAL_RELEASES, rivalEffect, seasonOf } from '../model/market.js';
 import { eventById } from '../model/events.js';
 import { rivalSubs } from '../model/rival.js';
@@ -2337,9 +2337,9 @@ function showGameOver() {
     // (аудит 2026-08): опоры дают 8.23 / 4.88 / 1.78 млрд (24 кода) —
     // весь мир стал скромнее, потому что годовая касса больше не считается
     // заработком, а конвейер премьер не гасит похмелье бесплатно.
-    : s.equityValue > 8e9 ? 'Excellent'
-    : s.equityValue > 4.5e9 ? 'Solid'
-    : s.equityValue > 1.5e9 ? 'Survived' : 'Modest';
+    : s.equityValue > VERDICT.excellent ? 'Excellent'
+    : s.equityValue > VERDICT.solid ? 'Solid'
+    : s.equityValue > VERDICT.survived ? 'Survived' : 'Modest';
   const grade = t(`grade${gradeTier}`);
 
   const line = resultString({

@@ -222,3 +222,24 @@ test('протокол «СКРЕПКА»: четыре доверия плюс 
   assert.equal(secretEndingUnlocked(), false, 'после сброса путь и протокол начинаются заново');
   assert.equal(Object.keys(protocolFlags()).length, 0, 'отметки доверия стёрты');
 });
+
+// Единица переноса наследия — это тот самый «крепкий финал», который игрок
+// видит в финале игры-источника. Пока числа жили в двух местах, они
+// разъехались: НОВОЕДА писала «крепкий бизнес» с 2.2 млрд, а НОВОГРАД на том
+// же результате отвечал «до крепкого финала не дотянуло» (единица стояла 5.5
+// млрд от давно пересобранного баланса). Этот тест делает такое расхождение
+// невозможным.
+test('перенос наследия считается от порога «крепко» самой игры', async () => {
+  const games = {
+    delivery: (await import('../../games/foodtech/src/model/config.js')).VERDICT,
+    streaming: (await import('../../games/cinema/src/model/config.js')).VERDICT,
+    tickets: (await import('../../games/tickets/src/model/config.js')).VERDICT,
+  };
+  for (const g of LEGACY_GAMES) {
+    const verdict = games[g.assetId];
+    assert.ok(verdict, `у игры ${g.tag} нет порогов вердикта в конфиге`);
+    assert.equal(g.solid, verdict.solid,
+      `${g.tag}: единица переноса ${g.solid} разошлась с порогом «крепко» ${verdict.solid}`);
+    assert.ok(g.threshold < g.solid, `${g.tag}: вход в НОВОГРАД не ниже крепкого финала`);
+  }
+});
