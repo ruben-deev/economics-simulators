@@ -57,6 +57,32 @@ const GAMES = [
 const problems = [];
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 
+// Сначала МОДУЛЬНАЯ версия каждой игры — именно она открывается по ссылке
+// с главной страницы сайта (games/<игра>/index.html грузит src/main.js).
+// Однофайловая сборка её не заменяет: сборщик переписывает импорты и уже
+// скрывал живую поломку — dist собирался и играл, а модульная страница
+// умирала молча. Проверка дешёвая: страница должна загрузиться, показать
+// текст и кнопку хода, и не выругаться в консоль.
+for (const dir of ['foodtech', 'cinema', 'tickets', 'ecosystem']) {
+  const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !/lbEndpoint|Failed to fetch|net::|favicon|metrika|mc\.yandex/.test(m.text())) errs.push(m.text());
+  });
+  await page.goto(`${ROOT}/${dir}/index.html`).catch(() => {});
+  await page.waitForTimeout(900);
+  const len = await page.evaluate(() => document.body.innerText.trim().length).catch(() => 0);
+  const btn = await page.locator('#btn-next').count().catch(() => 0);
+  const where = `${dir} · модульная версия`;
+  if (errs.length) problems.push(`${where}: ошибки — ${errs.slice(0, 2).join(' | ')}`);
+  if (len < 200) problems.push(`${where}: страница пустая (${len} символов текста)`);
+  if (!btn) problems.push(`${where}: нет кнопки хода — игра не собралась`);
+  await ctx.close();
+}
+console.log('модульные версии: проверены');
+
 for (const g of GAMES) {
   for (const lang of ['ru', 'en']) {
     for (const [tag, w, h] of [['широкий', 1440, 900], ['телефон', 390, 844]]) {
