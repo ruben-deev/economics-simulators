@@ -50,7 +50,7 @@ export const STRINGS = {
     en: 'Taxi levers appear once the vertical is launched — see the Taxi card in the Verticals panel.',
   },
   leverGroupLockedEcom: {
-    ru: 'Рычаги е-кома появятся после запуска вертикали. Совет согласует третью ногу с 8-го месяца при прибыльном стартовом активе.',
+    ru: 'Рычаги е-кома появятся после запуска вертикали. Совет согласует третий сервис с 8-го месяца при прибыльном стартовом активе.',
     en: 'E-commerce levers appear once the vertical is launched. The board approves a third leg from month 8, with the starting asset profitable.',
   },
 
@@ -100,7 +100,7 @@ export const STRINGS = {
     en: 'E-commerce: <b>{users}</b> customers; churn ~{lost}/mo against ~<b class="{cls}">{gained}</b> arriving.',
   },
   readoutEcomCapacity: { ru: 'Мощность логистики: <b class="{cls}">{level}</b> от предела — от неё зависят чек, отток и готовность базы пробовать посылки.', en: 'Logistics capacity: <b class="{cls}">{level}</b> of the ceiling — it drives basket size, churn and the base’s readiness to try parcels.' },
-  readoutEcomUnit: { ru: 'Устойчивая экономика ноги: <b class="{cls}">{steady}</b> в месяц (вклад с клиентов минус фикс и ассортимент). Сверху вы платите за рост: {growth} на маркетинг и мощность.', en: 'The leg’s steady economics: <b class="{cls}">{steady}</b> a month (customer contribution less fixed costs and range). On top of that you pay for growth: {growth} on marketing and capacity.' },
+  readoutEcomUnit: { ru: 'Устойчивая экономика сервиса: <b class="{cls}">{steady}</b> в месяц (вклад с клиентов минус фикс и ассортимент). Сверху вы платите за рост: {growth} на маркетинг и мощность.', en: 'The leg’s steady economics: <b class="{cls}">{steady}</b> a month (customer contribution less fixed costs and range). On top of that you pay for growth: {growth} on marketing and capacity.' },
   readoutEcomLogistics: {
     ru: 'Общая логистика: курьеры хаба возят посылки в непик — маржа выше, но пиковые конфликты стоят еде качества.',
     en: 'Shared logistics: the hub’s couriers carry parcels off-peak — higher margin, but peak conflicts cost food some quality.',
@@ -253,7 +253,7 @@ export const STRINGS = {
   // --- совет ---
   goalYear: { ru: 'Год {year}', en: 'Year {year}' },
   goalSecondLeg: {
-    ru: 'Вторая нога: к концу года у такси должно быть не меньше {target} клиентов.',
+    ru: 'Второй сервис: к концу года у такси должно быть не меньше {target} клиентов.',
     en: 'A second leg: the taxi vertical must have at least {target} customers by year end.',
   },
   goalGlue: {
@@ -307,7 +307,7 @@ export const STRINGS = {
   },
   forkSaveTitle: { ru: 'Подкопить и зайти позже.', en: 'Save up and enter later.' },
   forkSaveBody: {
-    ru: 'Меньше риска банкротства и раунды по лучшей оценке — но каждый месяц ожидания это минус месяцы роста такси, а совет к концу года ждёт вторую ногу.',
+    ru: 'Меньше риска банкротства и раунды по лучшей оценке — но каждый месяц ожидания это минус месяцы роста такси, а совет к концу года ждёт второй сервис.',
     en: 'Less bankruptcy risk and rounds at a better valuation — but every month of waiting costs taxi growth, and the board expects a second leg by year end.',
   },
   forkMilkTitle: { ru: 'Дожимать корову.', en: 'Milk the cow.' },
@@ -372,7 +372,7 @@ export const STRINGS = {
 
   // --- предупреждения ---
   alertNoTaxi: {
-    ru: 'Совет ждёт вторую ногу: цель первого года — {target} клиентов такси, а вертикаль ещё не запущена.',
+    ru: 'Совет ждёт второй сервис: цель первого года — {target} клиентов такси, а вертикаль ещё не запущена.',
     en: 'The board expects a second leg: the year-one goal is {target} taxi customers, and the vertical is not launched yet.',
   },
   alertWar: {
@@ -429,7 +429,7 @@ export const STRINGS = {
     en: 'The downturn runs {months} more months: fixed costs are cut 25%, but execution suffers — churn is above normal.',
   },
   alertEcomGateOpen: {
-    ru: 'Совет готов согласовать третью ногу: е-ком доступен к запуску — у вашей логистики здесь скидка.',
+    ru: 'Совет готов согласовать третий сервис: е-ком доступен к запуску — у вашей логистики здесь скидка.',
     en: 'The board is ready to approve a third leg: e-commerce is available — your logistics earns a discount here.',
   },
   alertPlusReady: {
@@ -663,7 +663,7 @@ export const STRINGS = {
     en: 'Monetisation is past the tolerance threshold: the money comes now, and the leavers take your future cross-sell with them.',
   },
   adviceEcomThin: {
-    ru: 'Е-ком убыточен при почти нулевой мощности логистики: так эта нога не сходится никогда — либо мощность, либо закрывать.',
+    ru: 'Е-ком убыточен при почти нулевой мощности логистики: так этот сервис не сходится никогда — либо мощность, либо закрывать.',
     en: 'E-commerce is loss-making with almost no logistics capacity: that leg never adds up this way — either fund the capacity or close it.',
   },
   advicePlusThin: {
@@ -772,6 +772,11 @@ export const STRINGS = {
     ru: 'Финалы старых игр открывают стартовые бонусы (актив, льготная лицензия, льготное партнёрство) — они складываются, но подобраны так, чтобы чувствоваться и не решать партию. Льготы по абоненткам действуют первый год: наследие — фора на старте, а не рента на все три года. За финалы всех трёх игр и достойный НОВОГРАД полагается секретная концовка — строго косметическая. Успешный НОВОГРАД, в свою очередь, открывает в старых играх бейдж и коды партий: экономических прибавок в их зачётных партиях нет — они сломали бы честность общей таблицы.',
     en: 'Finished runs of the earlier games unlock starting bonuses (asset, discounted licence, discounted partnership) — they stack, but are sized to be felt without deciding the game. The fee discounts last the first year: a legacy is a head start, not a rent for all three years. Finishing all three plus a worthy NOVOGRAD earns a secret ending — strictly cosmetic. A successful NOVOGRAD in turn unlocks a badge and game codes in the old games: no economic gains in their ranked runs — that would break the fairness of the shared table.',
   },
+  helpMoneyTitle: { ru: 'Откуда деньги', en: 'Where the money comes from' },
+  helpMoneyText: {
+    ru: 'Стартовый актив насыщен: он приносит, но не растёт, и к середине партии перестаёт покрывать даже собственный фикс. Второй сервис платит за запуск, привлечение и мощность задолго до того, как начнёт приносить. Поэтому деньги инвесторов здесь не признак поражения, а обычный способ построить холдинг, и обращаться к ним приходится не один раз за партию. Цена — доля: счёт партии это оценка компании, умноженная на то, что осталось у вас. Чем позже вы идёте к инвестору, тем хуже условия, а с пустой кассой договариваться уже не о чем — компанию продадут за долги.',
+    en: 'The starting asset is saturated: it earns but does not grow, and by mid-game it stops covering even its own fixed costs. The second service pays for launch, acquisition and capacity long before it earns anything. Investor money here is not a mark of failure but the ordinary way a holding gets built — and you will need it more than once. The price is your stake: the final score is the company valuation multiplied by whatever is left of it. The later you go to an investor, the worse the terms, and with no cash left there is nothing to negotiate with — the company is sold to cover its debts.',
+  },
   helpFocusTitle: { ru: 'Каннибализация фокуса', en: 'Focus cannibalisation' },
   helpFocusText: {
     ru: 'Маркетинг и менеджмент общие: каждая новая вертикаль размывает исполнение всех остальных. Управляющая компания выкупает штраф — это цена «ещё одного сервиса», которую не видно в его собственном P&L.',
@@ -839,7 +844,7 @@ export const STRINGS = {
   welcomeTitle: { ru: 'НОВОГРАД: экосистема', en: 'NOVOGRAD: the ecosystem' },
   welcomeRole: { ru: 'Вы — генеральный директор компании, которая уже выиграла свой рынок: одна из трёх игр серии закончилась победой, город насыщен, расти числом клиентов больше некуда. Эта партия начинается там, где закончилась прошлая.', en: 'You are the CEO of a company that has already won its market: one of the three games of the series ended in victory, the city is saturated, and there is no one left to acquire. This game starts where the previous one ended.' },
   welcomeTurn: { ru: 'Ход — месяц, партия — три года. Вы управляете холдингом на уровне портфеля: несколько рычагов на вертикаль, микроменеджмент остался в исходных играх.', en: 'A turn is a month; the game is three years. You run the holding at portfolio level: a few levers per vertical — the micromanagement stayed in the original games.' },
-  welcomeTension: { ru: 'Главное напряжение: дожимать насыщенную корову или строить вторую ногу — такси, кросс-селл, общая база. Деньги сейчас против выручки с клиента завтра; и на ваш вход хозяин рынка ответит войной.', en: 'The core tension: milk the saturated cow, or build a second leg — taxi, cross-sell, the shared base. Money now versus revenue per customer later; and the market’s owner will answer your entry with a war.' },
+  welcomeTension: { ru: 'Главное напряжение: дожимать насыщенную корову или строить второй сервис — такси, кросс-селл, общая база. Деньги сейчас против выручки с клиента завтра; и на ваш вход хозяин рынка ответит войной. Второй сервис строится не на прибыль первого, а на деньги инвесторов: привлекать их здесь норма, а не поражение, и платите вы за них долей.', en: 'The core tension: milk the saturated cow, or build a second leg — taxi, cross-sell, the shared base. Money now versus revenue per customer later; and the market’s owner will answer your entry with a war. The second leg is built on investor money rather than the first one’s profit: raising here is normal rather than a defeat, and you pay for it with your stake.' },
   welcomeGoal: { ru: 'Счёт партии — стоимость вашей доли: (оценка холдинга по сумме частей + касса) × доля. Инвестор платит премию за клиентов двух и более сервисов.', en: 'The score is the value of your stake: (sum-of-parts valuation + cash) × your stake. Investors pay a premium for customers on two or more services.' },
   welcomeHint: { ru: 'Начните с вкладки «База»: посмотрите, из чего состоит общая база клиентов, — и следите за ARPU холдинга в шапке.', en: 'Start with the Base tab: see what the shared customer base is made of — and keep an eye on holding ARPU in the header.' },
   welcomeStart: { ru: 'Начать партию', en: 'Start the game' },
@@ -874,7 +879,7 @@ export const STRINGS = {
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
-    ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} к дескриптору) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и вторую ногу построить большую.',
+    ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} к дескриптору) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и второй сервис построить большой.',
     en: 'A {game} run worth {score} — that is {ratio} of a solid result in that game. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} over the descriptor) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
   },
   welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid result' },
@@ -959,6 +964,10 @@ export const STRINGS = {
   debriefClean: {
     ru: 'Системных промахов не нашлось: подписка склеила вертикали, менеджмент поспевал за ростом, касса держала подушку. Сильная партия.',
     en: 'No systematic misses found: the subscription glued the verticals, management kept pace with growth, cash held its cushion. A strong run.',
+  },
+  debriefNoRounds: {
+    ru: 'Вы ни разу не привлекли инвестора. Насыщенный стартовый актив сам себя не кормит, а второй сервис тратит задолго до того, как начнёт приносить, — и партия заканчивается продажей за долги.',
+    en: 'You never brought an investor in. A saturated starting asset does not feed itself, and the second service spends long before it starts earning — so the game ends in a sale to cover the debts.',
   },
   debriefNoPlus: {
     ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: с Плюсом такая же партия приносит 8.7 млрд, без него — 6.7.',
@@ -1059,6 +1068,10 @@ export const STRINGS = {
   deathText: {
     ru: 'В кассе {cash}, темп −{burn}/мес: {runway}. Раунд ещё доступен — после нуля договариваться будет поздно.',
     en: 'Cash {cash}, burn −{burn}/mo: {runway}. A round is still possible — after zero there is nothing to negotiate with.',
+  },
+  deathEarlyText: {
+    ru: 'В кассе {cash}, темп −{burn}/мес: {runway}. Привлечь инвестора можно будет с {month}-го месяца — до тех пор единственный рычаг это расходы.',
+    en: 'Cash {cash}, burn −{burn}/mo: {runway}. You can bring an investor in from month {month} — until then your only lever is spending.',
   },
   deathRunway: { ru: 'хватит примерно на {n} мес.', en: 'roughly {n} months left' },
   deathRaise: { ru: 'Взять {amount} (−{dilution} доли)', en: 'Raise {amount} (−{dilution} stake)' },

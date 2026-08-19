@@ -1292,3 +1292,25 @@ test('сооснователь берёт долю один раз и снима
   const control = step({ ...s, pendingEvent: null }, { decisions, eventChoice: 0 }).state;
   assert.equal(again.equity, control.equity, 'доля ушла второй раз');
 });
+
+// Разбор партии называет главную причину провала: денег извне не брали.
+// Замер: без единого раунда 24 кода из 24 кончаются продажей за долги, а
+// нижняя планка вердикта недостижима в принципе — значит игрок должен
+// прочитать про это в финале, а не гадать.
+test('разбор замечает партию без единого раунда', async () => {
+  const { debrief } = await import('../src/model/engine.js');
+  const hist = Array.from({ length: 24 }, () => ({
+    profit: 5_000_000, cash: 500_000_000, revenue: 40_000_000,
+    taxiOn: true, plusOn: true, focusPenalty: 0,
+  }));
+
+  const without = debrief({ history: hist, raisedTotal: 0, month: 24 });
+  assert.ok(without.some((d) => d.id === 'noRounds'), 'партия без раундов не отмечена');
+
+  const with_ = debrief({ history: hist, raisedTotal: 400_000_000, month: 24 });
+  assert.ok(!with_.some((d) => d.id === 'noRounds'), 'раунд взят, а разбор всё равно ругается');
+
+  // Правило стоит первым: оно объясняет провал лучше остальных, а разбор
+  // режется до четырёх пунктов
+  assert.equal(without[0].id, 'noRounds', 'правило уехало вниз списка');
+});
