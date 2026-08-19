@@ -245,9 +245,13 @@ export const STRINGS = {
     en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in BILETVILLE.',
   },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (the customer base disperses, the fleet is disbanded)' },
+  vertLockedToastThin: {
+    ru: 'Совет ждёт, пока стартовый актив станет прибыльным {n} месяца подряд, а сейчас он даёт {avg}/мес. Пока это минус, ворота закрыты — и на тонком активе так может остаться до конца партии. Экосистема из двух сервисов — нормальный расклад, а не провал. Заявка сохранена.',
+    en: 'The board is waiting for the starting asset to run profitably for {n} months, and right now it makes {avg}/mo. While that is negative the gate stays shut — and on a thin asset it may stay shut for the rest of the game. An ecosystem of two services is a normal outcome, not a failure. The request is saved.',
+  },
   vertLockedToast: {
-    ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльный стартовый актив {n} месяца подряд. Заявка сохранена.',
-    en: 'The board will not approve the launch yet: you need month {month} and the starting asset profitable for {n} straight months. The request is saved.',
+    ru: 'Совет пока не согласует запуск: нужен месяц {month} и прибыльный стартовый актив {n} месяца подряд. Сейчас актив даёт {avg}/мес. Заявка сохранена.',
+    en: 'The board will not approve the launch yet: you need month {month} and the starting asset profitable for {n} straight months. Right now it makes {avg}/mo. The request is saved.',
   },
 
   // --- совет ---

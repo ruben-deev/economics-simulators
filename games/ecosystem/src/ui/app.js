@@ -1039,8 +1039,16 @@ function renderVerticals() {
       const set = new Set(state.decisions.verticals ?? []);
       if (!set.has(id)) {
         if (id === 'ecom' && !state.ecom.on && !ecomGateOpen) {
-          toast(t('vertLockedToast', {
-            month: ecomDef.gate.minMonth, n: ecomDef.gate.assetContributionMonths,
+          // Совет молчал, а игрок гадал: показываем то же живое число, что
+          // на бейдже, и честно говорим, что на тонком активе ворота могут
+          // не открыться вовсе — партия из двух сервисов это не провал.
+          const gn = ecomDef.gate.assetContributionMonths;
+          const gh = state.history.slice(-gn);
+          const gAvg = gh.length === gn
+            ? gh.reduce((acc, x) => acc + (x.foodFullContribution ?? 0), 0) / gn : null;
+          toast(t(gAvg !== null && gAvg <= 0 ? 'vertLockedToastThin' : 'vertLockedToast', {
+            month: ecomDef.gate.minMonth, n: gn,
+            avg: gAvg === null ? '—' : moneyExact(gAvg),
           }));
         }
         if (id === 'plus' && !state.plus.on && !plusOk) {
