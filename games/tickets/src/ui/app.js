@@ -12,7 +12,7 @@
 
 import {
   CONFIG, ORGANIZERS, AUDIENCES, LEVERS, LEVER_GROUPS, ALGORITHMS,
-  organizerById, audienceById, algorithmByKey, clamp,, VERDICT } from '../model/config.js';
+  organizerById, audienceById, algorithmByKey, clamp, VERDICT } from '../model/config.js';
 import {
   createInitialState, step, unitEconomics, valuation, fundingOffer, raise,
   explain, explainFactors, finalScore, algoQuality, dataLevel, rndLevel, debrief,
