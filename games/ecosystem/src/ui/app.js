@@ -1791,6 +1791,9 @@ function renderHelpTab() {
     <h4>${t('helpMetaTitle')}</h4>
     <p>${t('helpMetaText')}</p>
 
+    <h4>${t('helpMoneyTitle')}</h4>
+    <p>${t('helpMoneyText')}</p>
+
     <h4>${t('helpFocusTitle')}</h4>
     <p>${t('helpFocusText')}</p>
 
@@ -1858,7 +1861,24 @@ function maybeDeathFork() {
   if (!r || r.profit >= 0) return;
   const burn = -r.profit;
   if (state.cash >= burn * 2) return;
-  if (state.month < CONFIG.minMonthForFunding) return;
+  // До открытия окна раунд взять нельзя — но молчать здесь нельзя тем более:
+  // именно в этом окне гибнет билетный старт (касса меньше остальных, а
+  // запуск такси стоит столько же). Предупреждаем без кнопок раунда и своим
+  // флагом, иначе одноразовое предупреждение сгорит до того, как станет
+  // полезным.
+  if (state.month < CONFIG.minMonthForFunding) {
+    if (state.deathWarnedEarly) return;
+    state.deathWarnedEarly = true;
+    save();
+    modal(`<h2>${t('deathTitle')}</h2>
+      <p class="funding-note">${t('deathEarlyText', {
+        cash: money(state.cash), burn: money(burn),
+        runway: t('deathRunway', { n: num(Math.max(0, state.cash / burn), 1) }),
+        month: CONFIG.minMonthForFunding + 1,
+      })}</p>`,
+    [{ label: t('deathIgnore') }]);
+    return;
+  }
   state.deathWarned = true;
   save();
   const runway = Math.max(0, state.cash / burn);

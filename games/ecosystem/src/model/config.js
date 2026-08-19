@@ -591,7 +591,7 @@ export const LEVER_GROUPS = [
   {
     id: 'taxi',
     icon: '🚕',
-    label: { ru: 'Такси — вторая нога', en: 'Taxi — the second leg' },
+    label: { ru: 'Такси — второй сервис', en: 'Taxi — the second leg' },
     desc: {
       ru: 'Растущая вертикаль: цена поездки, мощность парка и холодное привлечение. Мощность ведут за спросом.',
       en: 'The growth vertical: fares, fleet capacity and cold acquisition. Capacity follows demand.',
@@ -601,7 +601,7 @@ export const LEVER_GROUPS = [
   {
     id: 'ecom',
     icon: '📦',
-    label: { ru: 'Е-ком — третья нога', en: 'E-commerce — the third leg' },
+    label: { ru: 'Е-ком — третий сервис', en: 'E-commerce — the third leg' },
     desc: {
       ru: 'Дарксторы и посылки против федеральных маркетплейсов. Живёт кросс-селлом из вашей базы и общей логистикой.',
       en: 'Dark stores and parcels against national marketplaces. Lives off cross-sell from your base and shared logistics.',
