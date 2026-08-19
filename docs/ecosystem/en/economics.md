@@ -187,18 +187,26 @@ finance-team budget taken as the best of a grid for each asset × level pair:
 
 | level | delivery | streaming | ticketing | spread |
 |---|---|---|---|---|
-| easy | 1.73× | 1.51× | 1.52× | 1.15× |
-| normal | 1.73× | 1.51× | 1.52× | 1.15× |
-| hard | 1.72× | 1.51× | 1.51× | 1.14× |
+| easy | 1.55× | 1.39× | 1.86× | 1.34× |
+| normal | 1.57× | 1.49× | 1.74× | 1.17× |
+| hard | 1.55× | 1.46× | 1.75× | 1.20× |
+
+The table was re-measured after the ticketing descriptor was rebuilt (wide
+and thin instead of small twice over). Ticketing now sits above its own bar
+rather than below it: the thresholds are derived from the measured ceiling
+using the same fractions as delivery, while this table runs one shared
+policy that is not tuned per asset. The two methods differ by about ten
+percent, and that gap is left in deliberately — tuning the thresholds to one
+policy would enshrine it as the only correct way to play.
 
 Equality does not arise by itself: a level's gifts inherently favour the
 larger start. Easy's free finance team drops other costs to the floor (0.5%
 of revenue instead of 3%), and that saving runs through the valuation
-multiple: for delivery ₽0.13bn of saved costs becomes ₽3.3bn of score (a ×25
-lever), for ticketing ₽0.06bn becomes just ₽0.12bn (×2), and the small start
-is also diluted twice as hard (38% equity against 78%). Resizing the gift
+multiple. A thin asset is also diluted harder — 48% equity at the finale
+against 74% for delivery — because equity is given up against valuation, and
+a smaller company pays a bigger share for the same money. Resizing the gift
 does not help — measurement shows that both a halved team and a discount on
-the price of money leave the spread almost unchanged.
+the cost of money leave the spread almost unchanged.
 
 That is why what equalises the starts is not the difficulty but the
 **verdict bar**: it
