@@ -312,6 +312,19 @@ export function expansionOpen(state, vertical) {
 }
 
 // Подписке нужно, что склеивать: хаб + хотя бы одна вертикаль
+// Партнёрская сеть билетного старта: афиши и кассы города — это канал к тем,
+// кто ЕЩЁ НЕ ваш клиент. Раньше перк давал только скидку на кросс-селл, а его
+// ёмкость упирается в размер базы хаба — у билетов она самая маленькая, и
+// скидка выдавалась на канал, которым этот актив не может воспользоваться
+// (замер: кросс-селл выше 3 млн там ухудшает итог). Теперь сеть удешевляет и
+// холодное привлечение вертикалей: тот же охват за меньшие деньги.
+// Замер на 24 кодах, билеты, такси с 1-го месяца: без перка 2.05 млрд,
+// с множителем 0.8 -> 2.21, 0.7 -> 2.29, 0.6 -> 2.44. Взято 0.7. Доставка и
+// стриминг не двигаются вовсе — перк есть только у билетного старта.
+export function partnerAcqMult(asset) {
+  return hasPerk(asset, 'partner-network') ? CONFIG.partnerNetworkAcqMult : 1;
+}
+
 export function plusAvailable(state) {
   return verticalsCount(state) >= CONFIG.plus.minVerticals;
 }
@@ -655,7 +668,7 @@ export function step(prevState, input = {}) {
 
     const mBudget = decisions.taxiMarketing ?? 0;
     coldAcq = taxiPool * CONFIG.taxiMarketingReach
-      * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation))
+      * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation * partnerAcqMult(asset)))
       * clamp(Math.pow(taxiPriceFactor, 0.7), 0.5, 1.3)
       * (atWar ? 1 - taxiDef.warAcqCut : 1)
       * fedAcqMult;
@@ -706,7 +719,7 @@ export function step(prevState, input = {}) {
 
     const mBudget = decisions.ecomMarketing ?? 0;
     ecomColdAcq = ecomPool * ecomDef.marketingReach
-      * (mBudget / (mBudget + ecomDef.marketingSaturation))
+      * (mBudget / (mBudget + ecomDef.marketingSaturation * partnerAcqMult(asset)))
       * fedAcqMult;
 
     state.bothEcom = Math.max(0, state.bothEcom - lostEcomBoth);

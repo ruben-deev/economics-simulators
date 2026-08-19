@@ -1333,3 +1333,17 @@ test('разбор замечает раздутую управляющую ко
     raisedTotal: 400_000_000, month: 24 });
   assert.ok(!sane.some((d) => d.id === 'fatMgmt'), 'разумный бюджет принят за переплату');
 });
+
+// Партнёрская сеть билетного старта работает по холодному привлечению, а не
+// только по кросс-селлу: у актива с самой маленькой базой канал кросс-селла
+// упирается в её размер, и скидка там доставалась каналу, которым нельзя
+// воспользоваться.
+test('партнёрская сеть удешевляет холодное привлечение только билетам', async () => {
+  const { partnerAcqMult } = await import('../src/model/engine.js');
+  assert.equal(partnerAcqMult(assetById('tickets')), CONFIG.partnerNetworkAcqMult,
+    'у билетного старта перк не применился');
+  assert.ok(CONFIG.partnerNetworkAcqMult < 1, 'перк должен удешевлять, а не удорожать');
+  for (const id of ['delivery', 'streaming']) {
+    assert.equal(partnerAcqMult(assetById(id)), 1, `перк протёк в старт ${id}`);
+  }
+});
