@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.18.0" />
+  <meta name="app-version" content="1.19.0" />
   <meta name="app-build-date" content="2026-08-19" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3592,6 +3592,9 @@ const CONFIG = {
   // расфокус просто не из чего.
   cofounder: { equity: 0.14, focusRelief: 0.25 },
   mgmtSaturation: 6_000_000,   // ₽/мес управляющей компании для «половины» эффекта
+  // Партнёрская сеть билетного старта удешевляет холодное привлечение
+  // вертикалей: точка насыщения маркетинга умножается на это число
+  partnerNetworkAcqMult: 0.7,
 
   // Контракт с аэропортом действует год, потом новый тендер. Вечная прибавка
   // частоты делала событие викториной (см. events.js airport_tender).
@@ -3991,8 +3994,8 @@ const START_ASSETS = [
     // а партнёрство с билетами уже в кармане (это вы и есть)
     perks: ['partner-network', 'own-tickets'],
     synergyNote: {
-      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Кросс-селл дешевле через афиши, а партнёрство по билетам не нужно — оно уже ваше.',
-      en: 'Ticketing’s edge is the organiser partner network. Cross-sell is cheaper through listings, and no ticketing partnership is needed — it is already yours.',
+      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Афиши и кассы города удешевляют привлечение — и своих через кросс-селл, и чужих в новые сервисы. Партнёрство по билетам не нужно: оно уже ваше.',
+      en: 'Ticketing’s edge is the organiser partner network. City listings and box offices make acquisition cheaper — both cross-sell to your own customers and cold acquisition into new services. No ticketing partnership is needed: it is already yours.',
     },
   },
 ];
@@ -5661,6 +5664,19 @@ function expansionOpen(state, vertical) {
 }
 
 // Подписке нужно, что склеивать: хаб + хотя бы одна вертикаль
+// Партнёрская сеть билетного старта: афиши и кассы города — это канал к тем,
+// кто ЕЩЁ НЕ ваш клиент. Раньше перк давал только скидку на кросс-селл, а его
+// ёмкость упирается в размер базы хаба — у билетов она самая маленькая, и
+// скидка выдавалась на канал, которым этот актив не может воспользоваться
+// (замер: кросс-селл выше 3 млн там ухудшает итог). Теперь сеть удешевляет и
+// холодное привлечение вертикалей: тот же охват за меньшие деньги.
+// Замер на 24 кодах, билеты, такси с 1-го месяца: без перка 2.05 млрд,
+// с множителем 0.8 -> 2.21, 0.7 -> 2.29, 0.6 -> 2.44. Взято 0.7. Доставка и
+// стриминг не двигаются вовсе — перк есть только у билетного старта.
+function partnerAcqMult(asset) {
+  return hasPerk(asset, 'partner-network') ? CONFIG.partnerNetworkAcqMult : 1;
+}
+
 function plusAvailable(state) {
   return verticalsCount(state) >= CONFIG.plus.minVerticals;
 }
@@ -6004,7 +6020,7 @@ function step(prevState, input = {}) {
 
     const mBudget = decisions.taxiMarketing ?? 0;
     coldAcq = taxiPool * CONFIG.taxiMarketingReach
-      * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation))
+      * (mBudget / (mBudget + CONFIG.taxiMarketingSaturation * partnerAcqMult(asset)))
       * clamp(Math.pow(taxiPriceFactor, 0.7), 0.5, 1.3)
       * (atWar ? 1 - taxiDef.warAcqCut : 1)
       * fedAcqMult;
@@ -6055,7 +6071,7 @@ function step(prevState, input = {}) {
 
     const mBudget = decisions.ecomMarketing ?? 0;
     ecomColdAcq = ecomPool * ecomDef.marketingReach
-      * (mBudget / (mBudget + ecomDef.marketingSaturation))
+      * (mBudget / (mBudget + ecomDef.marketingSaturation * partnerAcqMult(asset)))
       * fedAcqMult;
 
     state.bothEcom = Math.max(0, state.bothEcom - lostEcomBoth);

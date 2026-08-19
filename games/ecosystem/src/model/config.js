@@ -42,6 +42,9 @@ export const CONFIG = {
   // расфокус просто не из чего.
   cofounder: { equity: 0.14, focusRelief: 0.25 },
   mgmtSaturation: 6_000_000,   // ₽/мес управляющей компании для «половины» эффекта
+  // Партнёрская сеть билетного старта удешевляет холодное привлечение
+  // вертикалей: точка насыщения маркетинга умножается на это число
+  partnerNetworkAcqMult: 0.7,
 
   // Контракт с аэропортом действует год, потом новый тендер. Вечная прибавка
   // частоты делала событие викториной (см. events.js airport_tender).
@@ -441,8 +444,8 @@ export const START_ASSETS = [
     // а партнёрство с билетами уже в кармане (это вы и есть)
     perks: ['partner-network', 'own-tickets'],
     synergyNote: {
-      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Кросс-селл дешевле через афиши, а партнёрство по билетам не нужно — оно уже ваше.',
-      en: 'Ticketing’s edge is the organiser partner network. Cross-sell is cheaper through listings, and no ticketing partnership is needed — it is already yours.',
+      ru: 'Сильная сторона билетов: партнёрская сеть организаторов. Афиши и кассы города удешевляют привлечение — и своих через кросс-селл, и чужих в новые сервисы. Партнёрство по билетам не нужно: оно уже ваше.',
+      en: 'Ticketing’s edge is the organiser partner network. City listings and box offices make acquisition cheaper — both cross-sell to your own customers and cold acquisition into new services. No ticketing partnership is needed: it is already yours.',
     },
   },
 ];
