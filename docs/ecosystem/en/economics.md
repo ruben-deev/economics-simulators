@@ -27,9 +27,13 @@ The ecosystem’s shape follows the starting asset literally:
 * **streaming** — the habit of paying: the Plus subscription is cheaper to
   launch and converts better, and the content is yours — no cinema licence
   needed;
-* **ticketing** — a partner network: all cross-sell is 20% cheaper and the
-  ticketing partnership is already in hand. A small base and treasury —
-  hard mode.
+* **ticketing** — a partner network: cross-sell is 20% cheaper and cold
+  acquisition into the verticals costs 0.7 of the usual price (city listings
+  and box offices reach people who are not your customers yet); the ticketing
+  partnership is already in hand. The asset's shape is wide and thin: the
+  largest customer base in the city at the smallest revenue per person,
+  because people buy a ticket twice a year. 280K × $0.90 = $250K/mo against
+  $610K for delivery and $500K for streaming.
 
 ## Cross-sell versus cold marketing
 
