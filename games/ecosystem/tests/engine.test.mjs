@@ -1314,3 +1314,22 @@ test('разбор замечает партию без единого раун�
   // режется до четырёх пунктов
   assert.equal(without[0].id, 'noRounds', 'правило уехало вниз списка');
 });
+
+// Обратная ошибка расфокуса: раздутая управляющая компания. Подсказка рычага
+// обещала выкуп штрафа и молчала про цену денег, поэтому игрок крутил вверх
+// и терял больше, чем экономил, — разбор обязан это назвать.
+test('разбор замечает раздутую управляющую компанию', async () => {
+  const { debrief } = await import('../src/model/engine.js');
+  const row = (mgmt) => ({
+    profit: 5_000_000, cash: 500_000_000, revenue: 40_000_000,
+    taxiOn: true, plusOn: true, focusPenalty: 0, decisions: { mgmt },
+  });
+
+  const fat = debrief({ history: Array.from({ length: 24 }, () => row(14_000_000)),
+    raisedTotal: 400_000_000, month: 24 });
+  assert.ok(fat.some((d) => d.id === 'fatMgmt'), 'переплата за управление не замечена');
+
+  const sane = debrief({ history: Array.from({ length: 24 }, () => row(6_000_000)),
+    raisedTotal: 400_000_000, month: 24 });
+  assert.ok(!sane.some((d) => d.id === 'fatMgmt'), 'разумный бюджет принят за переплату');
+});
