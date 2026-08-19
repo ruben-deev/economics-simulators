@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.16.0" />
+  <meta name="app-version" content="1.17.0" />
   <meta name="app-build-date" content="2026-08-19" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2306,6 +2306,10 @@ const STRINGS = {
     ru: 'Вы ни разу не привлекли инвестора. Насыщенный стартовый актив сам себя не кормит, а второй сервис тратит задолго до того, как начнёт приносить, — и партия заканчивается продажей за долги.',
     en: 'You never brought an investor in. A saturated starting asset does not feed itself, and the second service spends long before it starts earning — so the game ends in a sale to cover the debts.',
   },
+  debriefFatMgmt: {
+    ru: 'Управляющая компания была раздута {n} месяцев. Она правда выкупает размытый фокус, но деньги на неё отнимаются у самих сервисов и у запаса кассы — переплата стоит дороже того штрафа, который снимает.',
+    en: 'The management company was oversized for {n} months. It does buy back diluted focus, but the money for it comes out of the services themselves and out of your cash buffer — overpaying costs more than the penalty it removes.',
+  },
   debriefNoPlus: {
     ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: с Плюсом такая же партия приносит 8.7 млрд, без него — 6.7.',
     en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: with Plus the same run makes $87M; without it, $67M.',
@@ -4191,8 +4195,8 @@ const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
-      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение, ещё четверть остатка снимает сооснователь. Пока вертикаль одна, команда почти не нужна.',
-      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here, and a co-founder removes another quarter of the rest. With a single vertical you barely need it.',
+      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение, ещё четверть остатка снимает сооснователь. Пока вертикаль одна, команда почти не нужна. И это не бесплатное лекарство: деньги на управление конкурируют с бюджетами самих сервисов и с запасом кассы. По замеру оптимум умеренный — при двух сервисах около 6–8 млн, при трёх около 4–6, а выше одиннадцати итог падает: за штраф вы платите больше, чем он стоит.',
+      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here, and a co-founder removes another quarter of the rest. With a single vertical you barely need it. And it is not a free cure: management money competes with the services\' own budgets and with your cash buffer. Measured, the optimum is modest — around $60–80K/mo with two services, $40–60K with three; above $110K the result falls, because you end up paying more than the penalty costs.',
     },
   },
   {
@@ -6814,6 +6818,13 @@ function debrief(state) {
   const taxiEver = hist.some((r) => r.taxiOn);
   const plusEver = hist.some((r) => r.plusOn);
   if (taxiEver && !plusEver && hist.length >= 30) out.push({ id: 'noPlus' });
+
+  // Обратная ошибка: управляющая компания раздута. Подсказка рычага обещает
+  // выкуп штрафа, про цену денег там раньше не было ни слова, и игрок
+  // естественно крутил вверх. Замер (24 кода, доставка): при двух сервисах
+  // оптимум 6-8 млн, при трёх 4-6, на 14 млн итог падает с 11.1 до 8.6 млрд.
+  const fatMgmt = hist.filter((r) => (r.decisions?.mgmt ?? 0) >= 12_000_000).length;
+  if (fatMgmt >= 10) out.push({ id: 'fatMgmt', n: fatMgmt });
 
   // Расфокус: вертикали открывались быстрее, чем рос менеджмент, и штраф
   // качества держался месяцами. Цена — собственный средний штраф партии.

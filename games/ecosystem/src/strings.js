@@ -969,6 +969,10 @@ export const STRINGS = {
     ru: 'Вы ни разу не привлекли инвестора. Насыщенный стартовый актив сам себя не кормит, а второй сервис тратит задолго до того, как начнёт приносить, — и партия заканчивается продажей за долги.',
     en: 'You never brought an investor in. A saturated starting asset does not feed itself, and the second service spends long before it starts earning — so the game ends in a sale to cover the debts.',
   },
+  debriefFatMgmt: {
+    ru: 'Управляющая компания была раздута {n} месяцев. Она правда выкупает размытый фокус, но деньги на неё отнимаются у самих сервисов и у запаса кассы — переплата стоит дороже того штрафа, который снимает.',
+    en: 'The management company was oversized for {n} months. It does buy back diluted focus, but the money for it comes out of the services themselves and out of your cash buffer — overpaying costs more than the penalty it removes.',
+  },
   debriefNoPlus: {
     ru: 'Вертикали подняты, а Плюс так и не запущен. Подписка и партнёрства — клей экосистемы: с Плюсом такая же партия приносит 8.7 млрд, без него — 6.7.',
     en: 'The verticals are up, but Plus never launched. The subscription and partnerships are the ecosystem’s glue: with Plus the same run makes $87M; without it, $67M.',
