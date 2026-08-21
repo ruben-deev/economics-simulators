@@ -62,9 +62,17 @@ export const STRINGS = {
     en: 'No district is selected, so there will be no orders. Start with one — the launch is a one-off cost, but running it is charged every week.',
   },
   opsPerCourier: { ru: 'Курьер увезёт <b>{orders}</b> заказов/нед (плечо {km} км).', en: 'A courier delivers <b>{orders}</b> orders/wk (average distance {km} km).' },
+  // Два числа, которые легко перепутать, и раньше их путали: кандидат считает
+  // заработок по ПОЛНОЙ смене (75% загрузки), а тот, кто уже на линии, получает
+  // по фактической. При простое второе число сильно меньше первого — отсюда
+  // «наём идёт, а люди уходят». Поэтому в подписи прямо сказано, чьё это число.
   opsEarnings: {
-    ru: 'Его заработок при 75% загрузки: <b>{pay}</b> против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
-    en: 'Their earnings at 75% utilisation: <b>{pay}</b> vs the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+    ru: 'Кандидат считает по 75% загрузки: <b>{pay}</b> против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+    en: 'A candidate does the maths at 75% utilisation: <b>{pay}</b> vs the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+  },
+  opsEarningsReal: {
+    ru: 'Но при фактической загрузке {util} курьер увезёт {orders} заказов и заработает <b class="neg">{pay}</b>. На это число смотрит отток, а не наём.',
+    en: 'At the actual {util} utilisation, though, a courier delivers {orders} orders and earns <b class="neg">{pay}</b>. Churn looks at this number; hiring does not.',
   },
   opsHiringQueue: { ru: 'очередь из кандидатов', en: 'a queue of applicants' },
   opsHiringSteady: { ru: 'наём идёт ровно', en: 'hiring runs smoothly' },
@@ -318,7 +326,7 @@ export const STRINGS = {
   alertShortage: { ru: 'Курьеров не хватает: спрос покрыт на {fill}. Потеряно {lost} заказов, время доставки выросло до {time} мин. Потерянный заказ бьёт дважды — сегодня по выручке, завтра по удержанию.', en: 'Not enough couriers: only {fill} of demand was served. {lost} orders lost and delivery time climbed to {time} min. A lost order hits you twice — revenue today, retention tomorrow.' },
   alertIdle: { ru: 'Курьеры простаивают (загрузка {util}). Каждый лишний курьер стоит {cost}/нед содержания, а заработок на человека падает — начнётся отток.', en: 'Couriers are idle (utilisation {util}). Every spare courier costs {cost}/wk to keep, and per-person earnings fall — churn will follow.' },
   alertNoApplicants: { ru: 'Никто не откликнулся на вакансию курьера: при ставке {pay} и {orders} заказах в неделю заработок не дотягивает до рыночных {market}. Отклики пойдут примерно от {minPay} за заказ.', en: 'Nobody applied to be a courier: at {pay} per order and {orders} orders a week the earnings fall short of the market rate of {market}. Applications start at roughly {minPay} per order.' },
-  alertLowPay: { ru: 'Курьер зарабатывает {earnings}/нед против {market} на рынке. Отток {churn}, откликов почти нет.', en: 'A courier earns {earnings}/wk vs the market rate of {market}. Churn is {churn} and applications have dried up.' },
+  alertLowPay: { ru: 'Курьер фактически зарабатывает {earnings}/нед против {market} на рынке. Отток {churn}, откликов почти нет.', en: 'A courier actually earns {earnings}/wk vs the market rate of {market}. Churn is {churn} and applications have dried up.' },
   alertNegativeCm: { ru: 'Вклад с заказа отрицательный ({value}). Рост объёма здесь ускоряет банкротство: масштабируется убыток, а не прибыль.', en: 'Contribution per order is negative ({value}). Growth accelerates bankruptcy here: you are scaling a loss, not a profit.' },
   alertBreakEven: { ru: 'Каждый заказ приносит {cm} вклада, но постоянных расходов на {opex}. Точка безубыточности: {orders} заказов в неделю.', en: 'Each order contributes {cm}, but fixed costs run at {opex}. Break-even sits at {orders} orders a week.' },
   alertRunway: { ru: 'Денег на {weeks} недель при текущем сжигании {burn}/нед. Пора резать расходы или привлекать раунд.', en: '{weeks} weeks of cash left at the current burn of {burn}/wk. Time to cut costs or raise a round.' },
