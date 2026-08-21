@@ -27,7 +27,7 @@ import { eventById } from '../model/events.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, growth, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import {
@@ -703,7 +703,7 @@ function renderReport() {
   const driversHtml = drivers.length && p0 ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
-        delta: signedPct(r.orgs / Math.max(1e-9, p0.orgs) - 1) })}</div>
+        delta: growth(r.orgs, p0.orgs, (v) => num(v, 0), 1) })}</div>
       ${drivers.map((x) => `<div class="driver">
           <span class="d-name">${t(x.key)}</span>
           <span class="d-people">${x.people >= 0 ? '+' : '−'}${num(Math.abs(x.people), 0)}</span>
@@ -757,7 +757,7 @@ function renderReport() {
   const p = prev();
   const sm = (v) => (v >= 0 ? '+' : '') + money(v);
   const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
-    gmv: signedPct(r.gmv / Math.max(1e-9, p.gmv) - 1, 0),
+    gmv: growth(r.gmv, p.gmv, money),
     profit: sm(r.profit - p.profit),
     cash: sm(r.cash - p.cash),
   })}</div>` : '';

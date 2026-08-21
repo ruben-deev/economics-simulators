@@ -27,7 +27,7 @@ import {
 } from '../../../../shared/meta.js';
 import { goalProgress } from '../model/board.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, growth, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
@@ -1346,7 +1346,7 @@ function renderReport() {
   const driversHtml = drivers.length ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
-        delta: signedPct(r.revenue / Math.max(1e-9, prev().revenue) - 1),
+        delta: growth(r.revenue, prev().revenue, money, 1),
       })}</div>
       ${drivers.map((d) => {
         const w = (Math.abs(d.effect) / maxAbs) * 50;
@@ -1386,7 +1386,7 @@ function renderReport() {
   const p = prev();
   const sm = (v) => (v >= 0 ? '+' : '') + money(v);
   const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
-    revenue: signedPct(r.revenue / Math.max(1e-9, p.revenue) - 1, 0),
+    revenue: growth(r.revenue, p.revenue, money),
     profit: sm(r.profit - p.profit),
     cash: sm(r.cash - p.cash),
   })}</div>` : '';

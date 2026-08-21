@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { setLang, t, setStrings, curSymbol, currency } from '../i18n.js';
-import { money, moneyExact, amount, amountIn, cash, isCurUnit, num } from '../format.js';
+import { money, moneyExact, amount, amountIn, cash, isCurUnit, num, growth } from '../format.js';
 
 setStrings({
   label: { ru: 'ARPU, {cur}', en: 'ARPU, {cur}' },
@@ -51,4 +51,23 @@ test('строка без {cur} не трогается, а не-денежны�
   assert.equal(t('plain'), 'no currency');
   assert.equal(num(195_500), '195,500', 'клиенты остаются клиентами');
   setLang('ru');
+});
+
+// ---------------------------------------------------------------------------
+// Изменение к прошлому ходу. Игрок прислал снимок: «заказы
+// +13 058 959 124 886%». Первая неделя прошла без открытых районов, заказов
+// было ноль, и процент считался делением на защитную микроскопическую
+// величину. От нуля процент не считается вовсе — показываем само изменение.
+test('изменение к прошлому ходу: от нуля показывается в натуре, а не процентом', () => {
+  setLang('ru');
+  assert.equal(growth(131, 0, (v) => num(v, 0)), '+131', 'с нуля — само число, а не степень десятки');
+  assert.equal(growth(0, 0, (v) => num(v, 0)), '+0', 'ничего не изменилось и не могло');
+  assert.equal(growth(131, 0.4, (v) => num(v, 0)), '+131', 'доли заказа тоже не база для процента');
+  assert.equal(growth(5, 100, (v) => num(v, 0)), '−95%', 'падение почти до нуля — обычный процент');
+  assert.equal(growth(150, 100, (v) => num(v, 0)), '+50%', 'обычный рост остаётся процентом');
+  assert.equal(growth(150, 100, (v) => num(v, 0), 1), '+50.0%', 'знаков после запятой ровно столько, сколько просили');
+  assert.equal(growth(0, 100, (v) => num(v, 0)), '−100%', 'обвал в ноль — это минус сто процентов');
+  assert.equal(growth(2_000_000, 0, money), '+2.00 млн ₽', 'денежное изменение с нуля — деньгами');
+  // Обратный ход тоже бывает: было ноль, стало меньше нуля
+  assert.equal(growth(-40, 0, (v) => num(v, 0)), '−40', 'уход в минус с нуля показывается минусом');
 });
