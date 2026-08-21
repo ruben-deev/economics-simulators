@@ -748,8 +748,14 @@ function jumpTo(target) {
   if (!node) return;
   // Слоты вроде #slate-slot — это обёртки: сама панель лежит внутри.
   // Подсвечивать надо её, иначе рамка обводит пустой контейнер.
+  // Наружу до .panel подниматься можно не всегда: левая и правая колонки сами
+  // по себе панели в несколько экранов высотой. Центрировать такую колонку —
+  // значит показать её середину, а нужный блок увести за экран целиком: ссылка
+  // «открыть район» честно прокручивала мимо районов. Из колонки не выходим.
+  const outer = node.closest('.panel');
+  const wide = outer && (outer.classList.contains('col-left') || outer.classList.contains('col-right'));
   let box = node.classList.contains('panel') ? node
-    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+    : (node.querySelector(':scope > .panel') ?? (wide ? node : outer) ?? node);
   // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
   // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
   // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
@@ -758,7 +764,12 @@ function jumpTo(target) {
     while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
     box = sib ?? box.parentElement ?? box;
   }
-  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Ведём к заголовку блока, а не к его середине: у длинного списка середина —
+  // это середина списка, а название («Покрытие города», «Алгоритмы») остаётся
+  // выше края экрана, и человек не понимает, куда попал.
+  const head = box.previousElementSibling && box.previousElementSibling.classList.contains('panel-title')
+    ? box.previousElementSibling : null;
+  (head ?? box).scrollIntoView({ behavior: 'smooth', block: head ? 'start' : 'center' });
   flash(box);
 }
 

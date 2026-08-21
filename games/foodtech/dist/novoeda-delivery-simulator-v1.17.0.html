@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.16.0" />
+  <meta name="app-version" content="1.17.0" />
   <meta name="app-build-date" content="2026-08-21" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -169,6 +169,10 @@ button { font-family: inherit; }
 @media (max-width: 980px) { .col-left { position: static; max-height: none; } }
 
 .panel-title {
+  /* Переход по подсказке ведёт к заголовку блока. На средних экранах шапка
+     ещё липкая, а колонка уже обычная — без этого отступа заголовок уезжает
+     под шапку и виден только сам блок, без названия. */
+  scroll-margin-top: 88px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -6102,13 +6106,19 @@ function jumpTo(target) {
     renderRightTab();
     const node = el('tab-content');
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    flash(node?.closest('.panel') ?? node);
+    flash(node);   // сама вкладка, а не вся правая колонка
     return;
   }
   const node = el(JUMP_PANELS[key] ?? key ?? kind);
   if (!node) return;
+  // Наружу до .panel подниматься можно не всегда: левая и правая колонки сами
+  // по себе панели в несколько экранов высотой. Центрировать такую колонку —
+  // значит показать её середину, а нужный блок увести за экран целиком: ссылка
+  // «открыть район» честно прокручивала мимо районов. Из колонки не выходим.
+  const outer = node.closest('.panel');
+  const wide = outer && (outer.classList.contains('col-left') || outer.classList.contains('col-right'));
   let box = node.classList.contains('panel') ? node
-    : (node.querySelector(':scope > .panel') ?? node.closest('.panel') ?? node);
+    : (node.querySelector(':scope > .panel') ?? (wide ? node : outer) ?? node);
   // Слот бывает пустым: в этом месяце просто нечего показывать. Подсветить
   // пустоту — значит на клик не ответить ничем, и человек решит, что ссылка
   // сломана. В таком случае ведём к ближайшей панели, которая что-то говорит.
@@ -6117,7 +6127,12 @@ function jumpTo(target) {
     while (sib && sib.getBoundingClientRect().height < 8) sib = sib.previousElementSibling;
     box = sib ?? box.parentElement ?? box;
   }
-  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Ведём к заголовку блока, а не к его середине: у длинного списка середина —
+  // это середина списка, а название («Покрытие города», «Алгоритмы») остаётся
+  // выше края экрана, и человек не понимает, куда попал.
+  const head = box.previousElementSibling && box.previousElementSibling.classList.contains('panel-title')
+    ? box.previousElementSibling : null;
+  (head ?? box).scrollIntoView({ behavior: 'smooth', block: head ? 'start' : 'center' });
   flash(box);
 }
 function bindJumps() {

@@ -143,6 +143,10 @@ button { font-family: inherit; }
 @media (max-width: 980px) { .col-left { position: static; max-height: none; } }
 
 .panel-title {
+  /* Переход по подсказке ведёт к заголовку блока. На средних экранах шапка
+     ещё липкая, а колонка уже обычная — без этого отступа заголовок уезжает
+     под шапку и виден только сам блок, без названия. */
+  scroll-margin-top: 88px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
