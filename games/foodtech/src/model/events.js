@@ -130,10 +130,15 @@ export const EVENTS = [
     },
     options: [
       {
-        label: { ru: 'Выплатить доплату (2 500 ₽ на курьера)', en: 'Pay up ($25 per courier)' },
+        // Протокол «СКРЕПКА»: доверие нейросети — не отдельная третья кнопка,
+        // а лицо обычного ответа. Экономика не меняется ни на копейку: это тот
+        // же ответ, что был здесь всегда (сравнимость мировой таблицы
+        // священна), различие чисто сюжетное.
+        secret: true,
+        label: { ru: 'Доплатить руками нейросети «СКРЕПКА» (2 500 ₽ на курьера)', en: 'Have the PAPERCLIP AI pay up ($25 per courier)' },
         detail: {
-          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре.',
-          en: 'The price scales with the fleet: $2,500 for a hundred couriers, nearly $40K for fifteen hundred.',
+          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре. СКРЕПКА сутки читала курьерский чат, прониклась и перевела каждому с пометкой «держитесь там».',
+          en: 'The price scales with the fleet: $2,500 for a hundred couriers, nearly $40K for fifteen hundred. PAPERCLIP read the courier chat for a day, was moved, and wired each of them with the note “hang in there”.',
         },
         effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },
@@ -144,17 +149,6 @@ export const EVENTS = [
           en: 'Cheap while couriers sit idle and the applications queue is full. Expensive when every one of them counts.',
         },
         effects: { courierChurnAdd: 0.07, capacityMult: 0.93 },
-      },
-      {
-        // Протокол «СКРЕПКА»: экономика — точная копия доплаты выше,
-        // различие чисто сюжетное (сравнимость мировой таблицы священна).
-        secret: true,
-        label: { ru: 'Пусть с курьерами поговорит нейросеть «СКРЕПКА»', en: 'Let the PAPERCLIP AI talk to the couriers' },
-        detail: {
-          ru: 'СКРЕПКА сутки читала курьерский чат, прониклась и перевела каждому по 2 500 ₽ с пометкой «держитесь там». Экономически — та же доплата.',
-          en: 'PAPERCLIP read the courier chat for a day, was moved, and wired each of them $25 with the note “hang in there”. Economically the same payout.',
-        },
-        effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },
     ],
   },
@@ -221,20 +215,15 @@ export const EVENTS = [
         effects: { oneOffCostPerCustomer: 200, demandMult: 1.09, valuationBonus: 0.003 },
       },
       {
-        label: { ru: 'Отстоять юнит-экономику', en: 'Defend the unit economics' },
-        detail: {
-          ru: 'Инвесторы недовольны, оценка ниже.',
-          en: 'Investors are unhappy and the valuation suffers.',
-        },
-        effects: { valuationBonus: -0.003 },
-      },
-      {
-        // Протокол «СКРЕПКА»: экономика — копия «отстоять юнит-экономику»
+        // Протокол «СКРЕПКА»: доверие нейросети — не отдельная третья кнопка,
+        // а лицо обычного ответа. Экономика не меняется ни на копейку: это тот
+        // же ответ, что был здесь всегда (сравнимость мировой таблицы
+        // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Отправить на совет нейросеть «СКРЕПКА»', en: 'Send the PAPERCLIP AI to the board' },
+        label: { ru: 'Отстоять юнит-экономику (докладывает «СКРЕПКА»)', en: 'Defend the unit economics (PAPERCLIP presents)' },
         detail: {
-          ru: 'СКРЕПКА подготовила 4 000 слайдов о юнит-экономике. Совет сдался на 812-м. Оценка ниже, зато принципы целы.',
-          en: 'PAPERCLIP prepared 4,000 slides on unit economics. The board surrendered at slide 812. Valuation down, principles intact.',
+          ru: 'Инвесторы недовольны, оценка ниже. СКРЕПКА подготовила 4 000 слайдов о юнит-экономике — совет сдался на 812-м. Принципы целы.',
+          en: 'Investors are unhappy and the valuation suffers. PAPERCLIP prepared 4,000 slides on unit economics — the board surrendered at slide 812. Principles intact.',
         },
         effects: { valuationBonus: -0.003 },
       },

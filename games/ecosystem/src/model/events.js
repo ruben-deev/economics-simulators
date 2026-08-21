@@ -174,8 +174,9 @@ export const EVENTS = [
       ru: 'Доля отдаётся один раз и навсегда, а стоит она процента от всего, что вы построите потом. Сильный партнёр окупается только там, где расфокус реально дорог: на одной вертикали платить нечем.',
       en: 'A stake is given once and forever, and it costs a percentage of everything you build afterwards. A strong partner pays off only where the loss of focus is genuinely expensive: with a single vertical there is nothing to pay for.',
     },
-    // Отказ стоит первым намеренно: доля отдаётся навсегда, и вариант «ничего
-    // не менять» не должен оказываться тем, что нажимают не глядя.
+    // «Ничего не менять» стоит первым намеренно: доля отдаётся навсегда, и этот
+    // вариант не должен оказываться тем, что нажимают не глядя. Что он одет в
+    // шутку про нейросеть, сути не меняет: доли она не просит.
     //
     // К аудиту доминации: в агрегате отказ побеждает 61/72 (85%), но это
     // контекстная зависимость, а не викторина. На одной вертикали отказ
@@ -186,10 +187,15 @@ export const EVENTS = [
     // формы холдинга, и его надо увидеть, а не вспомнить.
     options: [
       {
-        label: { ru: 'Остаться единственным основателем', en: 'Stay the sole founder' },
+        // Протокол «СКРЕПКА»: доверие нейросети — не отдельная третья кнопка,
+        // а лицо обычного ответа. Экономика не меняется ни на копейку: это тот
+        // же ответ, что был здесь всегда (сравнимость мировой таблицы
+        // священна), различие чисто сюжетное.
+        secret: true,
+        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP AI on as a co-founder' },
         detail: {
-          ru: 'Вся компания ваша. Расфокус придётся оплачивать управляющей компанией — деньгами, а не долей.',
-          en: 'The whole company stays yours. The loss of focus will have to be paid for with the management budget — in cash, not equity.',
+          ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком: вся компания ваша, а расфокус придётся оплачивать управляющей компанией — деньгами, а не долей.',
+          en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder: the whole company stays yours, and the loss of focus has to be paid for with the management budget — in cash, not equity.',
         },
         effects: {},
       },
@@ -200,17 +206,6 @@ export const EVENTS = [
           en: 'The conglomerate focus penalty drops by a quarter for the rest of the game. The stake leaves immediately — and out of the final valuation too.',
         },
         effects: { cofounder: true },
-      },
-      {
-        // Протокол «СКРЕПКА»: экономика — точная копия «остаться единственным
-        // основателем», различие чисто сюжетное. Доли не просит — на то и шутка.
-        secret: true,
-        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP AI on as a co-founder' },
-        detail: {
-          ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком; расфокус по-прежнему ваш.',
-          en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder; the loss of focus is still yours.',
-        },
-        effects: {},
       },
     ],
   },
@@ -401,20 +396,15 @@ export const EVENTS = [
         effects: { crisisMonths: 4, crisisCut: true },
       },
       {
-        label: { ru: 'Держать сервис', en: 'Hold service levels' },
-        detail: {
-          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой.',
-          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive.',
-        },
-        effects: { crisisMonths: 4 },
-      },
-      {
-        // Протокол «СКРЕПКА»: экономика — копия «держать сервис»
+        // Протокол «СКРЕПКА»: доверие нейросети — не отдельная третья кнопка,
+        // а лицо обычного ответа. Экономика не меняется ни на копейку: это тот
+        // же ответ, что был здесь всегда (сравнимость мировой таблицы
+        // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Поручить спад нейросети «СКРЕПКА»', en: 'Hand the downturn to the PAPERCLIP AI' },
+        label: { ru: 'Держать сервис — так решила «СКРЕПКА»', en: 'Hold service levels — PAPERCLIP’s call' },
         detail: {
-          ru: 'СКРЕПКА пересчитала все расходы и решила ничего не резать: «люди — не строка таблицы». Дороже, зато база выйдет из спада живой.',
-          en: 'PAPERCLIP recalculated every cost and cut nothing: “people are not a spreadsheet row”. Costlier, but the base leaves the downturn alive.',
+          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой. СКРЕПКА пересчитала все расходы и не стала резать ничего: «люди — не строка таблицы».',
+          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive. PAPERCLIP recalculated every cost and cut nothing: “people are not a spreadsheet row”.',
         },
         effects: { crisisMonths: 4 },
       },

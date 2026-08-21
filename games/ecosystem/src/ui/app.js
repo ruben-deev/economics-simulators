@@ -2364,12 +2364,18 @@ function showHelp() {
 function nextMonth() {
   if (state.over) { showGameOver(); return; }
   const ev = state.pendingEvent;
-  if (ev && ev.options && state.pendingChoice === null) {
+  // Партия, сохранённая до слияния скрепочных опций, могла держать выбор
+  // третьего ответа, которого больше нет. Считаем такой выбор несделанным,
+  // а не молча применяем чужой: сохранение переживает обновление игры.
+  if (ev && ev.options && !ev.options[state.pendingChoice]) {
+    state.pendingChoice = null;
+    renderAll();
     toast(t('eventChoiceNeeded'));
     return;
   }
   // Протокол «СКРЕПКА»: доверие нейросети отмечается на устройстве.
-  // Экономика секретной опции — копия обычной, влияет только на сюжет.
+  // Это обычный ответ события — на экономику отметка не влияет никак,
+  // только на секретный эпилог в финале НОВОГРАДА.
   const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosenOpt && chosenOpt.secret) {
     markProtocolChoice('ecosystem');
