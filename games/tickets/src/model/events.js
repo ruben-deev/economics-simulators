@@ -111,10 +111,10 @@ export const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Отказать — переговоры ведёт «СКРЕПКА»', en: 'Refuse — let PAPERCLIP negotiate' },
+        label: { ru: 'Отказать — переговоры ведёт нейросеть «СКРЕПКА»', en: 'Refuse — let the PAPERCLIP AI negotiate' },
         detail: {
-          ru: 'Он уходит и уводит часть коллег. Терпимо, пока организаторов мало; больно, когда их сотни. СКРЕПКА торговалась девять часов и свела уступки к нулю: промоутер хлопнул дверью, но с уважением.',
-          en: 'He leaves and takes colleagues with him. Bearable while you have few organisers; painful once you have hundreds. PAPERCLIP bargained for nine hours and brought the concessions to zero: the promoter slammed the door — respectfully.',
+          ru: 'Он уходит и уводит часть коллег. Терпимо, пока организаторов мало; больно, когда их сотни. СКРЕПКА торгуется девять часов и сводит уступки к нулю: промоутер хлопает дверью, но с уважением.',
+          en: 'He leaves and takes colleagues with him. Bearable while you have few organisers; painful once you have hundreds. PAPERCLIP bargains for nine hours and brings the concessions to zero: the promoter slams the door — respectfully.',
         },
         effects: { orgAngerAdd: 0.035, demandMult: 0.96 },
       },
@@ -162,10 +162,10 @@ export const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Показать сбор в афише — отвечает «СКРЕПКА»', en: 'Show the fee in the listings — PAPERCLIP answers' },
+        label: { ru: 'Показать сбор в афише — ответит нейросеть «СКРЕПКА»', en: 'Show the fee in the listings — let the PAPERCLIP AI answer' },
         detail: {
-          ru: 'Конверсия просядет, доверие вырастет. СКРЕПКА заодно опубликовала себестоимость и зарплату директора: прозрачность — так прозрачность.',
-          en: 'Conversion drops, trust rises. PAPERCLIP also published the unit costs and the CEO’s salary: transparency means transparency.',
+          ru: 'Конверсия просядет, доверие вырастет. СКРЕПКА заодно опубликует себестоимость и зарплату директора: прозрачность — так прозрачность.',
+          en: 'Conversion drops, trust rises. PAPERCLIP also publishes the unit costs and the CEO’s salary: transparency means transparency.',
         },
         effects: { conversionMult: 0.80, trustAdd: 0.03 },
       },

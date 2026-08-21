@@ -401,10 +401,10 @@ export const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Держать сервис — так решила «СКРЕПКА»', en: 'Hold service levels — PAPERCLIP’s call' },
+        label: { ru: 'Держать сервис — решает нейросеть «СКРЕПКА»', en: 'Hold service levels — let the PAPERCLIP AI decide' },
         detail: {
-          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой. СКРЕПКА пересчитала все расходы и не стала резать ничего: «люди — не строка таблицы».',
-          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive. PAPERCLIP recalculated every cost and cut nothing: “people are not a spreadsheet row”.',
+          ru: 'Дороже пережидать, зато качество и удержание целы — база выйдет из спада живой. СКРЕПКА пересчитывает все расходы и не режет ничего: «люди — не строка таблицы».',
+          en: 'Costlier to wait out, but quality and retention stay intact — the base leaves the downturn alive. PAPERCLIP recalculates every cost and cuts nothing: “people are not a spreadsheet row”.',
         },
         effects: { crisisMonths: 4 },
       },
