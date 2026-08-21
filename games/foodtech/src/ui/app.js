@@ -330,12 +330,25 @@ function renderOpsReadout() {
           })
         : ''}.</div>`;
 
+  // Заработок при ФАКТИЧЕСКОЙ загрузке. Строка выше считает по полной смене —
+  // так рассуждает кандидат, и на это число завязан наём. Но человек, который
+  // уже вышел на линию, получает по тому, сколько заказов реально доехало, и
+  // при простое эти два числа расходятся вдвое. Показываем оба, пока штат
+  // недогружен: иначе выходит «в расчёте 18 тысяч, в отчёте 13 — где враньё?».
+  const realLoad = util === null ? null : Math.min(1, util);
+  const realPay = realLoad === null ? null : perCourier * realLoad * payEff;
+  const idleGap = realLoad !== null && r?.couriers > 0
+    && realLoad < CONFIG.courierExpectedLoad - 0.05;
+
   el('ops-readout').innerHTML = `<div class="hint-box" style="margin-bottom:12px">
     <div>${t('opsPerCourier', { orders: num(perCourier), km: avgDistance.toFixed(1) })}</div>
     <div>${t('opsEarnings', {
       pay: money(expected), market: money(CONFIG.courierMarketWeeklyPay),
       cls: ratio >= 1 ? 'pos' : 'neg', ratio: ratio.toFixed(2), hiring,
     })}</div>
+    ${idleGap ? `<div>${t('opsEarningsReal', {
+      util: pct(realLoad, 0), orders: num(perCourier * realLoad), pay: money(realPay),
+    })}</div>` : ''}
     ${capacityLine}
     ${batch > 0 ? `<div>${t('opsBatching', { pay: amount(payEff) })}</div>` : ''}
     ${(WEATHER[nextType]?.severity ?? 0) > 0
