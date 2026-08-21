@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.18.0" />
+  <meta name="app-version" content="1.18.1" />
   <meta name="app-build-date" content="2026-08-21" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -4236,10 +4236,10 @@ const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Доплатить руками нейросети «СКРЕПКА» (2 500 ₽ на курьера)', en: 'Have the PAPERCLIP AI pay up ($25 per courier)' },
+        label: { ru: 'Доплатить (2 500 ₽ на курьера) — переведёт нейросеть «СКРЕПКА»', en: 'Pay up ($25 per courier) — let the PAPERCLIP AI send it' },
         detail: {
-          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре. СКРЕПКА сутки читала курьерский чат, прониклась и перевела каждому с пометкой «держитесь там».',
-          en: 'The price scales with the fleet: $2,500 for a hundred couriers, nearly $40K for fifteen hundred. PAPERCLIP read the courier chat for a day, was moved, and wired each of them with the note “hang in there”.',
+          ru: 'Цена зависит от штата: сотне курьеров это четверть миллиона, полутора тысячам — почти четыре. СКРЕПКА сутки читает курьерский чат, проникается и переводит каждому с пометкой «держитесь там».',
+          en: 'The price scales with the fleet: $2,500 for a hundred couriers, nearly $40K for fifteen hundred. PAPERCLIP reads the courier chat for a day, is moved, and wires each of them with the note “hang in there”.',
         },
         effects: { oneOffCostPerCourier: 2_500, courierChurnAdd: -0.02, courierSupplyMult: 1.2 },
       },
@@ -4321,10 +4321,10 @@ const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Отстоять юнит-экономику (докладывает «СКРЕПКА»)', en: 'Defend the unit economics (PAPERCLIP presents)' },
+        label: { ru: 'Отстоять юнит-экономику — доложит нейросеть «СКРЕПКА»', en: 'Defend the unit economics — let the PAPERCLIP AI present' },
         detail: {
-          ru: 'Инвесторы недовольны, оценка ниже. СКРЕПКА подготовила 4 000 слайдов о юнит-экономике — совет сдался на 812-м. Принципы целы.',
-          en: 'Investors are unhappy and the valuation suffers. PAPERCLIP prepared 4,000 slides on unit economics — the board surrendered at slide 812. Principles intact.',
+          ru: 'Инвесторы недовольны, оценка ниже. СКРЕПКА готовит совету 4 000 слайдов о юнит-экономике; совет сдаётся на 812-м. Принципы целы.',
+          en: 'Investors are unhappy and the valuation suffers. PAPERCLIP prepares 4,000 slides on unit economics for the board; they surrender at slide 812. Principles intact.',
         },
         effects: { valuationBonus: -0.003 },
       },
