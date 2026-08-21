@@ -18,7 +18,7 @@ import {
   segmentById, genreById, projectCost, catalogDepth, catalogFreshness,
 } from '../model/engine.js';
 import { drawLineChart, legendHtml, PALETTE } from '../../../../shared/charts.js';
-import { money, moneyExact, num, pct, signedPct, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
+import { money, moneyExact, num, pct, signedPct, growth, compact, axisNum, amount, amountIn, isCurUnit, cash, curSymbol } from '../../../../shared/format.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
@@ -1756,7 +1756,7 @@ function renderReport() {
   const driversHtml = drivers.length ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
-        delta: signedPct(r.subs / Math.max(1e-9, p0.subs) - 1) })}</div>
+        delta: growth(r.subs, p0.subs, compact, 1) })}</div>
       ${drivers.map((d) => `<div class="driver">
           <span class="d-name">${t(d.key)}</span>
           <span class="d-people">${d.people >= 0 ? '+' : '−'}${compact(Math.abs(d.people))}</span>
@@ -1821,7 +1821,7 @@ function renderReport() {
   const p = prev();
   const sm = (v) => (v >= 0 ? '+' : '') + money(v);
   const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
-    subs: signedPct(r.subs / Math.max(1e-9, p.subs) - 1, 1),
+    subs: growth(r.subs, p.subs, compact, 1),
     profit: sm(r.profit - p.profit),
     cash: sm(r.cash - p.cash),
   })}</div>` : '';

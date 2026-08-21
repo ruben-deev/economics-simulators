@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.23.1" />
+  <meta name="app-version" content="1.23.2" />
   <meta name="app-build-date" content="2026-08-21" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -7005,6 +7005,29 @@ function signedPct(x, digits = 1) {
   return `${x > 0 ? '+' : '−'}${v}%`;
 }
 
+/**
+ * Изменение против прошлого хода: процент, а если считать его не от чего —
+ * само изменение.
+ *
+ * Прошлый ход бывает нулевым: первая неделя без открытых районов, месяц без
+ * единого организатора, партия, где выручки ещё не было. Процент от нуля не
+ * значит ничего, а деление на почти-ноль однажды показало игроку «заказы
+ * +13 058 959 124 886%». Поэтому при базе меньше единицы возвращаем разницу
+ * в натуре: «+131» или «+2,3 млн ₽». Такая подстановка одинаково хорошо
+ * читается и в скобках, и после предлога «на».
+ *
+ * fmt — как показать разницу, когда процента нет (числом или деньгами).
+ */
+function growth(now, before, fmt, digits = 0) {
+  const a = Number(now) || 0;
+  const b = Number(before) || 0;
+  if (Math.abs(b) < 1) {
+    const d = a - b;
+    return `${d >= 0 ? '+' : '−'}${fmt(Math.abs(d))}`;
+  }
+  return signedPct(a / b - 1, digits);
+}
+
 function compact(x) {
   if (!Number.isFinite(x)) return '—';
   const abs = Math.abs(x);
@@ -8603,7 +8626,7 @@ function renderReport() {
   const driversHtml = drivers.length ? `
     <div class="drivers">
       <div class="panel-title">${t('driversTitle', {
-        delta: signedPct(r.revenue / Math.max(1e-9, prev().revenue) - 1),
+        delta: growth(r.revenue, prev().revenue, money, 1),
       })}</div>
       ${drivers.map((d) => {
         const w = (Math.abs(d.effect) / maxAbs) * 50;
@@ -8643,7 +8666,7 @@ function renderReport() {
   const p = prev();
   const sm = (v) => (v >= 0 ? '+' : '') + money(v);
   const deltaLine = p ? `<div class="funding-note" style="margin-top:2px">${t('reportDelta', {
-    revenue: signedPct(r.revenue / Math.max(1e-9, p.revenue) - 1, 0),
+    revenue: growth(r.revenue, p.revenue, money),
     profit: sm(r.profit - p.profit),
     cash: sm(r.cash - p.cash),
   })}</div>` : '';
