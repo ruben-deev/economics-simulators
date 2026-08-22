@@ -13,6 +13,11 @@ globalThis.localStorage = {
   removeItem: (k) => store.delete(k),
 };
 let href = 'https://example.org/games/foodtech/index.html';
+// В node 22 navigator доступен только для чтения — подменяем описанием свойства
+const setNavigator = (...langs) => Object.defineProperty(globalThis, 'navigator', {
+  value: { language: langs[0], languages: langs }, configurable: true, writable: true,
+});
+setNavigator('en-US');
 globalThis.window = {
   get location() { return { href }; },
   history: { replaceState: (_s, _t, url) => { href = String(url); } },
@@ -36,6 +41,32 @@ test('адрес задаёт язык и сильнее сохранённог�
   href = 'https://example.org/games/foodtech/index.html?seed=abc';
   store.clear();
   assert.equal(detectLang(), 'en', 'посторонние параметры язык не задают');
+});
+
+test('без адреса и без памяти смотрим на язык браузера', () => {
+  store.clear();
+  href = 'https://example.org/index.html';
+
+  setNavigator('ru-RU', 'en-US');
+  assert.equal(detectLang(), 'ru', 'русская система — русская версия');
+
+  setNavigator('en-US', 'ru');
+  assert.equal(detectLang(), 'ru', 'русский вторым в списке предпочтений тоже считается');
+
+  setNavigator('de-DE', 'fr-FR');
+  assert.equal(detectLang(), 'en', 'чужой язык — английский, как и раньше');
+
+  setNavigator('be-BY');
+  assert.equal(detectLang(), 'en', 'за соседние языки не гадаем');
+
+  // Сохранённый выбор и адрес всё так же сильнее браузера
+  setNavigator('ru-RU');
+  store.set('game-lang', 'en');
+  assert.equal(detectLang(), 'en', 'выбранный ранее язык сильнее системного');
+  href = 'https://example.org/index.html?lang=en';
+  store.clear();
+  assert.equal(detectLang(), 'en', 'ссылка сильнее системного языка');
+  setNavigator('en-US');
 });
 
 test('выбор языка запоминается и правит адрес, но не засоряет его', () => {
