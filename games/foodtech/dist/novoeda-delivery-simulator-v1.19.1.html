@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.19.0" />
-  <meta name="app-build-date" content="2026-08-21" />
+  <meta name="app-version" content="1.19.1" />
+  <meta name="app-build-date" content="2026-08-22" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -1415,17 +1415,17 @@ const STRINGS = {
   // по фактической. При простое второе число сильно меньше первого — отсюда
   // «наём идёт, а люди уходят». Поэтому в подписи прямо сказано, чьё это число.
   opsEarnings: {
-    ru: 'Кандидат считает по 75% загрузки: <b>{pay}</b> против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
-    en: 'A candidate does the maths at 75% utilisation: <b>{pay}</b> vs the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+    ru: 'Кандидат прикидывает заработок при 75% загрузки: <b>{pay}</b> в неделю против {market} на рынке (<span class="{cls}">×{ratio}</span>) — {hiring}.',
+    en: 'A candidate works out their pay at 75% utilisation: <b>{pay}</b> a week against the market rate of {market} (<span class="{cls}">×{ratio}</span>) — {hiring}.',
   },
   opsEarningsReal: {
-    ru: 'Но при фактической загрузке {util} курьер увезёт {orders} заказов и заработает <b class="neg">{pay}</b>. На это число смотрит отток, а не наём.',
-    en: 'At the actual {util} utilisation, though, a courier delivers {orders} orders and earns <b class="neg">{pay}</b>. Churn looks at this number; hiring does not.',
+    ru: 'Фактическая загрузка {util}: курьер возит {orders} заказов и получает <b class="neg">{pay}</b>. Это его настоящий заработок, и от него зависит, останется ли он.',
+    en: 'Actual utilisation is {util}: a courier delivers {orders} orders and takes home <b class="neg">{pay}</b>. That is their real pay, and it decides whether they stay.',
   },
   opsHiringQueue: { ru: 'очередь из кандидатов', en: 'a queue of applicants' },
   opsHiringSteady: { ru: 'наём идёт ровно', en: 'hiring runs smoothly' },
   opsHiringTrickle: { ru: 'кандидаты идут тонкой струйкой', en: 'applicants trickle in' },
-  opsHiringNone: { ru: 'откликов не будет — ставка ниже рынка', en: 'no applicants at all — the rate is below market' },
+  opsHiringNone: { ru: 'откликов не будет: ставка ниже рынка', en: 'no applicants at all: the rate is below market' },
   opsForecastStaff: {
     ru: 'Штат подбирает <b>алгоритм прогноза</b> под целевую загрузку {target} — ползунок штата не используется. На прошлой неделе он вывел {couriers} чел.',
     en: 'Headcount is set by the <b>forecasting algorithm</b> for a target utilisation of {target} — the headcount slider is ignored. Last week it put {couriers} couriers on the road.',
