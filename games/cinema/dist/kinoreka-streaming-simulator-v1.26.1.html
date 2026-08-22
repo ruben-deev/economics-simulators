@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.26.0" />
+  <meta name="app-version" content="1.26.1" />
   <meta name="app-build-date" content="2026-08-22" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1337,6 +1337,17 @@ function setLang(lang) {
   if (typeof window !== 'undefined') syncUrlLang(lang);
 }
 
+// Русский язык браузера. Смотрим весь список предпочтений, а не только
+// первый: в системе бывает «en-US, ru-RU», и человек всё равно читает
+// по-русски. Годятся и «ru», и «ru-RU», и «be-BY» не годится — гадать
+// за соседние языки мы не беремся.
+function browserWantsRu() {
+  try {
+    const list = navigator.languages?.length ? navigator.languages : [navigator.language];
+    return list.some((l) => /^ru\b/i.test(String(l ?? '')));
+  } catch { return false; }
+}
+
 function detectLang() {
   // Адрес сильнее сохранённого выбора: его написал тот, кто давал ссылку,
   // и он знает, кому её даёт. Выбор при этом запоминается — остальные три
@@ -1347,9 +1358,11 @@ function detectLang() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
   } catch { /* приватный режим */ }
-  // Английский по умолчанию: ссылки на игры расходятся шире русскоязычной
-  // аудитории, а кнопка RU на видном месте. Выбор запоминается и действует
-  // на витрину и все игры сразу — ключ в localStorage общий.
+  // Дальше — язык браузера. Английский остаётся значением по умолчанию:
+  // ссылки на игры расходятся шире русскоязычной аудитории. Но человеку с
+  // русской системой показывать английскую версию и надеяться, что он найдёт
+  // кнопку RU, — потеря на ровном месте.
+  if (typeof navigator !== 'undefined' && browserWantsRu()) return 'ru';
   return 'en';
 }
 
