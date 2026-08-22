@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.19.1" />
+  <meta name="app-version" content="1.20.0" />
   <meta name="app-build-date" content="2026-08-22" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1305,14 +1305,45 @@ function getLang() {
   return current;
 }
 
+// Язык из адреса: «…/index.html?lang=ru». Нужен, чтобы ссылку можно было
+// давать конкретной аудитории. Раньше язык жил только в localStorage, и
+// преподаватель, кинувший ссылку студентам, отправлял их на английскую
+// версию: у нового посетителя ничего не сохранено, а по умолчанию здесь
+// английский. Кнопка RU есть, но искать её никто не обязан.
+function langFromUrl() {
+  try {
+    const v = new URL(window.location.href).searchParams.get('lang');
+    return LANGS.includes(v) ? v : null;
+  } catch { return null; }
+}
+
+// Адрес и выбранный язык не должны расходиться: если в ссылке был ?lang=en,
+// а человек нажал RU, то после перезагрузки английский вернулся бы обратно.
+// Поэтому переключение правит параметр — но только если он там уже есть:
+// в обычные адреса ничего не дописываем.
+function syncUrlLang(lang) {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('lang')) return;
+    url.searchParams.set('lang', lang);
+    window.history.replaceState(null, '', url);
+  } catch { /* file:// и старые браузеры */ }
+}
+
 function setLang(lang) {
   if (!LANGS.includes(lang)) return;
   current = lang;
   try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* приватный режим */ }
   if (typeof document !== 'undefined') document.documentElement.lang = lang;
+  if (typeof window !== 'undefined') syncUrlLang(lang);
 }
 
 function detectLang() {
+  // Адрес сильнее сохранённого выбора: его написал тот, кто давал ссылку,
+  // и он знает, кому её даёт. Выбор при этом запоминается — остальные три
+  // игры и витрина откроются на том же языке.
+  const fromUrl = typeof window !== 'undefined' ? langFromUrl() : null;
+  if (fromUrl) return fromUrl;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (LANGS.includes(saved)) return saved;
