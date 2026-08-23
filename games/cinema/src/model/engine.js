@@ -1698,9 +1698,10 @@ export function debrief(state) {
   const noBuyMonths = hist.filter((r) => (r.decisions?.licensing ?? 0) === 0).length;
   if (noBuyMonths >= 6) out.push({ id: 'licenseStall', n: noBuyMonths });
 
-  // Премиум держался дорогим больше полупартии. Цена: на опоре 399₽
-  // обгоняет 449₽ на 0.7 млрд — эластичность режет приток раньше,
-  // чем дорастает ARPU.
+  // Цена стояла выше рыночной (режимы 499/649) больше полупартии.
+  // Замер снимался ещё на ползунке: 399₽ обгоняет 449₽ на 0.7 млрд —
+  // эластичность режет приток раньше, чем дорастает ARPU; для 499+
+  // разрыв только больше.
   const pricyMonths = hist.filter((r) => (r.decisions?.priceNew ?? 0) >= 449).length;
   if (pricyMonths > hist.length / 2) out.push({ id: 'pricyPremium', n: pricyMonths });
 

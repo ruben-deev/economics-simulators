@@ -432,7 +432,7 @@ export const LEVERS = [
     min: 0, max: 40_000_000, step: 1_000_000, def: 0,
     tip: {
       ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: комиссии платёжных систем, списания, штрафы, неразнесённая административка — всё это уходит в «прочие расходы». Сильная режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
-      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: payment commissions, write-offs, penalties, unallocated admin — all of it lands in “miscellaneous”. A strong one cuts that line and packages the company better for a round. The series difficulty changes only its price.',
+      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: card fees, write-offs, penalties, unallocated admin — all of it lands in “miscellaneous”. A strong one cuts that line and packages the company better for a round. The series difficulty changes only its price.',
     },
   },
   {
@@ -455,7 +455,7 @@ export const LEVERS = [
       { v: 499, label: { ru: 'Уверенная', en: 'Confident' },
         note: { ru: 'Выше рынка: подписка окупает контент быстрее, но каталог обязан это оправдывать — иначе новые не приходят.', en: 'Above market: the subscription pays back the content faster, but the catalogue has to justify it — otherwise new sign-ups dry up.' } },
       { v: 649, label: { ru: 'Премиум', en: 'Premium' },
-        note: { ru: 'Дорого и штучно: приходят немногие, зато платят как за кино. Годится только с сильными оригиналами.', en: 'Expensive and selective: few come, but they pay cinema money. Only works with strong originals.' } },
+        note: { ru: 'Дорого и штучно: приходят немногие, зато платят как за кино. Годится только с сильными оригиналами.', en: 'Expensive and selective: few come, but they pay cinema-ticket prices. Only works with strong originals.' } },
     ],
     tip: {
       ru: 'Цена, по которой подписываются новые. Действующая база продолжает платить свою — перевести её на новую цену можно только отдельным решением, и часть людей на этом уйдёт.',

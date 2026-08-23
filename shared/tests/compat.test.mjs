@@ -148,11 +148,18 @@ test('версия видна в имени файла, внутри стран�
     }
   }
 
-  const docs = ['README.md', 'README.en.md', 'index.html',
-    'docs/cinema/teacher-guide.md', 'docs/cinema/en/teacher-guide.md',
-    'docs/foodtech/teacher-guide.md', 'docs/foodtech/en/teacher-guide.md',
-    'docs/tickets/economics.md', 'docs/tickets/en/economics.md',
-    'docs/tickets/teacher-guide.md', 'docs/tickets/en/teacher-guide.md'];
+  // Вся публикуемая документация целиком: README обоих языков, витрина,
+  // инструкция сервера и все .md внутри docs/<игра>/ (включая en/).
+  // Рабочие записки в корне docs/ не проверяются — там исторические версии.
+  const docs = ['README.md', 'README.en.md', 'index.html', 'server/README.md'];
+  for (const dir of ['foodtech', 'cinema', 'tickets', 'ecosystem']) {
+    for (const sub of ['', 'en/']) {
+      const abs = join(root, 'docs', dir, sub);
+      for (const file of readdirSync(abs)) {
+        if (file.endsWith('.md')) docs.push(`docs/${dir}/${sub}${file}`);
+      }
+    }
+  }
   const stale = [];
   for (const doc of docs) {
     const text = readFileSync(join(root, doc), 'utf8');

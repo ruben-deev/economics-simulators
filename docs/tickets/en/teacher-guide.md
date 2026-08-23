@@ -1,5 +1,7 @@
 # Teaching notes: the ticketing service in class
 
+*[Русская версия](../teacher-guide.md)*
+
 The game suits courses on marketplaces and two-sided markets, platform
 economics, product strategy and unit economics. One game is 36 turns — 40–60
 minutes at a calm pace. A class session usually needs 12–18 turns.
@@ -47,8 +49,8 @@ The task: split the take rate between the two sides.
 1. Fix the total at 14% and ask the teams to divide it: 14/0, 0/14, 7/7, 10/4.
    Each team justifies its choice before the first turn.
 2. Five turns, then compare: turnover, organiser count, market share.
-3. Debrief: buyer segments have fee elasticities from 0.8 to 2.6, organiser types
-   have commission sensitivities from 0.85 to 3.1. So there is no right answer —
+3. Debrief: buyer segments have fee elasticities from 1.5 to 4.5, organiser types
+   have commission sensitivities from 0.7 to 2.6. So there is no right answer —
    there is an answer for your mix of listings.
 
 Homework question: how does the answer change if you want to grow in clubs rather
@@ -169,7 +171,7 @@ the next.
 
 ## Technical notes for the teacher
 
-* The game is a single HTML file, `dist/biletville-ticketing-simulator-v1.31.3.html`.
+* The game is a single HTML file, `dist/biletville-ticketing-simulator-v1.31.4.html`.
   No internet, no install, runs from a USB stick.
 * The game saves in the browser. To have every team play the same world, hand out
   the same file and dictate a shared game code — it is entered on the welcome
@@ -179,8 +181,17 @@ the next.
   the code, the score and a checksum — ask students to send it in: a doctored
   score fails the checksum. The final screen also keeps a table of the best
   games on that device.
+* Beyond the result string, the final screen has "Copy" and "Download CSV"
+  buttons (the month-by-month history), "Share as image" (a result card for
+  messengers; a vertical format on phones), the world leaderboard with result
+  submission, and a personal debrief.
 * The language switches in the header and on the welcome screen; the model is
-  identical either way.
+  identical either way. It can also be baked into the link:
+  `…/games/tickets/?lang=en` (or `?lang=ru`) — without the parameter the game
+  picks the browser's language.
+* The welcome screen offers three difficulty levels — Easy, Normal, Hard. The
+  level goes into the result-string tag and each level keeps its own
+  leaderboard — do not compare results across levels directly.
 * Formulas and constants are in `docs/tickets/en/economics.md`. Everything that
   can be changed without touching the logic lives in
   `games/tickets/src/model/config.js`.

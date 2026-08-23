@@ -190,7 +190,7 @@ export const EVENTS = [
     options: [
       {
         label: { ru: 'Согласиться', en: 'Accept' },
-        detail: { ru: 'Разово 200 млн ₽ и рост спроса. Но брендированные скидки раздражают зрителя и организаторов: доверие и афиша страдают. Дешёвая сделка при высоком доверии, дорогая — при низком.', en: '$2M up front and more demand. But branded discounts irritate buyers and organisers: trust and the listings both suffer. Cheap when trust is high, costly when it is low.' },
+        detail: { ru: 'Банк платит вам 200 млн ₽ разово, спрос растёт. Но брендированные скидки раздражают зрителя и организаторов: доверие и афиша страдают. Дешёвая сделка при высоком доверии, дорогая — при низком.', en: 'The bank pays you $2M up front, and demand grows. But branded discounts irritate buyers and organisers: trust and the listings both suffer. Cheap when trust is high, costly when it is low.' },
         effects: { oneOffGain: 200_000_000, demandMult: 1.08, trustAdd: -0.02, orgAngerAdd: 0.005 },
       },
       {

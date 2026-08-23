@@ -55,8 +55,8 @@ export const SCALES = [
     hours: 1.8,
     buzz: 2.3,
     hint: {
-      ru: 'Девять месяцев и втрое дороже сезона. Шум огромный — но и провал будет виден всем, а деньги уже потрачены.',
-      en: 'Nine months and nearly three times the cost of a season. The noise is enormous — but so is a flop, and the money is already spent.',
+      ru: 'Девять месяцев и в два с половиной раза дороже сезона. Шум огромный — но и провал будет виден всем, а деньги уже потрачены.',
+      en: 'Nine months and two and a half times the cost of a season. The noise is enormous — but so is a flop, and the money is already spent.',
     },
   },
 ];

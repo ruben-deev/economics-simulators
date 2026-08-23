@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.22.3" />
+  <meta name="app-version" content="1.22.4" />
   <meta name="app-build-date" content="2026-08-23" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1522,7 +1522,7 @@ const STRINGS = {
   boardDone: { ru: 'Цели закончились — идёт последний отрезок партии.', en: 'No goals left — this is the final stretch.' },
   goalQuarter: { ru: 'Квартал {quarter}', en: 'Quarter {quarter}' },
   goalOrders: { ru: 'Не меньше {target} заказов в неделю к концу квартала. Это про рост: покажите, что через вас вообще заказывают.', en: 'At least {target} orders a week by the end of the quarter. This one is about growth: show that people order through you at all.' },
-  goalUnit: { ru: 'Вклад с заказа не ниже {target} при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least {target} per order at {floor} orders a week. The GMV is someone else’s money, the contribution is yours — and growth alone will not get you there.' },
+  goalUnit: { ru: 'Вклад с заказа не ниже {target} при {floor} заказах в неделю. Оборот чужой, вклад ваш — и одним ростом эту цель не взять.', en: 'Contribution of at least {target} per order at {floor} orders a week. GMV is someone else’s money; the contribution is yours — and growth alone will not get you there.' },
   goalProfit: { ru: 'Не меньше {target} прибыльных недель из тринадцати, и база не ниже {floor} клиентов. Срезать расходы, растеряв город, не считается.', en: 'At least {target} profitable weeks out of thirteen, with a base of no less than {floor} customers. Cutting costs and losing the city does not count.' },
   goalShare: { ru: 'Доля города {target} при {floor} клиентах. Рынок делится не заказами, а людьми, которые к вам вернутся.', en: 'A city share of {target} with {floor} customers. The market is divided not by orders but by the people who come back.' },
   goalNow: { ru: 'сейчас {value}', en: 'now {value}' },
@@ -1786,7 +1786,7 @@ const STRINGS = {
   unitRevenue: { ru: 'Выручка сервиса', en: 'Service revenue' },
   unitCourier: { ru: 'Оплата курьеру', en: 'Courier pay' },
   unitPromo: { ru: 'Промо-скидка', en: 'Promo discount' },
-  unitPayment: { ru: 'Эквайринг', en: 'Card processing' },
+  unitPayment: { ru: 'Эквайринг', en: 'Card fees' },
   unitSupport: { ru: 'Поддержка и возвраты', en: 'Support and refunds' },
   unitContribution: { ru: 'Вклад с заказа', en: 'Contribution per order' },
   unitTakeRateNote: { ru: '<b>Take rate</b> — доля чека, которая остаётся сервису ({value}). В реальных фудтех-сервисах она обычно 20–30%, а вклад с заказа — единицы процентов от GMV. Именно поэтому отрасль так долго идёт к прибыли.', en: '<b>Take rate</b> is the share of the basket the service keeps ({value}). Real food delivery businesses run at 20–30%, with contribution in the low single digits of GMV. That is why the industry takes so long to reach profit.' },
@@ -1861,13 +1861,13 @@ const STRINGS = {
   helpDemandFormula: {
     ru: `заказы = клиенты × частота
 частота = базовая × Цена × √Скорость × √Выбор × сезон × погода
-Цена   = (эталонная цена / ваша цена) ^ эластичность района
+Цена     = (эталонная цена / ваша цена) ^ эластичность района
 Скорость = (35 мин / ваше время) ^ 0.6
-Выбор  = насыщение по числу подключённых ресторанов`,
+Выбор    = насыщение по числу подключённых ресторанов`,
     en: `orders = customers × frequency
 frequency = base × Price × √Speed × √Selection × season × weather
-Price  = (reference price / your price) ^ district elasticity
-Speed  = (35 min / your time) ^ 0.6
+Price     = (reference price / your price) ^ district elasticity
+Speed     = (35 min / your time) ^ 0.6
 Selection = saturation curve over connected restaurants`,
   },
   helpDemandText: { ru: 'Клиенты — это <b>запас</b>: он пополняется пробными заказами (их даёт узнаваемость от маркетинга) и убывает от оттока (его определяет удовлетворённость).', en: 'Customers are a <b>stock</b>: it is filled by trial orders (driven by awareness from marketing) and drained by churn (driven by satisfaction).' },
@@ -1884,7 +1884,9 @@ delivery time = base × (1 + 0.85 × utilisation³)`,
   },
   helpSupplyText: { ru: 'Куб в формуле — это очередь: при загрузке 100% время доставки почти удваивается. Это главная нелинейность игры и главная причина, по которой доставка ломается внезапно, а не постепенно.', en: 'The cube is a queue: at 100% utilisation delivery time nearly doubles. This is the key non-linearity in the game and the reason delivery breaks suddenly rather than gradually.' },
   helpWeatherTitle: { ru: 'Погода', en: 'Weather' },
-  helpWeatherText: { ru: 'Погода действует каждую неделю и разыгрывается по сезону: гололёд бывает только зимой, жара — только летом. Она всегда бьёт с двух сторон: поднимает спрос и режет мощность курьеров. В шторм загрузка растёт сразу в 1.6 раза. Прогноз на следующую неделю публичен — но курьеры, нанятые сегодня, выходят на линию именно на ней, поэтому прогноз надо не читать, а отрабатывать.', en: 'Weather applies every week and is drawn by season: ice only in winter, heat only in summer. It always hits from both sides — lifting demand and cutting courier capacity. In a storm utilisation jumps by a factor of 1.6. Next week’s forecast is public, but the couriers you hire today hit the road exactly that week, so the forecast is something to act on, not to read.' },
+  helpWeatherText: { ru: 'Погода действует каждую неделю и разыгрывается по сезону: гололёд бывает только зимой, жара — только летом. Она всегда бьёт с двух сторон: поднимает спрос и режет мощность курьеров. В шторм загрузка подскакивает больше чем вдвое: спрос ×1.3 при мощности ×0.6. Прогноз на следующую неделю публичен — но курьеры, нанятые сегодня, выходят на линию именно на ней, поэтому прогноз надо не читать, а отрабатывать.', en: 'Weather applies every week and is drawn by season: ice only in winter, heat only in summer. It always hits from both sides — lifting demand and cutting courier capacity. In a storm utilisation more than doubles: demand ×1.3 against capacity ×0.6. Next week’s forecast is public, but the couriers you hire today hit the road exactly that week, so the forecast is something to act on, not to read.' },
+  helpBoardTitle: { ru: 'Совет директоров', en: 'The board' },
+  helpBoardText: { ru: 'На каждый квартал совет ставит цель: заказы, вклад с заказа, прибыльные недели, доля города. Цель объявляется заранее, видна каждый ход и считается от вашего фактического состояния на начало квартала. Выполнение поднимает итоговую оценку, провал стоит дорого: размытие доли, порезанный маркетинг или срез оценки. Цели нарочно тянут в разные стороны — стратегия, взявшая один квартал, не берёт следующий без пересборки.', en: 'Each quarter the board sets a goal: orders, contribution per order, profitable weeks, city share. The goal is announced in advance, stays on screen every turn and is computed from your actual state at the start of the quarter. Meeting it raises the final valuation; missing it costs real money — dilution, a capped marketing budget or a valuation cut. The goals deliberately pull in different directions: the strategy that wins one quarter does not win the next without being rebuilt.' },
   helpSpiralsTitle: { ru: 'Обратные связи, которые вас погубят', en: 'The feedback loops that will kill you' },
   helpSpiralSpeed: { ru: '<b>Спираль скорости.</b> Мало курьеров → долгая доставка → недовольство → отток клиентов → падение выручки → нечем платить курьерам.', en: '<b>The speed spiral.</b> Too few couriers → slow delivery → dissatisfaction → customer churn → falling revenue → no money to pay couriers.' },
   helpSpiralPromo: { ru: '<b>Спираль промо.</b> Скидка → рост заказов → отрицательный вклад → сжигание кассы → отмена скидки → обвал спроса.', en: '<b>The promo spiral.</b> Discount → more orders → negative contribution → cash burn → discount cancelled → demand collapses.' },
@@ -2053,7 +2055,7 @@ score = valuation × your stake`,
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'нед. {turn}: {what}', en: 'wk {turn}: {what}' },
-  chartChangeDistricts: { ru: 'зоны покрытия', en: 'coverage areas' },
+  chartChangeDistricts: { ru: 'районы', en: 'districts' },
   reportDelta: { ru: 'К прошлой неделе: заказы {orders}, прибыль {profit}, касса {cash}.', en: 'Versus last week: orders {orders}, profit {profit}, cash {cash}.' },
   fundingRunway: { ru: 'При темпе прошлой недели кассы хватит примерно на {n} нед. Раунд дешевле поднимать заранее, а не у нуля.', en: 'At last week’s pace the cash lasts about {n} weeks. A round is cheaper raised early, not at zero.' },
   // --- Приветственный экран ---
@@ -2099,7 +2101,7 @@ score = valuation × your stake`,
   metaContinueTitle: { ru: 'Есть продолжение', en: 'There is a sequel' },
   metaContinueText: {
     ru: 'НОВОГРАД — четвёртая игра серии. Там вы управляете уже не одним сервисом, а холдингом: такси, е-ком, общая подписка. Ваша «НОВОЕДА» станет его стартовым активом — с той базой и кассой, что вы заработали здесь.',
-    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: ride-hailing, e-commerce, one subscription across them all. Your NOVOEDA becomes its starting asset — with the customer base and cash you earned here.',
+    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: taxi, e-commerce, one subscription across them all. Your NOVOEDA becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
 
@@ -3620,7 +3622,7 @@ const LEVERS = [
     min: 0, max: 399, step: 10, def: 149,
     tip: {
       ru: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
-      en: 'Direct revenue on every order. But demand is elastic: a 10% price rise cuts order frequency far harder on campus than downtown.',
+      en: 'Direct revenue on every order. But demand is elastic: a 10% price rise cuts order frequency far harder in Campus than in Downtown.',
     },
   },
   {
@@ -8293,6 +8295,9 @@ function renderHelpTab() {
 
     <h4>${t('helpCityTitle')}</h4>
     <p>${t('helpCityText')}</p>
+
+    <h4>${t('helpBoardTitle')}</h4>
+    <p>${t('helpBoardText')}</p>
 
     <h4>${t('helpSpiralsTitle')}</h4>
     <ul>

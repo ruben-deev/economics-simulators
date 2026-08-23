@@ -271,7 +271,7 @@
         <div class="diff-grid">${cells}</div>
         <p class="sub" style="margin-top:8px">${ru
           ? 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», сбивает эквайринг и лучше упаковывает компанию к раунду. У каждого уровня своя таблица рекордов.'
-          : 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, negotiates card processing down and packages the company better for a funding round. Each level has its own record table.'}</p>`;
+          : 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, negotiates card processing down and packages the company better for a funding round. Each level has its own high-score table.'}</p>`;
       node.querySelectorAll('[data-diff]').forEach((b) => {
         b.addEventListener('click', () => {
           setDifficulty(b.dataset.diff);
@@ -300,7 +300,7 @@
       }).join('');
       const done = sc.missing.length === 0;
       const tail = done
-        ? (ru ? 'Весь путь пройден: серия сыграна целиком.' : 'The whole path is walked: the series is complete.')
+        ? (ru ? 'Весь путь пройден: серия сыграна целиком.' : 'You have walked the whole path: the series is complete.')
         : (ru ? `Не хватает: ${sc.missing.join(', ')}.` : `Missing: ${sc.missing.join(', ')}.`);
       node.innerHTML = `<div class="series-head">
           <b>${ru ? 'Путь серии' : 'The series path'}</b>
@@ -309,7 +309,7 @@
         <div class="series-grid">${cells}</div>
         <p class="sub" style="margin-top:8px">${tail} ${ru
           ? 'Полоса — насколько близко вы к уверенной победе в игре; выше шкала не растёт.'
-          : 'The bar shows how close you are to a confident win in that game; it does not grow beyond.'}</p>
+          : 'The bar shows how close you are to a confident win in that game; it does not grow beyond that.'}</p>
         <div class="card-actions" style="padding-top:4px">
           <a href="#" id="series-reset" style="flex:0 0 auto;padding:8px 14px;font-size:13px">${
             ru ? 'Начать путь заново' : 'Start the path over'}</a>
@@ -321,7 +321,7 @@
         e.preventDefault();
         const ask = ru
           ? 'Начать путь заново? Стираются незаконченные партии, строки результатов и перенос наследия — серия встретит как в первый раз. Таблицы рекордов не трогаются: и личные в играх, и мировая на сервере останутся как есть.'
-          : 'Start the path over? Unfinished games, result strings and the legacy transfer are wiped — the series greets you as on day one. Record tables are untouched: both the personal ones in the games and the shared online table stay as they are.';
+          : 'Start the path over? Unfinished games, result strings and the legacy transfer are wiped — the series greets you as on day one. High-score tables are untouched: both the personal ones in the games and the shared online table stay as they are.';
         if (!window.confirm(ask)) return;
         resetEcosystemProgress();
         render();
@@ -349,7 +349,7 @@
       // Вопрос-крючок живёт в лиде, а не в H1: вывеска, которую видят при
       // каждом возвращении, не должна быть одноразовой шуткой.
       homeLead: {
-        ru: 'Построите прибыльный бизнес? Город сомневается. Три игры про управление бизнесом и общий финал — экосистема, в которую вы приходите победителем любой из них. Каждая игра — один ход в единицу времени, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
+        ru: 'Построите прибыльный бизнес? Город сомневается. Три игры про управление бизнесом и общий финал — экосистема, в которую вы приходите победителем любой из них. В каждой игре один ход — неделя или месяц, десяток рычагов и понятная причина, по которой можно разориться. Модель считается честно: любую цифру на экране можно объяснить.',
         en: 'Can you build a profitable business? The city doubts it. Three games about running a business, plus a shared endgame — an ecosystem you enter as the winner of any of them. Each game is one turn per period, a dozen levers and a clear reason you can go bust. The model is computed honestly: every number on screen can be explained.',
       },
       foodTitle: { ru: 'НОВОЕДА', en: 'NOVOEDA' },
@@ -373,24 +373,24 @@
         en: 'Renting a catalogue versus owning a library|Watch hours as a cost, not a success|Rival premieres and counter-programming|Growing the base versus keeping your stake',
       },
       ticketsTitle: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
-      ticketsSub: { ru: '36 месяцев · двусторонний рынок · B2B и B2C', en: '36 months · two-sided market · B2B and B2C' },
+      ticketsSub: { ru: 'билетный сервис · ход = месяц · 36 месяцев', en: 'a ticketing service · turn = month · 36 months' },
       ticketsText: {
-        ru: 'Вы управляете билетным оператором. С одной стороны организаторы дают афишу, с другой зрители покупают билеты. Ни одна сторона не приходит первой сама по себе.',
-        en: 'You run a ticketing operator. Organisers provide the listings on one side, buyers buy tickets on the other. Neither side arrives first on its own.',
+        ru: 'Вы управляете билетным сервисом. С одной стороны организаторы дают афишу, с другой зрители покупают билеты. Ни одна сторона не приходит первой сама по себе.',
+        en: 'You run a ticketing service. Organisers provide the listings on one side, buyers buy tickets on the other. Neither side arrives first on its own.',
       },
       ticketsList: {
         ru: 'Одна выручка, две стороны: сбор с покупателя против комиссии с организатора|Конфликт каналов: билетный виджет удерживает клиента и уводит продажи|Оборот и выручка — разные числа, и эквайринг вычитается из второго|Доверие: перекупщики наполняют оборот и опустошают репутацию',
-        en: 'One revenue, two sides: buyer fee versus organiser commission|Channel conflict: a ticketing widget keeps the client and takes the sales|Turnover and revenue are different numbers, and acquiring comes out of the second|Trust: resellers fill the turnover and empty the reputation',
+        en: 'One revenue, two sides: buyer fee versus organiser commission|Channel conflict: a ticketing widget keeps the organiser but takes the sales away from your listings|Turnover and revenue are different numbers, and card fees come out of the second|Trust: resellers pad the turnover and drain the reputation',
       },
       ecoLabel: { ru: 'Финал серии', en: 'The series endgame' },
       ecoTitle: { ru: 'НОВОГРАД', en: 'NOVOGRAD' },
       ecoSub: { ru: 'экосистема сервисов · ход = месяц · 36 месяцев', en: 'a service ecosystem · turn = month · 36 months' },
       ecoText: {
-        ru: 'Продолжение любой из трёх игр: ваш выигранный бизнес становится стартовым активом холдинга. Свой рынок он уже насытил — дальше рост не числом клиентов, а новыми сервисами для тех же людей: такси, е-ком, подписка «Плюс». Инвестор оценивает холдинг по сумме частей, и убыточная вертикаль без роста тянет оценку вниз.',
-        en: 'The continuation of any of the three games: the business you won becomes the holding’s starting asset. It has already saturated its own market — growth now comes from new services for the same people: ride-hailing, e-commerce, the Plus subscription. Investors value the holding as a sum of parts, and a loss-making vertical with no growth drags the valuation down.',
+        ru: 'Продолжение любой из трёх игр: ваш выигранный бизнес становится стартовым активом холдинга. Свой рынок он уже насытил — дальше рост не числом клиентов, а новыми сервисами для тех же людей: такси, е-ком, подписка «Новоград Plus». Инвестор оценивает холдинг по сумме частей, и убыточная вертикаль без роста тянет оценку вниз.',
+        en: 'The continuation of any of the three games: the business you won becomes the holding’s starting asset. It has already saturated its own market — growth now comes from new services for the same people: taxi, e-commerce, the Plus subscription. Investors value the holding as a sum of parts, and a loss-making vertical with no growth drags the valuation down.',
       },
       ecoList: {
-        ru: 'Стартовый актив задаёт форму экосистемы: доставка, стриминг или билеты|Кросс-селл по своей базе против дорогого холодного маркетинга|Подписка «Плюс»: платите маржой сейчас за удержание потом|Финалы трёх игр дают наследие на старте — а сильный финал НОВОГРАДА открывает бейджи в них',
+        ru: 'Стартовый актив задаёт форму экосистемы: доставка, стриминг или билеты|Кросс-селл по своей базе против дорогого холодного маркетинга|Подписка «Новоград Plus»: платите маржой сейчас за удержание потом|Финалы трёх игр дают наследие на старте — а сильный финал НОВОГРАДА открывает в них бейдж и коды партий',
         en: 'The starting asset shapes the ecosystem: delivery, streaming or ticketing|Cross-selling your own base versus expensive cold marketing|The Plus subscription: pay margin now for retention later|The three endgames grant a legacy at the start — and a strong NOVOGRAD finale unlocks badges back in them',
       },
       ecoMetaNone: {
@@ -399,8 +399,8 @@
       },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
-        ru: 'Игры работают в браузере, без установки. Разбор моделей и сценарии занятий: <a href="docs/foodtech/economics.html">доставка</a> · <a href="docs/cinema/economics.html">кинотеатр</a> · <a href="docs/tickets/economics.html">билеты</a> · <a href="docs/ecosystem/economics.html">экосистема</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.<br>Все совпадения с реальными экосистемами случайны. Особенно неслучайные.',
-        en: 'The games run in a browser, nothing to install. Model write-ups and lesson plans: <a href="docs/foodtech/en/economics.html">delivery</a> · <a href="docs/cinema/en/economics.html">streaming</a> · <a href="docs/tickets/en/economics.html">ticketing</a> · <a href="docs/ecosystem/en/economics.html">ecosystem</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.<br>Any resemblance to real ecosystems is coincidental. Especially the non-coincidental kind.',
+        ru: 'Игры работают в браузере, без установки. Разбор моделей: <a href="docs/foodtech/economics.html">доставка</a> · <a href="docs/cinema/economics.html">кинотеатр</a> · <a href="docs/tickets/economics.html">билеты</a> · <a href="docs/ecosystem/economics.html">экосистема</a>. Сценарии занятий для преподавателя: <a href="docs/foodtech/teacher-guide.html">доставка</a> · <a href="docs/cinema/teacher-guide.html">кинотеатр</a> · <a href="docs/tickets/teacher-guide.html">билеты</a> · <a href="docs/ecosystem/teacher-guide.html">экосистема</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.<br>Все совпадения с реальными экосистемами случайны. Особенно неслучайные.',
+        en: 'The games run in a browser, nothing to install. Model write-ups: <a href="docs/foodtech/en/economics.html">delivery</a> · <a href="docs/cinema/en/economics.html">streaming</a> · <a href="docs/tickets/en/economics.html">ticketing</a> · <a href="docs/ecosystem/en/economics.html">ecosystem</a>. Lesson plans for teachers: <a href="docs/foodtech/en/teacher-guide.html">delivery</a> · <a href="docs/cinema/en/teacher-guide.html">streaming</a> · <a href="docs/tickets/en/teacher-guide.html">ticketing</a> · <a href="docs/ecosystem/en/teacher-guide.html">ecosystem</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.<br>Any resemblance to real ecosystems is coincidental. Especially the non-coincidental kind.',
       },
       langBtn: { ru: 'EN', en: 'RU' },
     };

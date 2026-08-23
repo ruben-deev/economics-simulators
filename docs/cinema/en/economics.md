@@ -707,20 +707,23 @@ directions.
 | Year | Goal | What it tests |
 |---|---|---|
 | 1 | reach 3.4M subscribers | can you grow at all |
-| 2 | 3 profitable months of 12 **and** base no lower than ×1.05 | can you grow and earn at the same time |
-| 3 | market share ≥ 55% **and** base no lower than ×0.75 | did you hold the market once the rights expired |
+| 2 | duopoly share ≥ 52% **and** base no lower than ×1.05 | can you take market away, not just grow |
+| 3 | 2 profitable months **and** base no lower than ×0.55 of its peak | can you earn once growth is over |
 
-These numbers were measured, not guessed: a hundred random strategies are run across
-three years, and each bar sits where the clearly better half clears it and the middle
-does not. Latest measurement: 37% of strategies clear year one, 22% clear year three.
-The year-three bar is 0.55: after the third act (the rival's last push) the share
-distribution shifted down, and the old 0.60 was cleared by barely one in ten.
+These numbers were measured, not guessed: each bar sits where the clearly better half
+clears it and the middle does not. Year one is cleared by 37% of random strategies.
+The year-two bar — 0.52 — sits between the median (0.49) and the ninetieth percentile
+(0.60) of the duopoly share of well-tuned reference strategies at month 24.
 
-Year two is cleared by only 4%, and that is deliberate: a random strategy has no
-profitable months at all even at the ninetieth percentile, while a well-tuned one closes
-most of the year in the black. This goal separates a working business from an
-almost-working one rather than punishing one bad month. Year three is a defensive year:
-rights expire, partner contracts end, the rival has grown.
+Year two is the expansion year: the catalogue is built, the pipeline works, the market
+is being divided right now — so the goal is share. The old goal of "profitable months
+in year two" died when demand was rebuilt: well-tuned reference strategies have zero
+profitable months in year 2, and a goal nobody clears teaches the same lesson as a goal
+everybody clears. Profitability moved to year three — the year of defence and harvest:
+rights expire, the rival makes its last push, the base inevitably melts (well-tuned
+runs keep 55–65% of the peak). At least two profitable months — and not at the cost of
+the base: hold at least 55% of the peak. About 36% of well-tuned runs clear it —
+deliberately the hardest goal of the game, but a living one.
 
 The goal is announced in the first month of the year and is on screen every turn with
 its progress — this is planning, not a lottery.

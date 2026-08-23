@@ -353,7 +353,7 @@ export const LEVERS = [
     min: 0, max: 399, step: 10, def: 149,
     tip: {
       ru: 'Прямая выручка с заказа. Но спрос эластичен: рост цены на 10% в студенческом районе срезает частоту заказов сильнее, чем в центре.',
-      en: 'Direct revenue on every order. But demand is elastic: a 10% price rise cuts order frequency far harder on campus than downtown.',
+      en: 'Direct revenue on every order. But demand is elastic: a 10% price rise cuts order frequency far harder in Campus than in Downtown.',
     },
   },
   {

@@ -362,7 +362,7 @@ stays untouched).
 | Launching e-commerce | gate: month ≥8 and a profitable hub; “never” ≈ −15%, late up to −40% |
 | The Plus subscription | “never” ≈ −25%; ₽299 is an interior optimum |
 | Milking the hub | works in the moment; past the 115% threshold customers flee — and the cross-sell pool with them |
-| The three games’ legacy | stacks to +4–6% of the score: felt, not decisive |
+| The three games’ legacy | flags +2.5–4.5% of the score, up to +9% with numbers: felt, not decisive |
 
 The numbers are notional, chosen for playability: the game illustrates the
 mechanics of the relationships, not the magnitudes.

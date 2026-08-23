@@ -42,10 +42,10 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.22.3.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.28.3.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.31.3.html) ·
-[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.26.4.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.22.4.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.28.4.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.31.4.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.26.5.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **World leaderboard.** Each game's final screen keeps a local per-device record
@@ -69,7 +69,7 @@ The built files are already in the repository, so the build step is only needed 
 `build.manifest.js`. They are independent: a change in the streaming game does not
 rename the delivery file and pretend it was updated too. `package.json` stays the
 version of the monorepo as a whole. The game's number
-goes into the built file name (`…-simulator-v0.4.0.html`), into the page itself and into
+goes into the built file name (`…-simulator-v1.22.4.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
@@ -133,12 +133,12 @@ you pay for idle time. That is the main loop of the game, and it is not solved b
 | Weather | Demand | Courier capacity | Courier churn |
 |---|---|---|---|
 | Clear | — | — | — |
-| Rain | +16% | −8% | +4 pp |
-| Frost | +14% | −12% | +7 pp |
-| Snow | +22% | −18% | +9 pp |
-| Heat | +4% | −14% | +10 pp |
-| Ice | +10% | −26% | +16 pp |
-| Storm | +30% | −20% | +12 pp |
+| Rain | +16% | −12% | +5 pp |
+| Frost | +14% | −22% | +9 pp |
+| Snow | +22% | −34% | +13 pp |
+| Heat | +4% | −24% | +12 pp |
+| Ice | +10% | −44% | +21 pp |
+| Storm | +30% | −40% | +17 pp |
 
 Next week's forecast is public. The value is not in the information but in the reaction:
 couriers hired today go on the road exactly in the week the forecast covers.
@@ -230,7 +230,7 @@ beats the best constant setting of the sliders by **85%**.
   faster, and exclusives are the one thing the same money cannot buy him.
 * **Escalating resource costs** — rights get dearer when you both bid for them; talent
   gets dearer with your success. The growth flywheel has a brake.
-* **Board goals** — one per year: growth, then profitability, then market share. Missing
+* **Board goals** — one per year: growth, then market share, then profitability. Missing
   one costs equity, a capped budget or valuation.
 * **Crises** — a lawsuit, a scandal, a showrunner leaving, platform decay. Every month
   without a decision costs more than the last, and the fix gets dearer too. They arrive
@@ -323,11 +323,19 @@ shape each time: delivery brings strong logistics synergy with ride-hailing and
 e-commerce, streaming brings the habit of paying by subscription, ticketing brings a
 small but monied base and a partner network.
 
-**Meta-progression.** A result string from the older games (the same one used for the
-leaderboard) can be entered on NOVOGRAD's welcome screen and grants a legacy: brand
-awareness and a launch discount on "your" vertical. Winning all three games unlocks the
-secret ending, the Novograd Conglomerate — strictly cosmetic: a badge on the final
-screens, no effect on the older games' economics or records.
+**Meta-progression.** Endgames of the older games grant NOVOGRAD a legacy: brand
+awareness, launch discounts on "your" vertical, carried-over cash and valuation. On the
+same device they are picked up automatically; from another device, a result string (the
+same one used for the leaderboard) can be entered on the welcome screen. A finale counts
+from a threshold: ₽0.3B for delivery, ₽1.5B for streaming, ₽1.2B for ticketing. Worthy
+finales of all three games plus a worthy NOVOGRAD unlock a hidden reward, the Novograd
+Conglomerate — strictly cosmetic: a badge on the final screens, no effect on the older
+games' economics or records.
+
+**The conglomerate year.** After the scored finale (36 months) an optional fourth year
+opens: the scored result is frozen, the year has its own goal, a new vertical —
+scooters — and the outcome goes as a separate row tagged "НОВОГРАД+" into its own
+leaderboard.
 
 📘 [Formula write-up](docs/ecosystem/en/economics.md) ·
 🎓 [Lesson plans](docs/ecosystem/en/teacher-guide.md) ·
@@ -362,6 +370,7 @@ shared/
   format.js                     number and money formatting
   styles.css                    shared dark theme and grid
   tools/build.js                bundles the single-file builds from manifests
+  tools/docs.js                 builds docs/**/*.md into the site's HTML pages
   tools/serve.js                local static server
 games/<game>/
   index.html                    markup
@@ -370,12 +379,13 @@ games/<game>/
   src/model/config.js           ALL world parameters: constants, levers, algorithms
   src/model/engine.js           the simulation core — pure functions, no DOM
   src/model/events.js           random events
-  src/model/rival.js            the living rival: state and policy (streaming)
-  src/model/board.js            board goals (streaming)
-  src/model/crises.js           crises that last until resolved (streaming)
+  src/model/board.js            board goals (in every game)
+  src/model/rival.js            the living rival (streaming, ticketing)
+  src/model/crises.js           crises that last until resolved (streaming, ticketing)
+  src/model/…                   the rest of the world: demand, pricing, partners — per game
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.28.3.html
+  dist/kinoreka-streaming-simulator-v1.28.4.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```
@@ -397,7 +407,7 @@ Every number lives in `games/<game>/src/model/config.js`: starting capital, elas
 churn, content costs, algorithm unlock thresholds. You can change them without touching the
 logic.
 
-After editing it is worth running `npm test` — over 270 checks across the three games. The tests
+After editing it is worth running `npm test` — over 440 checks across the four games and the shared modules. The tests
 verify qualitative properties (monotonic responses, interior optima, P&L consistency, no
 NaNs, translation completeness) rather than specific numbers, so they survive rebalancing.
 

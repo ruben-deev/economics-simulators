@@ -98,14 +98,15 @@ How the session runs:
    orders. Ask: where is the growth? The Geography panel shows the second city
    and its entry price.
 2. Before any decision, have each team do the napkin maths: ₽30M entry, a
-   ₽1.2M/wk city office, awareness from zero, marketing split between two
+   ₽0.6M/wk city office, awareness from zero, marketing split between two
    cities, and 16 weeks of a promo war — the incumbent cuts new-customer inflow
    in half. How many weeks to payback, and does the game have that many left?
 3. Play 10–12 weeks. Compare teams: all four districts versus one, entry on
    week 16 versus week 30.
 4. Debrief against the measurement: entering with all four districts on weeks
-   14–20 adds +28–36% to the final score, Eastside alone +11–12%, and an entry
-   after week 30 never pays the war back. Separately: after entry your market
+   14–20 adds +28–36% to the final score (measured back when the office cost
+   twice as much — the gain is likely larger now), Eastside alone +11–12%, and
+   an entry after week 30 never pays the war back. Separately: after entry your market
    share is measured across both cities — the fourth-quarter goal (45%) gets
    noticeably harder.
 
@@ -134,10 +135,9 @@ How it goes:
    week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
    panel shows habit eating its effect over eight to ten weeks. A weather-driven bonus is
    both cheaper and stronger: measured, "bonus only in heavy weeks" earns +87% over the
-   best constant — though with forecast auto-hiring on, the bonus becomes redundant
-   (the fleet is already weather-sized, and paying twice costs 28% of the outcome) —
-   and playing it
-   backwards loses a quarter of the final score.
+   best constant, while playing it backwards loses a quarter of the final score. (One
+   caveat: with forecast auto-hiring on, the bonus becomes redundant — the fleet is
+   already weather-sized, and paying twice costs 28% of the outcome.)
 
 The core idea: the weather forecast is public and every competitor sees it. The advantage
 comes not from the information but from the speed of the reaction to it.
@@ -150,8 +150,8 @@ The task: show that a strategy built for one quarter's goal does not carry to th
 
 1. Quarter one: 45,000 orders a week. Almost everyone gets there by growth at any cost —
    a low fee, a heavy promo, plenty of couriers.
-2. Quarter two announces something else: contribution of ₽60 per order **and** an order
-   flow no lower than before. Pause and ask them to say out loud what has to change.
+2. Quarter two announces something else: contribution of ₽50 per order **and** an order
+   flow no lower than 85% of before. Pause and ask them to say out loud what has to change.
    It usually turns out that what has to change is exactly what won them quarter one.
 3. Quarter three — four profitable weeks out of thirteen with a base that has not shrunk.
    Quarter four — a 45% city share.
@@ -226,6 +226,23 @@ the game code, the score and a checksum. Ask students to send it in: a string wi
 doctored score fails the checksum (faking it is harder than playing honestly). The final
 screen also keeps a table of the best games on that device.
 
+**The final screen as a homework-collection tool.** Beyond the result string and the
+local table it has a "Copy" button (the result string in one tap), "Download CSV" (the
+week-by-week history of the game — handy for spreadsheet debriefs), "Share as image"
+(a result card for messengers; a vertical format on phones), the world leaderboard with
+result submission, and a personal debrief — two or three findings about what exactly
+cost the player money.
+
+**Language in the link.** The header button switches the language, but it can be baked
+straight into the link: `…/games/foodtech/?lang=en` (or `?lang=ru`). This matters when
+a bare link is sent out: without the parameter the game picks the browser's language,
+and part of the group may open the other version.
+
+**Difficulty levels.** The welcome screen offers three levels — Easy, Normal, Hard. The
+level goes into the result-string tag and each level keeps its own leaderboard, so do
+not compare results across levels directly: announce the level together with the game
+code.
+
 **Tuning difficulty.** All parameters live in `games/foodtech/src/model/config.js`:
 * `startCash` — how much room for error students have;
 * `courierMarketWeeklyPay` — how tight the labour market is;
@@ -248,5 +265,5 @@ All text in the model is stored as `{ ru, en }` pairs in `games/foodtech/src/mod
 `games/foodtech/src/model/events.js` and `games/foodtech/src/strings.js`, so adding a third language means adding one more
 key to each pair.
 
-**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.22.3.html` — a single
+**Handing it out to students.** `npm run build` produces `games/foodtech/dist/novoeda-delivery-simulator-v1.22.4.html` — a single
 file that works offline. Progress is saved in the browser's localStorage.
