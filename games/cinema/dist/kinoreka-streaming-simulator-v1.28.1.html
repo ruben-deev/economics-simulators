@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.28.0" />
+  <meta name="app-version" content="1.28.1" />
   <meta name="app-build-date" content="2026-08-23" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -8137,8 +8137,9 @@ function buildCardMarks(history, titleOf) {
     if (used.has(m.id)) continue;
     // Правый край занят итогом партии — туда подписи не ставим
     if (m.turn > history.length * 0.85) continue;
-    // Не теснимся: метки ближе восьмой части партии друг к другу сливаются
-    if (marks.some((x) => Math.abs(x.turn - m.turn) < history.length / 8)) continue;
+    // Не теснимся: капсулы широкие, и метки ближе четверти партии друг к
+    // другу перекрываются — вторая просто не влезает между точкой и итогом
+    if (marks.some((x) => Math.abs(x.turn - m.turn) < history.length / 4)) continue;
     const text = titleOf(m.id);
     if (!text) continue;
     used.add(m.id);
@@ -8151,18 +8152,27 @@ function buildCardMarks(history, titleOf) {
 // Отдать картинку: на телефоне — в системное «поделиться», иначе — файлом.
 // Возвращает 'shared' | 'saved' | 'cancel'.
 // ----------------------------------------------------------------------------
-async function shareCardImage(canvas, filename) {
+async function shareCardImage(canvas, filename, shareText) {
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) return 'cancel';
   try {
     const file = new File([blob], filename, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Ссылка кладётся текстом рядом с картинкой: в мессенджерах она станет
+      // кликабельной. Часть браузеров не принимает text вместе с files —
+      // тогда вторая попытка отдаёт одну картинку: адрес напечатан и на ней.
       try {
-        await navigator.share({ files: [file] });
+        await navigator.share(shareText ? { files: [file], text: shareText } : { files: [file] });
         return 'shared';
       } catch (e) {
-        // Человек закрыл системное окно — не повод скачивать файл силой
         if (e && e.name === 'AbortError') return 'cancel';
+        try {
+          await navigator.share({ files: [file] });
+          return 'shared';
+        } catch (e2) {
+          // Человек закрыл системное окно — не повод скачивать файл силой
+          if (e2 && e2.name === 'AbortError') return 'cancel';
+        }
       }
     }
   } catch { /* File не поддержан — падаем в скачивание */ }
@@ -10490,7 +10500,9 @@ function novogradInviteHtml() {
 // Карточка «поделиться»: картинка 1200×630 из истории партии. Кода партии на
 // ней нет сознательно — картинка зовёт играть, а не пугает служебным; строка
 // с кодом остаётся в финальном окне для тех, кто хочет сравниться.
-const SHARE_SITE = 'ruben-deev.github.io';
+// Полный адрес: игры живут в подкаталоге, голый домен ведёт мимо сайта
+const SHARE_SITE = 'ruben-deev.github.io/economics-simulators';
+const SHARE_LINK = 'https://ruben-deev.github.io/economics-simulators/';
 function shareFinaleCard(s, verdict) {
   const hist = state.history.slice(0, s.months);
   const marksIn = hist.map((r) => ({
@@ -10517,7 +10529,7 @@ function shareFinaleCard(s, verdict) {
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
   });
-  return shareCardImage(canvas, 'kinoreka-card.png').then((res) => {
+  return shareCardImage(canvas, 'kinoreka-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
 }

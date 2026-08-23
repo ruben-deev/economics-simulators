@@ -1979,7 +1979,9 @@ function recordsBlockHtml(s) {
 // с кодом остаётся в финальном окне для тех, кто хочет сравниться.
 // История режется до зачётных месяцев: показ из года конгломерата не должен
 // дорисовывать кривой лишние месяцы.
-const SHARE_SITE = 'ruben-deev.github.io';
+// Полный адрес: игры живут в подкаталоге, голый домен ведёт мимо сайта
+const SHARE_SITE = 'ruben-deev.github.io/economics-simulators';
+const SHARE_LINK = 'https://ruben-deev.github.io/economics-simulators/';
 function shareFinaleCard(s, verdict) {
   const hist = state.history.slice(0, s.months);
   const marksIn = hist.map((r) => ({
@@ -1989,13 +1991,16 @@ function shareFinaleCard(s, verdict) {
   }));
   const { marks, pickTurn } = buildCardMarks(marksIn, (id) => tx(eventById(id)?.title));
   const dead = Boolean(s.bankrupt || s.sold);
+  // Секретная концовка даёт свою карточку: редкость, которой хочется
+  // хвастаться, — и одновременно намёк остальным, что в наборе есть тайна
+  const secret = !dead && secretEndingUnlocked();
   const canvas = drawShareCard({
     emoji: '🏙️',
     name: t('brandTitle'),
     sub: t('shareSub'),
     verdict: dead ? null : verdict,
-    hook1: dead ? t('shareHookDead', { n: s.months }) : t('shareHookWin'),
-    hook2: dead ? t('shareHookDeadAsk') : t('shareHookWinAsk'),
+    hook1: dead ? t('shareHookDead', { n: s.months }) : secret ? t('shareHookSecret') : t('shareHookWin'),
+    hook2: dead ? t('shareHookDeadAsk') : secret ? t('shareHookSecretAsk') : t('shareHookWinAsk'),
     series: hist.map((r) => r.equityValue ?? 0),
     profits: hist.map((r) => r.profit ?? 0),
     marks,
@@ -2006,7 +2011,7 @@ function shareFinaleCard(s, verdict) {
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
   });
-  return shareCardImage(canvas, 'novograd-card.png').then((res) => {
+  return shareCardImage(canvas, 'novograd-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
 }
