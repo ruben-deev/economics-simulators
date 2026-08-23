@@ -1915,6 +1915,7 @@ function shareFinaleCard(s, verdict) {
     marks,
     pickTurn,
     endLabel: money(s.bankrupt ? 0 : s.equityValue),
+    outcomeLabel: t('shareOutcome'),
     legend: [t('shareLegendPlus'), t('shareLegendZero'), t('shareLegendMinus'), t('shareLegendPick')],
     button: t('shareCta'),
     urlBold: SHARE_SITE,

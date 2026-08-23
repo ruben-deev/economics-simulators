@@ -695,6 +695,7 @@ export const STRINGS = {
   shareLegendZero: { ru: 'в ноль', en: 'break-even' },
   shareLegendMinus: { ru: 'в минус', en: 'at a loss' },
   shareLegendPick: { ru: 'самое дорогое решение', en: 'the priciest decision' },
+  shareOutcome: { ru: 'оценка компании через три года', en: 'company value after three years' },
   shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
   shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
   shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },

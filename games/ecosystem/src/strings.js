@@ -1079,6 +1079,7 @@ export const STRINGS = {
   // им ничего не скажет, а «ИИ построил, я нажимал согласен» понятно всем
   shareHookSecret: { ru: 'Экосистему построил ИИ. Я нажимал «согласен».', en: 'The AI built the ecosystem. I clicked “approve”.' },
   shareHookSecretAsk: { ru: 'Он говорит, вы следующий. 📎', en: 'It says you are next. 📎' },
+  shareOutcome: { ru: 'итог партии: доля × (оценка + касса)', en: 'final score: stake × (value + cash)' },
   shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
   shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
   shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },

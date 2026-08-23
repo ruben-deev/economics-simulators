@@ -35,7 +35,10 @@ const LAYOUTS = {
   portrait: {
     W: 1080, H: 1350, pad: 54,
     hookFont: 44, hookY1: 172, hookY2: 228,
-    chartTop: 290, chartH: 650,
+    // Под заголовком — итог крупным блоком (в пейзаже он живёт на кривой):
+    // портрету нужна плотность, растянутый пейзаж выглядел пустым
+    outcomeLabelY: 300, outcomeY: 375, outcomeFont: 76,
+    chartTop: 430, chartH: 595,
     btnFont: 30, btnH: 74, btnPad: 34, btnBottom: 150,
     endFont: 30, markFont: 17, legendFont: 15,
   },
@@ -131,6 +134,15 @@ export function drawShareCard(data, portrait = false) {
   ctx.fillText(data.hook1, L.pad, L.hookY1);
   ctx.fillStyle = COL.good;
   ctx.fillText(data.hook2, L.pad, L.hookY2);
+
+  if (portrait && data.outcomeLabel) {
+    ctx.font = `600 17px ${FONT}`;
+    ctx.fillStyle = COL.muted;
+    ctx.fillText(data.outcomeLabel.toUpperCase(), L.pad, L.outcomeLabelY);
+    ctx.font = `800 ${L.outcomeFont}px ${FONT}`;
+    ctx.fillStyle = COL.good;
+    ctx.fillText(data.endLabel, L.pad, L.outcomeY);
+  }
 
   // --- Кривая ---
   const cx = L.pad;
@@ -230,10 +242,13 @@ export function drawShareCard(data, portrait = false) {
   ctx.strokeStyle = COL.bg;
   ctx.lineWidth = 3;
   ctx.stroke();
-  ctx.font = `800 ${L.endFont}px ${FONT}`;
-  ctx.fillStyle = COL.good;
-  const endW = ctx.measureText(data.endLabel).width;
-  ctx.fillText(data.endLabel, cx + cw - endW, py(n - 1) - 20);
+  // В портрете итог уже показан крупным блоком — на кривой не дублируем
+  if (!(portrait && data.outcomeLabel)) {
+    ctx.font = `800 ${L.endFont}px ${FONT}`;
+    ctx.fillStyle = COL.good;
+    const endW = ctx.measureText(data.endLabel).width;
+    ctx.fillText(data.endLabel, cx + cw - endW, py(n - 1) - 20);
+  }
 
   // --- Полоска ходов: та же ось времени, что у кривой ---
   const sy = top + ch + 12;
