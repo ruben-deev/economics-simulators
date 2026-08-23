@@ -2003,6 +2003,7 @@ function showEndlessOver() {
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
     </div>`,
   [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
+   { label: t('endlessBackToScored'), onClick: () => showGameOver(true) },
    { label: t('gameOverCharts'), onClick: () => {} }]);
   el('modal-root').querySelector('#copy-result')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
@@ -2010,12 +2011,18 @@ function showEndlessOver() {
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
 }
 
-function showGameOver() {
-  if (state.over === 'endless-done') { showEndlessOver(); return; }
-  // Касса кончилась посреди года конгломерата: показываем итог самого акта,
-  // а не замороженный финал партии — иначе экран заново предлагал бы
-  // «Играть год конгломерата» после уже проигранного года.
-  if (state.endless && state.over === 'bankrupt') { showEndlessOver(); return; }
+// frozen = true: показать замороженный финал трёх лет ИЗ года конгломерата.
+// Раньше вход в год конгломерата съедал этот экран безвозвратно — вместе с
+// короной и секретным эпилогом, ради которых люди и доигрывают. Теперь к
+// нему ведёт кнопка с экранов года конгломерата.
+function showGameOver(frozen = false) {
+  if (!frozen) {
+    if (state.over === 'endless-done') { showEndlessOver(); return; }
+    // Касса кончилась посреди года конгломерата: показываем итог самого
+    // акта, а не замороженный финал партии — иначе экран заново предлагал
+    // бы «Играть год конгломерата» после уже проигранного года.
+    if (state.endless && state.over === 'bankrupt') { showEndlessOver(); return; }
+  }
   // Зачётный счёт зафиксирован движком в момент финиша: пост-эндгейм
   // (следующие фазы) сможет продолжать партию, не трогая результат
   const s = state.scored ?? finalScore(state);
@@ -2120,7 +2127,7 @@ function showGameOver() {
     // Пост-эндгейм: партия зачтена, счёт заморожен — дальше играют за
     // зрелость холдинга. Предлагаем только выжившим: продолжать банкротство
     // нечем.
-    ...(s.bankrupt ? [] : [{ label: t('endlessStart'), onClick: () => {
+    ...(s.bankrupt || state.endless ? [] : [{ label: t('endlessStart'), onClick: () => {
       state = enterEndless(state);
       save();
       renderAll();
@@ -2134,7 +2141,8 @@ function showGameOver() {
         <p class="funding-note">🛴 ${t('endlessScootNote', {
           life: CONFIG.scooters.streetLifeMonths,
         })}</p>`,
-        [{ label: t('helpModalOk'), primary: true, onClick: () => {} }]);
+        [{ label: t('helpModalOk'), primary: true, onClick: () => {} },
+         { label: t('endlessBackToScored'), onClick: () => showGameOver(true) }]);
     } }]),
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
     { label: t('gameOverCharts'), onClick: () => {} },
@@ -2378,10 +2386,13 @@ function nextMonth() {
   // только на секретный эпилог в финале НОВОГРАДА.
   const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosenOpt && chosenOpt.secret) {
-    markProtocolChoice('ecosystem');
+    // Счётчик «N из 4» — единственный след, по которому концовку вообще
+    // можно вычислить без подсказки со стороны: игрок узнаёт, что таких
+    // мест четыре, но не узнаёт, где искать остальные.
+    const { count } = markProtocolChoice('ecosystem');
     toast(tx({
-      ru: '📎 СКРЕПКА благодарит за доверие.',
-      en: '📎 PAPERCLIP thanks you for your trust.',
+      ru: `📎 СКРЕПКА благодарит за доверие. ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. ${count} of 4.`,
     }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });

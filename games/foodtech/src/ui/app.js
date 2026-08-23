@@ -2234,10 +2234,13 @@ function nextWeek() {
   // только на секретный эпилог в финале НОВОГРАДА.
   const chosen = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosen && chosen.secret) {
-    markProtocolChoice('delivery');
+    // Счётчик «N из 4» — единственный след, по которому концовку вообще
+    // можно вычислить без подсказки со стороны: игрок узнаёт, что таких
+    // мест четыре, но не узнаёт, где искать остальные.
+    const { count } = markProtocolChoice('delivery');
     toast(tx({
-      ru: '📎 СКРЕПКА благодарит за доверие.',
-      en: '📎 PAPERCLIP thanks you for your trust.',
+      ru: `📎 СКРЕПКА благодарит за доверие. ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. ${count} of 4.`,
     }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });

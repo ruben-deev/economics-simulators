@@ -2510,10 +2510,13 @@ function nextMonth() {
   // только на секретный эпилог в финале НОВОГРАДА.
   const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosenOpt && chosenOpt.secret) {
-    markProtocolChoice('streaming');
+    // Счётчик «N из 4» — единственный след, по которому концовку вообще
+    // можно вычислить без подсказки со стороны: игрок узнаёт, что таких
+    // мест четыре, но не узнаёт, где искать остальные.
+    const { count } = markProtocolChoice('streaming');
     toast(tx({
-      ru: '📎 СКРЕПКА благодарит за доверие.',
-      en: '📎 PAPERCLIP thanks you for your trust.',
+      ru: `📎 СКРЕПКА благодарит за доверие. ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. ${count} of 4.`,
     }));
   }
   state = step(state, {

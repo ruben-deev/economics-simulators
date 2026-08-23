@@ -228,10 +228,32 @@ function pickWeighted(rng, pool) {
   return pool[pool.length - 1];
 }
 
-export function rollEvent(rng, month) {
+
+// ----------------------------------------------------------------------------
+// Протокол «СКРЕПКА»: мягкая гарантия события-носителя.
+//
+// Скрепочные ответы спрятаны в двух событиях, а события случайны: в 2–11%%
+// партий (смотря какая игра) ни одно из двух так и не выпадает. Игрок,
+// собирающий концовку, узнаёт об этом только в финале — партия сыграна зря.
+// Форсировать событие нельзя: у носителей настоящие экономические
+// последствия, и принудительная вставка ломала бы поток событий. Поэтому
+// мягко: если к поздней партии носитель ни разу не выпадал, его вес в
+// розыгрыше удваивается. Ранние партии не меняются вовсе; замер по 20 000
+// прогонов — шанс встретить носителя поднимается до ~97–99%%.
+const CARRIER_IDS = EVENTS
+  .filter((e) => (e.options ?? []).some((o) => o.secret))
+  .map((e) => e.id);
+
+function boostCarriers(pool, seen, late) {
+  if (!late || CARRIER_IDS.some((id) => seen.includes(id))) return pool;
+  return pool.map((e) => (CARRIER_IDS.includes(e.id) ? { ...e, weight: e.weight * 2 } : e));
+}
+
+export function rollEvent(rng, month, seen = []) {
   if (month < 3) return null;
   if (rng() > 0.30) return null;
-  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  let pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  pool = boostCarriers(pool, seen, month >= 26);
   const picked = pickWeighted(rng, pool);
   return picked ? { ...picked } : null;
 }

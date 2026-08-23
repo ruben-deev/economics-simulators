@@ -934,7 +934,12 @@ export function step(prevState, input = {}) {
   state.history.push(report);
   state.rngState = rng.state();
   state.pendingChoice = null;
-  state.pendingEvent = rollEvent(rng, week + 1, state.flags);
+  // Показанные события копятся ради мягкой гарантии скрепочного носителя
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
+  state.pendingEvent = rollEvent(rng, week + 1, state.flags, state.seenEvents ?? []);
   state.weather = state.weatherNext ?? 'clear';
   state.weatherNext = rollWeather(rng, week + 2);
   // Привычка к надбавке: копится, пока надбавка включена, рассеивается без неё
