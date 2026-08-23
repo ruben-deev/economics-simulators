@@ -3,7 +3,7 @@
 
 export default {
   name: 'foodtech',
-  version: '1.21.0',
+  version: '1.22.0',
   title: 'НОВОЕДА · food delivery economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
@@ -34,6 +34,7 @@ export default {
     '../../shared/tables.js',
   '../../shared/sliders.js',
     '../../shared/charts.js',
+    '../../shared/sharecard.js',
     'src/ui/app.js',
   ],
   // Точка входа: вызывается после склейки модулей

@@ -826,4 +826,20 @@ score = valuation × your stake`,
     en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: ride-hailing, e-commerce, one subscription across them all. Your KINOREKA becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
+
+  // --------------------------------------------------------------------------
+  // Карточка «поделиться»: картинка для ленты, собирается из истории партии
+  shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
+  shareSub: { ru: 'браузерный симулятор экономики · 36 месяцев, 36 решений', en: 'browser economics sim · 36 months, 36 decisions' },
+  shareHookWin: { ru: 'Я три года строил онлайн-кинотеатр.', en: 'I spent three years building a streaming service.' },
+  shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
+  shareHookDead: { ru: 'Мой стриминг утонул за {n} месяцев.', en: 'My streaming service sank in {n} months.' },
+  shareHookDeadAsk: { ru: 'Покажете, как надо?', en: 'Show me how it is done?' },
+  shareLegendPlus: { ru: 'месяц в плюс', en: 'month in profit' },
+  shareLegendZero: { ru: 'в ноль', en: 'break-even' },
+  shareLegendMinus: { ru: 'в минус', en: 'at a loss' },
+  shareLegendPick: { ru: 'самое дорогое решение', en: 'the priciest decision' },
+  shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
+  shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
+  shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },
 };
