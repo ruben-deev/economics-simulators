@@ -311,8 +311,9 @@ export function buildCardMarks(history, titleOf) {
     if (used.has(m.id)) continue;
     // Правый край занят итогом партии — туда подписи не ставим
     if (m.turn > history.length * 0.85) continue;
-    // Не теснимся: метки ближе восьмой части партии друг к другу сливаются
-    if (marks.some((x) => Math.abs(x.turn - m.turn) < history.length / 8)) continue;
+    // Не теснимся: капсулы широкие, и метки ближе четверти партии друг к
+    // другу перекрываются — вторая просто не влезает между точкой и итогом
+    if (marks.some((x) => Math.abs(x.turn - m.turn) < history.length / 4)) continue;
     const text = titleOf(m.id);
     if (!text) continue;
     used.add(m.id);
@@ -325,18 +326,27 @@ export function buildCardMarks(history, titleOf) {
 // Отдать картинку: на телефоне — в системное «поделиться», иначе — файлом.
 // Возвращает 'shared' | 'saved' | 'cancel'.
 // ----------------------------------------------------------------------------
-export async function shareCardImage(canvas, filename) {
+export async function shareCardImage(canvas, filename, shareText) {
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) return 'cancel';
   try {
     const file = new File([blob], filename, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Ссылка кладётся текстом рядом с картинкой: в мессенджерах она станет
+      // кликабельной. Часть браузеров не принимает text вместе с files —
+      // тогда вторая попытка отдаёт одну картинку: адрес напечатан и на ней.
       try {
-        await navigator.share({ files: [file] });
+        await navigator.share(shareText ? { files: [file], text: shareText } : { files: [file] });
         return 'shared';
       } catch (e) {
-        // Человек закрыл системное окно — не повод скачивать файл силой
         if (e && e.name === 'AbortError') return 'cancel';
+        try {
+          await navigator.share({ files: [file] });
+          return 'shared';
+        } catch (e2) {
+          // Человек закрыл системное окно — не повод скачивать файл силой
+          if (e2 && e2.name === 'AbortError') return 'cancel';
+        }
       }
     }
   } catch { /* File не поддержан — падаем в скачивание */ }

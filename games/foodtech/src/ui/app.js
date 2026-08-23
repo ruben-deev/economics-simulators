@@ -1993,7 +1993,9 @@ function novogradInviteHtml() {
 // Карточка «поделиться»: картинка 1200×630 из истории партии. Кода партии на
 // ней нет сознательно — картинка зовёт играть, а не пугает служебным; строка
 // с кодом остаётся в финальном окне для тех, кто хочет сравниться.
-const SHARE_SITE = 'ruben-deev.github.io';
+// Полный адрес: игры живут в подкаталоге, голый домен ведёт мимо сайта
+const SHARE_SITE = 'ruben-deev.github.io/economics-simulators';
+const SHARE_LINK = 'https://ruben-deev.github.io/economics-simulators/';
 function shareFinaleCard(s, verdict) {
   const hist = state.history.slice(0, s.weeks);
   const marksIn = hist.map((r) => ({
@@ -2020,7 +2022,7 @@ function shareFinaleCard(s, verdict) {
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
   });
-  return shareCardImage(canvas, 'novoeda-card.png').then((res) => {
+  return shareCardImage(canvas, 'novoeda-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
 }
