@@ -710,4 +710,20 @@ score = valuation × your stake`,
     en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: ride-hailing, e-commerce, one subscription across them all. Your NOVOEDA becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
+
+  // --------------------------------------------------------------------------
+  // Карточка «поделиться»: картинка для ленты, собирается из истории партии
+  shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
+  shareSub: { ru: 'браузерный симулятор экономики · 52 недели, 52 решения', en: 'browser economics sim · 52 weeks, 52 decisions' },
+  shareHookWin: { ru: 'Я год управлял доставкой еды.', en: 'I ran a food-delivery company for a year.' },
+  shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
+  shareHookDead: { ru: 'Я утопил доставку за {n} недель.', en: 'I sank the delivery company in {n} weeks.' },
+  shareHookDeadAsk: { ru: 'Покажете, как надо?', en: 'Show me how it is done?' },
+  shareLegendPlus: { ru: 'неделя в плюс', en: 'week in profit' },
+  shareLegendZero: { ru: 'в ноль', en: 'break-even' },
+  shareLegendMinus: { ru: 'в минус', en: 'at a loss' },
+  shareLegendPick: { ru: 'самое дорогое решение', en: 'the priciest decision' },
+  shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
+  shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
+  shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },
 };

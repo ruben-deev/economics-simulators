@@ -24,6 +24,7 @@ import { rivalOrgTotal, rivalPlatformLevel, STANCES } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
+import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
@@ -1882,6 +1883,42 @@ function novogradInviteHtml() {
     ${t('metaContinueText')}${link}</div>`;
 }
 
+// ----------------------------------------------------------------------------
+// Карточка «поделиться»: картинка 1200×630 из истории партии. Кода партии на
+// ней нет сознательно — картинка зовёт играть, а не пугает служебным; строка
+// с кодом остаётся в финальном окне для тех, кто хочет сравниться.
+const SHARE_SITE = 'ruben-deev.github.io';
+function shareFinaleCard(s, verdict) {
+  const hist = state.history.slice(0, s.months);
+  const marksIn = hist.map((r) => ({
+    value: r.equityValue,
+    eventId: r.event ? r.event.id : null,
+    hadChoice: Boolean(r.event && (eventById(r.event.id)?.options)),
+  }));
+  const { marks, pickTurn } = buildCardMarks(marksIn, (id) => tx(eventById(id)?.title));
+  const dead = Boolean(s.bankrupt || s.sold);
+  const canvas = drawShareCard({
+    emoji: '🎟️',
+    name: t('brand'),
+    sub: t('shareSub'),
+    verdict: dead ? null : verdict,
+    hook1: dead ? t('shareHookDead', { n: s.months }) : t('shareHookWin'),
+    hook2: dead ? t('shareHookDeadAsk') : t('shareHookWinAsk'),
+    series: hist.map((r) => r.equityValue ?? 0),
+    profits: hist.map((r) => r.profit ?? 0),
+    marks,
+    pickTurn,
+    endLabel: money(s.bankrupt ? 0 : s.equityValue),
+    legend: [t('shareLegendPlus'), t('shareLegendZero'), t('shareLegendMinus'), t('shareLegendPick')],
+    button: t('shareCta'),
+    urlBold: SHARE_SITE,
+    urlNote: t('shareUrlNote'),
+  });
+  return shareCardImage(canvas, 'biletville-card.png').then((res) => {
+    if (res === 'saved') toast(t('shareSaved'));
+  });
+}
+
 function showGameOver() {
   const score = finalScore(state);
   const goals = (state.board?.history ?? [])
@@ -1915,6 +1952,7 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
     </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
@@ -1939,6 +1977,7 @@ function showGameOver() {
     navigator.clipboard?.writeText(line).then(() => toast(t('resultCopied'))).catch(() => {});
   });
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
+  el('modal-root').querySelector('#share-img')?.addEventListener('click', () => { shareFinaleCard(score, gradeOf(score.equityValue)); });
 }
 
 function restart() {

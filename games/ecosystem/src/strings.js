@@ -1062,6 +1062,22 @@ export const STRINGS = {
     en: 'The act’s bar: glue from {glue} and growth from {growth}. Measured: a strong build clears it in about half its runs, a weak one never.',
   },
   endlessBackToScored: { ru: 'Итоги трёх лет', en: 'Three-year results' },
+
+  // --------------------------------------------------------------------------
+  // Карточка «поделиться»: картинка для ленты, собирается из истории партии
+  shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
+  shareSub: { ru: 'браузерный симулятор экономики · 36 месяцев, 36 решений', en: 'browser economics sim · 36 months, 36 decisions' },
+  shareHookWin: { ru: 'Я три года собирал экосистему сервисов.', en: 'I spent three years assembling a service ecosystem.' },
+  shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
+  shareHookDead: { ru: 'Моя экосистема развалилась за {n} месяцев.', en: 'My ecosystem fell apart in {n} months.' },
+  shareHookDeadAsk: { ru: 'Покажете, как надо?', en: 'Show me how it is done?' },
+  shareLegendPlus: { ru: 'месяц в плюс', en: 'month in profit' },
+  shareLegendZero: { ru: 'в ноль', en: 'break-even' },
+  shareLegendMinus: { ru: 'в минус', en: 'at a loss' },
+  shareLegendPick: { ru: 'самое дорогое решение', en: 'the priciest decision' },
+  shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
+  shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
+  shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },
   endlessResultNote: {
     ru: 'Строка года конгломерата помечена тегом НОВОГРАД+ и идёт в отдельную таблицу: зачётный результат партии она не заменяет.',
     en: 'The conglomerate-year string carries the NOVOGRAD+ tag and goes to a separate table: it does not replace your scored result.',
