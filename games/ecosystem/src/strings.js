@@ -1075,8 +1075,10 @@ export const STRINGS = {
   shareLegendZero: { ru: 'в ноль', en: 'break-even' },
   shareLegendMinus: { ru: 'в минус', en: 'at a loss' },
   shareLegendPick: { ru: 'самое дорогое решение', en: 'the priciest decision' },
-  shareHookSecret: { ru: 'Мы со СКРЕПКОЙ довели экосистему до финала.', en: 'The PAPERCLIP AI and I took the ecosystem all the way.' },
-  shareHookSecretAsk: { ru: 'Обойдёте нас двоих? 📎', en: 'Think you can beat us both? 📎' },
+  // Секретная карточка обращается к тем, кто в игру не играл: имя нейросети
+  // им ничего не скажет, а «ИИ построил, я нажимал согласен» понятно всем
+  shareHookSecret: { ru: 'Экосистему построил ИИ. Я нажимал «согласен».', en: 'The AI built the ecosystem. I clicked “approve”.' },
+  shareHookSecretAsk: { ru: 'Он говорит, вы следующий. 📎', en: 'It says you are next. 📎' },
   shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
   shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
   shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },
