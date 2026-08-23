@@ -231,18 +231,24 @@ Task: play 24 turns, meeting the board's goals.
 Running the session:
 1. Year one has one goal: reach 3.4M subscribers. Almost every team pours money into
    content and marketing and meets it while going deeply into the red.
-2. In the first month of year two the board announces a new goal: **four profitable
-   months out of twelve and a base no smaller than it was**. Pause and ask the
-   teams to say out loud what they will have to change.
-3. It usually turns out that the year-one strategy directly contradicts the year-two
-   goal. They cannot cut content — the base falls; they cannot not cut it — there will
-   be no profit. The working answer usually lies in price and ad load, not in the budget.
-4. If the goal is missed, show the consequence: the content budget is capped for six
-   months. "Pour everything into growth" stops being physically available.
+2. In the first month of year two the board announces a new goal: **a duopoly share
+   of at least 52% with a base no smaller than ×1.05 of the current one**. Pause and
+   ask the teams to say out loud what they will have to change.
+3. It usually turns out that "just keep growing" is no longer enough: the rival grows
+   too, and share is taken not with budget but by taking it away — content against
+   the rival's strong genres, price and promo at the moment of its weakness. For the
+   first time teams start watching the rival's panel, not only their own.
+4. In the first month of year three the goal changes again: **at least two profitable
+   months, with the base no lower than 55% of its peak**. The expansion strategy that
+   just won year two directly contradicts year three: rights expire, the base melts,
+   there is nothing left to pay for growth with — it is harvest time.
+5. If the year-two goal is missed, show the consequence: the content budget is capped
+   for six months. "Pour everything into growth" stops being physically available.
 
-The core idea: a business does not have one goal for life. The strategy that wins year
-one fails year two — and that is not a planning error, it is a normal change of stage.
-What has to be learned is not "the right setting" but the ability to rebuild it.
+The core idea: a business does not have one goal for life. A year of growth, a year of
+dividing the market, and a year of harvest demand different strategies — and the change
+of stage is not a planning error, it is the norm. What has to be learned is not "the
+right setting" but the ability to rebuild it.
 
 Debrief question: what should the team have done in month 10 if it had known the
 year-two goal in advance? (It did know — the goal is announced at the start of the year
@@ -307,6 +313,21 @@ produces a result string carrying the code, the score and a checksum — ask stu
 send it in: a doctored score fails the checksum. The final screen also keeps a table of
 the best games on that device.
 
+**The final screen as a homework-collection tool.** Beyond the result string and the
+local table it has "Copy" and "Download CSV" buttons (the month-by-month history of
+the game), "Share as image" (a result card for messengers; a vertical format on
+phones), the world leaderboard with result submission, and a personal debrief — two
+or three findings about what exactly cost the player money.
+
+**Language in the link.** The header button switches the language, but it can be baked
+straight into the link: `…/games/cinema/?lang=en` (or `?lang=ru`). Without the
+parameter the game picks the browser's language, and part of the group may open the
+other version.
+
+**Difficulty levels.** The welcome screen offers three levels — Easy, Normal, Hard.
+The level goes into the result-string tag and each level keeps its own leaderboard —
+do not compare results across levels directly.
+
 **Tuning difficulty.** All parameters live in `games/cinema/src/model/config.js`:
 * `startCash` — how much room there is for mistakes;
 * `monthsTotal` — the length of a game;
@@ -337,7 +358,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.28.3.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.28.4.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

@@ -307,7 +307,7 @@ export const AUDIENCES = [
     affinity: { theatre: 0.1, concert: 0.45, club: 0.2, sport: 3.0 },
     hint: {
       ru: 'Знают, куда идти, и в подборках не нуждаются. Сбор для них — прямая обида: билет и так дешёвый, а сверху накинули.',
-      en: 'They know where they are going and need no recommendations. The fee is a straight insult to them: the ticket is cheap already, and you added on top.',
+      en: 'They know where they are going and need no recommendations. The fee is a straight insult to them: the ticket is cheap already, and you added a fee on top.',
     },
   },
   {
@@ -354,7 +354,7 @@ export const LEVER_GROUPS = [
     id: 'infra',
     label: { ru: 'Продукт и поддержка', en: 'Product and support' },
     desc: {
-      ru: 'То, что держит доверие и выдерживает он-сейл: витрина, поддержка, ёмкость. Настраивается редко, но именно здесь ломается всё остальное.',
+      ru: 'То, что держит доверие и выдерживает старт продаж: витрина, поддержка, ёмкость. Настраивается редко, но именно здесь ломается всё остальное.',
       en: 'What holds trust and survives the on-sale: the storefront, support, capacity. Rarely adjusted — and exactly where everything else breaks.',
     },
     open: false,
@@ -654,9 +654,9 @@ export const ALGORITHMS = [
         { v: 0, label: { ru: 'Не мешать', en: 'Let it run' },
           note: { ru: 'Кто успел, тот и купил. Оборот даже растёт: перекупщик платит те же деньги. Зритель видит нули на старте и свой билет втридорога через час — и это тот же зритель, который потом не вернётся.', en: 'First come, first served. Turnover even grows: a reseller pays the same money. The buyer sees zero seats at on-sale and their own ticket at triple price an hour later — and that is the same buyer who does not come back.' } },
         { v: 25, label: { ru: 'Лимит на аккаунт', en: 'Per-account limit' },
-          note: { ru: 'Лучший итог по замеру: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The measured best: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is paid for by real buyers giving up.' } },
+          note: { ru: 'Лучший итог на контрольных партиях: четыре билета в одни руки. Профессионала не останавливает, случайного спекулянта — да, а живых людей почти не задевает. Дальше этой точки каждый процент жёсткости покупается чужими отказами.', en: 'The best result on control runs: four tickets per person. It does not stop a professional, it does stop the casual reseller, and real buyers barely notice. Past this point every extra percent of strictness is paid for by real buyers giving up.' } },
         { v: 50, label: { ru: 'Очередь и верификация', en: 'Queue and verification' },
-          note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: по замеру итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: measured, the result is already below a simple limit, even though trust is higher.' } },
+          note: { ru: 'Перекупщика отсекаете почти полностью, но очередь и подтверждение по телефону теряют часть зрителей: на контрольных партиях итог уже ниже, чем при простом лимите, хотя доверие выше.', en: 'You cut the reseller off almost entirely, but the queue and the phone confirmation lose you some buyers: on control runs the result is already below a simple limit, even though trust is higher.' } },
         { v: 100, label: { ru: 'Паспорт на входе', en: 'ID at the door' },
           note: { ru: 'Доверие максимальное (65% против 53% без защиты), но итог почти как без защиты: часть настоящих зрителей не проходит проверку и уходит вместе с деньгами. Репутация — не то же самое, что выручка.', en: 'Trust peaks (65% against 53% with no protection), but the result is no better than no protection at all: some genuine buyers fail the check and leave with their money. Reputation is not the same thing as revenue.' } },
       ],

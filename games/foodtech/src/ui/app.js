@@ -1800,6 +1800,9 @@ function renderHelpTab() {
     <h4>${t('helpCityTitle')}</h4>
     <p>${t('helpCityText')}</p>
 
+    <h4>${t('helpBoardTitle')}</h4>
+    <p>${t('helpBoardText')}</p>
+
     <h4>${t('helpSpiralsTitle')}</h4>
     <ul>
       <li>${t('helpSpiralSpeed')}</li>

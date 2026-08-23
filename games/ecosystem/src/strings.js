@@ -92,15 +92,15 @@ export const STRINGS = {
     en: 'Cross-sell brought <b>{conv}</b> customers last month.{wasted}',
   },
   readoutCrossWasted: {
-    ru: ' Сгорело о ёмкость канала: {wasted}.',
-    en: ' Burned against the channel’s capacity: {wasted}.',
+    ru: ' Кросс-селл упёрся в ёмкость канала: {wasted} сгорело.',
+    en: ' Cross-sell hit the channel’s capacity: {wasted} burned.',
   },
   readoutEcom: {
     ru: 'Е-ком: <b>{users}</b> клиентов; отток ~{lost}/мес против притока ~<b class="{cls}">{gained}</b>.',
     en: 'E-commerce: <b>{users}</b> customers; churn ~{lost}/mo against ~<b class="{cls}">{gained}</b> arriving.',
   },
   readoutEcomCapacity: { ru: 'Мощность логистики: <b class="{cls}">{level}</b> от предела — от неё зависят чек, отток и готовность базы пробовать посылки.', en: 'Logistics capacity: <b class="{cls}">{level}</b> of the ceiling — it drives basket size, churn and the base’s readiness to try parcels.' },
-  readoutEcomUnit: { ru: 'Устойчивая экономика сервиса: <b class="{cls}">{steady}</b> в месяц (вклад с клиентов минус фикс и ассортимент). Сверху вы платите за рост: {growth} на маркетинг и мощность.', en: 'The leg’s steady economics: <b class="{cls}">{steady}</b> a month (customer contribution less fixed costs and range). On top of that you pay for growth: {growth} on marketing and capacity.' },
+  readoutEcomUnit: { ru: 'Устойчивая экономика сервиса: <b class="{cls}">{steady}</b> в месяц (вклад с клиентов минус фикс и ассортимент). Сверху вы платите за рост: {growth} на маркетинг и мощность.', en: 'The leg’s steady economics: <b class="{cls}">{steady}</b> a month (customer contribution less fixed costs and assortment). On top of that you pay for growth: {growth} on marketing and capacity.' },
   readoutEcomLogistics: {
     ru: 'Общая логистика: курьеры хаба возят посылки в непик — маржа выше, но пиковые конфликты стоят еде качества.',
     en: 'Shared logistics: the hub’s couriers carry parcels off-peak — higher margin, but peak conflicts cost food some quality.',
@@ -113,7 +113,7 @@ export const STRINGS = {
   // --- бюджетная полоса ---
   budgetTitle: { ru: 'Расходы месяца при текущих решениях: <b>{total}</b>', en: 'This month’s spend at current settings: <b>{total}</b>' },
   budgetFixed: { ru: 'фиксы и офис', en: 'fixed & HQ' },
-  budgetFood: { ru: 'ядро', en: 'core' },
+  budgetFood: { ru: 'хаб', en: 'hub' },
   budgetTaxi: { ru: 'такси', en: 'taxi' },
   budgetEcom: { ru: 'торговля', en: 'retail' },
   budgetEco: { ru: 'экосистема', en: 'ecosystem' },
@@ -125,10 +125,10 @@ export const STRINGS = {
   // --- карта экосистемы ---
   mapTitle: { ru: 'Карта экосистемы', en: 'Ecosystem map' },
   mapCity: { ru: 'Новоград · {adults} взрослых горожан', en: 'Novograd · {adults} adult residents' },
-  mapFood: { ru: 'Еда', en: 'Food' },
-  mapHub: { ru: 'Ядро', en: 'Core' },
-  mapEcom: { ru: 'Торговля', en: 'Retail' },
-  mapEcomOff: { ru: 'торговля не запущена', en: 'retail not launched' },
+  mapFood: { ru: 'Хаб', en: 'Hub' },
+  mapHub: { ru: 'Хаб', en: 'Hub' },
+  mapEcom: { ru: 'Е-ком', en: 'E-com' },
+  mapEcomOff: { ru: 'е-ком не запущен', en: 'e-commerce not launched' },
   mapPlus: { ru: 'Plus · {subs}', en: 'Plus · {subs}' },
   mapCrisis: { ru: 'спад · {months} мес.', en: 'downturn · {months} mo' },
   mapTaxi: { ru: 'Такси', en: 'Taxi' },
@@ -166,11 +166,11 @@ export const STRINGS = {
   // Ворота е-кома показывают живое число: игрок должен видеть, чего
   // именно не хватает, а не гадать (замечание владельца)
   vertLockedEcom: {
-    ru: 'ворота совета: с месяца {month}, если еда в среднем за {n} мес в плюсе после ваших бюджетов на неё. Сейчас: {avg}/мес',
-    en: 'board gate: from month {month}, once food averages above zero over {n} months net of your food budgets. Now: {avg}/mo',
+    ru: 'ворота совета: с месяца {month}, если хаб в среднем за {n} мес. в плюсе после ваших бюджетов на него. Сейчас: {avg}/мес',
+    en: 'board gate: from month {month}, once the hub averages above zero over {n} months net of your budgets for it. Now: {avg}/mo',
   },
   vertLocked: {
-    ru: 'ворота совета: с месяца {month} и при прибыльном стартовом активе ({n} мес подряд)',
+    ru: 'ворота совета: с месяца {month} и при прибыльном стартовом активе ({n} мес. подряд)',
     en: 'board gate: from month {month}, with the starting asset profitable ({n} months running)',
   },
   vertWar: { ru: '⚔️ война со «{name}»: ещё {months} мес.', en: '⚔️ war with {name}: {months} months left' },
@@ -246,7 +246,7 @@ export const STRINGS = {
   },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (the customer base disperses, the fleet is disbanded)' },
   vertLockedToastThin: {
-    ru: 'Совет ждёт, пока стартовый актив станет прибыльным {n} месяца подряд, а сейчас он даёт {avg}/мес. Пока это минус, ворота закрыты — и на тонком активе так может остаться до конца партии. Экосистема из двух сервисов — нормальный расклад, а не провал. Заявка сохранена.',
+    ru: 'Совет ждёт, пока стартовый актив продержится в плюсе {n} месяца подряд, а сейчас он даёт {avg}/мес. Пока это минус, ворота закрыты — и на тонком активе так может остаться до конца партии. Экосистема из двух сервисов — нормальный расклад, а не провал. Заявка сохранена.',
     en: 'The board is waiting for the starting asset to run profitably for {n} months, and right now it makes {avg}/mo. While that is negative the gate stays shut — and on a thin asset it may stay shut for the rest of the game. An ecosystem of two services is a normal outcome, not a failure. The request is saved.',
   },
   vertLockedToast: {
@@ -343,7 +343,7 @@ export const STRINGS = {
   statTaxi: { ru: 'Такси', en: 'Taxi' },
   statTaxiSub: { ru: '{drivers} водителей · подача {fill}', en: '{drivers} drivers · pickup fill {fill}' },
   statTaxiOff: { ru: 'не запущено', en: 'not launched' },
-  statEcom: { ru: 'Онлайн-торговля', en: 'Online retail' },
+  statEcom: { ru: 'Е-ком', en: 'E-commerce' },
   statEcomSub: { ru: 'маржа {margin} с общей логистикой', en: 'margin {margin} with shared logistics' },
   statPlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   statPlusSub: { ru: '+{conv} / −{churned} за месяц', en: '+{conv} / −{churned} this month' },
@@ -473,8 +473,8 @@ export const STRINGS = {
   newsCustomersEven: { ru: 'база стоит на месте', en: 'the base is flat' },
   newsCustomersBad: { ru: 'уходит больше, чем приходит', en: 'more leave than arrive' },
   newsCross: {
-    ru: 'Кросс-селл привёл {conv} клиентов (в такси {toTaxi}, в еду {toFood}).',
-    en: 'Cross-sell brought {conv} customers ({toTaxi} to taxi, {toFood} to food).',
+    ru: 'Кросс-селл привёл {conv} клиентов (в такси {toTaxi}, в хаб {toFood}).',
+    en: 'Cross-sell brought {conv} customers ({toTaxi} to taxi, {toFood} to the hub).',
   },
   newsGoalTight: {
     ru: 'До отчёта совету {months} мес., цель года пока не выполнена.',
@@ -536,9 +536,9 @@ export const STRINGS = {
     ru: 'Два канала роста вертикалей: кросс-селл из общей базы (сюда же — возврат клиентов в хаб) и холодный маркетинг. У кросс-селла ниже цена, у маркетинга — выше потолок.',
     en: 'The verticals’ two growth channels: cross-sell from the shared base (returns to the hub count here too) and cold marketing. Cross-sell is cheaper; marketing scales higher.',
   },
-  seriesFood: { ru: 'Ядро', en: 'Core' },
+  seriesFood: { ru: 'Хаб', en: 'Hub' },
   seriesTaxi: { ru: 'Такси', en: 'Taxi' },
-  seriesEcom: { ru: 'Торговля', en: 'Retail' },
+  seriesEcom: { ru: 'Е-ком', en: 'E-com' },
   seriesBoth: { ru: 'Мульти-клиенты', en: 'Multi-service' },
   seriesPlus: { ru: 'Подписчики Plus', en: 'Plus subs' },
   seriesUnique: { ru: 'Уникальные', en: 'Unique' },
@@ -546,7 +546,7 @@ export const STRINGS = {
   seriesContribution: { ru: 'Вклад', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
   seriesArpu: { ru: 'ARPU, {cur}/мес', en: 'ARPU, {cur}/mo' },
-  seriesValueFood: { ru: 'Оценка еды', en: 'Food value' },
+  seriesValueFood: { ru: 'Оценка хаба', en: 'Hub value' },
   seriesValueTaxi: { ru: 'Оценка такси', en: 'Taxi value' },
   seriesValueEcom: { ru: 'Оценка е-кома', en: 'E-com value' },
   seriesValuePlus: { ru: 'Оценка подписки', en: 'Plus value' },
@@ -563,7 +563,7 @@ export const STRINGS = {
   tabSop: { ru: 'Оценка', en: 'Valuation' },
   tabPnl: { ru: 'P&L', en: 'P&L' },
   tabBase: { ru: 'База', en: 'Base' },
-  tabHelp: { ru: 'Справка', en: 'How to play' },
+  tabHelp: { ru: 'Справка', en: 'Guide' },
   sopIntro: {
     ru: 'Инвестор оценивает холдинг по сумме частей: каждая вертикаль — своим множителем от годовой выручки. Зрелый стартовый актив стоит как дойная корова, растущие вертикали — как история роста.',
     en: 'Investors value the holding as a sum of parts: each vertical gets its own multiple of annualised revenue. The mature starting asset is priced like a cash cow, the growing verticals like a growth story.',
@@ -575,7 +575,7 @@ export const STRINGS = {
   sopColValue: { ru: 'Оценка', en: 'Value' },
   sopPartFood: { ru: 'Стартовый актив', en: 'Starting asset' },
   sopPartTaxi: { ru: 'Такси', en: 'Taxi' },
-  sopPartEcom: { ru: 'Онлайн-торговля', en: 'Online retail' },
+  sopPartEcom: { ru: 'Е-ком', en: 'E-commerce' },
   sopPartPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
   sopThirdAct: {
     ru: 'Третий акт: инвесторы требуют прибыльную экосистему, а не зоопарк — убыточные части в последний год дисконтируются жёстче.',
@@ -693,10 +693,10 @@ export const STRINGS = {
   pnlCashChange: { ru: 'Изменение кассы', en: 'Cash change' },
   pnlSvcTitle: { ru: 'Полный вклад по сервисам', en: 'Full contribution by service' },
   pnlSvcNote: {
-    ru: 'Выручка сервиса минус его переменные, фиксы и ваши бюджеты на него. У еды именно это среднее за 3 месяца открывает ворота е-кома.',
-    en: 'A service’s revenue minus its variable costs, its fixed costs and your budgets for it. For food, the 3-month average of exactly this opens the e-commerce gate.',
+    ru: 'Выручка сервиса минус его переменные, фиксы и ваши бюджеты на него. У хаба именно это среднее за 3 месяца открывает ворота е-кома.',
+    en: 'A service’s revenue minus its variable costs, its fixed costs and your budgets for it. For the hub, the 3-month average of exactly this opens the e-commerce gate.',
   },
-  pnlSvcFood: { ru: 'Еда (стартовый актив)', en: 'Food (the starting asset)' },
+  pnlSvcFood: { ru: 'Хаб (стартовый актив)', en: 'Hub (the starting asset)' },
   pnlSvcTaxi: { ru: 'Такси', en: 'Taxi' },
   pnlSvcEcom: { ru: 'Е-ком', en: 'E-commerce' },
   pnlSvcPlus: { ru: 'Подписка Plus', en: 'Plus subscription' },
@@ -715,7 +715,7 @@ export const STRINGS = {
   baseColCount: { ru: 'Людей', en: 'People' },
   baseFood: { ru: 'Клиенты хаба', en: 'Hub customers' },
   baseTaxi: { ru: 'Клиенты такси', en: 'Taxi customers' },
-  baseEcom: { ru: 'Покупатели', en: 'Retail customers' },
+  baseEcom: { ru: 'Клиенты е-кома', en: 'E-commerce customers' },
   baseBoth: { ru: 'Два и более сервисов', en: 'Two or more services' },
   basePlus: { ru: 'Подписчики Plus', en: 'Plus subscribers' },
   baseUnique: { ru: 'Уникальных клиентов', en: 'Unique customers' },
@@ -883,8 +883,8 @@ export const STRINGS = {
   },
   welcomeCarryTitle: { ru: 'Что перенеслось из прошлой игры:', en: 'What carried over from the previous game:' },
   welcomeCarry: {
-    ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} к дескриптору) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и второй сервис построить большой.',
-    en: 'A {game} run worth {score} — that is {ratio} of a solid result in that game. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} over the descriptor) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
+    ru: 'Финал игры {game} — {score}, это {ratio} её крепкого финала. Переходит три валюты. <b>Клиенты:</b> {users} в базе ({usersBonus} больше, чем при чистом старте) — компанию вы привели с собой. <b>Касса:</b> {cash} ({bonus} к базовой) — деньги, которые вы там не потратили. <b>Оценка:</b> раунд оценивают на {round} выше, а ниже {floor} вас не оценят вовсе — за те же деньги вы отдадите меньшую долю. Планки правления считаются от вашей базы: большая компания обязана и второй сервис построить большой.',
+    en: 'A {game} run worth {score} — that is {ratio} of a solid result in that game. Three currencies carry over. <b>Customers:</b> {users} in the base ({usersBonus} more than a fresh start) — you brought the company with you. <b>Cash:</b> {cash} ({bonus} over the base) — the money you did not spend there. <b>Valuation:</b> rounds are priced {round} higher and never below {floor} — the same money costs you a smaller stake. Board targets scale with your base: a bigger company must build a bigger second leg.',
   },
   welcomeCarryNone: { ru: 'без прибавки: до «крепкого» финала не дотянуло', en: 'no bonus: short of a solid result' },
   welcomeCarryUnit: {
@@ -946,7 +946,7 @@ export const STRINGS = {
   gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
   gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
   gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
-  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board politely checks its watch.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала для старта «{asset}»: «экосистема состоялась» — итог от {a}, «крепкий холдинг» — от {b}, «выжили» — от {c}. У каждого стартового актива своя шкала: их потолки различаются втрое. Сильные игроки заканчивают выше {a} — выжить легко, выиграть нет.', en: 'The scale for the “{asset}” start: “a true ecosystem” from {a}, “a solid holding” from {b}, “survived” from {c}. Every starting asset has its own scale: their ceilings differ threefold. Strong players finish above {a} — surviving is easy, winning is not.' },
@@ -955,8 +955,8 @@ export const STRINGS = {
     en: 'Final month: revenue {revenue}, ARPU {arpu}, {unique} customers, {multi} of them on two or more services.',
   },
   gameOverQuestions: {
-    ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали еду все три года?',
-    en: 'Debrief questions: when did you launch taxi, and why then? What did a cross-sell customer cost versus cold? What would the valuation be had you simply milked food for all three years?',
+    ru: 'Вопросы для разбора: когда вы запустили такси и почему именно тогда? Сколько стоил клиент из кросс-селла против холодного? Что случилось бы с оценкой, если бы вы просто дожимали хаб все три года?',
+    en: 'Debrief questions: when did you launch taxi, and why then? What did a cross-sell customer cost versus cold? What would the valuation be had you simply milked the hub for all three years?',
   },
 
   // --- персональный разбор: правила с замеренной ценой (аудит 2026-08) ---
@@ -1058,8 +1058,8 @@ export const STRINGS = {
   endlessGrowth: { ru: 'Рост за год', en: 'Growth this year' },
   endlessGlue: { ru: 'Склейка', en: 'Glue' },
   endlessScaleNote: {
-    ru: 'Планка акта: склейка от {glue} и рост от {growth}. Замер: сильная сборка берёт её в половине партий, слабая — никогда.',
-    en: 'The act’s bar: glue from {glue} and growth from {growth}. Measured: a strong build clears it in about half its runs, a weak one never.',
+    ru: 'Планка акта: склейка от {glue} и рост от {growth}. На контрольных партиях сильная стратегия берёт её в половине случаев, слабая — никогда.',
+    en: 'The act’s bar: glue from {glue} and growth from {growth}. On control runs a strong strategy clears it about half the time, a weak one never.',
   },
   endlessBackToScored: { ru: 'Итоги трёх лет', en: 'Three-year results' },
 

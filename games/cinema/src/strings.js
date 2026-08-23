@@ -31,7 +31,7 @@ export const STRINGS = {
   plexKeyOut: { ru: 'ушли за месяц', en: 'left this month' },
   plexCaption: {
     ru: 'Площадь зала — база в масштабе: два ваших тарифа и конкурент рядом. Зелёные стрелки — приток месяца по тарифам, красная — отток, золотой пунктир — спустились с премиума на рекламный из-за цены, стрелка между залами — переток рынка.',
-    en: 'Hall area shows each subscriber base to scale: your two tiers with the rival beside them. Green arrows are this month’s inflow per tier, red is churn, the gold dashes are viewers trading down from premium over price, and the arrow between halls is market switching.',
+    en: 'The hall area shows each subscriber base to scale: your two tiers with the rival beside them. Green arrows are this month’s inflow per tier, red is churn, the gold dashes are viewers trading down from premium over price, and the arrow between halls is market switching.',
   },
   shelfTitle: { ru: 'Полка каталога', en: 'The catalogue shelf' },
   shelfLicensed: { ru: 'ЛИЦЕНЗИИ · {h} часов', en: 'LICENSED · {h} hours' },
@@ -101,7 +101,7 @@ export const STRINGS = {
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelBoard: { ru: 'Совет директоров', en: 'The board' },
   jumpGo: { ru: 'перейти →', en: 'go there →' },
-  alertsMore: { ru: 'И ещё {count} наблюдений — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
+  alertsMore: { ru: 'Ещё наблюдений: {count} — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
   panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
   partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} против {retail} в рознице', en: 'wholesale is {share} of the base · ARPU {wholesale} vs {retail} retail' },
   partnerMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
@@ -144,7 +144,7 @@ export const STRINGS = {
   // --- Слейт ---
   slateSlots: { ru: 'Слотов занято {used} из {total} · содержание {cost}/мес', en: '{used} of {total} slots busy · upkeep {cost}/mo' },
   slateReadyTitle: { ru: 'Готово к выпуску: {count}', en: 'Ready to release: {count}' },
-  slateReadyHint: { ru: 'Готовый проект можно придержать: выпустить в тихий месяц, ответить им на чужую премьеру или дождаться зимы. Но лежать не бесплатно — актуальность выветривается.', en: 'A finished project can be held back: released into a quiet month, used to answer a rival premiere, or saved for winter. But sitting in the vault is not free — it goes stale.' },
+  slateReadyHint: { ru: 'Готовый проект можно придержать: выпустить в тихий месяц, ответить им на чужую премьеру или дождаться зимы. Но лежать не бесплатно — актуальность выветривается.', en: 'A finished project can be held back: released into a quiet month, used to answer a rival premiere, or saved for winter. But the vault is not free — a finished project goes stale in it.' },
   slateProductionTitle: { ru: 'В производстве: {count}', en: 'In production: {count}' },
   slateEmpty: { ru: 'В производстве пусто. Даже самый быстрый проект выйдет только через {months} месяца — премьер не будет всё это время.', en: 'Nothing in production. Even the fastest project lands only in {months} months — there will be no premieres until then.' },
   slateCommission: { ru: 'Запустить проект', en: 'Commission a project' },
@@ -479,7 +479,7 @@ export const STRINGS = {
   seriesLicensed: { ru: 'Лицензии, ч', en: 'Licensed, h' },
   seriesOriginal: { ru: 'Свои, ч', en: 'Original, h' },
   chartEngagement: { ru: 'Просмотр', en: 'Engagement' },
-  chartEngagementCaption: { ru: 'Часы на подписчика — одновременно лучший индикатор лояльности и крупнейшая статья переменных расходов; рядом в процентах нарисован отток. Радоваться часам нужно осторожно.', en: 'Hours per subscriber is at once your best loyalty indicator and your largest variable cost; churn is drawn beside it in %. Enjoy the hours carefully.' },
+  chartEngagementCaption: { ru: 'Часы на подписчика — одновременно лучший индикатор лояльности и крупнейшая статья переменных расходов; рядом в процентах нарисован отток. Радоваться часам нужно осторожно.', en: 'Hours per subscriber is at once your best loyalty indicator and your largest variable cost; churn is drawn beside it in %. Be careful about celebrating those hours.' },
   seriesHoursPerSub: { ru: 'Часов на подписчика', en: 'Hours per subscriber' },
   seriesChurn: { ru: 'Отток, %', en: 'Churn, %' },
   chartUnit: { ru: 'Юнит', en: 'Unit' },
@@ -557,10 +557,10 @@ export const STRINGS = {
     ru: 'Три причины, по которым сегмент подписывается охотнее или неохотнее. <b>1.00 — норма.</b> Больше единицы — фактор работает на вас в этом сегменте, меньше — против. Охват — доля сегмента, которая о вас вообще слышала.',
     en: 'The three reasons a segment signs up more or less readily. <b>1.00 is normal.</b> Above one the factor works for you in that segment, below one against. Reach is the share of the segment that has heard of you at all.',
   },
-  segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь. Это не справочник, а прицел: премьера и её кампания бьют в сегмент проекта — по замеру снимать «не для своих» стоит до трети итога партии.', en: 'The same lever behaves differently by segment: an extra dollar on the price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched. This table is for aiming, not for reference: a premiere and its campaign hit the project’s segment — in testing, shooting for the wrong crowd costs up to a third of the final score.' },
+  segmentsNote: { ru: 'Один и тот же рычаг работает в сегментах по-разному: рубль цены пугает молодёжь и не замечается киноманами, а минута рекламы прогоняет киноманов и не трогает молодёжь. Это не справочник, а прицел: премьера и её кампания бьют в сегмент проекта — на контрольных партиях съёмка «не для своих» стоит до трети итога.', en: 'The same lever behaves differently by segment: an extra dollar on the price scares young viewers and goes unnoticed by cinephiles, while a minute of advertising drives cinephiles away and leaves the young untouched. This table is for aiming, not for reference: a premiere and its campaign hit the project’s segment — in testing, shooting for the wrong crowd costs up to a third of the final score.' },
   colSegDelta: { ru: '± месяц', en: '± month' },
   slateSegBroadNote: {
-    ru: 'Премьера «для всех» бьёт слабее, но по всем: кампания размазывается по сегментам. Прицельная премьера почти весь бюджет кампании тратит на свой сегмент — по замеру выбор адресата стоит до трети итога.',
+    ru: 'Премьера «для всех» бьёт слабее, но по всем: кампания размазывается по сегментам. Прицельная премьера почти весь бюджет кампании тратит на свой сегмент — на контрольных партиях выбор адресата стоит до трети итога.',
     en: 'A broad premiere hits softer but everywhere: the campaign spreads across segments. A targeted premiere spends almost the whole campaign on its own crowd — in testing, the choice of audience is worth up to a third of the final score.',
   },
   slateSegNote: {
@@ -575,7 +575,7 @@ export const STRINGS = {
   algosColSubs: { ru: 'Подписчики', en: 'Subscribers' },
   algosColHours: { ru: 'Часы', en: 'Hours' },
   algosTotal: { ru: 'Итого от алгоритмов', en: 'Total from algorithms' },
-  algosTeamCost: { ru: 'Стоимость команды', en: 'Cost of the team' },
+  algosTeamCost: { ru: 'Стоимость команды', en: 'Team cost' },
   algosNet: { ru: 'Чистый эффект', en: 'Net effect' },
   algosCounterfactual: { ru: 'Каждая строка — контрфактический расчёт: прошлый месяц пересчитан заново с выключенным алгоритмом. В реальной компании такой ответ стоит квартала A/B-тестов.', en: 'Every row is a counterfactual: last month was re-simulated with that algorithm switched off. In a real company this answer would take a quarter’s worth of A/B tests.' },
   algosNone: { ru: 'Ни один алгоритм не включён — сравнивать нечего. Начните с бюджета на Data Science.', en: 'No algorithm is switched on, so there is nothing to compare. Start with a data science budget.' },
@@ -588,7 +588,7 @@ export const STRINGS = {
   helpWhatText: { ru: 'Вы управляете онлайн-кинотеатром. Один ход — месяц, партия — три года. Цель: построить сервис, который дорого стоит <i>и</i> в котором вам всё ещё принадлежит большая доля.', en: 'You run a streaming service. One turn is a month, a game is three years. The goal: build a service that is worth a lot <i>and</i> in which you still own a large share.' },
   helpCatalogTitle: { ru: 'Каталог: аренда против актива', en: 'Catalogue: renting versus owning' },
   helpCatalogFormula: {
-    ru: `лицензии: появляются сразу, истекают 4,5% в месяц, есть у конкурентов
+    ru: `лицензии: появляются сразу, истекают 4.5% в месяц, есть у конкурентов
 оригиналы: премьера через 6 месяцев, остаются навсегда, только у вас
 глубина = насыщение(лицензии × 0.5 + оригиналы × 6)
 свежесть = √(новинки / эталон), новинка стареет за ~4 месяца`,
@@ -680,8 +680,8 @@ score = valuation × your stake`,
     en: 'Catalogue licensing sat at zero for {n} months. The very same run makes $141M with $3M/month of licensing and $4M with none: the shelf melts faster than the savings add up.',
   },
   debriefPricyPremium: {
-    ru: 'Премиум держался на 449 ₽ и выше {n} месяцев — больше половины партии. Цена 399 ₽ обгоняет 449 ₽ примерно на 0.7 млрд: дорогой вход режет приток новичков раньше, чем дорастает выручка с подписчика.',
-    en: 'Premium stayed at $4.49 or higher for {n} months — more than half the run. A $3.99 price beats $4.49 by about $7M: a high entry price cuts the inflow of newcomers before the revenue per subscriber catches up.',
+    ru: 'Цена стояла выше рыночной («Уверенная» или «Премиум») {n} месяцев — больше половины партии. На контрольных партиях «Рыночная» (399 ₽) обгоняет более дорогие режимы минимум на 0.7 млрд: дорогой вход режет приток новичков раньше, чем дорастает выручка с подписчика.',
+    en: 'The price sat above market (Confident or Premium) for {n} months — more than half the run. On control runs the Market mode ($3.99) beats the dearer ones by at least $7M: a high entry price cuts the inflow of newcomers before the revenue per subscriber catches up.',
   },
   debriefSummerAds: {
     ru: 'Рекламная загрузка летом была выше зимней — против сезона CPM (лето ×0.75, зима ×1.25). Та же минута рекламы летом приносит на 40% меньше зимней.',
@@ -766,14 +766,14 @@ score = valuation × your stake`,
   gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
   gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
   gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
-  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board politely checks its watch.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   scoreDeferredNote: {
     ru: 'Из итога вычтены неотработанные годовые: {value} получены вперёд за месяцы, которые сервис ещё должен отдать контентом. Это заём у зрителя, а не заработок.',
-    en: 'Unearned annual months are deducted from the score: {value} was received up front for months the service still owes in content. That is a loan from the viewer, not earnings.',
+    en: 'Unearned annual months are deducted from the score: {value} was received up front for months of service it has not yet delivered. That is a loan from the viewer, not earnings.',
   },
-  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий бизнес» — от {b}, «выжили» — от {c}. Сильные игроки заканчивают партию с 5–9 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: “excellent” starts at {a}, “a solid business” at {b}, “survived” at {c}. Strong players finish a run at $50–90M — surviving is easy, winning is not.' },
+  gradeScale: { ru: 'Шкала: «отлично» — итог от {a}, «крепкий сервис» — от {b}, «выжили» — от {c}. Сильные партии доходят до 10–15 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: “excellent” starts at {a}, “a solid service” at {b}, “survived” at {c}. Strong runs reach $100–150M — surviving is easy, winning is not.' },
   // --- Дневник решений на графике ---
   chartChangesTitle: { ru: 'Пунктир — ваши решения.', en: 'Dashed lines are your decisions.' },
   chartChangeItem: { ru: 'мес. {turn}: {what}', en: 'mo {turn}: {what}' },
@@ -805,7 +805,7 @@ score = valuation × your stake`,
   metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
   metaConglomerateText: {
     ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
-    en: 'Your NOVOGRAD ecosystem is up and running — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
+    en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
   },
   metaReturnTitle: { ru: 'Вы вернулись из экосистемы', en: 'You are back from the ecosystem' },
   metaReturnText: {
@@ -823,7 +823,7 @@ score = valuation × your stake`,
   metaContinueTitle: { ru: 'Есть продолжение', en: 'There is a sequel' },
   metaContinueText: {
     ru: 'НОВОГРАД — четвёртая игра серии. Там вы управляете уже не одним сервисом, а холдингом: такси, е-ком, общая подписка. Ваша «КИНОРЕКА» станет его стартовым активом — с той базой и кассой, что вы заработали здесь.',
-    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: ride-hailing, e-commerce, one subscription across them all. Your KINOREKA becomes its starting asset — with the customer base and cash you earned here.',
+    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: taxi, e-commerce, one subscription across them all. Your KINOREKA becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
 

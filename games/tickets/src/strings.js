@@ -6,10 +6,10 @@
 
 export const STRINGS = {
   mapSwitched: { ru: 'к конкуренту', en: 'to the rival' },
-  mapOutage: { ru: '{share} спроса не поместилось на он-сейле', en: '{share} of demand never got through at on-sale' },
+  mapOutage: { ru: '{share} спроса не поместилось на старте продаж', en: '{share} of demand never got through at on-sale' },
   leverInertPlatform: {
-    ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите площадки в панели каналов.',
-    en: 'Until at least one organiser has the widget, this decision changes nothing: connect venues in the channels panel.',
+    ru: 'Пока виджет не стоит ни у одного организатора, это решение ни на что не влияет: подключите тип организаторов в панели каналов продаж.',
+    en: 'Until at least one organiser has the widget, this decision changes nothing: onboard an organiser type in the sales-channels panel.',
   },
   marketMapTitle: { ru: 'Двусторонний рынок', en: 'The two-sided market' },
   mapOrgs: { ru: 'организаторы', en: 'organisers' },
@@ -113,7 +113,7 @@ export const STRINGS = {
   gradeQuipExcellent: { ru: 'Город делает вид, что не сомневался.', en: 'The city pretends it never doubted you.' },
   gradeQuipSolid: { ru: 'Совет директоров аплодирует. Сидя, но искренне.', en: 'The board applauds — seated, but sincere.' },
   gradeQuipSurvived: { ru: 'Инвесторы называют это «опытом».', en: 'Investors call this “experience”.' },
-  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board checks its watches, politely.' },
+  gradeQuipModest: { ru: 'Совет директоров вежливо смотрит на часы.', en: 'The board politely checks its watch.' },
   gradeQuipBankrupt: { ru: 'Деньги кончились раньше, чем аргументы. Бывает у лучших — обычно как раз у лучших.', en: 'The money ran out before the arguments did. Happens to the best — usually precisely to them.' },
   gradeQuipSold: { ru: 'Продажа — тоже выход. Просто дверь поуже.', en: 'A sale is an exit too. Just a narrower door.' },
   gradeScale: { ru: 'Шкала: «отлично» — доля рынка от 45% при take rate от 9%; «крепкий результат» — итог от {a}. Сильные игроки доводят платформенную партию до 15–20 млрд ₽ — выжить легко, выиграть нет.', en: 'The scale: “excellent” is 45%+ market share at a 9%+ take rate; “solid” starts at {a}. Strong players push a platform run to $150–200M — surviving is easy, winning is not.' },
@@ -202,7 +202,7 @@ export const STRINGS = {
   factorConversion: { ru: 'конверсия', en: 'conversion' },
 
   // --- Предупреждения ---
-  alertsMore: { ru: 'ещё {count} замечаний скрыто', en: '{count} more notes hidden' },
+  alertsMore: { ru: 'скрыто замечаний: {count}', en: '{count} more notes hidden' },
   alertNoListings: { ru: 'Афиша почти пуста: мест {seats}. Маркетинг сейчас сгорает впустую — приводить зрителя некуда.', en: 'The listings are nearly empty: {seats} seats. Marketing burns for nothing right now — there is nowhere to bring buyers.' },
   alertLowFill: { ru: 'Заполняемость {fill}: организаторы видят пустые залы и уходят. Либо больше спроса, либо меньше афиши.', en: 'Fill rate {fill}: organisers see empty halls and leave. Either more demand or fewer listings.' },
   alertOverloaded: { ru: 'Менеджеры перегружены: качество обслуживания {service}. На каждого приходится {perManager} организаторов.', en: 'The managers are overloaded: service level {service}. Each one carries {perManager} organisers.' },
@@ -298,8 +298,8 @@ export const STRINGS = {
     en: 'the onboarding budget goes nowhere: no type selected',
   },
   channelColMoneyNote: {
-    ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свои 2.2% с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
-    en: 'Net of card fees. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its 2.2% from both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
+    ru: 'После эквайринга. Через афишу вы берёте сбор с покупателя и комиссию с организатора; через виджет — только ставку платформы, а банк берёт свою комиссию с обеих сумм одинаково. Поэтому виджет держится не на билете, а на абонплате и на том обороте, который иначе ушёл бы мимо вас совсем.',
+    en: 'Net of card fees. Through your listings you take the buyer fee and the organiser commission; through the widget only the platform rate — and the bank takes its card fee off both alike. So the widget lives not off the ticket but off the subscription fee and off turnover that would otherwise pass you by entirely.',
   },
   channelColState: { ru: 'Переехали', en: 'Moved over' },
   channelOn: { ru: 'виджет стоит', en: 'widget installed' },
@@ -402,7 +402,7 @@ export const STRINGS = {
   chartMoney: { ru: 'Деньги', en: 'Money' },
   chartMoneyCaption: { ru: 'Оборот — чужие деньги. Ваши — только выручка, и от неё ещё надо отнять эквайринг.', en: 'Turnover is other people’s money. Only the revenue is yours — and card fees still come out of it.' },
   seriesRevenue: { ru: 'Выручка', en: 'Revenue' },
-  seriesContribution: { ru: 'Маржа', en: 'Contribution' },
+  seriesContribution: { ru: 'Вклад', en: 'Contribution' },
   seriesProfit: { ru: 'Прибыль', en: 'Profit' },
 
   chartCash: { ru: 'Касса', en: 'Cash' },
@@ -435,10 +435,10 @@ export const STRINGS = {
   tabPnl: { ru: 'P&L', en: 'P&L' },
   tabSides: { ru: 'Стороны', en: 'Both sides' },
   tabAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
-  tabHelp: { ru: 'Справка', en: 'Help' },
+  tabHelp: { ru: 'Справка', en: 'Guide' },
 
   unitIntro: { ru: 'Сколько остаётся с одного проданного билета. Средняя цена считается по вашей афише, а не по рынку.', en: 'What is left from one ticket sold. The average price is taken from your listings, not from the market.' },
-  unitColItem: { ru: 'Статья', en: 'Item' },
+  unitColItem: { ru: 'Статья', en: 'Line' },
   unitColPerTicket: { ru: 'На билет', en: 'Per ticket' },
   unitPrice: { ru: 'Цена билета (не ваша)', en: 'Ticket price (you do not set it)' },
   unitMarket: { ru: 'Через афишу: сбор + комиссия', en: 'Via listings: fee + commission' },
@@ -446,7 +446,7 @@ export const STRINGS = {
   unitBlended: { ru: 'Ваша выручка с билета', en: 'Your revenue per ticket' },
   unitAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   unitSupport: { ru: 'Поддержка', en: 'Support' },
-  unitContribution: { ru: 'Маржа с билета', en: 'Contribution per ticket' },
+  unitContribution: { ru: 'Вклад с билета', en: 'Contribution per ticket' },
   unitBreakEven: { ru: 'Чтобы выйти в ноль, нужно {value} билетов в месяц.', en: 'To break even you need {value} tickets a month.' },
 
   pnlEmpty: { ru: 'Сыграйте месяц, чтобы увидеть отчёт.', en: 'Play a month to see the report.' },
@@ -456,7 +456,7 @@ export const STRINGS = {
   pnlSubscription: { ru: 'Платформа: абонплата', en: 'Platform: subscriptions' },
   pnlAcquiring: { ru: 'Эквайринг', en: 'Card fees' },
   pnlSupport: { ru: 'Поддержка', en: 'Support' },
-  pnlContribution: { ru: 'Маржа', en: 'Contribution' },
+  pnlContribution: { ru: 'Вклад', en: 'Contribution' },
   pnlMarketing: { ru: 'Маркетинг', en: 'Marketing' },
   pnlManagers: { ru: 'Аккаунт-менеджеры', en: 'Account managers' },
   pnlStaff: { ru: 'Штат: интеграции, финансы, юристы', en: 'Staff: integrations, finance, legal' },
@@ -472,7 +472,7 @@ export const STRINGS = {
   pnlProfit: { ru: 'Прибыль', en: 'Profit' },
   pnlOneOff: { ru: 'Разовые', en: 'One-offs' },
   pnlNet: { ru: 'С учётом разовых', en: 'After one-offs' },
-  pnlGmvNote: { ru: 'Оборот за месяц {gmv} — это деньги зрителей, а не ваши. Ваша доля от него {take}.', en: 'The {gmv} of monthly turnover is buyers’ money, not yours. Your share of it is {take}.' },
+  pnlGmvNote: { ru: 'Оборот за месяц {gmv} — это деньги зрителей, а не ваши. Ваша доля от него {take}.', en: 'Monthly turnover of {gmv} is buyers’ money, not yours. Your share of it is {take}.' },
 
   sidesSupply: { ru: 'Сторона предложения', en: 'Supply side' },
   sidesDemand: { ru: 'Сторона спроса', en: 'Demand side' },
@@ -507,7 +507,7 @@ export const STRINGS = {
     ru: '<b>Доверие.</b> Перекупщики, упавший сайт и скрытый сбор бьют по одному счёту. Оборот при этом держится — и в этом ловушка: цифры выглядят нормально ровно до месяца, когда становится поздно.',
     en: '<b>Trust.</b> Resellers, an outage and a hidden fee all hit the same account. Turnover holds up meanwhile — and that is the trap: the numbers look fine right up to the month it is too late.',
   },
-  helpSeeds: { ru: 'Партия детерминирована: одинаковый seed даёт одинаковый мир. Это нужно, чтобы вся группа играла в один и тот же город.', en: 'A game is deterministic: the same seed gives the same world. That way a whole class plays the same city.' },
+  helpSeeds: { ru: 'Партия детерминирована: одинаковый код партии даёт одинаковый мир. Это нужно, чтобы вся группа играла в один и тот же город.', en: 'A game is deterministic: the same game code gives the same world. That way a whole class plays the same city.' },
 
   // --- Финал ---
   overTitle: { ru: 'Партия окончена', en: 'The game is over' },
@@ -537,8 +537,8 @@ export const STRINGS = {
     en: 'Organiser advances written off: {lost} — only {back} came back. Betting on hits without a cushion: every written-off advance is someone else’s show paid from your cash.',
   },
   debriefBots: {
-    ru: 'Боты держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: в здоровой партии доля ботов не поднимается выше 15%.',
-    en: 'Bots held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is the coming months’ demand: in a healthy run the bot share never tops 15%.',
+    ru: 'Перекупщики (боты) держали 18%+ продаж {n} месяцев, а антибот-фильтр стоял на нуле. Доверие зрителей — это спрос следующих месяцев: в здоровой партии доля перекупщиков не поднимается выше 15%.',
+    en: 'Resellers (bots) held 18%+ of sales for {n} months while the anti-bot filter sat at zero. Buyer trust is the coming months’ demand: in a healthy run the reseller share never tops 15%.',
   },
   debriefThinCash: {
     ru: 'Касса жила ниже месяца расходов {n} месяцев при убыточной операционке. Любой шок в такой момент — продажа за долги: она возвращает лишь 28% оценки.',
@@ -658,7 +658,7 @@ export const STRINGS = {
   unitTickets: { ru: 'билетов', en: 'tickets' },
   unitSeats: { ru: 'мест', en: 'seats' },
   unitOrgs: { ru: 'организаторов', en: 'organisers' },
-  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The NOVOGRAD Conglomerate.' },
+  metaConglomerate: { ru: 'Конгломерат Новограда.', en: 'The Novograd Conglomerate.' },
   metaConglomerateText: {
     ru: 'Ваша экосистема в НОВОГРАДЕ состоялась — города-побратимы открыты. Сыграйте партию с одним из кодов: {seeds}. Награда символическая: экономика зачётных партий не меняется.',
     en: 'Your NOVOGRAD ecosystem made it — the twin cities are open. Play a game with one of these codes: {seeds}. The reward is symbolic: ranked games’ economics stay untouched.',
@@ -679,7 +679,7 @@ export const STRINGS = {
   metaContinueTitle: { ru: 'Есть продолжение', en: 'There is a sequel' },
   metaContinueText: {
     ru: 'НОВОГРАД — четвёртая игра серии. Там вы управляете уже не одним сервисом, а холдингом: такси, е-ком, общая подписка. Ваша «БИЛЕТВИЛЬ» станет его стартовым активом — с той базой и кассой, что вы заработали здесь.',
-    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: ride-hailing, e-commerce, one subscription across them all. Your BILETVILLE becomes its starting asset — with the customer base and cash you earned here.',
+    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: taxi, e-commerce, one subscription across them all. Your BILETVILLE becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
 
