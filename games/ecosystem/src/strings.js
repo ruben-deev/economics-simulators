@@ -1061,6 +1061,7 @@ export const STRINGS = {
     ru: 'Планка акта: склейка от {glue} и рост от {growth}. Замер: сильная сборка берёт её в половине партий, слабая — никогда.',
     en: 'The act’s bar: glue from {glue} and growth from {growth}. Measured: a strong build clears it in about half its runs, a weak one never.',
   },
+  endlessBackToScored: { ru: 'Итоги трёх лет', en: 'Three-year results' },
   endlessResultNote: {
     ru: 'Строка года конгломерата помечена тегом НОВОГРАД+ и идёт в отдельную таблицу: зачётный результат партии она не заменяет.',
     en: 'The conglomerate-year string carries the NOVOGRAD+ tag and goes to a separate table: it does not replace your scored result.',

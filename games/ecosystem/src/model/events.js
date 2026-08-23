@@ -759,7 +759,18 @@ export function rollEvent(rng, month, flags = {}, ctx = {}) {
   if (flags.regulationRisk && ctx.taxiOn && !seen.has(REGULATION_FINE.id)) {
     pool.push(REGULATION_FINE);
   }
-  const picked = weightedPick(rng, pool);
+  // Протокол «СКРЕПКА»: мягкая гарантия носителя — как в остальных играх
+  // (см. комментарий к boostCarriers в любой из них). Здесь события идут
+  // реже — их теснят принудительный кризис и контекстные фильтры, — поэтому
+  // усиление раньше (24-й месяц) и сильнее (втрое): с ×2 c 26-го месяца
+  // носитель выпадал в 94,5% партий против 96–99% у остальных игр.
+  const carrierIds = EVENTS
+    .filter((e) => (e.options ?? []).some((o) => o.secret))
+    .map((e) => e.id);
+  const boosted = (month >= 24 && !carrierIds.some((id) => seen.has(id)))
+    ? pool.map((e) => (carrierIds.includes(e.id) ? { ...e, weight: e.weight * 3 } : e))
+    : pool;
+  const picked = weightedPick(rng, boosted);
   return picked ? { ...picked } : null;
 }
 

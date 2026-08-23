@@ -120,7 +120,7 @@
 <p>To run a class on algorithms alone without spending turns on the ramp-up, hand students a game with <code>dataStock</code> and <code>rndStock</code> already accumulated — that is what the tests in <code>games/foodtech/tests/engine.test.mjs</code> do (the <code>warmState</code> helper).</p>
 <p>After any edits, run <code>npm test</code>: the tests check qualitative properties of the model (demand responding to price, restaurants churning at high commission, P&amp;L consistency) rather than specific numbers, so they survive rebalancing.</p>
 <p><b>Language.</b> The interface switches between Russian and English with the RU / EN button. All text in the model is stored as <code>{ ru, en }</code> pairs in <code>games/foodtech/src/model/config.js</code>, <code>games/foodtech/src/model/events.js</code> and <code>games/foodtech/src/strings.js</code>, so adding a third language means adding one more key to each pair.</p>
-<p><b>Handing it out to students.</b> <code>npm run build</code> produces <code>games/foodtech/dist/novoeda-delivery-simulator-v1.20.1.html</code> — a single file that works offline. Progress is saved in the browser's localStorage.</p>
+<p><b>Handing it out to students.</b> <code>npm run build</code> produces <code>games/foodtech/dist/novoeda-delivery-simulator-v1.21.0.html</code> — a single file that works offline. Progress is saved in the browser's localStorage.</p>
   </div>
 </body>
 </html>

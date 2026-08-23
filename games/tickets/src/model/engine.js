@@ -807,7 +807,12 @@ export function step(prevState, input = {}) {
   });
   if (newCrisis) state.crisis = newCrisis;
 
-  state.pendingEvent = rollEvent(rng, month + 1);
+  // Показанные события копятся ради мягкой гарантии скрепочного носителя
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
+  state.pendingEvent = rollEvent(rng, month + 1, state.seenEvents ?? []);
   state.pendingChoice = null;
 
   // --- 15. Итог ---

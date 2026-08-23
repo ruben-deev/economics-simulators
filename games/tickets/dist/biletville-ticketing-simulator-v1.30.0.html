@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.29.1" />
-  <meta name="app-build-date" content="2026-08-22" />
+  <meta name="app-version" content="1.30.0" />
+  <meta name="app-build-date" content="2026-08-23" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>БИЛЕТВИЛЬ · ticketing marketplace simulator</title>
@@ -5400,10 +5400,32 @@ function pickWeighted(rng, pool) {
   return pool[pool.length - 1];
 }
 
-function rollEvent(rng, month) {
+
+// ----------------------------------------------------------------------------
+// Протокол «СКРЕПКА»: мягкая гарантия события-носителя.
+//
+// Скрепочные ответы спрятаны в двух событиях, а события случайны: в 2–11%%
+// партий (смотря какая игра) ни одно из двух так и не выпадает. Игрок,
+// собирающий концовку, узнаёт об этом только в финале — партия сыграна зря.
+// Форсировать событие нельзя: у носителей настоящие экономические
+// последствия, и принудительная вставка ломала бы поток событий. Поэтому
+// мягко: если к поздней партии носитель ни разу не выпадал, его вес в
+// розыгрыше удваивается. Ранние партии не меняются вовсе; замер по 20 000
+// прогонов — шанс встретить носителя поднимается до ~97–99%%.
+const CARRIER_IDS = EVENTS
+  .filter((e) => (e.options ?? []).some((o) => o.secret))
+  .map((e) => e.id);
+
+function boostCarriers(pool, seen, late) {
+  if (!late || CARRIER_IDS.some((id) => seen.includes(id))) return pool;
+  return pool.map((e) => (CARRIER_IDS.includes(e.id) ? { ...e, weight: e.weight * 2 } : e));
+}
+
+function rollEvent(rng, month, seen = []) {
   if (month < 3) return null;
   if (rng() > 0.30) return null;
-  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  let pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0));
+  pool = boostCarriers(pool, seen, month >= 26);
   const picked = pickWeighted(rng, pool);
   return picked ? { ...picked } : null;
 }
@@ -6203,7 +6225,12 @@ function step(prevState, input = {}) {
   });
   if (newCrisis) state.crisis = newCrisis;
 
-  state.pendingEvent = rollEvent(rng, month + 1);
+  // Показанные события копятся ради мягкой гарантии скрепочного носителя
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
+  state.pendingEvent = rollEvent(rng, month + 1, state.seenEvents ?? []);
   state.pendingChoice = null;
 
   // --- 15. Итог ---
@@ -8715,10 +8742,13 @@ function nextMonth() {
   // только на секретный эпилог в финале НОВОГРАДА.
   const chosenOpt = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosenOpt && chosenOpt.secret) {
-    markProtocolChoice('tickets');
+    // Счётчик «N из 4» — единственный след, по которому концовку вообще
+    // можно вычислить без подсказки со стороны: игрок узнаёт, что таких
+    // мест четыре, но не узнаёт, где искать остальные.
+    const { count } = markProtocolChoice('tickets');
     toast(tx({
-      ru: '📎 СКРЕПКА благодарит за доверие.',
-      en: '📎 PAPERCLIP thanks you for your trust.',
+      ru: `📎 СКРЕПКА благодарит за доверие. ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. ${count} of 4.`,
     }));
   }
   const res = step(state, {

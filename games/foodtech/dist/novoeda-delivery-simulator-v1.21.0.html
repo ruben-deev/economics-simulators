@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.20.1" />
-  <meta name="app-build-date" content="2026-08-22" />
+  <meta name="app-version" content="1.21.0" />
+  <meta name="app-build-date" content="2026-08-23" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -4434,12 +4434,34 @@ function eventById(id) {
   return EVENTS.find((e) => e.id === id) ?? null;
 }
 
+
+// ----------------------------------------------------------------------------
+// Протокол «СКРЕПКА»: мягкая гарантия события-носителя.
+//
+// Скрепочные ответы спрятаны в двух событиях, а события случайны: в 2–11%%
+// партий (смотря какая игра) ни одно из двух так и не выпадает. Игрок,
+// собирающий концовку, узнаёт об этом только в финале — партия сыграна зря.
+// Форсировать событие нельзя: у носителей настоящие экономические
+// последствия, и принудительная вставка ломала бы поток событий. Поэтому
+// мягко: если к поздней партии носитель ни разу не выпадал, его вес в
+// розыгрыше удваивается. Ранние партии не меняются вовсе; замер по 20 000
+// прогонов — шанс встретить носителя поднимается до ~97–99%%.
+const CARRIER_IDS = EVENTS
+  .filter((e) => (e.options ?? []).some((o) => o.secret))
+  .map((e) => e.id);
+
+function boostCarriers(pool, seen, late) {
+  if (!late || CARRIER_IDS.some((id) => seen.includes(id))) return pool;
+  return pool.map((e) => (CARRIER_IDS.includes(e.id) ? { ...e, weight: e.weight * 2 } : e));
+}
+
 // Выбирает событие недели (или null). Вероятность события ~35%.
-function rollEvent(rng, week, flags = {}) {
+function rollEvent(rng, week, flags = {}, seen = []) {
   if (week < 2) return null;
   if (rng() > 0.35) return null;
-  const pool = EVENTS.filter((e) => week >= (e.minWeek ?? 0));
+  let pool = EVENTS.filter((e) => week >= (e.minWeek ?? 0));
   if (flags.regulationRisk) pool.push(REGULATION_FINE);
+  pool = boostCarriers(pool, seen, week >= 40);
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
@@ -5392,7 +5414,12 @@ function step(prevState, input = {}) {
   state.history.push(report);
   state.rngState = rng.state();
   state.pendingChoice = null;
-  state.pendingEvent = rollEvent(rng, week + 1, state.flags);
+  // Показанные события копятся ради мягкой гарантии скрепочного носителя
+  if (event) {
+    state.seenEvents = state.seenEvents ?? [];
+    state.seenEvents.push(event.id);
+  }
+  state.pendingEvent = rollEvent(rng, week + 1, state.flags, state.seenEvents ?? []);
   state.weather = state.weatherNext ?? 'clear';
   state.weatherNext = rollWeather(rng, week + 2);
   // Привычка к надбавке: копится, пока надбавка включена, рассеивается без неё
@@ -8264,10 +8291,13 @@ function nextWeek() {
   // только на секретный эпилог в финале НОВОГРАДА.
   const chosen = ev && ev.options ? ev.options[state.pendingChoice ?? 0] : null;
   if (chosen && chosen.secret) {
-    markProtocolChoice('delivery');
+    // Счётчик «N из 4» — единственный след, по которому концовку вообще
+    // можно вычислить без подсказки со стороны: игрок узнаёт, что таких
+    // мест четыре, но не узнаёт, где искать остальные.
+    const { count } = markProtocolChoice('delivery');
     toast(tx({
-      ru: '📎 СКРЕПКА благодарит за доверие.',
-      en: '📎 PAPERCLIP thanks you for your trust.',
+      ru: `📎 СКРЕПКА благодарит за доверие. ${count} из 4.`,
+      en: `📎 PAPERCLIP thanks you for your trust. ${count} of 4.`,
     }));
   }
   const { state: next } = step(state, { decisions: state.decisions, eventChoice: state.pendingChoice ?? 0 });

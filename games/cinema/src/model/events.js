@@ -216,11 +216,33 @@ export function eventById(id) {
 // игрока) превращали сюжетный выбор в лотерейный билет — прежний rollEvent
 // вообще не помнил показанного. Пул к концу партии тает — это нормально:
 // поздние месяцы и так решают накопленным, а не событиями.
+
+// ----------------------------------------------------------------------------
+// Протокол «СКРЕПКА»: мягкая гарантия события-носителя.
+//
+// Скрепочные ответы спрятаны в двух событиях, а события случайны: в 2–11%%
+// партий (смотря какая игра) ни одно из двух так и не выпадает. Игрок,
+// собирающий концовку, узнаёт об этом только в финале — партия сыграна зря.
+// Форсировать событие нельзя: у носителей настоящие экономические
+// последствия, и принудительная вставка ломала бы поток событий. Поэтому
+// мягко: если к поздней партии носитель ни разу не выпадал, его вес в
+// розыгрыше удваивается. Ранние партии не меняются вовсе; замер по 20 000
+// прогонов — шанс встретить носителя поднимается до ~97–99%%.
+const CARRIER_IDS = EVENTS
+  .filter((e) => (e.options ?? []).some((o) => o.secret))
+  .map((e) => e.id);
+
+function boostCarriers(pool, seen, late) {
+  if (!late || CARRIER_IDS.some((id) => seen.includes(id))) return pool;
+  return pool.map((e) => (CARRIER_IDS.includes(e.id) ? { ...e, weight: e.weight * 2 } : e));
+}
+
 export function rollEvent(rng, month, flags = {}, seenIds = []) {
   if (month < 3) return null;
   if (rng() > 0.30) return null;
   const seen = new Set(seenIds);
-  const pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0) && !seen.has(e.id));
+  let pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0) && !seen.has(e.id));
+  pool = boostCarriers(pool, seenIds, month >= 26);
   const picked = weightedPick(rng, pool);
   return picked ? { ...picked } : null;
 }
