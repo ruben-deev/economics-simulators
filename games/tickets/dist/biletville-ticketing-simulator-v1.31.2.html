@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.31.1" />
+  <meta name="app-version" content="1.31.2" />
   <meta name="app-build-date" content="2026-08-23" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -7082,10 +7082,29 @@ function legendHtml(series) {
 // свечение линии имитируется широкими полупрозрачными обводками.
 // ============================================================================
 
-const W = 1200;
-const H = 630;
 const SCALE = 2;
 const FONT = '-apple-system, "Segoe UI", Roboto, sans-serif';
+
+// Два формата одной карточки. Пейзаж — лента на компьютере и превью ссылок;
+// портрет 4:5 — телеграм, вотсап и сторис с телефона: пейзажная картинка там
+// сжимается в полоску, вертикальная занимает экран. Кто из них рисуется,
+// решает вызывающая сторона по ширине экрана.
+const LAYOUTS = {
+  landscape: {
+    W: 1200, H: 630, pad: 54,
+    hookFont: 40, hookY1: 140, hookY2: 188,
+    chartTop: 210, chartH: 216,
+    btnFont: 24, btnH: 58, btnPad: 28, btnBottom: 96,
+    endFont: 26, markFont: 15, legendFont: 14,
+  },
+  portrait: {
+    W: 1080, H: 1350, pad: 54,
+    hookFont: 44, hookY1: 172, hookY2: 228,
+    chartTop: 290, chartH: 650,
+    btnFont: 30, btnH: 74, btnPad: 34, btnBottom: 150,
+    endFont: 30, markFont: 17, legendFont: 15,
+  },
+};
 
 const COL = {
   bg: '#0b1120', text: '#e2e8f0', muted: '#94a3b8',
@@ -7117,7 +7136,9 @@ function rr(ctx, x, y, w, h, r) {
 //   button, urlBold, urlNote,        — кнопка-вызов, адрес, «без регистрации…»
 // }
 // ----------------------------------------------------------------------------
-function drawShareCard(data) {
+function drawShareCard(data, portrait = false) {
+  const L = portrait ? LAYOUTS.portrait : LAYOUTS.landscape;
+  const { W, H } = L;
   const canvas = document.createElement('canvas');
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;
@@ -7127,12 +7148,12 @@ function drawShareCard(data) {
   // Фон: тёмное поле, синее свечение сверху слева, зелёный отсвет снизу справа
   ctx.fillStyle = COL.bg;
   ctx.fillRect(0, 0, W, H);
-  let g = ctx.createRadialGradient(120, -190, 80, 120, -190, 1000);
+  let g = ctx.createRadialGradient(120, -190, 80, 120, -190, Math.max(W, H) * 0.83);
   g.addColorStop(0, '#22375f');
   g.addColorStop(1, 'rgba(34,55,95,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-  g = ctx.createRadialGradient(W + 60, H + 90, 40, W + 60, H + 90, 640);
+  g = ctx.createRadialGradient(W + 60, H + 90, 40, W + 60, H + 90, Math.max(W, H) * 0.53);
   g.addColorStop(0, 'rgba(74,222,128,0.10)');
   g.addColorStop(1, 'rgba(74,222,128,0)');
   ctx.fillStyle = g;
@@ -7140,39 +7161,47 @@ function drawShareCard(data) {
 
   // --- Шапка ---
   ctx.font = `38px ${FONT}`;
-  ctx.fillText(data.emoji, 54, 68);
+  ctx.fillText(data.emoji, L.pad, 68);
   ctx.font = `800 21px ${FONT}`;
   ctx.fillStyle = COL.text;
-  ctx.fillText(data.name, 112, 56);
+  ctx.fillText(data.name, L.pad + 58, 56);
   ctx.font = `14px ${FONT}`;
   ctx.fillStyle = COL.muted;
-  ctx.fillText(data.sub, 112, 77);
+  ctx.fillText(data.sub, L.pad + 58, 77);
 
   if (data.verdict) {
     ctx.font = `700 17px ${FONT}`;
     const w = ctx.measureText(data.verdict).width + 38;
-    rr(ctx, W - 54 - w, 34, w, 38, 19);
+    rr(ctx, W - L.pad - w, 34, w, 38, 19);
     ctx.fillStyle = 'rgba(74,222,128,0.13)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(74,222,128,0.5)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = COL.good;
-    ctx.fillText(data.verdict, W - 54 - w + 19, 59);
+    ctx.fillText(data.verdict, W - L.pad - w + 19, 59);
   }
 
   // --- Заголовок ---
-  ctx.font = `800 40px ${FONT}`;
+  // Строки бывают длиннее поля (секретная — 46 знаков): кегль ужимается,
+  // пока обе не влезут, но не мельче читаемого
+  let hookFont = L.hookFont;
+  for (; hookFont > 26; hookFont -= 2) {
+    ctx.font = `800 ${hookFont}px ${FONT}`;
+    const wide = Math.max(ctx.measureText(data.hook1).width, ctx.measureText(data.hook2).width);
+    if (wide <= W - L.pad * 2) break;
+  }
+  ctx.font = `800 ${hookFont}px ${FONT}`;
   ctx.fillStyle = COL.text;
-  ctx.fillText(data.hook1, 54, 140);
+  ctx.fillText(data.hook1, L.pad, L.hookY1);
   ctx.fillStyle = COL.good;
-  ctx.fillText(data.hook2, 54, 188);
+  ctx.fillText(data.hook2, L.pad, L.hookY2);
 
   // --- Кривая ---
-  const cx = 54;
-  const cw = W - 108;
-  const top = 210;
-  const ch = 216;
+  const cx = L.pad;
+  const cw = W - L.pad * 2;
+  const top = L.chartTop;
+  const ch = L.chartH;
   const n = data.series.length;
   const maxV = Math.max(...data.series, 1);
   // Логарифм: на линейной шкале первые две трети партии лежат в одну
@@ -7229,7 +7258,7 @@ function drawShareCard(data) {
   // Метки-капсулы: точка на кривой, рядом тёмная капсула с цветной точкой.
   // Сторона чередуется, чтобы подписи не наезжали друг на друга.
   const marks = [...(data.marks ?? [])].sort((a, b) => a.turn - b.turn);
-  ctx.font = `600 15px ${FONT}`;
+  ctx.font = `600 ${L.markFont}px ${FONT}`;
   marks.forEach((m, k) => {
     const i = Math.min(Math.max(m.turn, 0), n - 1);
     const above = k % 2 === 1;
@@ -7266,7 +7295,7 @@ function drawShareCard(data) {
   ctx.strokeStyle = COL.bg;
   ctx.lineWidth = 3;
   ctx.stroke();
-  ctx.font = `800 26px ${FONT}`;
+  ctx.font = `800 ${L.endFont}px ${FONT}`;
   ctx.fillStyle = COL.good;
   const endW = ctx.measureText(data.endLabel).width;
   ctx.fillText(data.endLabel, cx + cw - endW, py(n - 1) - 20);
@@ -7292,8 +7321,8 @@ function drawShareCard(data) {
   }
 
   // --- Легенда ---
-  ctx.font = `14px ${FONT}`;
-  let lx = 54;
+  ctx.font = `${L.legendFont}px ${FONT}`;
+  let lx = L.pad;
   const ly = sy + cellH + 27;
   const dot = (color, ring) => {
     rr(ctx, lx, ly - 11, 11, 11, 3.5);
@@ -7320,29 +7349,42 @@ function drawShareCard(data) {
   }
 
   // --- Низ: кнопка-вызов и адрес ---
-  const by = H - 96;
-  ctx.font = `800 24px ${FONT}`;
-  const btnW = ctx.measureText(data.button).width + 56;
+  const by = H - L.btnBottom;
+  ctx.font = `800 ${L.btnFont}px ${FONT}`;
+  const btnW = portrait ? W - L.pad * 2 : ctx.measureText(data.button).width + L.btnPad * 2;
   ctx.save();
   ctx.shadowColor = 'rgba(74,222,128,0.35)';
   ctx.shadowBlur = 30;
   ctx.shadowOffsetY = 10;
-  rr(ctx, 54, by, btnW, 58, 14);
-  const bg = ctx.createLinearGradient(0, by, 0, by + 58);
+  rr(ctx, L.pad, by, btnW, L.btnH, 16);
+  const bg = ctx.createLinearGradient(0, by, 0, by + L.btnH);
   bg.addColorStop(0, '#5ce992');
   bg.addColorStop(1, '#3ecb70');
   ctx.fillStyle = bg;
   ctx.fill();
   ctx.restore();
   ctx.fillStyle = COL.btnText;
-  ctx.fillText(data.button, 82, by + 38);
+  const btnTextW = ctx.measureText(data.button).width;
+  ctx.fillText(data.button, L.pad + (btnW - btnTextW) / 2, by + L.btnH / 2 + L.btnFont * 0.36);
 
-  ctx.font = `700 16px ${FONT}`;
-  ctx.fillStyle = COL.text;
-  ctx.fillText(data.urlBold, 54 + btnW + 26, by + 22);
-  ctx.font = `15px ${FONT}`;
-  ctx.fillStyle = COL.muted;
-  ctx.fillText(data.urlNote, 54 + btnW + 26, by + 47);
+  if (portrait) {
+    // В портрете кнопка во всю ширину — адрес ложится под неё по центру
+    ctx.font = `700 19px ${FONT}`;
+    ctx.fillStyle = COL.text;
+    let tw = ctx.measureText(data.urlBold).width;
+    ctx.fillText(data.urlBold, (W - tw) / 2, by + L.btnH + 42);
+    ctx.font = `16px ${FONT}`;
+    ctx.fillStyle = COL.muted;
+    tw = ctx.measureText(data.urlNote).width;
+    ctx.fillText(data.urlNote, (W - tw) / 2, by + L.btnH + 70);
+  } else {
+    ctx.font = `700 16px ${FONT}`;
+    ctx.fillStyle = COL.text;
+    ctx.fillText(data.urlBold, L.pad + btnW + 26, by + 22);
+    ctx.font = `15px ${FONT}`;
+    ctx.fillStyle = COL.muted;
+    ctx.fillText(data.urlNote, L.pad + btnW + 26, by + 47);
+  }
 
   return canvas;
 }
@@ -9297,6 +9339,10 @@ function shareFinaleCard(s, verdict) {
   }));
   const { marks, pickTurn } = buildCardMarks(marksIn, (id) => tx(eventById(id)?.title));
   const dead = Boolean(s.bankrupt || s.sold);
+  // С телефона делятся в мессенджеры и сторис — там вертикаль 4:5 занимает
+  // экран, а пейзажная картинка сжимается в полоску. Порог тот же, что у
+  // телефонной вёрстки в CSS.
+  const portrait = Boolean(window.matchMedia && window.matchMedia('(max-width: 700px)').matches);
   const canvas = drawShareCard({
     emoji: '🎟️',
     name: t('brand'),
@@ -9313,7 +9359,7 @@ function shareFinaleCard(s, verdict) {
     button: t('shareCta'),
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
-  });
+  }, portrait);
   return shareCardImage(canvas, 'biletville-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });

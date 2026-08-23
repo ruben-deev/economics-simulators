@@ -1899,6 +1899,10 @@ function shareFinaleCard(s, verdict) {
   }));
   const { marks, pickTurn } = buildCardMarks(marksIn, (id) => tx(eventById(id)?.title));
   const dead = Boolean(s.bankrupt || s.sold);
+  // С телефона делятся в мессенджеры и сторис — там вертикаль 4:5 занимает
+  // экран, а пейзажная картинка сжимается в полоску. Порог тот же, что у
+  // телефонной вёрстки в CSS.
+  const portrait = Boolean(window.matchMedia && window.matchMedia('(max-width: 700px)').matches);
   const canvas = drawShareCard({
     emoji: '🎟️',
     name: t('brand'),
@@ -1915,7 +1919,7 @@ function shareFinaleCard(s, verdict) {
     button: t('shareCta'),
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
-  });
+  }, portrait);
   return shareCardImage(canvas, 'biletville-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });

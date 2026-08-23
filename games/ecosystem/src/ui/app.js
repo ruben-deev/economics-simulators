@@ -1994,6 +1994,10 @@ function shareFinaleCard(s, verdict) {
   // Секретная концовка даёт свою карточку: редкость, которой хочется
   // хвастаться, — и одновременно намёк остальным, что в наборе есть тайна
   const secret = !dead && secretEndingUnlocked();
+  // С телефона делятся в мессенджеры и сторис — там вертикаль 4:5 занимает
+  // экран, а пейзажная картинка сжимается в полоску. Порог тот же, что у
+  // телефонной вёрстки в CSS.
+  const portrait = Boolean(window.matchMedia && window.matchMedia('(max-width: 700px)').matches);
   const canvas = drawShareCard({
     emoji: '🏙️',
     name: t('brandTitle'),
@@ -2010,7 +2014,7 @@ function shareFinaleCard(s, verdict) {
     button: t('shareCta'),
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
-  });
+  }, portrait);
   return shareCardImage(canvas, 'novograd-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
