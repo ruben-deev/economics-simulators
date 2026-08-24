@@ -2202,7 +2202,6 @@ function showGameOver(frozen = false) {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2486,7 +2485,6 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: gameTag(), viewOnly: true,
   });

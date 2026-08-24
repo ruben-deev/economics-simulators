@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.32.3" />
+  <meta name="app-version" content="1.32.4" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1980,6 +1980,8 @@ const STRINGS = {
   lbSeedPlaceholder: { ru: 'Фильтр по коду партии: один город — одна таблица', en: 'Filter by game code: one city, one table' },
   lbSeedMine: { ru: 'Мой город', en: 'My city' },
   lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
+  lbWeekTitle: { ru: 'Таблица недели · {code}', en: 'This week’s table · {code}' },
+  lbWeekEmpty: { ru: 'На этой неделе ещё никто не доиграл — будьте первым.', en: 'Nobody has finished this week yet — be the first.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the leaderboard…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -3077,6 +3079,7 @@ function secretEndingUnlocked() {
 // CORS-preflight, на который Apps Script отвечать не умеет.
 // ============================================================================
 
+
 function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
@@ -3146,15 +3149,13 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '', startFiltered = false }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
   if (!root || !lbEndpoint()) return;
 
   // Фильтр по коду партии: класс играет один город — сравнение честное
   // по построению. Фильтруется на клиенте по расширенному топу: сервер
   // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
-  // startFiltered включает фильтр сразу — так партия челленджа недели
-  // открывает таблицу недели, а не общий топ.
-  let filterSeed = startFiltered && seed ? seed : '';
+  let filterSeed = '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -3221,14 +3222,31 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
   </div>`;
 
-  root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">${t('lbTitle')}</h3>`}
+  // Таблица недели — второй топ рядом с мировым: соревнование, которое
+  // идёт прямо сейчас. Колонки без кода — код у всех строк одинаковый.
+  const weekCode = challengeCode();
+  const weekHtml = (top) => {
+    const rows = top.filter((r) => (r.seed ?? '') === weekCode).slice(0, 10);
+    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty')}</p>`;
+    return `<div style="overflow-x:auto"><table class="data">
+      <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColDate')}</th></tr></thead>
+      <tbody>${rows.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
+        <td>${i + 1}</td><td>${esc(r.name)}${isMine(r) ? ` ${t('lbYou')}` : ''}</td>
+        <td>${money(r.score)}</td><td>${esc((r.date ?? '').slice(0, 10))}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  };
+
+  root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">🌍 ${t('lbTitle')}</h3>`}
     <div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
     ${filterHtml}
-    <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>`;
+    <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>
+    <h3 style="margin:14px 0 6px">🏆 ${t('lbWeekTitle', { code: weekCode })}</h3>
+    <div id="lb-week"><p class="funding-note">${t('lbLoading')}</p></div>`;
 
   const tableEl = root.querySelector('#lb-table');
+  const weekEl = root.querySelector('#lb-week');
   const statusEl = root.querySelector('#lb-status');
   // С фильтром топ запрашивается глубже: код партии — редкая строка,
   // и в первой десятке его может не оказаться вовсе (страховка для сервера
@@ -3238,6 +3256,10 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
+
+  lbTop(game, 100, weekCode)
+    .then((top) => { weekEl.innerHTML = weekHtml(top ?? []); })
+    .catch(() => { weekEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   const seedInput = root.querySelector('#lb-seed');
   let seedTimer = null;
@@ -9587,7 +9609,6 @@ function showGameOver() {
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -9704,7 +9725,6 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
