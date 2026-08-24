@@ -1125,11 +1125,19 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .chan-bar span { height: 100%; }
 .chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
 
-/* Группы рычагов (НОВОЕДА): подзаголовки делят длинный столбец по смыслу */
+/* Группы рычагов (НОВОЕДА): сворачиваемые подзаголовки делят столбец по смыслу */
 .lever-group { margin-top: 16px; }
 .lever-group:first-child { margin-top: 0; }
 .lever-group-title {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted); border-bottom: 1px solid var(--line);
   padding-bottom: 5px; margin-bottom: 8px;
+  cursor: pointer; list-style: none; user-select: none;
 }
+.lever-group-title::-webkit-details-marker { display: none; }
+.lever-group-title::before {
+  content: '▸'; display: inline-block; margin-right: 6px;
+  transition: transform 0.15s ease;
+}
+details[open] > .lever-group-title::before { transform: rotate(90deg); }
+.lever-group-title:hover { color: var(--fg, #e2e8f0); }
