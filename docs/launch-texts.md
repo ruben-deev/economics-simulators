@@ -15,7 +15,9 @@
 Постить утром по будням (14:00–16:00 UTC), первые 3–4 часа отвечать на
 комментарии — обсуждение и есть пост.
 
-**Title:**
+**Title** (два варианта — первый с личной историей обычно живёт лучше):
+
+> Show HN: I'm a finance exec who never coded. I built four business sims, starting on a plane
 
 > Show HN: I built four business sims where going bankrupt actually teaches you something
 
@@ -23,18 +25,23 @@
 
 **Первый комментарий (от автора):**
 
-> I teach unit economics on the side, and at some point I got tired of
-> slides. Nobody remembers a slide about courier utilisation. Everybody
-> remembers the week their delivery service collapsed because they saved
-> a little money on courier pay right before a storm.
+> I've spent my whole career on the other side of the spreadsheet — CFO
+> roles, heading analytics and strategy — and I had never written code
+> in my life. A few months ago, on a long flight, I wanted to refresh
+> how food-delivery economics actually works, opened an AI coding
+> assistant, and three hours later there was a playable prototype.
+> I still find it hard to believe that this is a thing a person with
+> zero programming experience can now do on a plane.
 >
-> So I built four browser sims: food delivery, a streaming service, a
-> ticketing marketplace, and an endgame where your winning business
-> becomes the seed of a city-wide ecosystem. Each one models a genuinely
-> different kind of economics — in delivery, revenue grows with customer
-> activity; in streaming, revenue is flat while your most loyal viewer
-> quietly becomes your biggest cost; in ticketing, billions flow through
-> you and you live on the percentages.
+> Then it pulled me in: I polished it over a couple of weeks in
+> half-hour sessions before bed, instead of doomscrolling. One game
+> became four: food delivery, a streaming service, a ticketing
+> marketplace, and an endgame where your winning business becomes the
+> seed of a city-wide ecosystem. Each models a genuinely different kind
+> of economics — in delivery, revenue grows with customer activity; in
+> streaming, revenue is flat while your most loyal viewer quietly
+> becomes your biggest cost; in ticketing, billions flow through you
+> and you live on the percentages.
 >
 > The design rule was "no black boxes": every number on screen can be
 > traced, each turn has a factor-by-factor breakdown, and the full formula
@@ -50,8 +57,9 @@
 >
 > Free, no accounts, English and Russian. The models are deliberately
 > simplified and the docs are honest about what each one leaves out.
-> Happy to talk about the economics — or about the balancing, which ate
-> more time than the games themselves.
+> Happy to talk about the economics, the balancing (which ate more time
+> than the games themselves) — or what building software as a
+> first-timer with AI tools felt like from the finance side of the desk.
 
 ---
 
@@ -68,8 +76,10 @@
 
 **Описание страницы:**
 
-> Four turn-based business sims set in one fictional city — built by
-> someone who teaches unit economics and got tired of slides.
+> Four turn-based business sims set in one fictional city — built by a
+> finance director who had never written a line of code. The first
+> prototype happened in three hours on a plane; the rest happened in
+> half-hour evening sessions that used to be doomscrolling.
 >
 > **🛵 NOVOEDA — food delivery.** A storm is the best thing that can
 > happen to you: everyone wants dumplings, nobody wants to leave home.
@@ -106,18 +116,29 @@ business-simulation, tycoon, educational, browser, free · Pricing: free.
 ## 3. Хабр (статья)
 
 Формат «как это устроено», но через историю, а не через спецификацию.
-Хабы: «Разработка игр», «Учебный процесс в IT». Заголовки-кандидаты:
+Хабы: «Разработка игр», «Игры и игровые консоли», можно «Карьера».
+Заголовки-кандидаты:
 
-1. «Никто не запоминает слайд про юнит-экономику. Все запоминают неделю,
+1. «Я финансовый директор и никогда не программировал. Первый симулятор
+   собрал за три часа в самолёте»
+2. «Никто не запоминает слайд про юнит-экономику. Все запоминают неделю,
    когда их доставка утонула»
-2. «Я сделал четыре бизнес-симулятора, чтобы студенты разорялись с пользой»
 
 **Скелет статьи (~15 минут чтения):**
 
-1. **Завязка.** Слайды про юнит-экономику не работают: студент кивает и
-   забывает. Работает личное банкротство — желательно безопасное. Так
-   появилась доставка еды с одним честным конфликтом: курьеров мало —
-   клиенты уходят, курьеров много — платишь за простой.
+1. **Завязка — личная.** Вся карьера по ту сторону отчётов: финансы,
+   аналитика, стратегия. Кода не писал никогда. В длинном перелёте
+   захотелось вспомнить, как на самом деле устроена экономика доставки, —
+   открыл AI-ассистент, и через три часа был играбельный прототип.
+   Честное удивление как двигатель текста: то, что раньше требовало
+   команды и месяцев, человек без опыта теперь делает в самолёте.
+   Дальше — по полчаса перед сном вместо скроллинга, и одна игра
+   превратилась в четыре.
+1а. **Почему симулятор, а не конспект.** Слайды про юнит-экономику не
+   работают: читатель кивает и забывает. Работает личное банкротство —
+   желательно безопасное. Так появилась доставка еды с одним честным
+   конфликтом: курьеров мало — клиенты уходят, курьеров много — платишь
+   за простой.
 2. **Правило «никаких чёрных ящиков».** Игра не имеет права говорить
    «вы проиграли» без объяснения. Разбор хода по факторам, таблица
    юнит-экономики, опубликованные формулы. Пример с промо, которое
@@ -139,8 +160,10 @@ business-simulation, tycoon, educational, browser, free · Pricing: free.
    изобретательны.
 6. **Что не получилось и что вырезано.** Честный список упрощений — и
    почему для учебной модели упрощение не баг.
-7. **Финал.** Ссылка, челлендж недели, пакет для преподавателей. Без
-   просьб про апвоты и колокольчик.
+7. **Финал.** Возврат к личной линии: самое ценное, что дал проект, —
+   не игры, а обнаруженная возможность строить руками то, что раньше
+   только считал в таблицах. Ссылка, челлендж недели, пакет для
+   преподавателей. Без просьб про апвоты и колокольчик.
 
 ---
 
