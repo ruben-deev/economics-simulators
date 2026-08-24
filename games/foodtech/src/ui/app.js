@@ -306,7 +306,11 @@ function syncLevers() {
     const raw = state.decisions[l.key] / (l.scale ?? 1);
     const input = el(`in-${l.key}`);
     if (input) input.value = String(raw);
-    el(`val-${l.key}`).textContent = leverDisplay(l, raw);
+    // На лёгком уровне рычага финансов в панели нет (financeFree) — без
+    // проверки эта строка роняла ВЕСЬ рендер лёгкого уровня: неделя не
+    // прожималась, графики не строились, деньги «не списывались»
+    const valEl = el(`val-${l.key}`);
+    if (valEl) valEl.textContent = leverDisplay(l, raw);
   }
 }
 
