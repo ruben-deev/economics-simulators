@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.27.5" />
+  <meta name="app-version" content="1.27.6" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -333,7 +333,13 @@ input[type="range"]:disabled { opacity: 0.45; }
   padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
   transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
 }
-.event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
+/* Подсветка наведения — только там, где наведение существует. На тачскрине
+   :hover «залипает» на последней тронутой кнопке, и рядом с настоящим
+   выбором появлялась вторая жёлтая рамка — выглядело как два выбранных
+   уровня сложности сразу. */
+@media (hover: hover) {
+  .event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
+}
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
@@ -1644,7 +1650,7 @@ const STRINGS = {
   partnerTickets: { ru: 'Партнёрство по билетам', en: 'Ticketing partnership' },
   partnerTicketsHint: {
     ru: 'Афиши и события для мульти-клиентов: событийная выручка и чуть крепче подписка. Билеты входят партнёрством — микроменеджмент остался в БИЛЕТВИЛЕ.',
-    en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in BILETVILLE.',
+    en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in TICKETGRAD.',
   },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (the customer base disperses, the fleet is disbanded)' },
   vertLockedToastThin: {
@@ -2171,7 +2177,7 @@ const STRINGS = {
   helpPlusTitle: { ru: 'Подписка Plus и партнёрства', en: 'The Plus subscription and partnerships' },
   helpPlusText: {
     ru: 'Plus — покупка удержания за маржу: выгоды подписчику стоят примерно столько же, сколько он платит, а окупается подписка частотой и оттоком, который она режет во всех сервисах сразу. Кино и билеты входят в экосистему лицензией и партнёрством — играбельные версии остались в КИНОРЕКЕ и БИЛЕТВИЛЕ.',
-    en: 'Plus buys retention with margin: the perks cost roughly what the subscriber pays, and the subscription pays off through frequency and the churn it cuts across every service at once. Cinema and ticketing join via a licence and a partnership — their playable versions stayed in KINOREKA and BILETVILLE.',
+    en: 'Plus buys retention with margin: the perks cost roughly what the subscriber pays, and the subscription pays off through frequency and the churn it cuts across every service at once. Cinema and ticketing join via a licence and a partnership — their playable versions stayed in KINOREKA and TICKETGRAD.',
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {
@@ -4112,8 +4118,8 @@ const START_ASSETS = [
   {
     id: 'tickets',
     icon: '🎟️',
-    fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
-    name: { ru: 'Билетный сервис «Билетвиль»', en: 'Biletville ticketing' },
+    fromGame: { ru: 'БИЛЕТВИЛЬ', en: 'TICKETGRAD' },
+    name: { ru: 'Билетный сервис «Билетвиль»', en: 'Ticketgrad ticketing' },
     short: { ru: 'билеты', en: 'ticketing' },
     hint: {
       ru: 'Вы выиграли рынок билетов. Самая широкая база города и самая тонкая выручка с человека: билет покупают пару раз в год, зато сервис знает почти весь Новоград. Плюс партнёрская сеть организаторов, через которую дешевеет любое привлечение.',

@@ -23,7 +23,7 @@ regardless of the language a game was played in.
 |---|---|---|---|---|
 | [🛵 **NOVOEDA**](https://ruben-deev.github.io/economics-simulators/games/foodtech/) | food delivery | week | 52 weeks | demand against throughput |
 | [🎬 **KINOREKA**](https://ruben-deev.github.io/economics-simulators/games/cinema/) | streaming service | month | 36 months | a market war against a living rival |
-| [🎟️ **BILETVILLE**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
+| [🎟️ **TICKETGRAD**](https://ruben-deev.github.io/economics-simulators/games/tickets/) | ticketing marketplace | month | 36 months | a two-sided market and channel conflict |
 | [🏙️ **NOVOGRAD**](https://ruben-deev.github.io/economics-simulators/games/ecosystem/) | service ecosystem | month | 36 months | focus against expansion over a shared customer base |
 
 The games are built the same way but deliberately model **different** kinds of economics:
@@ -42,10 +42,10 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.1.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.5.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.5.html) ·
-[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.5.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.2.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.6.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.33.0.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.6.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **For teachers** there is a ready pack in one archive — the game, the guide in both
@@ -275,7 +275,7 @@ viewers choose rather than leave.
 
 ---
 
-# 🎟️ BILETVILLE — ticketing marketplace
+# 🎟️ TICKETGRAD — ticketing marketplace
 
 You run a ticketing operator. One turn is a month, a game is 36 months, and
 the year starts in September with the opening of the season.
@@ -395,7 +395,7 @@ games/<game>/
   src/model/…                   the rest of the world: demand, pricing, partners — per game
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.29.5.html
+  dist/kinoreka-streaming-simulator-v1.29.6.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

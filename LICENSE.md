@@ -30,7 +30,7 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.ru
 
 ---
 
-**Educational economics simulators** (NOVOEDA, KINOREKA, BILETVILLE): code, economic
+**Educational economics simulators** (NOVOEDA, KINOREKA, TICKETGRAD): code, economic
 models, copy and documentation.
 
 © Ruben Deev — https://www.linkedin.com/in/ruben-deev

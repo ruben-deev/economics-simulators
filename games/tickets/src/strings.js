@@ -53,7 +53,7 @@ export const STRINGS = {
     ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
     en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
   },
-  brand: { ru: 'БИЛЕТВИЛЬ', en: 'BILETVILLE' },
+  brand: { ru: 'БИЛЕТВИЛЬ', en: 'TICKETGRAD' },
   brandSub: { ru: 'симулятор билетного сервиса', en: 'ticketing marketplace simulator' },
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
@@ -89,7 +89,7 @@ export const STRINGS = {
   restartNo: { ru: 'Отмена', en: 'Cancel' },
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎟️ Вы управляете билетным сервисом', en: '🎟️ You are running a ticketing service' },
-  welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'BILETVILLE is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
+  welcomeRole: { ru: 'Оператор «БИЛЕТВИЛЬ» — сайт, где покупают билеты. Театрам, промоутерам, клубам и стадионам нужно продать зал, зрителям — куда-то сходить; вы решаете, сколько взять с тех и с других.', en: 'TICKETGRAD is the site where people buy tickets. Theatres, promoters, clubs and stadiums need to fill halls, audiences need somewhere to go; you decide what to charge each side.' },
   welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года. Год начинается в сентябре — с открытия театрального сезона.', en: '<b>One turn is a month,</b> a game is three years. The year starts in September, with the opening of the theatre season.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Зрители идут туда, где афиша, организаторы — где зрители: реклама пустой афиши сжигает деньги, пустые залы разгоняют организаторов. А миллиарды в обороте — не ваши: ваши — несколько процентов сверху, и часть сразу забирает банк.', en: '<b>Here is the catch.</b> Buyers go where the listings are, organisers go where the buyers are: advertising an empty listing burns money, and empty halls drive organisers away. The tens of millions flowing through you are not yours either: yours is a few percent on top, and the bank takes part of that straight away.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять организаторов и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing organisers and seeing which decision started it teaches more than surviving by accident.' },
@@ -683,7 +683,7 @@ export const STRINGS = {
   metaContinueTitle: { ru: 'Есть продолжение', en: 'There is a sequel' },
   metaContinueText: {
     ru: 'НОВОГРАД — четвёртая игра серии. Там вы управляете уже не одним сервисом, а холдингом: такси, е-ком, общая подписка. Ваша «БИЛЕТВИЛЬ» станет его стартовым активом — с той базой и кассой, что вы заработали здесь.',
-    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: taxi, e-commerce, one subscription across them all. Your BILETVILLE becomes its starting asset — with the customer base and cash you earned here.',
+    en: 'NOVOGRAD is the fourth game in the series. There you run a holding rather than a single service: taxi, e-commerce, one subscription across them all. Your TICKETGRAD becomes its starting asset — with the customer base and cash you earned here.',
   },
   metaContinueLink: { ru: 'Играть в НОВОГРАД →', en: 'Play NOVOGRAD →' },
 

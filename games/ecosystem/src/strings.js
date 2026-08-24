@@ -242,7 +242,7 @@ export const STRINGS = {
   partnerTickets: { ru: 'Партнёрство по билетам', en: 'Ticketing partnership' },
   partnerTicketsHint: {
     ru: 'Афиши и события для мульти-клиентов: событийная выручка и чуть крепче подписка. Билеты входят партнёрством — микроменеджмент остался в БИЛЕТВИЛЕ.',
-    en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in BILETVILLE.',
+    en: 'Listings and events for multi-service customers: event revenue and a slightly stickier subscription. Ticketing joins as a partnership — the micromanagement stayed in TICKETGRAD.',
   },
   vertCloseHint: { ru: 'нажмите, чтобы закрыть вертикаль (клиенты и парк будут распущены)', en: 'click to shut the vertical down (the customer base disperses, the fleet is disbanded)' },
   vertLockedToastThin: {
@@ -769,7 +769,7 @@ export const STRINGS = {
   helpPlusTitle: { ru: 'Подписка Plus и партнёрства', en: 'The Plus subscription and partnerships' },
   helpPlusText: {
     ru: 'Plus — покупка удержания за маржу: выгоды подписчику стоят примерно столько же, сколько он платит, а окупается подписка частотой и оттоком, который она режет во всех сервисах сразу. Кино и билеты входят в экосистему лицензией и партнёрством — играбельные версии остались в КИНОРЕКЕ и БИЛЕТВИЛЕ.',
-    en: 'Plus buys retention with margin: the perks cost roughly what the subscriber pays, and the subscription pays off through frequency and the churn it cuts across every service at once. Cinema and ticketing join via a licence and a partnership — their playable versions stayed in KINOREKA and BILETVILLE.',
+    en: 'Plus buys retention with margin: the perks cost roughly what the subscriber pays, and the subscription pays off through frequency and the churn it cuts across every service at once. Cinema and ticketing join via a licence and a partnership — their playable versions stayed in KINOREKA and TICKETGRAD.',
   },
   helpMetaTitle: { ru: 'Наследие и «тройная корона»', en: 'Legacy and the triple crown' },
   helpMetaText: {

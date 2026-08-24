@@ -24,7 +24,7 @@ const SITE = 'https://ruben-deev.github.io/economics-simulators/';
 const GAMES = [
   { dir: 'foodtech', slug: 'novoeda', ru: 'НОВОЕДА — доставка еды', en: 'NOVOEDA — food delivery' },
   { dir: 'cinema', slug: 'kinoreka', ru: 'КИНОРЕКА — онлайн-кинотеатр', en: 'KINOREKA — streaming' },
-  { dir: 'tickets', slug: 'biletville', ru: 'БИЛЕТВИЛЬ — билетный сервис', en: 'BILETVILLE — ticketing' },
+  { dir: 'tickets', slug: 'biletville', ru: 'БИЛЕТВИЛЬ — билетный сервис', en: 'TICKETGRAD — ticketing' },
   { dir: 'ecosystem', slug: 'novograd', ru: 'НОВОГРАД — экосистема', en: 'NOVOGRAD — ecosystem' },
 ];
 
