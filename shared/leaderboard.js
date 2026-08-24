@@ -196,7 +196,7 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   const weekCode = challengeCode();
   const weekHtml = (top) => {
     const rows = top.filter((r) => (r.seed ?? '') === weekCode).slice(0, 10);
-    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty')}</p>`;
+    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty', { code: weekCode })}</p>`;
     return `<div style="overflow-x:auto"><table class="data">
       <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColDate')}</th></tr></thead>
       <tbody>${rows.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -211,7 +211,7 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
     <div id="lb-place"></div>
     <div style="display:flex;gap:6px;margin-top:10px">
       <button type="button" class="btn small primary" id="lb-tab-world">${t('lbTabWorld')}</button>
-      <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek', { code: weekCode })}</button>
+      <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek')}</button>
     </div>
     <div id="lb-pane-world">
       ${filterHtml}

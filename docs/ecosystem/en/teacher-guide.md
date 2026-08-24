@@ -65,7 +65,7 @@ touch the scored results.
 ## Technical notes
 
 * The game is a single HTML file,
-  `dist/novograd-ecosystem-simulator-v1.27.7.html`; the site link is the most
+  `dist/novograd-ecosystem-simulator-v1.27.8.html`; the site link is the most
   reliable way to run it.
 * Beyond the result string, the final screen has "Copy" and "Download CSV"
   buttons (the month-by-month history), "Share as image" (a result card for
