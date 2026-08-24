@@ -134,6 +134,8 @@ function jumpTo(target) {
   const [kind, key] = String(target).split(':');
   if (kind === 'lever') {
     const node = document.querySelector(`.lever[data-key="${key}"]`);
+    // Рычаг может жить в свёрнутой группе — раскрываем, иначе прыжок в пустоту
+    node?.closest('details.lever-group')?.setAttribute('open', '');
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     flash(node);
     return;
@@ -249,15 +251,26 @@ function buildLevers() {
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
     </div>`;
+  // Свёрнутость групп помнится на устройстве: продвинутый игрок прячет
+  // то, чем не пользуется, и панель остаётся его, а не нашей.
+  let collapsed = [];
+  try { collapsed = JSON.parse(localStorage.getItem('levers-collapsed') || '[]'); } catch { /* приватный режим */ }
   el('levers').innerHTML = LEVER_GROUPS
     .map((g) => {
       const levers = g.keys.map((k) => byKey.get(k)).filter(Boolean);
       if (!levers.length) return '';
-      return `<div class="lever-group">
-        <div class="lever-group-title">${g.icon} ${t(g.title)}</div>
+      return `<details class="lever-group" data-group="${g.title}"${collapsed.includes(g.title) ? '' : ' open'}>
+        <summary class="lever-group-title">${g.icon} ${t(g.title)}</summary>
         ${levers.map(leverHtml).join('')}
-      </div>`;
+      </details>`;
     }).join('');
+  el('levers').querySelectorAll('details.lever-group').forEach((d) => {
+    d.addEventListener('toggle', () => {
+      const closed = [...el('levers').querySelectorAll('details.lever-group:not([open])')]
+        .map((x) => x.dataset.group);
+      try { localStorage.setItem('levers-collapsed', JSON.stringify(closed)); } catch { /* не критично */ }
+    });
+  });
 
   for (const l of LEVERS) {
     // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего

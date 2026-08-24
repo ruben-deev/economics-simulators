@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.24.0" />
+  <meta name="app-version" content="1.24.1" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1151,14 +1151,22 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .chan-bar span { height: 100%; }
 .chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
 
-/* Группы рычагов (НОВОЕДА): подзаголовки делят длинный столбец по смыслу */
+/* Группы рычагов (НОВОЕДА): сворачиваемые подзаголовки делят столбец по смыслу */
 .lever-group { margin-top: 16px; }
 .lever-group:first-child { margin-top: 0; }
 .lever-group-title {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted); border-bottom: 1px solid var(--line);
   padding-bottom: 5px; margin-bottom: 8px;
+  cursor: pointer; list-style: none; user-select: none;
 }
+.lever-group-title::-webkit-details-marker { display: none; }
+.lever-group-title::before {
+  content: '▸'; display: inline-block; margin-right: 6px;
+  transition: transform 0.15s ease;
+}
+details[open] > .lever-group-title::before { transform: rotate(90deg); }
+.lever-group-title:hover { color: var(--fg, #e2e8f0); }
 
 </style>
   <script id="js-flag">
@@ -6841,6 +6849,8 @@ function jumpTo(target) {
   const [kind, key] = String(target).split(':');
   if (kind === 'lever') {
     const node = document.querySelector(`.lever[data-key="${key}"]`);
+    // Рычаг может жить в свёрнутой группе — раскрываем, иначе прыжок в пустоту
+    node?.closest('details.lever-group')?.setAttribute('open', '');
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     flash(node);
     return;
@@ -6956,15 +6966,26 @@ function buildLevers() {
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
     </div>`;
+  // Свёрнутость групп помнится на устройстве: продвинутый игрок прячет
+  // то, чем не пользуется, и панель остаётся его, а не нашей.
+  let collapsed = [];
+  try { collapsed = JSON.parse(localStorage.getItem('levers-collapsed') || '[]'); } catch { /* приватный режим */ }
   el('levers').innerHTML = LEVER_GROUPS
     .map((g) => {
       const levers = g.keys.map((k) => byKey.get(k)).filter(Boolean);
       if (!levers.length) return '';
-      return `<div class="lever-group">
-        <div class="lever-group-title">${g.icon} ${t(g.title)}</div>
+      return `<details class="lever-group" data-group="${g.title}"${collapsed.includes(g.title) ? '' : ' open'}>
+        <summary class="lever-group-title">${g.icon} ${t(g.title)}</summary>
         ${levers.map(leverHtml).join('')}
-      </div>`;
+      </details>`;
     }).join('');
+  el('levers').querySelectorAll('details.lever-group').forEach((d) => {
+    d.addEventListener('toggle', () => {
+      const closed = [...el('levers').querySelectorAll('details.lever-group:not([open])')]
+        .map((x) => x.dataset.group);
+      try { localStorage.setItem('levers-collapsed', JSON.stringify(closed)); } catch { /* не критично */ }
+    });
+  });
 
   for (const l of LEVERS) {
     // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего

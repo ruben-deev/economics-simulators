@@ -43,7 +43,7 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.0.html) ·
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.1.html) ·
 [кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.5.html) ·
 [билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.5.html) ·
 [экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.5.html).
@@ -77,7 +77,7 @@ npm run build      # пересобрать одиночные файлы игр
 **Новая версия.** У каждой игры своя версия — поле `version` в её `build.manifest.js`.
 Они независимы: правка в кинотеатре не переименовывает файл доставки и не делает
 вид, что он тоже обновился. `package.json` остаётся версией монорепозитория целиком.
-Номер игры попадает в имя собранного файла (`…-simulator-v1.24.0.html`), внутрь самой
+Номер игры попадает в имя собранного файла (`…-simulator-v1.24.1.html`), внутрь самой
 страницы и в справку по кнопке «?». Сборка версии заодно удаляет из `dist/` предыдущую, чтобы не гадать,
 какой файл раздавать. Ссылки в README, на витрине и в методичках содержат версию;
 если забыть их обновить, тест `shared/tests/compat.test.mjs` перечислит все устаревшие.

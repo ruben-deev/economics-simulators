@@ -42,7 +42,7 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.0.html) ·
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.1.html) ·
 [streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.5.html) ·
 [ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.5.html) ·
 [ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.5.html).
@@ -77,7 +77,7 @@ The built files are already in the repository, so the build step is only needed 
 `build.manifest.js`. They are independent: a change in the streaming game does not
 rename the delivery file and pretend it was updated too. `package.json` stays the
 version of the monorepo as a whole. The game's number
-goes into the built file name (`…-simulator-v1.24.0.html`), into the page itself and into
+goes into the built file name (`…-simulator-v1.24.1.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
