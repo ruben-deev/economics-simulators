@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.33.1" />
+  <meta name="app-version" content="1.33.2" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2004,8 +2004,8 @@ const STRINGS = {
   lbSeedMine: { ru: 'Мой город', en: 'My city' },
   lbEmptySeed: { ru: 'С этим кодом партии в топе пока пусто.', en: 'No entries with this game code yet.' },
   lbTabWorld: { ru: '🌍 Мировая', en: '🌍 World' },
-  lbTabWeek: { ru: '🏆 Неделя {code}', en: '🏆 Week {code}' },
-  lbWeekEmpty: { ru: 'На этой неделе ещё никто не доиграл — будьте первым.', en: 'Nobody has finished this week yet — be the first.' },
+  lbTabWeek: { ru: '🏆 Город недели', en: '🏆 Weekly city' },
+  lbWeekEmpty: { ru: 'В городе недели ({code}) пока пусто — новая партия сама предложит его код.', en: 'The weekly city ({code}) has no runs yet — a new game offers its code by itself.' },
   lbTitle: { ru: 'Мировая таблица', en: 'World leaderboard' },
   lbLoading: { ru: 'Загружаю таблицу…', en: 'Loading the leaderboard…' },
   lbEmpty: { ru: 'Пока пусто — ваш результат может стать первым.', en: 'Empty so far — yours could be the first.' },
@@ -3280,7 +3280,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   const weekCode = challengeCode();
   const weekHtml = (top) => {
     const rows = top.filter((r) => (r.seed ?? '') === weekCode).slice(0, 10);
-    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty')}</p>`;
+    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty', { code: weekCode })}</p>`;
     return `<div style="overflow-x:auto"><table class="data">
       <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColDate')}</th></tr></thead>
       <tbody>${rows.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -3295,7 +3295,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
     <div id="lb-place"></div>
     <div style="display:flex;gap:6px;margin-top:10px">
       <button type="button" class="btn small primary" id="lb-tab-world">${t('lbTabWorld')}</button>
-      <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek', { code: weekCode })}</button>
+      <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek')}</button>
     </div>
     <div id="lb-pane-world">
       ${filterHtml}
