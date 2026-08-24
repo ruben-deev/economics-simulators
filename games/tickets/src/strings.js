@@ -690,6 +690,10 @@ export const STRINGS = {
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
+  tryOthersText: { ru: 'Или смените индустрию — те же законы экономики, другой бизнес:', en: 'Or switch industries — the same economics, a different business:' },
+  tryOthersA: { ru: '🛵 НОВОЕДА — доставка', en: '🛵 NOVOEDA — delivery' },
+  tryOthersB: { ru: '🎬 КИНОРЕКА — стриминг', en: '🎬 KINOREKA — streaming' },
+  shareNote: { ru: 'Карточка результата: график партии и итог одной картинкой — для чата или сторис.', en: 'Your result card: the run and the score in one image — for chats or stories.' },
   shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я три года строил билетный сервис.', en: 'I spent three years building a ticketing service.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },

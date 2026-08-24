@@ -2338,6 +2338,18 @@ function novogradInviteHtml() {
     ${t('metaContinueText')}${link}</div>`;
 }
 
+// Финал — лучший момент позвать во вторую игру: НОВОГРАД — продолжение,
+// а соседние игры серии — те же законы экономики в другом бизнесе.
+// Только онлайн: в офлайн-файле соседних игр рядом нет.
+function otherGamesHtml() {
+  if (!window.__homeUrl) return '';
+  return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+    <span class="funding-note">${t('tryOthersText')}</span>
+    <a class="btn small" href="../foodtech/index.html">${t('tryOthersA')}</a>
+    <a class="btn small" href="../tickets/index.html">${t('tryOthersB')}</a>
+  </div>`;
+}
+
 // ----------------------------------------------------------------------------
 // Карточка «поделиться»: картинка 1200×630 из истории партии. Кода партии на
 // ней нет сознательно — картинка зовёт играть, а не пугает служебным; строка
@@ -2345,7 +2357,7 @@ function novogradInviteHtml() {
 // Полный адрес: игры живут в подкаталоге, голый домен ведёт мимо сайта
 const SHARE_SITE = 'ruben-deev.github.io/economics-simulators';
 const SHARE_LINK = 'https://ruben-deev.github.io/economics-simulators/';
-function shareFinaleCard(s, verdict) {
+function buildFinaleCard(s, verdict) {
   const hist = state.history.slice(0, s.months);
   const marksIn = hist.map((r) => ({
     value: r.equityValue,
@@ -2376,7 +2388,11 @@ function shareFinaleCard(s, verdict) {
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
   }, portrait);
-  return shareCardImage(canvas, 'kinoreka-card.png', SHARE_LINK).then((res) => {
+  return canvas;
+}
+
+function shareFinaleCard(s, verdict) {
+  return shareCardImage(buildFinaleCard(s, verdict), 'kinoreka-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
 }
@@ -2422,7 +2438,15 @@ function showGameOver() {
       value: money(s.deferred) })}</p>` : ''}
     <p class="funding-note">${t('gradeScale', { a: money(8e9), b: money(4.5e9), c: money(1.5e9) })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
+    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+      <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+      <div style="flex:1;min-width:160px">
+        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+      </div>
+    </div>
     ${novogradInviteHtml()}
+    ${otherGamesHtml()}
     ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
@@ -2436,7 +2460,6 @@ function showGameOver() {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-      <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
     </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
@@ -2462,6 +2485,13 @@ function showGameOver() {
   });
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
   el('modal-root').querySelector('#share-img')?.addEventListener('click', () => { shareFinaleCard(s, grade); });
+  // Превью строится из того же canvas, что уходит в шаринг: видно, чем
+  // именно делишься, ещё до нажатия. Клик по превью — тоже поделиться.
+  const sharePreview = el('modal-root').querySelector('#share-preview');
+  if (sharePreview) {
+    try { sharePreview.src = buildFinaleCard(s, grade).toDataURL('image/png'); } catch { sharePreview.remove(); }
+    sharePreview.addEventListener('click', () => { shareFinaleCard(s, grade); });
+  }
 }
 
 
