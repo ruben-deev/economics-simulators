@@ -725,7 +725,7 @@ score = valuation × your stake`,
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
-  seedWeeklyNote: { ru: 'Подставлен город недели: на нём соревнуются все, кто играет на этой неделе, — таблица недели на витрине. Хотите случайный город — просто сотрите код.', en: 'The city of the week is filled in: everyone playing this week competes on it — see the week’s table on the index page. Want a random city? Just clear the code.' },
+  seedWeeklyNote: { ru: 'Подставлен город недели — общий для всех, кто начнёт партию на этой неделе: одинаковый город делает сравнение честным. Хотите случайный — просто сотрите код.', en: 'The city of the week is filled in — shared by everyone starting a game this week: an identical city keeps the comparison fair. Want a random one? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый рынок у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same market. Empty means random.' },
   welcomeBest: { ru: 'Ваш лучший результат на этом устройстве: {score}.', en: 'Your best result on this device: {score}.' },
   // --- Мировая таблица результатов (общие ключи shared/leaderboard.js) ---
