@@ -707,4 +707,5 @@ export const STRINGS = {
   shareCta: { ru: 'Принять вызов →', en: 'Take the challenge →' },
   shareUrlNote: { ru: 'бесплатно, без регистрации, прямо в браузере', en: 'free, no sign-up, right in the browser' },
   shareSaved: { ru: 'Картинка сохранена.', en: 'Image saved.' },
+  shareLinkCopied: { ru: 'Ссылка на игры уже в буфере — вставьте её в подпись, и она будет кликабельной.', en: 'The game link is in your clipboard — paste it into the caption to make it clickable.' },
 };

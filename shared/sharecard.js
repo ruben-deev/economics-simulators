@@ -389,17 +389,27 @@ export async function shareCardImage(canvas, filename, shareText) {
   try {
     const file = new File([blob], filename, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // Ссылка кладётся текстом рядом с картинкой: в мессенджерах она станет
-      // кликабельной. Часть браузеров не принимает text вместе с files —
-      // тогда вторая попытка отдаёт одну картинку: адрес напечатан и на ней.
+      // Ссылка дополнительно кладётся в буфер обмена: телеграм и другие
+      // мессенджеры часто отбрасывают текст, присланный вместе с файлом,
+      // и пост уходит без кликабельного адреса — а из буфера ссылку
+      // вставляют в подпись одним движением. Кладём до share: после await
+      // жест пользователя истекает, и буфер может быть уже недоступен.
+      let copied = false;
+      if (shareText && navigator.clipboard?.writeText) {
+        try { await navigator.clipboard.writeText(shareText); copied = true; } catch { /* приватный режим */ }
+      }
+      // Ссылка кладётся и текстом рядом с картинкой: там, где мессенджер
+      // подпись принимает, она станет кликабельной сама. Часть браузеров
+      // не принимает text вместе с files — тогда вторая попытка отдаёт
+      // одну картинку: адрес напечатан и на ней.
       try {
         await navigator.share(shareText ? { files: [file], text: shareText } : { files: [file] });
-        return 'shared';
+        return copied ? 'shared-copied' : 'shared';
       } catch (e) {
         if (e && e.name === 'AbortError') return 'cancel';
         try {
           await navigator.share({ files: [file] });
-          return 'shared';
+          return copied ? 'shared-copied' : 'shared';
         } catch (e2) {
           // Человек закрыл системное окно — не повод скачивать файл силой
           if (e2 && e2.name === 'AbortError') return 'cancel';
