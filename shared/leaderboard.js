@@ -35,7 +35,26 @@ export async function lbTop(game, limit = 10, seed = '') {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`leaderboard ${res.status}`);
   const data = await res.json();
-  return Array.isArray(data.top) ? data.top : [];
+  const top = Array.isArray(data.top) ? data.top : [];
+  // Сколько строк во всей таблице, а не только в загруженном топе, — нужно,
+  // чтобы отличить «хуже всех вообще» от «хуже всех загруженных».
+  top.total = Number(data.total) || top.length;
+  return top;
+}
+
+// Место в сегодняшней таблице. Место, записанное при отправке (lb-mine-*), —
+// снимок: таблица живая, и «место 1», полученное в пустой таблице, через
+// месяц превращается в неправду. Считаем по загруженному топу: строки строго
+// лучше + 1. Если счёт хуже всех загруженных строк, а таблица глубже
+// загрузки, точное место неизвестно — возвращаем нижнюю оценку с exact:false
+// (показывается как «N+»).
+export function lbLiveRank(top, score) {
+  if (!Array.isArray(top) || !Number.isFinite(score)) return null;
+  const better = top.filter((r) => Number(r.score) > score).length;
+  if (better >= top.length && (top.total ?? top.length) > top.length) {
+    return { rank: top.length + 1, exact: false };
+  }
+  return { rank: better + 1, exact: true };
 }
 
 export async function lbSubmit({ game, name, line }) {
@@ -108,8 +127,12 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
     return r.score === Math.round(myScore ?? -1) || (mine && r.score === mine.score);
   };
 
-  const tableHtml = (top) => {
-    if (filterSeed) top = top.filter((r) => (r.seed ?? '') === filterSeed);
+  // full — весь загруженный топ (до 100 строк): по нему считается живое
+  // место; показывается из него только первая десятка.
+  const tableHtml = (full) => {
+    const top = filterSeed
+      ? full.filter((r) => (r.seed ?? '') === filterSeed)
+      : full.slice(0, 10);
     if (!top.length) return `<p class="funding-note">${t(filterSeed ? 'lbEmptySeed' : 'lbEmpty')}</p>`;
     const mine = lbMine(game);
     const inTop = top.some(isMine);
@@ -121,7 +144,8 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
     // Не дотянули до топа — своя строка дописывается снизу со своим номером,
     // чтобы место было видно, а не только надпись «вы 47-й».
     if (!inTop && mine && !filterSeed) {
-      rows.push(`<tr class="total"><td>${mine.rank}</td>
+      const live = lbLiveRank(full, Number(mine.score));
+      rows.push(`<tr class="total"><td>${live ? `${live.rank}${live.exact ? '' : '+'}` : ''}</td>
         <td>${esc(mine.name)} ${t('lbYou')}</td><td>${money(mine.score)}</td>
         <td></td><td>${esc((mine.date ?? '').slice(0, 10))}</td></tr>`);
     }
@@ -130,12 +154,17 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
       <tbody>${rows.join('')}</tbody></table></div>`;
   };
 
-  const placeHtml = () => {
+  // Пока свежий топ не загружен, место не показываем вовсе: снимок из
+  // localStorage успел устареть, а мигание «место 1 → место 14» хуже паузы.
+  const placeHtml = (full) => {
     const mine = lbMine(game);
-    return mine
-      ? `<p class="funding-note">${t('lbYourPlace', {
-          score: money(mine.score), rank: mine.rank, total: mine.total,
-        })}</p>` : '';
+    if (!mine) return '';
+    const live = full ? lbLiveRank(full, Number(mine.score)) : null;
+    if (!live) return '';
+    return `<p class="funding-note">${t('lbYourPlace', {
+      score: money(mine.score), rank: `${live.rank}${live.exact ? '' : '+'}`,
+      total: full.total ?? mine.total,
+    })}</p>`;
   };
 
   // Форма стоит выше таблицы и зовёт вписаться: имя подставляется из прошлой
@@ -179,7 +208,7 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   // Два топа — двумя вкладками: мировой открыт по умолчанию, неделя рядом.
   root.innerHTML = `<div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
-    <div id="lb-place">${placeHtml()}</div>
+    <div id="lb-place"></div>
     <div style="display:flex;gap:6px;margin-top:10px">
       <button type="button" class="btn small primary" id="lb-tab-world">${t('lbTabWorld')}</button>
       <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek', { code: weekCode })}</button>
@@ -208,11 +237,17 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   const tableEl = root.querySelector('#lb-table');
   const weekEl = root.querySelector('#lb-week');
   const statusEl = root.querySelector('#lb-status');
-  // С фильтром топ запрашивается глубже: код партии — редкая строка,
-  // и в первой десятке его может не оказаться вовсе (страховка для сервера
-  // первой версии; второй фильтрует сам по параметру seed)
-  const refreshTop = () => lbTop(game, filterSeed ? 100 : 10, filterSeed)
-    .then((top) => { tableEl.innerHTML = tableHtml(top ?? []); })
+  // Топ всегда запрашивается глубиной 100: по нему считается живое место
+  // (место из снимка на момент отправки устаревает), а с фильтром код
+  // партии — редкая строка, и в первой десятке его может не оказаться вовсе
+  // (страховка для сервера первой версии; второй фильтрует сам по seed).
+  const refreshTop = () => lbTop(game, 100, filterSeed)
+    .then((top) => {
+      tableEl.innerHTML = tableHtml(top ?? []);
+      // Живое место — только по нефильтрованному топу: отфильтрованный
+      // по коду список ничего не говорит о месте в мировой таблице.
+      if (!filterSeed) root.querySelector('#lb-place').innerHTML = placeHtml(top ?? []);
+    })
     .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   refreshTop();
@@ -251,9 +286,9 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
           name, score: Math.round(myScore ?? 0), rank: out.rank, total: out.total,
           date: new Date().toISOString().slice(0, 10),
         });
-        root.querySelector('#lb-place').innerHTML = placeHtml();
         root.querySelector('#lb-form').innerHTML = `<p class="funding-note">${t('lbAlreadySent')}</p>`;
         onSubmitted?.(out.rank, out.total);
+        // Место обновит refreshTop — по свежему топу, а не по снимку.
         refreshTop();
       } else {
         statusEl.textContent = t('lbError');

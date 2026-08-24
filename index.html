@@ -227,7 +227,7 @@
     import {
       legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
     } from './shared/meta.js';
-    import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
+    import { lbTop, lbMine, lbLiveRank, lbEndpoint } from './shared/leaderboard.js';
     import { money } from './shared/format.js';
     import {
       DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
@@ -248,17 +248,21 @@
       })) {
         const node = document.getElementById(`${id}-top`);
         if (!node) continue;
-        lbTop(taggedGame(game), 3).then((top) => {
+        // Глубина 100 — не ради показа (видны три строки), а ради честного
+        // «вашего места»: место, записанное при отправке, — снимок, и
+        // «место 1» из пустой таблицы месяц спустя превращается в неправду.
+        lbTop(taggedGame(game), 100).then((top) => {
           if (!top || !top.length) { node.textContent = ''; return; }
           // Счёт хранится в рублях (одна шкала на обе версии сайта), а
           // показывается в валюте языка — иначе финал игры и мировая
           // таблица говорили бы разными деньгами про одно число.
           const fmt = (n) => money(n);
-          const rows = top.map((r, i) => `<li>${['🥇', '🥈', '🥉'][i]} ${
+          const rows = top.slice(0, 3).map((r, i) => `<li>${['🥇', '🥈', '🥉'][i]} ${
             String(r.name).replace(/[&<>]/g, '')} — ${fmt(r.score)}</li>`).join('');
           const mine = lbMine(taggedGame(game));
-          const mineRow = mine
-            ? `<li>${ru ? 'вы' : 'you'}: ${fmt(mine.score)} · ${ru ? 'место' : 'rank'} ${mine.rank}</li>`
+          const live = mine ? lbLiveRank(top, Number(mine.score)) : null;
+          const mineRow = live
+            ? `<li>${ru ? 'вы' : 'you'}: ${fmt(mine.score)} · ${ru ? 'место' : 'rank'} ${live.rank}${live.exact ? '' : '+'}</li>`
             : '';
           node.innerHTML = `<div class="top-block"><b>${ru ? 'Мировая таблица' : 'World leaderboard'}</b>
             <ol class="top-list">${rows}${mineRow}</ol></div>`;
