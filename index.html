@@ -210,8 +210,6 @@
          не доходило — по отзывам игроков её не замечали вовсе. Настройка
          редкая (её трогают один раз за всё знакомство с набором), а карточка
          игры — то, ради чего пришли. -->
-    <section class="card series-card" id="challenge-card"></section>
-
     <section class="card series-card" id="difficulty-card"></section>
 
     <p class="home-foot" id="home-foot"></p>
@@ -230,7 +228,6 @@
       legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
     } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
-    import { challengeCode } from './shared/challenge.js';
     import { money } from './shared/format.js';
     import {
       DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
@@ -300,48 +297,10 @@
       });
     }
 
-    // Челлендж недели: один город на всех. Код детерминирован от даты,
-    // поэтому никакого сервера не нужно: любой, кто открыл витрину на этой
-    // неделе, видит тот же код — и в мировой таблице соревнуется с теми,
-    // кто ввёл его же. Ссылки несут код с собой (?code=…): экран
-    // приветствия игры подставит его в поле сам.
-    function renderChallenge() {
-      const node = document.getElementById('challenge-card');
-      if (!node) return;
-      const ru = getLang() === 'ru';
-      const code = challengeCode();
-      node.innerHTML = `<div class="series-head">
-          <b>🏆 ${ru ? 'Челлендж недели' : 'Challenge of the week'}</b>
-          <span>${ru ? 'код партии' : 'game code'}: <b>${code}</b></span>
-        </div>
-        <p class="sub" style="margin-top:8px">${ru
-          ? 'Один город на всех до воскресенья: новая партия в любой игре сама предложит город недели (код можно стереть), а на финальном экране таблица недели откроется сама.'
-          : 'One city for everyone until Sunday: a new game offers the weekly city by itself (the code can be cleared), and on the final screen the week’s table opens on its own.'}</p>
-        <div id="challenge-tops"></div>`;
-      renderChallengeTops(code);
-    }
-
-    // Таблица недели: лидеры по коду недели, прямо в карточке. Грузится
-    // лениво и молча — нет сервера или записей, значит строка зовёт стать
-    // первым, а не пугает ошибкой.
-    function renderChallengeTops(code) {
-      if (!lbEndpoint()) return;
-      const box = document.getElementById('challenge-tops');
-      if (!box) return;
-      const ru = getLang() === 'ru';
-      const games = { food: ['🛵', 'НОВОЕДА'], cinema: ['🎬', 'КИНОРЕКА'], tickets: ['🎟️', 'БИЛЕТВИЛЬ'], eco: ['🏙️', 'НОВОГРАД'] };
-      const esc = (x) => String(x).replace(/[&<>]/g, '');
-      Promise.all(Object.values(games).map(([icon, game]) =>
-        lbTop(taggedGame(game), 3, code).then((top) => [icon, top ?? []]).catch(() => [icon, []]),
-      )).then((rows) => {
-        const any = rows.some(([, top]) => top.length);
-        const line = ([icon, top]) => top.length
-          ? `${icon} ${top.map((r, i) => `${['🥇', '🥈', '🥉'][i]} ${esc(r.name)} — ${money(r.score)}`).join(' · ')}`
-          : `${icon} ${ru ? 'пока пусто' : 'no runs yet'}`;
-        box.innerHTML = `<p class="sub" style="margin-top:8px"><b>${ru ? 'Таблица недели' : 'This week’s table'}</b>${
-          any ? '' : (ru ? ' — сыграйте первым' : ' — be the first')}<br>${rows.map(line).join('<br>')}</p>`;
-      }).catch(() => {});
-    }
+    // Челленджа недели на витрине больше нет — карточка выбивалась из ряда
+    // (сюда приходят выбрать игру, а не читать про соревнование). Сам
+    // механизм жив и без неё: новая партия сама предлагает город недели,
+    // а таблица недели ждёт вкладкой на финальном экране.
 
     // Путь серии: одна строка о том, где игрок на пути из четырёх игр.
     // Прогресс каждой игры нормирован её «крепким» финалом, поэтому 100% —
@@ -500,7 +459,6 @@
       set('eco-play', t('play'));
       renderConglomeratePath();
       renderTops();
-      renderChallenge();
       renderDifficulty();
       renderSeries();
 
