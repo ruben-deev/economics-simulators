@@ -669,7 +669,7 @@ score = valuation × your stake`,
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🛵 Вы запускаете доставку еды', en: '🛵 You are launching a food delivery service' },
   welcomeRole: { ru: 'Город Новоград, сервис «НОВОЕДА»: приложение, рестораны и курьеры на самокатах. Вы решаете, сколько брать за доставку и с ресторанов, сколько платить курьерам, куда расти и на что тратить деньги.', en: 'The city of Novograd and a service called NOVOEDA: an app, restaurants and couriers on scooters. You decide what to charge for delivery, what commission to take from restaurants, what to pay couriers, where to grow and where the money goes.' },
-  welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год, 52 хода: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year — 52 turns: move the sliders, press “Run week” and see what came of it.' },
+  welcomeTurn: { ru: '<b>Один ход — неделя,</b> партия — год: двигаете ползунки, жмёте «Сыграть неделю» и смотрите, что вышло.', en: '<b>One turn is a week,</b> a game is a year: move the sliders, press “Run week” and see what came of it.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Человек платит за доставку 149 ₽, а курьер за ту же поездку получает 180 ₽ — каждый заказ в минусе. Поднимете цену — закажут реже; урежете курьерам — уйдут, и еда поедет дольше. Выход есть, но не в одном ползунке.', en: '<b>Here is the catch.</b> A customer pays $1.49 for delivery while the courier gets $1.80 for the same trip — every order loses money. Raise the price and people order less; cut courier pay and couriers leave, so food arrives later. There is a way out, but it is not one slider.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> разориться и понять почему — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> going broke and understanding why teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
@@ -716,7 +716,7 @@ score = valuation × your stake`,
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
-  shareSub: { ru: 'браузерный симулятор экономики · 52 недели, 52 решения', en: 'browser economics sim · 52 weeks, 52 decisions' },
+  shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я год управлял доставкой еды.', en: 'I ran a food-delivery company for a year.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
   shareHookDead: { ru: 'Я утопил доставку за {n} недель.', en: 'I sank the delivery company in {n} weeks.' },

@@ -783,7 +783,7 @@ score = valuation × your stake`,
   // --- Приветственный экран ---
   welcomeTitle: { ru: '🎬 Вы управляете онлайн-кинотеатром', en: '🎬 You are running a streaming service' },
   welcomeRole: { ru: 'Сервис «КИНОРЕКА» — подписка на кино и сериалы. Вы решаете, что взять у студий, что снять самим, сколько стоит подписка — и что делать, когда конкурент выкатывает громкий сериал.', en: 'KINOREKA is a subscription service for films and shows. You decide what to license from studios, what to make yourself, what the subscription costs — and what to do when the rival drops a hit show.' },
-  welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года, 36 ходов: принимаете решения, запускаете месяц и читаете, что изменилось.', en: '<b>One turn is a month,</b> a game is three years — 36 turns: make your decisions, run the month and read what changed.' },
+  welcomeTurn: { ru: '<b>Один ход — месяц,</b> партия — три года: принимаете решения, запускаете месяц и читаете, что изменилось.', en: '<b>One turn is a month,</b> a game is three years: make your decisions, run the month and read what changed.' },
   welcomeTension: { ru: '<b>В чём подвох.</b> Подписчик платит одно и то же, а вы — за каждый просмотренный час: чем больше смотрят, тем дороже вам. И время против вас: чужие права истекают, а свой сериал выходит через полгода после оплаты.', en: '<b>Where the catch is.</b> A subscriber pays the same either way, while you pay for every hour watched: the more they watch, the more they cost you. Time is against you too: licensed rights expire, and your own show arrives six months after you pay.' },
   welcomeGoal: { ru: '<b>Проиграть не страшно:</b> растерять подписчиков и понять, с какого решения это началось, — полезнее, чем случайно выжить.', en: '<b>Losing is fine:</b> losing subscribers and seeing which decision started it teaches more than surviving by accident.' },
   welcomeStart: { ru: 'Начать', en: 'Start' },
@@ -830,7 +830,7 @@ score = valuation × your stake`,
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
-  shareSub: { ru: 'браузерный симулятор экономики · 36 месяцев, 36 решений', en: 'browser economics sim · 36 months, 36 decisions' },
+  shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я три года строил онлайн-кинотеатр.', en: 'I spent three years building a streaming service.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
   shareHookDead: { ru: 'Мой стриминг утонул за {n} месяцев.', en: 'My streaming service sank in {n} months.' },

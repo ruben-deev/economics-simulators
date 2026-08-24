@@ -1066,7 +1066,7 @@ export const STRINGS = {
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
-  shareSub: { ru: 'браузерный симулятор экономики · 36 месяцев, 36 решений', en: 'browser economics sim · 36 months, 36 decisions' },
+  shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я три года собирал экосистему сервисов.', en: 'I spent three years assembling a service ecosystem.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },
   shareHookDead: { ru: 'Моя экосистема развалилась за {n} месяцев.', en: 'My ecosystem fell apart in {n} months.' },
