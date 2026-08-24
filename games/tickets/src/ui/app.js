@@ -1967,8 +1967,8 @@ function showGameOver() {
     })}</p>
     ${goals ? `<p class="funding-note">${t('overGoals', { list: goals })}</p>` : ''}
     <p><b>${gradeOf(score)}</b></p>
+    <p class="quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
-    <p class="funding-note quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
       <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
       <div style="flex:1;min-width:160px">

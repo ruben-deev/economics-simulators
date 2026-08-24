@@ -2436,8 +2436,8 @@ function showGameOver() {
     </div>
     ${s.deferred > 0 ? `<p class="funding-note">${t('scoreDeferredNote', {
       value: money(s.deferred) })}</p>` : ''}
+    <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(8e9), b: money(4.5e9), c: money(1.5e9) })}</p>
-    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
       <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
       <div style="flex:1;min-width:160px">

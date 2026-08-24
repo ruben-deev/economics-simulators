@@ -2153,11 +2153,11 @@ function showGameOver(frozen = false) {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
+    <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
-    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
       <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
       <div style="flex:1;min-width:160px">

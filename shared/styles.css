@@ -293,6 +293,19 @@ input[type="range"]:disabled { opacity: 0.45; }
   border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel-2);
 }
 .funding-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
+/* Фраза вердикта в финале («Совет директоров аплодирует сидя, но искренне»):
+   главная строчка с характером, а не сноска — крупнее, курсивом, с чертой. */
+.quip {
+  margin: 10px 0 4px;
+  padding: 7px 12px;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--text);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 8px 8px 0;
+  background: rgba(251, 191, 36, 0.07);
+}
 
 /* ------------------------------- Событие -------------------------------- */
 .event {
