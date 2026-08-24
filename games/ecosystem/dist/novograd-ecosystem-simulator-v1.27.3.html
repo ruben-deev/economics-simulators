@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.27.2" />
+  <meta name="app-version" content="1.27.3" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -2294,6 +2294,7 @@ const STRINGS = {
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
+  seedWeeklyNote: { ru: 'Подставлен город недели: на нём соревнуются все, кто играет на этой неделе, — таблица недели на витрине. Хотите случайный город — просто сотрите код.', en: 'The city of the week is filled in: everyone playing this week competes on it — see the week’s table on the index page. Want a random city? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
 
   // --- финал ---
@@ -7465,6 +7466,32 @@ function urlGameCode() {
   }
 }
 
+// --- Город недели по умолчанию -------------------------------------------
+// Новая партия (чистое устройство или «заново») сама предлагает код недели,
+// пока он на этом устройстве ещё не игрался в этой игре. Отметка ставится
+// при старте партии на коде недели; на следующей неделе код другой — и
+// приглашение возвращается само. Игрок всегда может стереть код и получить
+// случайный город: это приглашение, а не принуждение.
+
+const playedKey = (game, code) => `weekly-played-${game}-${code}`;
+
+/** Код недели, если он ещё не игрался в этой игре на этом устройстве. */
+function weeklySeedToPlay(game) {
+  const code = challengeCode();
+  try {
+    return localStorage.getItem(playedKey(game, code)) ? '' : code;
+  } catch {
+    // Приватный режим: не навязываем неделю снова и снова
+    return '';
+  }
+}
+
+/** Отметить: на этом устройстве неделя в этой игре сыграна. */
+function markWeeklyPlayed(game, seed) {
+  if (!seed || seed !== challengeCode()) return;
+  try { localStorage.setItem(playedKey(game, seed), '1'); } catch { /* не критично */ }
+}
+
 
 // ===== ../../shared/metrics.js =====================================
 // ============================================================================
@@ -10129,7 +10156,8 @@ function showGameOver(frozen = false) {
 function showWelcome() {
   // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
   // ссылка приносит код партии сама, поле можно не заполнять.
-  let seedWanted = urlGameCode();
+  // Ссылка важнее приглашения; без неё новая партия предлагает город недели
+  let seedWanted = urlGameCode() || weeklySeedToPlay('НОВОГРАД');
   let assetWanted = state.assetId;
   let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
@@ -10216,6 +10244,7 @@ function showWelcome() {
   const startGame = () => {
     track('game_start');
     markMilestone('НОВОГРАД', 'start', seedWanted.trim() || state.seed);
+    markWeeklyPlayed('НОВОГРАД', (seedWanted.trim() || state.seed));
     const v = seedWanted.trim();
     const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
     // Партия пересоздаётся, если поменяли сид или актив — или если это
@@ -10262,6 +10291,7 @@ function showWelcome() {
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     </label>
     <p class="funding-note">${t('seedNote')}</p>
+    ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeMore'), onClick: showHelp },

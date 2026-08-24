@@ -21,3 +21,23 @@ test('границы года считаются по ISO: неделя прин
 test('код годится в сид и в URL: латиница, цифры, дефис', () => {
   assert.match(challengeCode(new Date()), /^\d{4}-w\d{2}$/);
 });
+
+test('город недели предлагается, пока не сыгран, и замолкает после', async () => {
+  // node без DOM: localStorage подменяется на время теста
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+  };
+  const { weeklySeedToPlay, markWeeklyPlayed, challengeCode } = await import('../challenge.js');
+  const code = challengeCode();
+  assert.equal(weeklySeedToPlay('НОВОЕДА'), code);
+  // чужой сид отметку не ставит
+  markWeeklyPlayed('НОВОЕДА', 'урок-7б');
+  assert.equal(weeklySeedToPlay('НОВОЕДА'), code);
+  // сыграли неделю — приглашение замолкает, но только в этой игре
+  markWeeklyPlayed('НОВОЕДА', code);
+  assert.equal(weeklySeedToPlay('НОВОЕДА'), '');
+  assert.equal(weeklySeedToPlay('КИНОРЕКА'), code);
+  delete globalThis.localStorage;
+});
