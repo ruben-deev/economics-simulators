@@ -18,8 +18,6 @@
 // CORS-preflight, на который Apps Script отвечать не умеет.
 // ============================================================================
 
-import { challengeCode } from './challenge.js';
-
 export function lbEndpoint() {
   return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
 }
@@ -191,12 +189,21 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
     ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
   </div>`;
 
-  // Таблица недели — второй топ рядом с мировым: соревнование, которое
-  // идёт прямо сейчас. Колонки без кода — код у всех строк одинаковый.
-  const weekCode = challengeCode();
+  // Топ недели — второй топ рядом с мировым: лучшие результаты, присланные
+  // с понедельника, любым городом. Сначала вкладка фильтровала по коду
+  // города недели, но читалась как «рекорды этой недели» — автор решил, что
+  // так и лучше: города различаются не настолько, чтобы дробить
+  // соревнование. Фильтр по дате на клиенте поверх мирового топ-100:
+  // строка недели ниже сотого места мира сюда не попадёт — для учебной
+  // таблицы это приемлемо.
+  const weekStart = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // назад до понедельника
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
   const weekHtml = (top) => {
-    const rows = top.filter((r) => (r.seed ?? '') === weekCode).slice(0, 10);
-    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty', { code: weekCode })}</p>`;
+    const rows = top.filter((r) => (r.date ?? '').slice(0, 10) >= weekStart).slice(0, 10);
+    if (!rows.length) return `<p class="funding-note">${t('lbWeekEmpty')}</p>`;
     return `<div style="overflow-x:auto"><table class="data">
       <thead><tr><th>#</th><th>${t('lbColPlayer')}</th><th>${t('lbColScore')}</th><th>${t('lbColDate')}</th></tr></thead>
       <tbody>${rows.map((r, i) => `<tr${isMine(r) ? ' class="total"' : ''}>
@@ -238,23 +245,28 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   const weekEl = root.querySelector('#lb-week');
   const statusEl = root.querySelector('#lb-status');
   // Топ всегда запрашивается глубиной 100: по нему считается живое место
-  // (место из снимка на момент отправки устаревает), а с фильтром код
-  // партии — редкая строка, и в первой десятке его может не оказаться вовсе
-  // (страховка для сервера первой версии; второй фильтрует сам по seed).
+  // (место из снимка на момент отправки устаревает), из него же фильтруется
+  // топ недели — обе вкладки живут с одного запроса. С фильтром по коду
+  // глубина нужна и сама по себе: код партии — редкая строка, в первой
+  // десятке его может не оказаться вовсе (страховка для сервера первой
+  // версии; второй фильтрует сам по seed).
   const refreshTop = () => lbTop(game, 100, filterSeed)
     .then((top) => {
       tableEl.innerHTML = tableHtml(top ?? []);
-      // Живое место — только по нефильтрованному топу: отфильтрованный
-      // по коду список ничего не говорит о месте в мировой таблице.
-      if (!filterSeed) root.querySelector('#lb-place').innerHTML = placeHtml(top ?? []);
+      // Живое место и неделя — только по нефильтрованному топу:
+      // отфильтрованный по коду список ничего не говорит ни о месте в
+      // мировой таблице, ни о неделе целиком.
+      if (!filterSeed) {
+        root.querySelector('#lb-place').innerHTML = placeHtml(top ?? []);
+        weekEl.innerHTML = weekHtml(top ?? []);
+      }
     })
-    .catch(() => { tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
+    .catch(() => {
+      tableEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`;
+      if (!filterSeed) weekEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`;
+    });
 
   refreshTop();
-
-  lbTop(game, 100, weekCode)
-    .then((top) => { weekEl.innerHTML = weekHtml(top ?? []); })
-    .catch(() => { weekEl.innerHTML = `<p class="funding-note">${t('lbError')}</p>`; });
 
   const seedInput = root.querySelector('#lb-seed');
   let seedTimer = null;
