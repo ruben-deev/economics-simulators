@@ -42,9 +42,9 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.11.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.13.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.33.7.html) ·
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.12.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.14.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.33.8.html) ·
 [ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.13.html).
 These are self-contained HTML files: double-click and they run with no network.
 
@@ -395,7 +395,7 @@ games/<game>/
   src/model/…                   the rest of the world: demand, pricing, partners — per game
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.29.13.html
+  dist/kinoreka-streaming-simulator-v1.29.14.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

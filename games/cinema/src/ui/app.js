@@ -2343,10 +2343,12 @@ function novogradInviteHtml() {
 // Только онлайн: в офлайн-файле соседних игр рядом нет.
 function otherGamesHtml() {
   if (!window.__homeUrl) return '';
-  return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-    <span class="funding-note">${t('tryOthersText')}</span>
-    <a class="btn small" href="../foodtech/index.html">${t('tryOthersA')}</a>
-    <a class="btn small" href="../tickets/index.html">${t('tryOthersB')}</a>
+  return `<div style="margin-top:8px">
+    <p class="funding-note" style="margin:0 0 6px">${t('tryOthersText')}</p>
+    <div style="display:flex;gap:8px">
+      <a class="btn small primary" style="flex:1;text-align:center" href="../foodtech/index.html">${t('tryOthersA')}</a>
+      <a class="btn small primary" style="flex:1;text-align:center" href="../tickets/index.html">${t('tryOthersB')}</a>
+    </div>
   </div>`;
 }
 
