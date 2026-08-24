@@ -47,13 +47,13 @@
     .card-icon { font-size: 34px; line-height: 1; }
     /* Кнопка «Играть» живёт в шапке карточки: до неё не нужно листать
        описание — на планшете и телефоне это был целый экран текста */
-    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .card-head { display: flex; align-items: center; gap: 12px; }
     .card-play {
+      margin-left: auto;
       text-decoration: none; border-radius: 10px; padding: 10px 22px;
       font-weight: 700; font-size: 15px; white-space: nowrap;
       background: var(--accent); color: #06210f;
     }
-    .eco-head .card-play { align-self: center; }
     .card h2 { margin: 0; font-size: 18px; }
     .card .sub { color: var(--muted); font-size: 12px; margin: -6px 0 0; }
     .card p { margin: 0; line-height: 1.6; color: var(--text); }
@@ -97,8 +97,8 @@
       letter-spacing: 0.14em; text-transform: uppercase; }
     .eco-card { border-color: rgba(74, 222, 128, 0.4);
       background: linear-gradient(180deg, rgba(74, 222, 128, 0.06), var(--panel) 55%); }
-    .eco-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .eco-head .card-icon { font-size: 30px; align-self: center; }
+    .eco-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .eco-head .card-icon { font-size: 30px; }
     @media (min-width: 720px) {
       .eco-card ul { columns: 2; column-gap: 32px; }
       .eco-card ul li { break-inside: avoid; }
@@ -151,9 +151,9 @@
       <section class="card">
         <div class="card-head">
           <div class="card-icon">🛵</div>
+          <h2 id="food-title"></h2>
           <a class="card-play" href="games/foodtech/index.html" id="food-play"></a>
         </div>
-        <h2 id="food-title"></h2>
         <p class="sub" id="food-sub"></p>
         <p id="food-text"></p>
         <ul id="food-list"></ul>
@@ -164,9 +164,9 @@
       <section class="card">
         <div class="card-head">
           <div class="card-icon">🎬</div>
+          <h2 id="cinema-title"></h2>
           <a class="card-play" href="games/cinema/index.html" id="cinema-play"></a>
         </div>
-        <h2 id="cinema-title"></h2>
         <p class="sub" id="cinema-sub"></p>
         <p id="cinema-text"></p>
         <ul id="cinema-list"></ul>
@@ -177,9 +177,9 @@
       <section class="card">
         <div class="card-head">
           <div class="card-icon">🎟️</div>
+          <h2 id="tickets-title"></h2>
           <a class="card-play" href="games/tickets/index.html" id="tickets-play"></a>
         </div>
-        <h2 id="tickets-title"></h2>
         <p class="sub" id="tickets-sub"></p>
         <p id="tickets-text"></p>
         <ul id="tickets-list"></ul>
@@ -195,7 +195,7 @@
       <div class="eco-head">
         <div class="card-icon">🏙️</div>
         <h2 id="eco-title"></h2>
-        <a class="card-play" href="games/ecosystem/index.html" id="eco-play" style="margin-left:auto"></a>
+        <a class="card-play" href="games/ecosystem/index.html" id="eco-play"></a>
       </div>
       <p class="sub" id="eco-sub"></p>
       <p id="eco-text"></p>
