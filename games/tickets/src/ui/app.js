@@ -25,7 +25,7 @@ import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
@@ -1976,6 +1976,7 @@ function showGameOver() {
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2089,6 +2090,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });

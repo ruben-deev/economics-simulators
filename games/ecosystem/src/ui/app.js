@@ -11,7 +11,7 @@ import {
 } from '../../../../shared/difficulty.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
@@ -2202,6 +2202,7 @@ function showGameOver(frozen = false) {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2482,6 +2483,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: gameTag(), viewOnly: true,
   });

@@ -9,7 +9,7 @@ import { CONFIG, DISTRICTS, CITIES, LEVERS, ALGORITHMS, VERDICT } from '../model
 import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
@@ -2104,6 +2104,7 @@ function showGameOver() {
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2329,6 +2330,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });

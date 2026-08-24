@@ -305,13 +305,37 @@
           <span>${ru ? 'код партии' : 'game code'}: <b>${code}</b></span>
         </div>
         <p class="sub" style="margin-top:8px">${ru
-          ? 'Один город на всех до воскресенья. Откройте игру по ссылке ниже — код партии подставится сам — и сравните счёт в мировой таблице: фильтр по этому коду показывает только участников недели.'
-          : 'One city for everyone until Sunday. Open a game via the links below — the game code fills itself in — and compare scores on the world leaderboard: filtering by this code shows only this week’s players.'}</p>
+          ? 'Один город на всех до воскресенья. Откройте игру по ссылке ниже — код партии подставится сам, а на финальном экране таблица недели откроется сама.'
+          : 'One city for everyone until Sunday. Open a game via the links below — the game code fills itself in, and on the final screen the week’s table opens by itself.'}</p>
         <p class="sub" style="margin-top:6px">
           <a href="${link('games/foodtech/index.html')}">🛵 ${ru ? 'НОВОЕДА' : 'NOVOEDA'}</a> ·
           <a href="${link('games/cinema/index.html')}">🎬 ${ru ? 'КИНОРЕКА' : 'KINOREKA'}</a> ·
           <a href="${link('games/tickets/index.html')}">🎟️ ${ru ? 'БИЛЕТВИЛЬ' : 'BILETVILLE'}</a> ·
-          <a href="${link('games/ecosystem/index.html')}">🏙️ ${ru ? 'НОВОГРАД' : 'NOVOGRAD'}</a></p>`;
+          <a href="${link('games/ecosystem/index.html')}">🏙️ ${ru ? 'НОВОГРАД' : 'NOVOGRAD'}</a></p>
+        <div id="challenge-tops"></div>`;
+      renderChallengeTops(code);
+    }
+
+    // Таблица недели: лидеры по коду недели, прямо в карточке. Грузится
+    // лениво и молча — нет сервера или записей, значит строка зовёт стать
+    // первым, а не пугает ошибкой.
+    function renderChallengeTops(code) {
+      if (!lbEndpoint()) return;
+      const box = document.getElementById('challenge-tops');
+      if (!box) return;
+      const ru = getLang() === 'ru';
+      const games = { food: ['🛵', 'НОВОЕДА'], cinema: ['🎬', 'КИНОРЕКА'], tickets: ['🎟️', 'БИЛЕТВИЛЬ'], eco: ['🏙️', 'НОВОГРАД'] };
+      const esc = (x) => String(x).replace(/[&<>]/g, '');
+      Promise.all(Object.values(games).map(([icon, game]) =>
+        lbTop(taggedGame(game), 3, code).then((top) => [icon, top ?? []]).catch(() => [icon, []]),
+      )).then((rows) => {
+        const any = rows.some(([, top]) => top.length);
+        const line = ([icon, top]) => top.length
+          ? `${icon} ${top.map((r, i) => `${['🥇', '🥈', '🥉'][i]} ${esc(r.name)} — ${money(r.score)}`).join(' · ')}`
+          : `${icon} ${ru ? 'пока пусто' : 'no runs yet'}`;
+        box.innerHTML = `<p class="sub" style="margin-top:8px"><b>${ru ? 'Таблица недели' : 'This week’s table'}</b>${
+          any ? '' : (ru ? ' — сыграйте первым' : ' — be the first')}<br>${rows.map(line).join('<br>')}</p>`;
+      }).catch(() => {});
     }
 
     // Путь серии: одна строка о том, где игрок на пути из четырёх игр.
@@ -432,8 +456,8 @@
       },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
-        ru: 'Игры работают в браузере, без установки. Разбор моделей: <a href="docs/foodtech/economics.html">доставка</a> · <a href="docs/cinema/economics.html">кинотеатр</a> · <a href="docs/tickets/economics.html">билеты</a> · <a href="docs/ecosystem/economics.html">экосистема</a>. Сценарии занятий для преподавателя: <a href="docs/foodtech/teacher-guide.html">доставка</a> · <a href="docs/cinema/teacher-guide.html">кинотеатр</a> · <a href="docs/tickets/teacher-guide.html">билеты</a> · <a href="docs/ecosystem/teacher-guide.html">экосистема</a>. Пакет преподавателя одним архивом (игра + методичка + шаблон сбора работ): <a href="downloads/novoeda-teacher-pack.zip">доставка</a> · <a href="downloads/kinoreka-teacher-pack.zip">кинотеатр</a> · <a href="downloads/biletville-teacher-pack.zip">билеты</a> · <a href="downloads/novograd-teacher-pack.zip">экосистема</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.<br>Все компании, названия и события в играх вымышлены, числа условные, проект образовательный и некоммерческий. Совпадения с реальными компаниями случайны: если вы узнали свою — это вопросы к экономике, а не к нам.<br>У серии есть секретная концовка. Больше мы ничего не скажем. 📎',
-        en: 'The games run in a browser, nothing to install. Model write-ups: <a href="docs/foodtech/en/economics.html">delivery</a> · <a href="docs/cinema/en/economics.html">streaming</a> · <a href="docs/tickets/en/economics.html">ticketing</a> · <a href="docs/ecosystem/en/economics.html">ecosystem</a>. Lesson plans for teachers: <a href="docs/foodtech/en/teacher-guide.html">delivery</a> · <a href="docs/cinema/en/teacher-guide.html">streaming</a> · <a href="docs/tickets/en/teacher-guide.html">ticketing</a> · <a href="docs/ecosystem/en/teacher-guide.html">ecosystem</a>. A teacher pack in one archive (game + guide + a results-collection template): <a href="downloads/novoeda-teacher-pack.zip">delivery</a> · <a href="downloads/kinoreka-teacher-pack.zip">streaming</a> · <a href="downloads/biletville-teacher-pack.zip">ticketing</a> · <a href="downloads/novograd-teacher-pack.zip">ecosystem</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.<br>All companies, names and events in the games are fictional, the numbers are notional, and the project is educational and non-commercial. Any resemblance to real companies is coincidental: if you recognised yours, take it up with economics, not with us.<br>The series has a secret ending. That is all we are going to say. 📎',
+        ru: 'Игры работают в браузере, без установки. Разборы формул, сценарии занятий и пакеты преподавателя — <a href="docs/index.html">в материалах</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>.<br>Все компании, названия и события в играх вымышлены, числа условные, проект образовательный и некоммерческий. Совпадения с реальными компаниями случайны: если вы узнали свою — это вопросы к экономике, а не к нам.<br>У серии есть секретная концовка. Больше мы ничего не скажем. 📎',
+        en: 'The games run in a browser, nothing to install. Formula write-ups, lesson plans and teacher packs live <a href="docs/index.html">on the materials page</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>.<br>All companies, names and events in the games are fictional, the numbers are notional, and the project is educational and non-commercial. Any resemblance to real companies is coincidental: if you recognised yours, take it up with economics, not with us.<br>The series has a secret ending. That is all we are going to say. 📎',
       },
       langBtn: { ru: 'EN', en: 'RU' },
     };
