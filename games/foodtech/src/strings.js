@@ -54,6 +54,10 @@ export const STRINGS = {
   panelCoverage: { ru: 'География', en: 'Geography' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
+  leverGroupDemand: { ru: 'Спрос: цена и продвижение', en: 'Demand: price and promotion' },
+  leverGroupCouriers: { ru: 'Курьеры: мощность', en: 'Couriers: capacity' },
+  leverGroupRestaurants: { ru: 'Рестораны: ассортимент', en: 'Restaurants: selection' },
+  leverGroupGrowth: { ru: 'Развитие: технологии и команды', en: 'Growth: tech and teams' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- оперативная сводка ---

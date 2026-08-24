@@ -222,12 +222,24 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Рычаги сгруппированы по смыслу, а не свалены одним столбцом: первый
+// вопрос новичка — «за что вообще эти ползунки отвечают», и структура
+// панели отвечает на него раньше подсказок. Состав групп — это же
+// структура модели: спрос, курьеры, рестораны, инвестиции.
+const LEVER_GROUPS = [
+  { icon: '📣', title: 'leverGroupDemand', keys: ['deliveryFee', 'promo', 'marketing'] },
+  { icon: '🛵', title: 'leverGroupCouriers', keys: ['courierPay', 'targetCouriers', 'weatherBonus'] },
+  { icon: '🍔', title: 'leverGroupRestaurants', keys: ['commissionRate', 'sales'] },
+  { icon: '📈', title: 'leverGroupGrowth', keys: ['tech', 'rnd', 'finance'] },
+];
+
 function buildLevers() {
   // На лёгком уровне финансовая команда уже собрана и не стоит ничего —
   // ползунок там не решение, а декорация
-  el('levers').innerHTML = LEVERS
-    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree))
-    .map((l) => `
+  const visible = LEVERS
+    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+  const byKey = new Map(visible.map((l) => [l.key, l]));
+  const leverHtml = (l) => `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
@@ -236,8 +248,16 @@ function buildLevers() {
       <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
-    </div>
-  `).join('');
+    </div>`;
+  el('levers').innerHTML = LEVER_GROUPS
+    .map((g) => {
+      const levers = g.keys.map((k) => byKey.get(k)).filter(Boolean);
+      if (!levers.length) return '';
+      return `<div class="lever-group">
+        <div class="lever-group-title">${g.icon} ${t(g.title)}</div>
+        ${levers.map(leverHtml).join('')}
+      </div>`;
+    }).join('');
 
   for (const l of LEVERS) {
     // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего
