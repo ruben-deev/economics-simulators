@@ -43,7 +43,7 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.7.html) ·
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.8.html) ·
 [кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.10.html) ·
 [билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.33.4.html) ·
 [экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.10.html).
