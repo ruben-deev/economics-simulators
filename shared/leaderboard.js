@@ -176,14 +176,34 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
       </tr>`).join('')}</tbody></table></div>`;
   };
 
-  root.innerHTML = `${viewOnly ? '' : `<h3 style="margin:12px 0 6px">🌍 ${t('lbTitle')}</h3>`}
-    <div id="lb-form">${formHtml}</div>
+  // Два топа — двумя вкладками: мировой открыт по умолчанию, неделя рядом.
+  root.innerHTML = `<div id="lb-form">${formHtml}</div>
     <p class="funding-note" id="lb-status"></p>
     <div id="lb-place">${placeHtml()}</div>
-    ${filterHtml}
-    <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>
-    <h3 style="margin:14px 0 6px">🏆 ${t('lbWeekTitle', { code: weekCode })}</h3>
-    <div id="lb-week"><p class="funding-note">${t('lbLoading')}</p></div>`;
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button type="button" class="btn small primary" id="lb-tab-world">${t('lbTabWorld')}</button>
+      <button type="button" class="btn small" id="lb-tab-week">${t('lbTabWeek', { code: weekCode })}</button>
+    </div>
+    <div id="lb-pane-world">
+      ${filterHtml}
+      <div id="lb-table" style="margin-top:6px"><p class="funding-note">${t('lbLoading')}</p></div>
+    </div>
+    <div id="lb-pane-week" hidden style="margin-top:6px">
+      <div id="lb-week"><p class="funding-note">${t('lbLoading')}</p></div>
+    </div>`;
+
+  const paneWorld = root.querySelector('#lb-pane-world');
+  const paneWeek = root.querySelector('#lb-pane-week');
+  const tabWorld = root.querySelector('#lb-tab-world');
+  const tabWeek = root.querySelector('#lb-tab-week');
+  const showPane = (week) => {
+    paneWorld.hidden = week;
+    paneWeek.hidden = !week;
+    tabWorld.classList.toggle('primary', !week);
+    tabWeek.classList.toggle('primary', week);
+  };
+  tabWorld.addEventListener('click', () => showPane(false));
+  tabWeek.addEventListener('click', () => showPane(true));
 
   const tableEl = root.querySelector('#lb-table');
   const weekEl = root.querySelector('#lb-week');
