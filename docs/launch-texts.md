@@ -32,9 +32,11 @@
 **Первый комментарий (от автора):**
 
 > These games are, almost literally, my CV. I spent years running
-> strategy and analytics for a quick-commerce grocery delivery, and
-> today I'm the finance director of a streaming service and a ticketing
-> business. I had never written a line of code in my life.
+> strategy and analytics for a quick-commerce grocery delivery — the
+> team was the first in the world to announce EBITDA-positive
+> q-commerce operations in a city — and today I'm the finance director
+> of a streaming service and a ticketing business. I had never written
+> a line of code in my life.
 >
 > A few months ago, on a long flight, I wanted to refresh how delivery
 > economics actually works — the queues, the storms, the courier
@@ -141,7 +143,9 @@ business-simulation, tycoon, educational, browser, free · Pricing: free.
 
 1. **Завязка — личная.** Эти четыре игры — почти буквально резюме:
    несколько лет стратегии и аналитики в экспресс-доставке продуктов
-   [вариант с именем: в Яндекс Лавке], сейчас — финансовый директор
+   [вариант с именем: в Яндекс Лавке] — команда первой в мире объявила
+   о положительной EBITDA q-commerce в отдельном городе, и рычаги этой
+   экономики я определял и считал руками. Сейчас — финансовый директор
    в стриминге и билетном бизнесе. Плюс FMCG и автопром до этого,
    физтех — и ни строчки кода за всю жизнь. В длинном перелёте
    захотелось вспомнить, как на самом деле устроена экономика
