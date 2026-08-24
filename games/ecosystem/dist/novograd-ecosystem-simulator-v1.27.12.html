@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.27.11" />
+  <meta name="app-version" content="1.27.12" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -319,6 +319,19 @@ input[type="range"]:disabled { opacity: 0.45; }
   border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel-2);
 }
 .funding-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
+/* Фраза вердикта в финале («Совет директоров аплодирует сидя, но искренне»):
+   главная строчка с характером, а не сноска — крупнее, курсивом, с чертой. */
+.quip {
+  margin: 10px 0 4px;
+  padding: 7px 12px;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--text);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 8px 8px 0;
+  background: rgba(251, 191, 36, 0.07);
+}
 
 /* ------------------------------- Событие -------------------------------- */
 .event {
@@ -10200,11 +10213,11 @@ function showGameOver(frozen = false) {
       <div class="stat"><div class="s-label">${t('scoreCash')}</div><div class="s-value">${money(s.cash)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreGrade')}</div><div class="s-value">${grade}</div></div>
     </div>
+    <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
-    <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
     <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
       <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
       <div style="flex:1;min-width:160px">
