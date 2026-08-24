@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.24.7" />
+  <meta name="app-version" content="1.24.8" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -7677,7 +7677,9 @@ function renderCityMap() {
   // Кварталы кладутся в раскладку первыми: подпись обязана обходить не только
   // соседние подписи, но и сами кварталы — иначе числа ложатся на застройку
   const boxes = placed.map((p) => ({ x: p.x, y: p.y - p.rr * 0.92, w: p.rr * 2, h: p.rr * 1.84 }));
-  const estWidth = (text) => text.length * 5.4;
+  // 6.2px на знак — по замеру getBBox для кириллицы этого кегля; прежняя
+  // оценка 5.4 занижала ширину, и пересечения не ловились
+  const estWidth = (text) => text.length * 6.2;
   for (const p of [...placed].sort((a, b) => a.y - b.y)) {
     const planned = !p.live && chosen.has(p.d.id);
     const closing = p.live && !chosen.has(p.d.id);
@@ -7701,12 +7703,32 @@ function renderCityMap() {
           ];
     const w = Math.max(...p.lines.map((l) => estWidth(l.text)));
     const h = p.lines.length * 14;
+    // Сдвиг обязан выводить за проверочный запас (12): при сдвиге на 8 та же
+    // помеха ловилась снова и снова, цикл сгорал впустую, и подписи соседних
+    // кварталов замирали на одном месте друг на друге (Старгород: Слобода и
+    // Центр). Тесных кварталов бывает несколько — попыток с запасом.
+    // Вертикальный запас 8: между кварталами одной колонки зазор ~49px, и с
+    // запасом 12 подпись (28px) туда формально не помещалась — уезжала под
+    // чужой квартал, утаскивая за собой подписи всей колонки.
+    const overlaps = (ly) => boxes.find((b) => Math.abs(b.x - p.x) < (b.w + w) / 2 - 6
+      && ly - 8 < b.y + b.h && ly + h > b.y - 8);
     let ly = p.d.id.endsWith('center') ? p.y + 26 : p.y + 12;
-    for (let guard = 0; guard < 8; guard++) {
-      const hit = boxes.find((b) => Math.abs(b.x - p.x) < (b.w + w) / 2 - 6
-        && ly - 12 < b.y + b.h && ly + h > b.y - 12);
+    for (let guard = 0; guard < 16; guard++) {
+      const hit = overlaps(ly);
       if (!hit) break;
-      ly = hit.y + hit.h + 8;
+      ly = hit.y + hit.h + 12;
+    }
+    // Уехавшая далеко вниз подпись встаёт под ЧУЖИМ кварталом и читается его
+    // данными. Если над своим кварталом свободно и это заметно ближе, чем
+    // выторгованное снизу место, подпись переезжает наверх: близкая подпись
+    // читается своей даже без ниточки. Зазор 16 — больше проверочного запаса
+    // (12), иначе позиция «сверху» формально пересекается с собственным
+    // кварталом и всегда отвергается.
+    const above = p.y - p.rr * 0.92 - h - 16;
+    if (above > 20 && !overlaps(above)) {
+      const distDown = ly - (p.y + p.rr * 0.92);
+      const distUp = (p.y - p.rr * 0.92) - (above + h);
+      if (distDown > distUp + 24) ly = above;
     }
     boxes.push({ x: p.x, y: ly, w, h });
     p.ly = ly;
