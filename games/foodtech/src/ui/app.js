@@ -2152,7 +2152,7 @@ function showGameOver() {
     <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
     <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
       <div style="flex:1;min-width:160px">
         <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
         <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
@@ -2206,7 +2206,25 @@ function showGameOver() {
   const sharePreview = el('modal-root').querySelector('#share-preview');
   if (sharePreview) {
     try { sharePreview.src = buildFinaleCard(s, grade).toDataURL('image/png'); } catch { sharePreview.remove(); }
-    sharePreview.addEventListener('click', () => { shareFinaleCard(s, grade); });
+    // Клик по превью — полноэкранный просмотр: карточку надо суметь
+    // рассмотреть ДО репоста, маленький образец для этого мелковат
+    sharePreview.addEventListener('click', () => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(4,9,24,0.94);'
+        + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+        + 'padding:16px;gap:14px;overflow:auto';
+      ov.innerHTML = `<img src="${sharePreview.src}" alt=""
+          style="max-width:min(92vw,440px);max-height:78vh;border-radius:12px;border:1px solid var(--line)">
+        <div style="display:flex;gap:10px">
+          <button class="btn small primary" type="button" data-share>${t('shareBtn')}</button>
+          <button class="btn small" type="button" data-close>${t('shareClose')}</button>
+        </div>`;
+      ov.addEventListener('click', (e) => {
+        if (e.target === ov || e.target.closest('[data-close]')) ov.remove();
+      });
+      ov.querySelector('[data-share]').addEventListener('click', () => { shareFinaleCard(s, grade); });
+      document.body.appendChild(ov);
+    });
   }
 }
 

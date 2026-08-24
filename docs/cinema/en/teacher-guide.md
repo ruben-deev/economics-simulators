@@ -358,7 +358,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.29.14.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.29.15.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

@@ -1070,7 +1070,8 @@ export const STRINGS = {
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
-  shareNote: { ru: 'Карточка результата: график партии и итог одной картинкой — для чата или сторис.', en: 'Your result card: the run and the score in one image — for chats or stories.' },
+  shareNote: { ru: 'Карточка результата: график партии и итог одной картинкой — для чата или сторис. Нажмите на превью, чтобы рассмотреть.', en: 'Your result card: the run and the score in one image — for chats or stories. Tap the preview to see it full-size.' },
+  shareClose: { ru: 'Закрыть', en: 'Close' },
   shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я три года собирал экосистему сервисов.', en: 'I spent three years assembling a service ecosystem.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },

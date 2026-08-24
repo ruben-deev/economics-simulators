@@ -24,23 +24,35 @@ const FONT = '-apple-system, "Segoe UI", Roboto, sans-serif';
 // портрет 4:5 — телеграм, вотсап и сторис с телефона: пейзажная картинка там
 // сжимается в полоску, вертикальная занимает экран. Кто из них рисуется,
 // решает вызывающая сторона по ширине экрана.
+// Портретные кегли крупнее пейзажных не на глаз, а по арифметике экрана:
+// картинку 1080px шириной телефон показывает в ~390pt, то есть втрое мельче.
+// Подпись 15px на канвасе — это 5pt на экране; читаемый минимум — от ~22px.
 const LAYOUTS = {
   landscape: {
     W: 1200, H: 630, pad: 54,
-    hookFont: 40, hookY1: 140, hookY2: 188,
-    chartTop: 210, chartH: 216,
+    headEmojiFont: 38, headEmojiY: 68, headNameX: 58, headNameFont: 21, headNameY: 56,
+    headSubFont: 14, headSubY: 77,
+    verdictFont: 17, verdictY: 34, verdictH: 38,
+    hookFont: 40, hookY1: 140, hookY2: 188, hookMin: 26,
+    outLabelFont: 17,
+    chartTop: 210, chartH: 216, dotR: 6.5,
     btnFont: 24, btnH: 58, btnPad: 28, btnBottom: 96,
-    endFont: 26, markFont: 15, legendFont: 14,
+    urlBoldFont: 16, urlNoteFont: 15,
+    endFont: 26, markFont: 15, legendFont: 14, legendDot: 11,
   },
   portrait: {
     W: 1080, H: 1350, pad: 54,
-    hookFont: 44, hookY1: 172, hookY2: 228,
+    headEmojiFont: 54, headEmojiY: 88, headNameX: 78, headNameFont: 31, headNameY: 70,
+    headSubFont: 22, headSubY: 102,
+    verdictFont: 25, verdictY: 38, verdictH: 54,
+    hookFont: 52, hookY1: 186, hookY2: 248, hookMin: 34,
     // Под заголовком — итог крупным блоком (в пейзаже он живёт на кривой):
     // портрету нужна плотность, растянутый пейзаж выглядел пустым
-    outcomeLabelY: 300, outcomeY: 375, outcomeFont: 76,
-    chartTop: 430, chartH: 595,
-    btnFont: 30, btnH: 74, btnPad: 34, btnBottom: 150,
-    endFont: 30, markFont: 17, legendFont: 15,
+    outcomeLabelY: 318, outcomeY: 400, outcomeFont: 84, outLabelFont: 25,
+    chartTop: 450, chartH: 545, dotR: 9,
+    btnFont: 38, btnH: 92, btnPad: 34, btnBottom: 190,
+    urlBoldFont: 27, urlNoteFont: 23,
+    endFont: 38, markFont: 24, legendFont: 22, legendDot: 15,
   },
 };
 
@@ -98,33 +110,34 @@ export function drawShareCard(data, portrait = false) {
   ctx.fillRect(0, 0, W, H);
 
   // --- Шапка ---
-  ctx.font = `38px ${FONT}`;
-  ctx.fillText(data.emoji, L.pad, 68);
-  ctx.font = `800 21px ${FONT}`;
+  ctx.font = `${L.headEmojiFont}px ${FONT}`;
+  ctx.fillText(data.emoji, L.pad, L.headEmojiY);
+  ctx.font = `800 ${L.headNameFont}px ${FONT}`;
   ctx.fillStyle = COL.text;
-  ctx.fillText(data.name, L.pad + 58, 56);
-  ctx.font = `14px ${FONT}`;
+  ctx.fillText(data.name, L.pad + L.headNameX, L.headNameY);
+  ctx.font = `${L.headSubFont}px ${FONT}`;
   ctx.fillStyle = COL.muted;
-  ctx.fillText(data.sub, L.pad + 58, 77);
+  ctx.fillText(data.sub, L.pad + L.headNameX, L.headSubY);
 
   if (data.verdict) {
-    ctx.font = `700 17px ${FONT}`;
-    const w = ctx.measureText(data.verdict).width + 38;
-    rr(ctx, W - L.pad - w, 34, w, 38, 19);
+    ctx.font = `700 ${L.verdictFont}px ${FONT}`;
+    const w = ctx.measureText(data.verdict).width + L.verdictH;
+    rr(ctx, W - L.pad - w, L.verdictY, w, L.verdictH, L.verdictH / 2);
     ctx.fillStyle = 'rgba(74,222,128,0.13)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(74,222,128,0.5)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = COL.good;
-    ctx.fillText(data.verdict, W - L.pad - w + 19, 59);
+    ctx.fillText(data.verdict, W - L.pad - w + L.verdictH / 2,
+      L.verdictY + L.verdictH / 2 + L.verdictFont * 0.36);
   }
 
   // --- Заголовок ---
   // Строки бывают длиннее поля (секретная — 46 знаков): кегль ужимается,
   // пока обе не влезут, но не мельче читаемого
   let hookFont = L.hookFont;
-  for (; hookFont > 26; hookFont -= 2) {
+  for (; hookFont > L.hookMin; hookFont -= 2) {
     ctx.font = `800 ${hookFont}px ${FONT}`;
     const wide = Math.max(ctx.measureText(data.hook1).width, ctx.measureText(data.hook2).width);
     if (wide <= W - L.pad * 2) break;
@@ -136,7 +149,7 @@ export function drawShareCard(data, portrait = false) {
   ctx.fillText(data.hook2, L.pad, L.hookY2);
 
   if (portrait && data.outcomeLabel) {
-    ctx.font = `600 17px ${FONT}`;
+    ctx.font = `600 ${L.outLabelFont}px ${FONT}`;
     ctx.fillStyle = COL.muted;
     ctx.fillText(data.outcomeLabel.toUpperCase(), L.pad, L.outcomeLabelY);
     ctx.font = `800 ${L.outcomeFont}px ${FONT}`;
@@ -210,7 +223,7 @@ export function drawShareCard(data, portrait = false) {
     const i = Math.min(Math.max(m.turn, 0), n - 1);
     const above = k % 2 === 1;
     ctx.beginPath();
-    ctx.arc(px(i), py(i), 6.5, 0, Math.PI * 2);
+    ctx.arc(px(i), py(i), L.dotR, 0, Math.PI * 2);
     ctx.fillStyle = m.color;
     ctx.fill();
     ctx.strokeStyle = COL.bg;
@@ -236,7 +249,7 @@ export function drawShareCard(data, portrait = false) {
 
   // Конец кривой: точка и крупный зелёный итог
   ctx.beginPath();
-  ctx.arc(px(n - 1), py(n - 1), 7, 0, Math.PI * 2);
+  ctx.arc(px(n - 1), py(n - 1), L.dotR + 0.5, 0, Math.PI * 2);
   ctx.fillStyle = COL.text;
   ctx.fill();
   ctx.strokeStyle = COL.bg;
@@ -275,7 +288,7 @@ export function drawShareCard(data, portrait = false) {
   let lx = L.pad;
   const ly = sy + cellH + 27;
   const dot = (color, ring) => {
-    rr(ctx, lx, ly - 11, 11, 11, 3.5);
+    rr(ctx, lx, ly - L.legendDot, L.legendDot, L.legendDot, L.legendDot * 0.32);
     if (ring) {
       ctx.strokeStyle = COL.pick;
       ctx.lineWidth = 2.5;
@@ -284,7 +297,7 @@ export function drawShareCard(data, portrait = false) {
       ctx.fillStyle = color;
       ctx.fill();
     }
-    lx += 17;
+    lx += L.legendDot + 6;
   };
   const label = (text) => {
     ctx.fillStyle = COL.muted;
@@ -319,19 +332,19 @@ export function drawShareCard(data, portrait = false) {
 
   if (portrait) {
     // В портрете кнопка во всю ширину — адрес ложится под неё по центру
-    ctx.font = `700 19px ${FONT}`;
+    ctx.font = `700 ${L.urlBoldFont}px ${FONT}`;
     ctx.fillStyle = COL.text;
     let tw = ctx.measureText(data.urlBold).width;
-    ctx.fillText(data.urlBold, (W - tw) / 2, by + L.btnH + 42);
-    ctx.font = `16px ${FONT}`;
+    ctx.fillText(data.urlBold, (W - tw) / 2, by + L.btnH + 48);
+    ctx.font = `${L.urlNoteFont}px ${FONT}`;
     ctx.fillStyle = COL.muted;
     tw = ctx.measureText(data.urlNote).width;
-    ctx.fillText(data.urlNote, (W - tw) / 2, by + L.btnH + 70);
+    ctx.fillText(data.urlNote, (W - tw) / 2, by + L.btnH + 84);
   } else {
-    ctx.font = `700 16px ${FONT}`;
+    ctx.font = `700 ${L.urlBoldFont}px ${FONT}`;
     ctx.fillStyle = COL.text;
     ctx.fillText(data.urlBold, L.pad + btnW + 26, by + 22);
-    ctx.font = `15px ${FONT}`;
+    ctx.font = `${L.urlNoteFont}px ${FONT}`;
     ctx.fillStyle = COL.muted;
     ctx.fillText(data.urlNote, L.pad + btnW + 26, by + 47);
   }
