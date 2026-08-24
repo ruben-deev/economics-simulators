@@ -334,6 +334,19 @@ the fleet twice as fast — road salt and frost. The “Freak warm winter” eve
 lets you break the plan once — for the cost of overnight crews and the
 doubled wear.
 
+The second lever is the **ride fare**, three modes: ₽99 / 130 / 165 against
+a ₽30 variable cost. Demand responds with an asymmetric elasticity: a price
+hike chases riders to taxis and sidewalks faster (elasticity 2.2) than a
+discount brings new ones in (1.6). The decision reads off the season: when
+demand outstrips the fleet (summer), the premium fare skims the queue —
+rides barely drop while the margin grows from ₽100 to ₽135; in the shoulder
+season the base fare is the workhorse, and the cheap fare is marketing —
+a thin ₽69 margin, but riders join faster and feed the ecosystem through
+the overlap. Measured (24 seeds, a 26-batch fleet, March–October street
+plan, the vertical's net cash for the year): picking the fare month by month
+yields **₽98.5M**, "always 165" — 86.5, "always 130" — 56.1, "always 99" —
+−4.5. The right fare each month adds +14% over the best constant.
+
 The economics are measured on 12 seeds (medians, base — the full ecosystem):
 
 - a 26-batch fleet with a March–October street plan and a reinforced

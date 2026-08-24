@@ -46,7 +46,7 @@
 [доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.24.13.html) ·
 [кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.15.html) ·
 [билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.33.9.html) ·
-[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.14.html).
+[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.28.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 **Преподавателю** удобнее готовый пакет одним архивом — игра, методичка на двух
