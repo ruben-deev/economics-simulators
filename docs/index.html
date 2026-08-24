@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-lang="ru">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
-  <title>Материалы · Materials — Новоград</title>
+  <title>Материалы — Новоград</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏙️%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../shared/styles.css" />
   <style>
     body { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    .doc-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .doc-head a, .mat a { color: var(--accent-2); text-decoration: none; }
     .mat a:hover { text-decoration: underline; }
     h1 { margin: 18px 0 6px; }
@@ -16,61 +17,124 @@
     .mat { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
     .mat b.game { font-size: 16px; }
     .mat ul { list-style: none; margin: 10px 0 0; padding: 0; }
-    .mat li { padding: 5px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .mat li span { color: var(--muted); }
+    .mat li { padding: 6px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .mat li .what { color: var(--muted); }
+    .mat a.minor { color: var(--muted); font-size: 12px; }
     .muted { color: var(--muted); font-size: 13px; margin-top: 20px; line-height: 1.6; }
+    /* Один язык на экране: та же настройка game-lang, что у игр и витрины */
+    html[data-lang="ru"] .lang-en { display: none; }
+    html[data-lang="en"] .lang-ru { display: none; }
   </style>
 </head>
 <body>
-  <p class="doc-head"><a href="../index.html">⬅ К играм · Back to games</a></p>
-  <h1>Материалы · Materials</h1>
-  <p class="sub">Разбор формул каждой модели, сценарии занятий для преподавателя
-    и пакет «всё для урока» одним архивом: офлайн-игра, методички на двух языках
-    и шаблон сбора работ.<br>
-    Formula write-ups, lesson plans for teachers, and a one-archive teacher pack:
-    the offline game, both guides and a results-collection template.</p>
+  <p class="doc-head">
+    <a href="../index.html"><span class="lang-ru">⬅ К играм</span><span class="lang-en">⬅ Back to games</span></a>
+    <button id="lang-btn" class="btn small" type="button">EN</button>
+  </p>
+  <h1><span class="lang-ru">Материалы</span><span class="lang-en">Materials</span></h1>
+  <p class="sub lang-ru">Разбор формул каждой модели, сценарии занятий для
+    преподавателя и пакет «всё для урока» одним архивом: офлайн-игра, методички
+    на двух языках и шаблон сбора работ.</p>
+  <p class="sub lang-en">Formula write-ups for every model, lesson plans for
+    teachers, and a one-archive teacher pack: the offline game, both guides and
+    a results-collection template.</p>
 
   <div class="mat">
-    <b class="game">🛵 НОВОЕДА — доставка еды · food delivery</b>
+    <b class="game">🛵 НОВОЕДА<span class="lang-ru"> — доставка еды</span><span class="lang-en"> — food delivery</span></b>
     <ul>
-      <li><span>Разбор формул · Formulas</span><span><a href="foodtech/economics.html">по-русски</a> · <a href="foodtech/en/economics.html">in English</a></span></li>
-      <li><span>Сценарии занятий · Lesson plans</span><span><a href="foodtech/teacher-guide.html">по-русски</a> · <a href="foodtech/en/teacher-guide.html">in English</a></span></li>
-      <li><span>Пакет преподавателя · Teacher pack</span><span><a href="../downloads/novoeda-teacher-pack.zip">скачать архив · download zip</a></span></li>
+      <li><span class="what"><span class="lang-ru">Разбор формул</span><span class="lang-en">Formula write-up</span></span>
+        <span><a class="lang-ru" href="foodtech/economics.html">открыть</a><a class="lang-en" href="foodtech/en/economics.html">open</a>
+          <a class="minor lang-ru" href="foodtech/en/economics.html">EN</a><a class="minor lang-en" href="foodtech/economics.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Сценарии занятий</span><span class="lang-en">Lesson plans</span></span>
+        <span><a class="lang-ru" href="foodtech/teacher-guide.html">открыть</a><a class="lang-en" href="foodtech/en/teacher-guide.html">open</a>
+          <a class="minor lang-ru" href="foodtech/en/teacher-guide.html">EN</a><a class="minor lang-en" href="foodtech/teacher-guide.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Пакет преподавателя</span><span class="lang-en">Teacher pack</span></span>
+        <span><a href="../downloads/novoeda-teacher-pack.zip"><span class="lang-ru">скачать архив</span><span class="lang-en">download zip</span></a></span></li>
     </ul>
   </div>
 
   <div class="mat">
-    <b class="game">🎬 КИНОРЕКА — онлайн-кинотеатр · streaming</b>
+    <b class="game">🎬 КИНОРЕКА<span class="lang-ru"> — онлайн-кинотеатр</span><span class="lang-en"> — streaming</span></b>
     <ul>
-      <li><span>Разбор формул · Formulas</span><span><a href="cinema/economics.html">по-русски</a> · <a href="cinema/en/economics.html">in English</a></span></li>
-      <li><span>Сценарии занятий · Lesson plans</span><span><a href="cinema/teacher-guide.html">по-русски</a> · <a href="cinema/en/teacher-guide.html">in English</a></span></li>
-      <li><span>Пакет преподавателя · Teacher pack</span><span><a href="../downloads/kinoreka-teacher-pack.zip">скачать архив · download zip</a></span></li>
+      <li><span class="what"><span class="lang-ru">Разбор формул</span><span class="lang-en">Formula write-up</span></span>
+        <span><a class="lang-ru" href="cinema/economics.html">открыть</a><a class="lang-en" href="cinema/en/economics.html">open</a>
+          <a class="minor lang-ru" href="cinema/en/economics.html">EN</a><a class="minor lang-en" href="cinema/economics.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Сценарии занятий</span><span class="lang-en">Lesson plans</span></span>
+        <span><a class="lang-ru" href="cinema/teacher-guide.html">открыть</a><a class="lang-en" href="cinema/en/teacher-guide.html">open</a>
+          <a class="minor lang-ru" href="cinema/en/teacher-guide.html">EN</a><a class="minor lang-en" href="cinema/teacher-guide.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Пакет преподавателя</span><span class="lang-en">Teacher pack</span></span>
+        <span><a href="../downloads/kinoreka-teacher-pack.zip"><span class="lang-ru">скачать архив</span><span class="lang-en">download zip</span></a></span></li>
     </ul>
   </div>
 
   <div class="mat">
-    <b class="game">🎟️ БИЛЕТВИЛЬ — билетный сервис · ticketing</b>
+    <b class="game">🎟️ БИЛЕТВИЛЬ<span class="lang-ru"> — билетный сервис</span><span class="lang-en"> — ticketing</span></b>
     <ul>
-      <li><span>Разбор формул · Formulas</span><span><a href="tickets/economics.html">по-русски</a> · <a href="tickets/en/economics.html">in English</a></span></li>
-      <li><span>Сценарии занятий · Lesson plans</span><span><a href="tickets/teacher-guide.html">по-русски</a> · <a href="tickets/en/teacher-guide.html">in English</a></span></li>
-      <li><span>Пакет преподавателя · Teacher pack</span><span><a href="../downloads/biletville-teacher-pack.zip">скачать архив · download zip</a></span></li>
+      <li><span class="what"><span class="lang-ru">Разбор формул</span><span class="lang-en">Formula write-up</span></span>
+        <span><a class="lang-ru" href="tickets/economics.html">открыть</a><a class="lang-en" href="tickets/en/economics.html">open</a>
+          <a class="minor lang-ru" href="tickets/en/economics.html">EN</a><a class="minor lang-en" href="tickets/economics.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Сценарии занятий</span><span class="lang-en">Lesson plans</span></span>
+        <span><a class="lang-ru" href="tickets/teacher-guide.html">открыть</a><a class="lang-en" href="tickets/en/teacher-guide.html">open</a>
+          <a class="minor lang-ru" href="tickets/en/teacher-guide.html">EN</a><a class="minor lang-en" href="tickets/teacher-guide.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Пакет преподавателя</span><span class="lang-en">Teacher pack</span></span>
+        <span><a href="../downloads/biletville-teacher-pack.zip"><span class="lang-ru">скачать архив</span><span class="lang-en">download zip</span></a></span></li>
     </ul>
   </div>
 
   <div class="mat">
-    <b class="game">🏙️ НОВОГРАД — экосистема · ecosystem</b>
+    <b class="game">🏙️ НОВОГРАД<span class="lang-ru"> — экосистема</span><span class="lang-en"> — ecosystem</span></b>
     <ul>
-      <li><span>Разбор формул · Formulas</span><span><a href="ecosystem/economics.html">по-русски</a> · <a href="ecosystem/en/economics.html">in English</a></span></li>
-      <li><span>Сценарии занятий · Lesson plans</span><span><a href="ecosystem/teacher-guide.html">по-русски</a> · <a href="ecosystem/en/teacher-guide.html">in English</a></span></li>
-      <li><span>Пакет преподавателя · Teacher pack</span><span><a href="../downloads/novograd-teacher-pack.zip">скачать архив · download zip</a></span></li>
+      <li><span class="what"><span class="lang-ru">Разбор формул</span><span class="lang-en">Formula write-up</span></span>
+        <span><a class="lang-ru" href="ecosystem/economics.html">открыть</a><a class="lang-en" href="ecosystem/en/economics.html">open</a>
+          <a class="minor lang-ru" href="ecosystem/en/economics.html">EN</a><a class="minor lang-en" href="ecosystem/economics.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Сценарии занятий</span><span class="lang-en">Lesson plans</span></span>
+        <span><a class="lang-ru" href="ecosystem/teacher-guide.html">открыть</a><a class="lang-en" href="ecosystem/en/teacher-guide.html">open</a>
+          <a class="minor lang-ru" href="ecosystem/en/teacher-guide.html">EN</a><a class="minor lang-en" href="ecosystem/teacher-guide.html">RU</a></span></li>
+      <li><span class="what"><span class="lang-ru">Пакет преподавателя</span><span class="lang-en">Teacher pack</span></span>
+        <span><a href="../downloads/novograd-teacher-pack.zip"><span class="lang-ru">скачать архив</span><span class="lang-en">download zip</span></a></span></li>
     </ul>
   </div>
 
-  <p class="muted">Быстрый рецепт занятия: придумайте код партии, продиктуйте
-    группе — у всех будет один город. В конце соберите строки результата
-    с финального экрана: контрольная сумма не даст подделать счёт.<br>
-    Quick classroom recipe: invent a game code and dictate it — everyone plays
-    the same city. Collect the result strings at the end: the checksum makes
-    score doctoring harder than honest play.</p>
+  <p class="muted lang-ru">Быстрый рецепт занятия: придумайте код партии,
+    продиктуйте группе — у всех будет один город. В конце соберите строки
+    результата с финального экрана: контрольная сумма не даст подделать счёт.</p>
+  <p class="muted lang-en">Quick classroom recipe: invent a game code and
+    dictate it — everyone plays the same city. Collect the result strings at
+    the end: the checksum makes score doctoring harder than honest play.</p>
+
+  <script>
+    // Тот же выбор языка, что у игр и витрины: ?lang → сохранённый →
+    // язык браузера (русский включается только явно) → английский.
+    (function () {
+      var KEY = 'game-lang';
+      function detect() {
+        try {
+          var u = new URLSearchParams(location.search).get('lang');
+          if (u === 'ru' || u === 'en') return u;
+          var s = localStorage.getItem(KEY);
+          if (s === 'ru' || s === 'en') return s;
+          var langs = navigator.languages || [navigator.language || ''];
+          for (var i = 0; i < langs.length; i++) {
+            if (/^ru\b/i.test(langs[i])) return 'ru';
+          }
+        } catch (e) { /* приватный режим */ }
+        return 'en';
+      }
+      var lang = detect();
+      var btn = document.getElementById('lang-btn');
+      function apply() {
+        document.documentElement.setAttribute('data-lang', lang);
+        document.documentElement.lang = lang;
+        document.title = lang === 'ru' ? 'Материалы — Новоград' : 'Materials — Novograd';
+        btn.textContent = lang === 'ru' ? 'EN' : 'RU';
+      }
+      btn.addEventListener('click', function () {
+        lang = lang === 'ru' ? 'en' : 'ru';
+        try { localStorage.setItem(KEY, lang); } catch (e) { /* не критично */ }
+        apply();
+      });
+      apply();
+    })();
+  </script>
 </body>
 </html>
