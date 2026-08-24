@@ -319,7 +319,7 @@ export const STRINGS = {
   driverSelection: { ru: 'Выбор ресторанов', en: 'Restaurant selection' },
   driverSeason: { ru: 'Сезон, погода, события', en: 'Season, weather, events' },
   driverCapacity: { ru: 'Пропускная способность', en: 'Courier capacity' },
-  driverMix: { ru: 'Состав районов', en: 'District mix' },
+  driverMix: { ru: 'Микс районов', en: 'District mix' },
   driverSurge: { ru: 'Динамическая цена', en: 'Surge pricing' },
 
   installNote: { ru: 'Внедрено: {names} — разовые {cost}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.', en: 'Rolled out: {names} — a one-off {cost}. The algorithm starts working this week and starts paying off much later.' },
