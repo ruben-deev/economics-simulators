@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.24.6" />
+  <meta name="app-version" content="1.24.7" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1734,7 +1734,7 @@ const STRINGS = {
   driverSelection: { ru: 'Выбор ресторанов', en: 'Restaurant selection' },
   driverSeason: { ru: 'Сезон, погода, события', en: 'Season, weather, events' },
   driverCapacity: { ru: 'Пропускная способность', en: 'Courier capacity' },
-  driverMix: { ru: 'Состав районов', en: 'District mix' },
+  driverMix: { ru: 'Микс районов', en: 'District mix' },
   driverSurge: { ru: 'Динамическая цена', en: 'Surge pricing' },
 
   installNote: { ru: 'Внедрено: {names} — разовые {cost}. Алгоритм начинает работать с этой недели, а окупаться — заметно позже.', en: 'Rolled out: {names} — a one-off {cost}. The algorithm starts working this week and starts paying off much later.' },
@@ -5675,7 +5675,7 @@ function explain(prev, cur) {
   // по определению:
   //   заказы = клиенты × средняя_частота × surgeShave × заполнение
   // Частоту дальше раскладываем на названные причины, а всё, что они не
-  // объясняют, честно называется «состав районов»: когда открывается новый
+  // объясняют, честно называется «микс районов»: когда открывается новый
   // район, средняя частота меняется сама по себе, без единого решения.
   const ratio = (a, b) => (a > 0 && b > 0 ? b / a : 1);
   const named = [
