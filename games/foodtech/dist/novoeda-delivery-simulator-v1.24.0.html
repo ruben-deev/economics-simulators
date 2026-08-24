@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.23.5" />
+  <meta name="app-version" content="1.24.0" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1151,6 +1151,15 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .chan-bar span { height: 100%; }
 .chan-lbl { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
 
+/* Группы рычагов (НОВОЕДА): подзаголовки делят длинный столбец по смыслу */
+.lever-group { margin-top: 16px; }
+.lever-group:first-child { margin-top: 0; }
+.lever-group-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1px solid var(--line);
+  padding-bottom: 5px; margin-bottom: 8px;
+}
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -1446,6 +1455,10 @@ const STRINGS = {
   panelCoverage: { ru: 'География', en: 'Geography' },
   panelFunding: { ru: 'Финансирование', en: 'Funding' },
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
+  leverGroupDemand: { ru: 'Спрос: цена и продвижение', en: 'Demand: price and promotion' },
+  leverGroupCouriers: { ru: 'Курьеры: мощность', en: 'Couriers: capacity' },
+  leverGroupRestaurants: { ru: 'Рестораны: ассортимент', en: 'Restaurants: selection' },
+  leverGroupGrowth: { ru: 'Развитие: технологии и команды', en: 'Growth: tech and teams' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- оперативная сводка ---
@@ -6916,12 +6929,24 @@ function renderKpis() {
 // ----------------------------------------------------------------------------
 // Рычаги
 // ----------------------------------------------------------------------------
+// Рычаги сгруппированы по смыслу, а не свалены одним столбцом: первый
+// вопрос новичка — «за что вообще эти ползунки отвечают», и структура
+// панели отвечает на него раньше подсказок. Состав групп — это же
+// структура модели: спрос, курьеры, рестораны, инвестиции.
+const LEVER_GROUPS = [
+  { icon: '📣', title: 'leverGroupDemand', keys: ['deliveryFee', 'promo', 'marketing'] },
+  { icon: '🛵', title: 'leverGroupCouriers', keys: ['courierPay', 'targetCouriers', 'weatherBonus'] },
+  { icon: '🍔', title: 'leverGroupRestaurants', keys: ['commissionRate', 'sales'] },
+  { icon: '📈', title: 'leverGroupGrowth', keys: ['tech', 'rnd', 'finance'] },
+];
+
 function buildLevers() {
   // На лёгком уровне финансовая команда уже собрана и не стоит ничего —
   // ползунок там не решение, а декорация
-  el('levers').innerHTML = LEVERS
-    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree))
-    .map((l) => `
+  const visible = LEVERS
+    .filter((l) => !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+  const byKey = new Map(visible.map((l) => [l.key, l]));
+  const leverHtml = (l) => `
     <div class="lever" data-key="${l.key}">
       <div class="lever-head">
         <span class="lever-label">${tx(l.label)}</span>
@@ -6930,8 +6955,16 @@ function buildLevers() {
       <input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />
       <button class="lever-why" type="button">${t('leverWhy')}</button>
       <div class="lever-tip">${tx(l.tip)}</div>
-    </div>
-  `).join('');
+    </div>`;
+  el('levers').innerHTML = LEVER_GROUPS
+    .map((g) => {
+      const levers = g.keys.map((k) => byKey.get(k)).filter(Boolean);
+      if (!levers.length) return '';
+      return `<div class="lever-group">
+        <div class="lever-group-title">${g.icon} ${t(g.title)}</div>
+        ${levers.map(leverHtml).join('')}
+      </div>`;
+    }).join('');
 
   for (const l of LEVERS) {
     // Рычага может не быть в панели (см. фильтр выше) — тогда и слушать нечего
