@@ -43,11 +43,19 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.22.4.html) ·
-[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.28.4.html) ·
-[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.31.4.html) ·
-[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.26.5.html).
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.23.0.html) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.0.html) ·
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.0.html) ·
+[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
+
+**Преподавателю** удобнее готовый пакет одним архивом — игра, методичка на двух
+языках, разбор формул и шаблон таблицы для сбора работ:
+[доставка](https://ruben-deev.github.io/economics-simulators/downloads/novoeda-teacher-pack.zip) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/downloads/kinoreka-teacher-pack.zip) ·
+[билеты](https://ruben-deev.github.io/economics-simulators/downloads/biletville-teacher-pack.zip) ·
+[экосистема](https://ruben-deev.github.io/economics-simulators/downloads/novograd-teacher-pack.zip).
+Пакеты пересобираются командой `npm run build` (шаг `shared/tools/teacher-pack.js`).
 
 **Мировая таблица результатов.** На финальном экране каждой игры есть локальная
 таблица рекордов устройства, а на сайте — ещё и глобальная: игрок может отправить
@@ -69,7 +77,7 @@ npm run build      # пересобрать одиночные файлы игр
 **Новая версия.** У каждой игры своя версия — поле `version` в её `build.manifest.js`.
 Они независимы: правка в кинотеатре не переименовывает файл доставки и не делает
 вид, что он тоже обновился. `package.json` остаётся версией монорепозитория целиком.
-Номер игры попадает в имя собранного файла (`…-simulator-v1.22.4.html`), внутрь самой
+Номер игры попадает в имя собранного файла (`…-simulator-v1.23.0.html`), внутрь самой
 страницы и в справку по кнопке «?». Сборка версии заодно удаляет из `dist/` предыдущую, чтобы не гадать,
 какой файл раздавать. Ссылки в README, на витрине и в методичках содержат версию;
 если забыть их обновить, тест `shared/tests/compat.test.mjs` перечислит все устаревшие.
@@ -82,6 +90,8 @@ JavaScript**. Встроенный браузер того же Телеграм
 именно между «переслали файл» и «дали ссылку».
 Игра — расчётная модель, без скриптов от неё остаётся пустой каркас. Теперь в
 этом случае страница сама объясняет, что произошло и как открыть её в браузере.
+Сайт при этом можно **установить на телефон** («Добавить на экран „Домой“»):
+установленная витрина и открытые хоть раз игры работают и без сети.
 
 **Важно:** `games/<игра>/index.html` из папки двойным щелчком не откроется — браузер
 не грузит ES-модули с `file://`, и в Safari, и в Chrome. Для запуска с диска
@@ -382,7 +392,7 @@ games/<игра>/
   src/model/…                   остальные модули мира: спрос, цены, партнёры — по игре
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinoreka-streaming-simulator-v1.28.4.html
+  dist/kinoreka-streaming-simulator-v1.29.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
 ```

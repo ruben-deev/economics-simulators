@@ -149,6 +149,19 @@ function sheet_() {
   return sh;
 }
 
+// Лист воронки: [дата, игра, веха]. Никаких имён и строк результата —
+// это счётчик «дошёл ли новичок до пятого хода», а не журнал игроков.
+function metricsSheet_() {
+  const ss = spreadsheet_();
+  if (!ss) throw new Error('нет таблицы');
+  let sh = ss.getSheetByName('metrics');
+  if (!sh) {
+    sh = ss.insertSheet('metrics');
+    sh.appendRow(['date', 'game', 'milestone']);
+  }
+  return sh;
+}
+
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -269,6 +282,19 @@ function doPost(e) {
     try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) {
       return json_({ ok: false, error: 'bad json' });
     }
+    // Маяк воронки: {metric:{game,m}} — счётчик, не рекорд. Ошибки здесь
+    // молчаливые: маяк никогда не важнее того, чем занят игрок.
+    if (body.metric) {
+      try {
+        const g = cleanText_(body.metric.game, TAG_MAX);
+        const m = cleanText_(body.metric.m, 16);
+        if (g && /^(start|turn5|finale)$/.test(m)) {
+          metricsSheet_().appendRow([new Date(), g, m]);
+        }
+      } catch (err) { /* не критично */ }
+      return json_({ ok: true });
+    }
+
     const name = cleanText_(body.name, NAME_MAX);
     if (!name) return json_({ ok: false, error: 'name required' });
     const parsed = parseLine_(body.line);

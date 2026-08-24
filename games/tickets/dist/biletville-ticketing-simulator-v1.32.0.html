@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.31.4" />
-  <meta name="app-build-date" content="2026-08-23" />
+  <meta name="app-version" content="1.32.0" />
+  <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>БИЛЕТВИЛЬ · ticketing marketplace simulator</title>
@@ -186,7 +186,7 @@ button { font-family: inherit; }
 .lever { margin-bottom: 14px; }
 .lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .lever-label { font-weight: 600; font-size: 13px; }
-.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
+.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; cursor: pointer; }
 .lever input[type="range"] { width: 100%; margin: 6px 0 2px; }
 .lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
 .lever.open .lever-tip { display: block; }
@@ -6883,10 +6883,56 @@ function setFill(input) {
   input.style.setProperty('--fill', `${Math.max(0, Math.min(100, p)).toFixed(1)}%`);
 }
 
+// Тап по значению ползунка открывает числовое поле: на телефоне пальцем
+// точное значение не поймать (замечание из плейтеста). Поле живёт на месте
+// значения, Enter/blur применяют число через обычное событие input —
+// для игры это неотличимо от перетаскивания ручки.
+function editSliderValue(valueEl) {
+  const box = valueEl.closest('.lever') ?? valueEl.parentElement?.parentElement;
+  const range = box ? box.querySelector('input[type="range"]') : null;
+  if (!range || valueEl.querySelector('input')) return;
+  const prevHtml = valueEl.innerHTML;
+  const field = document.createElement('input');
+  field.type = 'number';
+  field.min = range.min; field.max = range.max; field.step = range.step || '1';
+  field.value = range.value;
+  field.style.cssText = 'width:82px;padding:2px 6px;background:transparent;'
+    + 'border:1px solid var(--line);border-radius:5px;color:inherit;'
+    + 'font:inherit;font-variant-numeric:tabular-nums;text-align:right';
+  valueEl.textContent = '';
+  valueEl.appendChild(field);
+  field.focus();
+  field.select();
+  let done = false;
+  const finish = (apply) => {
+    if (done) return;
+    done = true;
+    if (apply && field.value !== '') {
+      const min = Number(range.min || 0);
+      const max = Number(range.max || 100);
+      range.value = String(Math.max(min, Math.min(max, Number(field.value))));
+      range.dispatchEvent(new Event('input', { bubbles: true }));
+    } else if (field.parentElement === valueEl) {
+      // Отмена: игра ничего не перерисует, вернём значение сами
+      valueEl.innerHTML = prevHtml;
+    }
+  };
+  field.addEventListener('blur', () => finish(true));
+  field.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); field.blur(); }
+    if (e.key === 'Escape') { finish(false); }
+  });
+}
+
 function watchSliders(root = document) {
   root.addEventListener('input', (e) => {
     const el = e.target;
     if (el && el.tagName === 'INPUT' && el.type === 'range') setFill(el);
+  }, true);
+
+  root.addEventListener('click', (e) => {
+    const valueEl = e.target && e.target.closest ? e.target.closest('.lever-value') : null;
+    if (valueEl) editSliderValue(valueEl);
   }, true);
 
   let queued = false;
@@ -7061,6 +7107,87 @@ function legendHtml(series) {
   return series.map((s, i) => `<span class="legend-item"><i style="background:${s.color ?? PALETTE[i % PALETTE.length]}"></i>${s.label}</span>`).join('');
 }
 
+
+
+// ===== ../../shared/challenge.js ===================================
+// ============================================================================
+// Челлендж недели и код партии из ссылки.
+//
+// Идея: один город на всех. Код недели детерминирован от даты (ISO-неделя),
+// поэтому витрина, игры и любые посты называют один и тот же код без
+// сервера и синхронизации. Ссылка вида …/games/foodtech/?code=2026-w35
+// приносит код с собой: экран приветствия подставляет его в поле сам.
+//
+// Код намеренно нейтрален к языку — он попадает в сид мира и в мировую
+// таблицу, где русская и английская версии живут в одной шкале.
+// ============================================================================
+
+/** ISO-номер недели: понедельник — первый день, первая неделя — с четвергом. */
+function challengeCode(now = new Date()) {
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const year = d.getUTCFullYear();
+  const start = Date.UTC(year, 0, 1);
+  const week = Math.ceil(((d.getTime() - start) / 86400000 + 1) / 7);
+  return `${year}-w${String(week).padStart(2, '0')}`;
+}
+
+/** Код партии из ссылки (?code=…) — пустая строка, если его нет. */
+function urlGameCode() {
+  try {
+    return (new URLSearchParams(window.location.search).get('code') || '').trim().slice(0, 64);
+  } catch {
+    return '';
+  }
+}
+
+
+// ===== ../../shared/metrics.js =====================================
+// ============================================================================
+// Маяки воронки: «партия начата», «дошёл до 5-го хода», «дошёл до финала».
+//
+// Зачем: единственный вопрос, на который сайт до сих пор не мог ответить, —
+// где новички отваливаются в первые три минуты. Три маяка отвечают на него
+// целиком: start/turn5 говорит о пороге входа, turn5/finale — о длине партии.
+//
+// Что это НЕ делает: не следит за игроком. Уходит только имя игры и веха —
+// ни имени, ни счёта, ни кода партии, ни чего-либо про устройство. Уходит
+// только там, где страница знает адрес сервера рекордов (онлайн-версия);
+// в офлайн-файлах адреса нет, и модуль молчит. Любая ошибка проглатывается:
+// маяк никогда не важнее игры.
+//
+// Дедупликация на устройстве: одна веха на игру и партию (сид), чтобы
+// перезагрузка страницы не считалась новым игроком.
+// ============================================================================
+
+function endpoint() {
+  return (typeof window !== 'undefined' && window.__lbEndpoint) || null;
+}
+
+function sentKey(game, milestone, seed) {
+  return `metric-${game}-${milestone}-${seed || ''}`;
+}
+
+/** Отправить веху: mark('НОВОЕДА', 'turn5', state.seed). Тихо и один раз. */
+function markMilestone(game, milestone, seed) {
+  const base = endpoint();
+  if (!base) return;
+  const key = sentKey(game, milestone, seed);
+  try {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch { /* приватный режим: маяк уйдёт, дедуп не сработает — не страшно */ }
+  const body = JSON.stringify({ metric: { game, m: milestone } });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(base, body);
+    } else {
+      fetch(base, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body })
+        .catch(() => {});
+    }
+  } catch { /* не критично */ }
+}
 
 
 // ===== ../../shared/sharecard.js ===================================
@@ -9201,8 +9328,11 @@ function nextMonth() {
   clearActions();
   save();
   renderAll();
+  // Маяк воронки: новичок пережил первые пять ходов
+  if (state.month === 5) markMilestone('БИЛЕТВИЛЬ', 'turn5', state.seed);
   if (state.over) {
     track(state.over === 'bankrupt' ? 'game_bankrupt' : 'game_finished');
+    markMilestone('БИЛЕТВИЛЬ', 'finale', state.seed);
     showGameOver();
   } else {
     maybeDeathFork();
@@ -9460,7 +9590,9 @@ function restart() {
 function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
-  let seedWanted = '';
+  // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
+  // ссылка приносит код партии сама, поле можно не заполнять.
+  let seedWanted = urlGameCode();
   // Сложность — настройка всего набора: выбранная здесь действует и в
   // остальных играх. Меняет она только цену финансовой команды.
   let diffWanted = state.difficulty ?? currentDifficulty();
@@ -9471,6 +9603,7 @@ function showWelcome() {
     </button>`).join('');
   const startGame = () => {
     track('game_start');
+    markMilestone('БИЛЕТВИЛЬ', 'start', seedWanted.trim() || state.seed);
     const v = seedWanted.trim();
     if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
   };
@@ -9498,8 +9631,11 @@ function showWelcome() {
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
-  el('modal-root').querySelector('#seed-input')
-    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  const seedField = el('modal-root').querySelector('#seed-input');
+  if (seedField) {
+    seedField.value = seedWanted;
+    seedField.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
   // так же, как кнопки нижнего ряда.

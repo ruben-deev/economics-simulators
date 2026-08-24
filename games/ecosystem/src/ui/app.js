@@ -11,6 +11,8 @@ import {
 } from '../../../../shared/difficulty.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
+import { urlGameCode } from '../../../../shared/challenge.js';
+import { markMilestone } from '../../../../shared/metrics.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
   fundingOffer, raise, finalScore, expansionOpen, uniqueUsers, focusPenalty, debrief,
@@ -2219,7 +2221,9 @@ function showGameOver(frozen = false) {
 // Приветственный экран: куда человек попал, выбор стартового актива
 // («класс персонажа») и наследие из трёх игр набора.
 function showWelcome() {
-  let seedWanted = '';
+  // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
+  // ссылка приносит код партии сама, поле можно не заполнять.
+  let seedWanted = urlGameCode();
   let assetWanted = state.assetId;
   let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
@@ -2305,6 +2309,7 @@ function showWelcome() {
 
   const startGame = () => {
     track('game_start');
+    markMilestone('НОВОГРАД', 'start', seedWanted.trim() || state.seed);
     const v = seedWanted.trim();
     const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
     // Партия пересоздаётся, если поменяли сид или актив — или если это
@@ -2357,8 +2362,11 @@ function showWelcome() {
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
-  el('modal-root').querySelector('#seed-input')
-    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  const seedField = el('modal-root').querySelector('#seed-input');
+  if (seedField) {
+    seedField.value = seedWanted;
+    seedField.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
   // так же, как кнопки нижнего ряда.
@@ -2450,8 +2458,11 @@ function nextMonth() {
   state = next;
   save();
   renderAll();
+  // Маяк воронки: новичок пережил первые пять ходов
+  if (state.month === 5) markMilestone('НОВОГРАД', 'turn5', state.seed);
   if (state.over) {
     track(state.over === 'bankrupt' ? 'game_bankrupt' : 'game_finished');
+    markMilestone('НОВОГРАД', 'finale', state.seed);
     showGameOver();
   } else {
     maybeDeathFork();

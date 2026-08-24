@@ -25,6 +25,8 @@ import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
+import { urlGameCode } from '../../../../shared/challenge.js';
+import { markMilestone } from '../../../../shared/metrics.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
@@ -1745,8 +1747,11 @@ function nextMonth() {
   clearActions();
   save();
   renderAll();
+  // Маяк воронки: новичок пережил первые пять ходов
+  if (state.month === 5) markMilestone('БИЛЕТВИЛЬ', 'turn5', state.seed);
   if (state.over) {
     track(state.over === 'bankrupt' ? 'game_bankrupt' : 'game_finished');
+    markMilestone('БИЛЕТВИЛЬ', 'finale', state.seed);
     showGameOver();
   } else {
     maybeDeathFork();
@@ -2004,7 +2009,9 @@ function restart() {
 function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
-  let seedWanted = '';
+  // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
+  // ссылка приносит код партии сама, поле можно не заполнять.
+  let seedWanted = urlGameCode();
   // Сложность — настройка всего набора: выбранная здесь действует и в
   // остальных играх. Меняет она только цену финансовой команды.
   let diffWanted = state.difficulty ?? currentDifficulty();
@@ -2015,6 +2022,7 @@ function showWelcome() {
     </button>`).join('');
   const startGame = () => {
     track('game_start');
+    markMilestone('БИЛЕТВИЛЬ', 'start', seedWanted.trim() || state.seed);
     const v = seedWanted.trim();
     if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
   };
@@ -2042,8 +2050,11 @@ function showWelcome() {
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
-  el('modal-root').querySelector('#seed-input')
-    ?.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  const seedField = el('modal-root').querySelector('#seed-input');
+  if (seedField) {
+    seedField.value = seedWanted;
+    seedField.addEventListener('input', (e) => { seedWanted = e.target.value; });
+  }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
   // так же, как кнопки нижнего ряда.

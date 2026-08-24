@@ -121,7 +121,7 @@
 <ul><li><code>startCash</code> — запас прочности на ошибки;</li><li><code>courierMarketWeeklyPay</code> — жёсткость рынка труда;</li><li><code>customerBaseChurn</code> — насколько дорого обходится плохой сервис;</li><li><code>weeksTotal</code> — длительность партии;</li><li><code>SEASON_WEIGHTS</code> в <code>games/foodtech/src/model/weather.js</code> — насколько суров климат;</li><li><code>rndSaturation</code> и <code>dataSaturation</code> — как быстро открываются алгоритмы;</li><li><code>unlock</code> и <code>install</code> в массиве <code>ALGORITHMS</code> — порог доступности и цена внедрения.</li></ul>
 <p>Чтобы провести занятие только по алгоритмам, не тратя ход на разгон, выдайте студентам партию с уже накопленными <code>dataStock</code> и <code>rndStock</code> — так делают тесты в <code>games/foodtech/tests/engine.test.mjs</code> (функция <code>warmState</code>).</p>
 <p>После правок стоит прогнать <code>npm test</code>: тесты проверяют качественные свойства модели (реакция спроса на цену, отток ресторанов при высокой комиссии, сходимость P&amp;L), а не конкретные числа, поэтому переживают перебалансировку.</p>
-<p><b>Раздача студентам.</b> <code>npm run build</code> собирает <code>games/foodtech/dist/novoeda-delivery-simulator-v1.22.4.html</code> — один файл, работающий офлайн. Прогресс сохраняется в localStorage браузера.</p>
+<p><b>Раздача студентам.</b> <code>npm run build</code> собирает <code>games/foodtech/dist/novoeda-delivery-simulator-v1.23.0.html</code> — один файл, работающий офлайн. Прогресс сохраняется в localStorage браузера.</p>
   </div>
 </body>
 </html>
