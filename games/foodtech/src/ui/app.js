@@ -2105,6 +2105,9 @@ function buildFinaleCard(s, verdict) {
 function shareFinaleCard(s, verdict) {
   return shareCardImage(buildFinaleCard(s, verdict), 'novoeda-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
+    // Ссылка легла в буфер — скажем об этом: телеграм отбрасывает подпись
+    // у присланного файла, и кликабельной ссылку делает сам человек
+    if (res === 'shared-copied') toast(t('shareLinkCopied'));
   });
 }
 
