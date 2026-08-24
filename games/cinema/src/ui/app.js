@@ -2448,7 +2448,6 @@ function showGameOver() {
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2613,7 +2612,6 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
-    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });
