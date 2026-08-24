@@ -42,10 +42,10 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.23.1.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.1.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.1.html) ·
-[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.1.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.23.2.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.2.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.2.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.2.html).
 These are self-contained HTML files: double-click and they run with no network.
 
 **For teachers** there is a ready pack in one archive — the game, the guide in both
@@ -77,7 +77,7 @@ The built files are already in the repository, so the build step is only needed 
 `build.manifest.js`. They are independent: a change in the streaming game does not
 rename the delivery file and pretend it was updated too. `package.json` stays the
 version of the monorepo as a whole. The game's number
-goes into the built file name (`…-simulator-v1.23.1.html`), into the page itself and into
+goes into the built file name (`…-simulator-v1.23.2.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
@@ -395,7 +395,7 @@ games/<game>/
   src/model/…                   the rest of the world: demand, pricing, partners — per game
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.29.1.html
+  dist/kinoreka-streaming-simulator-v1.29.2.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

@@ -87,13 +87,15 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
+export function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '', startFiltered = false }) {
   if (!root || !lbEndpoint()) return;
 
   // Фильтр по коду партии: класс играет один город — сравнение честное
   // по построению. Фильтруется на клиенте по расширенному топу: сервер
   // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
-  let filterSeed = '';
+  // startFiltered включает фильтр сразу — так партия челленджа недели
+  // открывает таблицу недели, а не общий топ.
+  let filterSeed = startFiltered && seed ? seed : '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -155,6 +157,7 @@ export function lbMount({ root, t, money, game, line, myScore, submitted, onSubm
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
   const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
     <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      value="${esc(filterSeed)}"
       style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
   </div>`;

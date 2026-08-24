@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.27.1" />
+  <meta name="app-version" content="1.27.2" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3446,13 +3446,15 @@ function lbRemember(game, entry) {
   } catch { /* приватный режим */ }
 }
 
-function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '' }) {
+function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, viewOnly = false, seed = '', startFiltered = false }) {
   if (!root || !lbEndpoint()) return;
 
   // Фильтр по коду партии: класс играет один город — сравнение честное
   // по построению. Фильтруется на клиенте по расширенному топу: сервер
   // не меняется (правило набора: leaderboard.gs не деплоим отсюда).
-  let filterSeed = '';
+  // startFiltered включает фильтр сразу — так партия челленджа недели
+  // открывает таблицу недели, а не общий топ.
+  let filterSeed = startFiltered && seed ? seed : '';
 
   const esc = (s) => String(s).replace(/[&<>"]/g,
     (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -3514,6 +3516,7 @@ function lbMount({ root, t, money, game, line, myScore, submitted, onSubmitted, 
   // у которой уже есть свой заголовок «Мировая таблица», — не дублируем.
   const filterHtml = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">
     <input id="lb-seed" type="text" maxlength="40" placeholder="${t('lbSeedPlaceholder')}"
+      value="${esc(filterSeed)}"
       style="flex:1;min-width:140px;padding:6px 8px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     ${seed ? `<button class="btn small" id="lb-seed-mine" type="button">${t('lbSeedMine')}</button>` : ''}
   </div>`;
@@ -10104,6 +10107,7 @@ function showGameOver(frozen = false) {
   // Мировая таблица: живёт только там, где страница знает адрес сервера.
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -10384,6 +10388,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: gameTag(), viewOnly: true,
   });

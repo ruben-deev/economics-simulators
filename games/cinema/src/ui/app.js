@@ -8,7 +8,7 @@ import { CONFIG, SEGMENTS, GENRES, LEVERS, LEVER_GROUPS, ALGORITHMS, VERDICT } f
 import { RIVAL_RELEASES, rivalEffect, seasonOf } from '../model/market.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import { rivalSubs } from '../model/rival.js';
 import { goalProgress } from '../model/board.js';
@@ -2448,6 +2448,7 @@ function showGameOver() {
   // Отправка — по явной кнопке; факт отправки помнится внутри партии.
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t,
     money,
@@ -2609,6 +2610,7 @@ function showWorldTop() {
     [{ label: t('helpModalOk'), primary: true }]);
   lbMount({
     seed: state.seed,
+    startFiltered: state.seed === challengeCode(),
     root: el('modal-root').querySelector('#lb-root'),
     t, money, game: taggedGame(GAME_TAG, state.difficulty), viewOnly: true,
   });

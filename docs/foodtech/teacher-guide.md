@@ -260,5 +260,5 @@
 (реакция спроса на цену, отток ресторанов при высокой комиссии, сходимость P&L),
 а не конкретные числа, поэтому переживают перебалансировку.
 
-**Раздача студентам.** `npm run build` собирает `games/foodtech/dist/novoeda-delivery-simulator-v1.23.1.html` — один файл,
+**Раздача студентам.** `npm run build` собирает `games/foodtech/dist/novoeda-delivery-simulator-v1.23.2.html` — один файл,
 работающий офлайн. Прогресс сохраняется в localStorage браузера.
