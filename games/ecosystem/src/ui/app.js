@@ -1984,7 +1984,7 @@ function recordsBlockHtml(s) {
 // Полный адрес: игры живут в подкаталоге, голый домен ведёт мимо сайта
 const SHARE_SITE = 'ruben-deev.github.io/economics-simulators';
 const SHARE_LINK = 'https://ruben-deev.github.io/economics-simulators/';
-function shareFinaleCard(s, verdict) {
+function buildFinaleCard(s, verdict) {
   const hist = state.history.slice(0, s.months);
   const marksIn = hist.map((r) => ({
     value: r.equityValue,
@@ -2018,7 +2018,11 @@ function shareFinaleCard(s, verdict) {
     urlBold: SHARE_SITE,
     urlNote: t('shareUrlNote'),
   }, portrait);
-  return shareCardImage(canvas, 'novograd-card.png', SHARE_LINK).then((res) => {
+  return canvas;
+}
+
+function shareFinaleCard(s, verdict) {
+  return shareCardImage(buildFinaleCard(s, verdict), 'novograd-card.png', SHARE_LINK).then((res) => {
     if (res === 'saved') toast(t('shareSaved'));
   });
 }
@@ -2154,6 +2158,13 @@ function showGameOver(frozen = false) {
       asset: tx(assetById(state.assetId).short),
     })}</p>
     <p class="funding-note quip">${t(`gradeQuip${gradeTier}`)}</p>
+    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+      <img id="share-preview" alt="" style="width:120px;max-width:34%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+      <div style="flex:1;min-width:160px">
+        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+      </div>
+    </div>
     ${secretHtml}
     ${crownHtml}
     ${backHtml}
@@ -2171,7 +2182,6 @@ function showGameOver(frozen = false) {
       <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
       <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
       <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-      <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
     </div>
     ${recordsBlockHtml(s)}
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
@@ -2216,6 +2226,13 @@ function showGameOver(frozen = false) {
   });
   el('modal-root').querySelector('#csv-export')?.addEventListener('click', exportCsv);
   el('modal-root').querySelector('#share-img')?.addEventListener('click', () => { shareFinaleCard(s, grade); });
+  // Превью строится из того же canvas, что уходит в шаринг: видно, чем
+  // именно делишься, ещё до нажатия. Клик по превью — тоже поделиться.
+  const sharePreview = el('modal-root').querySelector('#share-preview');
+  if (sharePreview) {
+    try { sharePreview.src = buildFinaleCard(s, grade).toDataURL('image/png'); } catch { sharePreview.remove(); }
+    sharePreview.addEventListener('click', () => { shareFinaleCard(s, grade); });
+  }
 }
 
 // Приветственный экран: куда человек попал, выбор стартового актива

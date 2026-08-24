@@ -724,6 +724,10 @@ score = valuation × your stake`,
   // --------------------------------------------------------------------------
   // Карточка «поделиться»: картинка для ленты, собирается из истории партии
   shareBtn: { ru: 'Поделиться картинкой', en: 'Share as image' },
+  tryOthersText: { ru: 'Или смените индустрию — те же законы экономики, другой бизнес:', en: 'Or switch industries — the same economics, a different business:' },
+  tryOthersA: { ru: '🎬 КИНОРЕКА — стриминг', en: '🎬 KINOREKA — streaming' },
+  tryOthersB: { ru: '🎟️ БИЛЕТВИЛЬ — билеты', en: '🎟️ TICKETGRAD — ticketing' },
+  shareNote: { ru: 'Карточка результата: график партии и итог одной картинкой — для чата или сторис.', en: 'Your result card: the run and the score in one image — for chats or stories.' },
   shareSub: { ru: 'браузерный симулятор экономики', en: 'a browser economics sim' },
   shareHookWin: { ru: 'Я год управлял доставкой еды.', en: 'I ran a food-delivery company for a year.' },
   shareHookWinAsk: { ru: 'Обойдёте меня?', en: 'Think you can beat me?' },

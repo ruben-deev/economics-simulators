@@ -3,7 +3,7 @@
 
 export default {
   name: 'cinema',
-  version: '1.29.10',
+  version: '1.29.11',
   title: 'КИНОРЕКА · streaming economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
