@@ -207,6 +207,20 @@ export const STRINGS = {
     en: 'this turn’s order: buy {buy} · sell {sell}',
   },
   scootPlanTitle: { ru: 'План года: улица или склад', en: 'Year plan: street or storage' },
+  scootPriceTitle: { ru: 'Тариф поездки', en: 'Ride fare' },
+  scootPriceHint: {
+    ru: 'Дорогой тариф снимает сливки, когда спрос упирается в парк (лето); базовый — рабочая середина; дешёвый — маркетинг: маржа тонкая, зато райдеры прирастают быстрее и вливаются в экосистему.',
+    en: 'A premium fare skims the queue when demand outstrips the fleet (summer); base is the workhorse; cheap is marketing — thin margin, but riders join faster and feed the ecosystem.',
+  },
+  scootMonth: {
+    ru: 'За месяц: {rides} поездок · выручка {rev} · расходы {costs} → вклад {contrib}',
+    en: 'This month: {rides} rides · revenue {rev} · costs {costs} → contribution {contrib}',
+  },
+  scootMonthStored: {
+    ru: 'За месяц: парк на складе — расходы {costs}, райдеры тают',
+    en: 'This month: fleet in storage — {costs} in costs, riders drifting away',
+  },
+  mapScoot: { ru: 'Самокаты', en: 'Scooters' },
   scootPlanHint: {
     ru: 'Клик по месяцу переключает 🛴 улицу и 📦 склад. Столбик — сезонный спрос: июль возит в десятки раз больше января, а зимняя улица изнашивает парк вдвое быстрее — реагенты и морозы.',
     en: 'Click a month to switch between 🛴 street and 📦 storage. The bar is seasonal demand: July carries an order of magnitude more than January, and a winter street month wears the fleet twice as fast — road salt and frost.',

@@ -843,7 +843,7 @@ export function step(prevState, input = {}) {
   let revenueScoot = 0; let scootRides = 0; let scootCosts = 0;
   let scootCapex = 0; let scootResale = 0;
   let scootBought = 0; let scootSold = 0; let scootScrapped = 0;
-  let scootStreet = false;
+  let scootStreet = false; let scootPrice = sc.ridePrice;
   if (state.endless) {
     // Закупка: очередь решения исполняется и сбрасывается — это заказ,
     // а не ставка бюджета
@@ -879,11 +879,21 @@ export function step(prevState, input = {}) {
     scootStreet = fleet > 0
       && (mods.scootForceStreet || !plan || plan[calIdx] !== 'store');
     if (scootStreet) {
-      // Поездки: спрос города против ёмкости парка. Лишние самокаты зимой
+      // Тариф поездки — режимный рычаг: чужие значения приводятся к
+      // ближайшему режиму, чтобы сейв со старой версии не сломал спрос
+      const wanted = Number(decisions.scooterPrice) || sc.ridePrice;
+      scootPrice = sc.priceModes.reduce((best, m) => (
+        Math.abs(m - wanted) < Math.abs(best - wanted) ? m : best), sc.priceModes[0]);
+      // Поездки: спрос города против ёмкости парка. Спрос отвечает на тариф
+      // по эластичности; когда парк упирается в спрос, дорогой тариф снимает
+      // сливки — поездок меньше не становится. Лишние самокаты зимой
       // не возят никого — но стареть продолжают.
-      const demand = sc.cityDemandRides * seasonScooters(month) * (mods.scootDemandMult ?? 1);
+      const eps = scootPrice > sc.ridePrice ? sc.priceElasticityUp : sc.priceElasticity;
+      const priceMult = Math.pow(sc.ridePrice / scootPrice, eps);
+      const demand = sc.cityDemandRides * seasonScooters(month) * priceMult
+        * (mods.scootDemandMult ?? 1);
       scootRides = Math.round(Math.min(demand, fleet * sc.ridesPerUnitMonth));
-      revenueScoot = scootRides * sc.ridePrice;
+      revenueScoot = scootRides * scootPrice;
       scootCosts += fleet * sc.maintenancePerUnit;
       // Износ — только уличный: месяц на улице съедает месяц жизни.
       // Зимняя улица съедает два: реагенты, соль и морозы убивают батареи.
@@ -893,9 +903,13 @@ export function step(prevState, input = {}) {
         .filter((c) => c.wear >= sc.streetLifeMonths)
         .reduce((s, c) => s + c.units, 0);
       state.scoot.cohorts = state.scoot.cohorts.filter((c) => c.wear < sc.streetLifeMonths);
-      // Райдеры подтягиваются к ёмкости живого парка
+      // Райдеры подтягиваются к ёмкости живого парка. Дешёвый тариф работает
+      // маркетингом и ускоряет набор, дорогой — тормозит: райдеры дальше
+      // монетизируются склейкой (bothScoot → multiUsers → Plus)
+      const adoptMult = Math.pow(sc.ridePrice / scootPrice, sc.adoptElasticity);
       const capRiders = scooterFleet(state) * sc.ridersPerUnit;
-      state.scoot.users += Math.round((capRiders - state.scoot.users) * sc.riderAdopt);
+      state.scoot.users += Math.round(Math.max(0, capRiders - state.scoot.users)
+        * Math.min(0.95, sc.riderAdopt * adoptMult));
     } else {
       if (fleet > 0) scootCosts += fleet * sc.storagePerUnit;
       // Без самокатов на улице привычка тает — склейка зимой проседает
@@ -910,7 +924,7 @@ export function step(prevState, input = {}) {
   }
   const scootOn = scooterFleet(state) > 0 || scootSold > 0 || scootScrapped > 0;
   const scootFullContribution = state.endless
-    ? scootRides * (sc.ridePrice - sc.rideVarCost) - scootCosts : 0;
+    ? scootRides * (scootPrice - sc.rideVarCost) - scootCosts : 0;
 
   // --- 8. Подписка «Новоград Plus»: покупка удержания за маржу ---
   let plusConv = 0; let plusChurned = 0; let revenuePlus = 0; let plusPerkCost = 0;
@@ -948,7 +962,7 @@ export function step(prevState, input = {}) {
     + revenueTickets + revenueScoot;
   const contribution = contribFood + contribTaxi + contribEcom
     + (revenuePlus - plusPerkCost) + revenueTickets * 0.7
-    + scootRides * (sc.ridePrice - sc.rideVarCost);
+    + scootRides * (scootPrice - sc.rideVarCost);
   const fixedFood = asset.fixedMonthly * crisisFixedMult;
   const fixedTaxi = (taxiOn ? taxiDef.fixedMonthly : 0) * crisisFixedMult;
   // Фикс е-кома — это склады: у площадки их нет, товар лежит у продавца
@@ -1141,6 +1155,8 @@ export function step(prevState, input = {}) {
       bothScootUsers: state.bothScoot,
       revenueScoot,
       scootRides,
+      scootPrice,
+      scootCosts,
       scootFullContribution,
       scootCapex,
       scootResale,

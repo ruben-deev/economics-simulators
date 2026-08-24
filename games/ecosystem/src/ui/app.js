@@ -629,7 +629,19 @@ function renderEcoMap() {
   const spokeY = (taxiOn || ecomOn) ? 352 : 296;
   const tx2 = narrow ? 92 : 500; const ty2 = narrow ? spokeY : 78;
   const ex2 = narrow ? 268 : 500; const ey2 = narrow ? spokeY : 192;
-  const viewBox = narrow ? `0 0 360 ${(taxiOn || ecomOn) ? 448 : 330}` : '0 0 700 268';
+  // Самокаты — третья спица года конгломерата: карта обязана показывать
+  // вертикаль, в которую вложены живые деньги, а не только такси с е-комом
+  const scootUsers = state.endless ? (state.scoot?.users ?? 0) : 0;
+  const scootFleetNow = state.endless ? scooterFleet(state) : 0;
+  const scootMapOn = state.endless && (scootFleetNow > 0 || scootUsers > 0);
+  const scootShow = state.endless;
+  const sx2 = narrow ? 180 : 500;
+  const sy2 = narrow ? spokeY + 112 : 296;
+  const rScoot = scootMapOn ? 10 + 30 * Math.sqrt(scootUsers / 300_000) : 14;
+  const bothScootU = state.endless ? (state.bothScoot ?? 0) : 0;
+  const viewBox = narrow
+    ? `0 0 360 ${scootShow ? 556 : (taxiOn || ecomOn) ? 448 : 330}`
+    : `0 0 700 ${scootShow ? 372 : 268}`;
   const rTaxi = taxiOn ? 10 + 36 * Math.sqrt(taxiU / 300_000) : 14;
   const rEcom = ecomOn ? 10 + 34 * Math.sqrt(ecomU / 300_000) : 14;
   const rBoth = taxiOn && bothU > 500 ? 6 + 20 * Math.sqrt(bothU / 150_000) : 0;
@@ -755,6 +767,7 @@ function renderEcoMap() {
       <text x="${narrow ? 12 : 14}" y="${narrow ? 20 : 22}" class="m-muted">${t('mapCity', { adults: compact(CONFIG.cityAdults) })}</text>
       ${link(cx1, cy, rFood, tx2, ty2, taxiOn ? rTaxi : 14, bothU > 500)}
       ${ecomOn || !taxiOn ? link(cx1, cy, rFood, ex2, ey2, ecomOn ? rEcom : 14, bothEcomU > 500) : ''}
+      ${scootShow ? link(cx1, cy, rFood, sx2, sy2, scootMapOn ? rScoot : 14, bothScootU > 500) : ''}
       ${plusRing}
       <g class="node" data-jump="group:food">
         <circle cx="${cx1}" cy="${cy}" r="${rFood}" fill="url(#g-hub)" stroke="${PALETTE[1]}" stroke-width="1.5"/>
@@ -763,8 +776,13 @@ function renderEcoMap() {
       </g>
       ${spoke(taxiOn, tx2, ty2, rTaxi, taxi.icon, t('mapTaxi'), taxiU, 'group:taxi', t('mapTaxiOff'))}
       ${spoke(ecomOn, ex2, ey2, rEcom, ecomDef.icon, t('mapEcom'), ecomU, 'group:ecom', t('mapEcomOff'))}
+      ${scootShow ? spoke(scootMapOn, sx2, sy2, rScoot, '🛴', t('mapScoot'), scootUsers,
+        'panel:verticals', t('mapScoot')) : ''}
       ${bothNode(rBoth, midT, bothU, t('mapBoth'))}
       ${bothNode(rBothE, midE, bothEcomU, '')}
+      ${scootMapOn && bothScootU > 500 ? bothNode(
+        6 + 20 * Math.sqrt(bothScootU / 150_000),
+        arcMid(cx1, cy, rFood, sx2, sy2, rScoot), bothScootU, '') : ''}
       ${flowLabel(midT.x, midT.y + (rBoth || 8) + 14,
         r && r.crossConv > 0.5 ? `${t('mapCross')} +${compact(r.crossConv)}` : '', PALETTE[0])}
       ${flowLabel(midE.x, midE.y + (rBothE || 8) + 14,
@@ -983,6 +1001,21 @@ function renderVerticals() {
         units: num(fleet), wear: pct(wearAvg, 0),
         riders: compact(state.scoot?.users ?? 0), residual: money(residual),
       })}</div>` : ''}
+      ${r && r.scootOn ? `<div class="district-meta ${(r.scootFullContribution ?? 0) >= 0 ? 'pos' : 'neg'}">${r.scootStreet
+        ? t('scootMonth', {
+          rides: compact(r.scootRides ?? 0), rev: money(r.revenueScoot ?? 0),
+          costs: money(r.scootCosts ?? 0),
+          contrib: ((r.scootFullContribution ?? 0) >= 0 ? '+' : '') + money(r.scootFullContribution ?? 0),
+        })
+        : t('scootMonthStored', { costs: money(r.scootCosts ?? 0) })}</div>` : ''}
+      <div class="district-meta" style="margin-top:6px">${t('scootPriceTitle')}</div>
+      <div class="policy-seg" data-scoot-price>${sc.priceModes.map((m) => {
+        const wanted = Number(state.decisions.scooterPrice) || sc.ridePrice;
+        const active = sc.priceModes.reduce((b, x) => (
+          Math.abs(x - wanted) < Math.abs(b - wanted) ? x : b), sc.priceModes[0]);
+        return `<button type="button" class="${m === active ? 'active' : ''}" data-price="${m}">${m} ₽</button>`;
+      }).join('')}</div>
+      <div class="district-meta">${t('scootPriceHint')}</div>
       <div class="scoot-actions">
         <button class="btn tiny" data-scoot-buy>${t('scootBuy', {
           units: sc.batchUnits, cost: money(batchCost) })}</button>
@@ -1031,6 +1064,12 @@ function renderVerticals() {
     if (sellBtn) sellBtn.addEventListener('click', () => {
       state.decisions.scooterSell = Math.floor(state.decisions.scooterSell ?? 0) + 1;
       renderVerticals(); save();
+    });
+    scootRoot.querySelectorAll('[data-scoot-price] [data-price]').forEach((b) => {
+      b.addEventListener('click', () => {
+        state.decisions.scooterPrice = Number(b.dataset.price);
+        renderVerticals(); save();
+      });
     });
     scootRoot.querySelectorAll('[data-scoot-cell]').forEach((cell) => {
       cell.addEventListener('click', () => {

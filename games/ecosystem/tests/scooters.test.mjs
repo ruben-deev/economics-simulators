@@ -178,3 +178,55 @@ test('DEFAULT_DECISIONS не таскает общий массив плана �
   assert.equal(b.decisions.scooterPlan[0], 'street');
   assert.ok(!('scooterPlan' in DEFAULT_DECISIONS));
 });
+
+// --- Тариф поездки: режимный рычаг с асимметричной эластичностью ---
+
+const STREET_ALL = Array(12).fill('street');
+
+test('тариф: при запасе ёмкости дешёвый добирает поездки, дорогой режет', () => {
+  // Ход тарифа приходится на февраль (спрос 38 тыс. поездок): 6 партий дают
+  // ёмкость 69 тыс. — парк заведомо свободен, тариф двигает именно спрос
+  const mk = (price) => {
+    const s = endlessState('scoot-price-slack');
+    const bought = step(s, { decisions: { scooterBuy: 6, scooterPlan: STORE_ALL } }).state;
+    return step(bought, { decisions: { scooterPlan: STREET_ALL, scooterPrice: price } }).report;
+  };
+  const cheap = mk(99); const base = mk(130); const premium = mk(165);
+  assert.ok(cheap.scootRides > base.scootRides, 'дешевле — поездок больше');
+  assert.ok(premium.scootRides < base.scootRides, 'дороже — поездок меньше');
+  // Асимметрия: подорожание на режим режет спрос сильнее, чем удешевление добавляет
+  const up = base.scootRides / premium.scootRides;
+  const down = cheap.scootRides / base.scootRides;
+  assert.ok(up > down, 'вверх спрос отвечает круче, чем вниз');
+});
+
+test('тариф: при спросе выше ёмкости дорогой режим снимает сливки', () => {
+  // 1 партия против февральского спроса: парк — узкое место даже на 165
+  const mk = (price) => {
+    const s = endlessState('scoot-price-bound');
+    const bought = step(s, { decisions: { scooterBuy: 1, scooterPlan: STORE_ALL } }).state;
+    return step(bought, { decisions: { scooterPlan: STREET_ALL, scooterPrice: price } }).report;
+  };
+  const base = mk(130); const premium = mk(165);
+  assert.equal(base.scootRides, sc.batchUnits * sc.ridesPerUnitMonth,
+    'на базовом тарифе парк загружен полностью');
+  assert.ok(premium.scootFullContribution > base.scootFullContribution,
+    'вклад премиального тарифа выше: почти те же поездки, маржа толще');
+});
+
+test('тариф: чужое значение приводится к ближайшему режиму', () => {
+  const s = endlessState('scoot-price-snap');
+  const bought = step(s, { decisions: { scooterBuy: 2, scooterPlan: STORE_ALL } }).state;
+  const odd = step(bought, { decisions: { scooterPlan: STREET_ALL, scooterPrice: 141 } }).report;
+  assert.equal(odd.scootPrice, 130, '141 — это режим 130, а не собственный тариф');
+});
+
+test('тариф: дешёвый набирает райдеров быстрее дорогого', () => {
+  const mk = (price) => {
+    const s = endlessState('scoot-price-adopt');
+    const bought = step(s, { decisions: { scooterBuy: 2, scooterPlan: STORE_ALL } }).state;
+    return step(bought, { decisions: { scooterPlan: STREET_ALL, scooterPrice: price } }).state;
+  };
+  assert.ok(mk(99).scoot.users > mk(165).scoot.users,
+    'дешёвый тариф — ещё и маркетинг: райдеры прирастают быстрее');
+});
