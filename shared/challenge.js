@@ -29,3 +29,29 @@ export function urlGameCode() {
     return '';
   }
 }
+
+// --- Город недели по умолчанию -------------------------------------------
+// Новая партия (чистое устройство или «заново») сама предлагает код недели,
+// пока он на этом устройстве ещё не игрался в этой игре. Отметка ставится
+// при старте партии на коде недели; на следующей неделе код другой — и
+// приглашение возвращается само. Игрок всегда может стереть код и получить
+// случайный город: это приглашение, а не принуждение.
+
+const playedKey = (game, code) => `weekly-played-${game}-${code}`;
+
+/** Код недели, если он ещё не игрался в этой игре на этом устройстве. */
+export function weeklySeedToPlay(game) {
+  const code = challengeCode();
+  try {
+    return localStorage.getItem(playedKey(game, code)) ? '' : code;
+  } catch {
+    // Приватный режим: не навязываем неделю снова и снова
+    return '';
+  }
+}
+
+/** Отметить: на этом устройстве неделя в этой игре сыграна. */
+export function markWeeklyPlayed(game, seed) {
+  if (!seed || seed !== challengeCode()) return;
+  try { localStorage.setItem(playedKey(game, seed), '1'); } catch { /* не критично */ }
+}

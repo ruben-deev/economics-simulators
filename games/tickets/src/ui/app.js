@@ -25,7 +25,7 @@ import { goalProgress } from '../model/board.js';
 import { crisisById, resolutionCost } from '../model/crises.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode, weeklySeedToPlay, markWeeklyPlayed } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
@@ -2012,7 +2012,8 @@ function showWelcome() {
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
   // ссылка приносит код партии сама, поле можно не заполнять.
-  let seedWanted = urlGameCode();
+  // Ссылка важнее приглашения; без неё новая партия предлагает город недели
+  let seedWanted = urlGameCode() || weeklySeedToPlay('БИЛЕТВИЛЬ');
   // Сложность — настройка всего набора: выбранная здесь действует и в
   // остальных играх. Меняет она только цену финансовой команды.
   let diffWanted = state.difficulty ?? currentDifficulty();
@@ -2024,6 +2025,7 @@ function showWelcome() {
   const startGame = () => {
     track('game_start');
     markMilestone('БИЛЕТВИЛЬ', 'start', seedWanted.trim() || state.seed);
+    markWeeklyPlayed('БИЛЕТВИЛЬ', (seedWanted.trim() || state.seed));
     const v = seedWanted.trim();
     if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
   };
@@ -2044,6 +2046,7 @@ function showWelcome() {
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     </label>
     <p class="funding-note">${t('seedNote')}</p>
+    ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeMore'), onClick: showHelp },

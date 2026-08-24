@@ -11,7 +11,7 @@ import {
 } from '../../../../shared/difficulty.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode, challengeCode } from '../../../../shared/challenge.js';
+import { urlGameCode, challengeCode, weeklySeedToPlay, markWeeklyPlayed } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import {
   createInitialState, step, explain, valuation, sumOfParts,
@@ -2224,7 +2224,8 @@ function showGameOver(frozen = false) {
 function showWelcome() {
   // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
   // ссылка приносит код партии сама, поле можно не заполнять.
-  let seedWanted = urlGameCode();
+  // Ссылка важнее приглашения; без неё новая партия предлагает город недели
+  let seedWanted = urlGameCode() || weeklySeedToPlay('НОВОГРАД');
   let assetWanted = state.assetId;
   let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
@@ -2311,6 +2312,7 @@ function showWelcome() {
   const startGame = () => {
     track('game_start');
     markMilestone('НОВОГРАД', 'start', seedWanted.trim() || state.seed);
+    markWeeklyPlayed('НОВОГРАД', (seedWanted.trim() || state.seed));
     const v = seedWanted.trim();
     const seed = v || `novograd-${Math.floor(Math.random() * 1e6)}`;
     // Партия пересоздаётся, если поменяли сид или актив — или если это
@@ -2357,6 +2359,7 @@ function showWelcome() {
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
     </label>
     <p class="funding-note">${t('seedNote')}</p>
+    ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeMore'), onClick: showHelp },
