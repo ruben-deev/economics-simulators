@@ -138,7 +138,7 @@ Measured anchor strategies (6 codes, bankruptcy = 0):
 |---|---|---|---|---|
 | NOVOYEDA | 3.90 | 5.57 | 9.87 | 8.30 bn |
 | KINOREKA | 15.29 | 15.49 | bankrupt | 35.80 bn |
-| BILETVILLE | 0.84 | 2.13 | 5.01 | 5.58 bn |
+| TICKETGRAD | 0.84 | 2.13 | 5.01 | 5.58 bn |
 
 These measurements produce two different bars — and it matters not to
 confuse them:
@@ -153,7 +153,7 @@ confuse them:
 * **the unit of carry** (`solid`) — a solid finale: $55M / $50M / $40M.
   KINOREKA was recalculated after buzz fatigue and the deduction of unearned
   annual months from the score: its whole world became roughly twice as modest.
-  The ceiling (×2) is a polished run. BILETVILLE was recalculated after the
+  The ceiling (×2) is a polished run. TICKETGRAD was recalculated after the
   crisis revival: resolving crises lifted its whole scale nearly twofold.
 
 The games’ own verdict scales are set from the same measurements — each game
@@ -226,7 +226,7 @@ typical finale of each source game by level:
 |---|---|---|---|
 | NOVOYEDA | ₽8.30bn | ×1.062 | ×0.963 |
 | KINOREKA | ₽35.80bn | ×1.036 | ×0.977 |
-| BILETVILLE | ₽5.58bn | ×1.052 | ×0.984 |
+| TICKETGRAD | ₽5.58bn | ×1.052 | ×0.984 |
 
 The multipliers spread by 1.03× on easy and 1.02× on hard. A player who
 finished any of the three games on the same level brings essentially the same

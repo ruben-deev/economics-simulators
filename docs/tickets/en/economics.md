@@ -1,6 +1,6 @@
 # The ticketing model: formulas and assumptions
 
-"BILETVILLE" is a teaching model of a two-sided market. This page collects the
+"TICKETGRAD" is a teaching model of a two-sided market. This page collects the
 formulas it computes with and the assumptions it makes. All numbers live in
 `games/tickets/src/model/config.js` and can be changed without touching logic.
 

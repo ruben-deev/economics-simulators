@@ -105,7 +105,7 @@
 > expense. The ideal customer paid in January and left for the summer.
 > Also, there's a rival, and he's not asleep.
 >
-> **🎟️ BILETVILLE — ticketing.** Billions pass through your service.
+> **🎟️ TICKETGRAD — ticketing.** Billions pass through your service.
 > None of them are yours. You live on percentages, and the bank collects
 > its share from every ticket before you do.
 >

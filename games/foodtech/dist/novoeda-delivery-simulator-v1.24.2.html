@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.24.1" />
+  <meta name="app-version" content="1.24.2" />
   <meta name="app-build-date" content="2026-08-24" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -333,7 +333,13 @@ input[type="range"]:disabled { opacity: 0.45; }
   padding: 9px 11px; background: var(--panel-2); cursor: pointer; color: var(--text);
   transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
 }
-.event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
+/* Подсветка наведения — только там, где наведение существует. На тачскрине
+   :hover «залипает» на последней тронутой кнопке, и рядом с настоящим
+   выбором появлялась вторая жёлтая рамка — выглядело как два выбранных
+   уровня сложности сразу. */
+@media (hover: hover) {
+  .event-option:hover { border-color: var(--warn); background: rgba(251, 191, 36, 0.07); transform: translateY(-1px); }
+}
 .event-option.selected { border-color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .event-option b { display: block; margin-bottom: 3px; font-size: 13px; }
 .event-option span { color: var(--muted); font-size: 11px; }
