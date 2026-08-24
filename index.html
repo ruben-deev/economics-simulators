@@ -48,11 +48,12 @@
     /* Кнопка «Играть» живёт в шапке карточки: до неё не нужно листать
        описание — на планшете и телефоне это был целый экран текста */
     .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .card-head .card-play {
+    .card-play {
       text-decoration: none; border-radius: 10px; padding: 10px 22px;
       font-weight: 700; font-size: 15px; white-space: nowrap;
       background: var(--accent); color: #06210f;
     }
+    .eco-head .card-play { align-self: center; }
     .card h2 { margin: 0; font-size: 18px; }
     .card .sub { color: var(--muted); font-size: 12px; margin: -6px 0 0; }
     .card p { margin: 0; line-height: 1.6; color: var(--text); }
