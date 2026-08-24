@@ -19,6 +19,11 @@
   <meta property="og:image:height" content="1260" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://ruben-deev.github.io/economics-simulators/social-card.png" />
+  <!-- PWA: сайт можно поставить на телефон — «Добавить на экран „Домой“».
+       Воркер кэширует то, что человек открывал, и отдаёт это без сети. -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b1120" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
   <!-- Иконка вкладки: SVG в data-URI. Внешнего файла нет намеренно —
        раздаваемая сборка одним файлом должна оставаться самодостаточной. -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E🏙️%3C/text%3E%3C/svg%3E" />
@@ -194,6 +199,8 @@
          не доходило — по отзывам игроков её не замечали вовсе. Настройка
          редкая (её трогают один раз за всё знакомство с набором), а карточка
          игры — то, ради чего пришли. -->
+    <section class="card series-card" id="challenge-card"></section>
+
     <section class="card series-card" id="difficulty-card"></section>
 
     <p class="home-foot" id="home-foot"></p>
@@ -212,6 +219,7 @@
       legacyUnlocks, conglomerateUnlocked, seriesScorecard, resetEcosystemProgress,
     } from './shared/meta.js';
     import { lbTop, lbMine, lbEndpoint } from './shared/leaderboard.js';
+    import { challengeCode } from './shared/challenge.js';
     import { money } from './shared/format.js';
     import {
       DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
@@ -279,6 +287,31 @@
           renderTops();
         });
       });
+    }
+
+    // Челлендж недели: один город на всех. Код детерминирован от даты,
+    // поэтому никакого сервера не нужно: любой, кто открыл витрину на этой
+    // неделе, видит тот же код — и в мировой таблице соревнуется с теми,
+    // кто ввёл его же. Ссылки несут код с собой (?code=…): экран
+    // приветствия игры подставит его в поле сам.
+    function renderChallenge() {
+      const node = document.getElementById('challenge-card');
+      if (!node) return;
+      const ru = getLang() === 'ru';
+      const code = challengeCode();
+      const link = (path) => `${path}?code=${encodeURIComponent(code)}`;
+      node.innerHTML = `<div class="series-head">
+          <b>🏆 ${ru ? 'Челлендж недели' : 'Challenge of the week'}</b>
+          <span>${ru ? 'код партии' : 'game code'}: <b>${code}</b></span>
+        </div>
+        <p class="sub" style="margin-top:8px">${ru
+          ? 'Один город на всех до воскресенья. Откройте игру по ссылке ниже — код партии подставится сам — и сравните счёт в мировой таблице: фильтр по этому коду показывает только участников недели.'
+          : 'One city for everyone until Sunday. Open a game via the links below — the game code fills itself in — and compare scores on the world leaderboard: filtering by this code shows only this week’s players.'}</p>
+        <p class="sub" style="margin-top:6px">
+          <a href="${link('games/foodtech/index.html')}">🛵 ${ru ? 'НОВОЕДА' : 'NOVOEDA'}</a> ·
+          <a href="${link('games/cinema/index.html')}">🎬 ${ru ? 'КИНОРЕКА' : 'KINOREKA'}</a> ·
+          <a href="${link('games/tickets/index.html')}">🎟️ ${ru ? 'БИЛЕТВИЛЬ' : 'BILETVILLE'}</a> ·
+          <a href="${link('games/ecosystem/index.html')}">🏙️ ${ru ? 'НОВОГРАД' : 'NOVOGRAD'}</a></p>`;
     }
 
     // Путь серии: одна строка о том, где игрок на пути из четырёх игр.
@@ -399,8 +432,8 @@
       },
       play: { ru: 'Играть', en: 'Play' },
       foot: {
-        ru: 'Игры работают в браузере, без установки. Разбор моделей: <a href="docs/foodtech/economics.html">доставка</a> · <a href="docs/cinema/economics.html">кинотеатр</a> · <a href="docs/tickets/economics.html">билеты</a> · <a href="docs/ecosystem/economics.html">экосистема</a>. Сценарии занятий для преподавателя: <a href="docs/foodtech/teacher-guide.html">доставка</a> · <a href="docs/cinema/teacher-guide.html">кинотеатр</a> · <a href="docs/tickets/teacher-guide.html">билеты</a> · <a href="docs/ecosystem/teacher-guide.html">экосистема</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.<br>Все совпадения с реальными экосистемами случайны. Особенно неслучайные.',
-        en: 'The games run in a browser, nothing to install. Model write-ups: <a href="docs/foodtech/en/economics.html">delivery</a> · <a href="docs/cinema/en/economics.html">streaming</a> · <a href="docs/tickets/en/economics.html">ticketing</a> · <a href="docs/ecosystem/en/economics.html">ecosystem</a>. Lesson plans for teachers: <a href="docs/foodtech/en/teacher-guide.html">delivery</a> · <a href="docs/cinema/en/teacher-guide.html">streaming</a> · <a href="docs/tickets/en/teacher-guide.html">ticketing</a> · <a href="docs/ecosystem/en/teacher-guide.html">ecosystem</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.<br>Any resemblance to real ecosystems is coincidental. Especially the non-coincidental kind.',
+        ru: 'Игры работают в браузере, без установки. Разбор моделей: <a href="docs/foodtech/economics.html">доставка</a> · <a href="docs/cinema/economics.html">кинотеатр</a> · <a href="docs/tickets/economics.html">билеты</a> · <a href="docs/ecosystem/economics.html">экосистема</a>. Сценарии занятий для преподавателя: <a href="docs/foodtech/teacher-guide.html">доставка</a> · <a href="docs/cinema/teacher-guide.html">кинотеатр</a> · <a href="docs/tickets/teacher-guide.html">билеты</a> · <a href="docs/ecosystem/teacher-guide.html">экосистема</a>. Пакет преподавателя одним архивом (игра + методичка + шаблон сбора работ): <a href="downloads/novoeda-teacher-pack.zip">доставка</a> · <a href="downloads/kinoreka-teacher-pack.zip">кинотеатр</a> · <a href="downloads/biletville-teacher-pack.zip">билеты</a> · <a href="downloads/novograd-teacher-pack.zip">экосистема</a>.<br>Автор — <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · лицензия <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: свободно для учёбы и некоммерческого использования с указанием автора.<br>Все совпадения с реальными экосистемами случайны. Особенно неслучайные.<br>У серии есть секретная концовка. Больше мы ничего не скажем. 📎',
+        en: 'The games run in a browser, nothing to install. Model write-ups: <a href="docs/foodtech/en/economics.html">delivery</a> · <a href="docs/cinema/en/economics.html">streaming</a> · <a href="docs/tickets/en/economics.html">ticketing</a> · <a href="docs/ecosystem/en/economics.html">ecosystem</a>. Lesson plans for teachers: <a href="docs/foodtech/en/teacher-guide.html">delivery</a> · <a href="docs/cinema/en/teacher-guide.html">streaming</a> · <a href="docs/tickets/en/teacher-guide.html">ticketing</a> · <a href="docs/ecosystem/en/teacher-guide.html">ecosystem</a>. A teacher pack in one archive (game + guide + a results-collection template): <a href="downloads/novoeda-teacher-pack.zip">delivery</a> · <a href="downloads/kinoreka-teacher-pack.zip">streaming</a> · <a href="downloads/biletville-teacher-pack.zip">ticketing</a> · <a href="downloads/novograd-teacher-pack.zip">ecosystem</a>.<br>Made by <b><a href="https://www.linkedin.com/in/ruben-deev" target="_blank" rel="noopener">Ruben Deev</a></b> · licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>: free for education and non-commercial use with attribution.<br>Any resemblance to real ecosystems is coincidental. Especially the non-coincidental kind.<br>The series has a secret ending. That is all we are going to say. 📎',
       },
       langBtn: { ru: 'EN', en: 'RU' },
     };
@@ -438,6 +471,7 @@
       set('eco-play', t('play'));
       renderConglomeratePath();
       renderTops();
+      renderChallenge();
       renderDifficulty();
       renderSeries();
 
@@ -458,6 +492,13 @@
     });
 
     render();
+  </script>
+  <script>
+    // Service worker включается только на настоящем сайте: с file:// и в
+    // предпросмотрах его нет, и страница работает как обычно.
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>

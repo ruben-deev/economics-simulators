@@ -246,3 +246,23 @@ test('отдельный проект берёт таблицу из конст�
   assert.equal(srv.post({ game: 'НОВОЕДА', name: 'Аня', line: line('НОВОЕДА') }).ok, true);
   assert.equal(srv.opened[0], id);
 });
+
+test('маяк воронки пишется строкой [дата, игра, веха]', () => {
+  // В настоящем Apps Script у метрик отдельный лист; мок этого файла держит
+  // один лист на всё, поэтому проверяется содержимое строки, а не их число.
+  const srv = makeServer();
+  const out = srv.post({ metric: { game: 'НОВОЕДА', m: 'turn5' } });
+  assert.equal(out.ok, true);
+  const row = srv.data[srv.data.length - 1];
+  assert.equal(row[1], 'НОВОЕДА');
+  assert.equal(row[2], 'turn5');
+});
+
+test('маяк с чужой вехой молча игнорируется, но отвечает ok', () => {
+  const srv = makeServer();
+  srv.post({ metric: { game: 'НОВОЕДА', m: 'start' } });
+  const before = srv.data.length;
+  const out = srv.post({ metric: { game: 'НОВОЕДА', m: 'что-угодно' } });
+  assert.equal(out.ok, true);
+  assert.equal(srv.data.length, before);
+});

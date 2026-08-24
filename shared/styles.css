@@ -160,7 +160,7 @@ button { font-family: inherit; }
 .lever { margin-bottom: 14px; }
 .lever-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .lever-label { font-weight: 600; font-size: 13px; }
-.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; }
+.lever-value { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; font-size: 13px; cursor: pointer; }
 .lever input[type="range"] { width: 100%; margin: 6px 0 2px; }
 .lever-tip { color: var(--muted); font-size: 11px; line-height: 1.4; display: none; }
 .lever.open .lever-tip { display: block; }

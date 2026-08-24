@@ -42,11 +42,19 @@ The easiest route is [opening it in a browser](https://ruben-deev.github.io/econ
 Nothing to install.
 
 To hand games out offline, download the single-file build:
-[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.22.4.html) ·
-[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.28.4.html) ·
-[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.31.4.html) ·
-[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.26.5.html).
+[delivery](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.23.0.html) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.29.0.html) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.32.0.html) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.27.0.html).
 These are self-contained HTML files: double-click and they run with no network.
+
+**For teachers** there is a ready pack in one archive — the game, the guide in both
+languages, the formula write-up and a results-collection template:
+[delivery](https://ruben-deev.github.io/economics-simulators/downloads/novoeda-teacher-pack.zip) ·
+[streaming](https://ruben-deev.github.io/economics-simulators/downloads/kinoreka-teacher-pack.zip) ·
+[ticketing](https://ruben-deev.github.io/economics-simulators/downloads/biletville-teacher-pack.zip) ·
+[ecosystem](https://ruben-deev.github.io/economics-simulators/downloads/novograd-teacher-pack.zip).
+Packs are rebuilt by `npm run build` (the `shared/tools/teacher-pack.js` step).
 
 **World leaderboard.** Each game's final screen keeps a local per-device record
 table — and on the website there is also a global one: the player can submit a
@@ -69,7 +77,7 @@ The built files are already in the repository, so the build step is only needed 
 `build.manifest.js`. They are independent: a change in the streaming game does not
 rename the delivery file and pretend it was updated too. `package.json` stays the
 version of the monorepo as a whole. The game's number
-goes into the built file name (`…-simulator-v1.22.4.html`), into the page itself and into
+goes into the built file name (`…-simulator-v1.23.0.html`), into the page itself and into
 the help behind the "?" button. Building a version also deletes the previous one from
 `dist/`, so there is never a doubt about which file to hand out. Links in the READMEs, on
 the index page and in the teacher guides carry the version; if you forget to update them,
@@ -82,6 +90,8 @@ render HTML but **deliberately do not run JavaScript**. Telegram's built-in brow
 run scripts — the difference is between forwarding a file and sending a link. The game is a computed model;
 without scripts only an empty shell is left. The page now explains this itself and says
 how to open it in a real browser.
+The site can also be **installed on a phone** ("Add to Home Screen"): the installed
+index and any game opened at least once keep working offline.
 
 **Important:** `games/<game>/index.html` will not open by double-clicking from a folder —
 browsers do not load ES modules over `file://`, neither Safari nor Chrome. To run from
@@ -385,7 +395,7 @@ games/<game>/
   src/model/…                   the rest of the world: demand, pricing, partners — per game
   src/ui/app.js                 interface: levers, charts, reports
   tests/*.test.mjs              model and translation tests
-  dist/kinoreka-streaming-simulator-v1.28.4.html
+  dist/kinoreka-streaming-simulator-v1.29.0.html
                                 the built offline version (name in build.manifest.js)
 docs/<game>/                    formulas and lesson plans (RU + en/)
 ```

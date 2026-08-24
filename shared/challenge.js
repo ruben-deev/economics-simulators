@@ -1,0 +1,31 @@
+// ============================================================================
+// Челлендж недели и код партии из ссылки.
+//
+// Идея: один город на всех. Код недели детерминирован от даты (ISO-неделя),
+// поэтому витрина, игры и любые посты называют один и тот же код без
+// сервера и синхронизации. Ссылка вида …/games/foodtech/?code=2026-w35
+// приносит код с собой: экран приветствия подставляет его в поле сам.
+//
+// Код намеренно нейтрален к языку — он попадает в сид мира и в мировую
+// таблицу, где русская и английская версии живут в одной шкале.
+// ============================================================================
+
+/** ISO-номер недели: понедельник — первый день, первая неделя — с четвергом. */
+export function challengeCode(now = new Date()) {
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const year = d.getUTCFullYear();
+  const start = Date.UTC(year, 0, 1);
+  const week = Math.ceil(((d.getTime() - start) / 86400000 + 1) / 7);
+  return `${year}-w${String(week).padStart(2, '0')}`;
+}
+
+/** Код партии из ссылки (?code=…) — пустая строка, если его нет. */
+export function urlGameCode() {
+  try {
+    return (new URLSearchParams(window.location.search).get('code') || '').trim().slice(0, 64);
+  } catch {
+    return '';
+  }
+}
