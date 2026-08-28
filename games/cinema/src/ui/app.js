@@ -68,7 +68,7 @@ let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
 let pendingRelease = {};          // id готового проекта -> { campaign, cadence }
-let pendingAnchorRenew = null;    // продлевать ли права на якорный тайтл
+let pendingAnchorRenew = null;    // продлевать ли права на якорную франшизу
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
@@ -691,7 +691,7 @@ function renderPartners() {
 }
 
 // ----------------------------------------------------------------------------
-// Якорный тайтл: франшиза внутри арендованного каталога.
+// Якорная франшиза внутри арендованного каталога.
 //
 // Показываем её всегда, а не только в момент истечения: подписчик, который
 // «пришёл ради одного сериала», — это актив, о котором надо помнить заранее.

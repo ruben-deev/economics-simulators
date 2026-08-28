@@ -501,7 +501,7 @@ service, comparing, and leaving is easy. Someone six months in has folded you
 into a habit. Hence an uncomfortable consequence familiar to any growing service:
 **the faster you grow, the higher your average churn** — not because the service
 got worse, but because the share of newcomers went up. A loud premiere brings
-triallists, not subscribers; subscribers are the ones still there three months
+people on a free trial, not subscribers; subscribers are the ones still there three months
 later.
 
 The practical conclusion: monthly net adds are a poor health metric. What matters
