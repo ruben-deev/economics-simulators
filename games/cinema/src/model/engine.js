@@ -2041,8 +2041,28 @@ export function debrief(state) {
     out.push({ id: 'summerAds' });
   }
 
+  // Франшиза ушла и не вернулась. Самая дорогая из необъявленных потерь:
+  // по замеру продление стоит +11…+32% к итогу, а её уход роняет базу три
+  // месяца подряд. Молчать об этом — ровно то, чего игра себе не позволяет.
+  const lost = hist.find((r) => r.anchorLost);
+  if (lost && !state.anchor?.alive) out.push({ id: 'anchorLost', m: lost.month });
+
+  // Второй контракт: половина оплаченного срока приходится на время после
+  // финала, а цена к тому моменту выросла в два с половиной раза.
+  if ((state.anchor?.renewals ?? 0) >= 2) {
+    const paid = hist.reduce((a, r) => a + (r.anchorRenewCost ?? 0), 0);
+    out.push({ id: 'anchorOverpaid', n: state.anchor.renewals, money: Math.round(paid) });
+  }
+
+  // Доступ вне дома не трогали ни разу: весь срок платили за чужой просмотр.
+  const everCharged = hist.some((r) => (r.sharingPolicy ?? 0) > 0);
+  const finalShare = hist[hist.length - 1]?.sharingShare ?? 0;
+  if (!everCharged && finalShare > 0.18) {
+    out.push({ id: 'sharingIgnored', pct: Math.round(finalShare * 100) });
+  }
+
   // Партия кончилась продажей за долги: напомнить цену пустой кассы.
   if (state.over === 'bankrupt') out.push({ id: 'ranDry', m: state.month });
 
-  return out.slice(0, 4);
+  return out.slice(0, 5);
 }
