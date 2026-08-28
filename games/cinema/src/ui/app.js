@@ -2279,16 +2279,32 @@ function renderCfoTab() {
   const payback = r.cmPerSub > 0 && r.cac > 0 ? r.cac / r.cmPerSub : null;
   const cashGap = (r.contentSpend ?? 0) - (r.contentAmortization ?? 0);
 
-  // Что принёс каждый вышедший проект: потрачено против часов и шума.
-  const released = (state.slate ?? []).filter((p) => p.status === 'released')
-    .sort((a, b) => (b.releasedMonth ?? 0) - (a.releasedMonth ?? 0)).slice(0, 8);
-  const projectRows = released.map((p) => {
-    const spent = (p.cost ?? 0) + (p.campaign ?? 0);
-    const perHour = p.hours > 0 ? spent / p.hours : 0;
-    return `<tr><td>${genreName(p.genre)} · ${scaleName(p.scale)}
-        <div class="funding-note">${t('cfoReleasedIn', { month: p.releasedMonth ?? 0 })}${
-          p.cadence === 'weekly' ? ` · ${t('cadenceWeekly').toLowerCase()}` : ''}</div></td>
-      <td>${money(spent)}<div class="funding-note">${t('cfoPerHour', { value: amount(perHour) })}</div></td></tr>`;
+  // Судьба каждого вышедшего проекта. Сортируем по итогу: сверху то, что
+  // окупилось лучше всех, снизу — то, за что пришлось заплатить.
+  const titles = [...(r.titles ?? [])].sort((a, b) => b.net - a.net);
+  const titleRows = titles.map((x) => {
+    const roi = x.spend > 0 ? x.contribution / x.spend : null;
+    const cls = x.net >= 0 ? 'pos' : 'neg';
+    return `<div class="title-card">
+      <div class="title-head">
+        <span class="title-name">${genreName(x.genre)} · ${scaleName(x.scale)}</span>
+        <span class="badge ${cls === 'pos' ? 'on' : 'bad'}">${money(x.net)}</span>
+      </div>
+      <div class="proj-meta">${t('cfoReleasedIn', { month: x.releasedMonth })} ·
+        ${t(x.cadence === 'weekly' ? 'cadenceWeekly' : 'cadenceBinge').toLowerCase()}${
+          roi === null ? '' : ` · ${t('cfoRoi', { value: roi.toFixed(2) })}`}</div>
+      <table class="data title-pnl"><tbody>
+        <tr><td>${t('cfoColSpend')}</td><td class="neg">−${money(x.spend)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowProduction')}</td><td>${money(x.production)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowCampaign')}</td><td>${money(x.campaign)}</td></tr>
+        <tr><td>${t('cfoRowBrought')}</td><td>${compact(x.subsBrought)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowAlive')}</td><td>${compact(x.subsAlive)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowSubscription')}</td><td class="pos">${money(x.subscription)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowAds')}</td><td class="pos">${money(x.ads)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowCdn')}</td><td class="neg">−${money(x.cdn)}</td></tr>
+        <tr class="total"><td>${t('cfoColNet')}</td><td class="${cls}">${money(x.net)}</td></tr>
+      </tbody></table>
+    </div>`;
   }).join('');
 
   return `
@@ -2315,8 +2331,8 @@ function renderCfoTab() {
     </tbody></table></div>
     <p class="funding-note">${t('cfoProfitNote')}</p>
 
-    ${released.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
-    <div style="overflow-x:auto"><table class="data"><tbody>${projectRows}</tbody></table></div>
+    ${titles.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
+    <div class="title-cards">${titleRows}</div>
     <p class="funding-note">${t('cfoProjectsNote')}</p>` : ''}
 
     ${r.deferred > 0 ? `<h3 class="sub-title">${t('cfoDeferredTitle')}</h3>

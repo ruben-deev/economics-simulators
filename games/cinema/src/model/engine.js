@@ -711,6 +711,13 @@ export function step(prevState, input = {}) {
   const sharingAngerNow = state.sharingAnger > 0 ? clamp(state.sharingAnger / CONFIG.sharingAngerMonths, 0, 1) : 0;
   state.sharingAnger = Math.max(0, (state.sharingAnger ?? 0) - 1);
 
+  // Атрибуция премьер: сколько подписчиков привела каждая. Считается
+  // контрфактически — сравнением притока с премьерной надбавкой и без неё,
+  // а разница делится между премьерами по их доле в притяжении сегмента.
+  // Это не бухгалтерия, а отнесение: точной границы «этот человек пришёл
+  // ради этого сериала» не существует ни в игре, ни в жизни.
+  const premiereCredit = new Map();
+
   const partnerBefore = partnerTotals(state.partners).subs;
   const marketPotential = SEGMENTS.reduce((s, x) => s + potentialOf(x, state), 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
@@ -918,9 +925,22 @@ export function step(prevState, input = {}) {
     // Внимание рынка насыщается: конверсия шума в пробы вогнутая, а не
     // линейная. Линейная делала тройную премьерную тягу блокбастера тройным
     // притоком за те же деньги — доминация 2× по замеру (аудит 2026-08).
-    const trials = categoryTrials * preference
-      * (1 + CONFIG.premiereTrialGain * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower));
+    const premiereLift = CONFIG.premiereTrialGain
+      * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower);
+    const trials = categoryTrials * preference * (1 + premiereLift);
     let converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Премьерная часть притока: то, чего не было бы без премьер этого месяца
+    if (premiereLift > 0 && premiereAppeal > 0) {
+      const fromPremieres = categoryTrials * preference * premiereLift
+        * CONFIG.trialConversion * trialFactor;
+      for (const p of premieres) {
+        const pull = p.buzz * projectAppeal(p, def.id);
+        if (pull <= 0) continue;
+        premiereCredit.set(p.id,
+          (premiereCredit.get(p.id) ?? 0) + fromPremieres * (pull / premiereAppeal));
+      }
+    }
 
     // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
     // на смесь listPrice, и премиальная доля новичков (1 − adShare, не меньше
@@ -1346,6 +1366,54 @@ export function step(prevState, input = {}) {
   const avgChurn = retailSubs > 0
     ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / retailSubs
     : CONFIG.baseChurn;
+
+  // --- 13a. Судьба каждого вышедшего проекта ---
+  //
+  // Вопрос «что принёс этот сериал» в подписке не имеет бухгалтерского
+  // ответа: подписчик платит за доступ целиком, а не за конкретный тайтл.
+  // Поэтому здесь честное отнесение по двум каналам, и оба названы:
+  //
+  //   привлечение — премьерная надбавка к притоку, поделённая между
+  //     премьерами месяца по их доле в притяжении (считается выше);
+  //     приведённые платят дальше и тают с общим оттоком;
+  //   смотрение  — доля тайтла в собственной полке: столько же он берёт
+  //     от рекламной выручки и столько же стоит трафика.
+  //
+  // Расходы — производство плюс кампания под релиз. Полученный итог — не
+  // прибыль тайтла, а его вклад: сколько денег прошло через сервис
+  // благодаря ему и вопреки ему.
+  // Доля считается от ВСЕГО каталога, а не от собственной полки: зритель
+  // смотрит и арендованное тоже, и приписывать своему сериалу часы, которые
+  // люди провели за чужим, — самый простой способ нарисовать себе успех.
+  const shelfHours = Math.max(1, catalogHours);
+  for (const p of state.slate) {
+    if (p.status !== 'released') continue;
+    // Производство — то, что фактически выплачено съёмочной группе за все
+    // месяцы (p.paid), а не смета: порезанный или продлённый проект стоит
+    // столько, сколько за него заплатили.
+    p.ledger = p.ledger ?? {
+      spend: (p.paid ?? 0) + (p.campaign ?? 0),
+      subsBrought: 0, subsAlive: 0, subscription: 0, ads: 0, cdn: 0, hoursServed: 0,
+    };
+    // Приток этого месяца: премьеру засчитываем в месяц выхода
+    const brought = premiereCredit.get(p.id) ?? 0;
+    if (brought > 0) {
+      p.ledger.subsBrought += brought;
+      p.ledger.subsAlive += brought;
+    }
+    // Приведённые тают вместе со всеми и всё это время платят
+    p.ledger.subsAlive = Math.max(0, p.ledger.subsAlive * (1 - avgChurn));
+    p.ledger.subscription += p.ledger.subsAlive * (retailSubs > 0
+      ? subscriptionRevenue / retailSubs : 0);
+    // Часы тайтла: его доля в собственной полке. Она тает вместе с жанром,
+    // поэтому старый сериал забирает всё меньше и рекламы, и трафика.
+    const share = clamp((p.hoursNow ?? p.hours) / shelfHours, 0, 1);
+    const served = retailHours * share;
+    p.ledger.hoursServed += served;
+    p.ledger.ads += adRevenue * share;
+    p.ledger.cdn += cdnCost * share;
+    p.hoursNow = (p.hoursNow ?? p.hours) * (1 - (genreById(p.genre)?.decay ?? 0.05));
+  }
   const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
   const marketShare = totalSubs / marketPotential;
@@ -1463,6 +1531,19 @@ export function step(prevState, input = {}) {
     contentAmortization,
     contentBookValue,
     profitAccrual,
+
+    // Судьба каждого вышедшего проекта: что стоил и что принёс
+    titles: state.slate.filter((p) => p.status === 'released' && p.ledger).map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      releasedMonth: p.releasedMonth, cadence: p.cadence ?? 'binge',
+      quality: p.quality, hours: p.hours,
+      spend: p.ledger.spend, production: p.paid ?? 0, campaign: p.campaign ?? 0,
+      subsBrought: p.ledger.subsBrought, subsAlive: p.ledger.subsAlive,
+      subscription: p.ledger.subscription, ads: p.ledger.ads, cdn: p.ledger.cdn,
+      hoursServed: p.ledger.hoursServed,
+      contribution: p.ledger.subscription + p.ledger.ads - p.ledger.cdn,
+      net: p.ledger.subscription + p.ledger.ads - p.ledger.cdn - p.ledger.spend,
+    })),
 
     // --- Якорный тайтл ---
     anchorAlive: anchor.alive,

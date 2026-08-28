@@ -965,6 +965,52 @@ sizes, the profitable option changes with the state, and the mean gap between
 
 ---
 
+## 8c. How each title fared
+
+"What did this show bring in" has no accounting answer in a subscription
+business: the subscriber pays for access as a whole, not for a particular title.
+So this is honest attribution through two channels, and both are named.
+
+**Acquisition.** Each month's inflow is computed twice: with the premiere uplift
+and without it. The difference is the subscribers who would not have arrived
+without the premieres, and it is split between the month's premieres by their
+share of the segment's pull:
+
+```
+uplift = premiereTrialGain × pull^premiereTrialPower
+title's share = its buzz × segment aim / total pull
+```
+
+Those subscribers do not vanish the moment they arrive: they keep paying and melt
+away with general churn. Hence the two lines on the card — "brought in" and
+"still with you".
+
+**Watching.** The title's share of hours is measured against the **whole**
+catalogue, not against your own shelf: viewers watch the rented content too, and
+crediting your own show with hours people spent on someone else's is the easiest
+way to paint yourself a success. By that share the title receives part of the ad
+revenue and the same part of the bandwidth cost.
+
+**Costs.** Production is what was actually paid to the crew across all months,
+not the estimate: a project cut short by a crisis or extended costs what was paid
+for it. Plus the release campaign.
+
+```
+contribution = subscriptions of those brought + ads on its hours − bandwidth on its hours
+net          = contribution − production − campaign
+```
+
+Hence the pipeline's main rule, visible on the cards at a glance: the very same
+flagship pays for itself three times over when it lands in year one and never
+earns out in year three — the subscribers it brings simply do not have enough
+months left to return its cost. A cheap pilot in a good season almost always
+beats an expensive flagship in a bad one on return per unit spent.
+
+This is attribution, not the title's profit. There is no exact boundary of "this
+person came for this show" — not in the game and not in life — but this is how
+content is measured in the industry, and it is better to measure honestly and
+approximately than not at all.
+
 ## 9. Valuation and funding
 
 ```
