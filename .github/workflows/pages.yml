@@ -93,9 +93,9 @@ jobs:
         run: |
           mkdir -p _site/next
           cp index.html manifest.webmanifest sw.js social-card.png _site/
-          cp -r shared docs games icons press _site/
+          cp -r shared docs games icons press downloads _site/
           cp _next/index.html _next/manifest.webmanifest _next/sw.js _next/social-card.png _site/next/
-          cp -r _next/shared _next/docs _next/games _next/icons _site/next/
+          cp -r _next/shared _next/docs _next/games _next/icons _next/downloads _site/next/
           rm -rf _site/shared/tools _site/games/*/tests _site/games/*/tools
           rm -rf _site/next/shared/tools _site/next/games/*/tests _site/next/games/*/tools
           find _site -name 'build.manifest.js' -delete
