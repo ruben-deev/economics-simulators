@@ -67,7 +67,8 @@ let leversBuilt = false;
 let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
-let pendingRelease = {};          // id готового проекта -> бюджет кампании
+let pendingRelease = {};          // id готового проекта -> { campaign, cadence }
+let pendingAnchorRenew = null;    // продлевать ли права на якорный тайтл
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
@@ -81,6 +82,7 @@ const clearActions = () => {
   pendingCommission = [];
   pendingJoint = null;
   pendingRelease = {};
+  pendingAnchorRenew = null;
   pendingRaise = false;
   pendingCrisisChoice = null;
   pendingPartner = null;
@@ -464,6 +466,7 @@ function buildLevers() {
       renderStudioMap();
       renderTurn();
       renderSlate();
+      renderAnchor();
       renderRightTab();
       save();
     });
@@ -688,6 +691,67 @@ function renderPartners() {
 }
 
 // ----------------------------------------------------------------------------
+// Якорный тайтл: франшиза внутри арендованного каталога.
+//
+// Показываем её всегда, а не только в момент истечения: подписчик, который
+// «пришёл ради одного сериала», — это актив, о котором надо помнить заранее.
+// Решение появляется в окне предупреждения и стоит денег, которые растут
+// вместе с рынком прав и с тем, насколько громко звучит конкурент.
+// ----------------------------------------------------------------------------
+function renderAnchor() {
+  const slot = el('anchor-slot');
+  if (!slot) return;
+  if (state.over) { slot.innerHTML = ''; return; }
+  const a = state.anchor;
+  const r = last();
+  if (!a) { slot.innerHTML = ''; return; }
+
+  // Ушедшую франшизу показываем, пока осыпается база, потом убираем
+  if (!a.alive && a.decayLeft <= 0) { slot.innerHTML = ''; return; }
+
+  const price = r?.anchorPrice ?? CONFIG.anchorRenewCost;
+  const warn = a.alive && a.monthsLeft <= CONFIG.anchorWarnMonths;
+  const affordable = state.cash >= price;
+
+  slot.innerHTML = `<div class="panel">
+    <div class="report-head">
+      <h2 class="panel-title inline">${t('panelAnchor')}</h2>
+      ${a.alive
+        ? `<span class="badge ${warn ? 'warn' : 'on'}">${t('anchorMonthsLeft', { months: a.monthsLeft })}</span>`
+        : `<span class="badge bad">${t('anchorGone')}</span>`}
+    </div>
+    ${a.alive
+      ? `<p class="funding-note">${t('anchorHolds', { share: pct(CONFIG.anchorShare, 0) })}</p>`
+      : `<p class="funding-note neg">${t('anchorLostText', { months: a.decayLeft })}</p>`}
+    ${warn ? `<div class="offer">
+      <div class="offer-terms">
+        <span>${t('anchorTerm', { months: CONFIG.anchorRenewMonths })}</span>
+        <span class="${affordable ? '' : 'neg'}">${t('anchorPrice', { price: money(price) })}</span>
+        ${a.renewals ? `<span>${t('anchorRenewals', { count: a.renewals })}</span>` : ''}
+      </div>
+      <div class="event-options">
+        <button class="event-option ${pendingAnchorRenew ? 'chosen primary' : ''}" data-anchor="renew" ${affordable ? '' : 'disabled'}>
+          <span class="opt-label">${t('anchorRenew')}</span>
+          <span class="opt-detail">${t('anchorRenewDetail', { price: money(price) })}</span>
+        </button>
+        <button class="event-option ${pendingAnchorRenew === false ? 'chosen' : ''}" data-anchor="drop">
+          <span class="opt-label">${t('anchorDrop')}</span>
+          <span class="opt-detail">${t('anchorDropDetail')}</span>
+        </button>
+      </div>
+      <div class="lesson">${t('anchorLesson')}</div>
+    </div>` : ''}
+  </div>`;
+
+  slot.querySelectorAll('[data-anchor]').forEach((b) => {
+    b.addEventListener('click', () => {
+      pendingAnchorRenew = b.dataset.anchor === 'renew';
+      renderAnchor(); renderTurn();
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
 // Навигация по подсказкам.
 //
 // В советах ключевые вещи выделены цветом. Раз они названы — по ним должно
@@ -876,7 +940,7 @@ function plannedSpend() {
   const talent = talentIndexNow();
   const commissions = pendingCommission.reduce(
     (sum, c) => sum + projectPrice(c.genre, c.scale, talent) / scaleById(c.scale).months, 0);
-  const campaigns = Object.values(pendingRelease).reduce((a, b) => a + b, 0);
+  const campaigns = Object.values(pendingRelease).reduce((a, r) => a + (r?.campaign ?? 0), 0);
   return { commissions, campaigns };
 }
 
@@ -955,10 +1019,15 @@ function projectCard(p, kind) {
     ${planned
       ? `<div class="release-row">
           <label>${t('slateCampaign')}</label>
-          <input type="range" data-campaign="${p.id}" min="0" max="400000000" step="10000000" value="${campaign}" />
-          <span class="release-budget">${money(campaign)}</span>
+          <input type="range" data-campaign="${p.id}" min="0" max="400000000" step="10000000" value="${campaign.campaign}" />
+          <span class="release-budget">${money(campaign.campaign)}</span>
           <button class="btn ghost tiny" data-cancel="${p.id}">${t('slateCancel')}</button>
-        </div>`
+        </div>
+        <div class="policy-seg cadence-seg">
+          ${['binge', 'weekly'].map((c) => `<button type="button" class="${campaign.cadence === c ? 'on' : ''}"
+            data-cadence="${p.id}" data-cadence-mode="${c}">${t(c === 'binge' ? 'cadenceBinge' : 'cadenceWeekly')}</button>`).join('')}
+        </div>
+        <div class="proj-meta">${t(campaign.cadence === 'weekly' ? 'cadenceWeeklyNote' : 'cadenceBingeNote')}</div>`
       : `<button class="btn primary tiny" data-release="${p.id}">${t('slateRelease')}</button>`}
   </div>`;
 }
@@ -1125,8 +1194,13 @@ function renderSlate() {
     pendingCommission.splice(Number(b.dataset.unqueue), 1);
     renderSlate(); renderTurn();
   }));
+  root.querySelectorAll('[data-cadence]').forEach((b) => b.addEventListener('click', () => {
+    const id = Number(b.dataset.cadence);
+    if (pendingRelease[id]) pendingRelease[id].cadence = b.dataset.cadenceMode;
+    renderSlate(); renderTurn();
+  }));
   root.querySelectorAll('[data-release]').forEach((b) => b.addEventListener('click', () => {
-    pendingRelease[Number(b.dataset.release)] = 60_000_000;
+    pendingRelease[Number(b.dataset.release)] = { campaign: 60_000_000, cadence: 'binge' };
     renderSlate(); renderTurn();
   }));
   root.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', () => {
@@ -1134,7 +1208,7 @@ function renderSlate() {
     renderSlate(); renderTurn();
   }));
   root.querySelectorAll('[data-campaign]').forEach((inp) => inp.addEventListener('input', () => {
-    pendingRelease[Number(inp.dataset.campaign)] = Number(inp.value);
+    pendingRelease[Number(inp.dataset.campaign)].campaign = Number(inp.value);
     inp.parentElement.querySelector('.release-budget').textContent = money(Number(inp.value));
     renderTurn();
   }));
@@ -2187,12 +2261,74 @@ function renderHelpTab() {
   </div>`;
 }
 
+// ----------------------------------------------------------------------------
+// Отчёт финдира: то, что модель уже считает, но раньше показывала кусками.
+//
+// Три вопроса, которые задаёт человек, отвечающий за деньги: когда окупается
+// приведённый подписчик, что на самом деле принёс каждый проект и почему
+// прибыль в отчёте не равна движению денег.
+// ----------------------------------------------------------------------------
+function renderCfoTab() {
+  const r = last();
+  if (!r) return `<p class="funding-note">${t('pnlEmpty')}</p>`;
+  const row = (name, value, cls = '', note = '') =>
+    `<tr><td>${name}${note ? `<div class="funding-note">${note}</div>` : ''}</td><td class="${cls}">${value}</td></tr>`;
+
+  // Окупаемость когорты: сколько месяцев приведённый подписчик отбивает
+  // собственную стоимость привлечения при текущем вкладе.
+  const payback = r.cmPerSub > 0 && r.cac > 0 ? r.cac / r.cmPerSub : null;
+  const cashGap = (r.contentSpend ?? 0) - (r.contentAmortization ?? 0);
+
+  // Что принёс каждый вышедший проект: потрачено против часов и шума.
+  const released = (state.slate ?? []).filter((p) => p.status === 'released')
+    .sort((a, b) => (b.releasedMonth ?? 0) - (a.releasedMonth ?? 0)).slice(0, 8);
+  const projectRows = released.map((p) => {
+    const spent = (p.cost ?? 0) + (p.campaign ?? 0);
+    const perHour = p.hours > 0 ? spent / p.hours : 0;
+    return `<tr><td>${genreName(p.genre)} · ${scaleName(p.scale)}
+        <div class="funding-note">${t('cfoReleasedIn', { month: p.releasedMonth ?? 0 })}${
+          p.cadence === 'weekly' ? ` · ${t('cadenceWeekly').toLowerCase()}` : ''}</div></td>
+      <td>${money(spent)}<div class="funding-note">${t('cfoPerHour', { value: amount(perHour) })}</div></td></tr>`;
+  }).join('');
+
+  return `
+    <p class="funding-note">${t('cfoIntro')}</p>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+      ${row(t('cfoPayback'), payback === null ? '—' : t('cfoMonths', { value: payback.toFixed(1) }),
+        payback !== null && payback < 12 ? 'pos' : payback !== null && payback > 24 ? 'neg' : '',
+        t('cfoPaybackNote'))}
+      ${row(t('cfoLtvCac'), r.ltvCac ? r.ltvCac.toFixed(2) : '—',
+        (r.ltvCac ?? 0) >= 3 ? 'pos' : (r.ltvCac ?? 0) < 1 ? 'neg' : '')}
+      ${row(t('cfoYoungShare'), pct(r.youngShare ?? 0, 0), '', t('cfoYoungNote', {
+        young: pct(r.churnYoungAvg ?? 0, 1), mature: pct(r.churnMatureAvg ?? 0, 1) }))}
+      ${row(t('cfoSharing'), pct(r.sharingShare ?? 0, 0), '', t('cfoSharingNote'))}
+    </tbody></table></div>
+
+    <h3 class="sub-title">${t('cfoCashTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>
+      ${row(t('cfoCashOut'), moneyExact(-(r.contentSpend ?? 0)), 'neg')}
+      ${row(t('cfoRecognised'), moneyExact(-(r.contentAmortization ?? 0)), 'neg')}
+      ${row(t('cfoGap'), moneyExact(cashGap), cashGap > 0 ? 'neg' : 'pos', t('cfoGapNote'))}
+      ${row(t('cfoBook'), money(r.contentBookValue ?? 0), '', t('cfoBookNote'))}
+      <tr class="total"><td>${t('cfoProfitCash')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
+      <tr class="total"><td>${t('cfoProfitAccrual')}</td><td class="${(r.profitAccrual ?? 0) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profitAccrual ?? 0)}</td></tr>
+    </tbody></table></div>
+    <p class="funding-note">${t('cfoProfitNote')}</p>
+
+    ${released.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
+    <div style="overflow-x:auto"><table class="data"><tbody>${projectRows}</tbody></table></div>
+    <p class="funding-note">${t('cfoProjectsNote')}</p>` : ''}
+
+    ${r.deferred > 0 ? `<h3 class="sub-title">${t('cfoDeferredTitle')}</h3>
+    <p class="funding-note">${t('cfoDeferredNote', { value: money(r.deferred) })}</p>` : ''}`;
+}
+
 function renderRightTab() {
   el('tabs').querySelectorAll('.tab').forEach((tab) => {
     tab.classList.toggle('active', tab.dataset.tab === rightTab);
   });
   el('tab-content').innerHTML = {
-    unit: renderUnitTab, pnl: renderPnlTab, algos: renderAlgosTab,
+    unit: renderUnitTab, pnl: renderPnlTab, cfo: renderCfoTab, algos: renderAlgosTab,
     segments: renderSegmentsTab, help: renderHelpTab,
   }[rightTab]();
 }
@@ -2636,7 +2772,9 @@ function nextMonth() {
     partnerAnswer: pendingPartner,
     commission: pendingCommission,
     coProduce: pendingJoint,
-    release: Object.entries(pendingRelease).map(([id, campaign]) => ({ id: Number(id), campaign })),
+    release: Object.entries(pendingRelease).map(([id, r]) => ({
+      id: Number(id), campaign: r.campaign, cadence: r.cadence })),
+    renewAnchor: pendingAnchorRenew === true,
     raisePrice: pendingRaise,
   }).state;
   clearActions();
@@ -2700,7 +2838,7 @@ function renderChrome() {
 
   el('btn-next').textContent = state.over ? t('btnResults') : t('btnNext', { month: state.month + 1 });
   for (const [tab, key] of Object.entries({
-    unit: 'tabUnit', pnl: 'tabPnl', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
+    unit: 'tabUnit', pnl: 'tabPnl', cfo: 'tabCfo', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
   })) {
     const node = el('tabs').querySelector(`[data-tab="${tab}"]`);
     if (node) node.textContent = t(key);
@@ -2724,6 +2862,7 @@ function renderAll() {
   renderReport();
   renderEvent();
   renderCrisis();
+  renderAnchor();
   renderPartners();
   renderTurn();
   renderSlate();

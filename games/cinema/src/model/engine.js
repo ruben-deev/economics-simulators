@@ -158,12 +158,16 @@ export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
     lastRaiseMonth: -99,   // когда последний раз поднимали цену действующим
     lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
+    weeklyHoldLeft: 0,     // сколько месяцев ещё идёт понедельный выпуск
     hangover: 0,           // сколько зрителей досмотрели премьеру и готовы уйти
     segments: Object.fromEntries(SEGMENTS.map((s) => [s.id, {
       id: s.id,
       awareness: 0.03,
       premium: 0,
       ads: 0,
+      // Когорта новичков: подписчики, ещё не втянувшиеся в привычку.
+      // Стареет каждый месяц, пополняется теми, кто пришёл.
+      young: 0,
       pricing: createPricing(DEFAULT_DECISIONS.priceNew),
     }])),
 
@@ -175,6 +179,23 @@ export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     // --- Дорожающие ресурсы ---
     licenseIndex: 1,
     talentPenalty: 0,
+
+    // --- Якорный тайтл: франшиза внутри арендованного каталога ---
+    anchor: {
+      monthsLeft: CONFIG.anchorTermMonths,
+      alive: true,          // права ещё у нас
+      renewals: 0,
+      lostMonth: null,      // когда ушёл
+      decayLeft: 0,         // сколько месяцев ещё осыпается база
+    },
+
+    // --- Общие пароли ---
+    sharingShare: CONFIG.sharingBase,
+    sharingAnger: 0,        // остаточная обида после закрытия доступа
+    sharingPolicyPrev: 0,
+
+    // --- Учёт контента: несписанный остаток ---
+    contentBook: { license: 0, original: 0 },
 
     // --- Совет директоров ---
     board: { goal: null, history: [], profitableMonths: 0 },
@@ -493,7 +514,19 @@ export function step(prevState, input = {}) {
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
-    const rawPremiereBuzz = releaseBuzz(project) * lift * Math.pow(season, CONFIG.seasonBuzzPower);
+    // Каденция: выложить сезон целиком или выпускать по серии в неделю.
+    // Разом — пик громче, но держать зрителя в следующем месяце нечем:
+    // досмотрел и отписался. Понедельно — пик тише, зато премьера живёт
+    // полтора месяца и всё это время удерживает базу.
+    const cadence = order.cadence === 'weekly' ? 'weekly' : 'binge';
+    project.cadence = cadence;
+    const cadenceBuzz = cadence === 'weekly' ? CONFIG.cadenceWeeklyBuzz : CONFIG.cadenceBingeBuzz;
+    const cadenceHang = cadence === 'weekly' ? CONFIG.cadenceWeeklyHangover : CONFIG.cadenceBingeHangover;
+    if (cadence === 'weekly') {
+      state.weeklyHoldLeft = Math.max(state.weeklyHoldLeft ?? 0, CONFIG.cadenceWeeklyMonths);
+    }
+    const rawPremiereBuzz = releaseBuzz(project) * lift * cadenceBuzz
+      * Math.pow(season, CONFIG.seasonBuzzPower);
     buzzFatigueRaw += rawPremiereBuzz;
     premieres.push({
       id: project.id,
@@ -503,6 +536,8 @@ export function step(prevState, input = {}) {
       quality: project.quality,
       hours: project.hours,
       held: project.monthsHeld,
+      cadence,
+      cadenceHang,
       campaign,
       season,
       // Шум с поправкой на усталость: всё дальше (приток, охват, похмелье)
@@ -537,7 +572,12 @@ export function step(prevState, input = {}) {
   // причин платить. Растянутый по неделям релиз её заметно сглаживает.
   const hangover = state.hangover ?? 0;
   state.hangover = premieres.reduce(
-    (s, p) => s + p.buzz * (genreById(p.genre)?.hangover ?? 0.4), 0) * (1 - 0.55 * pacing);
+    (s, p) => s + p.buzz * (genreById(p.genre)?.hangover ?? 0.4) * (p.cadenceHang ?? 1),
+    0) * (1 - 0.55 * pacing);
+
+  // Пока идёт понедельный выпуск, уходить некуда: следующая серия на неделе.
+  const weeklyHold = (state.weeklyHoldLeft ?? 0) > 0 ? CONFIG.cadenceWeeklyHold : 0;
+  state.weeklyHoldLeft = Math.max(0, (state.weeklyHoldLeft ?? 0) - 1);
 
   // --- 7. Каталог ---
   // Прогноз спроса делает тот же бюджет эффективнее, но тянет закупку
@@ -564,13 +604,52 @@ export function step(prevState, input = {}) {
     state.rivalState.catalogLicensed *= (1 - CONFIG.rightsCliffShare);
   }
 
+  // --- Якорный тайтл ---
+  // Внутри арендованных часов сидит франшиза, ради которой подписалась
+  // заметная доля базы. Её контракт живёт отдельно от остального пакета:
+  // кончается в свой срок, продлевается за отдельные деньги и на торгах.
+  // Пока она у нас, лицензионная полка держит лучше, чем её часы; когда
+  // уходит — база осыпается несколько месяцев, а часы остаются на месте.
+  const anchor = state.anchor;
+  let anchorLost = false;
+  let anchorRenewCost = 0;
+  // Цена продления: базовая, разогнанная общим индексом прав и торгами
+  // конкурента. Чем громче он сейчас звучит, тем дороже отбить франшизу.
+  // Индекс прав входит корнем: франшиза дорожает вместе с рынком, но не
+  // в разы — иначе продление превращается в ловушку, которую нельзя взять.
+  const anchorPrice = Math.round(CONFIG.anchorRenewCost * Math.sqrt(licenseIndex)
+    * (1 + CONFIG.anchorRivalBidPower * clamp(state.rivalState.buzz ?? 0, 0, 1.2)));
+  if (anchor.alive && input.renewAnchor && anchor.monthsLeft <= CONFIG.anchorWarnMonths) {
+    anchorRenewCost = anchorPrice;
+    anchor.monthsLeft += CONFIG.anchorRenewMonths;
+    anchor.renewals += 1;
+  }
+  if (anchor.alive) {
+    anchor.monthsLeft -= 1;
+    if (anchor.monthsLeft <= 0) {
+      // Решение о продлении принимается заранее: если его не было, права уходят
+      anchor.alive = false;
+      anchor.lostMonth = month;
+      anchor.decayLeft = CONFIG.anchorLossMonths;
+      anchorLost = true;
+      // Франшиза уходит не в никуда: её забирает тот, кто торговался
+      state.rivalState.buzz = (state.rivalState.buzz ?? 0) + 0.35;
+    }
+  } else if (anchor.decayLeft > 0) {
+    anchor.decayLeft -= 1;
+  }
+  // Ценность лицензионной полки с якорем выше, чем без него
+  const anchorValue = anchor.alive ? CONFIG.anchorShare : 0;
+  const anchorChurnAdd = anchor.decayLeft > 0
+    ? CONFIG.anchorLossChurn * (anchor.decayLeft / CONFIG.anchorLossMonths) : 0;
+
   // Иск замораживает часть арендованной библиотеки — своё отобрать нельзя
   const freeze = crisisMods.licensedFreeze ?? 0;
   const availableLicensed = state.catalogLicensed * (1 - freeze);
 
   const catalogHours = availableLicensed + state.catalogOriginal;
   // Чужой каталог хуже удерживает: он есть и у конкурентов
-  const weightedLicensed = availableLicensed * CONFIG.licenseDepthWeight;
+  const weightedLicensed = availableLicensed * CONFIG.licenseDepthWeight * (1 + anchorValue);
   const weightedOriginal = weightedOriginals(state.originalsByGenre) * CONFIG.originalDepthWeight;
   const effectiveCatalog = weightedLicensed + weightedOriginal;
   const originalShare = effectiveCatalog > 0 ? weightedOriginal / effectiveCatalog : 0;
@@ -605,6 +684,33 @@ export function step(prevState, input = {}) {
   const refPrice = 399;
   // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
   // наравне с розничными, иначе рынок начинает считаться дважды.
+  // --- Общие пароли ---
+  // Доля растёт сама: чем дольше сервис на рынке и чем он крупнее, тем выше
+  // шанс, что у знакомого «уже есть». Эти люди смотрят каталог и стоят
+  // трафика, но не платят ничего.
+  const sharingPolicy = Math.round(decisions.sharingPolicy ?? 0);
+  const sharingScale = clamp(lastSubs(state) / CONFIG.refSubsForTalent, 0, 1);
+  state.sharingShare = clamp(
+    state.sharingShare + CONFIG.sharingGrowth / 12 * (0.4 + sharingScale),
+    0, CONFIG.sharingCap);
+  // Закрытие доступа: часть разделяющих становится подписчиками, часть уходит
+  // вместе с тем, кто их пустил. Мягкая просьба даёт треть эффекта и почти
+  // не злит; жёсткое закрытие — весь эффект и репутационный шум.
+  const sharingPush = sharingPolicy === 2 ? 1 : sharingPolicy === 1 ? 0.35 : 0;
+  const sharingConverted = state.sharingShare * sharingPush * CONFIG.sharingConvert;
+  const sharingBitten = state.sharingShare * sharingPush * CONFIG.sharingChurnBite;
+  if (sharingPush > 0) {
+    state.sharingShare = Math.max(0, state.sharingShare
+      - state.sharingShare * sharingPush * (CONFIG.sharingConvert + CONFIG.sharingChurnBite));
+  }
+  // Обида живёт несколько месяцев после ужесточения и мешает притоку
+  if (sharingPolicy > (state.sharingPolicyPrev ?? 0)) {
+    state.sharingAnger = CONFIG.sharingAngerMonths * (sharingPolicy === 2 ? 1 : 0.4);
+  }
+  state.sharingPolicyPrev = sharingPolicy;
+  const sharingAngerNow = state.sharingAnger > 0 ? clamp(state.sharingAnger / CONFIG.sharingAngerMonths, 0, 1) : 0;
+  state.sharingAnger = Math.max(0, (state.sharingAnger ?? 0) - 1);
+
   const partnerBefore = partnerTotals(state.partners).subs;
   const marketPotential = SEGMENTS.reduce((s, x) => s + potentialOf(x, state), 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
@@ -826,7 +932,12 @@ export function step(prevState, input = {}) {
     const premiumNew = premiumRaw * premiumTake;
     const downgraded = (premiumRaw - premiumNew) * clamp(0.5 * def.adTolerance, 0, 0.9);
     const adsNew = converted * adShare + downgraded;
-    converted = premiumNew + adsNew;
+    // Закрытие общего доступа: те, кто смотрел по чужому паролю, решают.
+    // Часть заводит свою подписку — это приток, которого не было бы без
+    // ограничения; часть уходит из категории и уводит того, кто их пустил.
+    const sharingNewHere = subsBefore * sharingConverted;
+    const sharingLostHere = subsBefore * sharingBitten;
+    converted = premiumNew + adsNew + sharingNewHere;
 
     // Конкурент забирает вторую половину той же поляны
     const rivalConverted = riv.alive
@@ -853,7 +964,10 @@ export function step(prevState, input = {}) {
       (CONFIG.baseChurn * def.loyalty + boredom + priceAnger + adAnger + techAnnoyance) * exclusiveHold
       + rival.churnAdd + (mods.churnAdd ?? 0) + (crisisMods.churnAdd ?? 0)
       + hangover * 0.018 * def.freshnessWeight
-      - buzz * 0.030,
+      + anchorChurnAdd * def.freshnessWeight
+      + sharingAngerNow * 0.012
+      - buzz * 0.030
+      - weeklyHold,
       0.005, 0.5);
     const savedShare = winbackPower * 0.45;
     churnRate = churnRate * (1 - savedShare);
@@ -873,7 +987,18 @@ export function step(prevState, input = {}) {
     // люди выключены из оттока до конца срока.
     const lockedIn = annualSubs(pricing);
     const churnable = Math.max(0, subsBefore - lockedIn);
-    const leaving = churnable * churnRate;
+    // Отток по стажу: новичок ещё не втянулся и уходит вдвое охотнее
+    // выдержанной базы. Годовые из расчёта исключены — они и так заперты.
+    const youngBefore = clamp(seg.young ?? 0, 0, subsBefore);
+    const youngChurnable = Math.min(churnable, youngBefore);
+    const matureChurnable = Math.max(0, churnable - youngChurnable);
+    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn, 0.005, 0.75);
+    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn, 0.002, 0.5);
+    const leavingYoung = youngChurnable * churnYoung;
+    const leavingMature = matureChurnable * churnMature;
+    const leaving = leavingYoung + leavingMature + sharingLostHere;
+    // Ставка, которая фактически получилась — она и идёт в отчёт
+    const blendedChurn = churnable > 0 ? leaving / churnable : churnRate;
     // Скидку получают удержанные и часть тех, кто и так остался бы (промахи модели)
     const discounted = churnable * churnRate * savedShare / Math.max(0.05, 1 - savedShare)
       + churnable * (1 - quality) * winbackDiscount * 0.03;
@@ -937,7 +1062,14 @@ export function step(prevState, input = {}) {
     const movable = Math.max(0, survivors - lockedNow);
     const survivorAdShare = survivorAdShareGuess;
     seg.ads = Math.max(0, movable * survivorAdShare + adsNew);
-    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + premiumNew);
+    // Пришедшие из-под общего пароля заводят полную подписку: они уже знают
+    // каталог и приходят не за рекламным тарифом.
+    seg.premium = Math.max(0, lockedNow + movable * (1 - survivorAdShare) + premiumNew + sharingNewHere);
+
+    // Когорта новичков: выжившие стареют, пришедшие занимают их место.
+    // За cohortYoungMonths месяцев подписчик переходит в выдержанную базу.
+    const youngSurvived = Math.max(0, youngBefore - leavingYoung);
+    seg.young = Math.max(0, youngSurvived * (1 - 1 / CONFIG.cohortYoungMonths) + converted);
 
     // Кто пришёл в этом месяце — понадобится в следующем: именно они рискуют
     // отвалиться на первом списании, если триал был длинным.
@@ -952,7 +1084,9 @@ export function step(prevState, input = {}) {
 
     perSegment.push({
       def, seg, pricing, adShare, blendedPrice, listPrice, paidPrice, priceFactor, appeal, adPenalty,
-      churnRate, converted, leaving, flow, preference,
+      churnRate: blendedChurn, churnBase: churnRate, converted, leaving, flow, preference,
+      churnYoung, churnMature, youngShare: subsBefore > 0 ? youngBefore / subsBefore : 0,
+      sharingNew: sharingNewHere, sharingLost: sharingLostHere,
       awareness: Math.max(1e-4, seg.awareness),
       subs: seg.premium + seg.ads, rivalSubs: riv.segments[def.id],
     });
@@ -965,6 +1099,16 @@ export function step(prevState, input = {}) {
   // Розница до партнёрского блока: по ней считается, сколько места на рынке
   // ещё осталось. Итоговая розница пересчитывается ниже — после того как
   // остатки закрытых контрактов перейдут в собственную базу.
+  // Агрегаты по когортам и общим паролям — для отчёта и панели финдира
+  const youngTotal = SEGMENTS.reduce((sum, def) => sum + (state.segments[def.id].young ?? 0), 0);
+  const retailNowForCohort = perSegment.reduce((s, p) => s + p.subs, 0);
+  const wAvg = (key) => (retailNowForCohort > 0
+    ? perSegment.reduce((s, p) => s + (p[key] ?? 0) * p.subs, 0) / retailNowForCohort : 0);
+  const churnYoungAvg = wAvg('churnYoung');
+  const churnMatureAvg = wAvg('churnMature');
+  const newSubsSharing = perSegment.reduce((s, p) => s + (p.sharingNew ?? 0), 0);
+  const lostSubsSharing = perSegment.reduce((s, p) => s + (p.sharingLost ?? 0), 0);
+
   const retailBeforePartners = perSegment.reduce((s, p) => s + p.subs, 0);
   if (input.partnerAnswer && state.partnerOffer) {
     if (input.partnerAnswer === 'accept') {
@@ -1145,8 +1289,28 @@ export function step(prevState, input = {}) {
   const perUnitCost = (mods.oneOffCostPerSub ?? 0) * subsAtStart
     + (mods.oneOffCostTalent ?? 0) * talentIndex;
   const oneOff = installCost + perUnitCost + (mods.oneOffCost ?? 0) + (crisisMods.oneOffCost ?? 0)
-    + crisisCost + partnerFees;
+    + crisisCost + partnerFees + anchorRenewCost;
+  // --- Учёт контента: касса против признанного расхода ---
+  // Деньги за контент уходят в момент покупки или съёмок, а работает он
+  // месяцами. Списание идёт по убывающему остатку: в первый месяц самая
+  // большая доля, дальше всё меньше. На кассу и на счёт партии это не
+  // влияет — влияет только на то, как выглядит прибыль. Расхождение двух
+  // строк и есть ответ на вопрос, почему в подписке можно показывать
+  // прибыль и одновременно оставаться без денег.
+  const book = state.contentBook ?? (state.contentBook = { license: 0, original: 0 });
+  book.license += contentBudget.licensing + anchorRenewCost;
+  book.original += productionSpend;
+  const amortLicense = book.license * CONFIG.amortRateLicense;
+  const amortOriginal = book.original * CONFIG.amortRateOriginal;
+  book.license = Math.max(0, book.license - amortLicense);
+  book.original = Math.max(0, book.original - amortOriginal);
+  const contentAmortization = amortLicense + amortOriginal;
+  const contentBookValue = book.license + book.original;
+
   const profit = contribution - fixed;
+  // Учётная прибыль: тот же месяц, но контент признан по списанию, а не
+  // по кассе. Счёт партии считается по кассовой — здесь только отчёт.
+  const profitAccrual = profit + contentSpend - contentAmortization;
 
   // Годовая предоплата — это касса сегодня и выручка, растянутая на год.
   // В P&L она не попадает: иначе один и тот же рубль был бы учтён дважды.
@@ -1279,6 +1443,36 @@ export function step(prevState, input = {}) {
     techUpkeep,
     contentSpend,
     contentCapped: capApplied ? cap : null,
+    // Касса против P&L: сколько ушло деньгами и сколько признано расходом
+    contentAmortization,
+    contentBookValue,
+    profitAccrual,
+
+    // --- Якорный тайтл ---
+    anchorAlive: anchor.alive,
+    anchorMonthsLeft: anchor.alive ? anchor.monthsLeft : 0,
+    anchorPrice,
+    anchorRenewCost,
+    anchorRenewals: anchor.renewals,
+    anchorLost,
+    anchorDecayLeft: anchor.decayLeft,
+    anchorChurnAdd,
+
+    // --- Общие пароли ---
+    sharingShare: state.sharingShare,
+    sharingPolicy,
+    sharingConvertedSubs: newSubsSharing,
+    sharingLostSubs: lostSubsSharing,
+
+    // --- Когорты по стажу ---
+    youngSubs: youngTotal,
+    youngShare: retailSubs > 0 ? youngTotal / retailSubs : 0,
+    churnYoungAvg: churnYoungAvg,
+    churnMatureAvg: churnMatureAvg,
+    // Ставка до разбиения по стажу: ею меряется реакция на решения, тогда как
+    // churnRate дополнительно двигается составом базы (мешать одно с другим
+    // при отладке — верный способ увидеть эффект там, где его нет).
+    churnBase: wAvg('churnBase'),
     oneOff,
     installCost,
     crisisCost,
