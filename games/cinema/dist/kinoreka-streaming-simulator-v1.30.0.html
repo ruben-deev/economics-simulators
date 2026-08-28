@@ -3775,9 +3775,16 @@ const CONFIG = {
   // в привычку. Одна усреднённая ставка прячет главный вывод: громкая
   // премьера приводит не подписчиков, а пробников, и настоящий актив —
   // выдержанная база, а не месячный прирост.
+  // Множители нормированы на опорную долю новичков: при ней средний отток
+  // равен базовой ставке, и разбиение по стажу не утяжеляет модель само по
+  // себе. Выше опорной доли (быстрый рост, свежий сервис) средний отток
+  // растёт, ниже (выдержанная база) — падает. Без нормировки механика была
+  // бы просто общим повышением оттока, а урок в ней не про уровень, а про
+  // состав базы.
   cohortYoungMonths: 3,       // сколько месяцев подписчик считается новичком
   cohortYoungChurn: 1.65,     // множитель оттока для новичков
   cohortMatureChurn: 0.86,    // множитель оттока для выдержанной базы
+  cohortRefYoungShare: 0.18,  // опорная доля новичков, на которой ставка равна базовой
 
   // --- Общие пароли ---
   // Одной подпиской пользуются в нескольких домах. Доля растёт со временем
@@ -3787,6 +3794,7 @@ const CONFIG = {
   sharingGrowth: 0.055,       // прирост доли за год при большой базе
   sharingCap: 0.30,
   sharingHoursMult: 0.55,     // сколько часов потребляет разделяющий от обычного
+  sharingWordOfMouth: 0.130,  // прибавка к узнаваемости от бесплатной витрины
   // Что даёт монетизация: часть разделяющих платит, часть уходит совсем
   sharingConvert: 0.34,       // доля, которая соглашается платить
   sharingChurnBite: 0.22,     // доля, которая уходит и уводит основного подписчика
@@ -6806,7 +6814,11 @@ function step(prevState, input = {}) {
     seg.awareness = clamp(
       seg.awareness + (1 - seg.awareness) * gain
       - seg.awareness * CONFIG.awarenessDecay * (crisisMods.awarenessMult ? 2 : 1)
-      + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02,
+      + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02
+      // Бесплатная витрина: тот, кто смотрит по чужому паролю, рассказывает
+      // о каталоге не хуже рекламы. Закрыв доступ рано, вы гасите этот
+      // канал — и платите за охват деньгами вместо чужих разговоров.
+      + (state.sharingShare ?? 0) * CONFIG.sharingWordOfMouth,
       0, 1);
 
     // --- Рынок один на двоих ---
@@ -6948,8 +6960,13 @@ function step(prevState, input = {}) {
     const youngBefore = clamp(seg.young ?? 0, 0, subsBefore);
     const youngChurnable = Math.min(churnable, youngBefore);
     const matureChurnable = Math.max(0, churnable - youngChurnable);
-    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn, 0.005, 0.75);
-    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn, 0.002, 0.5);
+    // Нормировка: при опорной доле новичков смесь даёт ровно базовую ставку.
+    // Иначе разбиение по стажу молча поднимало бы отток всем и всегда —
+    // а смысл механики в составе базы, а не в её общем утяжелении.
+    const ref = CONFIG.cohortRefYoungShare;
+    const refMix = ref * CONFIG.cohortYoungChurn + (1 - ref) * CONFIG.cohortMatureChurn;
+    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn / refMix, 0.005, 0.75);
+    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn / refMix, 0.002, 0.5);
     const leavingYoung = youngChurnable * churnYoung;
     const leavingMature = matureChurnable * churnMature;
     const leaving = leavingYoung + leavingMature + sharingLostHere;
@@ -7151,6 +7168,13 @@ function step(prevState, input = {}) {
     hours += segHours;
     adHours += p.adHours;
   }
+
+  // Общие пароли: эти люди смотрят ваш каталог, не заплатив ни рубля.
+  // Трафик за них платите вы — это и есть цена бесплатной витрины, и она
+  // растёт вместе с долей разделяющих. Без этой строки «не трогать» было
+  // бы бесплатным решением, а значит и не решением вовсе.
+  const sharingHours = hours * (state.sharingShare ?? 0) * CONFIG.sharingHoursMult;
+  hours += sharingHours;
 
   const retailHours = hours;
 

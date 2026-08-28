@@ -850,7 +850,11 @@ export function step(prevState, input = {}) {
     seg.awareness = clamp(
       seg.awareness + (1 - seg.awareness) * gain
       - seg.awareness * CONFIG.awarenessDecay * (crisisMods.awarenessMult ? 2 : 1)
-      + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02,
+      + (mods.awarenessAdd ?? 0) + premiereAppeal * 0.02
+      // Бесплатная витрина: тот, кто смотрит по чужому паролю, рассказывает
+      // о каталоге не хуже рекламы. Закрыв доступ рано, вы гасите этот
+      // канал — и платите за охват деньгами вместо чужих разговоров.
+      + (state.sharingShare ?? 0) * CONFIG.sharingWordOfMouth,
       0, 1);
 
     // --- Рынок один на двоих ---
@@ -992,8 +996,13 @@ export function step(prevState, input = {}) {
     const youngBefore = clamp(seg.young ?? 0, 0, subsBefore);
     const youngChurnable = Math.min(churnable, youngBefore);
     const matureChurnable = Math.max(0, churnable - youngChurnable);
-    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn, 0.005, 0.75);
-    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn, 0.002, 0.5);
+    // Нормировка: при опорной доле новичков смесь даёт ровно базовую ставку.
+    // Иначе разбиение по стажу молча поднимало бы отток всем и всегда —
+    // а смысл механики в составе базы, а не в её общем утяжелении.
+    const ref = CONFIG.cohortRefYoungShare;
+    const refMix = ref * CONFIG.cohortYoungChurn + (1 - ref) * CONFIG.cohortMatureChurn;
+    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn / refMix, 0.005, 0.75);
+    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn / refMix, 0.002, 0.5);
     const leavingYoung = youngChurnable * churnYoung;
     const leavingMature = matureChurnable * churnMature;
     const leaving = leavingYoung + leavingMature + sharingLostHere;
@@ -1195,6 +1204,13 @@ export function step(prevState, input = {}) {
     hours += segHours;
     adHours += p.adHours;
   }
+
+  // Общие пароли: эти люди смотрят ваш каталог, не заплатив ни рубля.
+  // Трафик за них платите вы — это и есть цена бесплатной витрины, и она
+  // растёт вместе с долей разделяющих. Без этой строки «не трогать» было
+  // бы бесплатным решением, а значит и не решением вовсе.
+  const sharingHours = hours * (state.sharingShare ?? 0) * CONFIG.sharingHoursMult;
+  hours += sharingHours;
 
   const retailHours = hours;
 
