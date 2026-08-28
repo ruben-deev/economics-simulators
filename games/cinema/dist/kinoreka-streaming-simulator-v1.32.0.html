@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.31.0" />
+  <meta name="app-version" content="1.32.0" />
   <meta name="app-build-date" content="2026-08-28" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1465,14 +1465,6 @@ const STRINGS = {
   studioPipeTitle: { ru: 'Конвейер студии: снимается {producing}, готово и ждёт {ready}', en: 'Studio pipeline: {producing} shooting, {ready} finished and waiting' },
   studioSlotMonths: { ru: '{months} мес.', en: '{months} mo.' },
   studioSlotIdle: { ru: 'слот простаивает', en: 'idle slot' },
-  leverInertAds: {
-    ru: 'На рекламном тарифе пока никого нет: цена рекламы начнёт работать, когда на него кто-то перейдёт.',
-    en: 'Nobody is on the ad-supported tier yet: its price starts working once someone switches to it.',
-  },
-  leverInertAnnual: {
-    ru: 'Годовых подписок пока нет: скидка начнёт работать с первого, кто заплатит за год вперёд.',
-    en: 'There are no annual plans yet: the discount starts working with the first person who pays a year upfront.',
-  },
   flowTitle: { ru: 'Мультиплекс: тарифы и рынок', en: 'The multiplex: tiers and the market' },
   plexPremium: { ru: 'Премиум · {price}', en: 'Premium · {price}' },
   plexAds: { ru: 'Рекламный · {price}', en: 'Ad tier · {price}' },
@@ -1767,6 +1759,7 @@ const STRINGS = {
 
 
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
+  leverUnlocked: { ru: '🔓 Открылся рычаг: {name}', en: '🔓 A new lever is live: {name}' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- сводка под ползунками ---
@@ -1795,6 +1788,7 @@ const STRINGS = {
   rivalMega: { ru: 'Событие года', en: 'Event of the year' },
   rivalNoEffect: { ru: 'ничего не отвлекает зрителя', en: 'nothing is competing for attention' },
   rivalEffects: { ru: 'приток новых <b class="down">{acq}</b>, отток <b class="down">+{churn} п.п.</b>, часы <b class="down">{hours}</b>', en: 'new sign-ups <b class="down">{acq}</b>, churn <b class="down">+{churn} pp</b>, hours <b class="down">{hours}</b>' },
+  rivalShooting: { ru: 'В работе у него: {genre}. До премьеры {months} мес. — столько же есть у вас, чтобы подготовить ответ.', en: 'In production over there: {genre}. {months} months to its premiere — the same amount of time you have to prepare an answer.' },
   rivalAdvice: { ru: 'В следующем месяце зрителя будут звать в другое место. Своя громкая премьера гасит чужую — но её нужно было запустить в производство полгода назад. Что можно сейчас: усилить маркетинг или переждать и не жечь бюджет впустую.', en: 'Next month someone else will be calling your viewers away. Your own loud premiere blunts theirs — but it had to enter production six months ago. What you can still do: push marketing, or sit it out and not burn the budget for nothing.' },
 
   seasonWinter: { ru: 'зима', en: 'winter' },
@@ -1845,8 +1839,8 @@ const STRINGS = {
   // --- отчёт ---
   reportMonth0: { ru: 'Месяц 0. Сервис ещё не запущен.', en: 'Month 0. The service has not launched yet.' },
   reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
-  reportStartIntro: { ru: 'У вас {cash} и библиотека из нескольких сотен часов старого кино. Порядок почти всегда такой:', en: 'You have {cash} and a library of a few hundred hours of old films. The sequence is almost always this:' },
-  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your own project will not premiere for six months.' },
+  reportStartIntro: { ru: 'У вас {cash}, библиотека из нескольких сотен часов старого кино и наследство прежнего владельца: пилот, доснятый наполовину. Он выйдет через пару месяцев — а дальше премьеры уже ваша забота. Порядок почти всегда такой:', en: 'You have {cash}, a library of a few hundred hours of old films, and what the previous owner left behind: a pilot, half shot. It lands in a couple of months — after that, premieres are your problem. The sequence is almost always this:' },
+  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а следующий собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your next own project will not premiere for six months.' },
   reportStart2: { ru: 'Одновременно запустите <a class="jump" data-jump="panel:slate">производство</a>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <a class="jump" data-jump="panel:slate">production</a>. An original is the only thing your rival does not have, and it stays yours forever.' },
   reportStart3: { ru: 'Проверьте вклад с подписчика: трафик растёт вместе с просмотром, и слишком щедрый битрейт съедает подписку целиком.', en: 'Check contribution per subscriber: bandwidth grows with viewing, and an over-generous bitrate can swallow the whole subscription fee.' },
   reportStart4: { ru: 'Только потом включайте <a class="jump" data-jump="lever:brandMarketing">маркетинг</a>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <a class="jump" data-jump="lever:brandMarketing">marketing</a>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },
@@ -3710,7 +3704,13 @@ const CONFIG = {
     roundGain: 0.20,
   },
   monthsTotal: 36,          // партия — три года
-  startCash: 4_000_000_000, // деньги инвестора на старте
+  // Деньги инвестора на старте. Было 4 млрд: 300 млн срезано под наследство
+  // прежнего владельца — полусмонтированный пилот, который выходит на третьем
+  // месяце. Подарок нужен новичку (до него первая своя премьера приходила на
+  // седьмом месяце во всех 24 партиях), но он же и подарок: на 72 кодах без
+  // компенсации ровная опора прибавляла 18%, студийная 19%. С 3.7 млрд обе
+  // возвращаются в прежний коридор.
+  startCash: 3_700_000_000,
 
   // --- Каталог ---
   // Лицензии дешевле, но истекают и есть у конкурентов. Оригиналы дороже,
@@ -5171,6 +5171,10 @@ function createRival(rng) {
     catalogLicensed: 2_200,
     catalogOriginal: 0,
     freshHours: 220,
+    // Он на рынке давно, и его студия не начинает с нуля вместе с вашей:
+    // один проект уже в работе. Иначе первая чужая премьера приходила на
+    // 7-м месяце, и панель «Афиша конкурента» шесть ходов говорила «Тихо» —
+    // то есть главный соперник полгода не подавал признаков жизни.
     pipeline: [],
     studioFund: 0,
     lastBuzz: 0,
@@ -5342,6 +5346,16 @@ function stepRival(rival, ctx, rng) {
   const next = rival.pipeline.filter((p) => p.monthsLeft <= 1);
   rival.announced = next.length
     ? { buzz: next.reduce((s, p) => s + genreOr(p.genre).buzz * p.quality, 0), genre: next[0].genre }
+    : null;
+
+  // Что у него в работе прямо сейчас. Анонс на следующий месяц появляется
+  // только когда проект почти готов, и первые полгода панель конкурента
+  // говорила «Тихо» — главный соперник полгода не подавал признаков жизни.
+  // Съёмки же видны отрасли сразу: это открытая информация, и на его
+  // экономику она не влияет никак.
+  const shooting = [...rival.pipeline].sort((a, b) => a.monthsLeft - b.monthsLeft)[0];
+  rival.shooting = shooting
+    ? { genre: shooting.genre, monthsLeft: shooting.monthsLeft }
     : null;
 
   // --- Узнаваемость и деньги ---
@@ -5810,6 +5824,35 @@ const EVENTS = [
     },
   },
   {
+    // Событие второго месяца: единственное с minMonth 2, поэтому первым
+    // выпадает именно оно. Цена честная — ровно 600 тыс ₽ за час, как в
+    // рычаге закупки: сделка не в цене, а в сроке. И ровно поэтому она
+    // учит тому, что своей закупкой видно не сразу: полка выросла, а
+    // свежесть — нет, потому что чужие часы почти не считаются новинками.
+    id: 'clearance', weight: 6, minMonth: 2,
+    title: { ru: 'Прокатчик отдаёт пакет одним лотом', en: 'A distributor is selling a package as one lot' },
+    text: {
+      ru: 'Полтораста часов чужого каталога — сразу, одним договором. Цена обычная, необычен срок: своя закупка набирала бы столько несколько месяцев.',
+      en: 'A hundred and fifty hours of someone else’s catalogue, all at once, in a single contract. The price is ordinary; the timing is not — buying this much through your own budget would take months.',
+    },
+    lesson: {
+      ru: 'Полка выросла, а свежесть — почти нет: чужие часы приводят зрителя, но ощущение «тут появилось новое» дают только свои премьеры. Глубина и новизна — два разных запаса, и пополняются они по-разному.',
+      en: 'The shelf grew; freshness barely did. Someone else’s hours bring viewers in, but the feeling that something new has appeared comes only from your own premieres. Depth and novelty are two different stocks, and they are refilled differently.',
+    },
+    options: [
+      {
+        label: { ru: 'Взять пакет (90 млн ₽)', en: 'Take the package ($0.9M)' },
+        detail: { ru: 'Сто пятьдесят часов на полку в этом же месяце.', en: 'A hundred and fifty hours on the shelf this very month.' },
+        effects: { oneOffCost: 90_000_000, licenseHoursAdd: 150 },
+      },
+      {
+        label: { ru: 'Отказаться', en: 'Pass' },
+        detail: { ru: 'Деньги остаются, полка растёт своим чередом.', en: 'The money stays; the shelf grows at its own pace.' },
+        effects: {},
+      },
+    ],
+  },
+  {
     id: 'outage', weight: 6, minMonth: 4,
     title: { ru: 'Сбой в вечер премьеры', en: 'Outage on premiere night' },
     text: {
@@ -5995,8 +6038,11 @@ function boostCarriers(pool, seen, late) {
 }
 
 function rollEvent(rng, month, flags = {}, seenIds = []) {
-  if (month < 3) return null;
-  if (rng() > 0.30) return null;
+  if (month < 2) return null;
+  // Второй месяц — первое решение партии, и оно приходит гарантированно.
+  // Раньше первое событие выпадало медианно на пятом месяце, а до него игрок
+  // только двигал ползунки: рынок вокруг молчал.
+  if (month > 2 && rng() > 0.30) return null;
   const seen = new Set(seenIds);
   let pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0) && !seen.has(e.id));
   pool = boostCarriers(pool, seenIds, month >= 26);
@@ -6153,7 +6199,21 @@ function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     marketLiftUntil: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
-    slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
+    // Наследство прежнего владельца: пилот, доснятый наполовину. Замер
+    // показывал, что первая своя премьера приходила на 7-м месяце во всех
+    // 24 партиях, а до неё игрок шесть ходов жал кнопку в пустоте. Съёмки
+    // оплачены прежним владельцем — на кассу проект не влияет, только на то,
+    // что приносит: часы и всплеск. Пилот драмы выбран нарочно: у драмы
+    // похмелье 0.45 — обвал заметен, но партию не ломает, и урок «один хит
+    // это заём, а не рост» приходит на третьем ходу, а не на десятом.
+    slate: [{
+      id: 0, genre: 'drama', scale: 'pilot', segment: null,
+      monthsLeft: 2, monthsTotal: 4, monthsHeld: 0,
+      hours: 4, quality: 0.72,
+      totalCost: 0, monthlyCost: 0, paid: 0,
+      inherited: true,
+      status: 'production',
+    }],
     lastRaiseMonth: -99,   // когда последний раз поднимали цену действующим
     lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
     weeklyHoldLeft: 0,     // сколько месяцев ещё идёт понедельный выпуск
@@ -6618,10 +6678,14 @@ function step(prevState, input = {}) {
   // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
   // лицензионного каталога видна только тем, кто читает исходники.
   const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
-  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
+  // Пакет прав, купленный по событию, ложится на ту же полку и тает по тем же
+  // правилам: аренда остаётся арендой, кем бы она ни была оформлена.
+  const eventHours = mods.licenseHoursAdd ?? 0;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours + eventHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
-  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
+  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay)
+    + (boughtHours + eventHours) * CONFIG.licenseFreshShare;
 
   // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
   // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог
@@ -7611,6 +7675,8 @@ function step(prevState, input = {}) {
     // --- Конкурент ---
     rival: rivalType,
     rivalNext: rivalNextType,
+    // Что конкурент снимает прямо сейчас: жанр и сколько месяцев до премьеры
+    rivalShooting: riv.shooting ?? null,
     rivalAcquisition: rival.acquisitionMult,
     rivalChurnAdd: rival.churnAdd,
     rivalSubs: rivalTotal,
@@ -9081,7 +9147,7 @@ const RECORDS_KEY = 'kinoreka-records';
 const GAME_TAG = 'КИНОРЕКА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
-const BUILD = 'cinema-3';
+const BUILD = 'cinema-4';
 // Версию проставляет сборщик. У модульной версии метки нет — значит это
 // исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
 // сборка» был ответ, а не догадки.
@@ -9103,6 +9169,7 @@ let state = null;
 let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversInert = null;   // подпись состава рычагов: меняется — панель пересобирается
 let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
@@ -9447,17 +9514,18 @@ function renderBudget() {
   });
 }
 
-// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
-// Молча неработающий ползунок — худший вид обучения.
-function inertNote(l) {
+// Рычаг, который прямо сейчас ни на что не влияет, не показывается вовсе.
+// Раньше он стоял в панели с замком и абзацем о том, почему не работает:
+// новичок первым делом видел два мёртвых органа управления, а «Закупка
+// лицензий» — шаг номер один его же инструкции — уезжала на 500 px ниже
+// сгиба. Теперь рычаг появляется в тот месяц, когда начинает работать, —
+// и появление отмечается тостом: в первые ходы это единственная награда.
+function inertKeys() {
   const r = last();
-  if (l.key === 'priceAds' && (r?.adSubs ?? 0) === 0) {
-    return `<div class="policy-note">🔒 ${t('leverInertAds')}</div>`;
-  }
-  if (l.key === 'annualDiscount' && (r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) {
-    return `<div class="policy-note">🔒 ${t('leverInertAnnual')}</div>`;
-  }
-  return '';
+  const out = new Set();
+  if ((r?.adSubs ?? 0) === 0) out.add('priceAds');
+  if ((r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) out.add('annualDiscount');
+  return out;
 }
 
 function buildLevers() {
@@ -9465,8 +9533,10 @@ function buildLevers() {
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
   // их всё время на экране значит тратить внимание там, где решения нет.
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
+    const inert = inertKeys();
     const items = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree)
+      && !inert.has(l.key));
     if (!items.length) return '';
     return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
       <button class="lever-group-head" type="button">
@@ -9482,7 +9552,6 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
-            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx)
               : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`}
             <button class="lever-why" type="button">${t('leverWhy')}</button>
@@ -10360,6 +10429,11 @@ function renderRival() {
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
       ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`, state.month + 1)}
+      ${next === 'none' && r?.rivalShooting ? `<div class="funding-note" style="flex-basis:100%">${
+        t('rivalShooting', {
+          genre: genreName(r.rivalShooting.genre).toLowerCase(),
+          months: r.rivalShooting.monthsLeft,
+        })}</div>` : ''}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
@@ -10845,12 +10919,13 @@ function renderReport() {
       ${stat(t('statArpu'), `${amount(r.arpu)}`, t('statArpuSub', { value: `${amount(r.cmPerSub)}` }))}
       ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: amount(r.cdnPerHour, 2) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
-        r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
-      ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
-        t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
-      ${stat(t('statPriceGap'), `${amount(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
-        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
+      ${r.cac > 0 ? stat(t('statCacLtv'), `${amount(r.cac)}`,
+        r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff')) : ''}
+      ${r.switchedIn + r.switchedOut > 0
+        ? stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
+          t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) })) : ''}
+      ${r.subs > 0 ? stat(t('statPriceGap'), `${amount(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
+        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) })) : ''}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
         t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
     </div>
@@ -11807,7 +11882,17 @@ function renderChrome() {
 function renderAll() {
   // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
   // нет — она уже оплачена), поэтому смена уровня пересобирает панель
-  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
+  const inertNow = [...inertKeys()].sort().join(',');
+  if (!leversBuilt || leversDiff !== state.difficulty || leversInert !== inertNow) {
+    const appeared = leversBuilt && leversInert !== null
+      ? leversInert.split(',').filter((k) => k && !inertNow.split(',').includes(k)) : [];
+    leversInert = inertNow;
+    buildLevers();
+    for (const key of appeared) {
+      const def = LEVERS.find((l) => l.key === key);
+      if (def) toast(t('leverUnlocked', { name: tx(def.label) }));
+    }
+  }
   renderChrome();
   syncLevers();
   renderPriceGap();
@@ -11833,6 +11918,7 @@ function renderAll() {
 function switchLang() {
   setLang(getLang() === 'ru' ? 'en' : 'ru');
   leversBuilt = false;
+  leversInert = null;
   renderAll();
 }
 

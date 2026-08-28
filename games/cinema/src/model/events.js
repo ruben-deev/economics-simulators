@@ -53,6 +53,35 @@ export const EVENTS = [
     },
   },
   {
+    // Событие второго месяца: единственное с minMonth 2, поэтому первым
+    // выпадает именно оно. Цена честная — ровно 600 тыс ₽ за час, как в
+    // рычаге закупки: сделка не в цене, а в сроке. И ровно поэтому она
+    // учит тому, что своей закупкой видно не сразу: полка выросла, а
+    // свежесть — нет, потому что чужие часы почти не считаются новинками.
+    id: 'clearance', weight: 6, minMonth: 2,
+    title: { ru: 'Прокатчик отдаёт пакет одним лотом', en: 'A distributor is selling a package as one lot' },
+    text: {
+      ru: 'Полтораста часов чужого каталога — сразу, одним договором. Цена обычная, необычен срок: своя закупка набирала бы столько несколько месяцев.',
+      en: 'A hundred and fifty hours of someone else’s catalogue, all at once, in a single contract. The price is ordinary; the timing is not — buying this much through your own budget would take months.',
+    },
+    lesson: {
+      ru: 'Полка выросла, а свежесть — почти нет: чужие часы приводят зрителя, но ощущение «тут появилось новое» дают только свои премьеры. Глубина и новизна — два разных запаса, и пополняются они по-разному.',
+      en: 'The shelf grew; freshness barely did. Someone else’s hours bring viewers in, but the feeling that something new has appeared comes only from your own premieres. Depth and novelty are two different stocks, and they are refilled differently.',
+    },
+    options: [
+      {
+        label: { ru: 'Взять пакет (90 млн ₽)', en: 'Take the package ($0.9M)' },
+        detail: { ru: 'Сто пятьдесят часов на полку в этом же месяце.', en: 'A hundred and fifty hours on the shelf this very month.' },
+        effects: { oneOffCost: 90_000_000, licenseHoursAdd: 150 },
+      },
+      {
+        label: { ru: 'Отказаться', en: 'Pass' },
+        detail: { ru: 'Деньги остаются, полка растёт своим чередом.', en: 'The money stays; the shelf grows at its own pace.' },
+        effects: {},
+      },
+    ],
+  },
+  {
     id: 'outage', weight: 6, minMonth: 4,
     title: { ru: 'Сбой в вечер премьеры', en: 'Outage on premiere night' },
     text: {
@@ -238,8 +267,11 @@ function boostCarriers(pool, seen, late) {
 }
 
 export function rollEvent(rng, month, flags = {}, seenIds = []) {
-  if (month < 3) return null;
-  if (rng() > 0.30) return null;
+  if (month < 2) return null;
+  // Второй месяц — первое решение партии, и оно приходит гарантированно.
+  // Раньше первое событие выпадало медианно на пятом месяце, а до него игрок
+  // только двигал ползунки: рынок вокруг молчал.
+  if (month > 2 && rng() > 0.30) return null;
   const seen = new Set(seenIds);
   let pool = EVENTS.filter((e) => month >= (e.minMonth ?? 0) && !seen.has(e.id));
   pool = boostCarriers(pool, seenIds, month >= 26);

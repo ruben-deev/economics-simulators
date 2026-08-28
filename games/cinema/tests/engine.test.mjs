@@ -151,13 +151,28 @@ const once = (state, decisions) => step(state, { decisions, eventChoice: 0 }).re
 // Базовая целостность
 // ----------------------------------------------------------------------------
 
+// Партия без наследства прежнего владельца. Тесты механик считают проекты
+// поштучно, и стартовый пилот сбивал бы им счёт; сам старт проверяется
+// отдельным тестом ниже.
+function bare(seed, difficulty) {
+  const s = createInitialState(seed, difficulty);
+  s.slate = [];
+  return s;
+}
+
 test('стартовое состояние согласовано', () => {
   const s = createInitialState('a');
   assert.equal(s.cash, CONFIG.startCash);
   assert.equal(s.month, 0);
   assert.equal(s.equity, 1);
   assert.equal(s.catalogOriginal, 0);
-  assert.equal(s.slate.length, 0);
+  // Наследство прежнего владельца: пилот, доснятый наполовину. Он в
+  // производстве, оплачен не игроком и выходит на третьем месяце — до него
+  // первые ходы проходили в пустоте.
+  assert.equal(s.slate.length, 1);
+  assert.equal(s.slate[0].status, 'production');
+  assert.equal(s.slate[0].monthlyCost, 0, 'съёмки оплачены прежним владельцем');
+  assert.ok(s.slate[0].monthsLeft <= 2, 'премьера в первые месяцы, а не через полгода');
   assert.ok(s.catalogLicensed >= 0);
   for (const def of SEGMENTS) {
     assert.equal(s.segments[def.id].pricing.lockedPrice, DEFAULT_DECISIONS.priceNew);
@@ -393,7 +408,7 @@ test('час оригинала весит в глубине больше час
 
 test('проект готов ровно через столько месяцев, сколько обещал масштаб', () => {
   for (const sc of SCALES) {
-    let state = createInitialState(`pipe-${sc.id}`);
+    let state = bare(`pipe-${sc.id}`);
     const d = decide({ licensing: 0 });
     let readyAt = null;
     for (let i = 0; i < sc.months + 3 && !readyAt; i++) {
@@ -409,7 +424,7 @@ test('проект готов ровно через столько месяце�
 });
 
 test('готовый проект ждёт решения игрока, а не выходит сам', () => {
-  let state = createInitialState('vault');
+  let state = bare('vault');
   const d = decide({ licensing: 0 });
   for (let i = 0; i < 10; i++) {
     const res = step(state, {
@@ -458,7 +473,7 @@ test('прицельный проект бьёт в свой сегмент и �
 });
 
 test('слотов ограниченное число, и лишние запуски отклоняются', () => {
-  const state = createInitialState('slots');
+  const state = bare('slots');
   const three = [1, 2, 3].map(() => ({ genre: 'drama', scale: 'season', segment: null }));
   const r = step(state, { decisions: decide({ studioSlots: 2, licensing: 0 }), commission: three }).report;
   assert.equal(r.started.length, 2, 'запустилось столько, сколько слотов');
@@ -475,7 +490,7 @@ test('слот стоит денег, даже когда пустует', () =>
 });
 
 test('производство списывается равными долями, а не одним платежом', () => {
-  const state = createInitialState('spread');
+  const state = bare('spread');
   const sc = scaleById('season');
   const price = projectPrice('drama', 'season', 1);
   const first = step(state, {
@@ -899,16 +914,16 @@ test('закрытие контракта не роняет базу на бум
 test('отток и средние по сегментам не разбавляются оптом', () => {
   // Розничные показатели должны считаться по розничной базе: иначе крупный
   // контракт «улучшал» удержание и цену, ничего в них не меняя.
-  const solo = createInitialState('dilute');
-  let a = solo, withDeal = createInitialState('dilute');
+  const solo = bare('dilute');
+  let a = solo, withDeal = bare('dilute');
   let churnSolo = 0, churnDeal = 0;
   for (let i = 0; i < 14; i++) {
     const r1 = step(a, { decisions: DEFAULT_DECISIONS, eventChoice: 0 });
-    a = r1.state; churnSolo = r1.report.churnRate;
+    a = r1.state; churnSolo = r1.report.churnBase;
     const input = { decisions: DEFAULT_DECISIONS, eventChoice: 0 };
     if (withDeal.partnerOffer) input.partnerAnswer = 'accept';
     const r2 = step(withDeal, input);
-    withDeal = r2.state; churnDeal = r2.report.churnRate;
+    withDeal = r2.state; churnDeal = r2.report.churnBase;
   }
   assert.ok(withDeal.partners.length > 0, 'контракт не подписался — сравнивать нечего');
   assert.ok(Math.abs(churnDeal - churnSolo) < 0.02,
@@ -983,7 +998,8 @@ test('дорогая подписка опускает доступность ц
 
 test('события не появляются в первые месяцы и берутся из своего пула', () => {
   const rng = createRng('ev');
-  for (let m = 1; m < 3; m++) assert.equal(rollEvent(rng, m), null);
+  assert.equal(rollEvent(rng, 1), null, 'на первом месяце событий нет');
+  assert.ok(rollEvent(rng, 2), 'на втором месяце событие приходит гарантированно');
   const seen = new Set();
   for (let i = 0; i < 4000; i++) {
     const e = rollEvent(rng, 20);
@@ -1087,48 +1103,54 @@ test('релиз в высокий сезон слышнее, чем в низк
     `зимняя премьера ${s2.premieres[0].buzz} должна быть заметно громче летней ${s1.premieres[0].buzz}`);
 });
 
-test('смешанный слейт бьёт однообразный', () => {
-  // Сравниваем ровно одно: чередование масштабов. Всё остальное — цены,
-  // бюджеты, слоты, момент выхода — одинаковое. Две ловушки, на которых эта
-  // проверка уже обжигалась: «смешанный» вариант не должен заодно придерживать
-  // готовое (иначе меряется придержание), а стратегия обязана быть
-  // платёжеспособной — на краю выживания итог решают обрывы раундов
-  // и разводнение, а не состав слейта.
-  const play = (mixScales) => ['u1', 'u2', 'u3'].reduce((sum, seed) => {
-    let state = createInitialState(seed);
+test('масштаб проекта — обмен, а не лестница: горизонт меняет ответ', () => {
+  // Прежняя версия этой проверки утверждала, что чередование масштабов бьёт
+  // однообразный конвейер, и держалась на трёх сидах. На двадцати четырёх
+  // утверждение разваливается: смешанный выигрывает на 11–14 кодах из 24 при
+  // любой платёжеспособности политики — это подбрасывание монеты, а не вывод.
+  // Проверяем то, что в модели действительно есть: у масштаба нет лучшего
+  // варианта вообще, есть лучший под горизонт. Быстрый пилот выигрывает,
+  // пока считается первый год; на полной партии выигрывает сезон, который
+  // дольше едет, но и больше приносит.
+  const SEEDS_U = Array.from({ length: 12 }, (_, i) => `u${i + 1}`);
+  const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+
+  const play = (scale, seed, months) => {
+    let state = bare(seed);
     let last = null;
-    let n = 0;
-    for (let i = 0; i < CONFIG.monthsTotal && !state.over; i++) {
+    for (let i = 0; i < months && !state.over; i++) {
       const burn = Math.max(30e6, -(last?.profit ?? 0));
       if (state.month >= CONFIG.minMonthForFunding && state.cash < burn * 4) {
         state = raise(state, state.cash < burn * 2 ? 1_200_000_000 : 400_000_000).state;
       }
       const producing = state.slate.filter((p) => p.status === 'production').length;
-      const scale = mixScales ? (n++ % 2 ? 'pilot' : 'season') : 'season';
       const o = step(state, {
         decisions: decide({
-          // 449 вместо прежних 799: после пересборки спроса (аудит 2026-08)
-          // задранный прайс разоряет, и на 799 тест мерил бы обрывы, а не слейт
           priceNew: 449, priceAds: 166, adLoad: 2, annualDiscount: 0.15,
-          licensing: 375_000_000, brandMarketing: 60_000_000, trialDays: 21,
-          // Три слота, а не два: состав слейта решает тем сильнее, чем чаще
-          // выходят проекты — на двух слотах разница тонула в шуме сидов
+          licensing: 300_000_000, brandMarketing: 60_000_000, trialDays: 21,
           tech: 20_000_000, rnd: 10_000_000, studioSlots: 3,
         }),
         commission: producing < 3 ? [{ genre: 'family', scale, segment: 'mass' }] : [],
         release: state.slate.filter((p) => p.status === 'ready')
           .map((p) => ({ id: p.id, campaign: 25_000_000 })),
+        eventChoice: 1,
       });
       state = o.state;
       last = o.report;
     }
-    return sum + state.history[state.history.length - 1].equityValue;
-  }, 0) / 3;
+    return state.history[state.history.length - 1].equityValue;
+  };
+  const value = (scale, months) => med(SEEDS_U.map((seed) => play(scale, seed, months)));
 
-  const mixed = play(true);
-  const uniform = play(false);
-  assert.ok(mixed > uniform,
-    `смешанный слейт ${Math.round(mixed / 1e9)} млрд должен бить однообразный ${Math.round(uniform / 1e9)}`);
+  const shortPilot = value('pilot', 12);
+  const shortSeason = value('season', 12);
+  assert.ok(shortPilot > shortSeason * 1.15,
+    `на коротком горизонте пилот должен вести: ${Math.round(shortPilot / 1e9)} против ${Math.round(shortSeason / 1e9)} млрд`);
+
+  const longPilot = value('pilot', CONFIG.monthsTotal);
+  const longSeason = value('season', CONFIG.monthsTotal);
+  assert.ok(longSeason > longPilot * 1.15,
+    `на полной партии сезон должен вести: ${Math.round(longSeason / 1e9)} против ${Math.round(longPilot / 1e9)} млрд`);
 });
 
 
@@ -1505,7 +1527,7 @@ test('потолок совета считается по месячным тр�
 });
 
 test('уже запущенный проект досчитывается до конца даже под потолком', () => {
-  let s = createInitialState('cap3');
+  let s = bare('cap3');
   s = step(s, {
     decisions: decide({ licensing: 0, studioSlots: 2 }),
     commission: [{ genre: 'drama', scale: 'season', segment: null }],
@@ -2019,7 +2041,7 @@ test('чужие дома: попросить платить рано — пот
 test('судьба проекта: что стоил и что принёс, с честной атрибуцией', async () => {
   const { createInitialState, step, raise } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
-  let s = createInitialState('судьба', 'normal');
+  let s = bare('судьба', 'normal');
   let raises = 0;
   const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 100e6, studioSlots: 2 };
   s = step(s, { decisions: d,
@@ -2105,7 +2127,9 @@ test('якорная франшиза: второе продление доро�
   for (let i = 0; i < CONFIG.anchorTermMonths + CONFIG.anchorRenewMonths + 2; i++) {
     const a = s.anchor;
     const renew = a.alive && a.monthsLeft <= CONFIG.anchorWarnMonths;
-    s = step(s, { decisions: d, renewAnchor: renew, eventChoice: 0 }).state;
+    // Пакет прав второго месяца не берём: тест про цену франшизы, а лишние
+    // 90 млн в начале решают, хватит ли кассы на второе продление.
+    s = step(s, { decisions: d, renewAnchor: renew, eventChoice: 1 }).state;
     const r = s.history.at(-1);
     if (r.anchorRenewCost > 0) prices.push(r.anchorRenewCost);
   }

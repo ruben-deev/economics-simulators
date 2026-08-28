@@ -155,7 +155,21 @@ export function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     marketLiftUntil: 0,
     originalsByGenre: Object.fromEntries(GENRES.map((g) => [g.id, 0])),
     freshHours: 0,         // «новинки»: стареют каждый месяц
-    slate: [],             // проекты: в производстве, готовые в запасе, вышедшие
+    // Наследство прежнего владельца: пилот, доснятый наполовину. Замер
+    // показывал, что первая своя премьера приходила на 7-м месяце во всех
+    // 24 партиях, а до неё игрок шесть ходов жал кнопку в пустоте. Съёмки
+    // оплачены прежним владельцем — на кассу проект не влияет, только на то,
+    // что приносит: часы и всплеск. Пилот драмы выбран нарочно: у драмы
+    // похмелье 0.45 — обвал заметен, но партию не ломает, и урок «один хит
+    // это заём, а не рост» приходит на третьем ходу, а не на десятом.
+    slate: [{
+      id: 0, genre: 'drama', scale: 'pilot', segment: null,
+      monthsLeft: 2, monthsTotal: 4, monthsHeld: 0,
+      hours: 4, quality: 0.72,
+      totalCost: 0, monthlyCost: 0, paid: 0,
+      inherited: true,
+      status: 'production',
+    }],
     lastRaiseMonth: -99,   // когда последний раз поднимали цену действующим
     lastBuzz: 0,           // остаточный шум прошлой премьеры (для календаря релизов)
     weeklyHoldLeft: 0,     // сколько месяцев ещё идёт понедельный выпуск
@@ -620,10 +634,14 @@ export function step(prevState, input = {}) {
   // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
   // лицензионного каталога видна только тем, кто читает исходники.
   const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
-  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
+  // Пакет прав, купленный по событию, ложится на ту же полку и тает по тем же
+  // правилам: аренда остаётся арендой, кем бы она ни была оформлена.
+  const eventHours = mods.licenseHoursAdd ?? 0;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours + eventHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
-  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
+  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay)
+    + (boughtHours + eventHours) * CONFIG.licenseFreshShare;
 
   // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
   // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог
@@ -1613,6 +1631,8 @@ export function step(prevState, input = {}) {
     // --- Конкурент ---
     rival: rivalType,
     rivalNext: rivalNextType,
+    // Что конкурент снимает прямо сейчас: жанр и сколько месяцев до премьеры
+    rivalShooting: riv.shooting ?? null,
     rivalAcquisition: rival.acquisitionMult,
     rivalChurnAdd: rival.churnAdd,
     rivalSubs: rivalTotal,
