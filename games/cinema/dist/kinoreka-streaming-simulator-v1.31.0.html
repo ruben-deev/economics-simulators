@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.30.1" />
+  <meta name="app-version" content="1.31.0" />
   <meta name="app-build-date" content="2026-08-28" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -686,17 +686,32 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .deal-name { font-weight: 700; font-size: 13px; }
 .deal-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
 
-/* Судьба тайтла: карточка вместо строки таблицы. В правой колонке узко,
-   и пять колонок с подписями там не читаются ни на одном экране. */
-.title-cards { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
-.title-card { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--panel-2); }
-.title-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.title-name { font-weight: 700; font-size: 13px; }
-.title-pnl { margin-top: 7px; }
-.title-pnl td { padding: 2px 0; }
-.title-pnl td:last-child { text-align: right; white-space: nowrap; }
-.title-pnl tr.sub td:first-child { padding-left: 12px; color: var(--muted); font-size: 11px; }
-.title-pnl tr.total td { border-top: 1px solid var(--line); padding-top: 4px; font-weight: 700; }
+/* Судьба проектов: одна строка на проект. Карточками к финалу выходило
+   двенадцать одинаковых блоков по девять строк — в узкой колонке это не
+   читается. Подробности раскрываются по клику на нужной строке. */
+table.data.titles th { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+table.data.titles th:not(:first-child), table.data.titles td:not(:first-child) { text-align: right; white-space: nowrap; }
+/* Раскрытые подробности — обычный текст: он длинный, и nowrap выдавливал
+   колонку с итогом за край панели. */
+table.data.titles tr.sub td { white-space: normal; text-align: left; font-size: 11px; color: var(--muted); }
+table.data.titles tr.sub td:last-child { text-align: right; }
+table.data.titles td:first-child { width: 62%; }
+.title-row { cursor: pointer; }
+.title-row:hover td { background: var(--panel-2); }
+.title-row .funding-note { margin-top: 2px; }
+.row-toggle { color: var(--muted); font-size: 10px; }
+
+/* Полоса: панель, которая ничего не ждёт от игрока. Занимает строку,
+   разворачивается по требованию. */
+.strip { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 7px 13px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); margin-bottom: 10px; }
+.strip-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.strip .more { margin: 0; margin-left: auto; }
+.strip .deals { margin-top: 8px; }
+
+/* Что произойдёт по нажатию кнопки хода — строка над решениями месяца. */
+.plan-line { margin: -2px 0 8px; }
 
 .offer { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 9px; padding: 11px 13px; }
 .offer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -1265,18 +1280,20 @@ details[open] > .lever-group-title::before { transform: rotate(90deg); }
     </aside>
 
     <section class="col-center">
-      <!-- Порядок повторяет то, как играют: сначала читают, что вышло,
-           потом решают срочное, потом планируют. -->
+      <!-- Три блока подряд, а не чересполосица: сначала всё, что читают
+           (итоги месяца, та же картина схемой, рынок вокруг), потом всё,
+           что решают (событие, кризис, франшиза, партнёрства, релизы),
+           в конце история партии графиком. Раньше рынок стоял между
+           решениями, и планирование прерывалось чтением. -->
       <div id="report-slot"></div>
       <div id="map-slot"></div>
+      <div id="news-slot"></div>
+      <div id="rival-slot"></div>
       <div id="event-slot"></div>
       <div id="crisis-slot"></div>
       <div id="anchor-slot"></div>
       <div id="partner-slot"></div>
-      <div id="turn-slot"></div>
       <div id="slate-slot"></div>
-      <div id="news-slot"></div>
-      <div id="rival-slot"></div>
       <div class="panel charts">
         <div class="charts-head">
           <h2 class="panel-title inline" id="title-dynamics"></h2>
@@ -1544,6 +1561,8 @@ const STRINGS = {
   jumpGo: { ru: 'перейти →', en: 'go there →' },
   alertsMore: { ru: 'Ещё наблюдений: {count} — они видны во вкладках справа.', en: 'And {count} more observations — they are in the tabs on the right.' },
   panelPartners: { ru: 'Партнёрства и бандлы', en: 'Partnerships and bundles' },
+  partnerCount: { ru: 'действующих контрактов: {count}', en: 'active contracts: {count}' },
+  partnerContracts: { ru: 'Контракты ({count})', en: 'Contracts ({count})' },
   partnerSummary: { ru: 'опт — {share} базы · ARPU {wholesale} против {retail} в рознице', en: 'wholesale is {share} of the base · ARPU {wholesale} vs {retail} retail' },
   partnerMonthsLeft: { ru: 'осталось {months} мес.', en: '{months} mo. left' },
   partnerDealMeta: { ru: '{subs} подписчиков · {arpu} с человека ({share} от прайса)', en: '{subs} subscribers · {arpu} each ({share} of list price)' },
@@ -1561,10 +1580,6 @@ const STRINGS = {
   partnerSignDetail: { ru: 'До {subs} новых в месяц по {arpu} вместо {retail}. Быстрый объём вместо выручки с человека.', en: 'Up to {subs} new subscribers a month at {arpu} instead of {retail}. Volume instead of revenue per head.' },
   partnerDecline: { ru: 'Отказаться', en: 'Decline' },
   partnerDeclineDetail: { ru: 'Растём розницей: дороже и медленнее, зато это ваши подписчики и ваша цена.', en: 'Grow retail instead: slower and dearer, but they are your subscribers at your price.' },
-  todoPartnerTitle: { ru: 'Предложение о партнёрстве: {name}', en: 'A partnership offer: {name}' },
-  todoPartnerText: { ru: 'Оптовый канал приводит людей быстрее маркетинга, но каждый из них стоит меньше и смотрит меньше. Ответить нужно в этом месяце.', en: 'The wholesale channel brings people faster than marketing, but each of them is worth less and watches less. Answer this month.' },
-  todoPartnerEndTitle: { ru: 'Контрактов на исходе: {count}', en: '{count} contracts running out' },
-  todoPartnerEndText: { ru: 'Когда контракт кончится, {subs} подписчиков уйдут почти разом. К этому моменту рознице должно быть чем их заменить.', en: 'When the contract ends, {subs} subscribers leave almost at once. By then retail needs something to replace them with.' },
 
   // --- Разрыв цены (постоянный блок у ползунка) ---
   gapList: { ru: 'прайс', en: 'list' },
@@ -1579,7 +1594,6 @@ const STRINGS = {
   gapNoData: { ru: 'Разрыв появится, когда у сервиса будет база.', en: 'The gap appears once the service has a base.' },
 
   panelSlate: { ru: 'Производство и релизы', en: 'Production and releases' },
-  panelTurn: { ru: 'Ход месяца {month}', en: 'Month {month}: your move' },
   unitMonthsShort: { ru: 'мес', en: 'mo' },
 
   // --- Слейт ---
@@ -1594,6 +1608,7 @@ const STRINGS = {
   slateNoCash: { ru: 'Не хватает кассы', en: 'Not enough cash' },
   slatePrice: { ru: 'Стоимость {price}, платится равными долями {months} месяцев', en: 'Costs {price}, paid in equal instalments over {months} months' },
   jointTitle: { ru: 'Совместный мегахит с конкурентом', en: 'A joint mega-hit with your rival' },
+  moreWhy: { ru: 'зачем это', en: 'why this matters' },
   moreHow: { ru: 'Как это устроено', en: 'How it works' },
   jointWhat: {
     ru: 'Снять вскладчину: вы платите {share} бюджета и {months} месяцев держите слот. Часы получаете и вы, и он — предпочтение зрителя не сдвинется. Сдвинется другое: сам рынок вырастет примерно на {lift} и продержится так около {window} месяцев.',
@@ -1611,7 +1626,6 @@ const STRINGS = {
   jointNoRival: { ru: 'Договариваться не с кем: конкурент ушёл с рынка.', en: 'Nobody to deal with: the rival has left the market.' },
   jointTooEarly: { ru: 'О таком договариваются не раньше {month}-го месяца.', en: 'A deal like this does not happen before month {month}.' },
   jointNoSlots: { ru: 'Все слоты студии заняты: совместному проекту нужен свой.', en: 'Every studio slot is busy: the joint project needs one of its own.' },
-  slateFocusHint: { ru: 'Проект под конкретный сегмент попадает в него точнее, но остальным интересен меньше: фокус — это всегда и отказ. «Для всех» — компромисс без перекоса.', en: 'A project aimed at one segment lands harder there and interests everyone else less: focus is always also a refusal. “Broad” is a compromise with no bias.' },
   slateBroad: { ru: 'Для всех', en: 'Broad' },
   slateFor: { ru: 'под {segment}', en: 'for {segment}' },
   slateHours: { ru: '{hours} ч контента', en: '{hours} h of content' },
@@ -1628,27 +1642,16 @@ const STRINGS = {
   slateStartsNow: { ru: 'запустится в этом ходу, {months} мес. производства', en: 'starts this turn, {months} months of production' },
 
   // --- Ход месяца ---
+  planPrefix: { ru: 'В этом месяце:', en: 'This month:' },
+  slateWarnMarketing: { ru: 'Маркетинг идёт при почти пустой полке: приводить зрителя некуда, и деньги сгорают. Сначала каталог, потом реклама.', en: 'Marketing is running against a nearly empty shelf: there is nowhere to bring the viewer and the money burns. Catalogue first, advertising after.' },
+  slateWarnCampaign: { ru: 'Большой бренд-маркетинг без единой премьеры под ним. Кампания под конкретный релиз даёт кратно больше — но релиз для неё нужно иметь.', en: 'A big brand-marketing budget with no premiere behind it. A campaign behind a specific release does far more — but you need the release first.' },
   planNothing: { ru: 'На этот месяц ничего не запланировано', en: 'Nothing planned for this month' },
   planReleases: { ru: 'релизов: {count} на {budget}', en: 'releases: {count} for {budget}' },
   planCommission: { ru: 'запусков: {count} по {monthly}/мес', en: 'commissions: {count} at {monthly}/mo' },
   planRaise: { ru: 'повышение цены действующим', en: 'price rise for the existing base' },
-  todoReleaseTitle: { ru: 'Готово к выпуску: {count}. Выпускать сейчас?', en: '{count} ready to release. Release now?' },
-  todoReleaseVsRival: { ru: 'В следующем месяце у конкурента громкая премьера. Своя гасит чужую максимум на 65% — иногда выгоднее переждать и выйти в тихий месяц целиком.', en: 'The rival has a loud premiere next month. Yours blunts at most 65% of it — sometimes it pays more to wait and take a quiet month whole.' },
-  todoReleaseGoodSeason: { ru: 'Сейчас {season} — смотрят больше обычного. Хороший месяц для премьеры.', en: 'It is {season} — people watch more than usual. A good month for a premiere.' },
-  todoReleaseQuiet: { ru: 'Месяц спокойный: чужих премьер нет. Ваш шум никто не перебьёт.', en: 'A quiet month with no rival premieres. Nothing will drown out your noise.' },
-  todoStudioTitle: { ru: 'В производстве пусто', en: 'Nothing in production' },
-  todoStudioText: { ru: 'Запустите проект сейчас, иначе следующие месяцы пройдут без единой премьеры — а отток идёт всё это время.', en: 'Commission something now, or the coming months will pass without a single premiere — while churn runs the whole time.' },
-  todoPriceGapTitle: { ru: 'База платит на {gap} меньше прайса', en: 'The base pays {gap} below list price' },
-  todoPriceGapText: { ru: 'Новые подписываются по {list}, действующие платят {paid}. Перевести базу на прайс можно одним решением — но часть людей уйдёт именно из-за него.', en: 'New sign-ups pay {list}, the existing base pays {paid}. One decision moves them all onto list price — and some will leave precisely because of it.' },
   todoPriceGapCooldown: { ru: 'Повышать снова нельзя ещё {months} мес.: у людей есть память, и второе повышение подряд стоит гораздо дороже.', en: 'You cannot raise again for {months} months: people remember, and a second rise in a row costs far more.' },
   todoPriceGapDo: { ru: 'Перевести базу на прайс', en: 'Move the base to list price' },
   todoPriceGapOn: { ru: '✓ Переведём в этом месяце', en: '✓ Will move them this month' },
-  todoMarketingTitle: { ru: 'Маркетинг при пустом каталоге', en: 'Marketing against an empty catalogue' },
-  todoMarketingText: { ru: 'Приводить зрителя некуда: глубина каталога мала, и деньги сгорают. Сначала каталог, потом реклама.', en: 'There is nowhere to bring the viewer: catalogue depth is low and the money burns. Catalogue first, advertising after.' },
-  todoCampaignTitle: { ru: 'Большой маркетинг без релиза', en: 'A big marketing budget with nothing to promote' },
-  todoCampaignText: { ru: 'Бренд-маркетинг работает медленно. Кампания под конкретную премьеру даёт кратно больше — но премьеру для неё нужно иметь.', en: 'Brand marketing works slowly. A campaign behind a specific premiere does far more — but you need a premiere to put behind it.' },
-  todoCalmTitle: { ru: 'Срочных решений нет', en: 'Nothing urgent' },
-  todoCalmText: { ru: 'Можно двигать ползунки, запускать проекты или просто прожить месяц.', en: 'Adjust the sliders, commission something, or simply run the month.' },
 
   // --- Годовая подписка и цена ---
   kpiSubsFlat: { ru: 'без изменений', en: 'flat' },
@@ -1802,22 +1805,11 @@ const STRINGS = {
   // --- что в индустрии ---
   newsPanel: { ru: 'Что в индустрии', en: 'What is going on in the industry' },
   newsEmpty: { ru: 'Месяц без событий: ни премьер, ни новостей от соседа. Такие месяцы и показывают настоящую экономику подписки — без всплесков от премьер.', en: 'A month with nothing in it: no premieres, no news from next door. These are the months that show the real economics of a subscription — without the premiere spikes.' },
-  newsPremiere: { ru: '<b>Премьера: {genre}, {scale}.</b> Качество {quality}.{held} Всплеск смотрения держится месяц, а платить за него будут те, кто останется после.', en: '<b>Premiere: {genre}, {scale}.</b> Quality {quality}.{held} The viewing spike lasts a month; the ones who pay for it are the ones who stay after.' },
-  newsPremiereHeld: { ru: ' Проект пролежал в запасе {months} мес. и за это время подвыветрился.', en: ' The project sat in the vault for {months} months and went a little stale.' },
-  newsNoPremiere: { ru: 'В этом месяце вы ничего не выпустили. В запасе готовых проектов: {vault}. Пустой месяц не бесплатен: без новинок база вспоминает, что подписку можно отменить.', en: 'You released nothing this month. Finished projects in the vault: {vault}. An empty month is not free: with nothing new, the base remembers that a subscription can be cancelled.' },
-  newsRivalLoud: { ru: '<b>У конкурента на следующий месяц заявлено: {release}.</b> Внимание зрителя в этот месяц будет делиться, а не складываться: выпускать своё крупное рядом — значит платить за кампанию дважды.', en: '<b>Announced next door for next month: {release}.</b> Attention that month gets divided, not added: putting your own big release beside it means paying for the campaign twice.' },
-  newsRivalQuiet: { ru: 'У конкурента на следующий месяц заявлено: {release}. Тихий месяц у соседа — лучшее окно для вашей премьеры.', en: 'Announced next door for next month: {release}. A quiet month next door is the best window for your own premiere.' },
-  newsRivalStance: { ru: '<b>Конкурент меняет тактику: {stance}.</b> {note}', en: '<b>The rival changes tack: {stance}.</b> {note}' },
-  newsRivalRaised: { ru: '<b>Конкурент поднял раунд.</b> Теперь ему есть на что демпинговать и перекупать права — и то и другое вы почувствуете не сразу.', en: '<b>The rival has raised a round.</b> Now they have money to undercut you and to outbid you for rights — and you will feel both with a delay.' },
   newsRights: { ru: '<b>Истекли права на {gone} ч каталога,</b> куплено за месяц {bought} ч. {verdict}', en: '<b>Rights expired on {gone} h of the catalogue,</b> {bought} h bought this month. {verdict}' },
   newsRightsShrink: { ru: 'Каталог тает: лицензии — это аренда, и платить надо каждый месяц просто чтобы остаться на месте. Своё этого не требует.', en: 'The catalogue is shrinking: licences are rent, and you pay every month just to stand still. Your own titles do not ask for that.' },
   newsRightsHold: { ru: 'Закупка покрывает истечение — каталог держится. Ровно поэтому лицензионные часы дешевле собственных только на первый взгляд.', en: 'Buying covers the expiry — the catalogue holds. This is exactly why licensed hours only look cheaper than your own.' },
   newsCliffSoon: { ru: '<b>Студии готовят собственные витрины: через {months} мес. с рынка отзовут около {share} лицензионных каталогов.</b> Удар придётся по всем — устоит тот, у кого к тому времени будет своё.', en: '<b>The studios are building their own storefronts: in {months} months about {share} of licensed catalogues will be pulled from the market.</b> Everyone takes the hit — whoever owns their own content by then stays standing.' },
   newsCliffHit: { ru: '<b>Обвал прав: студии отозвали {lost} ч вашего лицензионного каталога.</b> У конкурента полка похудела так же. Дальше решает собственный контент.', en: '<b>The rights cliff: the studios pulled {lost} h of your licensed catalogue.</b> The rival’s shelf just got thinner too. From here on, original content decides.' },
-  newsRivalSurge: { ru: '<b>Конкурент закрыл внеплановый раунд и объявляет ценовую войну до конца года.</b> Досидеть финал на автопилоте не получится.', en: '<b>The rival has closed an unscheduled round and has declared a price war through the end of the year.</b> You will not coast through the final stretch on autopilot.' },
-  newsLicensePrice: { ru: '<b>Права подорожали: ×{index} к базовой цене часа.</b> Когда за одни и те же сериалы торгуетесь вы оба, дороже становится обоим.', en: '<b>Rights have gone up: ×{index} on the base price per hour.</b> When you both bid for the same shows, both of you pay more.' },
-  newsTalentPrice: { ru: '<b>Талант подорожал: ×{index} к базовой смете.</b> Режиссёров и актёров на рынке столько же, сколько было, а денег у индустрии стало больше.', en: '<b>Talent has gone up: ×{index} on the base budget.</b> There are as many directors and actors as before; there is just more money chasing them.' },
-  newsFinished: { ru: '<b>Проект доснят: {genre}, {scale}.</b> Его можно выпускать сейчас, а можно придержать до нужного месяца — но в запасе он выветривается.', en: '<b>A project is finished: {genre}, {scale}.</b> You can release it now or hold it for the right month — but it goes stale in the vault.' },
   newsPartnerExpired: { ru: '<b>Договор с партнёром закончился: {name}.</b> Подписчиков ушло {lost}, осталось {kept}. Оптовая база уходит вместе с договором — она была не ваша.', en: '<b>A partner deal has ended: {name}.</b> {lost} subscribers left, {kept} stayed. A wholesale base leaves with the contract — it was never yours.' },
   newsSeasonWinter: { ru: '<b>Начинается зима — высокий сезон.</b> Смотрят почти на пятую часть больше обычного, и премьеры соседа тоже придутся на эти месяцы.', en: '<b>Winter is starting — the high season.</b> People watch almost a fifth more than usual, and the rival premieres will land in these months too.' },
   newsSeasonSpring: { ru: '<b>Начинается весна.</b> Смотрение возвращается к обычному: всплеск зимних премьер закончился, платить продолжают уже по привычке.', en: '<b>Spring is starting.</b> Viewing returns to normal: the winter premiere spike is over, and people keep paying out of habit.' },
@@ -1978,8 +1970,12 @@ const STRINGS = {
   cfoProfitAccrual: { ru: 'Прибыль учётная', en: 'Accounting profit' },
   cfoProfitNote: { ru: 'Счёт партии считается по кассовой: оценка компании стоит на деньгах, а не на способе их списывать. Учётная строка показана, чтобы было видно, как одна и та же неделя выглядит в отчёте и в банке.', en: 'Your score runs on the cash line: the valuation stands on money, not on the way you write it off. The accounting line is shown so you can see how the very same month looks in the report and in the bank.' },
   cfoProjectsTitle: { ru: 'Судьба каждого проекта', en: 'How each project fared' },
-  cfoReleasedIn: { ru: 'вышел на {month}-м месяце', en: 'released in month {month}' },
-  cfoColSpend: { ru: 'Стоил', en: 'Cost' },
+  cfoColTitle: { ru: 'Проект', en: 'Project' },
+  cfoColEarned: { ru: 'Принёс', en: 'Earned' },
+  cfoProjectsHow: { ru: 'Как это считается', en: 'How this is counted' },
+  cfoReleasedShort: { ru: 'мес. {month}', en: 'mo. {month}' },
+  cfoSpentShort: { ru: 'стоил {value}', en: 'cost {value}' },
+  cfoRoiShort: { ru: '{value}× вложений', en: '{value}× of cost' },
   cfoColNet: { ru: 'Итог', en: 'Net' },
   cfoRowProduction: { ru: 'производство', en: 'production' },
   cfoRowCampaign: { ru: 'кампания под релиз', en: 'release campaign' },
@@ -1988,7 +1984,6 @@ const STRINGS = {
   cfoRowSubscription: { ru: 'их подписка', en: 'their subscriptions' },
   cfoRowAds: { ru: 'реклама на его часах', en: 'ads on its hours' },
   cfoRowCdn: { ru: 'трафик на его часах', en: 'bandwidth on its hours' },
-  cfoRoi: { ru: '{value} на вложенный рубль', en: 'returned {value}× of what it cost' },
   cfoProjectsNote: { ru: 'Отнесение, а не бухгалтерия: в подписке никто не платит за конкретный сериал. «Привёл» — премьерная надбавка к притоку, поделённая между премьерами месяца по их доле в притяжении; приведённые платят дальше и тают с общим оттоком. «Принёс» — их подписка плюс доля проекта в рекламной выручке минус его же доля в расходах на трафик, по доле часов во всём каталоге. Отсюда главное правило производства: один и тот же флагман, вышедший на первом году, окупается втрое, а на третьем не успевает отработать вовсе.', en: 'Attribution, not accounting: in a subscription business nobody pays for one particular show. "Brought in" is the premiere uplift to sign-ups, split between the month’s premieres by their share of the pull; those subscribers keep paying and melt away with general churn. "Earned" is their subscription revenue plus the title’s share of ad revenue minus its share of bandwidth, by its share of hours in the whole catalogue. Hence the main rule of the production line: the very same flagship pays for itself three times over in year one and never earns its money back in year three.' },
   cfoDeferredTitle: { ru: 'Выручка будущих периодов', en: 'Deferred revenue' },
   cfoDeferredNote: { ru: 'Годовые подписки принесли {value}, которые вы уже получили деньгами, но ещё должны отработать сервисом. При оценке компании эта сумма вычитается из кассы.', en: 'Annual plans brought {value} that you have already received in cash but still owe in service. This amount is deducted from your cash when the company is valued.' },
@@ -9115,6 +9110,7 @@ let pendingRelease = {};          // id готового проекта -> { cam
 let pendingAnchorRenew = null;    // продлевать ли права на якорную франшизу
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
+let openTitles = new Set();   // раскрытые строки в таблице проектов
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
 // Совместный проект, предложенный в этом ходу: как и обычный заказ, он
 // уходит в модель на следующем ходе, а не мгновенно.
@@ -9390,10 +9386,11 @@ function renderStudioMap() {
     <h2 class="panel-title">${t('flowTitle')}</h2>
     ${multiplexSvg}
     <div class="flow-legend map-legend">${legend}</div>
-    <div class="chart-caption">${t('plexCaption')}</div>
     <div class="slate-label" style="margin-top:12px">${t('shelfTitle')}</div>
     ${shelfSvg}
-    <div class="chart-caption">${t('shelfCaption')}</div>
+    <details class="more"><summary>${t('moreHow')}</summary>
+      <div class="chart-caption">${t('plexCaption')}</div>
+      <div class="chart-caption">${t('shelfCaption')}</div></details>
   </div>`;
 
   // Подсветка с легенды: наведение или фокус гасит все группы, кроме своей
@@ -9508,7 +9505,6 @@ function buildLevers() {
       renderOpsReadout();
       renderBudget();
       renderStudioMap();
-      renderTurn();
       renderSlate();
       renderAnchor();
       renderRightTab();
@@ -9529,7 +9525,6 @@ function buildLevers() {
       renderOpsReadout();
       renderBudget();
       renderStudioMap();
-      renderTurn();
       renderSlate();
       renderRightTab();
       save();
@@ -9598,7 +9593,7 @@ function renderPriceGap() {
   el('btn-raise')?.addEventListener('click', () => {
     pendingRaise = !pendingRaise;
     renderPriceGap();
-    renderTurn();
+    renderSlate();
   });
 }
 
@@ -9718,6 +9713,21 @@ function renderPartners() {
     <div class="lesson">${tx(offer.lesson)}</div>
   </div>` : '';
 
+  // Действующие контракты, которые ничего не требуют, — свёрнутая строка:
+  // читать их каждый ход незачем, а место они занимают каждый ход.
+  const ending = deals.some((d) => d.monthsLeft <= 2);
+  if (!offer && !ending) {
+    el('partner-slot').innerHTML = `<div class="strip">
+      <span class="strip-label">${t('panelPartners')}</span>
+      <span class="funding-note">${r && r.partnerSubs > 0 ? t('partnerSummary', {
+        share: pct(r.partnerShare, 0), wholesale: amount(r.partnerArpu), retail: amount(r.retailArpu),
+      }) : t('partnerCount', { count: deals.length })}</span>
+      <details class="more"><summary>${t('partnerContracts', { count: deals.length })}</summary>
+        <div class="deals">${deals.map(dealRow).join('')}</div></details>
+    </div>`;
+    return;
+  }
+
   el('partner-slot').innerHTML = `<div class="panel">
     <div class="report-head">
       <h2 class="panel-title inline">${t('panelPartners')}</h2>
@@ -9730,7 +9740,7 @@ function renderPartners() {
   </div>`;
 
   el('partner-slot').querySelectorAll('[data-partner]').forEach((b) => {
-    b.addEventListener('click', () => { pendingPartner = b.dataset.partner; renderPartners(); renderTurn(); });
+    b.addEventListener('click', () => { pendingPartner = b.dataset.partner; renderPartners(); });
   });
 }
 
@@ -9756,6 +9766,19 @@ function renderAnchor() {
   const price = r?.anchorPrice ?? CONFIG.anchorRenewCost;
   const warn = a.alive && a.monthsLeft <= CONFIG.anchorWarnMonths;
   const affordable = state.cash >= price;
+
+  // Пока контракт не подходит к концу, франшиза ничего не ждёт от игрока —
+  // и занимает одну строку. Панель с решением разворачивается в окне
+  // предупреждения и когда права уже потеряны.
+  if (a.alive && !warn) {
+    slot.innerHTML = `<div class="strip">
+      <span class="strip-label">${t('panelAnchor')}</span>
+      <span class="badge on">${t('anchorMonthsLeft', { months: a.monthsLeft })}</span>
+      <details class="more"><summary>${t('moreHow')}</summary>
+        <p class="funding-note">${t('anchorHolds', { share: pct(CONFIG.anchorShare, 0) })}</p></details>
+    </div>`;
+    return;
+  }
 
   slot.innerHTML = `<div class="panel">
     <div class="report-head">
@@ -9790,7 +9813,7 @@ function renderAnchor() {
   slot.querySelectorAll('[data-anchor]').forEach((b) => {
     b.addEventListener('click', () => {
       pendingAnchorRenew = b.dataset.anchor === 'renew';
-      renderAnchor(); renderTurn();
+      renderAnchor();
     });
   });
 }
@@ -9815,7 +9838,6 @@ const JUMP_PANELS = {
   price: 'price-gap',
   report: 'report-slot',
   charts: 'chart',
-  turn: 'turn-slot',
 };
 
 function flash(node) {
@@ -9896,130 +9918,15 @@ function bindJumps() {
 }
 
 // ----------------------------------------------------------------------------
-// Ход месяца: что решается прямо сейчас.
-//
-// Раньше подсказки лежали в справке внизу справа, и до них никто не доходил.
-// Теперь совет стоит там же, где кнопка: рядом с решением, к которому он
-// относится, и только когда он уместен.
+// Что уйдёт из кассы по решениям этого месяца: запуски идут долями по месяцам
+// производства, кампании — целиком в месяц премьеры.
 // ----------------------------------------------------------------------------
-function turnTodos() {
-  const r = last();
-  const todos = [];
-  const slate = state.slate ?? [];
-  const ready = slate.filter((p) => p.status === 'ready');
-  const producing = slate.filter((p) => p.status === 'production');
-  const planned = Object.keys(pendingRelease).length;
-  const rivalLoud = ['major', 'mega'].includes(state.rivalNext ?? 'none');
-  const season = seasonOf(state.month + 1);
-
-  // 1. Готовые проекты — главное решение месяца
-  if (ready.length && !planned) {
-    todos.push({
-      kind: rivalLoud ? 'warn' : 'act',
-      jump: 'panel:slate',
-      title: t('todoReleaseTitle', { count: ready.length }),
-      text: rivalLoud
-        ? t('todoReleaseVsRival')
-        : season === 'winter' || season === 'autumn'
-          ? t('todoReleaseGoodSeason', { season: seasonName(season) })
-          : t('todoReleaseQuiet'),
-    });
-  }
-
-  // 2. Пустая студия — премьеры не будет полгода
-  if (!producing.length && !pendingCommission.length) {
-    todos.push({ kind: 'bad', jump: 'panel:slate', title: t('todoStudioTitle'), text: t('todoStudioText') });
-  }
-
-  // 3. Разрыв между прайсом и тем, что платит база.
-  // Само решение живёт рядом с ползунком цены; здесь только напоминание,
-  // и только когда разрыв стал по-настоящему большим.
-  if (r && r.priceGap > 0.15 && !pendingRaise) {
-    const cooldown = CONFIG.raiseCooldown - (state.month - (state.lastRaiseMonth ?? -99));
-    todos.push({
-      kind: 'warn',
-      jump: 'panel:price',
-      title: t('todoPriceGapTitle', { gap: pct(r.priceGap, 0) }),
-      text: cooldown > 0
-        ? t('todoPriceGapCooldown', { months: cooldown })
-        : t('todoPriceGapText', { list: amount(state.decisions.priceNew), paid: amount(r.lockedPrice) }),
-    });
-  }
-
-  // 4. Партнёрство ждёт ответа
-  if (state.partnerOffer && !pendingPartner) {
-    todos.push({
-      kind: 'act',
-      jump: 'panel:partners',
-      title: t('todoPartnerTitle', { name: tx(partnerById(state.partnerOffer)?.name ?? '') }),
-      text: t('todoPartnerText'),
-    });
-  }
-
-  // 5. Контракт заканчивается
-  const ending = (state.partners ?? []).filter((d) => d.monthsLeft <= 2);
-  if (ending.length) {
-    todos.push({
-      kind: 'warn',
-      jump: 'panel:partners',
-      title: t('todoPartnerEndTitle', { count: ending.length }),
-      text: t('todoPartnerEndText', { subs: compact(ending.reduce((a, b) => a + b.subs, 0)) }),
-    });
-  }
-
-  // 6. Маркетинг без каталога
-  if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
-    todos.push({ kind: 'warn', jump: 'lever:licensing', title: t('todoMarketingTitle'), text: t('todoMarketingText') });
-  }
-
-  // 7. Кампания без релиза
-  if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
-    todos.push({ kind: 'warn', jump: 'panel:slate', title: t('todoCampaignTitle'), text: t('todoCampaignText') });
-  }
-
-  return todos;
-}
-
 function plannedSpend() {
   const talent = talentIndexNow();
   const commissions = pendingCommission.reduce(
     (sum, c) => sum + projectPrice(c.genre, c.scale, talent) / scaleById(c.scale).months, 0);
   const campaigns = Object.values(pendingRelease).reduce((a, r) => a + (r?.campaign ?? 0), 0);
   return { commissions, campaigns };
-}
-
-function renderTurn() {
-  if (state.over) { el('turn-slot').innerHTML = ''; return; }
-  const todos = turnTodos();
-  const { commissions, campaigns } = plannedSpend();
-  const releases = Object.keys(pendingRelease).length;
-
-  const plan = [];
-  if (releases) plan.push(t('planReleases', { count: releases, budget: money(campaigns) }));
-  if (pendingCommission.length) plan.push(t('planCommission', { count: pendingCommission.length, monthly: money(commissions) }));
-  if (pendingRaise) plan.push(t('planRaise'));
-
-  el('turn-slot').innerHTML = `<div class="panel turn">
-    <div class="report-head">
-      <h2 class="panel-title inline">${t('panelTurn', { month: state.month + 1 })}</h2>
-      <span class="funding-note">${plan.length ? plan.join(' · ') : t('planNothing')}</span>
-    </div>
-    ${todos.length
-      ? `<div class="todos">${todos.map((td) => `
-          <div class="todo ${td.kind}">
-            <div class="todo-title">${td.title}</div>
-            <div class="todo-text">${td.text}</div>
-            ${td.jump ? `<a class="jump todo-jump" data-jump="${td.jump}">${t('jumpGo')}</a>` : ''}
-            ${td.action ? `<button class="btn ${td.action.on ? 'primary' : 'ghost'} tiny"
-              data-todo="${td.action.id}">${td.action.label}</button>` : ''}
-          </div>`).join('')}</div>`
-      : `<div class="todo ok"><div class="todo-title">${t('todoCalmTitle')}</div>
-          <div class="todo-text">${t('todoCalmText')}</div></div>`}
-  </div>`;
-
-  el('turn-slot').querySelectorAll('[data-todo="raise"]').forEach((b) => {
-    b.addEventListener('click', () => { pendingRaise = !pendingRaise; renderTurn(); });
-  });
 }
 
 // ----------------------------------------------------------------------------
@@ -10101,7 +10008,7 @@ function jointHtml() {
 
   return `<div class="slate-section joint">
     <div class="slate-label">${t('jointTitle')}</div>
-    <details class="more"${state_ ? '' : ' open'}><summary>${t('moreHow')}</summary>
+    <details class="more"><summary>${t('moreHow')}</summary>
       <div class="funding-note">${t('jointWhat', {
         share: pct(C.yourShare, 0), months: C.months, lift: pct(C.marketLift, 0),
         window: C.liftMonths,
@@ -10136,6 +10043,27 @@ function renderSlate() {
       ${t('slateStartsNow', { months: scaleById(c.scale).months })}</div>
   </div>`).join('');
 
+  // План на месяц: единственное место, где видно, что произойдёт по нажатию
+  // кнопки хода. Стоит там же, где эти решения и принимаются.
+  const { commissions, campaigns } = plannedSpend();
+  const plan = [];
+  if (Object.keys(pendingRelease).length) {
+    plan.push(t('planReleases', { count: Object.keys(pendingRelease).length, budget: money(campaigns) }));
+  }
+  if (pendingCommission.length) plan.push(t('planCommission', { count: pendingCommission.length, monthly: money(commissions) }));
+  if (pendingRaise) plan.push(t('planRaise'));
+
+  // Два предупреждения, которых нет больше нигде: они не пересказывают панель,
+  // а сопоставляют маркетинг с содержимым полки.
+  const r = last();
+  const warnings = [];
+  if (r && state.decisions.brandMarketing > 60_000_000 && r.depth < 0.25) {
+    warnings.push(t('slateWarnMarketing'));
+  }
+  if (!Object.keys(pendingRelease).length && state.decisions.brandMarketing > 200_000_000 && !ready.length) {
+    warnings.push(t('slateWarnCampaign'));
+  }
+
   el('slate-slot').innerHTML = `<div class="panel">
     <div class="report-head">
       <h2 class="panel-title inline">${t('panelSlate')}</h2>
@@ -10143,6 +10071,8 @@ function renderSlate() {
         used: producing.length + pendingCommission.length, total: slots,
         cost: money(CONFIG.studioSlotMonthly * Math.pow(slots, CONFIG.studioSlotExponent)) })}</span>
     </div>
+    <div class="funding-note plan-line">${plan.length ? `${t('planPrefix')} ${plan.join(' · ')}` : t('planNothing')}</div>
+    ${warnings.map((w) => `<div class="alert warn">${w}</div>`).join('')}
 
     ${ready.length ? `<div class="slate-section">
       <div class="slate-label">${t('slateReadyTitle', { count: ready.length })}</div>
@@ -10165,22 +10095,11 @@ function renderSlate() {
           <button class="${g.id === commissionDraft.genre ? 'active' : ''}" data-genre="${g.id}"
             title="${tx(g.hint)}">${tx(g.name)}</button>`).join('')}</div>
       </div>
-      ${(() => {
-        // Подсказка выбранного жанра — видимой строкой, а не hover-тултипом:
-        // на телефоне title не существует, и виды контента оставались
-        // неописанными (жалоба игрока, аудит 2026-08)
-        const g = genreById(commissionDraft.genre);
-        return g ? `<div class="funding-note">${tx(g.hint)}</div>` : '';
-      })()}
       <div class="commission-row">
         <div class="pick" data-pick="scale">${SCALES.map((sc) => `
           <button class="${sc.id === commissionDraft.scale ? 'active' : ''}" data-scale="${sc.id}"
             title="${tx(sc.hint)}">${tx(sc.name)} · ${sc.months} ${t('unitMonthsShort')}</button>`).join('')}</div>
       </div>
-      ${(() => {
-        const sc = scaleById(commissionDraft.scale);
-        return sc ? `<div class="funding-note">${tx(sc.hint)}</div>` : '';
-      })()}
       <div class="commission-row">
         <div class="pick" data-pick="segment">
           <button class="${commissionDraft.segment === null ? 'active' : ''}" data-segment="">${t('slateBroad')}</button>
@@ -10189,26 +10108,31 @@ function renderSlate() {
         </div>
       </div>
       ${(() => {
-        // Живая строка под выбором адресата: премьера и кампания бьют в
-        // выбранный сегмент, и цена промаха измерена — до трети итога.
-        // Показываем, в кого целимся: базу, потолок и отток сегмента.
-        if (!commissionDraft.segment) {
-          return `<div class="funding-note">${t('slateSegBroadNote')}</div>`;
+        // Одна строка на все три выбора, а не три подряд. Видимой строкой,
+        // а не hover-тултипом: на телефоне title не существует, и виды
+        // контента оставались неописанными (жалоба игрока, аудит 2026-08).
+        const g = genreById(commissionDraft.genre);
+        const sc = scaleById(commissionDraft.scale);
+        const parts = [g && tx(g.hint), sc && tx(sc.hint)].filter(Boolean);
+        if (!commissionDraft.segment) parts.push(t('slateSegBroadNote'));
+        else {
+          const segRow = last()?.segments?.find((x) => x.id === commissionDraft.segment);
+          const def = segmentById(commissionDraft.segment);
+          if (segRow && def) {
+            parts.push(t('slateSegNote', {
+              name: tx(def.name), subs: compact(segRow.subs),
+              pen: pct(segRow.penetration, 0), pot: compact(def.potential),
+              churn: pct(segRow.churnRate, 1),
+            }));
+          }
         }
-        const segRow = last()?.segments?.find((x) => x.id === commissionDraft.segment);
-        const def = segmentById(commissionDraft.segment);
-        return segRow && def ? `<div class="funding-note">${t('slateSegNote', {
-          name: tx(def.name), subs: compact(segRow.subs),
-          pen: pct(segRow.penetration, 0), pot: compact(def.potential),
-          churn: pct(segRow.churnRate, 1),
-        })}</div>` : '';
+        return `<div class="funding-note">${parts.join(' ')}</div>`;
       })()}
       <div class="commission-foot">
         <span>${t('slatePrice', { price: money(price), months: scaleById(commissionDraft.scale).months })}</span>
         <button class="btn primary" id="btn-commission" ${free > 0 && affordable ? '' : 'disabled'}>
           ${free > 0 ? (affordable ? t('slateStart') : t('slateNoCash')) : t('slateNoSlots')}</button>
       </div>
-      <div class="funding-note">${t('slateFocusHint')}</div>
     </div>
 
     ${jointHtml()}
@@ -10219,7 +10143,6 @@ function renderSlate() {
     pendingJoint = { genre: commissionDraft.genre };
     toast(t('jointQueued'));
     renderSlate();
-    renderTurn();
   });
   root.querySelectorAll('[data-genre]').forEach((b) => b.addEventListener('click', () => {
     commissionDraft.genre = b.dataset.genre; renderSlate();
@@ -10232,29 +10155,29 @@ function renderSlate() {
   }));
   el('btn-commission')?.addEventListener('click', () => {
     pendingCommission.push({ ...commissionDraft });
-    renderSlate(); renderTurn();
+    renderSlate();
   });
   root.querySelectorAll('[data-unqueue]').forEach((b) => b.addEventListener('click', () => {
     pendingCommission.splice(Number(b.dataset.unqueue), 1);
-    renderSlate(); renderTurn();
+    renderSlate();
   }));
   root.querySelectorAll('[data-cadence]').forEach((b) => b.addEventListener('click', () => {
     const id = Number(b.dataset.cadence);
     if (pendingRelease[id]) pendingRelease[id].cadence = b.dataset.cadenceMode;
-    renderSlate(); renderTurn();
+    renderSlate();
   }));
   root.querySelectorAll('[data-release]').forEach((b) => b.addEventListener('click', () => {
     pendingRelease[Number(b.dataset.release)] = { campaign: 60_000_000, cadence: 'binge' };
-    renderSlate(); renderTurn();
+    renderSlate();
   }));
   root.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', () => {
     delete pendingRelease[Number(b.dataset.cancel)];
-    renderSlate(); renderTurn();
+    renderSlate();
   }));
   root.querySelectorAll('[data-campaign]').forEach((inp) => inp.addEventListener('input', () => {
     pendingRelease[Number(inp.dataset.campaign)].campaign = Number(inp.value);
     inp.parentElement.querySelector('.release-budget').textContent = money(Number(inp.value));
-    renderTurn();
+    renderSlate();
   }));
 }
 
@@ -10326,43 +10249,14 @@ function rivalCard(type, when, cls = '', releaseMonth = state.month) {
 // про ваши метрики: что вышло, что анонсировал сосед, что истекло само собой.
 // Каждая строка выведена из состояния: выдумывать нечего.
 // ----------------------------------------------------------------------------
+// Новости — только то, чего не говорят соседние панели. Премьеры и запуски
+// стоят в итогах месяца, курс и афиша конкурента — в его панели, доснятый
+// проект — в панели производства, индексы прав и таланта — плиткой в отчёте.
+// Здесь остаётся невидимое: истечение лицензий, обвал прав, конец контракта
+// и смена сезона.
 function buildNews(r) {
   const news = [];
   const month = state.month;
-  const hist = state.history ?? [];
-  const prevStance = hist.length > 1 ? hist[hist.length - 2].rivalStance : null;
-
-  // Свои премьеры — главное событие месяца в этой игре
-  for (const p of r?.premieres ?? []) {
-    news.push(['good', t('newsPremiere', {
-      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
-      quality: pct(p.quality, 0),
-      held: p.held > 0 ? t('newsPremiereHeld', { months: num(p.held, 0) }) : '',
-    })]);
-  }
-  if (r && !(r.premieres ?? []).length) {
-    news.push(['', t('newsNoPremiere', { vault: num((r.vault ?? []).length, 0) })]);
-  }
-
-  // Что заявил конкурент на следующий месяц — это и новость, и решение:
-  // выпускать своё в один месяц с его мегапремьерой значит делить внимание.
-  if (r?.rivalAlive && r.rivalNext && r.rivalNext !== 'none') {
-    const loud = (RIVAL_RELEASES[r.rivalNext]?.pull ?? 0) >= 0.7;
-    news.push([loud ? 'warn' : '', t(loud ? 'newsRivalLoud' : 'newsRivalQuiet', {
-      release: rivalName(r.rivalNext).toLowerCase(),
-    })]);
-  }
-  if (r?.rivalAlive && r.rivalStance && r.rivalStance !== prevStance) {
-    news.push(['warn', t('newsRivalStance', {
-      stance: stanceName(r.rivalStance).toLowerCase(),
-      note: t(`stance${r.rivalStance.charAt(0).toUpperCase()}${r.rivalStance.slice(1)}Hint`),
-    })]);
-  }
-  if (r?.rivalSurge) {
-    news.push(['warn', t('newsRivalSurge')]);
-  } else if (r?.rivalJustRaised) {
-    news.push(['warn', t('newsRivalRaised')]);
-  }
 
   // Третий акт: обвал прав анонсируется заранее — это новость-предупреждение,
   // на которую можно успеть ответить собственным производством.
@@ -10382,21 +10276,6 @@ function buildNews(r) {
     news.push([shrinking ? 'warn' : '', t('newsRights', {
       gone: compact(r.licenseExpired), bought: compact(r.licenseBought),
       verdict: t(shrinking ? 'newsRightsShrink' : 'newsRightsHold'),
-    })]);
-  }
-
-  // Права и талант дорожают, когда за них торгуетесь вы оба
-  if (r && r.licenseIndex > 1.4) {
-    news.push(['warn', t('newsLicensePrice', { index: r.licenseIndex.toFixed(2) })]);
-  }
-  if (r && r.talentIndex > 1.6) {
-    news.push(['warn', t('newsTalentPrice', { index: r.talentIndex.toFixed(2) })]);
-  }
-
-  // Проект доснят: с этого месяца его можно выпускать, а можно придержать
-  for (const p of r?.finished ?? []) {
-    news.push(['good', t('newsFinished', {
-      genre: genreName(p.genre), scale: scaleName(p.scale).toLowerCase(),
     })]);
   }
 
@@ -10912,7 +10791,8 @@ function renderReport() {
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
   // Порядок уже расставлен по срочности — плохое поднято наверх.
-  const shown = alerts.slice(0, 5);
+  // Три строки, а не пять: разбор читают, пока он короткий.
+  const shown = alerts.slice(0, 3);
   const hidden = alerts.length - shown.length;
   const alertsHtml = shown.length
     ? `<div class="alerts">${shown.map(([k, text, jump]) => `<div class="alert ${k}">${text}${
@@ -11250,10 +11130,10 @@ function renderAlgosTab() {
           <td class="${i.hours >= 0 ? 'pos' : 'neg'}">${i.hours >= 0 ? '+' : ''}${compact(i.hours)}</td>
         </tr>`).join('')}
         <tr class="total"><td>${t('algosTotal')}</td>
-          <td class="${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${compact(totalGain)}</td><td colspan="2"></td></tr>
-        <tr class="total"><td>${t('algosTeamCost')}</td><td class="neg">−${compact(rndSpend)}</td><td colspan="2"></td></tr>
+          <td class="${totalGain >= 0 ? 'pos' : 'neg'}">${totalGain >= 0 ? '+' : ''}${compact(totalGain)}</td><td></td></tr>
+        <tr class="total"><td>${t('algosTeamCost')}</td><td class="neg">−${compact(rndSpend)}</td><td></td></tr>
         <tr class="total"><td>${t('algosNet')}</td>
-          <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td><td colspan="2"></td></tr>
+          <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td><td></td></tr>
       </tbody>
     </table></div>
     <p class="funding-note" style="margin-top:8px">${t('algosCounterfactual')}</p>`
@@ -11315,8 +11195,11 @@ function renderHelpTab() {
 function renderCfoTab() {
   const r = last();
   if (!r) return `<p class="funding-note">${t('pnlEmpty')}</p>`;
+  // Пояснение к строке — под раскрывашкой: иначе на четыре числа приходится
+  // четыре абзаца прозы, и числа в них тонут.
   const row = (name, value, cls = '', note = '') =>
-    `<tr><td>${name}${note ? `<div class="funding-note">${note}</div>` : ''}</td><td class="${cls}">${value}</td></tr>`;
+    `<tr><td>${name}${note ? `<details class="more"><summary>${t('moreWhy')}</summary>
+      <div class="funding-note">${note}</div></details>` : ''}</td><td class="${cls}">${value}</td></tr>`;
 
   // Окупаемость когорты: сколько месяцев приведённый подписчик отбивает
   // собственную стоимость привлечения при текущем вкладе.
@@ -11325,30 +11208,33 @@ function renderCfoTab() {
 
   // Судьба каждого вышедшего проекта. Сортируем по итогу: сверху то, что
   // окупилось лучше всех, снизу — то, за что пришлось заплатить.
+  // Судьба вышедших проектов — таблица, а не стопка карточек: к финалу
+  // проектов дюжина, и дюжина одинаковых карточек по девять строк в узкой
+  // колонке не читается. Строка отвечает на «стоил / принёс / итог»,
+  // подробности раскрываются по клику на нужном проекте.
   const titles = [...(r.titles ?? [])].sort((a, b) => b.net - a.net);
   const titleRows = titles.map((x) => {
     const roi = x.spend > 0 ? x.contribution / x.spend : null;
     const cls = x.net >= 0 ? 'pos' : 'neg';
-    return `<div class="title-card">
-      <div class="title-head">
-        <span class="title-name">${genreName(x.genre)} · ${scaleName(x.scale)}</span>
-        <span class="badge ${cls === 'pos' ? 'on' : 'bad'}">${money(x.net)}</span>
-      </div>
-      <div class="proj-meta">${t('cfoReleasedIn', { month: x.releasedMonth })} ·
-        ${t(x.cadence === 'weekly' ? 'cadenceWeekly' : 'cadenceBinge').toLowerCase()}${
-          roi === null ? '' : ` · ${t('cfoRoi', { value: roi.toFixed(2) })}`}</div>
-      <table class="data title-pnl"><tbody>
-        <tr><td>${t('cfoColSpend')}</td><td class="neg">−${money(x.spend)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowProduction')}</td><td>${money(x.production)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowCampaign')}</td><td>${money(x.campaign)}</td></tr>
-        <tr><td>${t('cfoRowBrought')}</td><td>${compact(x.subsBrought)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowAlive')}</td><td>${compact(x.subsAlive)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowSubscription')}</td><td class="pos">${money(x.subscription)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowAds')}</td><td class="pos">${money(x.ads)}</td></tr>
-        <tr class="sub"><td>${t('cfoRowCdn')}</td><td class="neg">−${money(x.cdn)}</td></tr>
-        <tr class="total"><td>${t('cfoColNet')}</td><td class="${cls}">${money(x.net)}</td></tr>
-      </tbody></table>
-    </div>`;
+    const open = openTitles.has(x.id) ? ' open' : '';
+    // Две колонки, а не четыре: в колонке 340 px четвёртая уезжает за край,
+    // и итог — то самое число, ради которого таблица есть, — не виден.
+    return `<tr class="title-row${open}" data-title="${x.id}">
+        <td><span class="row-toggle">${open ? '▾' : '▸'}</span> ${genreName(x.genre)} · ${scaleName(x.scale)}
+          <div class="funding-note">${t('cfoReleasedShort', { month: x.releasedMonth })} ·
+            ${t('cfoSpentShort', { value: money(x.spend) })}${
+            roi === null ? '' : ` · ${t('cfoRoiShort', { value: roi.toFixed(2) })}`}</div></td>
+        <td class="${cls}">${money(x.net)}</td>
+      </tr>` + (open ? `
+      <tr class="sub"><td>${t('cfoRowProduction')} · ${t('cfoRowCampaign')}</td>
+        <td>${money(x.production)} + ${money(x.campaign)} · ${
+          t(x.cadence === 'weekly' ? 'cadenceWeekly' : 'cadenceBinge').toLowerCase()}</td></tr>
+      <tr class="sub"><td>${t('cfoColEarned')}</td>
+        <td>${money(x.contribution)}</td></tr>
+      <tr class="sub"><td>${t('cfoRowBrought')}</td>
+        <td>${compact(x.subsBrought)} · ${t('cfoRowAlive')} ${compact(x.subsAlive)}</td></tr>
+      <tr class="sub"><td>${t('cfoRowSubscription')} · ${t('cfoRowAds')} · ${t('cfoRowCdn')}</td>
+        <td>${money(x.subscription)} + ${money(x.ads)} − ${money(x.cdn)}</td></tr>` : '');
   }).join('');
 
   return `
@@ -11366,18 +11252,21 @@ function renderCfoTab() {
 
     <h3 class="sub-title">${t('cfoCashTitle')}</h3>
     <div style="overflow-x:auto"><table class="data"><tbody>
-      ${row(t('cfoCashOut'), moneyExact(r.contentSpend ?? 0), 'neg')}
-      ${row(t('cfoRecognised'), moneyExact(r.contentAmortization ?? 0), 'neg')}
-      ${row(t('cfoGap'), moneyExact(cashGap), cashGap > 0 ? 'neg' : 'pos', t('cfoGapNote'))}
-      ${row(t('cfoBook'), moneyExact(r.contentBookValue ?? 0), '', t('cfoBookNote'))}
-      <tr class="total"><td>${t('cfoProfitCash')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
-      <tr class="total"><td>${t('cfoProfitAccrual')}</td><td class="${(r.profitAccrual ?? 0) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profitAccrual ?? 0)}</td></tr>
+      ${row(t('cfoCashOut'), money(r.contentSpend ?? 0), 'neg')}
+      ${row(t('cfoRecognised'), money(r.contentAmortization ?? 0), 'neg')}
+      ${row(t('cfoGap'), money(cashGap), cashGap > 0 ? 'neg' : 'pos', t('cfoGapNote'))}
+      ${row(t('cfoBook'), money(r.contentBookValue ?? 0), '', t('cfoBookNote'))}
+      <tr class="total"><td>${t('cfoProfitCash')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${money(r.profit)}</td></tr>
+      <tr class="total"><td>${t('cfoProfitAccrual')}</td><td class="${(r.profitAccrual ?? 0) >= 0 ? 'pos' : 'neg'}">${money(r.profitAccrual ?? 0)}</td></tr>
     </tbody></table></div>
     <p class="funding-note">${t('cfoProfitNote')}</p>
 
     ${titles.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
-    <div class="title-cards">${titleRows}</div>
-    <p class="funding-note">${t('cfoProjectsNote')}</p>` : ''}
+    <div style="overflow-x:auto"><table class="data titles"><thead><tr>
+      <th>${t('cfoColTitle')}</th><th>${t('cfoColNet')}</th>
+    </tr></thead><tbody>${titleRows}</tbody></table></div>
+    <details class="more"><summary>${t('cfoProjectsHow')}</summary>
+      <p class="funding-note">${t('cfoProjectsNote')}</p></details>` : ''}
 
     ${r.deferred > 0 ? `<h3 class="sub-title">${t('cfoDeferredTitle')}</h3>
     <p class="funding-note">${t('cfoDeferredNote', { value: money(r.deferred) })}</p>` : ''}`;
@@ -11391,6 +11280,16 @@ function renderRightTab() {
     unit: renderUnitTab, pnl: renderPnlTab, cfo: renderCfoTab, algos: renderAlgosTab,
     segments: renderSegmentsTab, help: renderHelpTab,
   }[rightTab]();
+
+  // Строка проекта раскрывается на месте: подробности нужны про один проект,
+  // а не про все сразу.
+  el('tab-content').querySelectorAll('[data-title]').forEach((tr) => {
+    tr.addEventListener('click', () => {
+      const id = Number(tr.dataset.title);
+      if (openTitles.has(id)) openTitles.delete(id); else openTitles.add(id);
+      renderRightTab();
+    });
+  });
 }
 
 // ----------------------------------------------------------------------------
@@ -11924,7 +11823,6 @@ function renderAll() {
   renderCrisis();
   renderAnchor();
   renderPartners();
-  renderTurn();
   renderSlate();
   renderNews();
   renderRival();
