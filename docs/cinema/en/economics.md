@@ -12,6 +12,30 @@ A game lasts 36 months.
 
 ---
 
+## 0. How a game begins
+
+```
+cash                    ₽3.7bn   the investor's money, 100% yours
+library              900 hours   old films from the previous owner
+in production        one pilot   half shot, premieres in month 3
+the rival        1.3M on books   he has been here a while; you enter a taken market
+```
+
+The pilot in production is not a gift for its own sake. Without it, your first
+premiere landed in month seven: measured across 24 codes it was exactly month 7
+in all twenty-four games, and for the first six turns the player moved sliders
+while nothing happened on screen. The shoot was paid for by the previous owner,
+so the pilot does not touch your cash; the gift is paid for elsewhere — starting
+cash was cut from ₽4bn to ₽3.7bn. Without that compensation, measured across 72
+codes, the balanced anchor gained 18% and the studio-led one 19%; with it, both
+returned to their old corridor.
+
+A drama pilot is a deliberate choice: drama's `hangover` is 0.45. The slump
+after the premiere is visible but not ruinous — and the lesson that one hit is a
+loan rather than growth arrives on turn three instead of turn ten.
+
+---
+
 ## 1. The overall picture
 
 ```
@@ -91,6 +115,14 @@ it is pointed at you.
 If you do not renew, the franchise goes to your rival: the hours stay on your
 shelf, the reason to stay does not. The base slides for three months (up to
 +5.5pp of churn in the first one), and the rival gains buzz.
+
+> **On sample size.** KINOREKA's anchors are measured across **72 codes**, not
+> the twenty-four used for the other games in the set. The licence-led anchor's
+> distribution is badly skewed — quartiles of ₽1.6bn and ₽10.1bn around a median
+> of ₽6.2bn — and across 24 codes its median wanders by a third: the very same
+> code gave ₽8.2bn on 24 codes and ₽6.0bn on 72. The measurements below marked
+> "24 codes" were taken earlier and describe the shape of an effect, not its
+> exact size.
 
 Measured (24 codes), the shape is the same on all three anchor strategies:
 **renew once, then let it go** is the best outcome (+11% licence-led, +12%

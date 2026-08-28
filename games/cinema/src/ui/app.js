@@ -42,7 +42,7 @@ const RECORDS_KEY = 'kinoreka-records';
 const GAME_TAG = 'КИНОРЕКА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
-const BUILD = 'cinema-3';
+const BUILD = 'cinema-4';
 // Версию проставляет сборщик. У модульной версии метки нет — значит это
 // исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
 // сборка» был ответ, а не догадки.
@@ -64,6 +64,7 @@ let state = null;
 let chartTab = 'war';
 let rightTab = 'unit';
 let leversBuilt = false;
+let leversInert = null;   // подпись состава рычагов: меняется — панель пересобирается
 let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
@@ -408,17 +409,18 @@ function renderBudget() {
   });
 }
 
-// Предвестник: рычаг стоит в панели, но прямо сейчас ни на что не влияет.
-// Молча неработающий ползунок — худший вид обучения.
-function inertNote(l) {
+// Рычаг, который прямо сейчас ни на что не влияет, не показывается вовсе.
+// Раньше он стоял в панели с замком и абзацем о том, почему не работает:
+// новичок первым делом видел два мёртвых органа управления, а «Закупка
+// лицензий» — шаг номер один его же инструкции — уезжала на 500 px ниже
+// сгиба. Теперь рычаг появляется в тот месяц, когда начинает работать, —
+// и появление отмечается тостом: в первые ходы это единственная награда.
+function inertKeys() {
   const r = last();
-  if (l.key === 'priceAds' && (r?.adSubs ?? 0) === 0) {
-    return `<div class="policy-note">🔒 ${t('leverInertAds')}</div>`;
-  }
-  if (l.key === 'annualDiscount' && (r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) {
-    return `<div class="policy-note">🔒 ${t('leverInertAnnual')}</div>`;
-  }
-  return '';
+  const out = new Set();
+  if ((r?.adSubs ?? 0) === 0) out.add('priceAds');
+  if ((r?.annualSubs ?? 0) === 0 && (state.decisions.annualDiscount ?? 0) === 0) out.add('annualDiscount');
+  return out;
 }
 
 function buildLevers() {
@@ -426,8 +428,10 @@ function buildLevers() {
   // Эти четыре ползунка выставляются один раз и почти не трогаются — держать
   // их всё время на экране значит тратить внимание там, где решения нет.
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
+    const inert = inertKeys();
     const items = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree)
+      && !inert.has(l.key));
     if (!items.length) return '';
     return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
       <button class="lever-group-head" type="button">
@@ -443,7 +447,6 @@ function buildLevers() {
               <span class="lever-label">${tx(l.label)}</span>
               <span class="lever-value" id="val-${l.key}"></span>
             </div>
-            ${inertNote(l)}
             ${l.policy ? policyHtml(l, tx)
               : `<input type="range" id="in-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" />`}
             <button class="lever-why" type="button">${t('leverWhy')}</button>
@@ -1321,6 +1324,11 @@ function renderRival() {
     <div class="weather">
       ${rivalCard(now, t('rivalNow'), 'weather-now')}
       ${rivalCard(next, t('rivalNext'), `weather-next ${alarm ? 'alarm' : ''}`, state.month + 1)}
+      ${next === 'none' && r?.rivalShooting ? `<div class="funding-note" style="flex-basis:100%">${
+        t('rivalShooting', {
+          genre: genreName(r.rivalShooting.genre).toLowerCase(),
+          months: r.rivalShooting.monthsLeft,
+        })}</div>` : ''}
       ${alarm ? `<div class="funding-note" style="flex-basis:100%">${t('rivalAdvice')}</div>` : ''}
     </div>
   </div>`;
@@ -1806,12 +1814,13 @@ function renderReport() {
       ${stat(t('statArpu'), `${amount(r.arpu)}`, t('statArpuSub', { value: `${amount(r.cmPerSub)}` }))}
       ${stat(t('statTraffic'), money(r.cdnCost), t('statTrafficSub', { perHour: amount(r.cdnPerHour, 2) }))}
       ${stat(t('statProfit'), money(r.profit), t('statProfitSub', { value: money(r.fixed) }))}
-      ${stat(t('statCacLtv'), r.cac > 0 ? `${amount(r.cac)}` : '—',
-        r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff'))}
-      ${stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
-        t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) }))}
-      ${stat(t('statPriceGap'), `${amount(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
-        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) }))}
+      ${r.cac > 0 ? stat(t('statCacLtv'), `${amount(r.cac)}`,
+        r.ltvCac ? `LTV/CAC ${r.ltvCac.toFixed(2)}` : t('statCacOff')) : ''}
+      ${r.switchedIn + r.switchedOut > 0
+        ? stat(t('statSwitch'), r.netSwitch >= 0 ? `+${compact(r.netSwitch)}` : `−${compact(-r.netSwitch)}`,
+          t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) })) : ''}
+      ${r.subs > 0 ? stat(t('statPriceGap'), `${amount(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
+        t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) })) : ''}
       ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
         t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
     </div>
@@ -2768,7 +2777,17 @@ function renderChrome() {
 function renderAll() {
   // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
   // нет — она уже оплачена), поэтому смена уровня пересобирает панель
-  if (!leversBuilt || leversDiff !== state.difficulty) buildLevers();
+  const inertNow = [...inertKeys()].sort().join(',');
+  if (!leversBuilt || leversDiff !== state.difficulty || leversInert !== inertNow) {
+    const appeared = leversBuilt && leversInert !== null
+      ? leversInert.split(',').filter((k) => k && !inertNow.split(',').includes(k)) : [];
+    leversInert = inertNow;
+    buildLevers();
+    for (const key of appeared) {
+      const def = LEVERS.find((l) => l.key === key);
+      if (def) toast(t('leverUnlocked', { name: tx(def.label) }));
+    }
+  }
   renderChrome();
   syncLevers();
   renderPriceGap();
@@ -2794,6 +2813,7 @@ function renderAll() {
 function switchLang() {
   setLang(getLang() === 'ru' ? 'en' : 'ru');
   leversBuilt = false;
+  leversInert = null;
   renderAll();
 }
 

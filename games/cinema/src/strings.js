@@ -7,14 +7,6 @@ export const STRINGS = {
   studioPipeTitle: { ru: 'Конвейер студии: снимается {producing}, готово и ждёт {ready}', en: 'Studio pipeline: {producing} shooting, {ready} finished and waiting' },
   studioSlotMonths: { ru: '{months} мес.', en: '{months} mo.' },
   studioSlotIdle: { ru: 'слот простаивает', en: 'idle slot' },
-  leverInertAds: {
-    ru: 'На рекламном тарифе пока никого нет: цена рекламы начнёт работать, когда на него кто-то перейдёт.',
-    en: 'Nobody is on the ad-supported tier yet: its price starts working once someone switches to it.',
-  },
-  leverInertAnnual: {
-    ru: 'Годовых подписок пока нет: скидка начнёт работать с первого, кто заплатит за год вперёд.',
-    en: 'There are no annual plans yet: the discount starts working with the first person who pays a year upfront.',
-  },
   flowTitle: { ru: 'Мультиплекс: тарифы и рынок', en: 'The multiplex: tiers and the market' },
   plexPremium: { ru: 'Премиум · {price}', en: 'Premium · {price}' },
   plexAds: { ru: 'Рекламный · {price}', en: 'Ad tier · {price}' },
@@ -309,6 +301,7 @@ export const STRINGS = {
 
 
   panelDynamics: { ru: 'Динамика', en: 'Trends' },
+  leverUnlocked: { ru: '🔓 Открылся рычаг: {name}', en: '🔓 A new lever is live: {name}' },
   leverWhy: { ru: 'зачем это?', en: 'why does this matter?' },
 
   // --- сводка под ползунками ---
@@ -337,6 +330,7 @@ export const STRINGS = {
   rivalMega: { ru: 'Событие года', en: 'Event of the year' },
   rivalNoEffect: { ru: 'ничего не отвлекает зрителя', en: 'nothing is competing for attention' },
   rivalEffects: { ru: 'приток новых <b class="down">{acq}</b>, отток <b class="down">+{churn} п.п.</b>, часы <b class="down">{hours}</b>', en: 'new sign-ups <b class="down">{acq}</b>, churn <b class="down">+{churn} pp</b>, hours <b class="down">{hours}</b>' },
+  rivalShooting: { ru: 'В работе у него: {genre}. До премьеры {months} мес. — столько же есть у вас, чтобы подготовить ответ.', en: 'In production over there: {genre}. {months} months to its premiere — the same amount of time you have to prepare an answer.' },
   rivalAdvice: { ru: 'В следующем месяце зрителя будут звать в другое место. Своя громкая премьера гасит чужую — но её нужно было запустить в производство полгода назад. Что можно сейчас: усилить маркетинг или переждать и не жечь бюджет впустую.', en: 'Next month someone else will be calling your viewers away. Your own loud premiere blunts theirs — but it had to enter production six months ago. What you can still do: push marketing, or sit it out and not burn the budget for nothing.' },
 
   seasonWinter: { ru: 'зима', en: 'winter' },
@@ -387,8 +381,8 @@ export const STRINGS = {
   // --- отчёт ---
   reportMonth0: { ru: 'Месяц 0. Сервис ещё не запущен.', en: 'Month 0. The service has not launched yet.' },
   reportStartTitle: { ru: 'С чего начать.', en: 'Where to start.' },
-  reportStartIntro: { ru: 'У вас {cash} и библиотека из нескольких сотен часов старого кино. Порядок почти всегда такой:', en: 'You have {cash} and a library of a few hundred hours of old films. The sequence is almost always this:' },
-  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your own project will not premiere for six months.' },
+  reportStartIntro: { ru: 'У вас {cash}, библиотека из нескольких сотен часов старого кино и наследство прежнего владельца: пилот, доснятый наполовину. Он выйдет через пару месяцев — а дальше премьеры уже ваша забота. Порядок почти всегда такой:', en: 'You have {cash}, a library of a few hundred hours of old films, and what the previous owner left behind: a pilot, half shot. It lands in a couple of months — after that, premieres are your problem. The sequence is almost always this:' },
+  reportStart1: { ru: 'Включите <a class="jump" data-jump="lever:licensing">закупку лицензий</a>: каталог нужен прямо сейчас, а следующий собственный проект выйдет только через полгода.', en: 'Turn on <a class="jump" data-jump="lever:licensing">licensing</a>: you need a catalogue right now, and your next own project will not premiere for six months.' },
   reportStart2: { ru: 'Одновременно запустите <a class="jump" data-jump="panel:slate">производство</a>. Оригинал — единственное, чего нет у конкурента, и он остаётся вашим навсегда.', en: 'At the same time start <a class="jump" data-jump="panel:slate">production</a>. An original is the only thing your rival does not have, and it stays yours forever.' },
   reportStart3: { ru: 'Проверьте вклад с подписчика: трафик растёт вместе с просмотром, и слишком щедрый битрейт съедает подписку целиком.', en: 'Check contribution per subscriber: bandwidth grows with viewing, and an over-generous bitrate can swallow the whole subscription fee.' },
   reportStart4: { ru: 'Только потом включайте <a class="jump" data-jump="lever:brandMarketing">маркетинг</a>. Приводить зрителя в пустой каталог — самый дорогой способ купить отток.', en: 'Only then turn on <a class="jump" data-jump="lever:brandMarketing">marketing</a>. Bringing viewers into an empty catalogue is the most expensive way to buy churn.' },

@@ -44,6 +44,10 @@ export function createRival(rng) {
     catalogLicensed: 2_200,
     catalogOriginal: 0,
     freshHours: 220,
+    // Он на рынке давно, и его студия не начинает с нуля вместе с вашей:
+    // один проект уже в работе. Иначе первая чужая премьера приходила на
+    // 7-м месяце, и панель «Афиша конкурента» шесть ходов говорила «Тихо» —
+    // то есть главный соперник полгода не подавал признаков жизни.
     pipeline: [],
     studioFund: 0,
     lastBuzz: 0,
@@ -215,6 +219,16 @@ export function stepRival(rival, ctx, rng) {
   const next = rival.pipeline.filter((p) => p.monthsLeft <= 1);
   rival.announced = next.length
     ? { buzz: next.reduce((s, p) => s + genreOr(p.genre).buzz * p.quality, 0), genre: next[0].genre }
+    : null;
+
+  // Что у него в работе прямо сейчас. Анонс на следующий месяц появляется
+  // только когда проект почти готов, и первые полгода панель конкурента
+  // говорила «Тихо» — главный соперник полгода не подавал признаков жизни.
+  // Съёмки же видны отрасли сразу: это открытая информация, и на его
+  // экономику она не влияет никак.
+  const shooting = [...rival.pipeline].sort((a, b) => a.monthsLeft - b.monthsLeft)[0];
+  rival.shooting = shooting
+    ? { genre: shooting.genre, monthsLeft: shooting.monthsLeft }
     : null;
 
   // --- Узнаваемость и деньги ---

@@ -27,6 +27,13 @@ import { measure as measureTickets } from '../../games/tickets/tools/anchors.mjs
 import { measure as measureEco } from '../../games/ecosystem/tools/anchors.mjs';
 import { SEEDS } from '../tools/measure.js';
 
+// КИНОРЕКА меряется на утроенной выборке. У её лицензионной опоры разброс
+// сильно скошен (квартили 1.6 и 7.1 млрд при медиане 6.2), и на двадцати
+// четырёх кодах медиана этой опоры гуляет: закреплённые здесь 8.23 млрд и
+// 5.97 млрд на 72 кодах — это ОДИН И ТОТ ЖЕ код, померенный двумя выборками.
+// Двадцать четыре кода — правило набора, но для этой опоры их мало.
+const SEEDS_CINEMA = Array.from({ length: 72 }, (_, i) => `замер-${i + 1}`);
+
 // Коридор: во сколько раз медиана может уехать вверх и вниз, прежде чем это
 // считается изменением баланса, а не шумом правки.
 const LOW = 0.75;
@@ -57,9 +64,12 @@ const BASE = {
   // неотработанных годовых из счёта (аудит 2026-08): доминация блокбастеров
   // 2.1x сведена к вершине 1.2x, «только помесячно» стал живым выбором.
   КИНОРЕКА: {
-    лицензионная: [8.23e9, 0],
-    ровная: [4.88e9, 0],
-    студийная: [1.78e9, 0],
+    // Переснято на 72 кодах после наследства прежнего владельца (пилот,
+    // выходящий на третьем месяце) и стартовой кассы 3.7 млрд вместо 4:
+    // подарок компенсирован деньгами, опоры вернулись в прежний коридор.
+    лицензионная: [6.19e9, 0],
+    ровная: [5.21e9, 0],
+    студийная: [2.28e9, 0],
   },
   // Переснято после оживления кризисов (аудит 2026-08): частота кризисов
   // перекалибрована (пол 5%/мес, полная частота от GMV 2 млрд/мес — было
@@ -91,7 +101,7 @@ const BASE = {
 
 const MEASURE = {
   НОВОЕДА: () => measureFood('normal', SEEDS),
-  КИНОРЕКА: () => measureCinema('normal', SEEDS),
+  КИНОРЕКА: () => measureCinema('normal', SEEDS_CINEMA),
   БИЛЕТВИЛЬ: () => measureTickets('normal', SEEDS),
   НОВОГРАД: () => measureEco('normal', 'delivery', SEEDS),
 };
@@ -112,8 +122,9 @@ for (const [game, anchors] of Object.entries(BASE)) {
       if (r.median < median * LOW || r.median > median * HIGH) {
         drifted.push(`${name}: было ${money(median)}, стало ${money(r.median)}`);
       }
+      const codes = game === 'КИНОРЕКА' ? SEEDS_CINEMA.length : SEEDS.length;
       if (r.bankrupts > bankrupts + BANKRUPT_SLACK) {
-        drifted.push(`${name}: банкротств было ${bankrupts}, стало ${r.bankrupts} из ${SEEDS.length}`);
+        drifted.push(`${name}: банкротств было ${bankrupts}, стало ${r.bankrupts} из ${codes}`);
       }
     }
     assert.deepEqual(drifted, []);
