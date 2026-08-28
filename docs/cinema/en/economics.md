@@ -79,19 +79,32 @@ is bidding:
 
 ```
 price = 210M × √(rights index) × (1 + 0.35 × rival buzz)
+              × (1 + 1.6 × renewals so far)
 ```
+
+That last factor is the important one. The rights holder prices not their own
+costs but your cost of switching: by renewing once you have shown the franchise
+matters to you, and the next contract costs two and a half times as much. It is
+the same bargaining power the whole chapter on large partners is about, only now
+it is pointed at you.
 
 If you do not renew, the franchise goes to your rival: the hours stay on your
 shelf, the reason to stay does not. The base slides for three months (up to
 +5.5pp of churn in the first one), and the rival gains buzz.
 
-Measured (24 codes): renewing with an eye on how much of the run is left is
-worth +16% to the licence-led strategy, +20% to the balanced one and +48% to the
-studio-led one — in percentage terms the smaller your base, the more it matters.
-Renewing blindly, "whenever they offer", is worth half as much: +9% / +10% /
-+28%. The difference is the price of that last contract, bought months before
-the run ends, when it no longer has time to pay for itself. The mechanic
-punishes not the decision but taking it without looking at the calendar.
+Measured (24 codes), the shape is the same on all three anchor strategies:
+**renew once, then let it go** is the best outcome (+11% licence-led, +12%
+balanced, +32% studio-led), while the second contract is already a mistake, if a
+small one (8.75 against 8.92 billion, 5.14 against 5.26, 2.83 against 2.86). The
+reason is arithmetic: the run lasts 36 months, the first contract ends in month
+fourteen, and a second renewal covers months 26–38 — half of what you paid for
+falls after the finish line, by which point the price has risen two and a half
+times.
+
+Renewing blindly, "whenever they offer", is punished separately: a contract
+signed months before the end never earns out at all. The mechanic is not about
+remembering to pay. It is about looking at the calendar and the bank balance
+before you pay a second time.
 
 ### Originals: a slate, not a budget
 

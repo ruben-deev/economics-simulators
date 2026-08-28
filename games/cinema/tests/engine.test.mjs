@@ -2075,3 +2075,41 @@ test('атрибуция премьер: доля часов считается 
     `один пилот при большой арендованной полке не может стоить полтрафика: ${t.cdn} из ${r.cdnCost}`);
   assert.ok(t.ads < r.adRevenue * 0.5, 'и не может забрать половину рекламной выручки');
 });
+
+test('состояние прошлой сборки не роняет ход, а достраивается', async () => {
+  const { createInitialState, step, normalizeState } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Сейв предыдущей версии не знает о полях, добавленных позже. Обращение к
+  // ним роняло весь ход — ровно так однажды умер лёгкий уровень НОВОЕДЫ.
+  const old = createInitialState('старый-сейв', 'normal');
+  delete old.anchor; delete old.sharingShare; delete old.sharingAnger;
+  delete old.contentBook; delete old.weeklyHoldLeft; delete old.sharingPolicyPrev;
+  for (const id of Object.keys(old.segments)) delete old.segments[id].young;
+
+  const fixed = normalizeState(structuredClone(old));
+  assert.equal(fixed.anchor.alive, true, 'франшиза достроена живой');
+  assert.equal(fixed.sharingShare, CONFIG.sharingBase, 'доля чужих домов взята стартовой');
+  assert.ok(fixed.segments.mass.young >= 0, 'когорта новичков достроена');
+
+  const after = step(old, { decisions: DEFAULT_DECISIONS, eventChoice: 0 });
+  assert.ok(after.report, 'ход прожит без падения');
+  assert.ok(Number.isFinite(after.report.subs), 'и посчитан');
+});
+
+test('якорная франшиза: второе продление дороже первого — правообладатель знает вашу цену', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('жадность', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 200e6 };
+  const prices = [];
+  for (let i = 0; i < CONFIG.anchorTermMonths + CONFIG.anchorRenewMonths + 2; i++) {
+    const a = s.anchor;
+    const renew = a.alive && a.monthsLeft <= CONFIG.anchorWarnMonths;
+    s = step(s, { decisions: d, renewAnchor: renew, eventChoice: 0 }).state;
+    const r = s.history.at(-1);
+    if (r.anchorRenewCost > 0) prices.push(r.anchorRenewCost);
+  }
+  assert.ok(prices.length >= 2, `продлевали дважды: ${prices.length}`);
+  assert.ok(prices[1] > prices[0] * 1.5,
+    `второй контракт заметно дороже первого: ${prices[0]} → ${prices[1]}`);
+});

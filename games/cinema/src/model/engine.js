@@ -304,8 +304,39 @@ export function contentCap(state) {
 // ----------------------------------------------------------------------------
 // Главный шаг симуляции
 // ----------------------------------------------------------------------------
+/**
+ * Достройка состояния до текущей формы модели.
+ *
+ * Сохранение прошлой сборки не знает о полях, добавленных позже, и обращение
+ * к ним роняет весь ход — экран замирает, а причина невидима. Метка сборки
+ * (BUILD) такие сейвы обычно отсекает, но полагаться только на неё нельзя:
+ * состояние приходит и из наследия, и из тестов, и из чужого файла. Дешевле
+ * достроить недостающее нейтральными значениями, чем однажды получить пустой
+ * экран у живого игрока — так уже было с лёгким уровнем НОВОЕДЫ.
+ */
+export function normalizeState(state) {
+  if (!state) return state;
+  state.anchor = state.anchor ?? {
+    monthsLeft: CONFIG.anchorTermMonths, alive: true, renewals: 0, lostMonth: null, decayLeft: 0,
+  };
+  state.sharingShare = state.sharingShare ?? CONFIG.sharingBase;
+  state.sharingAnger = state.sharingAnger ?? 0;
+  state.sharingPolicyPrev = state.sharingPolicyPrev ?? 0;
+  state.contentBook = state.contentBook ?? { license: 0, original: 0 };
+  state.weeklyHoldLeft = state.weeklyHoldLeft ?? 0;
+  for (const def of SEGMENTS) {
+    const seg = state.segments?.[def.id];
+    if (seg && seg.young === undefined) {
+      // Возраст базы в старом сейве неизвестен. Берём опорную долю: она и есть
+      // то значение, при котором разбиение по стажу не меняет средний отток.
+      seg.young = (seg.premium + seg.ads) * CONFIG.cohortRefYoungShare;
+    }
+  }
+  return state;
+}
+
 export function step(prevState, input = {}) {
-  const state = deepClone(prevState);
+  const state = normalizeState(deepClone(prevState));
   if (state.over) return { state, report: state.history[state.history.length - 1] ?? null };
 
   const snapshot = deepClone({
@@ -618,7 +649,8 @@ export function step(prevState, input = {}) {
   // Индекс прав входит корнем: франшиза дорожает вместе с рынком, но не
   // в разы — иначе продление превращается в ловушку, которую нельзя взять.
   const anchorPrice = Math.round(CONFIG.anchorRenewCost * Math.sqrt(licenseIndex)
-    * (1 + CONFIG.anchorRivalBidPower * clamp(state.rivalState.buzz ?? 0, 0, 1.2)));
+    * (1 + CONFIG.anchorRivalBidPower * clamp(state.rivalState.buzz ?? 0, 0, 1.2))
+    * (1 + CONFIG.anchorRenewGreed * (anchor.renewals ?? 0)));
   if (anchor.alive && input.renewAnchor && anchor.monthsLeft <= CONFIG.anchorWarnMonths) {
     anchorRenewCost = anchorPrice;
     anchor.monthsLeft += CONFIG.anchorRenewMonths;
