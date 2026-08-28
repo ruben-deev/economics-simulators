@@ -2322,10 +2322,10 @@ function renderCfoTab() {
 
     <h3 class="sub-title">${t('cfoCashTitle')}</h3>
     <div style="overflow-x:auto"><table class="data"><tbody>
-      ${row(t('cfoCashOut'), moneyExact(-(r.contentSpend ?? 0)), 'neg')}
-      ${row(t('cfoRecognised'), moneyExact(-(r.contentAmortization ?? 0)), 'neg')}
+      ${row(t('cfoCashOut'), moneyExact(r.contentSpend ?? 0), 'neg')}
+      ${row(t('cfoRecognised'), moneyExact(r.contentAmortization ?? 0), 'neg')}
       ${row(t('cfoGap'), moneyExact(cashGap), cashGap > 0 ? 'neg' : 'pos', t('cfoGapNote'))}
-      ${row(t('cfoBook'), money(r.contentBookValue ?? 0), '', t('cfoBookNote'))}
+      ${row(t('cfoBook'), moneyExact(r.contentBookValue ?? 0), '', t('cfoBookNote'))}
       <tr class="total"><td>${t('cfoProfitCash')}</td><td class="${r.profit >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit)}</td></tr>
       <tr class="total"><td>${t('cfoProfitAccrual')}</td><td class="${(r.profitAccrual ?? 0) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profitAccrual ?? 0)}</td></tr>
     </tbody></table></div>
