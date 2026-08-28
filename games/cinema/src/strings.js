@@ -516,9 +516,9 @@ export const STRINGS = {
   // --- вкладки ---
   tabUnit: { ru: 'Юнит-экономика', en: 'Unit economics' },
   tabPnl: { ru: 'P&L', en: 'P&L' },
-  tabCfo: { ru: 'Отчёт финдира', en: 'CFO report' },
-  cfoIntro: { ru: 'То же, что модель считает каждый ход, но собранное так, как это читает человек, отвечающий за деньги.', en: 'The same numbers the model computes every turn, arranged the way the person responsible for the money reads them.' },
-  cfoPayback: { ru: 'Окупаемость подписчика', en: 'Subscriber payback' },
+  tabCfo: { ru: 'Окупаемость', en: 'Payback' },
+  cfoIntro: { ru: 'Что во что превратилось и когда вернулось: подписчик, вложенный в контент рубль, каждый вышедший проект.', en: 'What turned into what, and when it came back: a subscriber, a rouble put into content, every project you released.' },
+  cfoPayback: { ru: 'Подписчик окупается за', en: 'A subscriber pays back in' },
   cfoMonths: { ru: '{value} мес.', en: '{value} mo.' },
   cfoPaybackNote: { ru: 'За сколько месяцев вклад одного подписчика отбивает то, что стоило его привести. Дольше срока его жизни — привлечение убыточно, сколько бы ни радовал график роста.', en: 'How many months of one subscriber’s contribution it takes to earn back what it cost to acquire them. Longer than their lifetime and acquisition loses money, however cheerful the growth chart looks.' },
   cfoLtvCac: { ru: 'LTV / CAC', en: 'LTV / CAC' },
@@ -742,6 +742,18 @@ score = valuation × your stake`,
   debriefSummerAds: {
     ru: 'Рекламная загрузка летом была выше зимней — против сезона CPM (лето ×0.75, зима ×1.25). Та же минута рекламы летом приносит на 40% меньше зимней.',
     en: 'Ad load ran higher in summer than in winter — against the CPM season (summer ×0.75, winter ×1.25). The same ad minute earns 40% less in summer than in winter.',
+  },
+  debriefAnchorLost: {
+    ru: 'Франшиза ушла к конкуренту в месяце {m}, и вы её не вернули. Часы на полке остались, а причина оставаться — нет: база осыпалась три месяца подряд. По контрольным партиям одно вовремя сделанное продление стоит от 11 до 32% итога — больше всего тому, у кого своя полка тоньше.',
+    en: 'The franchise went to your rival in month {m} and you never got it back. The hours stayed on the shelf, the reason to stay did not: the base slid for three months straight. On control runs a single well-timed renewal is worth between 11 and 32% of the final result — most of all to whoever has the thinner shelf of their own.',
+  },
+  debriefAnchorOverpaid: {
+    ru: 'Права на франшизу продлевали {n} раза, всего на {money}. Второй контракт покрывает месяцы после финала: половина оплаченного срока приходится на время, когда партия уже закончилась, а цена к тому моменту выросла в два с половиной раза. Правообладатель считает не свои издержки, а вашу цену переключения.',
+    en: 'You renewed the franchise {n} times, {money} in total. The second contract covers months past the finish line: half of what you paid for falls after the run is over, and by then the price had risen two and a half times. The rights holder prices not their own costs but your cost of switching.',
+  },
+  debriefSharingIgnored: {
+    ru: 'Доступ вне дома вы не трогали ни разу, и к финалу по чужой подписке смотрели {pct}% базы. Эти люди весь срок шли по вашему счёту за трафик. Закрывать рано вредно — они же приводят зрителей даром, — но и держать витрину открытой до конца значит платить за просмотр, за который вам не платят.',
+    en: 'You never touched out-of-home access, and by the finish {pct}% of your base was watching on somebody else’s plan. Those people ran on your bandwidth bill the whole time. Closing early hurts — they bring you viewers for free — but leaving the window open to the end means paying for watching nobody pays you for.',
   },
   debriefRanDry: {
     ru: 'Касса кончилась в месяце {m}: продажа за долги возвращает лишь 28% оценки. Подушка и ранний раунд стоят дешевле, чем спасение.',

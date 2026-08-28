@@ -2113,3 +2113,43 @@ test('якорная франшиза: второе продление доро�
   assert.ok(prices[1] > prices[0] * 1.5,
     `второй контракт заметно дороже первого: ${prices[0]} → ${prices[1]}`);
 });
+
+test('разбор партии называет потерю франшизы и неоплаченный доступ вне дома', async () => {
+  const { createInitialState, step, raise, debrief } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Пассивная партия: франшизу не продлевали, доступ вне дома не трогали
+  let s = createInitialState('разбор-пассив', 'normal');
+  let raises = 0;
+  const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 100e6 };
+  for (let i = 0; i < CONFIG.monthsTotal && !s.over; i++) {
+    if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+      s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+    }
+    s = step(s, { decisions: d, eventChoice: 0 }).state;
+  }
+  const ids = debrief(s).map((x) => x.id);
+  assert.ok(ids.includes('anchorLost'), `разбор называет уход франшизы: ${ids.join(', ')}`);
+  assert.ok(ids.includes('sharingIgnored'), `и нетронутый доступ вне дома: ${ids.join(', ')}`);
+  const lost = debrief(s).find((x) => x.id === 'anchorLost');
+  assert.ok(lost.m > 0 && lost.m <= CONFIG.monthsTotal, 'с указанием месяца');
+});
+
+test('разбор партии называет лишнее продление франшизы', async () => {
+  const { createInitialState, step, raise, debrief } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('разбор-жадность', 'normal');
+  let raises = 0;
+  const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 80e6 };
+  for (let i = 0; i < CONFIG.monthsTotal && !s.over; i++) {
+    if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+      s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+    }
+    const a = s.anchor;
+    const renew = a.alive && a.monthsLeft <= CONFIG.anchorWarnMonths;
+    s = step(s, { decisions: d, renewAnchor: renew, eventChoice: 0 }).state;
+  }
+  assert.ok(s.anchor.renewals >= 2, `продлевали дважды: ${s.anchor.renewals}`);
+  const item = debrief(s).find((x) => x.id === 'anchorOverpaid');
+  assert.ok(item, 'разбор замечает второй контракт');
+  assert.ok(item.money > 0, 'и называет потраченную сумму');
+});
