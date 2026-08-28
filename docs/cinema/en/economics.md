@@ -512,9 +512,9 @@ The report carries both rates: `churnRate` is what actually happened with a mixe
 base, and `churnBase` is the rate before the tenure split, which shows how your
 decisions landed without the arithmetic of the mix.
 
-### Shared passwords
+### One account, several homes
 
-One subscription gets used across several homes. The share of such viewers grows
+One subscription gets used across several households: kids, parents, friends. The share of such viewers grows
 by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger
 you are: a friend "already has it".
 
@@ -529,7 +529,10 @@ Leaving it alone is not free: someone else's hours arrive on your bandwidth bill
 Closing it is not free either: the shop window goes dark, and with it a channel
 that was bringing you viewers without any marketing budget.
 
-The out-of-home access lever decides when to close it:
+The out-of-home access lever decides when to invite them to pay for themselves.
+The middle setting is the family plan: a second home for a surcharge, with no
+restrictions on those who decline. The hard one makes access from another
+household paid only.
 
 ```
 agreed to pay = share × force × 0.34
@@ -547,9 +550,10 @@ licence-led strategy a meagre +1% and drops the studio-led one, which lives on
 the reach of its premieres, by **−19%**. Closing in month thirty-two brings half
 the peak: the share has grown, but it is too late to turn it into money.
 
-A shared password is not theft but a free shop window: those people already watch
-your catalogue. Close it too early and you lose reach; too late and you have paid
-for their bandwidth all along and taught them not to pay.
+One plan across several homes is not theft but a free shop window: those people
+already watch your catalogue and already cost you bandwidth. Ask them to pay too
+early and you lose the reach they were bringing you; too late and you have paid
+for their watching all along and taught them not to pay.
 
 ## 4. Watch hours and bandwidth
 

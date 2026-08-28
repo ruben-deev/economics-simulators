@@ -1965,8 +1965,8 @@ const STRINGS = {
   cfoLtvCac: { ru: 'LTV / CAC', en: 'LTV / CAC' },
   cfoYoungShare: { ru: 'Доля новичков в базе', en: 'Share of newcomers' },
   cfoYoungNote: { ru: 'Подписчики моложе трёх месяцев уходят по {young} в месяц, выдержанная база — по {mature}. Чем быстрее вы растёте, тем выше средний отток: премьера приводит пробников, а активом становится тот, кто остался.', en: 'Subscribers younger than three months churn at {young} a month, the mature base at {mature}. The faster you grow, the higher your average churn: a premiere brings triallists, and only those who stay become an asset.' },
-  cfoSharing: { ru: 'Доля общих паролей', en: 'Shared-password share' },
-  cfoSharingNote: { ru: 'Эти люди смотрят каталог и стоят трафика, но не платят. Рычаг «доступ вне дома» решает, когда закрывать бесплатную витрину.', en: 'These people watch the catalogue and cost you bandwidth but pay nothing. The out-of-home access lever decides when to close the free shop window.' },
+  cfoSharing: { ru: 'Смотрят по чужой подписке', en: 'Watching on someone else’s plan' },
+  cfoSharingNote: { ru: 'Доля зрителей, которые смотрят по подписке, оформленной в другом доме: у друзей, у родителей, у бывших. Они стоят вам трафика и не платят ничего. Рычаг «доступ вне дома» решает, когда предложить им платить самим.', en: 'The share of viewers watching on a plan taken out in another household: friends, parents, exes. They cost you bandwidth and pay nothing. The out-of-home access lever decides when to invite them to pay for themselves.' },
   cfoCashTitle: { ru: 'Контент: касса против P&L', en: 'Content: cash vs P&L' },
   cfoCashOut: { ru: 'Ушло деньгами', en: 'Cash out' },
   cfoRecognised: { ru: 'Признано расходом', en: 'Expense recognised' },
@@ -3807,7 +3807,7 @@ const CONFIG = {
   cohortMatureChurn: 0.86,    // множитель оттока для выдержанной базы
   cohortRefYoungShare: 0.18,  // опорная доля новичков, на которой ставка равна базовой
 
-  // --- Общие пароли ---
+  // --- Один аккаунт на несколько домов ---
   // Одной подпиской пользуются в нескольких домах. Доля растёт со временем
   // и с размером базы: чем больше сервис, тем выше шанс, что у знакомого
   // «уже есть». Часы эти люди потребляют, денег не приносят.
@@ -4251,16 +4251,16 @@ const LEVERS = [
     min: 0, max: 2, step: 1, def: 0,
     policyMode: 'replace',
     policy: [
-      { v: 0, label: { ru: 'Не трогаем', en: 'Leave it alone' },
-        note: { ru: 'Одной подпиской пользуются в нескольких домах. Часы растут, деньги — нет.', en: 'One subscription is used across several homes. Hours grow, money does not.' } },
-      { v: 1, label: { ru: 'Просим доплатить', en: 'Ask politely' },
-        note: { ru: 'Мягкое предложение оплатить второй дом. Соглашается меньшинство, но и обиженных мало.', en: 'A gentle offer to pay for a second home. A minority agrees, and few take offence.' } },
-      { v: 2, label: { ru: 'Закрываем', en: 'Enforce it' },
-        note: { ru: 'Доступ вне дома — только за деньги. Часть разделявших становится подписчиками, часть уходит вместе с тем, кто их пустил.', en: 'Out-of-home access costs money. Some sharers become subscribers, some leave — taking the original subscriber with them.' } },
+      { v: 0, label: { ru: 'Смотрят все', en: 'Everyone watches' },
+        note: { ru: 'Одну подписку носят по домам: дети, родители, друзья. Вы платите за их трафик и не берёте с них ничего.', en: 'One plan travels between households: kids, parents, friends. You pay for their bandwidth and charge them nothing.' } },
+      { v: 1, label: { ru: 'Предложить второй дом', en: 'Offer a second home' },
+        note: { ru: 'Мягкий апселл: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
+      { v: 2, label: { ru: 'Только за доплату', en: 'Paid access only' },
+        note: { ru: 'Доступ из другого дома — платный. Часть смотревших заводит свою подписку, часть уходит и уводит того, кто их пустил.', en: 'Access from another household costs money. Some of those watching take out their own plan, some leave — and take with them whoever let them in.' } },
     ],
     tip: {
-      ru: 'Общий пароль — не воровство, а бесплатная витрина: эти люди уже смотрят ваш каталог и стоят вам трафика. Вопрос в том, когда витрину пора закрывать: рано — потеряете охват, поздно — приучите не платить.',
-      en: 'A shared password is not theft but a free shop window: those people already watch your catalogue and cost you bandwidth. The question is when to close the window: too early and you lose reach, too late and you have taught them not to pay.',
+      ru: 'Одна подписка на несколько домов — не воровство, а бесплатная витрина: эти люди уже смотрят ваш каталог и уже стоят вам трафика. Вопрос только в сроке: попросите их платить рано — потеряете охват, который они же вам и приносили; поздно — весь этот срок платили за чужой просмотр и приучили не платить.',
+      en: 'One plan across several homes is not theft but a free shop window: those people already watch your catalogue and already cost you bandwidth. The only question is timing: ask them to pay too early and you lose the reach they were bringing you; too late and you have paid for their watching all along and taught them not to pay.',
     },
   },
   {
@@ -5824,10 +5824,10 @@ const EVENTS = [
   },
   {
     id: 'password', weight: 5, minMonth: 12,
-    title: { ru: 'Волна общих паролей', en: 'Password sharing spreads' },
+    title: { ru: 'Подписку смотрят три дома', en: 'One plan, three households' },
     text: {
-      ru: 'Одной подпиской пользуются в трёх квартирах. Часы растут, деньги — нет.',
-      en: 'One subscription is being used in three flats. Hours grow, money does not.',
+      ru: 'Одну подписку разнесли по трём квартирам: дети, родители, друзья. Часы растут, деньги — нет.',
+      en: 'One subscription has spread across three flats: kids, parents, friends. Hours grow, money does not.',
     },
     effects: { hoursMult: 1.18, demandMult: 0.9 },
     lesson: {
@@ -6174,7 +6174,7 @@ function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
       decayLeft: 0,         // сколько месяцев ещё осыпается база
     },
 
-    // --- Общие пароли ---
+    // --- Один аккаунт на несколько домов ---
     sharingShare: CONFIG.sharingBase,
     sharingAnger: 0,        // остаточная обида после закрытия доступа
     sharingPolicyPrev: 0,
@@ -6669,7 +6669,7 @@ function step(prevState, input = {}) {
   const refPrice = 399;
   // Оптовые подписчики — это те же люди. Они занимают ёмкость сегментов
   // наравне с розничными, иначе рынок начинает считаться дважды.
-  // --- Общие пароли ---
+  // --- Один аккаунт на несколько домов ---
   // Доля растёт сама: чем дольше сервис на рынке и чем он крупнее, тем выше
   // шанс, что у знакомого «уже есть». Эти люди смотрят каталог и стоят
   // трафика, но не платят ничего.
@@ -7210,7 +7210,7 @@ function step(prevState, input = {}) {
     adHours += p.adHours;
   }
 
-  // Общие пароли: эти люди смотрят ваш каталог, не заплатив ни рубля.
+  // Смотрящие по чужой подписке: эти люди смотрят ваш каталог, не заплатив ни рубля.
   // Трафик за них платите вы — это и есть цена бесплатной витрины, и она
   // растёт вместе с долей разделяющих. Без этой строки «не трогать» было
   // бы бесплатным решением, а значит и не решением вовсе.
@@ -7540,7 +7540,7 @@ function step(prevState, input = {}) {
     anchorDecayLeft: anchor.decayLeft,
     anchorChurnAdd,
 
-    // --- Общие пароли ---
+    // --- Один аккаунт на несколько домов ---
     sharingShare: state.sharingShare,
     sharingPolicy,
     sharingConvertedSubs: newSubsSharing,
