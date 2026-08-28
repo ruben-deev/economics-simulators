@@ -1,156 +1,119 @@
-# Teaching notes: the ticketing service in class
+# Class notes: the ticketing simulator
 
 *[Русская версия](../teacher-guide.md)*
 
-The game suits courses on marketplaces and two-sided markets, platform
-economics, product strategy and unit economics. One game is 36 turns — 40–60
-minutes at a calm pace. A class session usually needs 12–18 turns.
+One caveat first: this is not a syllabus and not a course programme. I have never taught
+a class with these games, so there are no timings here and no step-by-step running order —
+they would be invented. What follows is something else: the places where the model behaves
+differently from what most people expect, with the number or the measurement that shows it,
+and the question worth asking out loud. What to use and in what order, you will judge
+better than I can.
 
-The three games in the set are built differently, and that is the point of
-playing more than one. In delivery (`docs/foodtech/`) revenue per customer grows
-with their activity. In the streaming service (`docs/cinema/`) it is fixed by the
-subscription while cost grows. Here it grows with nothing at all: billions pass
-through the service and what becomes yours is percentages — part of which the
-bank takes straight away.
+The game suits courses on marketplaces and two-sided markets, platform economics, product
+strategy and unit economics. One game is 36 turns, which at a calm pace is 40–60 minutes.
+Seeing the main forks usually takes 12–18 turns.
+
+The three games in the set are built differently, which is the point of playing more than
+one. In delivery (`docs/foodtech/`) revenue per customer grows with their activity. In
+streaming (`docs/cinema/`) it is fixed by the subscription while cost grows. Here it grows
+with nothing at all: billions pass through the service and percentages are yours — and the
+bank takes part of those first.
 
 ---
 
-## What the student should take away
+## The six ideas the game was built around
 
-1. **A two-sided market does not start from one side.** Organisers come for the
-   buyers, buyers come for the listings. Marketing into empty listings burns
-   entirely; rich listings with no buyers give empty halls, after which the
-   organisers leave. Both mistakes look like "we under-invested" and are cured by
-   opposite actions.
-2. **Turnover and revenue are different accounts.** The GMV in the header and
-   your revenue differ tenfold. Acquiring comes off turnover, not revenue, so at
+1. **A two-sided market does not start from one side.** Promoters come for the audience,
+   the audience comes for the line-up. Marketing into an empty line-up burns entirely;
+   a rich line-up without an audience means empty halls, after which promoters leave.
+   Both mistakes look like "we underinvested" and are cured by opposite things.
+2. **Turnover and revenue are different accounts.** The GMV in the header and your revenue
+   differ by a factor of ten. Card processing is charged on turnover, not on revenue, so at
    a low take rate the bank eats nearly all of it.
-3. **The same commission can be taken from two sides, and the consequences
-   differ.** The buyer fee is visible at checkout and hits demand; the organiser
-   commission is invisible to the buyer and hits supply. Same sum, different
-   elasticities.
-4. **A partner's own channel is a choice between "less per ticket" and "nothing
-   per ticket".** A widget on the organiser's site recovers turnover that would
-   otherwise pass you by, but earns several times less and does not fill your
-   listings.
-5. **Migrating between platforms is a project, not a checkbox.** Everyone already
-   runs something. Speed is bought with budget, and those sitting on the rival's
-   platform cannot be won over.
-6. **Trust is spent invisibly and recovers slowly.** Resellers lift turnover and
-   sink reputation: the numbers look fine right up to the month when it is
-   too late.
+3. **The same commission can be charged to either side, with different consequences.**
+   A buyer fee is visible at checkout and hits demand; a promoter commission is invisible to
+   the buyer and hits supply. Same amount, different elasticities.
+4. **A partner's own channel is a choice between "less per ticket" and "nothing per
+   ticket".** A widget on the promoter's site recovers turnover that would otherwise pass
+   you by, but it brings in several times less and does not fill your line-up.
+5. **Migrating between platforms is a project, not a checkbox.** Everyone already runs
+   something. Speed is bought with budget, and those who sit with the rival cannot be
+   pulled away.
+6. **Trust is spent invisibly and rebuilt slowly.** Scalpers lift turnover and sink
+   reputation: the numbers look fine right up to the month when it is too late.
 
 ---
 
-## Session 1. "How much is 14%?" (30 minutes)
+## Where the model surprises people
 
-The task: split the take rate between the two sides.
+### There is no single "right" take rate
 
-1. Fix the total at 14% and ask the teams to divide it: 14/0, 0/14, 7/7, 10/4.
-   Each team justifies its choice before the first turn.
-2. Five turns, then compare: turnover, organiser count, market share.
-3. Debrief: buyer segments have fee elasticities from 1.5 to 4.5, organiser types
-   have commission sensitivities from 0.7 to 2.6. So there is no right answer —
-   there is an answer for your mix of listings.
+The same total 14% can be split 14/0, 0/14, 7/7 or 10/4, and those are different
+businesses. Audience elasticity to the buyer fee runs from 1.5 to 4.5; promoter sensitivity
+to commission from 0.7 to 2.6. There is no right answer — there is an answer for your
+line-up mix.
 
-Homework question: how does the answer change if you want to grow in clubs rather
-than theatres?
+*Question:* how does the split change if you need to grow in clubs rather than theatres?
 
----
+### The widget pays pennies — and is still sometimes right
 
-## Session 2. "Who gets a widget" (40 minutes)
+The "Your money per ticket" line in the channels panel: ₽179 through the line-up, ₽4
+through the widget (clubs, default settings). The obvious question is why bother with the
+widget at all. The answer is in the next column, "past you": 58% of sports turnover bypasses
+the service entirely, and the widget recovers that part at a low rate.
 
-The task: see channel conflict in numbers rather than in words.
+By the measurement in `economics.md`: clubs +95%, concerts +100%, theatres −4%, sports −1%.
+The winners are the ones with nothing to lose: clubs have no box office of their own and
+there are thousands of them; promoters have no audience of their own.
 
-1. Open the channels panel and read the "What a ticket earns you" line out loud:
-   ₽179 through the listings, ₽4 through the widget (clubs, default settings).
-   Ask: why install the widget at all?
-2. The answer is in the "past you" column: for sport 58% of turnover goes past
-   the service entirely. The widget recovers that part at a low rate.
-3. Let the teams pick types and play 8 turns. Compare with the measurement in
-   `economics.md`: clubs +95%, concerts +100%, theatres −4%, sport −1%.
-4. Debrief: why clubs and concerts win. Clubs have no ticketing of their own and
-   there are thousands of them; promoters have no audience of their own, so there
-   is nothing to lose.
+### A decision and its execution are different things
 
----
+You can tick the types for the widget and leave the integration budget alone. Then nothing
+happens: the migrated share sits at zero for as many turns as you like. With a budget, the
+"Migrated" column grows in pieces, faster for clubs than for sports. Need works like a
+discount, a raw product moves nobody, and the rival holds its own — the ceiling is below
+one.
 
-## Session 3. "Migration costs money" (30 minutes)
+This is a good moment to talk about how a plan differs from a budget.
 
-The task: see that a decision and its execution are different things.
+### Spare capacity is held all year for one day
 
-1. Ask them to tick types for the widget and **not touch** the onboarding budget.
-   Three turns. Nothing happens — the share that moved stays at zero.
-2. Now give them the budget. Watch the "Moved over" column: it grows in parts,
-   and faster for clubs than for sport.
-3. Debrief: need works as a discount, a raw product moves nobody, and the rival
-   holds their own — so the ceiling is below one.
+The "City" panel announces a tour ahead of time. A team that raised spare capacity before
+the announced month and a team that left it alone diverge on demand lost in that month.
+Capacity cannot be bought on the day of peak load — the same is true of a warehouse, cloud
+headroom and an on-call shift.
 
-A good moment to talk about the difference between a plan and a budget.
+### Turnover up, trust down
 
----
+Turn bot protection off, or never roll it out, and turnover really does rise: scalpers buy
+faster than people. The trust chart goes down at the same time, and trust feeds both
+conversion and attractiveness to promoters — but with a lag, so the conversion drop arrives
+months later.
 
-## Session 4. "One tour" (35 minutes)
+A separate case of the same kind: a fee revealed at the last step lifts conversion
+immediately and erodes trust gradually.
 
-The task: show why you pay for something you do not need nine months out of
-twelve.
+### An exclusive advance is a cash gap
 
-1. Play until the first announcement in the "What is on in town" panel.
-2. Forbid half the teams from touching capacity headroom; tell the other half to
-   raise it.
-3. Play the announced month and compare the lost demand.
-4. Debrief: headroom is held all year for a single day, and it cannot be bought
-   on that day. The same holds for warehouse stock, cloud reserve and an on-call
-   shift.
+An advance of ₽120–500M against monthly revenue of roughly ₽150–240M. By measurement:
+taking everything on offer — ₽990M and 4 bankruptcies out of 6; taking one only when there
+is still payroll left afterwards — ₽7.77bn and no bankruptcies; taking none at all —
+₽7.45bn.
 
----
+The conclusion is not "exclusives are bad" but "the decision is made on the cash left over,
+not on how attractive the deal is".
 
-## Session 5. "Turnover up, trust down" (40 minutes)
+### A strategy built for one year's goal does not carry to the next
 
-The task: separate two metrics that are usually confused.
+Year one: turnover of ₽1.2bn a month — almost everyone takes it through growth at any price.
+Year two announces something else: three profitable months **and** turnover above ₽700M.
+Year three: 65% market share with 420 promoters — different again. The take rate turns out
+to be a decision for a year, not a setting.
 
-1. Give the teams the goal of maximising turnover over six turns.
-2. Almost all will turn off bot protection or never install it: resellers buy
-   faster than people, and turnover really does grow.
-3. Show the trust chart and ask what will happen over the next six months.
-4. Play on until conversion falls. Debrief: trust enters both conversion and
-   appeal to organisers, but with a lag.
-
-A separate question: "fee at the last step" raises conversion at once and lowers
-trust gradually. Which teams switched it on, and why?
-
----
-
-## Session 6. "The exclusive" (30 minutes)
-
-The task: learn to price an advance.
-
-1. Wait for an exclusive offer and read the advance out loud (₽120–500M against
-   a monthly revenue of roughly ₽150–240M).
-2. Have the teams decide before they see the consequences.
-3. Debrief from the measurement: taking every offer gives ₽990M and 4 bankruptcies
-   out of 6; taking one only when there is still payroll left afterwards gives
-   ₽7.77B and no bankruptcies; never taking one gives ₽7.45B.
-4. The conclusion is not "exclusives are bad" but "an advance is a cash gap, and
-   the decision is made on the cash left over, not on how good the deal looks".
-
----
-
-## Session 7. "Shareholder goals" (35 minutes)
-
-The task: show that a strategy built for one year's goal does not carry to
-the next.
-
-1. Year one: monthly turnover from ₽1.2B. Almost everyone gets there by growth at
-   any cost.
-2. Year two announces something else: three profitable months **and** turnover
-   above ₽700M. Pause and ask them to say out loud what has to change.
-3. Year three — 65% market share with 420 organisers: different again.
-4. Debrief: the take rate is a decision for the year, not a setting. The bars were
-   set by measuring the distribution, not by guessing: year one is cleared by 30%
-   of strategies, year two by a few percent, year three by 24%. The measurement runs 120 random
-   strategies and assumes a player who raises rounds rather than dying halfway
-   through: without rounds the bars would read about half as high.
+The bars were set from a measured distribution rather than by eye: the year-one goal is
+taken by 30% of strategies, year two by a few per cent, year three by 24%. The measurement
+runs 120 random strategies and assumes a player who raises rounds rather than dying
+mid-game: without rounds the bars would read half as high as they do.
 
 ---
 

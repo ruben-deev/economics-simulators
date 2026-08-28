@@ -49,8 +49,8 @@
 [экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.28.0.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
-**Преподавателю** удобнее готовый пакет одним архивом — игра, методичка на двух
-языках, разбор формул и шаблон таблицы для сбора работ:
+**Преподавателю** удобнее готовый пакет одним архивом — игра, заметки к занятию
+на двух языках, разбор формул и шаблон таблицы для сбора работ:
 [доставка](https://ruben-deev.github.io/economics-simulators/downloads/novoeda-teacher-pack.zip) ·
 [кинотеатр](https://ruben-deev.github.io/economics-simulators/downloads/kinoreka-teacher-pack.zip) ·
 [билеты](https://ruben-deev.github.io/economics-simulators/downloads/biletville-teacher-pack.zip) ·
@@ -79,7 +79,7 @@ npm run build      # пересобрать одиночные файлы игр
 вид, что он тоже обновился. `package.json` остаётся версией монорепозитория целиком.
 Номер игры попадает в имя собранного файла (`…-simulator-v1.24.1.html`), внутрь самой
 страницы и в справку по кнопке «?». Сборка версии заодно удаляет из `dist/` предыдущую, чтобы не гадать,
-какой файл раздавать. Ссылки в README, на витрине и в методичках содержат версию;
+какой файл раздавать. Ссылки в README, на витрине и в документации содержат версию;
 если забыть их обновить, тест `shared/tests/compat.test.mjs` перечислит все устаревшие.
 
 **Файл или ссылка.** Одиночный файл рассчитан на ноутбук: там его открывают
@@ -165,7 +165,7 @@ JavaScript**. Встроенный браузер того же Телеграм
 | Гибкая комиссия | индивидуальная ставка для ресторанов | часть комиссионной выручки |
 
 📘 [Разбор формул](docs/foodtech/economics.md) ·
-🎓 [Сценарии занятий](docs/foodtech/teacher-guide.md) ·
+🎓 [Заметки для занятия](docs/foodtech/teacher-guide.md) ·
 🇬🇧 [English docs](docs/foodtech/en/economics.md)
 
 ---
@@ -271,7 +271,7 @@ JavaScript**. Встроенный браузер того же Телеграм
 | Календарь релизов | премьера растягивается, отток сглаживается | пик подписок ниже |
 
 📘 [Разбор формул](docs/cinema/economics.md) ·
-🎓 [Сценарии занятий](docs/cinema/teacher-guide.md) ·
+🎓 [Заметки для занятия](docs/cinema/teacher-guide.md) ·
 🇬🇧 [English docs](docs/cinema/en/economics.md)
 
 ---
@@ -311,7 +311,7 @@ take rate 3% минус эквайринг — почти ноль.
 тура) и четыре алгоритма второго порядка — включая тот, что поднимает
 конверсию за счёт доверия.
 
-🎓 [Сценарии занятий](docs/tickets/teacher-guide.md) ·
+🎓 [Заметки для занятия](docs/tickets/teacher-guide.md) ·
 📘 [Разбор формул](docs/tickets/economics.md) ·
 🇬🇧 [English docs](docs/tickets/en/economics.md)
 
@@ -344,7 +344,7 @@ take rate 3% минус эквайринг — почти ноль.
 а итог уходит отдельной строкой с тегом «НОВОГРАД+» в отдельную таблицу рекордов.
 
 📘 [Разбор формул](docs/ecosystem/economics.md) ·
-🎓 [Сценарии занятий](docs/ecosystem/teacher-guide.md) ·
+🎓 [Заметки для занятия](docs/ecosystem/teacher-guide.md) ·
 🇬🇧 [English docs](docs/ecosystem/en/economics.md)
 
 ---
@@ -394,7 +394,7 @@ games/<игра>/
   tests/*.test.mjs              тесты модели и перевода
   dist/kinoreka-streaming-simulator-v1.30.0.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
-docs/<игра>/                    разбор формул и сценарии занятий (RU + en/)
+docs/<игра>/                    разбор формул и заметки для занятия (RU + en/)
 ```
 
 Вся экономика сосредоточена в `games/<игра>/src/model`. Эти модули не знают про браузер,
