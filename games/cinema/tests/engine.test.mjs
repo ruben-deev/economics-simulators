@@ -1961,3 +1961,57 @@ test('учёт контента: касса и признанный расход
   assert.ok(Math.abs(before * (1 - CONFIG.amortRateLicense) - after.contentBookValue) < before * 0.05,
     'списание идёт по убывающему остатку');
 });
+
+test('когорты: при опорной доле новичков средний отток равен базовой ставке', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Нормировка: разбиение по стажу перераспределяет отток, а не поднимает его.
+  // Проверяем арифметику смеси напрямую по ставкам из отчёта.
+  let s = createInitialState('нормировка', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 60e6 };
+  for (let i = 0; i < 18; i++) s = step(s, { decisions: d, eventChoice: 0 }).state;
+  const r = s.history.at(-1);
+  const ref = CONFIG.cohortRefYoungShare;
+  const blendedAtRef = ref * r.churnYoungAvg + (1 - ref) * r.churnMatureAvg;
+  assert.ok(Math.abs(blendedAtRef - r.churnBase) < r.churnBase * 0.02,
+    `при опорной доле смесь равна базовой ставке: ${blendedAtRef} против ${r.churnBase}`);
+});
+
+test('общие пароли: не трогать — тоже решение, чужие часы идут по вашему счёту', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const snapshot = { base: CONFIG.sharingBase, growth: CONFIG.sharingGrowth };
+  const run = () => {
+    let s = createInitialState('трафик', 'normal');
+    const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 60e6 };
+    for (let i = 0; i < 10; i++) s = step(s, { decisions: d, eventChoice: 0 }).state;
+    return s.history.at(-1);
+  };
+  const withSharing = run();
+  CONFIG.sharingBase = 0; CONFIG.sharingGrowth = 0;
+  const without = run();
+  CONFIG.sharingBase = snapshot.base; CONFIG.sharingGrowth = snapshot.growth;
+  assert.ok(withSharing.cdnCost > without.cdnCost,
+    `разделяющие стоят трафика: ${withSharing.cdnCost} против ${without.cdnCost}`);
+  assert.ok(withSharing.hours > without.hours, 'и их часы попадают в общий счёт');
+});
+
+test('общие пароли: закрыть рано — потерять охват, который они приносили', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const run = (closeFrom) => {
+    let s = createInitialState('охват', 'normal');
+    const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 60e6 };
+    for (let i = 0; i < 20; i++) {
+      const sharingPolicy = closeFrom && s.month + 1 >= closeFrom ? 2 : 0;
+      s = step(s, { decisions: { ...d, sharingPolicy }, eventChoice: 0 }).state;
+    }
+    return s.history.at(-1);
+  };
+  const early = run(3);
+  const never = run(0);
+  assert.ok(early.sharingShare < never.sharingShare, 'раннее закрытие душит долю в зародыше');
+  const aw = (r) => r.segments.reduce((a, x) => a + x.awareness, 0) / r.segments.length;
+  assert.ok(aw(early) < aw(never),
+    `и вместе с ней гаснет сарафан: ${aw(early)} против ${aw(never)}`);
+});

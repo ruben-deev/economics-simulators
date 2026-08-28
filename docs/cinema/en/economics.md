@@ -85,12 +85,13 @@ If you do not renew, the franchise goes to your rival: the hours stay on your
 shelf, the reason to stay does not. The base slides for three months (up to
 +5.5pp of churn in the first one), and the rival gains buzz.
 
-Measured (24 codes, licence-led anchor strategy): renewing is worth +20% on the
-final result — it pays off if you live on rented catalogue. For the studio-led
-strategy, which owns its shelf, the same contract is worth only +14%: the
-franchise matters most to whoever is left with nothing without it. Renewing in
-the last months of the run is pointless — the contract will not have time to
-work.
+Measured (24 codes): renewing with an eye on how much of the run is left is
+worth +16% to the licence-led strategy, +20% to the balanced one and +48% to the
+studio-led one — in percentage terms the smaller your base, the more it matters.
+Renewing blindly, "whenever they offer", is worth half as much: +9% / +10% /
++28%. The difference is the price of that last contract, bought months before
+the run ends, when it no longer has time to pay for itself. The mechanic
+punishes not the decision but taking it without looking at the calendar.
 
 ### Originals: a slate, not a budget
 
@@ -164,10 +165,11 @@ to hold the viewer: they finish and cancel. A weekly release is quieter, but the
 premiere lives for six weeks and holds the base the whole time.
 
 Which is better depends on what you stand on. Measured (24 codes): for the
-studio-led strategy, which lives on premieres, weekly release is worth +11%; for
+studio-led strategy, which lives on premieres, weekly release is worth +12%; for
 the licence-led one, where premieres are seasoning on a rented shelf, it costs
-−3% on the median but lifts the lower quartile (3.47 against 2.62 billion). So it
-is also a choice between a loud result and a predictable one.
+−2%, and for the balanced one −1%. There is no universal answer, and that is the
+point: the spike is for those with nothing to hold people with, retention is for
+those who already have the spike.
 
 ### Aiming at a segment
 
@@ -483,9 +485,16 @@ The rate above is not the same for everyone. The base splits into two cohorts,
 and they churn differently:
 
 ```
-newcomer (under 3 months)   churn × 1.65
-mature base                 churn × 0.86
+newcomer (under 3 months)   churn × 1.65 / norm
+mature base                 churn × 0.86 / norm
+norm = 0.18 × 1.65 + 0.82 × 0.86
 ```
+
+The normalisation matters: the multipliers are divided by the mix at a reference
+share of newcomers (18%), so at that share the average churn equals the base
+rate. Without it the tenure split would quietly raise churn for everyone all the
+time — and the lesson here is not about the level of churn but about the
+composition of the base.
 
 Someone who signed up this month has not settled in: they are still trying the
 service, comparing, and leaving is easy. Someone six months in has folded you
@@ -507,10 +516,20 @@ decisions landed without the arithmetic of the mix.
 
 One subscription gets used across several homes. The share of such viewers grows
 by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger
-you are: a friend "already has it". These people watch the catalogue and cost you
-bandwidth while paying nothing.
+you are: a friend "already has it".
 
-The out-of-home access lever decides when to close the free shop window:
+That share has two sides, and both are real:
+
+```
+bandwidth   = hours × share × 0.55      — you pay for watching nobody pays you for
+word of mouth = share × 0.13 of awareness — and they advertise the catalogue for free
+```
+
+Leaving it alone is not free: someone else's hours arrive on your bandwidth bill.
+Closing it is not free either: the shop window goes dark, and with it a channel
+that was bringing you viewers without any marketing budget.
+
+The out-of-home access lever decides when to close it:
 
 ```
 agreed to pay = share × force × 0.34
@@ -520,14 +539,17 @@ left for good = share × force × 0.22
 Force is 1 for hard enforcement and 0.35 for a polite request. Tightening leaves
 reputational noise for three months (+1.2pp of churn in the first).
 
-Measured: enforcement is worth +3–5% to the licence-led strategy, a polite
-request about the same and without the resentment. The mechanic does not turn a
-run around, but it is an honest late addition: when organic growth is over, the
-only way left is deeper.
+Measured (24 codes), this is a decision about timing, not about whether. Closing
+in month eighteen is worth +7% to the licence-led strategy, +8% to the balanced
+one and +5% to the studio-led one. Closing in month four — when the window is
+still nearly empty and word of mouth has only just started — leaves the
+licence-led strategy a meagre +1% and drops the studio-led one, which lives on
+the reach of its premieres, by **−19%**. Closing in month thirty-two brings half
+the peak: the share has grown, but it is too late to turn it into money.
 
 A shared password is not theft but a free shop window: those people already watch
-your catalogue. The question is when to close it: too early and you lose reach,
-too late and you have taught them not to pay.
+your catalogue. Close it too early and you lose reach; too late and you have paid
+for their bandwidth all along and taught them not to pay.
 
 ## 4. Watch hours and bandwidth
 
