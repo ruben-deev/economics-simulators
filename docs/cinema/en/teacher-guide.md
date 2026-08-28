@@ -1,10 +1,17 @@
-# Instructor notes: the streaming simulator in class
+# Class notes: the streaming simulator
 
 *[Русская версия](../teacher-guide.md)*
 
+One caveat first: this is not a syllabus and not a course programme. I have never taught
+a class with these games, so there are no timings here and no step-by-step running order —
+they would be invented. What follows is something else: the places where the model behaves
+differently from what most people expect, with the number or the measurement that shows it,
+and the question worth asking out loud. What to use and in what order, you will judge
+better than I can.
+
 The game suits courses on subscription economics, media business, unit economics and
 corporate finance. One game is 36 turns, which at a calm pace is 40–60 minutes.
-A class session usually needs only 12–18 turns.
+Seeing the main forks usually takes only 12–18 turns.
 
 The three games in the set model different kinds of business, which is the point of
 playing more than one. In delivery (`docs/foodtech/`) revenue per customer grows with
@@ -14,7 +21,7 @@ words — "engagement", "retention", "growth" — mean different things in each.
 
 ---
 
-## What the student should take away
+## The six ideas the game was built around
 
 1. **Content is a capital investment with a lag.** A decision to produce in-house pays off
    in six months. By the time the problem shows up in the report, production is too slow
@@ -28,255 +35,158 @@ words — "engagement", "retention", "growth" — mean different things in each.
 5. **A catalogue can shrink by nothing and still lose people.** Freshness is a separate
    stock from depth.
 6. **Growing the base ≠ growing the value of your stake.** Funding rounds finance growth
-   and take equity; the final score counts equity.
+   and take a share; the final score counts the share.
 
 ---
 
-## Scenario 1. "Where to put the first billion" (30 minutes)
+## Where the model surprises people
 
-Task: maximise subscribers over 12 turns. Starting capital is ₽4B.
+### Where to put the first billion
 
-Almost every team does one of two things: pour everything into marketing, or everything
-into in-house production. Both fail, and differently:
+Both extremes fail, and they fail differently. All into marketing: the base grows for two
+or three turns and stalls — there is nowhere to send the viewer, and the debrief prints
+"The catalogue is nearly empty: marketing is burning for nothing right now." All into
+originals: nothing reaches the screen for six months, cash runs out around turn 9–13, and
+the "Studio and production" panel shows projects in the pipeline and no premieres.
 
-1. **All marketing.** The base grows for two or three turns and stalls: there is nowhere
-   to bring the viewer, catalogue appeal is near zero. Show the analysis line "the
-   catalogue is nearly empty: marketing simply burns right now".
-2. **All originals.** Nothing appears on screen for six months and the cash runs out
-   around turn 9–13. Show the "Studio and production" panel: projects in the pipeline,
-   no premieres.
+*Question:* what is the smallest catalogue at which marketing converts at all, and how
+many months can the company afford to go without a premiere?
 
-Debrief: ask them to name the minimum catalogue at which marketing makes any sense, and
-to calculate how many months the company can afford to have no premieres.
+### Two tiers are not a product line, they are cannibalisation
 
----
+The expected effect of cutting the ad-tier price is "more people will come". The actual
+effect is different: part of the audience moves down from the expensive tier. The cheap
+tier earns from people who would not have paid at all and loses on people who would have
+paid full price. The split is on the "Audience" tab.
 
-## Scenario 2. "Two tiers" (40 minutes)
+The ad load works on two different lags: revenue rises immediately, churn a turn later.
+Tolerance for ads differs by segment: 0.45 for film buffs, 1.35 for the young.
 
-Task: 15 turns, maximise revenue. Prices and ad load are free.
+*Question:* how does that spread change the answer to "should we raise the ad load"?
 
-Running the session:
-1. Let them play 5 turns, then stop and ask what is happening to the split between tiers.
-   The Audience tab shows the ad-tier share by segment.
-2. Ask: what happens if you cut the ad-tier price by ₽50? The expected answer is "more
-   people arrive". The actual effect is that part of the audience **moves down from the
-   expensive tier**. Let them check.
-3. Raise ad load from 4 to 12 minutes an hour. Ad revenue rises immediately, churn rises
-   next turn. Discuss how to tell whether the move paid off.
+### One hit is a loan, not growth
 
-The core idea: two tiers are not a "broad line-up", they are cannibalisation management.
-The cheap tier earns from people who would not have paid at all, and loses on people who
-would have paid full price.
+A blockbuster produces a sign-up spike roughly six turns later and a slump two turns after
+that. The cause is a genre constant: `hangover` is 1.0 for a blockbuster and 0.1 for family
+animation. A blockbuster gives a spike one and a half times bigger and a slump ten times
+deeper. The only cure is a second project started while the first is still in production —
+otherwise the next premiere lands six months after the slump.
 
-Debrief question: cinephiles have an ad tolerance of 0.45, young viewers 1.35. How does
-that change the answer to "should we raise ad load"?
+*Question:* does a subscription business live off the schedule of premieres or their size?
 
----
+### The rival can be read
 
-## Scenario 3. "One hit" (40 minutes)
+The rival holds five stances and each lasts at least four months — that is a course, not
+noise. When it is "harvesting" it cuts content and raises the price: its catalogue starts
+to wear out, and that is the best moment to take its base by switching. When it is in a
+price war, stay out: it has more money and a war of attrition is not winnable.
 
-Task: make one blockbuster and hold on to the base it brings.
+The month's results carry a separate "switching" line: people who did not cancel a
+subscription but chose a different one. There are two ways to grow — bring in people with
+no subscription, and take people who pay the neighbour. The second is faster, but the
+neighbour has a reply and the open market does not.
 
-Running the session:
-1. Everything into a blockbuster, wait six turns, watch the sign-up spike.
-2. Two turns later, the collapse. Show the "hangover" line in the month analysis.
-3. Ask: what should have been done on turn 5 to prevent this? (Answer: start the second
-   project while the first was still in production — otherwise the next premiere is six
-   months after the collapse.)
-4. Let them replay with a continuous pipeline.
+*Question:* why is a strong rival sometimes useful? (It grows the whole category: new
+inflow is computed from the best offer on the market, not only from yours.)
 
-Compare genres: `hangover` is 1.0 for a blockbuster and 0.1 for family animation.
-The blockbuster gives a spike one and a half times as large and a collapse ten times
-as large.
+### Knowing the rival's line-up is worth almost nothing
 
-The core idea: a single hit with nothing behind it is a loan, not growth. A subscription
-business lives on the release schedule, not on the size of any one release.
+The "Rival's line-up" panel shows next month's announcement — that is, the schedule of
+someone else's releases is public and everyone has it. You can answer with a premiere of
+your own, but counter-programming is capped at 65%: someone else's "event of the year"
+cannot be fully cancelled out. The alternative is to release the same title a month later,
+into a quiet month.
 
----
+The advantage comes not from the knowledge but from having a project ready to ship.
+And readiness is laid down six months earlier.
 
-## Scenario 4. "Reading the rival" (45 minutes)
+*Question:* why are there fewer rival premieres in summer while your own spike is also
+weaker? (The seasonal hours multiplier is 0.84 — everyone watches less.)
 
-Task: 18 turns, get to 50% market share.
+### Licences versus originals: the optimum is in the interior
 
-Running the session:
-1. Show the rival panel. He has five stances, and each is held for at least four
-   months — that is not noise, it is a course you can read.
-2. Ask in advance: what do you do when he is "harvesting"? (Answer: he cuts content
-   and raises price — his catalogue will go stale and you can take his base by
-   switching. That is the best moment to attack.)
-3. Let a team undercut him while he is in "price war". Show the result: he has more
-   money; you do not win a war of attrition.
-4. Work through the "switching" line in the month results: these are people who did
-   not give up on streaming — they chose someone else.
+The one place where I have a real measurement rather than an observation. Four strategies,
+the same studio slots and price, differing only in the rights-buying budget (audit 2026-08,
+24 fixed codes, full game):
 
-The core idea: there are two ways to grow — bring in people with no subscription, and
-take people who pay the other guy. The second is faster, but the other guy has a
-counter-move and the untapped market does not.
-
-Debrief question: why is a strong rival sometimes useful? (He grows the whole category:
-new sign-ups are computed from the best offer on the market, not only from yours.)
-
----
-
-## Scenario 4a. "The rival's line-up" (35 minutes)
-
-Task: 15 turns, and answer the rival's "event of the year" at least once.
-
-Running the session:
-1. Point students at the "Rival line-up" panel: the right card is next month's
-   announcement. Ask what can be done with that knowledge in one turn.
-2. Let them play. Most teams answer with their own premiere. Show that counter-programming
-   is capped at 65%: an "event of the year" cannot be fully cancelled.
-3. Offer the alternative: release the same premiere a month later, into a quiet month.
-   Compare the resulting growth in the base.
-
-The core idea: everyone has the same information — rival release schedules are public.
-The advantage comes not from knowing but from having a project ready to ship. And
-readiness is decided six months earlier.
-
-Debrief question: why are there fewer rival premieres in summer but also a weaker spike
-for you? (The seasonal hours multiplier is 0.84 — everyone watches less.)
-
----
-
-## Scenario 5. "Licences versus originals" (50 minutes)
-
-Split the group into four teams. Everyone gets three studio slots and the same price —
-only the rights budget differs:
-
-| Team | Rights budget | Equity | Subscribers | Own share |
+| Strategy | Rights budget | Capital | Subscribers | Own share |
 |---|---|---|---|---|
-| A | 0 | ₽0.2B | 1.6M | 94% |
-| B | ₽150M/mo | ₽6.4B | 2.7M | 43% |
-| C | ₽500M/mo | **₽13.2B** | 5.2M | 30% |
-| D | ₽800M/mo | ₽7.1B | 4.8M | 27% |
+| A | 0 | 0.2bn | 1.6M | 94% |
+| B | 150M/mo | 6.4bn | 2.7M | 43% |
+| C | 500M/mo | **13.2bn** | 5.2M | 30% |
+| D | 800M/mo | 7.1bn | 4.8M | 27% |
 
-Measured in the 2026-08 audit across 24 seeds, full game. Three things are visible at once:
+You cannot skip buying: A builds a library out of its own output alone, a third of its
+games end in bankruptcy, and the survivors are worth thirty times less than C. You cannot
+live on buying alone either: D buys more than C and ends up almost twice as bad — buying
+past the point of sense drives the rights index up and you pay more to yourself. The curve
+is humped: from 150M to 500M the result doubles, past roughly 550M it falls.
 
-1. **You cannot do it without buying.** Team A builds a library out of its own work
-   alone — a third of its games end in bankruptcy, and the survivors are worth thirty
-   times less than C. In-house production is far too slow to assemble a catalogue by
-   itself.
-2. **You cannot do it on buying alone either.** D buys more than C and ends up nearly
-   twice worse: buying beyond measure heats the rights index, and you pay more to
-   yourself. That is the central question for the debrief.
-3. **The optimum is inside.** The curve is a hump: from ₽150M to ₽500M the outcome
-   doubles, past ~₽550M it falls. What decides is not the exact rights figure but the
-   in-house production running next to it: your own premieres are what keeps the viewer
-   when someone else's rights expire.
+Three numbers on screen explain it: the own share of the catalogue (which drives exclusive
+retention), freshness (A holds it only through premieres and sags between them), and the
+valuation — C's is higher not only because of revenue: the library enters the valuation as
+a separate term, while licences do not enter it at all, because renting is not owning.
 
-Debrief on three numbers on screen:
-* **own share of the catalogue** — it drives exclusive retention;
-* **freshness** — for team A it rests on premieres alone and sags between them;
-* **company valuation** — C's is higher not only on revenue: the library enters
-  the valuation as a separate term while licences do not enter it at all: they are rent.
+*Question:* D has almost as many subscribers as C and buys 60% more rights. Why does an
+investor value it at nearly half? (The short answer is the line "rights expired on N hours,
+M bought" in the "Industry" panel: a licence is a rental, and you pay every month just to
+stay where you are.)
 
-Debrief question: team D has nearly as many subscribers as C and a rights budget 60%
-larger. Why does the investor value it at almost half of C?
+### A smart algorithm can be switched on to your own harm
 
----
+`quality = √(data × team)`, and data accumulates only from viewing — a strong data-science
+team on turn one buys nothing but cost. It gets worse: turn recommendations to maximum
+strength at a model quality of 0.3 and the perceived catalogue **falls** — the benefit is
+linear in strength, the harm is quadratic. The optimum personalisation strength sits inside
+the range and moves right as quality grows: a "smart algorithm" has a dial, not just
+a switch.
 
-## Scenario 6. "Smart algorithms" (50 minutes)
+The "Algorithms" tab recomputes last month with the algorithm turned off. The contribution
+is often near zero: retention is useless at low churn, encoding does not pay off at low
+traffic, and there is no release calendar to stretch without premieres. The algorithm costs
+the same whether it works or not.
 
-Task: run the service to turn 20 on ordinary levers, then start switching on algorithms,
-explaining each decision.
+*Question:* do recommendations replace content, or take it off the shelf?
 
-Running the session:
-1. Ask in advance: what happens if you hire a strong data science team on turn 1?
-   (Answer: nothing but cost. `quality = √(data × team)`, and data accumulates only
-   from viewing.)
-2. Switch recommendations to full strength at model quality 0.3. The perceived catalogue
-   will **fall**. Show the formula: the benefit is linear in strength, the harm quadratic.
-3. Set the task of finding the optimal personalisation strength. The optimum is interior
-   and moves right as quality grows — a good moment to discuss why a "smart algorithm"
-   has a setting and not just a switch.
-4. Open the Algorithms tab: last month re-simulated with the algorithm off. The
-   contribution is often about zero.
+### The valuation and your stake are different numbers
 
-Work out why. Retention is pointless at low churn, encoding does not pay at low traffic,
-and there is nothing for the release calendar to spread out without premieres. The
-algorithm costs the same whether or not it works.
+The score counts valuation × stake, not valuation. A game where the round is taken later
+usually has fewer subscribers and a bigger score.
 
-The main conclusion: second-order optimisation does not replace a first-order decision.
-Recommendations increase consumption of what you already have — they do not replace
-content, they only take it off the shelf.
+*Question:* when is raising at a low valuation still right? (When without the money the
+company will not live to the point where the valuation grows. A round is not a mistake;
+taking one earlier than needed is.)
 
----
+### A business does not have one goal for life
 
-## Scenario 7. "The board" (30 minutes)
+The most interesting place in the game if there is time for only one. The year-one goal is
+3.4M subscribers; it is taken by pouring money into content and marketing, usually while
+running deep into the red. In the first month of year two the board announces something
+else: a duopoly share of at least 52% **and** a base at least 1.05× the current one.
+"Just grow" is no longer enough — the rival grows too, and share is taken by taking, not by
+budget: content against its strong genres, price and promo at its weakest moment. In the
+first month of year three the goal changes again: at least two profitable months and a base
+no lower than 55% of the peak. The expansion strategy that just won year two directly
+contradicts year three.
 
-Task: 20 turns, maximise **your stake in money**, not the number of subscribers.
+Missing a goal cuts the content budget for six months — that is, it breaks precisely the
+move the team has been playing until now.
 
-Running the session:
-1. Do not mention funding rounds in advance. Let the team accelerate, hit the cash wall
-   and raise.
-2. On turn 20, compare two metrics: company valuation and the final score
-   (valuation × stake).
-3. Let them replay with the instruction "raise as late as possible".
+*Question:* what should the team have done in month 10 if it had known the year-two goal in
+advance? (It does know: the goal is announced at the start of the year and sits on screen
+every turn. The question is who was looking at it.)
 
-The usual outcome: the second game has fewer subscribers and a larger score.
+### Crises arrive more often the better things go
 
-Debrief question: when is raising at a low valuation still right? (When without the money
-the company will not survive to the point where the valuation grows. A round is not a
-mistake; a round taken earlier than needed is.)
+After month 7 crisis frequency grows with the size of the service. Each one offers two
+buttons: an expensive fix and cheap inaction. The cost of the fix rises every month you
+wait while churn runs the whole time. "A rights-holder lawsuit" stands apart: it freezes
+part of the **rented** library — what you own cannot be taken away, which is one more
+argument for originals that never shows up in the P&L.
 
----
-
-## Scenario 8. "The year-two goal" (50 minutes)
-
-The single most valuable scenario in the course if you only have time for one.
-
-Task: play 24 turns, meeting the board's goals.
-
-Running the session:
-1. Year one has one goal: reach 3.4M subscribers. Almost every team pours money into
-   content and marketing and meets it while going deeply into the red.
-2. In the first month of year two the board announces a new goal: **a duopoly share
-   of at least 52% with a base no smaller than ×1.05 of the current one**. Pause and
-   ask the teams to say out loud what they will have to change.
-3. It usually turns out that "just keep growing" is no longer enough: the rival grows
-   too, and share is taken not with budget but by taking it away — content against
-   the rival's strong genres, price and promo at the moment of its weakness. For the
-   first time teams start watching the rival's panel, not only their own.
-4. In the first month of year three the goal changes again: **at least two profitable
-   months, with the base no lower than 55% of its peak**. The expansion strategy that
-   just won year two directly contradicts year three: rights expire, the base melts,
-   there is nothing left to pay for growth with — it is harvest time.
-5. If the year-two goal is missed, show the consequence: the content budget is capped
-   for six months. "Pour everything into growth" stops being physically available.
-
-The core idea: a business does not have one goal for life. A year of growth, a year of
-dividing the market, and a year of harvest demand different strategies — and the change
-of stage is not a planning error, it is the norm. What has to be learned is not "the
-right setting" but the ability to rebuild it.
-
-Debrief question: what should the team have done in month 10 if it had known the
-year-two goal in advance? (It did know — the goal is announced at the start of the year
-and is on screen every turn. The question is who was looking at it.)
-
----
-
-## Scenario 9. "A crisis will not go away on its own" (35 minutes)
-
-Task: finish a game with a crisis running, explaining every decision.
-
-Running the session:
-1. Wait for a crisis (from month 7 onwards they arrive more often the larger the
-   service is). Show the two buttons: the expensive fix and the cheap inaction.
-2. Split the teams: half resolve immediately, half stall for three months.
-3. Compare the total losses. The cost of the fix grows every month, and churn runs
-   the whole time.
-4. Discuss "A rights holder sues" separately: it freezes part of the **rented** library.
-   What you own cannot be taken away — one more argument for originals that never
-   appears in the P&L.
-
-The core idea: crises arrive more often the better things are going. This is not a
-punishment for success, it is what success actually costs — and no growth model
-includes it.
-
-Debrief question: why is "wait it out" sometimes the right answer after all? (With two
-months left in the game, paying for the fix can cost more than living with the problem.
-What matters is the remaining horizon, not the month.)
+*Question:* when is "wait it out" still the right answer? (With two months left in the
+game, paying for the fix can cost more than living with the problem. Count the remaining
+horizon, not the month.)
 
 ---
 

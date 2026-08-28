@@ -165,7 +165,7 @@ couriers hired today go on the road exactly in the week the forecast covers.
 | Flexible commission | per-partner rates for restaurants | part of your commission revenue |
 
 📘 [Formulas and assumptions](docs/foodtech/en/economics.md) ·
-🎓 [Lesson plans](docs/foodtech/en/teacher-guide.md)
+🎓 [Class notes](docs/foodtech/en/teacher-guide.md)
 
 ---
 
@@ -271,7 +271,7 @@ viewers choose rather than leave.
 | Release calendar | the premiere is spread out, churn is smoothed | a lower sign-up peak |
 
 📘 [Formulas and assumptions](docs/cinema/en/economics.md) ·
-🎓 [Lesson plans](docs/cinema/en/teacher-guide.md)
+🎓 [Class notes](docs/cinema/en/teacher-guide.md)
 
 ---
 
@@ -313,7 +313,7 @@ crises (resellers, a site that goes down at on-sale, the regulator, a
 cancelled tour) and four second-order algorithms — including the one that
 lifts conversion at the cost of trust.
 
-🎓 [Class sessions](docs/tickets/en/teacher-guide.md) ·
+🎓 [Class notes](docs/tickets/en/teacher-guide.md) ·
 📘 [Formula write-up](docs/tickets/en/economics.md)
 
 ---
@@ -348,7 +348,7 @@ scooters — and the outcome goes as a separate row tagged "НОВОГРАД+" i
 leaderboard.
 
 📘 [Formula write-up](docs/ecosystem/en/economics.md) ·
-🎓 [Lesson plans](docs/ecosystem/en/teacher-guide.md) ·
+🎓 [Class notes](docs/ecosystem/en/teacher-guide.md) ·
 🇷🇺 [Russian docs](docs/ecosystem/economics.md)
 
 ---
@@ -397,7 +397,7 @@ games/<game>/
   tests/*.test.mjs              model and translation tests
   dist/kinoreka-streaming-simulator-v1.30.0.html
                                 the built offline version (name in build.manifest.js)
-docs/<game>/                    formulas and lesson plans (RU + en/)
+docs/<game>/                    formulas and class notes (RU + en/)
 ```
 
 All the economics lives in `games/<game>/src/model`. Those modules know nothing about the

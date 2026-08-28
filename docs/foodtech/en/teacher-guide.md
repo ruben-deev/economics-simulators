@@ -1,17 +1,24 @@
-# Teaching notes: using the simulator in class
+# Class notes: the food-delivery simulator
 
 *[Русская версия](../teacher-guide.md)*
 
+One caveat first: this is not a syllabus and not a course programme. I have never taught
+a class with these games, so there are no timings here and no step-by-step running order —
+they would be invented. What follows is something else: the places where the model behaves
+differently from what most people expect, with the number or the measurement that shows it,
+and the question worth asking out loud. What to use and in what order, you will judge
+better than I can.
+
 The game suits courses on unit economics, operations management, marketplaces and systems
-thinking. A full game is 52 turns, which at a relaxed pace takes 40–60 minutes. For a single
-class, 15–20 turns is usually enough.
+thinking. A full game is 52 turns, which at a relaxed pace takes 40–60 minutes. Seeing the
+main forks usually takes 15–20 turns.
 
 The interface is bilingual — the RU / EN button in the header switches it, and the choice
 persists between sessions.
 
 ---
 
-## What students should take away
+## The six ideas the game was built around
 
 1. **Unit economics comes first.** While contribution per order is negative, growth
    accelerates death rather than approaching profit.
@@ -28,167 +35,119 @@ persists between sessions.
 
 ---
 
-## Scenario 1. "Find break-even" (30 minutes)
+## Where the model surprises people
 
-The task: launch one district and drive it to a weekly profit of ≥ 0 without raising money.
+### Marketing into an empty city does not convert
 
-How it goes:
-1. In the first three turns students usually switch marketing on immediately — and see
-   nothing happen. Discuss why: the Selection multiplier is zero at zero restaurants.
-2. Once contribution turns positive, ask them to open the Unit economics tab and compute
-   break-even out loud.
-3. Compare the answers across teams: one will reach profit at 20,000 orders, another at
-   8,000. The entire difference comes from decisions about price and courier pay.
+The first thing almost everyone does is switch marketing on at turn one. The result is
+zero: the "Choice" multiplier is zero at zero restaurants. A two-sided market does not
+start from one side, and that shows up in the weekly report rather than in theory.
 
-Debrief question: how can a team with higher contribution per order end up with lower total
+Break-even is computed on the "Unit economics" tab. The interesting part is the spread
+between teams: some reach profit at 20,000 orders and some at 8,000 — the whole difference
+sits in decisions about price and courier pay.
+
+*Question:* why can a team with higher contribution per order end up with lower total
 profit?
 
----
+### The metric changes the manager
 
-## Scenario 2. "Buy growth" (45 minutes)
+"Maximise the number of orders" and "maximise your result (valuation × stake)" lead to
+opposite decisions on the same map. Under the first, almost everyone turns on promos and
+maximum marketing; the "Money" and "Cash" charts then show orders rising while cash falls.
 
-The task: maximise the number of orders over 20 weeks. Nothing is said about profit.
+This is the most direct place in the game to see a chosen KPI change behaviour, and it
+transfers to real companies one to one.
 
-Almost every team turns on promos and maximum marketing. Then:
-1. Show the Money and Cash charts — orders climbing while cash falls.
-2. Introduce a second condition: now maximise *your result* (valuation × stake).
-3. Let them replay.
+### The system does not return to where it started
 
-This is the most valuable scenario: it shows how the metric chosen for evaluation changes
-the behaviour of the manager. A direct parallel to KPIs in real companies.
+If the courier headcount is deliberately too small, the chain unwinds by itself: demand
+exceeded capacity → delivery time rose → satisfaction fell → churn overtook inflow →
+demand fell below where it started. The key word is "below": lost customers do not come
+back on their own, and the "Week debrief" tab shows every link separately.
 
----
+### Districts: the right answer depends on your unit economics
 
-## Scenario 3. "Operational crisis" (20 minutes)
-
-The task: hand students a game where courier headcount is deliberately too small (for
-example, set the target to half of what is needed and run five weeks), then ask them to
-explain what happened using the weekly breakdown.
-
-The expected answer: demand exceeded capacity → delivery time rose → satisfaction fell →
-churn overtook acquisition → demand fell below where it started. The key idea: the system
-did not return to its starting point, it settled below it. Lost customers do not come back
-on their own.
-
----
-
-## Scenario 4. "A portfolio of districts" (40 minutes)
-
-The task: expand into three districts over 30 weeks and justify the order of entry.
-
-Material for discussion:
-* Downtown — the best unit economics (high basket, short legs), but half the market is taken.
-* Campus — elasticity 2.2: discounts produce the maximum response and the minimum margin.
-* Suburbs — a 9 km leg, so a courier completes half as many orders; the high basket does not
+* Downtown — the best unit economics (high basket, short leg), but half the market is
+  already taken.
+* University — elasticity 2.2: discounts get the strongest response and the thinnest margin.
+* Suburban — a 9 km leg, so a courier carries half as many orders; a high basket does not
   always compensate.
 * Industrial — cheap to enter, but few restaurants and low frequency.
 
-Question: which district is better with a contribution of ₽150 per order, and which with
-₽60? Why does the answer change?
+*Question:* which district is better at a contribution per order of ₽150, and which at ₽60?
+Why does the answer change?
 
----
+### The second city: entry timing matters more than the district mix
 
-## Scenario 4b. "The second city" (40 minutes)
+By week 20 growth in Novograd plateaus and the "Geography" panel shows the second city with
+its entry price. The sums are worth doing before the decision: ₽30M to enter, ₽0.6M a week
+of office, awareness from zero, marketing split across two cities, and 16 weeks of promo
+war in which "StaroEd" halves the inflow.
 
-The task: by week 20 growth in Novograd is over — orders sit on a plateau. Decide
-whether to enter Stargorod, when, and with which districts.
+By measurement: entering with all four districts in weeks 14–20 gives +28–36% on the final
+result (the measurement was taken when the office cost twice as much, so the gain is
+probably larger now), entering with the Eastern district alone gives +11–12%, and entering
+after week 30 no longer pays the war back. Separately: after entry, market share is counted
+across both cities, which makes the fourth-quarter goal (45%) noticeably harder.
 
-How the session runs:
-1. Bring a game (or hand out a save) to saturation: 4–5 districts at home, flat
-   orders. Ask: where is the growth? The Geography panel shows the second city
-   and its entry price.
-2. Before any decision, have each team do the napkin maths: ₽30M entry, a
-   ₽0.6M/wk city office, awareness from zero, marketing split between two
-   cities, and 16 weeks of a promo war — the incumbent cuts new-customer inflow
-   in half. How many weeks to payback, and does the game have that many left?
-3. Play 10–12 weeks. Compare teams: all four districts versus one, entry on
-   week 16 versus week 30.
-4. Debrief against the measurement: entering with all four districts on weeks
-   14–20 adds +28–36% to the final score (measured back when the office cost
-   twice as much — the gain is likely larger now), Eastside alone +11–12%, and
-   an entry after week 30 never pays the war back. Separately: after entry your market
-   share is measured across both cities — the fourth-quarter goal (45%) gets
-   noticeably harder.
+Expansion is not "more districts" — it is a second launch of the company, with a working
+machine and an enemy on home ground.
 
-The main idea: expansion is not "more districts" — it is a second company
-launch, with a working machine behind you and an enemy on his own field.
-Timing matters more than the district mix.
+### Good weather for delivery is bad weather for delivery
 
----
+Demand ×1.30 at capacity ×0.60: a storm doubles the load on every courier who does turn up.
+Then the chain runs on — lost orders, delivery time, courier churn — and two more weeks of
+consequences: couriers lost to a storm are delivery times after the storm, and delivery
+times are customer churn.
 
-## Scenario 5. "Storm on Thursday" (25 minutes)
+"Set an ₽80 bonus and forget it" fails for two reasons, both visible in the game. The
+promise costs money: a courier gets 35% of the bonus even in a clear week, otherwise it is
+not a guarantee. And a permanent bonus wears off: the weather panel shows habit eating its
+effect over eight to ten weeks. A weather-triggered bonus is both cheaper and stronger —
+by measurement, "only in hard weeks" gives +87% over the best constant, while playing it
+the other way round loses a quarter of the result.
 
-The task: get the service running steadily, then wait for a forecast showing a storm or ice
-and explain what has to be done a week ahead of it.
+A caveat for stronger groups: with predictive auto-hiring on, the bonus is redundant — the
+headcount is already matched to the weather, and paying on top of it takes 28% off the
+result. Two mechanics doing one job: you pay twice.
 
-How it goes:
-1. Ask up front: weather lifts demand — is that good or bad? Most people say good. Then show
-   the table: demand ×1.30 at capacity ×0.60 — a storm doubles the load on every courier
-   who does show up.
-2. Let them live through a storm week unprepared. Work through the report: lost orders,
-   delivery time, courier churn — and the two weeks after: couriers lost in the storm are
-   post-storm delivery times, and delivery times are customer churn.
-3. Replay with preparation: hiring a week early and a bad-weather bonus. Compare contribution
-   and losses.
-4. Discuss why "set the bonus to ₽80 and forget it" does not work. Two reasons, both visible
-   in the game: the promise is paid for (35% of the bonus reaches the courier even in a clear
-   week — otherwise it is not a guarantee), and a permanent bonus wears off — the weather
-   panel shows habit eating its effect over eight to ten weeks. A weather-driven bonus is
-   both cheaper and stronger: measured, "bonus only in heavy weeks" earns +87% over the
-   best constant, while playing it backwards loses a quarter of the final score. (One
-   caveat: with forecast auto-hiring on, the bonus becomes redundant — the fleet is
-   already weather-sized, and paying twice costs 28% of the outcome.)
+The forecast appears in two places: as a card in the weather panel and in words in the
+"City" panel, which also spells out what it means for delivery times. It is public and
+every competitor has it: the advantage comes from reaction speed, not from information.
 
-The core idea: the weather forecast is public and every competitor sees it. The advantage
-comes not from the information but from the speed of the reaction to it.
+### A strategy built for one quarter's goal does not carry to the next
 
----
+Quarter one: 45,000 orders a week — almost everyone takes it through growth at any price
+(low pay, high promo, many couriers). Quarter two announces something else: contribution
+per order of at least ₽50 **and** flow no lower than 85% of before, which means changing
+exactly what won quarter one. Quarter three: four profitable weeks out of thirteen with the
+base intact. Quarter four: 45% of the city.
 
-## Scenario 6. "The quarter's goal" (40 minutes)
+Missing quarter one costs 15% of the stake (the shareholders put money in themselves);
+missing quarters two and three cuts marketing for the quarter ahead — that is, it breaks
+precisely the move the team has been playing. Delivery price and commission turn out to be
+decisions for a quarter, not settings.
 
-The task: show that a strategy built for one quarter's goal does not carry to the next.
+The bars were set by measurement across 120 random strategies: quarter one is taken by 30%,
+quarter two by 21%, quarter four by 23%. Almost no random strategy takes quarter three,
+while a well-run one closes all thirteen weeks in profit — that goal separates a working
+business from an almost-working one.
 
-1. Quarter one: 45,000 orders a week. Almost everyone gets there by growth at any cost —
-   a low fee, a heavy promo, plenty of couriers.
-2. Quarter two announces something else: contribution of ₽50 per order **and** an order
-   flow no lower than 85% of before. Pause and ask them to say out loud what has to change.
-   It usually turns out that what has to change is exactly what won them quarter one.
-3. Quarter three — four profitable weeks out of thirteen with a base that has not shrunk.
-   Quarter four — a 45% city share.
-4. Debrief: the delivery fee and the commission are decisions for the quarter, not
-   settings. Missing quarter one costs 15% of the stake (shareholders inject the money
-   themselves); missing two or three caps marketing for a quarter ahead — which breaks
-   exactly the move the team has been using so far.
+### A smart algorithm often contributes exactly zero
 
-The bars were set by measuring 120 random strategies: 30% clear the first quarter, 21%
-the second, 23% the fourth. Almost no random strategy clears the third, while a well-tuned one
-closes all thirteen weeks in profit — that goal separates a working business from an
-almost-working one.
+`quality = √(data × team)` — a strong team in week one buys nothing but cost: there is
+nothing to train the model on. Further along, the "Algorithms" tab recomputes last week with
+the algorithm switched off, and the contribution is frequently zero: surge does not work
+without overload, allocation without a courier shortage, forecasting if the player was
+sizing the shift correctly anyway. The algorithm costs the same whether it works or not.
 
----
+Personal-discount reach has an interior optimum. Personal discounts make expensive promos
+less ruinous without making them profitable: second-order optimisation does not replace a
+first-order decision.
 
-## Scenario 7. "Smart algorithms" (50 minutes)
-
-The task: run the service to week 25 with ordinary levers, then switch on data science and
-roll out algorithms, justifying each decision.
-
-How it goes:
-1. Point at the formula `quality = √(data × team)`. Ask in advance: what happens if you hire
-   a strong team in week one? (Answer: nothing but costs — there is nothing to learn from.)
-2. After the first rollout, open the Algorithms tab: the previous week has been re-simulated
-   with the algorithm switched off. Frequently the contribution turns out to be zero.
-3. Work through why. Surge does nothing without congestion, allocation nothing without a
-   courier shortage, forecasting nothing if the player already sized the team correctly. The
-   algorithm costs the same either way.
-4. Set them the task of finding the discount reach that maximises the result. The optimum is
-   inside the range, which is a good prompt to discuss why.
-
-The main conclusion: second-order optimisation does not replace a first-order decision.
-Targeted discounts make an expensive promo less ruinous; they do not make it profitable.
-Strategy first, then the algorithms that make it cheaper.
-
-Debrief question: you have ₽1M a week. Where does it go — marketing, technology or data
-science? What does the answer depend on, and how does it change between week 5 and week 40?
+*Question:* you have ₽1M a week. Marketing, technology or data science? What does the
+answer depend on, and how does it change between week 5 and week 40?
 
 ---
 

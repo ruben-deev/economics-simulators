@@ -1,27 +1,32 @@
-# NOVOGRAD: a class session
+# Class notes: the NOVOGRAD ecosystem
 
 *[Русская версия](../teacher-guide.md)*
+
+One caveat first: this is not a syllabus and not a course programme. I have
+never taught a class with these games, so there are no timings here and no
+step-by-step running order — they would be invented. What follows is how the
+game is built, what is worth discussing in it, and what you need to know to
+hand it to a group.
 
 The endgame game: it lands best with a group that has already played at
 least one of the three games of the set (usually NOVOEDA). Hand out one
 game code to everyone — the city and the events will be identical and the
 results comparable.
 
-## A 60–90 minute format
+## What is worth discussing
 
-1. **The first move — where to go (10 min).** The month-0 screen offers
-   three forks: launch taxi right away, save up, or milk the cash cow. Have
-   everyone choose and justify their choice. Do not hint at a right answer.
-2. **Year one (20 min).** The war with Taxograd, funding rounds, the
-   e-commerce gate. Questions along the way: why is cross-sell cheaper than
-   marketing? Why does an extra rouble of cross-sell budget burn?
-3. **The glue (20 min).** The Plus subscription and the partnerships. The
-   key question: the subscription barely earns anything by itself — so what
-   is it for?
-4. **Debrief (15–20 min).** Compare the result strings. Use the final
-   screen’s questions: when did you launch taxi and why then; what did a
-   cross-sell customer cost versus a cold one; what would the valuation
-   have been had you simply milked the hub for all three years.
+* **The first move.** The month-0 screen offers three forks: launch taxi right
+  away, save up, or milk the cash cow. A good place to ask for a justification
+  before the consequence becomes visible.
+* **Year one.** The war with Taxograd, funding rounds, the e-commerce gate.
+  Two questions whose answers are not obvious: why cross-sell is cheaper than
+  marketing, and why an extra rouble of cross-sell budget burns.
+* **The glue.** The Plus subscription and the partnerships. The key question:
+  the subscription barely earns anything by itself — so what is it for?
+* **The finale.** The final screen answers three questions by itself: when taxi
+  was launched and why then; what a cross-sell customer cost versus a cold one;
+  what the valuation would have been had you simply milked the hub for all
+  three years.
 
 ## Meta-progression
 
