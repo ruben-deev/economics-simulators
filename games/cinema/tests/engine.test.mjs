@@ -1821,7 +1821,7 @@ test('годовые: неотработанные месяцы вычитают
 });
 
 // ---------------------------------------------------------------------------
-// Пакет CFO: когорты по стажу, якорный тайтл, каденция релиза, общие пароли,
+// Пакет CFO: когорты по стажу, якорный тайтл, каденция релиза, чужие дома,
 // учёт контента. Все пять механик добавлены после разбора с действующим
 // финдиром стримингового сервиса (см. docs/cinema/economics.md).
 // ---------------------------------------------------------------------------
@@ -1917,7 +1917,7 @@ test('каденция: понедельный выпуск тише шумит,
     'и похмелье после него слабее по построению');
 });
 
-test('общие пароли: закрытие доступа приводит подписчиков и злит часть базы', async () => {
+test('чужие дома: платный доступ приводит подписчиков и злит часть базы', async () => {
   const { createInitialState, step } = await import('../src/model/engine.js');
   const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
   const play = (policy) => {
@@ -1933,7 +1933,7 @@ test('общие пароли: закрытие доступа приводит 
   const idleLast = idle.history.at(-1);
   const enfLast = enforced.history.at(-1);
   assert.ok(idleLast.sharingShare > enfLast.sharingShare,
-    'закрытие уменьшает долю общих паролей');
+    'платный доступ уменьшает долю смотрящих по чужой подписке');
   assert.ok(enforced.history.some((r) => (r.sharingConvertedSubs ?? 0) > 0),
     'часть разделявших завела свою подписку');
   assert.ok(enforced.history.some((r) => (r.sharingLostSubs ?? 0) > 0),
@@ -1977,7 +1977,7 @@ test('когорты: при опорной доле новичков средн
     `при опорной доле смесь равна базовой ставке: ${blendedAtRef} против ${r.churnBase}`);
 });
 
-test('общие пароли: не трогать — тоже решение, чужие часы идут по вашему счёту', async () => {
+test('чужие дома: не трогать — тоже решение, чужие часы идут по вашему счёту', async () => {
   const { createInitialState, step } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
   const snapshot = { base: CONFIG.sharingBase, growth: CONFIG.sharingGrowth };
@@ -1996,7 +1996,7 @@ test('общие пароли: не трогать — тоже решение, 
   assert.ok(withSharing.hours > without.hours, 'и их часы попадают в общий счёт');
 });
 
-test('общие пароли: закрыть рано — потерять охват, который они приносили', async () => {
+test('чужие дома: попросить платить рано — потерять охват, который они приносили', async () => {
   const { createInitialState, step } = await import('../src/model/engine.js');
   const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
   const run = (closeFrom) => {

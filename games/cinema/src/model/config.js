@@ -124,7 +124,7 @@ export const CONFIG = {
   cohortMatureChurn: 0.86,    // множитель оттока для выдержанной базы
   cohortRefYoungShare: 0.18,  // опорная доля новичков, на которой ставка равна базовой
 
-  // --- Общие пароли ---
+  // --- Один аккаунт на несколько домов ---
   // Одной подпиской пользуются в нескольких домах. Доля растёт со временем
   // и с размером базы: чем больше сервис, тем выше шанс, что у знакомого
   // «уже есть». Часы эти люди потребляют, денег не приносят.
@@ -568,16 +568,16 @@ export const LEVERS = [
     min: 0, max: 2, step: 1, def: 0,
     policyMode: 'replace',
     policy: [
-      { v: 0, label: { ru: 'Не трогаем', en: 'Leave it alone' },
-        note: { ru: 'Одной подпиской пользуются в нескольких домах. Часы растут, деньги — нет.', en: 'One subscription is used across several homes. Hours grow, money does not.' } },
-      { v: 1, label: { ru: 'Просим доплатить', en: 'Ask politely' },
-        note: { ru: 'Мягкое предложение оплатить второй дом. Соглашается меньшинство, но и обиженных мало.', en: 'A gentle offer to pay for a second home. A minority agrees, and few take offence.' } },
-      { v: 2, label: { ru: 'Закрываем', en: 'Enforce it' },
-        note: { ru: 'Доступ вне дома — только за деньги. Часть разделявших становится подписчиками, часть уходит вместе с тем, кто их пустил.', en: 'Out-of-home access costs money. Some sharers become subscribers, some leave — taking the original subscriber with them.' } },
+      { v: 0, label: { ru: 'Смотрят все', en: 'Everyone watches' },
+        note: { ru: 'Одну подписку носят по домам: дети, родители, друзья. Вы платите за их трафик и не берёте с них ничего.', en: 'One plan travels between households: kids, parents, friends. You pay for their bandwidth and charge them nothing.' } },
+      { v: 1, label: { ru: 'Предложить второй дом', en: 'Offer a second home' },
+        note: { ru: 'Мягкий апселл: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
+      { v: 2, label: { ru: 'Только за доплату', en: 'Paid access only' },
+        note: { ru: 'Доступ из другого дома — платный. Часть смотревших заводит свою подписку, часть уходит и уводит того, кто их пустил.', en: 'Access from another household costs money. Some of those watching take out their own plan, some leave — and take with them whoever let them in.' } },
     ],
     tip: {
-      ru: 'Общий пароль — не воровство, а бесплатная витрина: эти люди уже смотрят ваш каталог и стоят вам трафика. Вопрос в том, когда витрину пора закрывать: рано — потеряете охват, поздно — приучите не платить.',
-      en: 'A shared password is not theft but a free shop window: those people already watch your catalogue and cost you bandwidth. The question is when to close the window: too early and you lose reach, too late and you have taught them not to pay.',
+      ru: 'Одна подписка на несколько домов — не воровство, а бесплатная витрина: эти люди уже смотрят ваш каталог и уже стоят вам трафика. Вопрос только в сроке: попросите их платить рано — потеряете охват, который они же вам и приносили; поздно — весь этот срок платили за чужой просмотр и приучили не платить.',
+      en: 'One plan across several homes is not theft but a free shop window: those people already watch your catalogue and already cost you bandwidth. The only question is timing: ask them to pay too early and you lose the reach they were bringing you; too late and you have paid for their watching all along and taught them not to pay.',
     },
   },
   {

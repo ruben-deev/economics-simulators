@@ -80,10 +80,10 @@ export const EVENTS = [
   },
   {
     id: 'password', weight: 5, minMonth: 12,
-    title: { ru: 'Волна общих паролей', en: 'Password sharing spreads' },
+    title: { ru: 'Подписку смотрят три дома', en: 'One plan, three households' },
     text: {
-      ru: 'Одной подпиской пользуются в трёх квартирах. Часы растут, деньги — нет.',
-      en: 'One subscription is being used in three flats. Hours grow, money does not.',
+      ru: 'Одну подписку разнесли по трём квартирам: дети, родители, друзья. Часы растут, деньги — нет.',
+      en: 'One subscription has spread across three flats: kids, parents, friends. Hours grow, money does not.',
     },
     effects: { hoursMult: 1.18, demandMult: 0.9 },
     lesson: {

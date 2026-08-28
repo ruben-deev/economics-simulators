@@ -255,18 +255,18 @@ norm = 0.18 × 1.65 + 0.82 × 0.86</code></pre>
 <p>Someone who signed up this month has not settled in: they are still trying the service, comparing, and leaving is easy. Someone six months in has folded you into a habit. Hence an uncomfortable consequence familiar to any growing service: <b>the faster you grow, the higher your average churn</b> — not because the service got worse, but because the share of newcomers went up. A loud premiere brings triallists, not subscribers; subscribers are the ones still there three months later.</p>
 <p>The practical conclusion: monthly net adds are a poor health metric. What matters is the mature part of the base, and that is what a valuation is actually paying for.</p>
 <p>The report carries both rates: <code>churnRate</code> is what actually happened with a mixed base, and <code>churnBase</code> is the rate before the tenure split, which shows how your decisions landed without the arithmetic of the mix.</p>
-<h3 id="s-21">Shared passwords</h3>
-<p>One subscription gets used across several homes. The share of such viewers grows by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger you are: a friend "already has it".</p>
+<h3 id="s-21">One account, several homes</h3>
+<p>One subscription gets used across several households: kids, parents, friends. The share of such viewers grows by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger you are: a friend "already has it".</p>
 <p>That share has two sides, and both are real:</p>
 <pre class="doc-pre"><code>bandwidth   = hours × share × 0.55      — you pay for watching nobody pays you for
 word of mouth = share × 0.13 of awareness — and they advertise the catalogue for free</code></pre>
 <p>Leaving it alone is not free: someone else's hours arrive on your bandwidth bill. Closing it is not free either: the shop window goes dark, and with it a channel that was bringing you viewers without any marketing budget.</p>
-<p>The out-of-home access lever decides when to close it:</p>
+<p>The out-of-home access lever decides when to invite them to pay for themselves. The middle setting is the family plan: a second home for a surcharge, with no restrictions on those who decline. The hard one makes access from another household paid only.</p>
 <pre class="doc-pre"><code>agreed to pay = share × force × 0.34
 left for good = share × force × 0.22</code></pre>
 <p>Force is 1 for hard enforcement and 0.35 for a polite request. Tightening leaves reputational noise for three months (+1.2pp of churn in the first).</p>
 <p>Measured (24 codes), this is a decision about timing, not about whether. Closing in month eighteen is worth +7% to the licence-led strategy, +8% to the balanced one and +5% to the studio-led one. Closing in month four — when the window is still nearly empty and word of mouth has only just started — leaves the licence-led strategy a meagre +1% and drops the studio-led one, which lives on the reach of its premieres, by <b>−19%</b>. Closing in month thirty-two brings half the peak: the share has grown, but it is too late to turn it into money.</p>
-<p>A shared password is not theft but a free shop window: those people already watch your catalogue. Close it too early and you lose reach; too late and you have paid for their bandwidth all along and taught them not to pay.</p>
+<p>One plan across several homes is not theft but a free shop window: those people already watch your catalogue and already cost you bandwidth. Ask them to pay too early and you lose the reach they were bringing you; too late and you have paid for their watching all along and taught them not to pay.</p>
 <h2 id="s-22">4. Watch hours and bandwidth</h2>
 <pre class="doc-pre"><code>hours(segment) = subscribers × baseHoursPerSub × baseHours(segment) × season
                  × depth^0.35 × (1 + 0.22 × recommendations × quality)
