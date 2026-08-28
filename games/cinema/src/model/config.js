@@ -268,7 +268,7 @@ export const CONFIG = {
   slotQualityDrag: 0.55,
   vaultDecay: 0.045,          // насколько готовый проект выветривается за месяц в запасе
 
-  // --- Каденция релиза ---
+  // --- Как выпускать готовое: разом или по серии ---
   // Сезон целиком или по серии в неделю. Разом — пик громче, но зрителя
   // нечем держать в следующем месяце: досмотрел и отписался. Понедельно —
   // пик тише, зато премьера живёт полтора месяца и держит базу.
@@ -279,7 +279,7 @@ export const CONFIG = {
   cadenceWeeklyHold: 0.020,   // сколько снимает с оттока, пока идёт выпуск
   cadenceWeeklyMonths: 2,     // сколько месяцев держится эффект
 
-  // --- Якорный тайтл лицензионного пакета ---
+  // --- Якорная франшиза лицензионного пакета ---
   // Каталог неоднороден: внутри арендованных часов сидит франшиза, ради
   // которой половина базы и подписалась. Её контракт кончается отдельно
   // от остальных, и продлевать его придётся на торгах с конкурентом.
@@ -568,10 +568,10 @@ export const LEVERS = [
     min: 0, max: 2, step: 1, def: 0,
     policyMode: 'replace',
     policy: [
-      { v: 0, label: { ru: 'Смотрят все', en: 'Everyone watches' },
+      { v: 0, label: { ru: 'Пусть смотрят', en: 'Leave it open' },
         note: { ru: 'Одну подписку носят по домам: дети, родители, друзья. Вы платите за их трафик и не берёте с них ничего.', en: 'One plan travels between households: kids, parents, friends. You pay for their bandwidth and charge them nothing.' } },
       { v: 1, label: { ru: 'Предложить второй дом', en: 'Offer a second home' },
-        note: { ru: 'Мягкий апселл: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
+        note: { ru: 'Мягкое предложение: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
       { v: 2, label: { ru: 'Только за доплату', en: 'Paid access only' },
         note: { ru: 'Доступ из другого дома — платный. Часть смотревших заводит свою подписку, часть уходит и уводит того, кто их пустил.', en: 'Access from another household costs money. Some of those watching take out their own plan, some leave — and take with them whoever let them in.' } },
     ],

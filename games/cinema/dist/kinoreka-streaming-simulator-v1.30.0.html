@@ -1664,21 +1664,21 @@ const STRINGS = {
   pnlSlots: { ru: 'Содержание студии', en: 'Studio upkeep' },
   pnlCampaigns: { ru: 'Кампании под релизы', en: 'Release campaigns' },
 
-  // --- Каденция релиза ---
+  // --- Как выпускать готовое: разом или по серии ---
   cadenceBinge: { ru: 'Сезон целиком', en: 'Full season' },
   cadenceWeekly: { ru: 'По серии в неделю', en: 'Weekly episodes' },
   cadenceBingeNote: { ru: 'Громче пик, но через месяц держать зрителя нечем: досмотрел и отписался.', en: 'A louder peak, but nothing holds the viewer next month: they finish and cancel.' },
   cadenceWeeklyNote: { ru: 'Пик тише, зато премьера живёт полтора месяца и всё это время удерживает базу.', en: 'A quieter peak, but the premiere lives for six weeks and holds the base the whole time.' },
 
-  // --- Якорный тайтл ---
+  // --- Якорная франшиза ---
   panelAnchor: { ru: 'Франшиза в каталоге', en: 'The franchise in your catalogue' },
-  anchorMonthsLeft: { ru: 'права ещё {months} мес.', en: '{months} mo. of rights left' },
+  anchorMonthsLeft: { ru: 'права ещё {months} мес.', en: 'rights: {months} mo. left' },
   anchorGone: { ru: 'права ушли', en: 'rights are gone' },
-  anchorHolds: { ru: 'Внутри арендованного каталога сидит франшиза, ради которой подписалась заметная часть базы: она держит примерно {share} ценности всей лицензионной полки. Её контракт живёт отдельно от остального пакета.', en: 'Inside the rented catalogue sits a franchise a sizeable share of your base signed up for: it holds roughly {share} of the value of the entire licensed shelf. Its contract runs separately from the rest of the package.' },
-  anchorLostText: { ru: 'Франшиза ушла к конкуренту. Часы на полке остались, а причина оставаться — нет: база будет осыпаться ещё {months} мес.', en: 'The franchise has gone to your rival. The hours are still on the shelf, the reason to stay is not: the base will keep sliding for {months} more mo.' },
+  anchorHolds: { ru: 'Внутри арендованного каталога сидит франшиза, ради которой подписалась заметная часть базы: она держит примерно {share} ценности всей лицензионной полки. Её контракт живёт отдельно от остального пакета.', en: 'Inside the rented catalogue sits a franchise that a sizeable share of your base signed up for: it holds roughly {share} of the value of the entire licensed shelf. Its contract runs separately from the rest of the package.' },
+  anchorLostText: { ru: 'Франшиза ушла к конкуренту. Часы на полке остались, а причина оставаться — нет: база будет осыпаться ещё {months} мес.', en: 'The franchise has gone to your rival. The hours are still on the shelf, the reason to stay is not: the base will keep sliding for another {months} months.' },
   anchorTerm: { ru: 'продление на {months} мес.', en: 'renews for {months} mo.' },
   anchorPrice: { ru: 'цена сейчас {price}', en: 'price now {price}' },
-  anchorRenewals: { ru: 'продлевали раз: {count}', en: 'renewed {count} time(s)' },
+  anchorRenewals: { ru: 'продлений: {count}', en: 'renewals: {count}' },
   anchorRenew: { ru: 'Продлить права', en: 'Renew the rights' },
   anchorRenewDetail: { ru: 'Заплатить {price} и оставить франшизу себе. Цена растёт вместе с рынком прав и с тем, насколько громко звучит конкурент.', en: 'Pay {price} and keep the franchise. The price rises with the rights market and with how loudly your rival is bidding.' },
   anchorDrop: { ru: 'Отпустить', en: 'Let it go' },
@@ -1964,7 +1964,7 @@ const STRINGS = {
   cfoPaybackNote: { ru: 'За сколько месяцев вклад одного подписчика отбивает то, что стоило его привести. Дольше срока его жизни — привлечение убыточно, сколько бы ни радовал график роста.', en: 'How many months of one subscriber’s contribution it takes to earn back what it cost to acquire them. Longer than their lifetime and acquisition loses money, however cheerful the growth chart looks.' },
   cfoLtvCac: { ru: 'LTV / CAC', en: 'LTV / CAC' },
   cfoYoungShare: { ru: 'Доля новичков в базе', en: 'Share of newcomers' },
-  cfoYoungNote: { ru: 'Подписчики моложе трёх месяцев уходят по {young} в месяц, выдержанная база — по {mature}. Чем быстрее вы растёте, тем выше средний отток: премьера приводит пробников, а активом становится тот, кто остался.', en: 'Subscribers younger than three months churn at {young} a month, the mature base at {mature}. The faster you grow, the higher your average churn: a premiere brings triallists, and only those who stay become an asset.' },
+  cfoYoungNote: { ru: 'Подписчики моложе трёх месяцев уходят по {young} в месяц, выдержанная база — по {mature}. Чем быстрее вы растёте, тем выше средний отток: премьера приводит пробников, а активом становится тот, кто остался.', en: 'Subscribers younger than three months churn at {young} a month, the mature base at {mature}. The faster you grow, the higher your average churn: a premiere brings people on a free trial, and only those who stay become an asset.' },
   cfoSharing: { ru: 'Смотрят по чужой подписке', en: 'Watching on someone else’s plan' },
   cfoSharingNote: { ru: 'Доля зрителей, которые смотрят по подписке, оформленной в другом доме: у друзей, у родителей, у бывших. Они стоят вам трафика и не платят ничего. Рычаг «доступ вне дома» решает, когда предложить им платить самим.', en: 'The share of viewers watching on a plan taken out in another household: friends, parents, exes. They cost you bandwidth and pay nothing. The out-of-home access lever decides when to invite them to pay for themselves.' },
   cfoCashTitle: { ru: 'Контент: касса против P&L', en: 'Content: cash vs P&L' },
@@ -1978,18 +1978,18 @@ const STRINGS = {
   cfoProfitAccrual: { ru: 'Прибыль учётная', en: 'Accounting profit' },
   cfoProfitNote: { ru: 'Счёт партии считается по кассовой: оценка компании стоит на деньгах, а не на способе их списывать. Учётная строка показана, чтобы было видно, как одна и та же неделя выглядит в отчёте и в банке.', en: 'Your score runs on the cash line: the valuation stands on money, not on the way you write it off. The accounting line is shown so you can see how the very same month looks in the report and in the bank.' },
   cfoProjectsTitle: { ru: 'Судьба каждого проекта', en: 'How each project fared' },
-  cfoReleasedIn: { ru: 'вышел в {month}-й месяц', en: 'released in month {month}' },
+  cfoReleasedIn: { ru: 'вышел на {month}-м месяце', en: 'released in month {month}' },
   cfoColSpend: { ru: 'Стоил', en: 'Cost' },
   cfoColNet: { ru: 'Итог', en: 'Net' },
   cfoRowProduction: { ru: 'производство', en: 'production' },
   cfoRowCampaign: { ru: 'кампания под релиз', en: 'release campaign' },
-  cfoRowBrought: { ru: 'Привёл подписчиков', en: 'Subscribers brought' },
+  cfoRowBrought: { ru: 'Привёл подписчиков', en: 'Subscribers it brought' },
   cfoRowAlive: { ru: 'из них ещё с вами', en: 'still with you' },
   cfoRowSubscription: { ru: 'их подписка', en: 'their subscriptions' },
   cfoRowAds: { ru: 'реклама на его часах', en: 'ads on its hours' },
   cfoRowCdn: { ru: 'трафик на его часах', en: 'bandwidth on its hours' },
-  cfoRoi: { ru: 'на рубль вложенного {value}', en: '{value} per unit invested' },
-  cfoProjectsNote: { ru: 'Отнесение, а не бухгалтерия: в подписке никто не платит за конкретный сериал. «Привёл» — премьерная надбавка к притоку, поделённая между премьерами месяца по их доле в притяжении; приведённые платят дальше и тают с общим оттоком. «Принёс» — их подписка плюс доля тайтла в рекламной выручке минус его же доля в трафике, по доле часов во всём каталоге. Отсюда главное правило конвейера: один и тот же флагман, вышедший на первом году, окупается втрое, а на третьем не успевает отработать вовсе.', en: 'Attribution, not accounting: in a subscription business nobody pays for one particular show. "Brought in" is the premiere uplift to sign-ups, split between the month’s premieres by their share of the pull; those subscribers keep paying and melt away with general churn. "Earned" is their subscription revenue plus the title’s share of ad revenue minus its share of bandwidth, by its share of hours in the whole catalogue. Hence the pipeline’s main rule: the very same flagship pays for itself three times over in year one and never earns out in year three.' },
+  cfoRoi: { ru: '{value} на вложенный рубль', en: 'returned {value}× of what it cost' },
+  cfoProjectsNote: { ru: 'Отнесение, а не бухгалтерия: в подписке никто не платит за конкретный сериал. «Привёл» — премьерная надбавка к притоку, поделённая между премьерами месяца по их доле в притяжении; приведённые платят дальше и тают с общим оттоком. «Принёс» — их подписка плюс доля проекта в рекламной выручке минус его же доля в расходах на трафик, по доле часов во всём каталоге. Отсюда главное правило производства: один и тот же флагман, вышедший на первом году, окупается втрое, а на третьем не успевает отработать вовсе.', en: 'Attribution, not accounting: in a subscription business nobody pays for one particular show. "Brought in" is the premiere uplift to sign-ups, split between the month’s premieres by their share of the pull; those subscribers keep paying and melt away with general churn. "Earned" is their subscription revenue plus the title’s share of ad revenue minus its share of bandwidth, by its share of hours in the whole catalogue. Hence the main rule of the production line: the very same flagship pays for itself three times over in year one and never earns its money back in year three.' },
   cfoDeferredTitle: { ru: 'Выручка будущих периодов', en: 'Deferred revenue' },
   cfoDeferredNote: { ru: 'Годовые подписки принесли {value}, которые вы уже получили деньгами, но ещё должны отработать сервисом. При оценке компании эта сумма вычитается из кассы.', en: 'Annual plans brought {value} that you have already received in cash but still owe in service. This amount is deducted from your cash when the company is valued.' },
   tabAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
@@ -3951,7 +3951,7 @@ const CONFIG = {
   slotQualityDrag: 0.55,
   vaultDecay: 0.045,          // насколько готовый проект выветривается за месяц в запасе
 
-  // --- Каденция релиза ---
+  // --- Как выпускать готовое: разом или по серии ---
   // Сезон целиком или по серии в неделю. Разом — пик громче, но зрителя
   // нечем держать в следующем месяце: досмотрел и отписался. Понедельно —
   // пик тише, зато премьера живёт полтора месяца и держит базу.
@@ -3962,7 +3962,7 @@ const CONFIG = {
   cadenceWeeklyHold: 0.020,   // сколько снимает с оттока, пока идёт выпуск
   cadenceWeeklyMonths: 2,     // сколько месяцев держится эффект
 
-  // --- Якорный тайтл лицензионного пакета ---
+  // --- Якорная франшиза лицензионного пакета ---
   // Каталог неоднороден: внутри арендованных часов сидит франшиза, ради
   // которой половина базы и подписалась. Её контракт кончается отдельно
   // от остальных, и продлевать его придётся на торгах с конкурентом.
@@ -4251,10 +4251,10 @@ const LEVERS = [
     min: 0, max: 2, step: 1, def: 0,
     policyMode: 'replace',
     policy: [
-      { v: 0, label: { ru: 'Смотрят все', en: 'Everyone watches' },
+      { v: 0, label: { ru: 'Пусть смотрят', en: 'Leave it open' },
         note: { ru: 'Одну подписку носят по домам: дети, родители, друзья. Вы платите за их трафик и не берёте с них ничего.', en: 'One plan travels between households: kids, parents, friends. You pay for their bandwidth and charge them nothing.' } },
       { v: 1, label: { ru: 'Предложить второй дом', en: 'Offer a second home' },
-        note: { ru: 'Мягкий апселл: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
+        note: { ru: 'Мягкое предложение: второй дом за доплату, но без ограничений для тех, кто откажется. Соглашается меньшинство, зато обиженных почти нет.', en: 'A gentle upsell: a second home for a surcharge, with no restrictions on those who decline. A minority takes it, and almost nobody is offended.' } },
       { v: 2, label: { ru: 'Только за доплату', en: 'Paid access only' },
         note: { ru: 'Доступ из другого дома — платный. Часть смотревших заводит свою подписку, часть уходит и уводит того, кто их пустил.', en: 'Access from another household costs money. Some of those watching take out their own plan, some leave — and take with them whoever let them in.' } },
     ],
@@ -6165,7 +6165,7 @@ function createInitialState(seed = 'kinoreka', difficulty = 'normal') {
     licenseIndex: 1,
     talentPenalty: 0,
 
-    // --- Якорный тайтл: франшиза внутри арендованного каталога ---
+    // --- Якорная франшиза внутри арендованного каталога ---
     anchor: {
       monthsLeft: CONFIG.anchorTermMonths,
       alive: true,          // права ещё у нас
@@ -6499,7 +6499,7 @@ function step(prevState, input = {}) {
     // Сезон работает не только на часы, но и на премьеру: зимой зритель дома
     // и ищет, что посмотреть, летом — нет. Поэтому месяц выхода — решение,
     // а не формальность: ради высокого сезона имеет смысл придержать готовое.
-    // Каденция: выложить сезон целиком или выпускать по серии в неделю.
+    // Выложить сезон целиком или выпускать по серии в неделю.
     // Разом — пик громче, но держать зрителя в следующем месяце нечем:
     // досмотрел и отписался. Понедельно — пик тише, зато премьера живёт
     // полтора месяца и всё это время удерживает базу.
@@ -6589,7 +6589,7 @@ function step(prevState, input = {}) {
     state.rivalState.catalogLicensed *= (1 - CONFIG.rightsCliffShare);
   }
 
-  // --- Якорный тайтл ---
+  // --- Якорная франшиза ---
   // Внутри арендованных часов сидит франшиза, ради которой подписалась
   // заметная доля базы. Её контракт живёт отдельно от остального пакета:
   // кончается в свой срок, продлевается за отдельные деньги и на торгах.
@@ -7355,17 +7355,17 @@ function step(prevState, input = {}) {
   // --- 13a. Судьба каждого вышедшего проекта ---
   //
   // Вопрос «что принёс этот сериал» в подписке не имеет бухгалтерского
-  // ответа: подписчик платит за доступ целиком, а не за конкретный тайтл.
+  // ответа: подписчик платит за доступ целиком, а не за конкретный сериал.
   // Поэтому здесь честное отнесение по двум каналам, и оба названы:
   //
   //   привлечение — премьерная надбавка к притоку, поделённая между
   //     премьерами месяца по их доле в притяжении (считается выше);
   //     приведённые платят дальше и тают с общим оттоком;
-  //   смотрение  — доля тайтла в собственной полке: столько же он берёт
+  //   смотрение  — доля проекта в собственной полке: столько же он берёт
   //     от рекламной выручки и столько же стоит трафика.
   //
   // Расходы — производство плюс кампания под релиз. Полученный итог — не
-  // прибыль тайтла, а его вклад: сколько денег прошло через сервис
+  // прибыль проекта, а его вклад: сколько денег прошло через сервис
   // благодаря ему и вопреки ему.
   // Доля считается от ВСЕГО каталога, а не от собственной полки: зритель
   // смотрит и арендованное тоже, и приписывать своему сериалу часы, которые
@@ -7390,7 +7390,7 @@ function step(prevState, input = {}) {
     p.ledger.subsAlive = Math.max(0, p.ledger.subsAlive * (1 - avgChurn));
     p.ledger.subscription += p.ledger.subsAlive * (retailSubs > 0
       ? subscriptionRevenue / retailSubs : 0);
-    // Часы тайтла: его доля в собственной полке. Она тает вместе с жанром,
+    // Часы проекта: его доля в собственной полке. Она тает вместе с жанром,
     // поэтому старый сериал забирает всё меньше и рекламы, и трафика.
     const share = clamp((p.hoursNow ?? p.hours) / shelfHours, 0, 1);
     const served = retailHours * share;
@@ -7530,7 +7530,7 @@ function step(prevState, input = {}) {
       net: p.ledger.subscription + p.ledger.ads - p.ledger.cdn - p.ledger.spend,
     })),
 
-    // --- Якорный тайтл ---
+    // --- Якорная франшиза ---
     anchorAlive: anchor.alive,
     anchorMonthsLeft: anchor.alive ? anchor.monthsLeft : 0,
     anchorPrice,
@@ -9042,7 +9042,7 @@ let leversDiff = null;
 let pendingCrisisChoice = null;   // выбранный способ решения кризиса на этот ход
 let pendingCommission = [];       // проекты, запускаемые в этом ходу
 let pendingRelease = {};          // id готового проекта -> { campaign, cadence }
-let pendingAnchorRenew = null;    // продлевать ли права на якорный тайтл
+let pendingAnchorRenew = null;    // продлевать ли права на якорную франшизу
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
 let openGroups = { money: true, growth: true, infra: false };
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
@@ -9665,7 +9665,7 @@ function renderPartners() {
 }
 
 // ----------------------------------------------------------------------------
-// Якорный тайтл: франшиза внутри арендованного каталога.
+// Якорная франшиза внутри арендованного каталога.
 //
 // Показываем её всегда, а не только в момент истечения: подписчик, который
 // «пришёл ради одного сериала», — это актив, о котором надо помнить заранее.
