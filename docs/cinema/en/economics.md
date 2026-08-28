@@ -62,6 +62,36 @@ licensed(t)   = licensed(t−1) × (1 − licenseDecay) + hours_bought
 every month. Licences arrive **immediately**: pay this month, it is on the shelf this
 month.
 
+### The anchor title
+
+A catalogue is not uniform inside: among identical-looking rented hours sits a
+franchise that a sizeable share of your base signed up for. While the rights are
+yours, the whole licensed shelf weighs more:
+
+```
+licensed weight = hours × licenseDepthWeight × (1 + 0.22 if the franchise is yours)
+```
+
+Its contract runs separately from the rest of the package: 14 months from the
+start of the run, a warning three months ahead, renewal for twelve. Renewal costs
+money, and the price rises with the rights market and with how loudly your rival
+is bidding:
+
+```
+price = 210M × √(rights index) × (1 + 0.35 × rival buzz)
+```
+
+If you do not renew, the franchise goes to your rival: the hours stay on your
+shelf, the reason to stay does not. The base slides for three months (up to
++5.5pp of churn in the first one), and the rival gains buzz.
+
+Measured (24 codes, licence-led anchor strategy): renewing is worth +20% on the
+final result — it pays off if you live on rented catalogue. For the studio-led
+strategy, which owns its shelf, the same contract is worth only +14%: the
+franchise matters most to whoever is left with nothing without it. Renewing in
+the last months of the run is pointless — the contract will not have time to
+work.
+
 ### Originals: a slate, not a budget
 
 Production is not a budget slider but a slate: every project is an object,
@@ -118,6 +148,26 @@ Holding is not free: 4.5% of the buzz evaporates each month. But the seasonal
 multiplier raised to 2.2 means a winter premiere is nearly twice as loud as a
 summer one — so holding until December usually beats shipping in July. Measured:
 season-timed releases return about 6% more than "ship it as soon as it is ready".
+
+### Cadence: the full season or an episode a week
+
+When you release something ready, you choose not only the month but how it comes
+out:
+
+| | premiere buzz | hangover | while it runs |
+|---|---|---|---|
+| Full season | ×1.16 | ×1.55 | — |
+| Weekly episodes | ×0.84 | ×0.45 | −2pp of churn, 2 mo. |
+
+Dropping it all at once means a louder peak, but a month later there is nothing
+to hold the viewer: they finish and cancel. A weekly release is quieter, but the
+premiere lives for six weeks and holds the base the whole time.
+
+Which is better depends on what you stand on. Measured (24 codes): for the
+studio-led strategy, which lives on premieres, weekly release is worth +11%; for
+the licence-led one, where premieres are seasoning on a rented shelf, it costs
+−3% on the median but lifts the lower quartile (3.47 against 2.62 billion). So it
+is also a choice between a loud result and a predictable one.
 
 ### Aiming at a segment
 
@@ -426,6 +476,58 @@ discount has an interior optimum (10–15%); both “monthly only” and an
 aggressive 30% are live but inferior answers.
 
 ---
+
+### Churn by tenure
+
+The rate above is not the same for everyone. The base splits into two cohorts,
+and they churn differently:
+
+```
+newcomer (under 3 months)   churn × 1.65
+mature base                 churn × 0.86
+```
+
+Someone who signed up this month has not settled in: they are still trying the
+service, comparing, and leaving is easy. Someone six months in has folded you
+into a habit. Hence an uncomfortable consequence familiar to any growing service:
+**the faster you grow, the higher your average churn** — not because the service
+got worse, but because the share of newcomers went up. A loud premiere brings
+triallists, not subscribers; subscribers are the ones still there three months
+later.
+
+The practical conclusion: monthly net adds are a poor health metric. What matters
+is the mature part of the base, and that is what a valuation is actually paying
+for.
+
+The report carries both rates: `churnRate` is what actually happened with a mixed
+base, and `churnBase` is the rate before the tenure split, which shows how your
+decisions landed without the arithmetic of the mix.
+
+### Shared passwords
+
+One subscription gets used across several homes. The share of such viewers grows
+by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger
+you are: a friend "already has it". These people watch the catalogue and cost you
+bandwidth while paying nothing.
+
+The out-of-home access lever decides when to close the free shop window:
+
+```
+agreed to pay = share × force × 0.34
+left for good = share × force × 0.22
+```
+
+Force is 1 for hard enforcement and 0.35 for a polite request. Tightening leaves
+reputational noise for three months (+1.2pp of churn in the first).
+
+Measured: enforcement is worth +3–5% to the licence-led strategy, a polite
+request about the same and without the resentment. The mechanic does not turn a
+run around, but it is an honest late addition: when organic growth is over, the
+only way left is deeper.
+
+A shared password is not theft but a free shop window: those people already watch
+your catalogue. The question is when to close it: too early and you lose reach,
+too late and you have taught them not to pay.
 
 ## 4. Watch hours and bandwidth
 

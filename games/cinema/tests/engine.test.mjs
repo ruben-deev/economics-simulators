@@ -1553,8 +1553,11 @@ test('повышение прайса не задевает базу, пока �
   const b = step(structuredClone(base), { decisions: dear }).report;
 
   assert.ok(b.newSubs < a.newSubs, 'новых приходит меньше: они смотрят на прайс');
-  assert.ok(Math.abs(b.churnRate - a.churnRate) < 0.005,
-    `действующие не должны замечать чужой прайс: ${a.churnRate} против ${b.churnRate}`);
+  // Сравнивается ставка до разбиения по стажу: средний отток дополнительно
+  // двигается составом базы (дорогой прайс приводит меньше новичков, а они
+  // текут сильнее), и это уже не «база заметила прайс», а арифметика смеси.
+  assert.ok(Math.abs(b.churnBase - a.churnBase) < 0.005,
+    `действующие не должны замечать чужой прайс: ${a.churnBase} против ${b.churnBase}`);
   assert.ok(b.priceGap > 0.3, 'зато открывается разрыв');
 });
 
@@ -1815,4 +1818,146 @@ test('годовые: неотработанные месяцы вычитают
   const clean = finalScore(s);
   assert.ok(clean.equityValue - withDebt.equityValue >= expected * s.equity * 0.999,
     'долг по годовым вычтен из стоимости доли');
+});
+
+// ---------------------------------------------------------------------------
+// Пакет CFO: когорты по стажу, якорный тайтл, каденция релиза, общие пароли,
+// учёт контента. Все пять механик добавлены после разбора с действующим
+// финдиром стримингового сервиса (см. docs/cinema/economics.md).
+// ---------------------------------------------------------------------------
+
+test('когорты: новичок уходит заметно охотнее выдержанной базы', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('когорты', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 80e6 };
+  for (let i = 0; i < 4; i++) s = step(s, { decisions: d, eventChoice: 0 }).state;
+  const r = s.history.at(-1);
+  assert.ok(r.churnYoungAvg > r.churnMatureAvg,
+    `новички текут сильнее: ${r.churnYoungAvg} vs ${r.churnMatureAvg}`);
+  const ratio = r.churnYoungAvg / r.churnMatureAvg;
+  const expected = CONFIG.cohortYoungChurn / CONFIG.cohortMatureChurn;
+  assert.ok(Math.abs(ratio - expected) < 0.15, `соотношение по конфигу: ${ratio} vs ${expected}`);
+  assert.ok(r.youngShare > 0 && r.youngShare <= 1, 'доля новичков в пределах [0,1]');
+});
+
+test('когорты: подкачка новых поднимает долю новичков и средний отток', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Сравнивать надо зрелый сервис: в первые полгода база молода по построению,
+  // и доля новичков там ничего не говорит о темпе роста.
+  const d = (marketing) => ({ ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: marketing });
+  let base = createInitialState('зрелость', 'normal');
+  for (let i = 0; i < 24; i++) base = step(base, { decisions: d(60e6), eventChoice: 0 }).state;
+  const branch = (marketing) => {
+    let s = structuredClone(base);
+    for (let i = 0; i < 6; i++) s = step(s, { decisions: d(marketing), eventChoice: 0 }).state;
+    return s.history.at(-1);
+  };
+  const pushing = branch(300e6);
+  const coasting = branch(0);
+  assert.ok(pushing.youngShare > coasting.youngShare,
+    `подкачка держит базу молодой: ${pushing.youngShare} vs ${coasting.youngShare}`);
+  assert.ok(pushing.churnRate > coasting.churnRate,
+    `и поднимает средний отток: ${pushing.churnRate} vs ${coasting.churnRate}`);
+});
+
+test('якорный тайтл: уходит в срок, продление стоит денег и сохраняет права', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const play = (renew) => {
+    let s = createInitialState('якорь', 'normal');
+    let paid = 0;
+    const d = { ...DEFAULT_DECISIONS, licensing: 200e6 };
+    for (let i = 0; i < CONFIG.anchorTermMonths + 2; i++) {
+      const doRenew = renew && s.anchor.alive && s.anchor.monthsLeft <= CONFIG.anchorWarnMonths;
+      s = step(s, { decisions: d, renewAnchor: doRenew, eventChoice: 0 }).state;
+      paid += s.history.at(-1).anchorRenewCost ?? 0;
+    }
+    return { s, paid };
+  };
+  const dropped = play(false);
+  assert.equal(dropped.s.anchor.alive, false, 'без продления права уходят');
+  assert.equal(dropped.paid, 0, 'и ничего не стоят');
+  assert.ok(dropped.s.history.some((r) => r.anchorLost), 'момент ухода отмечен в отчёте');
+
+  const kept = play(true);
+  assert.equal(kept.s.anchor.alive, true, 'с продлением права остаются');
+  assert.ok(kept.paid > 0, 'продление стоит денег');
+  assert.equal(kept.s.anchor.renewals, 1, 'продлевали один раз');
+  const keptSubs = kept.s.history.at(-1).subs;
+  const lostSubs = dropped.s.history.at(-1).subs;
+  assert.ok(keptSubs > lostSubs, `франшиза держит базу: ${keptSubs} vs ${lostSubs}`);
+});
+
+test('каденция: понедельный выпуск тише шумит, но мягче роняет базу', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const play = (cadence) => {
+    let s = createInitialState('каденция', 'normal');
+    const d = { ...DEFAULT_DECISIONS, licensing: 200e6, studioSlots: 2 };
+    s = step(s, { decisions: d,
+      commission: [{ genre: 'drama', scale: 'pilot', segment: 'mass' }], eventChoice: 0 }).state;
+    let released = null;
+    for (let i = 0; i < 10; i++) {
+      const ready = (s.slate ?? []).filter((p) => p.status === 'ready');
+      const release = !released && ready.length
+        ? [{ id: ready[0].id, campaign: 50e6, cadence }] : [];
+      s = step(s, { decisions: d, release, eventChoice: 0 }).state;
+      if (release.length) released = s.history.at(-1);
+    }
+    return { released, hangoverAfter: s.history.at(-1).hangover ?? 0 };
+  };
+  const binge = play('binge');
+  const weekly = play('weekly');
+  assert.ok(binge.released && weekly.released, 'обе премьеры состоялись');
+  assert.ok(weekly.released.buzz < binge.released.buzz,
+    `понедельный пик тише: ${weekly.released.buzz} vs ${binge.released.buzz}`);
+  assert.ok(CONFIG.cadenceWeeklyHangover < CONFIG.cadenceBingeHangover,
+    'и похмелье после него слабее по построению');
+});
+
+test('общие пароли: закрытие доступа приводит подписчиков и злит часть базы', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const play = (policy) => {
+    let s = createInitialState('пароли', 'normal');
+    const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 60e6 };
+    for (let i = 0; i < 12; i++) {
+      s = step(s, { decisions: { ...d, sharingPolicy: i >= 8 ? policy : 0 }, eventChoice: 0 }).state;
+    }
+    return s;
+  };
+  const idle = play(0);
+  const enforced = play(2);
+  const idleLast = idle.history.at(-1);
+  const enfLast = enforced.history.at(-1);
+  assert.ok(idleLast.sharingShare > enfLast.sharingShare,
+    'закрытие уменьшает долю общих паролей');
+  assert.ok(enforced.history.some((r) => (r.sharingConvertedSubs ?? 0) > 0),
+    'часть разделявших завела свою подписку');
+  assert.ok(enforced.history.some((r) => (r.sharingLostSubs ?? 0) > 0),
+    'часть ушла вместе с тем, кто их пустил');
+});
+
+test('учёт контента: касса и признанный расход расходятся, счёт идёт по кассе', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('учёт', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 400e6 };
+  s = step(s, { decisions: d, eventChoice: 0 }).state;
+  const first = s.history.at(-1);
+  assert.ok(first.contentAmortization < first.contentSpend,
+    'в первый месяц признано меньше, чем ушло деньгами');
+  assert.ok(first.contentBookValue > 0, 'остаток ждёт списания в следующих месяцах');
+  assert.ok(first.profitAccrual > first.profit,
+    'учётная прибыль выше кассовой, пока полка наполняется');
+  // Дальше перестаём покупать: списание продолжается, остаток тает
+  const before = s.history.at(-1).contentBookValue;
+  s = step(s, { decisions: { ...DEFAULT_DECISIONS, licensing: 0 }, eventChoice: 0 }).state;
+  const after = s.history.at(-1);
+  assert.ok(after.contentBookValue < before, 'остаток списывается и без новых покупок');
+  assert.ok(after.contentAmortization > 0, 'расход признаётся, хотя денег в этом месяце не платили');
+  assert.ok(Math.abs(before * (1 - CONFIG.amortRateLicense) - after.contentBookValue) < before * 0.05,
+    'списание идёт по убывающему остатку');
 });
