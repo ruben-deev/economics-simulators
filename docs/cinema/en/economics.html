@@ -58,10 +58,11 @@
     <a href="#s-32">6c. Crises</a>
     <a href="#s-33">7. Algorithms: second-order optimisation</a>
     <a href="#s-36">8. Events</a>
-    <a href="#s-37">9. Valuation and funding</a>
-    <a href="#s-38">10. What the model leaves out</a>
-    <a href="#s-39">The cost of what is already built</a>
-    <a href="#s-40">The price of a free month</a>
+    <a href="#s-37">8c. How each title fared</a>
+    <a href="#s-38">9. Valuation and funding</a>
+    <a href="#s-39">10. What the model leaves out</a>
+    <a href="#s-40">The cost of what is already built</a>
+    <a href="#s-41">The price of a free month</a>
   </nav>
     <h1>Streaming economics model: formulas and assumptions</h1>
 <p><i><a href="../economics.html">Русская версия</a></i></p>
@@ -409,7 +410,19 @@ perceived_depth = depth × lift × bubble</code></pre>
 </table></div>
 <p><b>The price of a decision depends on your size.</b> Compensations and sales are charged per head — against the base at the start of the month; the star's ask is indexed to the price of talent. Honesty and generosity cost a small service almost nothing and a large one dearly. That is why events have no "right answer": measured across three company sizes, the profitable option changes with the state, and the mean gap between "always first" and "always second" is a fraction of a percent.</p>
 <hr>
-<h2 id="s-37">9. Valuation and funding</h2>
+<h2 id="s-37">8c. How each title fared</h2>
+<p>"What did this show bring in" has no accounting answer in a subscription business: the subscriber pays for access as a whole, not for a particular title. So this is honest attribution through two channels, and both are named.</p>
+<p><b>Acquisition.</b> Each month's inflow is computed twice: with the premiere uplift and without it. The difference is the subscribers who would not have arrived without the premieres, and it is split between the month's premieres by their share of the segment's pull:</p>
+<pre class="doc-pre"><code>uplift = premiereTrialGain × pull^premiereTrialPower
+title's share = its buzz × segment aim / total pull</code></pre>
+<p>Those subscribers do not vanish the moment they arrive: they keep paying and melt away with general churn. Hence the two lines on the card — "brought in" and "still with you".</p>
+<p><b>Watching.</b> The title's share of hours is measured against the <b>whole</b> catalogue, not against your own shelf: viewers watch the rented content too, and crediting your own show with hours people spent on someone else's is the easiest way to paint yourself a success. By that share the title receives part of the ad revenue and the same part of the bandwidth cost.</p>
+<p><b>Costs.</b> Production is what was actually paid to the crew across all months, not the estimate: a project cut short by a crisis or extended costs what was paid for it. Plus the release campaign.</p>
+<pre class="doc-pre"><code>contribution = subscriptions of those brought + ads on its hours − bandwidth on its hours
+net          = contribution − production − campaign</code></pre>
+<p>Hence the pipeline's main rule, visible on the cards at a glance: the very same flagship pays for itself three times over when it lands in year one and never earns out in year three — the subscribers it brings simply do not have enough months left to return its cost. A cheap pilot in a good season almost always beats an expensive flagship in a bad one on return per unit spent.</p>
+<p>This is attribution, not the title's profit. There is no exact boundary of "this person came for this show" — not in the game and not in life — but this is how content is measured in the industry, and it is better to measure honestly and approximately than not at all.</p>
+<h2 id="s-38">9. Valuation and funding</h2>
 <pre class="doc-pre"><code>run-rate    = average revenue over 6 months × 12
 growth      = subscribers over 3 months / subscribers over the previous 3 months
 margin      = profit over 6 months / revenue over the same 6 months
@@ -431,12 +444,12 @@ new stake       = old stake × (1 − dilution)</code></pre>
 <p>The worse things are, the lower the valuation and the more the same money costs. The valuation floor is ₽300M, so a ₽3B cheque at a weak company takes almost everything.</p>
 <p>The final score counts <b>your stake</b>, not the size of the company. "Grow at any cost" produces more subscribers and a smaller result — this is checked by the <code>расти любой ценой невыгодно</code> test in <code>games/cinema/tests/engine.test.mjs</code>.</p>
 <hr>
-<h2 id="s-38">10. What the model leaves out</h2>
+<h2 id="s-39">10. What the model leaves out</h2>
 <p>This is a teaching model, not a forecasting tool.</p>
 <ul><li><b>There is one rival and he is simplified.</b> He reacts to your price, your share and your genre choice, but his policy is five legible stances, not a full player. A real market has several players with different business models.</li><li><b>The board sets only three goals</b> and always of the same three types.</li><li><b>No international market.</b> One language, one country, one audience ceiling.</li><li><b>The catalogue is homogeneous within a type.</b> All licensed hours are alike, whereas in practice one show can cost as much as a thousand others.</li><li><b>Piracy is not a permanent factor</b> — only a one-off event.</li><li><b>Advertising sells at a fixed CPM.</b> There is no real ad market with seasonality and bidding for inventory.</li><li><b>Viewers within a segment are identical.</b> Personal discounts are modelled as a share, not as a distribution over individual people.</li></ul>
 <p>The model shows the <b>structure</b> of a subscription business: why content is a capital investment with a lag, why engagement costs money, and why growing the base and growing the value of your stake are not the same thing.</p>
 <hr>
-<h2 id="s-39">The cost of what is already built</h2>
+<h2 id="s-40">The cost of what is already built</h2>
 <p>What you have built has a cost of ownership. If the spend were written off once while the accumulated level stayed forever and cost nothing, the "invest in technology" lever would be dishonest: pay once, enjoy the advantage forever. That is not how it works, and two cost lines carry that price.</p>
 <p><b>Upkeep.</b> Every feature built has to be maintained: libraries updated, breakage from other changes fixed, new people taught. The bill arrives every month and does not depend on whether anyone uses the feature:</p>
 <pre class="doc-pre"><code>upkeep = cumulative investment × 1.35% в месяц</code></pre>
@@ -444,7 +457,7 @@ new stake       = old stake × (1 − dilution)</code></pre>
 <p><b>Infrastructure.</b> Load-driven infrastructure already exists here and is called traffic: <code>cdn = watch hours × cost per hour</code>. It grows with audience loyalty and gets cheaper with technology and encoding — see the watch-hours section.</p>
 <p>The point of splitting these two lines out of "office and administration" is behavioural: the base fixed part is small, while upkeep and traffic grow with the product and the audience. Costs breathe together with the business, and every "invest more" decision carries a tail of future obligations.</p>
 <hr>
-<h2 id="s-40">The price of a free month</h2>
+<h2 id="s-41">The price of a free month</h2>
 <p>A gifted month has two prices, and both are obvious if you look at the cash rather than at the subscriber chart. Without them the best answer would always be the maximum 30 days — and the slider would effectively not exist.</p>
 <p><b>Given-away days are an invoice never sent.</b> Someone who arrives this month watches free for the first <code>trialDays</code> days and pays only for the remainder:</p>
 <pre class="doc-pre"><code>given away = new subscribers × (trialDays / 30) × average price</code></pre>

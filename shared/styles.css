@@ -660,6 +660,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .deal-name { font-weight: 700; font-size: 13px; }
 .deal-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
 
+/* Судьба тайтла: карточка вместо строки таблицы. В правой колонке узко,
+   и пять колонок с подписями там не читаются ни на одном экране. */
+.title-cards { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+.title-card { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--panel-2); }
+.title-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.title-name { font-weight: 700; font-size: 13px; }
+.title-pnl { margin-top: 7px; }
+.title-pnl td { padding: 2px 0; }
+.title-pnl td:last-child { text-align: right; white-space: nowrap; }
+.title-pnl tr.sub td:first-child { padding-left: 12px; color: var(--muted); font-size: 11px; }
+.title-pnl tr.total td { border-top: 1px solid var(--line); padding-top: 4px; font-weight: 700; }
+
 .offer { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 9px; padding: 11px 13px; }
 .offer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .offer-head h3 { margin: 0; font-size: 15px; }

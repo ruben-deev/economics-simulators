@@ -2015,3 +2015,63 @@ test('общие пароли: закрыть рано — потерять ох
   assert.ok(aw(early) < aw(never),
     `и вместе с ней гаснет сарафан: ${aw(early)} против ${aw(never)}`);
 });
+
+test('судьба тайтла: что стоил и что принёс, с честной атрибуцией', async () => {
+  const { createInitialState, step, raise } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('судьба', 'normal');
+  let raises = 0;
+  const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 100e6, studioSlots: 2 };
+  s = step(s, { decisions: d,
+    commission: [{ genre: 'blockbuster', scale: 'pilot', segment: 'mass' }], eventChoice: 0 }).state;
+  let released = false;
+  for (let i = 0; i < 16; i++) {
+    if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+      s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+    }
+    const ready = (s.slate ?? []).filter((p) => p.status === 'ready');
+    const release = !released && ready.length
+      ? [{ id: ready[0].id, campaign: 100e6, cadence: 'binge' }] : [];
+    if (release.length) released = true;
+    s = step(s, { decisions: d, release, eventChoice: 0 }).state;
+  }
+  const r = s.history.at(-1);
+  assert.equal(r.titles.length, 1, 'вышел ровно один проект');
+  const t = r.titles[0];
+  assert.ok(t.production > 0, 'производство посчитано по фактически выплаченному');
+  assert.equal(t.campaign, 100e6, 'кампания под релиз записана отдельно');
+  assert.equal(t.spend, t.production + t.campaign, 'стоимость — сумма двух статей');
+  assert.ok(t.subsBrought > 0, 'премьера привела подписчиков');
+  assert.ok(t.subsAlive < t.subsBrought, 'приведённые тают вместе со всеми');
+  assert.ok(t.subscription > 0, 'и всё это время платят');
+  assert.ok(t.cdn > 0, 'его часы стоят трафика');
+  assert.ok(Math.abs(t.contribution - (t.subscription + t.ads - t.cdn)) < 1,
+    'вклад = подписка + реклама − трафик');
+  assert.ok(Math.abs(t.net - (t.contribution - t.spend)) < 1, 'итог = вклад − затраты');
+});
+
+test('атрибуция премьер: доля часов считается от всего каталога, а не от своей полки', async () => {
+  const { createInitialState, step, raise } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('доля', 'normal');
+  let raises = 0;
+  // Большая арендованная полка: собственный пилот не может забрать весь трафик
+  const d = { ...DEFAULT_DECISIONS, licensing: 700e6, brandMarketing: 80e6, studioSlots: 2 };
+  s = step(s, { decisions: d,
+    commission: [{ genre: 'drama', scale: 'pilot', segment: 'mass' }], eventChoice: 0 }).state;
+  let released = false;
+  for (let i = 0; i < 14; i++) {
+    if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+      s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+    }
+    const ready = (s.slate ?? []).filter((p) => p.status === 'ready');
+    const release = !released && ready.length ? [{ id: ready[0].id, campaign: 60e6 }] : [];
+    if (release.length) released = true;
+    s = step(s, { decisions: d, release, eventChoice: 0 }).state;
+  }
+  const r = s.history.at(-1);
+  const t = r.titles[0];
+  assert.ok(t.cdn < r.cdnCost * 0.5,
+    `один пилот при большой арендованной полке не может стоить полтрафика: ${t.cdn} из ${r.cdnCost}`);
+  assert.ok(t.ads < r.adRevenue * 0.5, 'и не может забрать половину рекламной выручки');
+});

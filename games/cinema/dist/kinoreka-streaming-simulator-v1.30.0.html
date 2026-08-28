@@ -686,6 +686,18 @@ table.data tr.sub td:first-child { padding-left: 16px; color: var(--muted); }
 .deal-name { font-weight: 700; font-size: 13px; }
 .deal-meta { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
 
+/* Судьба тайтла: карточка вместо строки таблицы. В правой колонке узко,
+   и пять колонок с подписями там не читаются ни на одном экране. */
+.title-cards { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+.title-card { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--panel-2); }
+.title-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.title-name { font-weight: 700; font-size: 13px; }
+.title-pnl { margin-top: 7px; }
+.title-pnl td { padding: 2px 0; }
+.title-pnl td:last-child { text-align: right; white-space: nowrap; }
+.title-pnl tr.sub td:first-child { padding-left: 12px; color: var(--muted); font-size: 11px; }
+.title-pnl tr.total td { border-top: 1px solid var(--line); padding-top: 4px; font-weight: 700; }
+
 .offer { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 9px; padding: 11px 13px; }
 .offer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .offer-head h3 { margin: 0; font-size: 15px; }
@@ -1965,10 +1977,19 @@ const STRINGS = {
   cfoProfitCash: { ru: 'Прибыль по кассе', en: 'Cash profit' },
   cfoProfitAccrual: { ru: 'Прибыль учётная', en: 'Accounting profit' },
   cfoProfitNote: { ru: 'Счёт партии считается по кассовой: оценка компании стоит на деньгах, а не на способе их списывать. Учётная строка показана, чтобы было видно, как одна и та же неделя выглядит в отчёте и в банке.', en: 'Your score runs on the cash line: the valuation stands on money, not on the way you write it off. The accounting line is shown so you can see how the very same month looks in the report and in the bank.' },
-  cfoProjectsTitle: { ru: 'Что стоил каждый проект', en: 'What each project cost' },
+  cfoProjectsTitle: { ru: 'Судьба каждого проекта', en: 'How each project fared' },
   cfoReleasedIn: { ru: 'вышел в {month}-й месяц', en: 'released in month {month}' },
-  cfoPerHour: { ru: '{value} за час', en: '{value} per hour' },
-  cfoProjectsNote: { ru: 'Производство плюс кампания, поделённые на часы. Сравнивать надо не с ценой лицензионного часа, а с тем, сколько эти часы держат базу: своё дороже и не тает.', en: 'Production plus campaign divided by hours. Compare it not with the price of a licensed hour but with how well those hours hold the base: your own costs more and does not melt away.' },
+  cfoColSpend: { ru: 'Стоил', en: 'Cost' },
+  cfoColNet: { ru: 'Итог', en: 'Net' },
+  cfoRowProduction: { ru: 'производство', en: 'production' },
+  cfoRowCampaign: { ru: 'кампания под релиз', en: 'release campaign' },
+  cfoRowBrought: { ru: 'Привёл подписчиков', en: 'Subscribers brought' },
+  cfoRowAlive: { ru: 'из них ещё с вами', en: 'still with you' },
+  cfoRowSubscription: { ru: 'их подписка', en: 'their subscriptions' },
+  cfoRowAds: { ru: 'реклама на его часах', en: 'ads on its hours' },
+  cfoRowCdn: { ru: 'трафик на его часах', en: 'bandwidth on its hours' },
+  cfoRoi: { ru: 'на рубль вложенного {value}', en: '{value} per unit invested' },
+  cfoProjectsNote: { ru: 'Отнесение, а не бухгалтерия: в подписке никто не платит за конкретный сериал. «Привёл» — премьерная надбавка к притоку, поделённая между премьерами месяца по их доле в притяжении; приведённые платят дальше и тают с общим оттоком. «Принёс» — их подписка плюс доля тайтла в рекламной выручке минус его же доля в трафике, по доле часов во всём каталоге. Отсюда главное правило конвейера: один и тот же флагман, вышедший на первом году, окупается втрое, а на третьем не успевает отработать вовсе.', en: 'Attribution, not accounting: in a subscription business nobody pays for one particular show. "Brought in" is the premiere uplift to sign-ups, split between the month’s premieres by their share of the pull; those subscribers keep paying and melt away with general churn. "Earned" is their subscription revenue plus the title’s share of ad revenue minus its share of bandwidth, by its share of hours in the whole catalogue. Hence the pipeline’s main rule: the very same flagship pays for itself three times over in year one and never earns out in year three.' },
   cfoDeferredTitle: { ru: 'Выручка будущих периодов', en: 'Deferred revenue' },
   cfoDeferredNote: { ru: 'Годовые подписки принесли {value}, которые вы уже получили деньгами, но ещё должны отработать сервисом. При оценке компании эта сумма вычитается из кассы.', en: 'Annual plans brought {value} that you have already received in cash but still owe in service. This amount is deducted from your cash when the company is valued.' },
   tabAlgos: { ru: 'Алгоритмы', en: 'Algorithms' },
@@ -6675,6 +6696,13 @@ function step(prevState, input = {}) {
   const sharingAngerNow = state.sharingAnger > 0 ? clamp(state.sharingAnger / CONFIG.sharingAngerMonths, 0, 1) : 0;
   state.sharingAnger = Math.max(0, (state.sharingAnger ?? 0) - 1);
 
+  // Атрибуция премьер: сколько подписчиков привела каждая. Считается
+  // контрфактически — сравнением притока с премьерной надбавкой и без неё,
+  // а разница делится между премьерами по их доле в притяжении сегмента.
+  // Это не бухгалтерия, а отнесение: точной границы «этот человек пришёл
+  // ради этого сериала» не существует ни в игре, ни в жизни.
+  const premiereCredit = new Map();
+
   const partnerBefore = partnerTotals(state.partners).subs;
   const marketPotential = SEGMENTS.reduce((s, x) => s + potentialOf(x, state), 0);
   // Повышение цены действующей базе — отдельное решение с отдельной ценой.
@@ -6882,9 +6910,22 @@ function step(prevState, input = {}) {
     // Внимание рынка насыщается: конверсия шума в пробы вогнутая, а не
     // линейная. Линейная делала тройную премьерную тягу блокбастера тройным
     // притоком за те же деньги — доминация 2× по замеру (аудит 2026-08).
-    const trials = categoryTrials * preference
-      * (1 + CONFIG.premiereTrialGain * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower));
+    const premiereLift = CONFIG.premiereTrialGain
+      * Math.pow(Math.max(0, premiereAppeal), CONFIG.premiereTrialPower);
+    const trials = categoryTrials * preference * (1 + premiereLift);
     let converted = trials * CONFIG.trialConversion * trialFactor;
+
+    // Премьерная часть притока: то, чего не было бы без премьер этого месяца
+    if (premiereLift > 0 && premiereAppeal > 0) {
+      const fromPremieres = categoryTrials * preference * premiereLift
+        * CONFIG.trialConversion * trialFactor;
+      for (const p of premieres) {
+        const pull = p.buzz * projectAppeal(p, def.id);
+        if (pull <= 0) continue;
+        premiereCredit.set(p.id,
+          (premiereCredit.get(p.id) ?? 0) + fromPremieres * (pull / premiereAppeal));
+      }
+    }
 
     // Премиальный выбор чувствует полный прайс. Раньше спрос смотрел только
     // на смесь listPrice, и премиальная доля новичков (1 − adShare, не меньше
@@ -7310,6 +7351,54 @@ function step(prevState, input = {}) {
   const avgChurn = retailSubs > 0
     ? perSegment.reduce((s, p) => s + p.churnRate * p.subs, 0) / retailSubs
     : CONFIG.baseChurn;
+
+  // --- 13a. Судьба каждого вышедшего проекта ---
+  //
+  // Вопрос «что принёс этот сериал» в подписке не имеет бухгалтерского
+  // ответа: подписчик платит за доступ целиком, а не за конкретный тайтл.
+  // Поэтому здесь честное отнесение по двум каналам, и оба названы:
+  //
+  //   привлечение — премьерная надбавка к притоку, поделённая между
+  //     премьерами месяца по их доле в притяжении (считается выше);
+  //     приведённые платят дальше и тают с общим оттоком;
+  //   смотрение  — доля тайтла в собственной полке: столько же он берёт
+  //     от рекламной выручки и столько же стоит трафика.
+  //
+  // Расходы — производство плюс кампания под релиз. Полученный итог — не
+  // прибыль тайтла, а его вклад: сколько денег прошло через сервис
+  // благодаря ему и вопреки ему.
+  // Доля считается от ВСЕГО каталога, а не от собственной полки: зритель
+  // смотрит и арендованное тоже, и приписывать своему сериалу часы, которые
+  // люди провели за чужим, — самый простой способ нарисовать себе успех.
+  const shelfHours = Math.max(1, catalogHours);
+  for (const p of state.slate) {
+    if (p.status !== 'released') continue;
+    // Производство — то, что фактически выплачено съёмочной группе за все
+    // месяцы (p.paid), а не смета: порезанный или продлённый проект стоит
+    // столько, сколько за него заплатили.
+    p.ledger = p.ledger ?? {
+      spend: (p.paid ?? 0) + (p.campaign ?? 0),
+      subsBrought: 0, subsAlive: 0, subscription: 0, ads: 0, cdn: 0, hoursServed: 0,
+    };
+    // Приток этого месяца: премьеру засчитываем в месяц выхода
+    const brought = premiereCredit.get(p.id) ?? 0;
+    if (brought > 0) {
+      p.ledger.subsBrought += brought;
+      p.ledger.subsAlive += brought;
+    }
+    // Приведённые тают вместе со всеми и всё это время платят
+    p.ledger.subsAlive = Math.max(0, p.ledger.subsAlive * (1 - avgChurn));
+    p.ledger.subscription += p.ledger.subsAlive * (retailSubs > 0
+      ? subscriptionRevenue / retailSubs : 0);
+    // Часы тайтла: его доля в собственной полке. Она тает вместе с жанром,
+    // поэтому старый сериал забирает всё меньше и рекламы, и трафика.
+    const share = clamp((p.hoursNow ?? p.hours) / shelfHours, 0, 1);
+    const served = retailHours * share;
+    p.ledger.hoursServed += served;
+    p.ledger.ads += adRevenue * share;
+    p.ledger.cdn += cdnCost * share;
+    p.hoursNow = (p.hoursNow ?? p.hours) * (1 - (genreById(p.genre)?.decay ?? 0.05));
+  }
   const cac = newSubs > 0 ? marketingSpend / newSubs : 0;
   const ltv = cmPerSub / Math.max(0.005, avgChurn);
   const marketShare = totalSubs / marketPotential;
@@ -7427,6 +7516,19 @@ function step(prevState, input = {}) {
     contentAmortization,
     contentBookValue,
     profitAccrual,
+
+    // Судьба каждого вышедшего проекта: что стоил и что принёс
+    titles: state.slate.filter((p) => p.status === 'released' && p.ledger).map((p) => ({
+      id: p.id, genre: p.genre, scale: p.scale, segment: p.segment,
+      releasedMonth: p.releasedMonth, cadence: p.cadence ?? 'binge',
+      quality: p.quality, hours: p.hours,
+      spend: p.ledger.spend, production: p.paid ?? 0, campaign: p.campaign ?? 0,
+      subsBrought: p.ledger.subsBrought, subsAlive: p.ledger.subsAlive,
+      subscription: p.ledger.subscription, ads: p.ledger.ads, cdn: p.ledger.cdn,
+      hoursServed: p.ledger.hoursServed,
+      contribution: p.ledger.subscription + p.ledger.ads - p.ledger.cdn,
+      net: p.ledger.subscription + p.ledger.ads - p.ledger.cdn - p.ledger.spend,
+    })),
 
     // --- Якорный тайтл ---
     anchorAlive: anchor.alive,
@@ -11151,16 +11253,32 @@ function renderCfoTab() {
   const payback = r.cmPerSub > 0 && r.cac > 0 ? r.cac / r.cmPerSub : null;
   const cashGap = (r.contentSpend ?? 0) - (r.contentAmortization ?? 0);
 
-  // Что принёс каждый вышедший проект: потрачено против часов и шума.
-  const released = (state.slate ?? []).filter((p) => p.status === 'released')
-    .sort((a, b) => (b.releasedMonth ?? 0) - (a.releasedMonth ?? 0)).slice(0, 8);
-  const projectRows = released.map((p) => {
-    const spent = (p.cost ?? 0) + (p.campaign ?? 0);
-    const perHour = p.hours > 0 ? spent / p.hours : 0;
-    return `<tr><td>${genreName(p.genre)} · ${scaleName(p.scale)}
-        <div class="funding-note">${t('cfoReleasedIn', { month: p.releasedMonth ?? 0 })}${
-          p.cadence === 'weekly' ? ` · ${t('cadenceWeekly').toLowerCase()}` : ''}</div></td>
-      <td>${money(spent)}<div class="funding-note">${t('cfoPerHour', { value: amount(perHour) })}</div></td></tr>`;
+  // Судьба каждого вышедшего проекта. Сортируем по итогу: сверху то, что
+  // окупилось лучше всех, снизу — то, за что пришлось заплатить.
+  const titles = [...(r.titles ?? [])].sort((a, b) => b.net - a.net);
+  const titleRows = titles.map((x) => {
+    const roi = x.spend > 0 ? x.contribution / x.spend : null;
+    const cls = x.net >= 0 ? 'pos' : 'neg';
+    return `<div class="title-card">
+      <div class="title-head">
+        <span class="title-name">${genreName(x.genre)} · ${scaleName(x.scale)}</span>
+        <span class="badge ${cls === 'pos' ? 'on' : 'bad'}">${money(x.net)}</span>
+      </div>
+      <div class="proj-meta">${t('cfoReleasedIn', { month: x.releasedMonth })} ·
+        ${t(x.cadence === 'weekly' ? 'cadenceWeekly' : 'cadenceBinge').toLowerCase()}${
+          roi === null ? '' : ` · ${t('cfoRoi', { value: roi.toFixed(2) })}`}</div>
+      <table class="data title-pnl"><tbody>
+        <tr><td>${t('cfoColSpend')}</td><td class="neg">−${money(x.spend)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowProduction')}</td><td>${money(x.production)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowCampaign')}</td><td>${money(x.campaign)}</td></tr>
+        <tr><td>${t('cfoRowBrought')}</td><td>${compact(x.subsBrought)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowAlive')}</td><td>${compact(x.subsAlive)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowSubscription')}</td><td class="pos">${money(x.subscription)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowAds')}</td><td class="pos">${money(x.ads)}</td></tr>
+        <tr class="sub"><td>${t('cfoRowCdn')}</td><td class="neg">−${money(x.cdn)}</td></tr>
+        <tr class="total"><td>${t('cfoColNet')}</td><td class="${cls}">${money(x.net)}</td></tr>
+      </tbody></table>
+    </div>`;
   }).join('');
 
   return `
@@ -11187,8 +11305,8 @@ function renderCfoTab() {
     </tbody></table></div>
     <p class="funding-note">${t('cfoProfitNote')}</p>
 
-    ${released.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
-    <div style="overflow-x:auto"><table class="data"><tbody>${projectRows}</tbody></table></div>
+    ${titles.length ? `<h3 class="sub-title">${t('cfoProjectsTitle')}</h3>
+    <div class="title-cards">${titleRows}</div>
     <p class="funding-note">${t('cfoProjectsNote')}</p>` : ''}
 
     ${r.deferred > 0 ? `<h3 class="sub-title">${t('cfoDeferredTitle')}</h3>
