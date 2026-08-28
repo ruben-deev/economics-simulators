@@ -2,13 +2,6 @@
 
 *[Русская версия](../teacher-guide.md)*
 
-One caveat first: this is not a syllabus and not a course programme. I have never taught
-a class with these games, so there are no timings here and no step-by-step running order —
-they would be invented. What follows is something else: the places where the model behaves
-differently from what most people expect, with the number or the measurement that shows it,
-and the question worth asking out loud. What to use and in what order, you will judge
-better than I can.
-
 The game suits courses on subscription economics, media business, unit economics and
 corporate finance. One game is 36 turns, which at a calm pace is 40–60 minutes.
 Seeing the main forks usually takes only 12–18 turns.
@@ -268,7 +261,7 @@ After changes it is worth running `npm test`: the tests check qualitative proper
 the model (an interior price optimum, ad revenue traded against churn, a mixed content
 strategy beating both extremes) rather than specific numbers, so they survive rebalancing.
 
-**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.30.0.html` —
+**Handing it out to students.** `npm run build` produces `games/cinema/dist/kinoreka-streaming-simulator-v1.30.1.html` —
 a single file that works offline. Progress is saved in the browser's localStorage.
 
 **Language.** The interface switches between Russian and English with the RU / EN button.

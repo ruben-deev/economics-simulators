@@ -557,11 +557,13 @@ reputational noise for three months (+1.2pp of churn in the first).
 
 Measured (24 codes), this is a decision about timing, not about whether. Closing
 in month eighteen is worth +7% to the licence-led strategy, +8% to the balanced
-one and +5% to the studio-led one. Closing in month four — when the window is
-still nearly empty and word of mouth has only just started — leaves the
-licence-led strategy a meagre +1% and drops the studio-led one, which lives on
-the reach of its premieres, by **−19%**. Closing in month thirty-two brings half
-the peak: the share has grown, but it is too late to turn it into money.
+one and +5% to the studio-led one. Closing in month one — when the window is
+nearly empty and word of mouth has brought in nothing yet — costs the licence-led
+strategy −10% and drops the studio-led one, which lives on the reach of its
+premieres, by **−19%**. By month four the studio-led strategy is still down
+(−10%) while the licence-led one scrapes a meagre +1%. Closing in month thirty
+brings roughly half the peak: the share has grown, but it is too late to turn it
+into money.
 
 One plan across several homes is not theft but a free shop window: those people
 already watch your catalogue and already cost you bandwidth. Ask them to pay too

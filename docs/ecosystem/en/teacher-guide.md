@@ -2,12 +2,6 @@
 
 *[Русская версия](../teacher-guide.md)*
 
-One caveat first: this is not a syllabus and not a course programme. I have
-never taught a class with these games, so there are no timings here and no
-step-by-step running order — they would be invented. What follows is how the
-game is built, what is worth discussing in it, and what you need to know to
-hand it to a group.
-
 The endgame game: it lands best with a group that has already played at
 least one of the three games of the set (usually NOVOEDA). Hand out one
 game code to everyone — the city and the events will be identical and the
