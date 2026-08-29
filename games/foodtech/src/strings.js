@@ -6,11 +6,6 @@
 export const STRINGS = {
   pnlFinance: { ru: 'Финансовая команда', en: 'Finance team' },
   pnlMisc: { ru: 'Прочие расходы ({rate} выручки)', en: 'Miscellaneous ({rate} of revenue)' },
-  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
-  welcomeDifficultyNote: {
-    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
-    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
-  },
   readoutFinance: {
     ru: 'Финансовая команда: сила <b class="{cls}">{level}</b>. Прочие расходы — {misc} выручки, эквайринг — {pay}.',
     en: 'Finance team: strength <b class="{cls}">{level}</b>. Miscellaneous costs {misc} of revenue; card processing {pay}.',

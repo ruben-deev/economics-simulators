@@ -583,17 +583,6 @@ export const GENRES = [
 
 export const LEVERS = [
   {
-    key: 'finance',
-    group: 'infra',
-    label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/мес', en: '$/mo' },
-    min: 0, max: 40_000_000, step: 1_000_000, def: 0,
-    tip: {
-      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: комиссии платёжных систем, списания, штрафы, неразнесённая административка — всё это уходит в «прочие расходы». Сильная режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
-      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: card fees, write-offs, penalties, unallocated admin — all of it lands in “miscellaneous”. A strong one cuts that line and packages the company better for a round. The series difficulty changes only its price.',
-    },
-  },
-  {
     key: 'priceNew',
     group: 'money',
     label: { ru: 'Цена для новых', en: 'Price for new sign-ups' },

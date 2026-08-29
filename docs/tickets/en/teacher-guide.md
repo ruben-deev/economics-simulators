@@ -127,7 +127,7 @@ mid-game: without rounds the bars would read half as high as they do.
 
 ## Technical notes for the teacher
 
-* The game is a single HTML file, `dist/biletville-ticketing-simulator-v1.34.0.html`.
+* The game is a single HTML file, `dist/biletville-ticketing-simulator-v1.35.0.html`.
   No internet, no install, runs from a USB stick.
 * The game saves in the browser. To have every team play the same world, hand out
   the same file and dictate a shared game code — it is entered on the welcome
@@ -145,9 +145,6 @@ mid-game: without rounds the bars would read half as high as they do.
   identical either way. It can also be baked into the link:
   `…/games/tickets/?lang=en` (or `?lang=ru`) — without the parameter the game
   picks the browser's language.
-* The welcome screen offers three difficulty levels — Easy, Normal, Hard. The
-  level goes into the result-string tag and each level keeps its own
-  leaderboard — do not compare results across levels directly.
 * Formulas and constants are in `docs/tickets/en/economics.md`. Everything that
   can be changed without touching the logic lives in
   `games/tickets/src/model/config.js`.

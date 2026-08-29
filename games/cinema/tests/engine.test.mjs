@@ -1155,7 +1155,6 @@ test('масштаб проекта — обмен, а не лестница: г
     `на полной партии сезон должен вести: ${Math.round(longSeason / 1e9)} против ${Math.round(longPilot / 1e9)} млрд`);
 });
 
-
 test('расти любой ценой невыгодно: доля важнее числа подписчиков', () => {
   // Один и тот же seed, разная доля выручки в контент. Подписчиков больше
   // у агрессивной стратегии, но она добирает деньги раундами и размывается.
@@ -1705,36 +1704,6 @@ test('финальный рывок: конкурент получает кас�
 // ----------------------------------------------------------------------------
 // Финансовая команда и уровни сложности набора
 // ----------------------------------------------------------------------------
-
-test('финансовая команда: цена растёт с выручкой, «прочие расходы» падают', () => {
-  const s = createInitialState('fin', 'normal');
-  assert.equal(financeLevel(s, decide({ finance: 0 })), 0, 'без бюджета команды нет');
-  const half = financeHalf(s);
-  assert.ok(Math.abs(financeLevel(s, decide({ finance: half })) - 0.5) < 1e-9,
-    'на насыщении ровно половина силы');
-  assert.ok(miscRate(s, decide({ finance: 0 })) > miscRate(s, decide({ finance: half * 4 })),
-    'сильная служба режет «прочие расходы»');
-
-  const r = step(s, { decisions: decide({ finance: half }), eventChoice: 0, ...NO_ACTIONS }).report;
-  assert.ok(Math.abs(r.miscCost - r.revenue * r.miscRate) < 1, 'строка считается от выручки');
-  assert.ok(r.financeCost > 0, 'бюджет команды виден в P&L');
-});
-
-test('уровни сложности: одни механики, разная цена команды', () => {
-  const level = {}; const misc = {};
-  for (const dd of DIFFICULTIES) {
-    const s = createInitialState('diff', dd.id);
-    assert.equal(s.difficulty, dd.id);
-    level[dd.id] = financeLevel(s, decide({ finance: 8_000_000 }));
-    misc[dd.id] = miscRate(s, decide({ finance: 8_000_000 }));
-  }
-  assert.equal(level.easy, 1, 'на лёгком команда уже собрана');
-  assert.ok(level.normal > level.hard, 'за те же деньги на сложном покупается меньше');
-  assert.ok(misc.easy < misc.normal && misc.normal < misc.hard);
-  const easy = step(createInitialState('diff', 'easy'), { decisions: decide({ finance: 8_000_000 }), eventChoice: 0, ...NO_ACTIONS }).report;
-  assert.equal(easy.financeCost, 0, 'на лёгком команду содержит не игрок');
-  assert.equal(easy.financeLevel, 1);
-});
 
 test('совместный мегахит: рынок растёт обоим, договориться можно один раз', () => {
   const decide = (over = {}) => ({ ...DEFAULT_DECISIONS, ...over });

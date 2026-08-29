@@ -178,18 +178,19 @@ Measured per flag (share of the final score, on tuned anchors):
 The zeros are not errors: your own content needs no cinema licence, your own
 ticketing needs no partnership.
 
-## Are the three starts equal — on every difficulty?
+## Are the three starts equal?
 
 Absolute results differ severalfold by design: the assets differ in size.
 The comparison is each finale against its own "solid finale" threshold under
-one policy. Measured on 24 game codes, identical legacy for all, with the
-finance-team budget taken as the best of a grid for each asset × level pair:
+one policy. Measured on 24 game codes, identical legacy for all:
 
-| level | delivery | streaming | ticketing | spread |
+| asset | delivery | streaming | ticketing | spread |
 |---|---|---|---|---|
-| easy | 1.55× | 1.39× | 1.86× | 1.34× |
-| normal | 1.57× | 1.49× | 1.74× | 1.17× |
-| hard | 1.55× | 1.46× | 1.75× | 1.20× |
+| finale against its own bar | 1.57× | 1.49× | 1.74× | 1.17× |
+
+(Before the 2026-08 audit this table had three rows, one per difficulty level.
+The levels differed by 1.09–1.22× and in Novograd by exactly 1.00×, which is
+why the ladder was removed; the row above is what used to be "normal".)
 
 The table was re-measured after the ticketing descriptor was rebuilt (wide
 and thin instead of small twice over). Ticketing now sits above its own bar

@@ -1,69 +1,47 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { DIFFICULTIES, difficultyById, taggedGame } from '../difficulty.js';
 import {
-  DIFFICULTIES, difficultyById, taggedGame, DIFFICULTY_KEY,
-} from '../difficulty.js';
-import {
-  financeHalfCost, financeStrength, financeMiscRate, financeSpend, financeRoundGain,
+  FINANCE_STRENGTH, financeMiscRate, financeSpend, financeRoundGain, financeStrength,
 } from '../finance.js';
 
 // Числа условной игры: форма механики общая, значения у игр свои
-const CONF = {
-  saturationShare: 0.05,
-  saturationFloor: 1_000_000,
-  miscRateBase: 0.03,
-  miscRateCut: 0.02,
-  roundGain: 0.25,
-};
+const CONF = { miscRateBase: 0.03, miscRateCut: 0.02, roundGain: 0.25 };
 
-test('уровни сложности: порядок и отдельные таблицы рекордов', () => {
-  assert.deepEqual(DIFFICULTIES.map((d) => d.id), ['easy', 'normal', 'hard']);
-  // Зачётный уровень без суффикса: прежние рекорды остаются в своих таблицах
-  assert.equal(difficultyById('normal').tagSuffix, '');
-  const suffixes = DIFFICULTIES.map((d) => d.tagSuffix);
-  assert.equal(new Set(suffixes).size, 3, 'у каждого уровня своя таблица');
-  assert.equal(taggedGame('НОВОЕДА', 'normal'), 'НОВОЕДА');
-  assert.equal(taggedGame('НОВОЕДА', 'hard'), 'НОВОЕДА·сложный');
-  assert.equal(taggedGame('НОВОГРАД+', 'easy'), 'НОВОГРАД+·лёгкий');
-  // Неизвестный уровень — зачётный: испорченное хранилище не ломает игру
-  assert.equal(difficultyById(undefined).id, 'normal');
-  assert.equal(difficultyById('чужое').id, 'normal');
-  assert.equal(DIFFICULTY_KEY, 'series-difficulty');
-
-  // Сложность дороже, а «прочие расходы» выше — по возрастанию уровня
-  assert.ok(difficultyById('easy').financeFree);
-  assert.ok(!difficultyById('normal').financeFree);
-  assert.ok(difficultyById('normal').saturationMult < difficultyById('hard').saturationMult);
-  assert.ok(difficultyById('easy').miscMult < difficultyById('normal').miscMult);
-  assert.ok(difficultyById('normal').miscMult < difficultyById('hard').miscMult);
+test('уровень сложности убран: он один и таблица рекордов одна', () => {
+  assert.equal(DIFFICULTIES.length, 1, 'уровень остался ровно один');
+  // Старые сейвы и уже отправленные рекорды приходят с прежними значениями —
+  // любое из них должно разрешаться, а не ронять партию.
+  for (const id of ['easy', 'normal', 'hard', 'нет такого', undefined]) {
+    assert.equal(difficultyById(id).id, 'normal', `${id} разрешается в единственный уровень`);
+    assert.equal(difficultyById(id).tagSuffix, '', 'суффикса у тега больше нет');
+  }
+  // Тег партии не получает суффикса: записи всех прежних уровней попадают
+  // в одну таблицу, а не в три.
+  assert.equal(taggedGame('КИНОРЕКА'), 'КИНОРЕКА');
 });
 
-test('финансовая команда: цена растёт с выручкой, сила насыщается', () => {
-  const revenue = 100_000_000;
-  const half = financeHalfCost(CONF, 'normal', revenue);
-  assert.ok(Math.abs(half - revenue * 0.05 * 0.55) < 1e-6, 'половина силы — доля выручки');
-  assert.ok(financeHalfCost(CONF, 'normal', revenue * 2) > half, 'крупной компании служба дороже');
-  assert.equal(financeHalfCost(CONF, 'normal', 0), CONF.saturationFloor * 0.55,
-    'у совсем маленькой выручки работает пол');
-  assert.ok(financeHalfCost(CONF, 'hard', revenue) > financeHalfCost(CONF, 'normal', revenue));
-
-  assert.equal(financeStrength(CONF, 'normal', revenue, 0), 0);
-  assert.ok(Math.abs(financeStrength(CONF, 'normal', revenue, half) - 0.5) < 1e-9);
-  assert.ok(financeStrength(CONF, 'normal', revenue, half * 100) < 1, 'полной силы не купить');
-  assert.equal(financeStrength(CONF, 'easy', revenue, 0), 1, 'на лёгком команда уже собрана');
+test('прочие расходы: постоянная доля выручки, а не рычаг', () => {
+  // Раньше строку резала сила нанятой команды. Замер показал, что при
+  // сильной игре правильный ответ всегда «не нанимать», и рычаг убран:
+  // служба зафиксирована на уровне нормально устроенной компании.
+  assert.equal(FINANCE_STRENGTH, 0.5);
+  assert.equal(financeStrength(), 0.5, 'сила не зависит ни от бюджета, ни от выручки');
+  const rate = financeMiscRate(CONF);
+  assert.ok(Math.abs(rate - (0.03 - 0.02 * 0.5)) < 1e-12,
+    `ставка ровно посередине между конторой без службы и с полной: ${rate}`);
+  assert.ok(rate < CONF.miscRateBase, 'и ниже, чем совсем без службы');
+  assert.equal(financeMiscRate(CONF), financeMiscRate(CONF), 'и она постоянна');
 });
 
-test('прочие расходы и раунд: что именно чинит команда', () => {
-  assert.ok(financeMiscRate(CONF, 'normal', 0) > financeMiscRate(CONF, 'normal', 1));
-  assert.ok(financeMiscRate(CONF, 'hard', 0) > financeMiscRate(CONF, 'normal', 0));
-  assert.ok(financeMiscRate(CONF, 'easy', 1) >= 0.005, 'ставка не уходит в ноль');
+test('нижний пол «прочих» уважается', () => {
+  const rate = financeMiscRate({ miscRateBase: 0.01, miscRateCut: 0.09, miscFloor: 0.004 });
+  assert.equal(rate, 0.004, 'ниже пола ставка не опускается');
+});
 
-  assert.equal(financeSpend('easy', 5_000_000), 0, 'на лёгком команду содержит не игрок');
-  assert.equal(financeSpend('normal', 5_000_000), 5_000_000);
-
-  assert.equal(financeRoundGain(CONF, 0), 1);
-  assert.ok(Math.abs(financeRoundGain(CONF, 1) - 1.25) < 1e-9);
-  // Конфиг без упаковки к раунду не ломается
-  assert.equal(financeRoundGain({}, 1), 1);
+test('игрок за службу отдельно не платит', () => {
+  assert.equal(financeSpend(), 0, 'она внутри постоянных расходов');
+  assert.ok(Math.abs(financeRoundGain(CONF) - (1 + 0.25 * 0.5)) < 1e-12,
+    'упаковка к раунду соответствует постоянной силе службы');
 });

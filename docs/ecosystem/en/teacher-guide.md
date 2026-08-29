@@ -64,7 +64,7 @@ touch the scored results.
 ## Technical notes
 
 * The game is a single HTML file,
-  `dist/novograd-ecosystem-simulator-v1.29.0.html`; the site link is the most
+  `dist/novograd-ecosystem-simulator-v1.30.0.html`; the site link is the most
   reliable way to run it.
 * Beyond the result string, the final screen has "Copy" and "Download CSV"
   buttons (the month-by-month history), "Share as image" (a result card for
@@ -73,9 +73,6 @@ touch the scored results.
 * The language can be baked straight into the link: `…/games/ecosystem/?lang=en`
   (or `?lang=ru`) — without the parameter the game picks the browser's
   language.
-* The welcome screen offers three difficulty levels — Easy, Normal, Hard. The
-  level goes into the result-string tag and each level keeps its own
-  leaderboard — do not compare results across levels directly.
 
 ## What the model leaves out
 

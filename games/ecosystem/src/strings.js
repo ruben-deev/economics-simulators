@@ -651,14 +651,6 @@ export const STRINGS = {
     ru: 'Финансовая команда: сила <b class="{cls}">{level}</b>. Прочие расходы — {misc} выручки, условия раунда лучше на {round}.',
     en: 'Finance team: strength <b class="{cls}">{level}</b>. Miscellaneous costs run at {misc} of revenue; round terms improve by {round}.',
   },
-  readoutFinanceFree: {
-    ru: 'На лёгком уровне команда уже собрана и вам ничего не стоит.',
-    en: 'On the easy level the team is already in place and costs you nothing.',
-  },
-  readoutFinanceHalf: {
-    ru: 'Половина силы стоит {half} в месяц — цена растёт вместе с выручкой холдинга.',
-    en: 'Half its strength costs {half} a month — the price grows with the holding’s revenue.',
-  },
   adviceTitle: { ru: 'Разбор месяца от финансовой команды', en: 'The finance team’s read on the month' },
   adviceCac: {
     ru: 'Холодный клиент обходится в {cac}, а приносит около {value} за год. Канал не окупается — либо дешевле, либо меньше.',
@@ -688,16 +680,6 @@ export const STRINGS = {
     ru: 'Подписка стоит дороже, чем приносит, и охватывает мало кого: Plus окупается массовостью, а не ценой.',
     en: 'The subscription costs more than it earns and reaches too few people: Plus pays off through scale, not price.',
   },
-  welcomeDifficulty: { ru: 'Уровень сложности', en: 'Difficulty' },
-  welcomeDifficultyNote: {
-    ru: 'Настройка всего набора: выбранный уровень действует во всех четырёх играх. Механики везде одни и те же, разница одна — сколько стоит финансовая команда. У каждого уровня своя таблица рекордов.',
-    en: 'A setting for the whole series: the level you choose applies to all four games. The mechanics are identical everywhere; one thing changes — what the finance team costs. Each level keeps its own high-score table.',
-  },
-  gameOverDifficulty: {
-    ru: 'Уровень: <b>{level}</b>. {note}',
-    en: 'Level: <b>{level}</b>. {note}',
-  },
-  gameOverOwnTable: { ru: 'У каждого уровня своя таблица рекордов: партии с разной ценой денег несравнимы.', en: 'Each level keeps its own high-score table: games played at a different cost of money are not comparable.' },
   pnlEcomLogistics: { ru: 'Мощность логистики', en: 'Logistics capacity' },
   pnlEcomMarketing: { ru: 'Маркетинг е-кома', en: 'E-commerce marketing' },
   pnlLicense: { ru: 'Лицензия кино в Plus', en: 'Cinema licence for Plus' },

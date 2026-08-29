@@ -1,59 +1,39 @@
 // ============================================================================
-// Финансовая команда — общая механика набора.
+// Прочие расходы — постоянная статья, а не рычаг (аудит 2026-08).
 //
-// Единственный рычаг всех четырёх игр, который управляет не бизнесом, а тем,
-// как бизнес считают и показывают. Слабая финансовая служба стоит денег
-// молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы,
-// неразнесённая административка. Это строка «прочие расходы» — она растёт
-// сама, вместе с выручкой, и её режет не бизнес-решение, а служба.
+// Раньше игрок нанимал финансовую команду ползунком, и её сила резала строку
+// «прочие расходы». Замер на 90 кодах: при опорной политике рычаг стоил 11%
+// разницы между худшим и лучшим положением, а при сильной игре кривая была
+// монотонно убывающей — правильный ответ всегда «ноль». Рычаг, у которого
+// при хорошей игре один ответ, — не решение, а лишняя строка на экране.
 //
-// Сильная команда, помимо этой строки: лучше упаковывает компанию к раунду
-// (оценку считает рынок — упаковка меняет только отдаваемую долю), делает
-// читаемым разбор оценки и разбирает решения периода.
+// Служба осталась в модели как факт: «прочие» никуда не делись, они просто
+// зафиксированы на уровне нормально устроенной компании — ровно посередине
+// между конторой без финансовой службы и с полной. Числа у каждой игры свои
+// и живут в её конфиге.
 //
-// Цена команды считается ДОЛЕЙ выручки, а не абсолютом: финансовая служба
-// растёт вместе с компанией. Первый замер с фиксированной ценой показал
-// мёртвый рычаг у маленького бизнеса — его не окупало ничто.
-//
-// Числа (доля выручки, ставка «прочих») у каждой игры свои и живут в её
-// конфиге: у доставки, стриминга и билетов разные выручки и маржи. Общей
-// остаётся форма механики и множители уровня сложности.
-//
-// conf = { saturationShare, saturationFloor, miscRateBase, miscRateCut,
-//          roundGain?, transparencyAt?, adviceAt? }
+// conf = { miscRateBase, miscRateCut, miscFloor?, roundGain? }
 // ============================================================================
 
-import { difficultyById } from './difficulty.js';
+// Сила службы у нормально устроенной компании: половина шкалы.
+export const FINANCE_STRENGTH = 0.5;
 
-// Сколько стоит «половина силы» при текущем размере бизнеса
-export function financeHalfCost(conf, difficulty, revenue) {
-  const d = difficultyById(difficulty);
-  return Math.max(conf.saturationFloor, (Number(revenue) || 0) * conf.saturationShare)
-    * d.saturationMult;
-}
+export function financeHalfCost() { return 0; }
 
-// Сила команды, 0…1. На лёгком уровне команда уже собрана и стоит ноль.
-export function financeStrength(conf, difficulty, revenue, budget) {
-  if (difficultyById(difficulty).financeFree) return 1;
-  const b = Number(budget) || 0;
-  return b > 0 ? b / (b + financeHalfCost(conf, difficulty, revenue)) : 0;
-}
+export function financeStrength() { return FINANCE_STRENGTH; }
 
-// Доля выручки, уходящая «прочими расходами» при такой силе команды
-export function financeMiscRate(conf, difficulty, strength) {
-  const d = difficultyById(difficulty);
+/** Доля выручки, уходящая «прочими расходами». Постоянная. */
+export function financeMiscRate(conf) {
   return Math.max(
     conf.miscFloor ?? 0.005,
-    conf.miscRateBase * (d.miscMult ?? 1) - conf.miscRateCut * strength,
+    conf.miscRateBase - conf.miscRateCut * FINANCE_STRENGTH,
   );
 }
 
-// Что за команду платит игрок: на лёгком уровне её содержит не он
-export function financeSpend(difficulty, budget) {
-  return difficultyById(difficulty).financeFree ? 0 : (Number(budget) || 0);
-}
+/** Игрок за службу отдельно не платит: она внутри постоянных расходов. */
+export function financeSpend() { return 0; }
 
-// Насколько лучше компания упакована к раунду
-export function financeRoundGain(conf, strength) {
-  return 1 + (conf.roundGain ?? 0) * strength;
+/** Насколько компания упакована к раунду. */
+export function financeRoundGain(conf) {
+  return 1 + (conf.roundGain ?? 0) * FINANCE_STRENGTH;
 }
