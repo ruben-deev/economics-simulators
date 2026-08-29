@@ -40,7 +40,7 @@ export const CRISES = [
       {
         id: 'wait',
         label: { ru: 'Переждать', en: 'Wait it out' },
-        detail: { ru: 'Денег не стоит. В следующем месяце будет хуже.', en: 'Costs nothing. Next month it will be worse.' },
+        detail: { ru: 'Денег не стоит, но каждый месяц дороже в оттоке. Тема выдохнется сама месяцев через восемь.', en: 'Costs nothing, but each month costs more in churn. The story burns itself out in about eight months.' },
         cost: () => 0,
         resolves: false,
       },
@@ -59,7 +59,15 @@ export const CRISES = [
       ru: 'Арендованный каталог — это ещё и юридический риск: чужие права можно потерять по чужому решению.',
       en: 'A rented catalogue is also a legal risk: rights you do not own can be taken away by someone else’s decision.',
     },
-    escalate: (m) => ({ licensedFreeze: clamp(0.16 + 0.07 * m, 0, 0.55), oneOffCost: 22_000_000 }),
+    // Заморозка сама по себе била мягко: глубина каталога входит в спрос с
+    // маленьким показателем у массового зрителя, и переждать иск оказывалось
+    // дешевле любого решения. Добавлен прямой отток: когда из библиотеки
+    // пропадают названия, зритель уходит, не дожидаясь решения суда.
+    escalate: (m) => ({
+      licensedFreeze: clamp(0.16 + 0.07 * m, 0, 0.55),
+      oneOffCost: 22_000_000,
+      churnAdd: 0.007 * m,
+    }),
     resolutions: [
       {
         id: 'settle',
@@ -69,11 +77,18 @@ export const CRISES = [
         resolves: true,
       },
       {
+        // До правки (аудит 2026-08) эта кнопка брала 30 млн в месяц и не
+        // делала ровно ничего: resolves: false и ни одного модификатора.
+        // Итог по замеру — «судиться» и «вообще не трогать» давали один и тот
+        // же результат, только первое ещё и стоило денег. Теперь это честный
+        // размен: деньги остаются при вас, но часть спорных часов суд
+        // отдаёт истцу навсегда.
         id: 'fight',
         label: { ru: 'Судиться', en: 'Fight it' },
-        detail: { ru: 'Дешевле в месяц, но заморозка растёт.', en: 'Cheaper per month, but the freeze keeps growing.' },
-        cost: () => 30_000_000,
-        resolves: false,
+        detail: { ru: 'Вчетверо дешевле мировой, но часть спорной библиотеки суд отдаст истцу — и уже насовсем.', en: 'A quarter of the cost of settling, but the court hands part of the disputed library to the claimant — for good.' },
+        cost: (m) => 45_000_000 + 10_000_000 * m,
+        resolves: true,
+        catalogLoss: 0.14,
       },
     ],
   },
@@ -180,6 +195,17 @@ export function rollCrisis(rng, month, { subs, active, lastResolved = -99 }) {
 // каждый месяц, и решение всё равно остаётся за игроком.
 export const MAX_ESCALATION = 5;
 export const CRISIS_COOLDOWN = 3;
+
+// Кризис не висит вечно: новостной цикл выдыхается. До правки (аудит 2026-08)
+// нерешённый кризис оставался на компании до конца партии, и «переждать»
+// у скандала стоило три четверти компании — 4.20 млрд против 16.99 у тех,
+// кто ответил. Кнопка выглядела вариантом, а была проигрышем партии.
+//
+// Теперь ждать можно: через CRISIS_BURNOUT месяцев тема гаснет сама. Это
+// дорого — все эти месяцы вы платите полной ставкой на полке, — но это
+// стратегия, а не обрыв. Ровно так работает и жизнь: скандал переживают,
+// просто с потерями.
+export const CRISIS_BURNOUT = 8;
 
 export const severityOf = (active) => clamp(Math.max(1, (active?.months ?? 0) + 1), 1, MAX_ESCALATION);
 

@@ -42,7 +42,7 @@ import {
 } from './rival.js';
 import { makeGoal, goalProgress, applyGoalOutcome } from './board.js';
 import {
-  rollCrisis, crisisEffects, crisisById, resolutionById, resolutionCost,
+  rollCrisis, crisisEffects, crisisById, resolutionById, resolutionCost, CRISIS_BURNOUT,
 } from './crises.js';
 import {
   SCALES, scaleById, projectPrice, projectMonths, commission, coProduce, advanceProduction,
@@ -402,6 +402,10 @@ export function step(prevState, input = {}) {
       if (res.techGain) state.techStock += crisisCost * res.techGain;
       if (res.pipelineDelay) for (const p of state.slate) if (p.status === 'production') p.monthsLeft += res.pipelineDelay;
       if (res.qualityHit) for (const p of state.slate) if (p.status === 'production') p.quality *= (1 - res.qualityHit);
+      // Суд частично решает не в вашу пользу: спорные часы уходят навсегда.
+      if (res.catalogLoss) {
+        state.catalogLicensed = Math.max(0, state.catalogLicensed * (1 - res.catalogLoss));
+      }
       if (res.resolves) {
         crisisResolved = { id: state.crisis.id, resolution: res.id, months: state.crisis.months };
         state.crisisHistory.push(crisisResolved);
@@ -1572,7 +1576,15 @@ export function step(prevState, input = {}) {
   }
 
   // --- 15. Кризисы ---
-  if (state.crisis) state.crisis.months += 1;
+  if (state.crisis) {
+    state.crisis.months += 1;
+    // Тема выдыхается сама: нерешённый кризис не длится до конца партии.
+    if (state.crisis.months >= CRISIS_BURNOUT) {
+      state.crisisHistory.push({ id: state.crisis.id, resolution: 'burnout', months: state.crisis.months });
+      state.crisis = null;
+      state.lastCrisisResolved = month;
+    }
+  }
   const newCrisis = rollCrisis(rng, month, {
     subs: totalSubs, active: Boolean(state.crisis), lastResolved: state.lastCrisisResolved ?? -99,
   });

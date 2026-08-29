@@ -1852,6 +1852,42 @@ test('когорты: разрыв по стажу свой у каждого с
   assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
 });
 
+test('кризис выгорает сам: ждать дорого, но не смертельно', async () => {
+  const { createInitialState, step, finalScore } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  const { CRISIS_BURNOUT } = await import('../src/model/crises.js');
+  // До правки нерешённый кризис висел до конца партии, и «переждать» у
+  // скандала стоило три четверти компании: 4.20 млрд против 16.99 у тех,
+  // кто ответил. Кнопка выглядела выбором, а была проигрышем.
+  const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 80e6, trialDays: 12 };
+  let s = createInitialState('выгорание', 'normal');
+  let sawCrisis = false;
+  let longest = 0;
+  for (let i = 0; i < CONFIG.monthsTotal && !s.over; i++) {
+    if (s.crisis) { sawCrisis = true; longest = Math.max(longest, s.crisis.months); }
+    s = step(s, { decisions: d, eventChoice: 0, crisisChoice: null }).state;
+  }
+  assert.ok(sawCrisis, 'кризис в партии случился');
+  assert.ok(longest < CRISIS_BURNOUT,
+    `ни один кризис не висел дольше выгорания: ${longest} против ${CRISIS_BURNOUT}`);
+  assert.ok(!finalScore(s).bankrupt, 'игнорирование кризисов не убивает партию само по себе');
+});
+
+test('иск: обе развязки делают дело, а не только берут деньги', async () => {
+  const { CRISES } = await import('../src/model/crises.js');
+  // «Судиться» брало 30 млн в месяц и не делало ровно ничего: resolves: false
+  // без единого модификатора. Замер показывал, что «судиться» и «не трогать»
+  // дают один результат, только первое ещё и стоит денег.
+  const lawsuit = CRISES.find((c) => c.id === 'lawsuit');
+  for (const r of lawsuit.resolutions) {
+    assert.ok(r.resolves, `${r.id} действительно закрывает иск`);
+  }
+  const fight = lawsuit.resolutions.find((r) => r.id === 'fight');
+  const settle = lawsuit.resolutions.find((r) => r.id === 'settle');
+  assert.ok(fight.cost(3) < settle.cost(3), 'судиться дешевле мировой');
+  assert.ok(fight.catalogLoss > 0, 'но часть библиотеки уходит навсегда');
+});
+
 test('оценка не покупается тишиной перед финалом', async () => {
   const { createInitialState, step, raise, finalScore } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
