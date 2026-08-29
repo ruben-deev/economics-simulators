@@ -39,7 +39,7 @@ import {
 } from '../../../../shared/meta.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import {
-  DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
+  taggedGame,
 } from '../../../../shared/difficulty.js';
 import { policyHtml, syncPolicy, renderBudgetBar } from '../../../../shared/controls.js';
 import { STRINGS } from '../strings.js';
@@ -502,8 +502,7 @@ function buildLevers() {
   // команды нет — она уже оплачена
   if (leversBuilt && leversDiff === state.difficulty) return;
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
-    const items = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+    const items = LEVERS.filter((l) => l.group === g.id);
     if (!items.length) return '';
     return `<div class="lever-group ${openGroups[g.id] ? 'open' : ''}" data-group="${g.id}">
       <button class="lever-group-head" type="button">
@@ -2081,20 +2080,13 @@ function showWelcome() {
   // ссылка приносит код партии сама, поле можно не заполнять.
   // Ссылка важнее приглашения; без неё новая партия предлагает город недели
   let seedWanted = urlGameCode() || weeklySeedToPlay('БИЛЕТВИЛЬ');
-  // Сложность — настройка всего набора: выбранная здесь действует и в
-  // остальных играх. Меняет она только цену финансовой команды.
-  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
-  const diffCards = () => DIFFICULTIES.map((dd) => `
-    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
-      <b>${tx(dd.label)}</b><span>${tx(dd.note)}</span>
-    </button>`).join('');
   const startGame = () => {
     track('game_start');
     markMilestone('БИЛЕТВИЛЬ', 'start', seedWanted.trim() || state.seed);
     markWeeklyPlayed('БИЛЕТВИЛЬ', (seedWanted.trim() || state.seed));
     const v = seedWanted.trim();
-    if ((v && v !== state.seed) || diffWanted !== state.difficulty) { state = createInitialState(v || state.seed, diffWanted); clearActions(); save(); renderAll(); }
+    if ((v && v !== state.seed)) { state = createInitialState(v || state.seed); clearActions(); save(); renderAll(); }
   };
   modal(`<h2>${t('welcomeTitle')}</h2>
     <p class="funding-note">${t('welcomeRole')}</p>
@@ -2105,9 +2097,6 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
-    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
-    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
-    <div class="event-options" id="diff-options">${diffCards()}</div>
     <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
         style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
@@ -2132,15 +2121,6 @@ function showWelcome() {
   el('modal-root').querySelector('#welcome-start')?.addEventListener('click', () => {
     el('modal-root').innerHTML = '';
     startGame();
-  });
-
-  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
-    b.addEventListener('click', () => {
-      diffWanted = setDifficulty(b.dataset.diff);
-      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
-        x.classList.toggle('selected', x.dataset.diff === diffWanted);
-      });
-    });
   });
 }
 

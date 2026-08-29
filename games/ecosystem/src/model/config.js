@@ -700,17 +700,6 @@ export const LEVERS = [
     },
   },
   {
-    key: 'finance',
-    group: 'holding',
-    label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/мес', en: '$/mo' },
-    min: 0, max: 20_000_000, step: 500_000, def: 0,
-    tip: {
-      ru: 'Казначейство, контроль расходов, подготовка к раундам. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная режет эту строку, лучше упаковывает холдинг к раунду и объясняет, из чего собирается ваша оценка.',
-      en: 'Treasury, cost control, preparing for funding rounds. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one cuts that line, packages the holding better for a round, and explains what your valuation is actually built from.',
-    },
-  },
-  {
     key: 'foodTake',
     group: 'food',
     label: { ru: 'Монетизация актива', en: 'Asset monetisation' },

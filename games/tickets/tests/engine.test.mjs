@@ -285,9 +285,14 @@ test('абонплата перестала быть кнопкой «не бр�
 // Деньги
 // ----------------------------------------------------------------------------
 test('эквайринг берётся со всего оборота, а не с вашей выручки', () => {
+  // Ставка эквайринга сбита финансовой службой на постоянную величину
+  // (аудит 2026-08: служба перестала быть рычагом), поэтому сверяем с
+  // фактической ставкой месяца, а не с базовой из конфига.
   const r = run(10, decide(), 'acq').last;
-  assert.ok(Math.abs(r.acquiring - r.gmv * CONFIG.acquiringRate) < 1,
+  assert.ok(Math.abs(r.acquiring - r.gmv * r.acquiringRate) < 1,
     'эквайринг должен считаться от оборота');
+  assert.ok(r.acquiringRate > 0 && r.acquiringRate < CONFIG.acquiringRate,
+    `ставка сбита службой: ${r.acquiringRate} против базовой ${CONFIG.acquiringRate}`);
   assert.ok(r.acquiring > 0);
 });
 
@@ -643,35 +648,3 @@ test('аванс — это долг под будущие продажи, а н
 // Финансовая команда и уровни сложности набора
 // ----------------------------------------------------------------------------
 
-test('финансовая команда: режет «прочие» и выторговывает эквайринг', () => {
-  const s = createInitialState('fin', 'normal');
-  assert.equal(financeLevel(s, decide({ finance: 0 })), 0, 'без бюджета команды нет');
-  const half = financeHalf(s);
-  assert.ok(Math.abs(financeLevel(s, decide({ finance: half })) - 0.5) < 1e-9,
-    'на насыщении ровно половина силы');
-  assert.ok(miscRate(s, decide({ finance: 0 })) > miscRate(s, decide({ finance: half * 4 })));
-  // Эквайринг снимается с оборота, а зарабатываете вы тонкий процент —
-  // поэтому десятые доли ставки здесь важнее, чем кажется
-  assert.ok(acquiringRate(s, decide({ finance: half * 4 })) < CONFIG.acquiringRate);
-
-  const r = step(s, { decisions: decide({ finance: half }), eventChoice: 0 }).report;
-  assert.ok(Math.abs(r.miscCost - r.revenue * r.miscRate) < 1, 'строка считается от выручки');
-  assert.ok(r.financeCost > 0 && r.acquiringRate <= CONFIG.acquiringRate);
-});
-
-test('уровни сложности: одни механики, разная цена команды', () => {
-  const level = {}; const misc = {};
-  for (const dd of DIFFICULTIES) {
-    const st = createInitialState('diff', dd.id);
-    assert.equal(st.difficulty, dd.id);
-    level[dd.id] = financeLevel(st, decide({ finance: 2_000_000 }));
-    misc[dd.id] = miscRate(st, decide({ finance: 2_000_000 }));
-  }
-  assert.equal(level.easy, 1, 'на лёгком команда уже собрана');
-  assert.ok(level.normal > level.hard, 'за те же деньги на сложном покупается меньше');
-  assert.ok(misc.easy < misc.normal && misc.normal < misc.hard);
-  const easy = step(createInitialState('diff', 'easy'),
-    { decisions: decide({ finance: 2_000_000 }), eventChoice: 0 }).report;
-  assert.equal(easy.financeCost, 0, 'на лёгком команду содержит не игрок');
-  assert.equal(easy.financeLevel, 1);
-});

@@ -7,7 +7,7 @@
 
 import { CONFIG, START_ASSETS, FUTURE_VERTICALS, LEVERS, LEVER_GROUPS, assetById, verticalById, gradesFor } from '../model/config.js';
 import {
-  DIFFICULTIES, difficultyById, currentDifficulty, setDifficulty, taggedGame,
+  taggedGame,
 } from '../../../../shared/difficulty.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
@@ -75,8 +75,6 @@ let leversBuilt = false;
 let leversSignature = '';         // группы перестраиваются при запусках
 let bound = false;                // обработчики уже навешаны
 
-// В подпись входит и уровень сложности: на лёгком финансовой команды в
-// панели нет — она уже оплачена, и ползунок там был бы декорацией
 const versSignature = () => `${state.taxi.on}|${state.ecom.on}|${state.plus.on}|${state.difficulty}`;
 
 // ----------------------------------------------------------------------------
@@ -260,8 +258,7 @@ function buildLevers() {
   el('levers').innerHTML = LEVER_GROUPS.map((g) => {
     // Цена Plus появляется вместе с подпиской
     const levers = LEVERS.filter((l) => l.group === g.id
-      && !(l.key === 'plusPrice' && !state.plus.on)
-      && !(l.key === 'finance' && difficultyById(state.difficulty).financeFree));
+      && !(l.key === 'plusPrice' && !state.plus.on));
     const locked = (g.id === 'taxi' && !state.taxi.on)
       || (g.id === 'ecom' && !state.ecom.on);
     const body = locked
@@ -418,19 +415,15 @@ function renderLeverReadouts() {
           subs: compact(state.plus.subs), multi: compact(r.multiUsers),
         })}</div>` : '';
     // Финансовая команда: сила, цена «прочих расходов» и условия раунда.
-    // Показывается всегда — на лёгком уровне как факт, на остальных как
-    // отдача от денег, которые вы в неё кладёте.
-    const diff = difficultyById(state.difficulty);
+    // Финансовая служба перестала быть рычагом (аудит 2026-08): строка
+    // осталась фактом о компании, а не отдачей от вложенных в неё денег.
     const fin = financeLevel(state, d);
-    const half = financeSaturation(state);
     const financeLine = `<div>${t('readoutFinance', {
       level: pct(fin, 0),
       misc: pct(miscRate(state, d), 1),
       round: pct(CONFIG.finance.roundGain * fin, 0),
       cls: fin >= CONFIG.finance.transparencyAt ? 'pos' : 'neg',
-    })}</div>${diff.financeFree
-      ? `<div class="funding-note">${t('readoutFinanceFree')}</div>`
-      : `<div class="funding-note">${t('readoutFinanceHalf', { half: money(half) })}</div>`}`;
+    })}</div>`;
     holdBox.innerHTML = `<div class="hint-box" style="margin-bottom:10px">
       <div>${focusLine}</div>
       ${crossLine}
@@ -2176,17 +2169,12 @@ function showGameOver(frozen = false) {
     tag: gameTag(), version: APP_VERSION, seed: state.seed,
     score: s.bankrupt ? 0 : s.equityValue, turns: s.months,
   });
-  const diffNow = difficultyById(state.difficulty);
   modal(`
     <h2>${s.bankrupt ? t('gameOverBankrupt') : s.sold ? t('gameOverSold') : t('gameOverFinished')}</h2>
     <p class="funding-note">${s.bankrupt
       ? t('gameOverBankruptText', { month: s.months })
       : s.sold ? t('gameOverSoldText', { month: s.months, value: money(s.equityValue) })
       : t('gameOverFinishedText')}</p>
-    <p class="funding-note">${t('gameOverDifficulty', {
-      level: tx(diffNow.label),
-      note: t('gameOverOwnTable'),
-    })}</p>
     <div class="score-grid">
       <div class="stat"><div class="s-label">${t('scoreValuation')}</div><div class="s-value">${money(s.valuation)}</div></div>
       <div class="stat"><div class="s-label">${t('scoreStake')}</div><div class="s-value">${pct(s.equity, 1)}</div></div>
@@ -2306,7 +2294,6 @@ function showWelcome() {
   // Ссылка важнее приглашения; без неё новая партия предлагает город недели
   let seedWanted = urlGameCode() || weeklySeedToPlay('НОВОГРАД');
   let assetWanted = state.assetId;
-  let diffWanted = state.difficulty ?? currentDifficulty();
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
   const scores = legacyScores();
@@ -2339,11 +2326,6 @@ function showWelcome() {
       })} · ${tx(a.synergyNote)}</span>
     </button>`).join('');
 
-  const diffCards = () => DIFFICULTIES.map((dd) => `
-    <button type="button" class="event-option ${dd.id === diffWanted ? 'selected' : ''}" data-diff="${dd.id}">
-      <b>${tx(dd.label)}</b>
-      <span>${tx(dd.note)}</span>
-    </button>`).join('');
 
   // Статус наследия по каждой игре — с реальными числами, найденными на
   // этом устройстве: игрок должен видеть, что его финал засчитан сам,
@@ -2397,9 +2379,9 @@ function showWelcome() {
     // Партия пересоздаётся, если поменяли сид или актив — или если это
     // свежая партия (ход ещё не сделан): наследие должно примениться
     if (v !== state.seed || assetWanted !== state.assetId
-      || diffWanted !== state.difficulty || state.month === 0) {
+      || state.month === 0) {
       state = createInitialState(v ? seed : (state.month === 0 && assetWanted === state.assetId ? state.seed : seed),
-        assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
+        assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
       save();
       renderAll();
     }
@@ -2415,9 +2397,6 @@ function showWelcome() {
     <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeAsset')}</h3>
     <p class="funding-note">${t('welcomeAssetChoice')}</p>
     <div class="event-options">${assetCards}</div>
-    <h3 style="margin:10px 0 4px;font-size:14px">${t('welcomeDifficulty')}</h3>
-    <p class="funding-note">${t('welcomeDifficultyNote')}</p>
-    <div class="event-options" id="diff-options">${diffCards()}</div>
     <div class="hint-box" style="margin-top:8px">
       <b>${t('welcomeLegacy')}:</b><br>${legacyLine}
       <div class="funding-note" style="margin-top:6px">${t('welcomeLegacyNote')}</div>
@@ -2468,15 +2447,6 @@ function showWelcome() {
       if (box) box.innerHTML = carryHtmlFor(assetWanted);
     });
   });
-  el('modal-root').querySelectorAll('[data-diff]').forEach((b) => {
-    b.addEventListener('click', () => {
-      // Сложность — настройка набора: выбор здесь меняет её во всех играх
-      diffWanted = setDifficulty(b.dataset.diff);
-      el('modal-root').querySelectorAll('[data-diff]').forEach((x) => {
-        x.classList.toggle('selected', x.dataset.diff === diffWanted);
-      });
-    });
-  });
   el('modal-root').querySelector('#legacy-add')?.addEventListener('click', () => {
     const input = el('modal-root').querySelector('#legacy-line');
     const res = addResultLine(input?.value ?? '');
@@ -2492,7 +2462,7 @@ function showWelcome() {
   el('modal-root').querySelector('#legacy-reset')?.addEventListener('click', () => {
     if (!window.confirm(t('welcomeLegacyResetAsk'))) return;
     resetEcosystemProgress();
-    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()), diffWanted);
+    state = createInitialState(state.seed, assetWanted, legacyFor(assetWanted, legacyUnlocks(), legacyScores()));
     save();
     renderAll();
     showWelcome();

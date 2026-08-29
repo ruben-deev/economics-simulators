@@ -446,16 +446,6 @@ export const LEVERS = [
       en: 'The team that builds your algorithms: surge pricing, targeted discounts, demand forecasting. Useless without data — and data only accumulates from completed orders.',
     },
   },
-  {
-    key: 'finance',
-    label: { ru: 'Финансовая команда', en: 'Finance team' },
-    unit: { ru: '₽/нед', en: '$/wk' },
-    min: 0, max: 1_500_000, step: 50_000, def: 0,
-    tip: {
-      ru: 'Казначейство, контроль расходов, переговоры с банком. Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы — всё это уходит в «прочие расходы» и не спрашивает разрешения. Сильная сбивает ставку эквайринга, режет эту строку и лучше упаковывает компанию к раунду. Уровень сложности набора меняет только её цену.',
-      en: 'Treasury, cost control, talking to the bank. A weak finance function costs money silently: unfavourable card-processing rates, commissions, write-offs, penalties — all of it lands in “miscellaneous” and never asks permission. A strong one negotiates the processing rate down, cuts that line and packages the company better for a funding round. The series difficulty changes only its price.',
-    },
-  },
 ];
 
 // ============================================================================

@@ -73,12 +73,6 @@
     }
     .card-actions a.primary { background: var(--accent); color: #06210f; border-color: transparent; }
     .series-card:empty { display: none; }
-    .diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
-    .diff-btn { text-align: left; padding: 10px 12px; border: 1px solid var(--line);
-      border-radius: 10px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-    .diff-btn b { display: block; margin-bottom: 3px; }
-    .diff-btn span { display: block; font-size: 12px; opacity: .75; line-height: 1.35; }
-    .diff-btn.on { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
     .series-card { margin-top: 26px; gap: 6px; }
     .series-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
     .series-head span { color: var(--muted); font-size: 12px; }
@@ -210,7 +204,6 @@
          не доходило — по отзывам игроков её не замечали вовсе. Настройка
          редкая (её трогают один раз за всё знакомство с набором), а карточка
          игры — то, ради чего пришли. -->
-    <section class="card series-card" id="difficulty-card"></section>
 
     <p class="home-foot" id="home-foot"></p>
   </main>
@@ -229,9 +222,7 @@
     } from './shared/meta.js';
     import { lbTop, lbMine, lbLiveRank, lbEndpoint } from './shared/leaderboard.js';
     import { money } from './shared/format.js';
-    import {
-      DIFFICULTIES, currentDifficulty, setDifficulty, taggedGame,
-    } from './shared/difficulty.js';
+    import { taggedGame } from './shared/difficulty.js';
 
     // Мета-прогрессия на витрине: витрина — не список ссылок, а карта пути.
     // Финалы старых игр (локальные рекорды этого устройства) отмечаются
@@ -252,13 +243,10 @@
         // «вашего места»: место, записанное при отправке, — снимок, и
         // «место 1» из пустой таблицы месяц спустя превращается в неправду.
         lbTop(taggedGame(game), 100).then((top) => {
-          // Пустая таблица — не повод молчать: у каждого уровня сложности
-          // своя таблица, и на лёгком/сложном она может быть пуста. Молчание
-          // читалось как «топы сломались», а не «здесь ещё никто не играл».
+          // Пустая таблица — не повод молчать: молчание читалось как «топы
+          // сломались», а не «здесь ещё никто не играл».
           if (!top || !top.length) {
-            const d = DIFFICULTIES.find((x) => x.id === currentDifficulty());
-            const lvl = d && d.id !== 'normal' ? ` (${ru ? d.label.ru.toLowerCase() : d.label.en.toLowerCase()})` : '';
-            node.innerHTML = `<div class="top-block"><b>${ru ? 'Мировая таблица' : 'World leaderboard'}</b>${lvl} — ${
+            node.innerHTML = `<div class="top-block"><b>${ru ? 'Мировая таблица' : 'World leaderboard'}</b> — ${
               ru ? 'пока пусто, сыграйте первым' : 'no runs yet, be the first'}</div>`;
             return;
           }
@@ -277,37 +265,6 @@
             <ol class="top-list">${rows}${mineRow}</ol></div>`;
         }).catch(() => { node.textContent = ''; });
       }
-    }
-
-    // Уровень сложности — настройка всего набора, поэтому её место здесь, на
-    // витрине, а не в одной игре. Меняет она ровно одно: сколько стоит
-    // финансовая команда во всех четырёх симуляторах. Таблицы рекордов у
-    // каждого уровня свои — переключение перерисовывает их.
-    function renderDifficulty() {
-      const node = document.getElementById('difficulty-card');
-      if (!node) return;
-      const ru = getLang() === 'ru';
-      const now = currentDifficulty();
-      const cells = DIFFICULTIES.map((d) => `
-        <button type="button" class="diff-btn${d.id === now ? ' on' : ''}" data-diff="${d.id}">
-          <b>${ru ? d.label.ru : d.label.en}</b>
-          <span>${ru ? d.note.ru : d.note.en}</span>
-        </button>`).join('');
-      node.innerHTML = `<div class="series-head">
-          <b>${ru ? 'Уровень сложности' : 'Difficulty'}</b>
-          <span>${ru ? 'общий для всех игр' : 'shared across all games'}</span>
-        </div>
-        <div class="diff-grid">${cells}</div>
-        <p class="sub" style="margin-top:8px">${ru
-          ? 'Механики на всех уровнях одни и те же. Разница одна: сколько стоит финансовая команда — та, что режет «прочие расходы», сбивает эквайринг и лучше упаковывает компанию к раунду. У каждого уровня своя таблица рекордов.'
-          : 'The mechanics are identical on every level. One thing changes: what the finance team costs — the team that cuts miscellaneous expenses, negotiates card processing down and packages the company better for a funding round. Each level has its own high-score table.'}</p>`;
-      node.querySelectorAll('[data-diff]').forEach((b) => {
-        b.addEventListener('click', () => {
-          setDifficulty(b.dataset.diff);
-          renderDifficulty();
-          renderTops();
-        });
-      });
     }
 
     // Челленджа недели на витрине больше нет — карточка выбивалась из ряда
@@ -472,7 +429,6 @@
       set('eco-play', t('play'));
       renderConglomeratePath();
       renderTops();
-      renderDifficulty();
       renderSeries();
 
       set('tickets-title', t('ticketsTitle'));

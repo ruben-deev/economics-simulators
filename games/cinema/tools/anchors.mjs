@@ -79,13 +79,14 @@ export function measure(difficulty = 'normal', seeds = SEEDS) {
   ]));
 }
 
-const LEVELS = { лёгкий: 'easy', обычный: 'normal', сложный: 'hard' };
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const level = LEVELS[process.argv[2]] ?? 'normal';
+  // Уровень сложности убран (аудит 2026-08): аргумент движка остался ради
+  // старых сейвов, а выбирать больше нечего.
+  const level = 'normal';
   // Семьдесят два кода вместо двадцати четырёх: у лицензионной опоры разброс
   // сильно скошен, и на 24 кодах её медиана гуляет на треть. Остальным играм
   // набора хватает 24 — эта одна требует больше.
   const seeds = Array.from({ length: 72 }, (_, i) => `замер-${i + 1}`);
-  console.log(`=== КИНОРЕКА · якорные стратегии · уровень ${level} · ${seeds.length} кодов ===`);
+  console.log(`=== КИНОРЕКА · якорные стратегии · ${seeds.length} кодов ===`);
   for (const [name, r] of Object.entries(measure(level, seeds))) console.log(line(name, r));
 }
