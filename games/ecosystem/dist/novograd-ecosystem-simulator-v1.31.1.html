@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.31.0" />
+  <meta name="app-version" content="1.31.1" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -26,9 +26,9 @@
   <style>
 :root {
   --bg: #0b1120;
-  --panel: #111a2e;
-  --panel-2: #16213a;
-  --line: rgba(148, 163, 184, 0.16);
+  --panel: #141f38;
+  --panel-2: #1b2846;
+  --line: rgba(148, 163, 184, 0.24);
   --text: #e2e8f0;
   --muted: #94a3b8;
   --accent: #4ade80;
@@ -161,8 +161,13 @@ button { font-family: inherit; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
+  /* Мягкая тень поднимает карточку над страницей: одной рамки на тёмном
+     фоне не хватало, соседние блоки читались как один длинный. */
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 6px 16px rgba(2, 6, 16, 0.35);
 }
 .col-center { display: flex; flex-direction: column; gap: 14px; }
+.col-center > div:empty { display: none; }
+@media (max-width: 980px) { .col-center { gap: 20px; } }
 .col-left { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
 .col-right { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
 @media (max-width: 1400px) { .col-right { position: static; max-height: none; } }
@@ -1263,7 +1268,13 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
   max-width: 340px; background: #0f2018;
 }
 @media (max-width: 980px) {
-  .toast-fixed { right: 10px; left: 10px; max-width: none; bottom: calc(84px + env(safe-area-inset-bottom)); }
+  /* Полоса кнопок внизу бывает и в одну строку, и в две (кнопка хода
+     забирает свою). Высоту меряет сам интерфейс и кладёт в --bar-h —
+     фиксированные 84 px промахивались, и сообщение ложилось на плитки. */
+  .toast-fixed {
+    right: 10px; left: 10px; max-width: none;
+    bottom: calc(var(--bar-h, 96px) + 12px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Пол кегля. Одиннадцать пикселей — это предел, за которым подпись перестают
@@ -10048,6 +10059,17 @@ function modal(html, actions = []) {
   });
 }
 
+// Высота нижней полосы кнопок — в переменную CSS. Полоса бывает в одну
+// строку и в две (кнопка хода забирает свою), а всплывающее сообщение
+// должно вставать над ней, а не поверх содержимого. Считаем при загрузке,
+// при смене размера и после каждой перерисовки шапки.
+function measureBar() {
+  const bar = document.querySelector('.topbar-actions');
+  if (!bar) return;
+  const h = Math.round(bar.getBoundingClientRect().height);
+  if (h > 0) document.documentElement.style.setProperty('--bar-h', `${h}px`);
+}
+
 function toast(text) {
   const root = el('modal-root');
   const node = document.createElement('div');
@@ -10730,6 +10752,7 @@ function renderChrome() {
 }
 
 function renderAll() {
+  measureBar();
   if (!leversBuilt || leversSignature !== versSignature()) buildLevers();
   renderChrome();
   syncLevers();
@@ -10886,6 +10909,9 @@ function exportCsv() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
+
+addEventListener('resize', measureBar);
+measureBar();
 
 
 init();
