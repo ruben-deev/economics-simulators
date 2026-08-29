@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.36.1" />
+  <meta name="app-version" content="1.36.2" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -156,7 +156,7 @@ button { font-family: inherit; }
   .col-right { grid-column: auto; }
 }
 
-.panel {
+.panel, .col-block {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -168,10 +168,18 @@ button { font-family: inherit; }
 .col-center { display: flex; flex-direction: column; gap: 14px; }
 .col-center > div:empty { display: none; }
 @media (max-width: 980px) { .col-center { gap: 20px; } }
-.col-left { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
+/* Левая колонка — не одна панель в четыре экрана высотой, а стопка
+   карточек. Раньше «рычаги», «алгоритмы», «совет директоров» и
+   «финансирование» шли внутри общей рамки одним потоком: на телефоне это
+   читалось как бесконечная лента без границ, и понять, где кончается один
+   блок и начинается другой, было нечем. */
+.col-left { display: flex; flex-direction: column; gap: 14px; }
+@media (max-width: 980px) { .col-left { gap: 20px; } }
+/* Отступ по краям — чтобы тень карточек не срезалась стенкой прокрутки. */
+.col-left { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; padding: 2px 3px; }
 .col-right { max-height: calc(100vh - 90px); overflow-y: auto; position: sticky; top: 74px; }
 @media (max-width: 1400px) { .col-right { position: static; max-height: none; } }
-@media (max-width: 980px) { .col-left { position: static; max-height: none; } }
+@media (max-width: 980px) { .col-left { position: static; max-height: none; overflow: visible; padding: 0; } }
 
 .panel-title {
   /* Переход по подсказке ведёт к заголовку блока. На средних экранах шапка
@@ -186,6 +194,7 @@ button { font-family: inherit; }
   font-weight: 700;
 }
 .panel-title.inline { margin: 0; }
+.col-block > .panel-title:first-child { margin-top: 0; }
 
 /* ------------------------------- Рычаги --------------------------------- */
 .lever { margin-bottom: 14px; }
@@ -805,7 +814,7 @@ table.data.titles td:first-child { width: 62%; }
   /* Без min-width: 0 колонка не может стать уже своего самого широкого
      содержимого — и широкая таблица растягивает всю страницу вместо того,
      чтобы прокручиваться внутри панели. */
-  .col-center, .col-left, .col-right { min-width: 0; }
+  .col-center, .col-left, .col-block, .col-right { min-width: 0; }
   .col-center > * { min-width: 0; }
 }
 
@@ -920,8 +929,8 @@ table.data.titles td:first-child { width: 62%; }
      max-width обязателен — одного overflow-x мало, потому что ширину
      колонке задаёт самое широкое содержимое. */
   .col-center, .col-center > *, .col-center .panel,
-  .col-left, .col-right { max-width: 100%; }
-  .col-center .panel, .col-right, .col-left { overflow-x: auto; }
+  .col-left, .col-block, .col-right { max-width: 100%; }
+  .col-center .panel, .col-right, .col-block { overflow-x: auto; }
   /* Таблица перестаёт быть таблицей.
      Пять-шесть колонок в 390 пикселей не помещаются ни при каком размере
      шрифта: либо уезжают вбок и последних не видно, либо шапка ломается
@@ -1363,16 +1372,20 @@ table.data .cell-sub, .brand-sub, .kpi .k-label, .kpi .k-delta,
   </header>
 
   <main class="layout">
-    <aside class="panel col-left">
-      <h2 class="panel-title" id="title-levers"></h2>
-      <div id="budget-slot"></div>
-      <div id="levers"></div>
-
-      <h2 class="panel-title" id="title-board"></h2>
-      <div id="board"></div>
-
-      <h2 class="panel-title" id="title-funding"></h2>
-      <div id="funding" class="funding"></div>
+    <aside class="col-left">
+      <section class="col-block">
+        <h2 class="panel-title" id="title-levers"></h2>
+        <div id="budget-slot"></div>
+        <div id="levers"></div>
+      </section>
+      <section class="col-block">
+        <h2 class="panel-title" id="title-board"></h2>
+        <div id="board"></div>
+      </section>
+      <section class="col-block">
+        <h2 class="panel-title" id="title-funding"></h2>
+        <div id="funding" class="funding"></div>
+      </section>
     </aside>
 
     <section class="col-center">
@@ -8020,11 +8033,13 @@ function jumpTo(target) {
   }
   const node = el(JUMP_PANELS[key] ?? key ?? kind);
   if (!node) return;
-  // Наружу до .panel подниматься можно не всегда: левая и правая колонки сами
-  // по себе панели в несколько экранов высотой. Центрировать такую колонку —
-  // значит показать её середину, а нужный блок увести за экран целиком: ссылка
+  // Наружу до .panel подниматься можно не всегда: правая колонка сама по себе
+  // панель в несколько экранов высотой. Центрировать такую колонку — значит
+  // показать её середину, а нужный блок увести за экран целиком: ссылка
   // «открыть район» честно прокручивала мимо районов. Из колонки не выходим.
-  const outer = node.closest('.panel');
+  // Левая колонка разбита на .col-block — до них подниматься как раз нужно,
+  // иначе подсветка обводит содержимое без заголовка блока.
+  const outer = node.closest('.panel, .col-block');
   const wide = outer && (outer.classList.contains('col-left') || outer.classList.contains('col-right'));
   let box = node.classList.contains('panel') ? node
     : (node.querySelector(':scope > .panel') ?? (wide ? node : outer) ?? node);

@@ -211,11 +211,13 @@ function jumpTo(target) {
   }
   const node = el(JUMP_PANELS[key] ?? key ?? kind);
   if (!node) return;
-  // Наружу до .panel подниматься можно не всегда: левая и правая колонки сами
-  // по себе панели в несколько экранов высотой. Центрировать такую колонку —
-  // значит показать её середину, а нужный блок увести за экран целиком: ссылка
+  // Наружу до .panel подниматься можно не всегда: правая колонка сама по себе
+  // панель в несколько экранов высотой. Центрировать такую колонку — значит
+  // показать её середину, а нужный блок увести за экран целиком: ссылка
   // «открыть район» честно прокручивала мимо районов. Из колонки не выходим.
-  const outer = node.closest('.panel');
+  // Левая колонка разбита на .col-block — до них подниматься как раз нужно,
+  // иначе подсветка обводит содержимое без заголовка блока.
+  const outer = node.closest('.panel, .col-block');
   const wide = outer && (outer.classList.contains('col-left') || outer.classList.contains('col-right'));
   let box = node.classList.contains('panel') ? node
     : (node.querySelector(':scope > .panel') ?? (wide ? node : outer) ?? node);

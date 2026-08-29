@@ -3,7 +3,7 @@
 
 export default {
   name: 'tickets',
-  version: '1.36.1',
+  version: '1.36.2',
   title: 'БИЛЕТВИЛЬ · ticketing marketplace simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
