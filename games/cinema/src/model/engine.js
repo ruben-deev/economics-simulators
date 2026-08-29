@@ -35,7 +35,7 @@ import { createRng } from '../../../../shared/rng.js';
 import { deepClone } from '../../../../shared/clone.js';
 import { platformUpkeep } from '../../../../shared/upkeep.js';
 import { windowAvg, windowGrowthStable, revenueMultiple, roundTerms, distressedSale } from '../../../../shared/valuation.js';
-import { neutralModifiers, applyEvent, rollEvent } from './events.js';
+import { neutralModifiers, applyEvent, rollEvent, eventById } from './events.js';
 import { classifyRelease, rivalEffect, seasonHours, seasonOf } from './market.js';
 import {
   createRival, stepRival, rivalSubs, segmentPreference, switchFlow, STANCES,
@@ -337,6 +337,13 @@ export function normalizeState(state) {
   state.sharingAnger = state.sharingAnger ?? 0;
   state.sharingPolicyPrev = state.sharingPolicyPrev ?? 0;
   state.contentBook = state.contentBook ?? { license: 0, original: 0 };
+  // Событие, которого больше нет в наборе: партия, сохранённая до правки,
+  // держала бы карточку с кнопками, которые ничего не делают. Считаем такой
+  // месяц бессобытийным — это честнее, чем брать деньги за пустой эффект.
+  if (state.pendingEvent && !eventById(state.pendingEvent.id)) {
+    state.pendingEvent = null;
+    state.pendingChoice = null;
+  }
   state.weeklyHoldLeft = state.weeklyHoldLeft ?? 0;
   for (const def of SEGMENTS) {
     const seg = state.segments?.[def.id];
@@ -511,7 +518,7 @@ export function step(prevState, input = {}) {
   const stall = crisisMods.pipelineStall ?? 0;
   const { spent: productionSpend, finished } = advanceProduction(state.slate, {
     stallMonths: stall,
-    qualityMult: crisisMods.qualityMult ?? 1,
+    qualityMult: (crisisMods.qualityMult ?? 1) * (mods.qualityMult ?? 1),
   });
 
   // Релизы: выпускает игрок, а не движок. Готовый проект может лежать в запасе —
@@ -634,14 +641,10 @@ export function step(prevState, input = {}) {
   // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
   // лицензионного каталога видна только тем, кто читает исходники.
   const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
-  // Пакет прав, купленный по событию, ложится на ту же полку и тает по тем же
-  // правилам: аренда остаётся арендой, кем бы она ни была оформлена.
-  const eventHours = mods.licenseHoursAdd ?? 0;
-  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours + eventHours;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
-  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay)
-    + (boughtHours + eventHours) * CONFIG.licenseFreshShare;
+  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
 
   // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
   // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог

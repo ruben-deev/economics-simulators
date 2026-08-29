@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.33.0" />
+  <meta name="app-version" content="1.34.0" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1216,6 +1216,17 @@ table.data.titles td:first-child { width: 62%; }
 details[open] > .lever-group-title::before { transform: rotate(90deg); }
 .lever-group-title:hover { color: var(--fg, #e2e8f0); }
 
+/* Кнопка хода, пока не отвечено на событие: жёлтая, а не зелёная — она
+   сейчас не «прожить месяц», а «разберись с этим». */
+.btn.primary.needs-answer {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  border-color: #f59e0b; color: #2a1a02;
+  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.28);
+}
+.btn.primary.needs-answer:hover {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b); filter: brightness(1.06);
+}
+
 /* Финальный экран: раскрывашки второго плана заметнее обычных — это не
    сноска, а два раздела, куда игрок пойдёт по своему желанию. */
 .final-more { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
@@ -1304,17 +1315,19 @@ details[open] > .lever-group-title::before { transform: rotate(90deg); }
     </aside>
 
     <section class="col-center">
-      <!-- Три блока подряд, а не чересполосица: сначала всё, что читают
-           (итоги месяца, та же картина схемой, рынок вокруг), потом всё,
-           что решают (событие, кризис, франшиза, партнёрства, релизы),
-           в конце история партии графиком. Раньше рынок стоял между
-           решениями, и планирование прерывалось чтением. -->
+      <!-- Порядок: сначала срочное, потом прочитать, потом планировать.
+           Событие и кризис стоят выше отчёта нарочно — они блокируют ход
+           («сначала выберите решение по событию месяца»), и держать их
+           пятыми в колонке значило заставлять искать то, без чего кнопка
+           не работает. Дальше то, что читают (итоги месяца, та же картина
+           схемой, рынок вокруг), и только потом то, что решают на будущее
+           (франшиза, партнёрства, релизы). В конце история графиком. -->
+      <div id="event-slot"></div>
+      <div id="crisis-slot"></div>
       <div id="report-slot"></div>
       <div id="map-slot"></div>
       <div id="news-slot"></div>
       <div id="rival-slot"></div>
-      <div id="event-slot"></div>
-      <div id="crisis-slot"></div>
       <div id="anchor-slot"></div>
       <div id="partner-slot"></div>
       <div id="slate-slot"></div>
@@ -1540,6 +1553,7 @@ const STRINGS = {
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
+  btnAnswerEvent: { ru: '⚡ Ответить на событие', en: '⚡ Answer the event' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
   langToggle: { ru: 'EN', en: 'RU' },
@@ -5851,29 +5865,31 @@ const EVENTS = [
   },
   {
     // Событие второго месяца: единственное с minMonth 2, поэтому первым
-    // выпадает именно оно. Цена честная — ровно 600 тыс ₽ за час, как в
-    // рычаге закупки: сделка не в цене, а в сроке. И ровно поэтому она
-    // учит тому, что своей закупкой видно не сразу: полка выросла, а
-    // свежесть — нет, потому что чужие часы почти не считаются новинками.
-    id: 'clearance', weight: 6, minMonth: 2,
-    title: { ru: 'Прокатчик отдаёт пакет одним лотом', en: 'A distributor is selling a package as one lot' },
+    // выпадает именно оно. Про то, чего не умеет ни один рычаг: качество
+    // проекта решается ДО премьеры, и после неё его уже не поправить.
+    // Первая версия события предлагала пакет прав «которого своей закупкой
+    // не набрать за месяц» — неправда: рычаг закупки берёт до 1333 часов
+    // в месяц, а в пакете было 150. Событие, дублирующее ползунок, — это
+    // ползунок с лишними нажатиями.
+    id: 'reshoot', weight: 6, minMonth: 2,
+    title: { ru: 'Монтаж просит доснять финал', en: 'The cutting room wants the finale reshot' },
     text: {
-      ru: 'Полтораста часов чужого каталога — сразу, одним договором. Цена обычная, необычен срок: своя закупка набирала бы столько несколько месяцев.',
-      en: 'A hundred and fifty hours of someone else’s catalogue, all at once, in a single contract. The price is ordinary; the timing is not — buying this much through your own budget would take months.',
+      ru: 'Пилот, доставшийся вам от прежнего владельца, собран — и последние две серии проседают. Группа готова вернуться на площадку, но смена стоит денег, а премьера уже через месяц.',
+      en: 'The pilot you inherited is cut, and the last two episodes sag. The crew is ready to go back on set, but a shooting day costs money and the premiere is a month away.',
     },
     lesson: {
-      ru: 'Полка выросла, а свежесть — почти нет: чужие часы приводят зрителя, но ощущение «тут появилось новое» дают только свои премьеры. Глубина и новизна — два разных запаса, и пополняются они по-разному.',
-      en: 'The shelf grew; freshness barely did. Someone else’s hours bring viewers in, but the feeling that something new has appeared comes only from your own premieres. Depth and novelty are two different stocks, and they are refilled differently.',
+      ru: 'Качество проекта решается до премьеры и после неё не правится: шум, который он поднимет, уже заложен. Единственное окно, где на это ещё можно потратить деньги, — пока идёт производство.',
+      en: 'A project’s quality is settled before the premiere and cannot be fixed after: the noise it will make is already baked in. The only window where money still changes it is while the shoot is running.',
     },
     options: [
       {
-        label: { ru: 'Взять пакет (90 млн ₽)', en: 'Take the package ($0.9M)' },
-        detail: { ru: 'Сто пятьдесят часов на полку в этом же месяце.', en: 'A hundred and fifty hours on the shelf this very month.' },
-        effects: { oneOffCost: 90_000_000, licenseHoursAdd: 150 },
+        label: { ru: 'Доснять (120 млн ₽)', en: 'Reshoot it ($1.2M)' },
+        detail: { ru: 'Качество всего, что сейчас в производстве, вырастет на 12%.', en: 'Everything now in production gains 12% quality.' },
+        effects: { oneOffCostTalent: 120_000_000, qualityMult: 1.12 },
       },
       {
-        label: { ru: 'Отказаться', en: 'Pass' },
-        detail: { ru: 'Деньги остаются, полка растёт своим чередом.', en: 'The money stays; the shelf grows at its own pace.' },
+        label: { ru: 'Выпускать как есть', en: 'Ship it as it is' },
+        detail: { ru: 'Деньги остаются, премьера выйдет со своим шумом.', en: 'The money stays; the premiere goes out with the noise it has.' },
         effects: {},
       },
     ],
@@ -6407,6 +6423,13 @@ function normalizeState(state) {
   state.sharingAnger = state.sharingAnger ?? 0;
   state.sharingPolicyPrev = state.sharingPolicyPrev ?? 0;
   state.contentBook = state.contentBook ?? { license: 0, original: 0 };
+  // Событие, которого больше нет в наборе: партия, сохранённая до правки,
+  // держала бы карточку с кнопками, которые ничего не делают. Считаем такой
+  // месяц бессобытийным — это честнее, чем брать деньги за пустой эффект.
+  if (state.pendingEvent && !eventById(state.pendingEvent.id)) {
+    state.pendingEvent = null;
+    state.pendingChoice = null;
+  }
   state.weeklyHoldLeft = state.weeklyHoldLeft ?? 0;
   for (const def of SEGMENTS) {
     const seg = state.segments?.[def.id];
@@ -6581,7 +6604,7 @@ function step(prevState, input = {}) {
   const stall = crisisMods.pipelineStall ?? 0;
   const { spent: productionSpend, finished } = advanceProduction(state.slate, {
     stallMonths: stall,
-    qualityMult: crisisMods.qualityMult ?? 1,
+    qualityMult: (crisisMods.qualityMult ?? 1) * (mods.qualityMult ?? 1),
   });
 
   // Релизы: выпускает игрок, а не движок. Готовый проект может лежать в запасе —
@@ -6704,14 +6727,10 @@ function step(prevState, input = {}) {
   // ничего не покупать. Число выносится в отчёт: иначе беговая дорожка
   // лицензионного каталога видна только тем, кто читает исходники.
   const licenseExpired = state.catalogLicensed * CONFIG.licenseDecay;
-  // Пакет прав, купленный по событию, ложится на ту же полку и тает по тем же
-  // правилам: аренда остаётся арендой, кем бы она ни была оформлена.
-  const eventHours = mods.licenseHoursAdd ?? 0;
-  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours + eventHours;
+  state.catalogLicensed = state.catalogLicensed - licenseExpired + boughtHours;
   // Лицензии почти не считаются новинками: это чужое и часто не первой свежести.
   // Ощущение «тут появилось что-то новое» создают премьеры собственных проектов.
-  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay)
-    + (boughtHours + eventHours) * CONFIG.licenseFreshShare;
+  state.freshHours = state.freshHours * (1 - CONFIG.freshDecay) + boughtHours * CONFIG.licenseFreshShare;
 
   // Третий акт: обвал прав. Студии разом отзывают долю лицензионных каталогов
   // у всего рынка — полка худеет и у вас, и у конкурента. Собственный каталог
@@ -9930,6 +9949,8 @@ function renderAnchor() {
 // Разметка: <a class="jump" data-jump="lever:licensing">закупку лицензий</a>
 // ----------------------------------------------------------------------------
 const JUMP_PANELS = {
+  event: 'event-slot',
+  crisis: 'crisis-slot',
   slate: 'slate-slot',
   partners: 'partner-slot',
   rival: 'rival-slot',
@@ -10728,7 +10749,9 @@ function renderEvent() {
   el('event-slot').querySelectorAll('[data-choice]').forEach((b) => {
     b.addEventListener('click', () => {
       state.pendingChoice = Number(b.dataset.choice);
-      renderEvent(); save();
+      // Кнопку хода рисует шапка: без неё она оставалась жёлтой «ответить
+      // на событие» уже после ответа.
+      renderEvent(); renderChrome(); save();
     });
   });
 }
@@ -11829,6 +11852,8 @@ function nextMonth() {
   if (ev && ev.options && !ev.options[state.pendingChoice]) {
     state.pendingChoice = null;
     renderAll();
+    // Не тост в пустоту: ведём туда, где стоит решение.
+    jumpTo('panel:event');
     toast(t('eventChoiceNeeded'));
     return;
   }
@@ -11917,7 +11942,16 @@ function renderChrome() {
   const topBtn = el('btn-top');
   if (topBtn) { topBtn.hidden = !lbEndpoint(); topBtn.title = t('lbTitle'); }
 
-  el('btn-next').textContent = state.over ? t('btnResults') : t('btnNext', { month: state.month + 1 });
+  // Событие блокирует ход, а на телефоне кнопка живёт в липкой шапке и
+  // видна всегда, тогда как само событие — нет. Пока ответа нет, кнопка
+  // говорит об этом и ведёт к событию, а не упирается в тост.
+  const needsEvent = !state.over && state.pendingEvent?.options
+    && !state.pendingEvent.options[state.pendingChoice];
+  const next = el('btn-next');
+  next.textContent = state.over ? t('btnResults')
+    : needsEvent ? t('btnAnswerEvent')
+      : t('btnNext', { month: state.month + 1 });
+  next.classList.toggle('needs-answer', Boolean(needsEvent));
   for (const [tab, key] of Object.entries({
     unit: 'tabUnit', pnl: 'tabPnl', cfo: 'tabCfo', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
   })) {

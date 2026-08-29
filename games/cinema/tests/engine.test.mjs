@@ -1012,13 +1012,15 @@ test('события не появляются в первые месяцы и �
 });
 
 test('событие с выбором меняет результат в зависимости от решения', () => {
-  const withChoice = EVENTS.find((e) => e.options && e.options.length > 1);
-  const a = applyEvent(neutralModifiers(), withChoice, 0);
-  const b = applyEvent(neutralModifiers(), withChoice, 1);
-  assert.notDeepEqual(
-    [a.demandMult, a.churnAdd, a.oneOffCost, a.valuationBonus],
-    [b.demandMult, b.churnAdd, b.oneOffCost, b.valuationBonus],
-  );
+  // Сравниваем набор модификаторов целиком, а не четыре выбранных поля:
+  // событие может отличаться выбором по любому из них (например по цене
+  // в деньгах таланта и по качеству того, что в производстве), и список
+  // из четырёх полей однажды уже пропустил такую разницу.
+  for (const ev of EVENTS.filter((e) => e.options && e.options.length > 1)) {
+    const a = applyEvent(neutralModifiers(), ev, 0);
+    const b = applyEvent(neutralModifiers(), ev, 1);
+    assert.notDeepEqual(a, b, `«${ev.id}»: оба ответа дают одно и то же`);
+  }
 });
 
 test('множители событий перемножаются, а прибавки складываются', () => {

@@ -799,6 +799,8 @@ function renderAnchor() {
 // Разметка: <a class="jump" data-jump="lever:licensing">закупку лицензий</a>
 // ----------------------------------------------------------------------------
 const JUMP_PANELS = {
+  event: 'event-slot',
+  crisis: 'crisis-slot',
   slate: 'slate-slot',
   partners: 'partner-slot',
   rival: 'rival-slot',
@@ -1597,7 +1599,9 @@ function renderEvent() {
   el('event-slot').querySelectorAll('[data-choice]').forEach((b) => {
     b.addEventListener('click', () => {
       state.pendingChoice = Number(b.dataset.choice);
-      renderEvent(); save();
+      // Кнопку хода рисует шапка: без неё она оставалась жёлтой «ответить
+      // на событие» уже после ответа.
+      renderEvent(); renderChrome(); save();
     });
   });
 }
@@ -2698,6 +2702,8 @@ function nextMonth() {
   if (ev && ev.options && !ev.options[state.pendingChoice]) {
     state.pendingChoice = null;
     renderAll();
+    // Не тост в пустоту: ведём туда, где стоит решение.
+    jumpTo('panel:event');
     toast(t('eventChoiceNeeded'));
     return;
   }
@@ -2786,7 +2792,16 @@ function renderChrome() {
   const topBtn = el('btn-top');
   if (topBtn) { topBtn.hidden = !lbEndpoint(); topBtn.title = t('lbTitle'); }
 
-  el('btn-next').textContent = state.over ? t('btnResults') : t('btnNext', { month: state.month + 1 });
+  // Событие блокирует ход, а на телефоне кнопка живёт в липкой шапке и
+  // видна всегда, тогда как само событие — нет. Пока ответа нет, кнопка
+  // говорит об этом и ведёт к событию, а не упирается в тост.
+  const needsEvent = !state.over && state.pendingEvent?.options
+    && !state.pendingEvent.options[state.pendingChoice];
+  const next = el('btn-next');
+  next.textContent = state.over ? t('btnResults')
+    : needsEvent ? t('btnAnswerEvent')
+      : t('btnNext', { month: state.month + 1 });
+  next.classList.toggle('needs-answer', Boolean(needsEvent));
   for (const [tab, key] of Object.entries({
     unit: 'tabUnit', pnl: 'tabPnl', cfo: 'tabCfo', algos: 'tabAlgos', segments: 'tabSegments', help: 'tabHelp',
   })) {

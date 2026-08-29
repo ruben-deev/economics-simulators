@@ -54,29 +54,31 @@ export const EVENTS = [
   },
   {
     // Событие второго месяца: единственное с minMonth 2, поэтому первым
-    // выпадает именно оно. Цена честная — ровно 600 тыс ₽ за час, как в
-    // рычаге закупки: сделка не в цене, а в сроке. И ровно поэтому она
-    // учит тому, что своей закупкой видно не сразу: полка выросла, а
-    // свежесть — нет, потому что чужие часы почти не считаются новинками.
-    id: 'clearance', weight: 6, minMonth: 2,
-    title: { ru: 'Прокатчик отдаёт пакет одним лотом', en: 'A distributor is selling a package as one lot' },
+    // выпадает именно оно. Про то, чего не умеет ни один рычаг: качество
+    // проекта решается ДО премьеры, и после неё его уже не поправить.
+    // Первая версия события предлагала пакет прав «которого своей закупкой
+    // не набрать за месяц» — неправда: рычаг закупки берёт до 1333 часов
+    // в месяц, а в пакете было 150. Событие, дублирующее ползунок, — это
+    // ползунок с лишними нажатиями.
+    id: 'reshoot', weight: 6, minMonth: 2,
+    title: { ru: 'Монтаж просит доснять финал', en: 'The cutting room wants the finale reshot' },
     text: {
-      ru: 'Полтораста часов чужого каталога — сразу, одним договором. Цена обычная, необычен срок: своя закупка набирала бы столько несколько месяцев.',
-      en: 'A hundred and fifty hours of someone else’s catalogue, all at once, in a single contract. The price is ordinary; the timing is not — buying this much through your own budget would take months.',
+      ru: 'Пилот, доставшийся вам от прежнего владельца, собран — и последние две серии проседают. Группа готова вернуться на площадку, но смена стоит денег, а премьера уже через месяц.',
+      en: 'The pilot you inherited is cut, and the last two episodes sag. The crew is ready to go back on set, but a shooting day costs money and the premiere is a month away.',
     },
     lesson: {
-      ru: 'Полка выросла, а свежесть — почти нет: чужие часы приводят зрителя, но ощущение «тут появилось новое» дают только свои премьеры. Глубина и новизна — два разных запаса, и пополняются они по-разному.',
-      en: 'The shelf grew; freshness barely did. Someone else’s hours bring viewers in, but the feeling that something new has appeared comes only from your own premieres. Depth and novelty are two different stocks, and they are refilled differently.',
+      ru: 'Качество проекта решается до премьеры и после неё не правится: шум, который он поднимет, уже заложен. Единственное окно, где на это ещё можно потратить деньги, — пока идёт производство.',
+      en: 'A project’s quality is settled before the premiere and cannot be fixed after: the noise it will make is already baked in. The only window where money still changes it is while the shoot is running.',
     },
     options: [
       {
-        label: { ru: 'Взять пакет (90 млн ₽)', en: 'Take the package ($0.9M)' },
-        detail: { ru: 'Сто пятьдесят часов на полку в этом же месяце.', en: 'A hundred and fifty hours on the shelf this very month.' },
-        effects: { oneOffCost: 90_000_000, licenseHoursAdd: 150 },
+        label: { ru: 'Доснять (120 млн ₽)', en: 'Reshoot it ($1.2M)' },
+        detail: { ru: 'Качество всего, что сейчас в производстве, вырастет на 12%.', en: 'Everything now in production gains 12% quality.' },
+        effects: { oneOffCostTalent: 120_000_000, qualityMult: 1.12 },
       },
       {
-        label: { ru: 'Отказаться', en: 'Pass' },
-        detail: { ru: 'Деньги остаются, полка растёт своим чередом.', en: 'The money stays; the shelf grows at its own pace.' },
+        label: { ru: 'Выпускать как есть', en: 'Ship it as it is' },
+        detail: { ru: 'Деньги остаются, премьера выйдет со своим шумом.', en: 'The money stays; the premiere goes out with the noise it has.' },
         effects: {},
       },
     ],
