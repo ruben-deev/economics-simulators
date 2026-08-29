@@ -1228,3 +1228,51 @@ details[open] > .lever-group-title::before { transform: rotate(90deg); }
    ставкой читаются, а третья колонка таблицу бы распёрла. */
 table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
   font-variant-numeric: tabular-nums; margin-top: 1px; }
+
+/* Всплывающее сообщение. Держится над закреплённой полосой кнопок: на
+   телефоне она стоит у нижнего края, и прежние bottom:18px ложились прямо
+   на «Прожить месяц». */
+.toast-fixed {
+  position: fixed; right: 18px; bottom: 18px; z-index: 60;
+  max-width: 340px; background: #0f2018;
+}
+@media (max-width: 980px) {
+  .toast-fixed { right: 10px; left: 10px; max-width: none; bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+
+/* Пол кегля. Одиннадцать пикселей — это предел, за которым подпись перестают
+   читать и начинают угадывать; замер насчитал 121–158 таких узлов на страницу.
+   Двенадцать читаются, а места занимают почти столько же. */
+.funding-note, .lever-tip, .k-label, .s-label, .s-sub, .sub, .rival-stance-hint,
+.district-meta, .event-option span, .event-option .opt-detail,
+table.data .cell-sub, .brand-sub, .kpi .k-label, .kpi .k-delta,
+.panel-title, .slate-label, .policy-note, .lever-why, .lg-count, .q-name,
+.tabs button, .pick button, .policy-seg button { font-size: 12px; }
+
+/* Цели касания. Полоски и мелкие кнопки расширяются прозрачной областью в
+   той же идиоме, что уже принята в файле, — сама вёрстка при этом не едет. */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .lever-why, .tabs button, [data-tab], .top-list a, .doc-toc a,
+  .badge, .chip, .pill { position: relative; }
+  .lever-why::after, .tabs button::after, [data-tab]::after, .top-list a::after,
+  .doc-toc a::after, .badge::after, .chip::after, .pill::after {
+    content: ""; position: absolute; inset: -8px -4px;
+  }
+}
+
+/* Свёрнутое пояснение. Выглядит как уже принятая в панелях ссылка
+   «зачем это?», а не как ещё один элемент управления. */
+.note-fold { margin: 8px 0 0; }
+.note-fold > summary {
+  list-style: none; cursor: pointer; color: var(--accent-2);
+  font-size: 12px; padding: 2px 0; width: fit-content;
+}
+.note-fold > summary::-webkit-details-marker { display: none; }
+.note-fold > summary::before { content: "▸ "; }
+.note-fold[open] > summary::before { content: "▾ "; }
+.note-fold[open] > summary { color: var(--muted); }
+.note-fold .funding-note { margin-top: 4px; }
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .note-fold > summary { position: relative; }
+  .note-fold > summary::after { content: ""; position: absolute; inset: -8px -6px; }
+}

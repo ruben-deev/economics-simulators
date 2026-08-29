@@ -146,8 +146,12 @@ function renderKpis() {
   const burn = r ? r.fixed + r.oneOff - r.contribution : 0;
   const runway = burn > 0 ? state.cash / burn : Infinity;
 
-  // Пять показателей в одну строку. Всё остальное — в итогах месяца и вкладках:
-  // шапка нужна, чтобы понять положение за секунду, а не чтобы изучать её.
+  // Четыре показателя в одну строку. Шесть не влезали в 1440 px: последняя
+  // плитка уезжала на вторую строку, оставляя рядом пустое поле в пол-экрана.
+  // Шапка нужна, чтобы понять положение за секунду, а не чтобы изучать её, —
+  // поэтому в ней месяц, касса, база и цена доли. Прибыль ушла в итоги месяца
+  // (где она и так была, вторым экземпляром), доля рынка — в панель
+  // конкурента, где рядом стоит его база.
   const parts = [
     kpi(t('kpiMonth'), `${state.month} / ${CONFIG.monthsTotal}`,
       seasonName(seasonOf(state.month + 1))),
@@ -162,11 +166,6 @@ function renderKpis() {
     const [dSubs, cSubs] = delta(r.subs, p?.subs);
     parts.push(
       kpi(t('kpiSubs'), compact(r.subs), dSubs || t('kpiSubsFlat'), cSubs || 'neutral'),
-      kpi(t('kpiShare'), pct(r.duopolyShare ?? 0, 0),
-        t('kpiShareSub', { them: compact(r.rivalSubs ?? 0) }),
-        (r.duopolyShare ?? 0) >= 0.5 ? 'up' : (r.duopolyShare ?? 0) >= 0.35 ? 'neutral' : 'down'),
-      kpi(t('kpiProfit'), money(r.profit), t('kpiProfitSub', { value: money(r.contribution) }),
-        r.profit >= 0 ? 'up' : 'down'),
       kpi(t('kpiEquity'), money(r.equityValue ?? 0),
         t('kpiEquitySub', { value: pct(state.equity, 1) }), 'neutral'),
     );
@@ -1718,6 +1717,31 @@ function renderStartHint() {
   </div>`;
 }
 
+// ----------------------------------------------------------------------------
+// Пояснение, которое само решает, показываться ли развёрнутым.
+//
+// Замер (аудит 2026-08): на телефоне поясняющие блоки занимали 2164 px — 30%
+// страницы, — и 32 из 35 были видны всегда. Просто свернуть их нельзя: без
+// объяснений вкладка превращается в таблицу чисел без смысла. Поэтому правило
+// контекстное, а не «свернуть всё»:
+//
+//   • первые три месяца раскрыто всё — новичок ещё учится читать экран;
+//   • дальше — раскрыто при первом заходе на эту вкладку, чтобы объяснение
+//     нельзя было пропустить, не увидев;
+//   • свернул сам — остаётся свёрнутым.
+//
+// Так текст не пропадает: он перестаёт занимать экран у того, кто его уже
+// прочитал.
+const seenPanels = new Set();
+function fold(key, html) {
+  const fresh = state.month <= 3 || !seenPanels.has(key);
+  seenPanels.add(key);
+  return `<details class="note-fold"${fresh ? ' open' : ''}>
+    <summary>${t('noteWhy')}</summary>
+    <div class="funding-note">${html}</div>
+  </details>`;
+}
+
 function renderReport() {
   const r = last();
   if (!r) { el('report-slot').innerHTML = renderStartHint(); return; }
@@ -1822,8 +1846,6 @@ function renderReport() {
     </div>
     ${deltaLine}
     <div class="report-grid">
-      ${stat(t('statSubs'), compact(r.subs), t('statSubsSub', {
-        gained: compact(r.newSubs), lost: compact(r.lostSubs) }))}
       ${stat(t('statHours'), compact(r.hours), t('statHoursSub', { perSub: num(r.hoursPerSub, 1) }))}
       ${stat(t('statCatalog'), `${compact(r.catalogHours)} ${t('unitHours')}`, t('statCatalogSub', {
         original: compact(r.catalogOriginal), share: pct(r.originalShare, 0) }))}
@@ -2002,7 +2024,7 @@ function renderUnitTab() {
   const breakEven = r && u.contribution > 0 ? r.fixed / u.contribution : null;
 
   return `
-    <p class="funding-note">${t('unitIntro')}</p>
+    ${fold('unit', t('unitIntro'))}
     <div style="overflow-x:auto"><table class="data">
       <thead><tr><th>${t('unitColItem')}</th><th>${t('unitColPerSub')}</th></tr></thead>
       <tbody>
@@ -2015,7 +2037,7 @@ function renderUnitTab() {
           <td class="${u.contribution >= 0 ? 'pos' : 'neg'}">${amount(u.contribution)}</td></tr>
       </tbody>
     </table></div>
-    <p class="funding-note" style="margin-top:10px">${t('unitNote')}</p>
+    ${fold('unitNote', t('unitNote'))}
     ${breakEven ? `<div class="hint-box" style="margin-top:10px">${t('unitBreakEven', {
       fixed: money(r.fixed), subs: compact(breakEven), current: compact(r.subs) })}</div>`
       : u.contribution <= 0 ? `<div class="hint-box" style="margin-top:10px">${t('unitNoBreakEven')}</div>` : ''}
@@ -2063,7 +2085,7 @@ function renderPnlTab() {
       <tr class="total"><td>${t('pnlCashChange')}</td>
         <td class="${(r.profit - r.oneOff) >= 0 ? 'pos' : 'neg'}">${moneyExact(r.profit - r.oneOff)}</td></tr>
     </tbody></table></div>
-    <p class="funding-note" style="margin-top:10px">${t('pnlNote')}</p>`;
+    ${fold('pnl', t('pnlNote'))}`;
 }
 
 function renderSegmentsTab() {
@@ -2098,9 +2120,7 @@ function renderSegmentsTab() {
         <td class="${s.appeal >= 1 ? 'pos' : 'neg'}">${s.appeal.toFixed(2)}</td>
         <td class="${s.adPenalty >= 0.95 ? 'pos' : 'neg'}">${s.adPenalty.toFixed(2)}</td></tr>`).join('')}</tbody>
     </table></div>
-    <p class="funding-note">${t('tenureNote')}</p>
-    <p class="funding-note">${t('factorsNote')}</p>
-    <p class="funding-note">${t('segmentsNote')}</p>`;
+    ${fold('segments', `${t('tenureNote')}<br><br>${t('factorsNote')}<br><br>${t('segmentsNote')}`)}`;
 }
 
 function renderAlgosTab() {
@@ -2127,7 +2147,7 @@ function renderAlgosTab() {
           <td class="${totalGain - rndSpend >= 0 ? 'pos' : 'neg'}">${totalGain - rndSpend >= 0 ? '+' : ''}${compact(totalGain - rndSpend)}</td><td></td></tr>
       </tbody>
     </table></div>
-    <p class="funding-note" style="margin-top:8px">${t('algosCounterfactual')}</p>`
+    ${fold('algos', t('algosCounterfactual'))}`
     : `<p class="funding-note">${t('algosNone')}</p>`;
 
   const zero = impact.filter((i) => Math.abs(i.profit) < 1_000_000);
@@ -2304,7 +2324,9 @@ function toast(text) {
   const root = el('modal-root');
   const node = document.createElement('div');
   node.className = 'alert good';
-  node.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:60;max-width:340px;background:#0f2018';
+  // На телефоне нижний ряд кнопок закреплён у края экрана, и тост с
+  // bottom:18px ложился прямо на него. Поднимаем над полосой.
+  node.className += ' toast-fixed';
   node.textContent = text;
   root.appendChild(node);
   setTimeout(() => node.remove(), 3500);

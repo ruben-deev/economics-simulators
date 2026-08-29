@@ -572,6 +572,7 @@ export const STRINGS = {
   colSegment: { ru: 'Сегмент', en: 'Segment' },
   colSubs: { ru: 'Подписчики', en: 'Subscribers' },
   colAdShare: { ru: 'Тариф с рекламой', en: 'Ad tier' },
+  noteWhy: { ru: 'зачем это?', en: 'why this?' },
   colChurn: { ru: 'Отток', en: 'Churn' },
   churnByTenure: { ru: 'вет. {mature} · нов. {young}', en: 'vet. {mature} · new {young}' },
   tenureNote: { ru: 'Под оттоком сегмента — две ставки: выдержанная база и новички моложе трёх месяцев. Разрыв между ними свой у каждого сегмента: у киноманов привычка копится, у молодёжи стажа будто и нет. И держит когорты разное: новичка — шум премьеры, ветерана — глубина полки.', en: 'Under each segment\'s churn are two rates: the mature base and newcomers under three months. The gap differs by segment — cinephiles build up a habit, young viewers barely accumulate tenure at all. And the cohorts stay for different reasons: the newcomer for the noise of a premiere, the veteran for the depth of the shelf.' },
