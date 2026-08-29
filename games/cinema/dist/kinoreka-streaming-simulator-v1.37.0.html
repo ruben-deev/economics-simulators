@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.36.0" />
+  <meta name="app-version" content="1.37.0" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3798,6 +3798,14 @@ const CONFIG = {
   appealDepthExp: 0.6,        // показатель глубины в ценности каталога
   appealFreshExp: 0.5,        // показатель свежести там же
   boredomCoef: 0.055,         // во что обходится пустая афиша
+  // Часы просмотра тоже упирались в глубину ровным показателем 0.35 — одним
+  // на все сегменты. Из-за этого глубокая полка давала часы поровну и
+  // киноману, которому она и нужна, и подростку, которому всё равно; главный
+  // канал выручки не различал аудиторию, и любая ставка на широту каталога
+  // размазывалась по рынку. Теперь показатель свой: вес_глубины сегмента,
+  // нормированный на средний вес по потенциалу (0.7156) — при нём показатель
+  // равен прежним 0.35, так что общий уровень задан не заново, а унаследован.
+  hoursDepthExp: 0.489,       // множитель к вес_глубины в показателе часов
   recoRefDepth: 0.50,         // глубина, на которой лифт равен прежнему
   recoLiftMax: 0.35,          // сила лифта на опорной глубине
   // Каталог, при котором множитель выбора равен 1.0. Опущен с 9 000: прежняя
@@ -7455,7 +7463,8 @@ function step(prevState, input = {}) {
   let adHours = 0;
   for (const p of perSegment) {
     const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
-      * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
+      * season * Math.pow(Math.max(0.1, perceivedDepth),
+        p.def.depthWeight * CONFIG.hoursDepthExp)
       * (1 + 0.22 * recoStrength * quality)
       * rival.hoursMult * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
     p.hours = segHours;
