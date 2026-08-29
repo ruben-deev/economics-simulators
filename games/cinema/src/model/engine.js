@@ -1073,9 +1073,38 @@ export function step(prevState, input = {}) {
     // Иначе разбиение по стажу молча поднимало бы отток всем и всегда —
     // а смысл механики в составе базы, а не в её общем утяжелении.
     const ref = CONFIG.cohortRefYoungShare;
-    const refMix = ref * CONFIG.cohortYoungChurn + (1 - ref) * CONFIG.cohortMatureChurn;
-    const churnYoung = clamp(churnRate * CONFIG.cohortYoungChurn / refMix, 0.005, 0.75);
-    const churnMature = clamp(churnRate * CONFIG.cohortMatureChurn / refMix, 0.002, 0.5);
+    // Разрыв по стажу свой у каждого сегмента: у киномана привычка копится,
+    // у молодёжи почти нет. Старое состояние без этих полей падает на
+    // прежние общие множители.
+    const tenureYoung = def.tenureYoung ?? CONFIG.cohortYoungChurn;
+    const tenureMature = def.tenureMature ?? CONFIG.cohortMatureChurn;
+    const refMix = ref * tenureYoung + (1 - ref) * tenureMature;
+
+    // Когорты держатся за разное — и ставка у них поэтому не одна на двоих.
+    // Премьера: её шум и её похмелье бьют по новичку сильнее, по ветерану
+    // слабее. Коэффициент ветерана выводится из нормировки, поэтому при
+    // опорной доле новичков суммарная сила премьеры та же, что и раньше:
+    // это перераспределение, а не утяжеление.
+    const mateShare = (kYoung) => (1 - ref * kYoung) / (1 - ref);
+    const buzzHold = buzz * 0.030;
+    const hangHit = hangover * 0.018 * def.freshnessWeight;
+    const dBuzz = (k) => -buzzHold * (k - 1);
+    const dHang = (k) => hangHit * (k - 1);
+    // Полка держит только выдержанную базу и только там, где глубина важна.
+    // Новичку глубина каталога ничего не обещает: он ещё не дошёл до второго
+    // ряда полки. Это единственная часть правки, которая двигает средний
+    // отток, а не только его распределение.
+    const depthHold = clamp(perceivedDepth - CONFIG.cohortDepthRef, CONFIG.cohortDepthFloor, 0.9)
+      * def.depthWeight * CONFIG.cohortDepthHold;
+
+    const rateYoung = churnRate
+      + dBuzz(CONFIG.cohortBuzzYoung) + dHang(CONFIG.cohortHangoverYoung);
+    const rateMature = churnRate
+      + dBuzz(mateShare(CONFIG.cohortBuzzYoung)) + dHang(mateShare(CONFIG.cohortHangoverYoung))
+      - depthHold;
+
+    const churnYoung = clamp(rateYoung * tenureYoung / refMix, 0.005, 0.75);
+    const churnMature = clamp(rateMature * tenureMature / refMix, 0.002, 0.5);
     const leavingYoung = youngChurnable * churnYoung;
     const leavingMature = matureChurnable * churnMature;
     const leaving = leavingYoung + leavingMature + sharingLostHere;
@@ -1775,6 +1804,9 @@ export function step(prevState, input = {}) {
       penetration: p.subs / potentialOf(p.def, state),
       awareness: p.seg.awareness,
       churnRate: p.churnRate,
+      churnYoung: p.churnYoung,
+      churnMature: p.churnMature,
+      youngShare: p.youngShare,
       hours: p.hours,
       priceFactor: p.priceFactor,
       appeal: p.appeal,

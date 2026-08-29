@@ -530,16 +530,54 @@ The rate above is not the same for everyone. The base splits into two cohorts,
 and they churn differently:
 
 ```
-newcomer (under 3 months)   churn × 1.65 / norm
-mature base                 churn × 0.86 / norm
-norm = 0.18 × 1.65 + 0.82 × 0.86
+newcomer (under 3 months)   newcomer rate × newcomer tenure / norm
+mature base                 veteran rate  × veteran tenure  / norm
+norm = 0.18 × newcomer tenure + 0.82 × veteran tenure
 ```
+
+The tenure multipliers differ by segment:
+
+| segment | newcomer | veteran | gap |
+|---|---|---|---|
+| mainstream | 1.65 | 0.86 | 1.9× |
+| cinephiles | 1.95 | 0.79 | 2.5× |
+| families | 1.80 | 0.82 | 2.2× |
+| young viewers | 1.30 | 0.93 | 1.4× |
+
+A cinephile builds up a habit: they have settled into the shelf and rarely leave.
+A family subscription is held by a household, not a person. Young viewers barely
+accumulate tenure at all: they leave for the next hit whether they joined last
+month or thirty months ago.
 
 The normalisation matters: the multipliers are divided by the mix at a reference
 share of newcomers (18%), so at that share the average churn equals the base
 rate. Without it the tenure split would quietly raise churn for everyone all the
 time — and the lesson here is not about the level of churn but about the
 composition of the base.
+
+**The cohorts hold on to different things.** A single rate for both would hide
+the point: the newcomer came for the premiere, while for the veteran a premiere
+is nothing new.
+
+```
+newcomer rate = churn − buzz × 0.030 × 1.55 + hangover × 0.018 × freshness weight × 1.45
+veteran rate  = churn − buzz × 0.030 × 0.88 + hangover × 0.018 × freshness weight × 0.90
+                      − clamp(depth − 0.45, −0.20, 0.90) × depth weight × 0.018
+```
+
+The veteran's premiere multipliers are not set by hand — they follow from the
+normalisation: at the reference share of newcomers the total pull of a premiere
+is the same as without the split. Buzz and hangover are **redistributed** between
+the cohorts rather than added to the model. Measured at month 18: buzz of 1.0
+takes 7.6 pp of churn off newcomers and only 2.3 pp off veterans; a hangover of
+1.0 adds 4.7 pp and 1.6 pp respectively.
+
+The shelf is the exception: that is real retention, not redistribution, and only
+for the mature base. Depth promises a newcomer nothing — they have not reached
+the second row yet. Its strength scales with the segment's depth weight, so a
+sixfold shelf takes noticeably more off cinephiles than off young viewers, and
+across the whole base it removes 0.9 pp from veterans against 0.05 pp from
+newcomers.
 
 Someone who signed up this month has not settled in: they are still trying the
 service, comparing, and leaving is easy. Someone six months in has folded you
