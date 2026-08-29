@@ -22,16 +22,48 @@
       background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
     .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
       padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    /* Формула словами переносится с висячим отступом: продолжение строки
+       видно, что оно продолжение, а не следующая строка формулы. */
+    .doc-pre .pl { display: block; white-space: pre-wrap;
+      padding-left: 2.2em; text-indent: -2.2em; overflow-wrap: break-word; }
+    .doc-pre.is-diagram { white-space: pre; }
     .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
       padding: 1px 5px; font-size: 0.92em; }
     .doc-pre code { background: none; border: none; padding: 0; }
     .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
     .doc table.data { width: 100%; }
-    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+    .doc-toc { margin: 18px 0 6px; padding: 10px 18px 14px; background: var(--panel);
       border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
-    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
-      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
-    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc-toc > summary { list-style: none; cursor: pointer; padding: 4px 0;
+      font-weight: 700; color: var(--muted); text-transform: uppercase;
+      font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc > summary::-webkit-details-marker { display: none; }
+    .doc-toc > summary::after { content: " ▾"; }
+    .doc-toc[open] > summary::after { content: " ▴"; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none;
+      border-left: 2px solid transparent; padding-left: 8px; margin-left: -8px; }
+    .doc-toc a.on { border-left-color: var(--accent); color: var(--text); }
+    @media (min-width: 700px) { .doc-toc[open] { columns: 2; column-gap: 26px; }
+      .doc-toc > summary { column-span: all; } }
+    .doc h2, .doc h3 { scroll-margin-top: 14px; }
+    /* Широкий экран: оглавление уходит на поле слева и остаётся на виду.
+       Порог 1340 — раньше рейка налезала бы на текст. */
+    @media (min-width: 1340px) {
+      .doc-toc[open] { columns: 1; }
+      .doc-toc { position: fixed; top: 18px; left: calc(50% - 656px); width: 210px;
+        max-height: calc(100vh - 36px); overflow-y: auto; margin: 0; z-index: 5; }
+      .doc-toc > summary { cursor: default; }
+      .doc-toc > summary::after, .doc-toc[open] > summary::after { content: ""; }
+    }
+    .doc-up { position: fixed; right: 16px; bottom: 16px; z-index: 6;
+      width: 42px; height: 42px; border-radius: 50%; cursor: pointer;
+      background: var(--panel); color: var(--accent-2); font-size: 18px;
+      border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+    .doc-up:hover { color: var(--text); border-color: var(--accent); }
+    @media (max-width: 640px) {
+      .doc { padding: 20px 14px 80px; }
+      .doc-pre { font-size: 12px; padding: 12px 13px; }
+    }
     .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
   </style>
 </head>
@@ -42,8 +74,8 @@
       <a href="../economics.html">Русская версия</a>
     </div>
     
-  <nav class="doc-toc">
-    <div class="doc-toc-title">Contents</div>
+  <details class="doc-toc" id="doc-toc">
+    <summary>Contents · 20</summary>
     <a href="#s-1">0. How a game begins</a>
     <a href="#s-2">1. The overall picture</a>
     <a href="#s-3">2. The catalogue: renting versus owning</a>
@@ -64,22 +96,19 @@
     <a href="#s-40">10. What the model leaves out</a>
     <a href="#s-41">The cost of what is already built</a>
     <a href="#s-42">The price of a free month</a>
-  </nav>
+  </details>
     <h1>Streaming economics model: formulas and assumptions</h1>
 <p><i><a href="../economics.html">Русская версия</a></i></p>
 <p>This document describes exactly what <code>games/cinema/src/model/engine.js</code> computes. Every constant that appears in the formulas lives in <code>games/cinema/src/model/config.js</code> and can be changed by the instructor.</p>
 <p>The time step is <b>one month</b>. All flows (sign-ups, hours, revenue, costs) are monthly; all stocks (subscribers, catalogue, cash, accumulated data) are end-of-month values. A game lasts 36 months.</p>
 <hr>
 <h2 id="s-1">0. How a game begins</h2>
-<pre class="doc-pre"><code>cash                    ₽3.7bn   the investor's money, 100% yours
-library              900 hours   old films from the previous owner
-in production        one pilot   half shot, premieres in month 3
-the rival        1.3M on books   he has been here a while; you enter a taken market</code></pre>
+<pre class="doc-pre"><code><span class="pl">cash                    ₽3.7bn   the investor's money, 100% yours</span><span class="pl">library              900 hours   old films from the previous owner</span><span class="pl">in production        one pilot   half shot, premieres in month 3</span><span class="pl">the rival        1.3M on books   he has been here a while; you enter a taken market</span></code></pre>
 <p>The pilot in production is not a gift for its own sake. Without it, your first premiere landed in month seven: measured across 24 codes it was exactly month 7 in all twenty-four games, and for the first six turns the player moved sliders while nothing happened on screen. The shoot was paid for by the previous owner, so the pilot does not touch your cash; the gift is paid for elsewhere — starting cash was cut from ₽4bn to ₽3.7bn. Without that compensation, measured across 72 codes, the balanced anchor gained 18% and the studio-led one 19%; with it, both returned to their old corridor.</p>
 <p>A drama pilot is a deliberate choice: drama's <code>hangover</code> is 0.45. The slump after the premiere is visible but not ruinous — and the lesson that one hit is a loan rather than growth arrives on turn three instead of turn ten.</p>
 <hr>
 <h2 id="s-2">1. The overall picture</h2>
-<pre class="doc-pre"><code>marketing ──► awareness ──► free trials ──────────┐
+<pre class="doc-pre is-diagram"><code>marketing ──► awareness ──► free trials ──────────┐
                                                   ├──► SUBSCRIBER BASE (stock)
    boredom, price, ads ──► churn ─────────────────┘          │
                                                              ▼
@@ -100,15 +129,13 @@ studio budget ──► pipeline (6 mo) ──► premieres ──┤          �
 <h2 id="s-3">2. The catalogue: renting versus owning</h2>
 <p>The catalogue is the central stock of the game. It is filled in two ways with fundamentally different economics.</p>
 <h3 id="s-4">Licences</h3>
-<pre class="doc-pre"><code>hours_bought  = licensing_budget / licenseCostPerHour × forecast_efficiency
-licensed(t)   = licensed(t−1) × (1 − licenseDecay) + hours_bought</code></pre>
+<pre class="doc-pre"><code><span class="pl">hours_bought  = licensing_budget / licenseCostPerHour × forecast_efficiency</span><span class="pl">licensed(t)   = licensed(t−1) × (1 − licenseDecay) + hours_bought</span></code></pre>
 <p><code>licenseCostPerHour = ₽600,000</code>, <code>licenseDecay = 0.045</code> — 4.5% of the library expires every month. Licences arrive <b>immediately</b>: pay this month, it is on the shelf this month.</p>
 <h3 id="s-5">The anchor title</h3>
 <p>A catalogue is not uniform inside: among identical-looking rented hours sits a franchise that a sizeable share of your base signed up for. While the rights are yours, the whole licensed shelf weighs more:</p>
-<pre class="doc-pre"><code>licensed weight = hours × licenseDepthWeight × (1 + 0.22 if the franchise is yours)</code></pre>
+<pre class="doc-pre"><code><span class="pl">licensed weight = hours × licenseDepthWeight × (1 + 0.22 if the franchise is yours)</span></code></pre>
 <p>Its contract runs separately from the rest of the package: 14 months from the start of the run, a warning three months ahead, renewal for twelve. Renewal costs money, and the price rises with the rights market and with how loudly your rival is bidding:</p>
-<pre class="doc-pre"><code>price = 210M × √(rights index) × (1 + 0.35 × rival buzz)
-              × (1 + 1.6 × renewals so far)</code></pre>
+<pre class="doc-pre"><code><span class="pl">price = 210M × √(rights index) × (1 + 0.35 × rival buzz)</span><span class="pl">              × (1 + 1.6 × renewals so far)</span></code></pre>
 <p>That last factor is the important one. The rights holder prices not their own costs but your cost of switching: by renewing once you have shown the franchise matters to you, and the next contract costs two and a half times as much. It is the same bargaining power the whole chapter on large partners is about, only now it is pointed at you.</p>
 <p>If you do not renew, the franchise goes to your rival: the hours stay on your shelf, the reason to stay does not. The base slides for three months (up to +5.5pp of churn in the first one), and the rival gains buzz.</p>
 <blockquote><b>On sample size.</b> KINOREKA's anchors are measured across <b>72 codes</b>, not the twenty-four used for the other games in the set. The licence-led anchor's distribution is badly skewed — quartiles of ₽1.6bn and ₽10.1bn around a median of ₽6.2bn — and across 24 codes its median wanders by a third: the very same code gave ₽8.2bn on 24 codes and ₽6.0bn on 72. The measurements below marked "24 codes" were taken earlier and describe the shape of an effect, not its exact size.</blockquote>
@@ -117,10 +144,7 @@ licensed(t)   = licensed(t−1) × (1 − licenseDecay) + hours_bought</code></p
 <h3 id="s-6">Originals: a slate, not a budget</h3>
 <p>Production is not a budget slider but a slate: every project is an object, and it carries three decisions:</p>
 <ol><li><b>What to commission</b> — genre × scale × the segment you are aiming at.</li><li><b>When to release it</b> — a finished project sits in the vault until you say so.</li><li><b>How much campaign to put behind it</b> — marketing tied to a specific premiere.</li></ol>
-<pre class="doc-pre"><code>cost    = originalCostPerHour × costPerHour(genre) × hours(genre)
-          × cost(scale) × talent_index
-          charged in equal instalments over the production months
-quality = clamp(0.55 + 0.5 × luck + 0.25 × (tech − studio_load), 0.25, 1.45)</code></pre>
+<pre class="doc-pre"><code><span class="pl">cost    = originalCostPerHour × costPerHour(genre) × hours(genre)</span><span class="pl">          × cost(scale) × talent_index</span><span class="pl">          charged in equal instalments over the production months</span><span class="pl">quality = clamp(0.55 + 0.5 × luck + 0.25 × (tech − studio_load), 0.25, 1.45)</span></code></pre>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Scale</th><th>Months</th><th>Cost</th><th>Hours</th><th>Buzz</th></tr></thead>
 <tbody><tr><td>Pilot</td><td>4</td><td>×0.40</td><td>×0.5</td><td>×0.45</td></tr><tr><td>Season</td><td>6</td><td>×1.0</td><td>×1.0</td><td>×1.0</td></tr><tr><td>Flagship</td><td>9</td><td>×2.6</td><td>×1.8</td><td>×2.3</td></tr></tbody>
@@ -128,15 +152,11 @@ quality = clamp(0.55 + 0.5 × luck + 0.25 × (tech − studio_load), 0.25, 1.45)
 <p>Quality is fixed at commissioning, but until the premiere the player sees only a <b>range</b>, narrowing as the project nears completion: a producer knows the budget and the team, not the result.</p>
 <h3 id="s-7">Studio slots</h3>
 <p>As many projects run in parallel as the studio has slots. A slot costs money every month whether it is busy or idle, and upkeep grows faster than the count:</p>
-<pre class="doc-pre"><code>upkeep          = studioSlotMonthly × slots^1.45
-project_quality −= slotQualityDrag × (busy / total)</code></pre>
+<pre class="doc-pre"><code><span class="pl">upkeep          = studioSlotMonthly × slots^1.45</span><span class="pl">project_quality −= slotQualityDrag × (busy / total)</span></code></pre>
 <p>Five parallel productions are not five times one: they also need coordinating, and each gets less attention. Hence an interior optimum — three slots beats both one and five.</p>
 <h3 id="s-8">The vault: when to release</h3>
 <p>A finished project does not go out by itself. You can hold it — release into a quiet month, answer a rival premiere with it, or wait for the high season:</p>
-<pre class="doc-pre"><code>buzz = buzz(genre) × buzz(scale) × quality
-       × (1 − vaultDecay)^months_held
-       × (1 + campaignPower × campaign/(campaign + refCampaign))
-       × season^2.2</code></pre>
+<pre class="doc-pre"><code><span class="pl">buzz = buzz(genre) × buzz(scale) × quality</span><span class="pl">       × (1 − vaultDecay)^months_held</span><span class="pl">       × (1 + campaignPower × campaign/(campaign + refCampaign))</span><span class="pl">       × season^2.2</span></code></pre>
 <p>Holding is not free: 4.5% of the buzz evaporates each month. But the seasonal multiplier raised to 2.2 means a winter premiere is nearly twice as loud as a summer one — so holding until December usually beats shipping in July. Measured: season-timed releases return about 6% more than "ship it as soon as it is ready".</p>
 <h3 id="s-9">Cadence: the full season or an episode a week</h3>
 <p>When you release something ready, you choose not only the month but how it comes out:</p>
@@ -148,14 +168,11 @@ project_quality −= slotQualityDrag × (busy / total)</code></pre>
 <p>Which is better depends on what you stand on. Measured (24 codes): for the studio-led strategy, which lives on premieres, weekly release is worth +12%; for the licence-led one, where premieres are seasoning on a rented shelf, it costs −2%, and for the balanced one −1%. There is no universal answer, and that is the point: the spike is for those with nothing to hold people with, retention is for those who already have the spike.</p>
 <h3 id="s-10">Aiming at a segment</h3>
 <p>A project can be aimed at one segment or made broad:</p>
-<pre class="doc-pre"><code>pull = appeal(genre, segment) × 2.0    if aimed at this segment
-       appeal(genre, segment) × 0.78   if aimed at another</code></pre>
+<pre class="doc-pre"><code><span class="pl">pull = appeal(genre, segment) × 2.0    if aimed at this segment</span><span class="pl">       appeal(genre, segment) × 0.78   if aimed at another</span></code></pre>
 <p>Focus is always also a refusal. A mountain of reality TV will not hold cinephiles however large it gets, while a drama aimed at them collects them and leaves everyone else cold.</p>
 <h3 id="s-11">Catalogue depth</h3>
 <p>Hours are not hours. Rivals have the same licences; only you have your exclusives. And your own hours are not equal to each other either: every genre has its own value for depth and its own rate of ageing.</p>
-<pre class="doc-pre"><code>weighted  = licensed × 0.5 + Σ(genre_hours × genre_value) × 9
-depth     = saturation(weighted / refCatalogHours)
-own_share = weighted_own / weighted</code></pre>
+<pre class="doc-pre"><code><span class="pl">weighted  = licensed × 0.5 + Σ(genre_hours × genre_value) × 9</span><span class="pl">depth     = saturation(weighted / refCatalogHours)</span><span class="pl">own_share = weighted_own / weighted</span></code></pre>
 <p><b>Why an own hour weighs 9 and the catalogue reference sits at 7,500 hours.</b> An hour of licence costs ₽600k and weighs 0.5, so ₽1.2M per effective hour. Your own hour is far more expensive to produce, so without a large weight it would never pay off at all — the weight of 9 puts its effective price in a comparable range. And the 7,500-hour catalogue reference is reachable within a game, so depth does saturate: past some point the next licensed hour stops paying off, which is exactly what makes "licences or originals" a real choice. Measured, the buying optimum sits inside the slider's range, and the share of own content in a polished strategy is around 20% — the central lesson of the game (licences buy a base quickly, your own stays an asset) is confirmed by measurement, not just by the teacher's guide.</p>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Genre</th><th>Value per hour</th><th>Monthly ageing</th><th>Cost per hour</th><th>Hangover</th></tr></thead>
@@ -164,25 +181,21 @@ own_share = weighted_own / weighted</code></pre>
 <p>Reality is the cheapest way to fill a shelf and the fastest way to lose it: two years later almost nothing of that library is left. Family animation barely ages at all — it gets rewatched. That difference is exactly why two companies with the same "amount of content" are worth different amounts.</p>
 <p>The weight ratio of roughly 12:1 against a price ratio of 50:1 is the whole trade-off. An hour of exclusive content retains like a dozen hours of someone else's library and costs five times that dozen. <b>Neither extreme works:</b> licences alone give you nothing to hold people with and nothing to pull the rival's viewers away with; originals alone leave six months with nothing to watch while the rival takes the market. The test named <code>смешанная стратегия бьёт обе крайности</code> ("a mixed strategy beats both extremes") checks this.</p>
 <h3 id="s-12">Freshness</h3>
-<pre class="doc-pre"><code>new(t)    = new(t−1) × (1 − freshDecay) + premiere_hours + bought × licenseFreshShare
-freshness = √(new / refFreshHours), capped</code></pre>
+<pre class="doc-pre"><code><span class="pl">new(t)    = new(t−1) × (1 − freshDecay) + premiere_hours + bought × licenseFreshShare</span><span class="pl">freshness = √(new / refFreshHours), capped</span></code></pre>
 <p><code>freshDecay = 0.22</code> — a release stops feeling new in roughly four months. <code>licenseFreshShare = 0.10</code>: a bought licence barely counts as new — it is someone else's and often not first-run. The feeling that "something new has appeared" comes almost entirely from your own premieres.</p>
 <p>Freshness enters churn directly:</p>
-<pre class="doc-pre"><code>boredom = max(0, 1 − freshness) × freshnessWeight(segment) × 0.055</code></pre>
+<pre class="doc-pre"><code><span class="pl">boredom = max(0, 1 − freshness) × freshnessWeight(segment) × 0.055</span></code></pre>
 <p>The catalogue can lose not a single hour and still lose subscribers, because viewers see the same shelf. This is the most common way to lose the game.</p>
 <hr>
 <h2 id="s-13">3. Price: new sign-ups pay one thing, the existing base another</h2>
 <p>In a subscription business the price is not one number. An existing subscriber pays what they signed up at, and moving them to a new price is a separate decision with a separate cost.</p>
-<pre class="doc-pre"><code>list price  = what new sign-ups pay; only they see it
-lockedPrice = what the segment's base actually pays on average
-gap         = 1 − lockedPrice / list price</code></pre>
+<pre class="doc-pre"><code><span class="pl">list price  = what new sign-ups pay; only they see it</span><span class="pl">lockedPrice = what the segment's base actually pays on average</span><span class="pl">gap         = 1 − lockedPrice / list price</span></code></pre>
 <p>The gap opens every time you raise the list price and closes on its own — slowly, as the base turns over. Closing it at once takes one decision, and it costs subscribers:</p>
-<pre class="doc-pre"><code>shock = raiseShockBase × (jump / 0.1)^1.6 × elasticity(segment)</code></pre>
+<pre class="doc-pre"><code><span class="pl">shock = raiseShockBase × (jump / 0.1)^1.6 × elasticity(segment)</span></code></pre>
 <p>The reaction is non-linear: +10% is barely noticed, +40% takes out a visible chunk of the base. You cannot repeat a rise within four months — people remember, and a second one in a row costs far more.</p>
 <h3 id="s-14">Annual plans</h3>
 <p>Some new sign-ups can be moved onto an annual plan with a discount:</p>
-<pre class="doc-pre"><code>annual_share = clamp(0.10 + 1.5 × discount × willingness(segment), 0, 0.75)
-cash         = subscribers × discounted_price × 12   — at once, on sign-up</code></pre>
+<pre class="doc-pre"><code><span class="pl">annual_share = clamp(0.10 + 1.5 × discount × willingness(segment), 0, 0.75)</span><span class="pl">cash         = subscribers × discounted_price × 12   — at once, on sign-up</span></code></pre>
 <p>An annual subscriber is <b>excluded from churn</b> for the term, <b>exempt from price rises</b> and <b>cannot switch to the rival</b>: they are paid up for a year. The value is not the discount but those two properties: it is a loan against your own future revenue — cash today, a locked price tomorrow. The optimal discount is interior, around 10%; beyond that you are simply selling cheaper to people who would have stayed anyway.</p>
 <hr>
 <h2 id="s-15">3b. Partnerships: wholesale against retail</h2>
@@ -197,63 +210,34 @@ cash         = subscribers × discounted_price × 12   — at once, on sign-up</
 <p><b>The rate is fixed at signing and does not follow your list price.</b> That is what a contract is for: you can raise retail prices tomorrow, and the wholesale partner will keep paying exactly what was agreed until the term ends.</p>
 <p>Wholesale subscribers occupy the same segment capacity as retail ones — they are the same people. You can add them into a single "how many subscribers do we have" figure, but that is exactly how people fool themselves with a growth chart.</p>
 <p>Measured on the tuned strategy:</p>
-<pre class="doc-pre"><code>decline everything             ₽232B | 8.96M subscribers
-sign everything                ₽221B | 9.42M subscribers
-only high-share deals (≥60%)   ₽235B | 9.18M subscribers</code></pre>
+<pre class="doc-pre"><code><span class="pl">decline everything             ₽232B | 8.96M subscribers</span><span class="pl">sign everything                ₽221B | 9.42M subscribers</span><span class="pl">only high-share deals (≥60%)   ₽235B | 9.18M subscribers</span></code></pre>
 <p>"Sign everything" produces <b>more subscribers and less money</b>. That is the lesson of the mechanic in one line: growing the base and growing revenue are not the same thing, and "how many subscribers" means nothing without "where did they come from".</p>
 <p>Some contracts are exclusive: signing the operator locks you out of the aggregator. Distribution is also a choice about who you will <b>not</b> be available through.</p>
 <hr>
 <h2 id="s-16">3a. Subscribers: two tiers, four segments</h2>
 <h3 id="s-17">Tier choice</h3>
 <p>Each segment splits itself between the paid and the ad-supported tier:</p>
-<pre class="doc-pre"><code>saving      = (ad_free_price − ad_tier_price) / ad_free_price
-ad_pain     = (ad_load / refAdLoad)^1.6 / tolerance(segment)   — convex
-ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)
-ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)</code></pre>
+<pre class="doc-pre"><code><span class="pl">saving      = (ad_free_price − ad_tier_price) / ad_free_price</span><span class="pl">ad_pain     = (ad_load / refAdLoad)^1.6 / tolerance(segment)   — convex</span><span class="pl">ad_ceiling  = clamp(0.72 × tolerance(segment), 0.15, 0.9)</span><span class="pl">ad_share    = clamp(0.12 + 0.85 × saving × tolerance − 0.12 × ad_pain, 0.02, ad_ceiling)</span></code></pre>
 <p>Ad pain is convex: a couple of minutes an hour goes almost unnoticed, and past that every extra spot annoys more than the previous one. With linear pain the load optimum sat at zero on every anchor — there was no lever; with convexity each anchor has an interior optimum at 2–4 min/hr, and heavy load is honestly expensive — through irritation and because the cheap tier stops counting as a way in (see Inflow).</p>
 <p><b>The ceiling on the ad tier came out of measurement.</b> Some viewers will not watch with ads at any price, and every segment has its own limit: cinephiles 32%, families 58%, the mass audience 83%, the young 90%.</p>
 <p><b>The cheap tier's weight in the entry price is intrinsic, not actual.</b> A newcomer judges "how much does trying this cost" by the blend of tiers they would consider for themselves, not by the actual distribution of your base. The ad tier's weight in that blend is the share of the segment that considers watching with ads at all, and it fades with ad load: a tier you cannot stand to watch does not exist in a newcomer's eyes. Were the weight actual, a vicious loop would open: cranking the list price would inflate the cheap tier's share, the blend would get cheaper — and demand would rise with the price. With the intrinsic weight the loop is broken, and price has an honest interior optimum (measured: peak at ₽449, minus two-thirds of the outcome at ₽999).</p>
 <p><b>The premium choice feels the full list price.</b> A newcomer taking the ad-free tier judges it by its own price, not by the blend:</p>
-<pre class="doc-pre"><code>premium_take = clamp((399 / premium_price)^(elasticity × 0.8), 0.10, 1)
-premium_new  = converted × (1 − ad_share) × premium_take
-downgraded   = (1 − premium_take) × (1 − ad_share) × converted
-               × clamp(0.5 × tolerance, 0, 0.9)   — onto the ad tier</code></pre>
+<pre class="doc-pre"><code><span class="pl">premium_take = clamp((399 / premium_price)^(elasticity × 0.8), 0.10, 1)</span><span class="pl">premium_new  = converted × (1 − ad_share) × premium_take</span><span class="pl">downgraded   = (1 − premium_take) × (1 − ad_share) × converted</span><span class="pl">               × clamp(0.5 × tolerance, 0, 0.9)   — onto the ad tier</span></code></pre>
 <p>Those scared off the premium tier partly step down to the cheap one (as far as the segment tolerates ads); the rest do not sign up at all.</p>
 <p>Hence a non-obvious consequence: <b>cutting the cheap tier's price poaches people from your own expensive one</b>. Cannibalisation is not a side effect, it is the main mechanism.</p>
 <h3 id="s-18">Inflow</h3>
 <p>Inflow splits into two independent questions that must not be confused:</p>
 <ol><li><b>How many people will subscribe at all this month.</b> That depends on the best offer on the market, not only on yours.</li><li><b>Which of the two gets them.</b> That is decided by preference (see section 6).</li></ol>
-<pre class="doc-pre"><code>ad_weight   = clamp(0.5 × tolerance, 0.15, 0.75)
-              × clamp(1 − 0.12 × max(0, ad_pain − 1), 0, 1)
-entry_price = premium × (1 − ad_weight) + ad_price × ad_weight
-paid_price  = lockedPrice × (1 − ad_share) + ad_price × ad_share
-list_factor = (399 / entry_price) ^ elasticity(segment)  — for new sign-ups
-paid_factor = (399 / paid_price) ^ elasticity(segment)   — for the existing base
-appeal      = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)
-ad_penalty  = 1 − 0.16 × ad_pain × ad_share × (1 − relief)
-
-quality(side)   = list_factor × appeal × ad_penalty
-category_trials = untapped × market_awareness × 0.115
-                  × max(quality_you, quality_rival) × line-up × events
-trials          = category_trials × preference × (1 + premiere_pull × 0.6)
-converted       = trials × trialConversion × trial_length_factor</code></pre>
+<pre class="doc-pre"><code><span class="pl">ad_weight   = clamp(0.5 × tolerance, 0.15, 0.75)</span><span class="pl">              × clamp(1 − 0.12 × max(0, ad_pain − 1), 0, 1)</span><span class="pl">entry_price = premium × (1 − ad_weight) + ad_price × ad_weight</span><span class="pl">paid_price  = lockedPrice × (1 − ad_share) + ad_price × ad_share</span><span class="pl">list_factor = (399 / entry_price) ^ elasticity(segment)  — for new sign-ups</span><span class="pl">paid_factor = (399 / paid_price) ^ elasticity(segment)   — for the existing base</span><span class="pl">appeal      = depth^(0.6 × depthWeight) × freshness^(0.5 × freshnessWeight)</span><span class="pl">ad_penalty  = 1 − 0.16 × ad_pain × ad_share × (1 − relief)</span><span class="pl">&nbsp;</span><span class="pl">quality(side)   = list_factor × appeal × ad_penalty</span><span class="pl">category_trials = untapped × market_awareness × 0.115</span><span class="pl">                  × max(quality_you, quality_rival) × line-up × events</span><span class="pl">trials          = category_trials × preference × (1 + premiere_pull × 0.6)</span><span class="pl">converted       = trials × trialConversion × trial_length_factor</span></code></pre>
 <p><code>untapped = potential(segment) − your subscribers − his</code>: the closer the market is to saturation, the more expensive each further subscriber — regardless of who has them now.</p>
 <p><b>New sign-ups look at the list price; existing subscribers are annoyed by what they themselves pay.</b> Until the base is moved onto the new list price, a rise does not irritate them — that is the whole point of the gap: it lets the price grow without paying in churn straight away. Churn uses <code>paid_factor</code>, inflow uses <code>list_factor</code>.</p>
 <p>The split matters: service quality must enter the viewer's decision once. If it entered both the inflow and the choice between services, it would effectively be squared — any imbalance would instantly turn into a rout, and you could not learn anything from an experiment.</p>
 <h3 id="s-19">Awareness</h3>
-<pre class="doc-pre"><code>per_viewer = (marketing × segment_share_of_market) / potential
-gain       = clamp(0.28 × (per_viewer / refMarketingPerViewer)^0.55, 0, awarenessMaxGain)
-awareness(t) = awareness(t−1) + (1 − awareness) × gain
-               − awareness × awarenessDecay + premiere_pull × 0.02</code></pre>
+<pre class="doc-pre"><code><span class="pl">per_viewer = (marketing × segment_share_of_market) / potential</span><span class="pl">gain       = clamp(0.28 × (per_viewer / refMarketingPerViewer)^0.55, 0, awarenessMaxGain)</span><span class="pl">awareness(t) = awareness(t−1) + (1 − awareness) × gain</span><span class="pl">               − awareness × awarenessDecay + premiere_pull × 0.02</span></code></pre>
 <p>The exponent 0.55 produces diminishing returns: quadrupling the budget does not quadruple the effect. <code>awarenessDecay = 0.06</code> — a brand is forgotten unless it is repeated.</p>
 <p>Note that awareness is <b>multiplied</b> by catalogue appeal. Marketing against an empty catalogue burns for nothing — there is nowhere to bring the viewer.</p>
 <h3 id="s-20">Churn</h3>
-<pre class="doc-pre"><code>churn = (baseChurn × loyalty + boredom + price_anger + ad_anger + quality_annoyance)
-        × exclusive_hold
-      + rival_lineup + hangover × 0.018 × freshnessWeight
-      − premiere_buzz × 0.030
-
-exclusive_hold = 1 − exclusiveRetention × own_share = 1 − 0.40 × own_share</code></pre>
+<pre class="doc-pre"><code><span class="pl">churn = (baseChurn × loyalty + boredom + price_anger + ad_anger + quality_annoyance)</span><span class="pl">        × exclusive_hold</span><span class="pl">      + rival_lineup + hangover × 0.018 × freshnessWeight</span><span class="pl">      − premiere_buzz × 0.030</span><span class="pl">&nbsp;</span><span class="pl">exclusive_hold = 1 − exclusiveRetention × own_share = 1 − 0.40 × own_share</span></code></pre>
 <p><code>baseChurn = 0.035</code> — 3.5% a month with a perfect service, i.e. an average subscription life of about 29 months. Real churn in the game usually runs 5–12%, i.e. 8–20 months.</p>
 <p><b>Hangover</b> is a stock of its own. A premiere adds <code>buzz × hangover(genre)</code> to it, and next month that stock works on churn. This is how "finished it, cancelled" is modelled: a blockbuster has <code>hangover = 1.0</code>, family animation <code>0.1</code>.</p>
 <p><b>Buzz fatigue</b> (added in the 2026-08 audit). A city cannot be amazed every month: each premiere tires the audience in proportion to its raw buzz, and until the fatigue decays (−40% a month) the next premieres ring quieter — by <code>1/(1 + 0.5 × fatigue)</code>. On top of that the buzz-to-trials conversion is concave (<code>buzz^0.85</code>): market attention saturates. Without these two mechanics a conveyor of loud premieres cancelled the hangover by construction — the next spike arrived before the previous one wore off — and the mass-market blockbuster dominated at 2.1× (measured). It now stays the peak (~1.2×) but pays for the frequency of its noise, and outside the mass segment it loses to retention genres.</p>
@@ -261,9 +245,7 @@ exclusive_hold = 1 − exclusiveRetention × own_share = 1 − 0.40 × own_share
 <hr>
 <h3 id="s-21">Churn by tenure</h3>
 <p>The rate above is not the same for everyone. The base splits into two cohorts, and they churn differently:</p>
-<pre class="doc-pre"><code>newcomer (under 3 months)   churn × 1.65 / norm
-mature base                 churn × 0.86 / norm
-norm = 0.18 × 1.65 + 0.82 × 0.86</code></pre>
+<pre class="doc-pre"><code><span class="pl">newcomer (under 3 months)   churn × 1.65 / norm</span><span class="pl">mature base                 churn × 0.86 / norm</span><span class="pl">norm = 0.18 × 1.65 + 0.82 × 0.86</span></code></pre>
 <p>The normalisation matters: the multipliers are divided by the mix at a reference share of newcomers (18%), so at that share the average churn equals the base rate. Without it the tenure split would quietly raise churn for everyone all the time — and the lesson here is not about the level of churn but about the composition of the base.</p>
 <p>Someone who signed up this month has not settled in: they are still trying the service, comparing, and leaving is easy. Someone six months in has folded you into a habit. Hence an uncomfortable consequence familiar to any growing service: <b>the faster you grow, the higher your average churn</b> — not because the service got worse, but because the share of newcomers went up. A loud premiere brings people on a free trial, not subscribers; subscribers are the ones still there three months later.</p>
 <p>The practical conclusion: monthly net adds are a poor health metric. What matters is the mature part of the base, and that is what a valuation is actually paying for.</p>
@@ -271,41 +253,25 @@ norm = 0.18 × 1.65 + 0.82 × 0.86</code></pre>
 <h3 id="s-22">One account, several homes</h3>
 <p>One subscription gets used across several households: kids, parents, friends. The share of such viewers grows by itself — from 6% at the start towards a 30% ceiling, and the faster the bigger you are: a friend "already has it".</p>
 <p>That share has two sides, and both are real:</p>
-<pre class="doc-pre"><code>bandwidth   = hours × share × 0.55      — you pay for watching nobody pays you for
-word of mouth = share × 0.13 of awareness — and they advertise the catalogue for free</code></pre>
+<pre class="doc-pre"><code><span class="pl">bandwidth   = hours × share × 0.55      — you pay for watching nobody pays you for</span><span class="pl">word of mouth = share × 0.13 of awareness — and they advertise the catalogue for free</span></code></pre>
 <p>Leaving it alone is not free: someone else's hours arrive on your bandwidth bill. Closing it is not free either: the shop window goes dark, and with it a channel that was bringing you viewers without any marketing budget.</p>
 <p>The out-of-home access lever decides when to invite them to pay for themselves. The middle setting is the family plan: a second home for a surcharge, with no restrictions on those who decline. The hard one makes access from another household paid only.</p>
-<pre class="doc-pre"><code>agreed to pay = share × force × 0.34
-left for good = share × force × 0.22</code></pre>
+<pre class="doc-pre"><code><span class="pl">agreed to pay = share × force × 0.34</span><span class="pl">left for good = share × force × 0.22</span></code></pre>
 <p>Force is 1 for hard enforcement and 0.35 for a polite request. Tightening leaves reputational noise for three months (+1.2pp of churn in the first).</p>
 <p>Measured (24 codes), this is a decision about timing, not about whether. Closing in month eighteen is worth +7% to the licence-led strategy, +8% to the balanced one and +5% to the studio-led one. Closing in month one — when the window is nearly empty and word of mouth has brought in nothing yet — costs the licence-led strategy −10% and drops the studio-led one, which lives on the reach of its premieres, by <b>−19%</b>. By month four the studio-led strategy is still down (−10%) while the licence-led one scrapes a meagre +1%. Closing in month thirty brings roughly half the peak: the share has grown, but it is too late to turn it into money.</p>
 <p>One plan across several homes is not theft but a free shop window: those people already watch your catalogue and already cost you bandwidth. Ask them to pay too early and you lose the reach they were bringing you; too late and you have paid for their watching all along and taught them not to pay.</p>
 <h2 id="s-23">4. Watch hours and bandwidth</h2>
-<pre class="doc-pre"><code>hours(segment) = subscribers × baseHoursPerSub × baseHours(segment) × season
-                 × depth^0.35 × (1 + 0.22 × recommendations × quality)
-                 × rival_lineup
-
-per_hour = cdnCostPerHour × (bitrate / refBitrate) × (1 − 0.30 × tech_level)
-           × (1 − encoding_saving)
-bandwidth = hours × per_hour</code></pre>
+<pre class="doc-pre"><code><span class="pl">hours(segment) = subscribers × baseHoursPerSub × baseHours(segment) × season</span><span class="pl">                 × depth^0.35 × (1 + 0.22 × recommendations × quality)</span><span class="pl">                 × rival_lineup</span><span class="pl">&nbsp;</span><span class="pl">per_hour = cdnCostPerHour × (bitrate / refBitrate) × (1 − 0.30 × tech_level)</span><span class="pl">           × (1 − encoding_saving)</span><span class="pl">bandwidth = hours × per_hour</span></code></pre>
 <p>This is the <b>only large variable cost line</b> of a subscription business — and it grows with the loyalty of the audience. Families watch one and a half times as much as the mainstream: they are the most loyal and the most expensive.</p>
 <p>The teaching point: in a subscription business "engagement" is not a success metric, it is a cost line. Success is when hours convert into retention faster than into a bandwidth bill.</p>
 <hr>
 <h2 id="s-24">5. Revenue</h2>
-<pre class="doc-pre"><code>subscriptions = ad_free_subs × premium_price + ad_subs × ad_price
-impressions   = ad_hours × ad_load × 2 × adaptive_ads_yield
-glut          = impressions / (impressions + adInventorySaturation)
-cpm           = base cpm × cpm_season × (1 − 0.45 × glut)
-advertising   = impressions / 1000 × cpm
-revenue       = subscriptions + advertising</code></pre>
+<pre class="doc-pre"><code><span class="pl">subscriptions = ad_free_subs × premium_price + ad_subs × ad_price</span><span class="pl">impressions   = ad_hours × ad_load × 2 × adaptive_ads_yield</span><span class="pl">glut          = impressions / (impressions + adInventorySaturation)</span><span class="pl">cpm           = base cpm × cpm_season × (1 − 0.45 × glut)</span><span class="pl">advertising   = impressions / 1000 × cpm</span><span class="pl">revenue       = subscriptions + advertising</span></code></pre>
 <p><code>base cpm = ₽640</code>, a spot is 30 seconds, hence the factor of 2 (spots per minute). The ad market is seasonal: winter ×1.25, autumn ×1.1, spring ×0.95, summer ×0.75 — the same spot earns two-thirds more in winter than in July, turning ad load from set-and-forget into a tactical decision.</p>
 <p>There is a finite number of advertisers: the more impressions you dump, the cheaper each one gets. This saturation — together with the ad-tier share ceiling — closes the loophole where "crank the price and herd everyone onto the ad tier" would be a free strategy — together with the ceiling on the ad tier this is what gave the price back its meaning as a price.</p>
-<pre class="doc-pre"><code>variable costs = bandwidth + support + retention discounts
-contribution   = revenue − variable costs
-fixed costs    = hqMonthly + staff (₽6 × subscribers) + licensing + originals + marketing + technology + data science
-profit         = contribution − fixed costs</code></pre>
+<pre class="doc-pre"><code><span class="pl">variable costs = bandwidth + support + retention discounts</span><span class="pl">contribution   = revenue − variable costs</span><span class="pl">fixed costs    = hqMonthly + staff (₽6 × subscribers) + licensing + originals + marketing + technology + data science</span><span class="pl">profit         = contribution − fixed costs</span></code></pre>
 <p>The content budget is deliberately classed as a fixed cost: it does not depend on how many subscribers you have this month. That gives a direct break-even calculation:</p>
-<pre class="doc-pre"><code>break-even subscribers = fixed costs / contribution per subscriber</code></pre>
+<pre class="doc-pre"><code><span class="pl">break-even subscribers = fixed costs / contribution per subscriber</span></code></pre>
 <p>That number is on screen every month. It explains why streaming is a scale business: fixed costs are enormous, contribution per subscriber is small, and everything comes down to whether you can build the base before the cash runs out.</p>
 <hr>
 <h2 id="s-25">6. A living rival</h2>
@@ -320,21 +286,15 @@ profit         = contribution − fixed costs</code></pre>
 </table></div>
 <p>The rival has two funding rounds. Once they are spent and his cash goes negative he goes bust, and his subscribers disperse across the market over three months. That is the only way to get the whole market — and it means surviving the price war first.</p>
 <h3 id="s-27">Two ways to grow</h3>
-<pre class="doc-pre"><code>occupied = your subscribers + his subscribers
-untapped = segment potential − occupied</code></pre>
+<pre class="doc-pre"><code><span class="pl">occupied = your subscribers + his subscribers</span><span class="pl">untapped = segment potential − occupied</span></code></pre>
 <p><b>First, bring in people who have no subscription at all.</b> How many people decide to subscribe depends on the best offer available on the market, not only on yours:</p>
-<pre class="doc-pre"><code>quality(side)  = price_factor × catalogue_appeal × ad_penalty
-category_trials = untapped × market_awareness × 0.115 × max(you, rival)</code></pre>
+<pre class="doc-pre"><code><span class="pl">quality(side)  = price_factor × catalogue_appeal × ad_penalty</span><span class="pl">category_trials = untapped × market_awareness × 0.115 × max(you, rival)</span></code></pre>
 <p>A strong rival grows the whole category — including for you.</p>
 <p><b>Second, take people who already pay the other guy.</b> Inflow splits by the segment's preference, and part of his base switches every month:</p>
-<pre class="doc-pre"><code>pull(side)  = price_factor^0.9 × catalogue × ad_penalty × awareness^0.35
-              × (1 + 1.15 × exclusive) × (1 + 0.5 × premiere_buzz)
-preference  = pull_you / (pull_you + pull_rival)
-switching   = his_base × 0.035 × segment_loyalty × (2 × preference − 1)</code></pre>
+<pre class="doc-pre"><code><span class="pl">pull(side)  = price_factor^0.9 × catalogue × ad_penalty × awareness^0.35</span><span class="pl">              × (1 + 1.15 × exclusive) × (1 + 0.5 × premiere_buzz)</span><span class="pl">preference  = pull_you / (pull_you + pull_rival)</span><span class="pl">switching   = his_base × 0.035 × segment_loyalty × (2 × preference − 1)</span></code></pre>
 <p>The second route is faster than the first, but the rival knows how to answer.</p>
 <p>Note the <code>exclusive</code> term. It is the one thing the same money cannot buy: a licence sits on both shelves, your own show only on yours. And what counts is not volume in general but volume <b>for this segment</b>: a mountain of reality TV will not hold cinephiles, however large it gets.</p>
-<pre class="doc-pre"><code>exclusive(segment) = Σ(genre_hours × genre_value × genre_appeal_to_segment)
-                     / (the same + threshold)</code></pre>
+<pre class="doc-pre"><code><span class="pl">exclusive(segment) = Σ(genre_hours × genre_value × genre_appeal_to_segment)</span><span class="pl">                     / (the same + threshold)</span></code></pre>
 <h3 id="s-28">The line-up</h3>
 <p>Rival premieres are no longer drawn from a die: what you see on screen is what actually comes out of his pipeline. Next month's announcement is honest — it is a project one month from release.</p>
 <div class="doc-tablewrap"><table class="data">
@@ -360,11 +320,10 @@ switching   = his_base × 0.035 × segment_loyalty × (2 × preference − 1)</c
 <h2 id="s-30">6a. Escalating resource costs</h2>
 <p>The flywheel "more subscribers → more money → more content → more subscribers" cannot spin forever. It has two brakes, and both carry a lesson.</p>
 <p><b>Rights get more expensive when you are both bidding for them.</b> The index is shared:</p>
-<pre class="doc-pre"><code>pressure = max(0, (your_buying + his_buying − calm_volume) / scale)
-index    → 1 + 1.15 × pressure          (smoothed, inertia 0.72)</code></pre>
+<pre class="doc-pre"><code><span class="pl">pressure = max(0, (your_buying + his_buying − calm_volume) / scale)</span><span class="pl">index    → 1 + 1.15 × pressure          (smoothed, inertia 0.72)</span></code></pre>
 <p>You cannot bring the index down alone — you can only stop bidding. Hence a non-obvious consequence that the tests check: trying to buy up the entire rights market on a large budget bankrupts you, because you are raising the price against yourself.</p>
 <p><b>Talent gets more expensive with your success:</b></p>
-<pre class="doc-pre"><code>talent_index = 1 + 0.95 × (subscribers / 4M)^0.7</code></pre>
+<pre class="doc-pre"><code><span class="pl">talent_index = 1 + 0.95 × (subscribers / 4M)^0.7</span></code></pre>
 <p>This is exactly why a hit's cost grows faster than its audience: stars charge a successful service differently. By the end of a good game a project costs twice what it did at the start.</p>
 <h3 id="s-31">6a-2. The third act: the rights cliff and the rival's last push</h3>
 <p>Before these mechanics, measuring "from which turn can the game be abandoned" showed that random decisions after month 30 barely changed the outcome: the finale played itself. Now two things happen in the last third of the game — both deterministic, both announced in advance.</p>
@@ -399,18 +358,14 @@ index    → 1 + 1.15 × pressure          (smoothed, inertia 0.72)</code></pre>
 <h2 id="s-34">7. Algorithms: second-order optimisation</h2>
 <p>A slider sets a <b>number</b> ("price = ₽399"). An algorithm sets a <b>rule</b> ("discount = f(this particular viewer's churn risk)"), and a rule can differ across circumstances.</p>
 <p>Algorithms unlock as quality grows:</p>
-<pre class="doc-pre"><code>quality    = √(data_level × team_level)
-data_level = saturation(accumulated watch hours / dataSaturation)
-team_level = saturation(spent on data science / rndSaturation)</code></pre>
+<pre class="doc-pre"><code><span class="pl">quality    = √(data_level × team_level)</span><span class="pl">data_level = saturation(accumulated watch hours / dataSaturation)</span><span class="pl">team_level = saturation(spent on data science / rndSaturation)</span></code></pre>
 <p>The geometric mean means <b>neither factor rescues a zero in the other</b>: a team without data is exactly as useless as data without a team. Data accumulates only from viewing — so algorithms arrive later the smaller your audience is.</p>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Algorithm</th><th>Unlock</th><th>What it does</th><th>What it costs you</th></tr></thead>
 <tbody><tr><td>Recommendation feed</td><td>0.10</td><td>the perceived catalogue is larger than the real one</td><td>with a weak model the feed collapses into a bubble</td></tr><tr><td>Content demand forecast</td><td>0.18</td><td>the same budget buys the right things</td><td>buying drifts towards the already known; depth grows slower</td></tr><tr><td>Personal retention</td><td>0.28</td><td>the discount goes only to people about to leave</td><td>model misses: some who would have stayed get it too</td></tr><tr><td>Adaptive advertising</td><td>0.36</td><td>the same impressions at less irritation</td><td>complexity, and it only works on large data</td></tr><tr><td>Smart encoding</td><td>0.22</td><td>a cheaper hour of bandwidth</td><td>with a weak model the picture degrades</td></tr><tr><td>Release calendar</td><td>0.44</td><td>the premiere is spread out, churn is smoothed</td><td>a lower sign-up peak</td></tr></tbody>
 </table></div>
 <h3 id="s-35">Recommendations: why the slider has a safe setting</h3>
-<pre class="doc-pre"><code>lift            = 1 + 0.35 × strength × quality
-bubble          = 1 − 0.30 × strength² × (1 − quality)
-perceived_depth = depth × lift × bubble</code></pre>
+<pre class="doc-pre"><code><span class="pl">lift            = 1 + 0.35 × strength × quality</span><span class="pl">bubble          = 1 − 0.30 × strength² × (1 − quality)</span><span class="pl">perceived_depth = depth × lift × bubble</span></code></pre>
 <p>The benefit is linear in personalisation strength; the harm is <b>quadratic</b>. So the optimal strength is always interior and moves right as the model improves: a cautious feed helps even on weak data, while an aggressive one on the same data collapses the catalogue into a dozen identical cards. That is the central lesson about "smart algorithms": the question is not whether to switch it on but how hard to push — and the answer depends on how much you know.</p>
 <h3 id="s-36">Counterfactual analysis</h3>
 <p>The Algorithms tab <b>re-simulates last month with the algorithm switched off</b> and shows the difference. The answer is often close to zero: retention is pointless when churn is already low, encoding does not pay while traffic is small, and there is nothing to spread out with the release calendar if there are no premieres. Students see that an algorithm's value is not a property of the algorithm but a property of the situation.</p>
@@ -426,33 +381,22 @@ perceived_depth = depth × lift × bubble</code></pre>
 <h2 id="s-38">8c. How each title fared</h2>
 <p>"What did this show bring in" has no accounting answer in a subscription business: the subscriber pays for access as a whole, not for a particular title. So this is honest attribution through two channels, and both are named.</p>
 <p><b>Acquisition.</b> Each month's inflow is computed twice: with the premiere uplift and without it. The difference is the subscribers who would not have arrived without the premieres, and it is split between the month's premieres by their share of the segment's pull:</p>
-<pre class="doc-pre"><code>uplift = premiereTrialGain × pull^premiereTrialPower
-title's share = its buzz × segment aim / total pull</code></pre>
+<pre class="doc-pre"><code><span class="pl">uplift = premiereTrialGain × pull^premiereTrialPower</span><span class="pl">title's share = its buzz × segment aim / total pull</span></code></pre>
 <p>Those subscribers do not vanish the moment they arrive: they keep paying and melt away with general churn. Hence the two lines on the card — "brought in" and "still with you".</p>
 <p><b>Watching.</b> The title's share of hours is measured against the <b>whole</b> catalogue, not against your own shelf: viewers watch the rented content too, and crediting your own show with hours people spent on someone else's is the easiest way to paint yourself a success. By that share the title receives part of the ad revenue and the same part of the bandwidth cost.</p>
 <p><b>Costs.</b> Production is what was actually paid to the crew across all months, not the estimate: a project cut short by a crisis or extended costs what was paid for it. Plus the release campaign.</p>
-<pre class="doc-pre"><code>contribution = subscriptions of those brought + ads on its hours − bandwidth on its hours
-net          = contribution − production − campaign</code></pre>
+<pre class="doc-pre"><code><span class="pl">contribution = subscriptions of those brought + ads on its hours − bandwidth on its hours</span><span class="pl">net          = contribution − production − campaign</span></code></pre>
 <p>Hence the pipeline's main rule, visible on the cards at a glance: the very same flagship pays for itself three times over when it lands in year one and never earns out in year three — the subscribers it brings simply do not have enough months left to return its cost. A cheap pilot in a good season almost always beats an expensive flagship in a bad one on return per unit spent.</p>
 <p>This is attribution, not the title's profit. There is no exact boundary of "this person came for this show" — not in the game and not in life — but this is how content is measured in the industry, and it is better to measure honestly and approximately than not at all.</p>
 <h2 id="s-39">9. Valuation and funding</h2>
-<pre class="doc-pre"><code>run-rate    = average revenue over 6 months × 12
-growth      = subscribers over 3 months / subscribers over the previous 3 months
-margin      = profit over 6 months / revenue over the same 6 months
-multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
-library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45
-position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
-valuation   = (run-rate × multiple + library) × position
-final score = (valuation + cash in the till) × your stake</code></pre>
+<pre class="doc-pre"><code><span class="pl">run-rate    = average revenue over 6 months × 12</span><span class="pl">growth      = subscribers over 3 months / subscribers over the previous 3 months</span><span class="pl">margin      = profit over 6 months / revenue over the same 6 months</span><span class="pl">multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)</span><span class="pl">library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45</span><span class="pl">position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)</span><span class="pl">valuation   = (run-rate × multiple + library) × position</span><span class="pl">final score = (valuation + cash in the till) × your stake</span></code></pre>
 <p>The cash in the till belongs to the shareholders: a rouble unspent by the finale is worth a rouble, and a rouble spent has to come back as valuation growth. Without the cash term, one-off costs late in the game would be free — including the price of event decisions.</p>
 <p>Your own library enters the valuation as a <b>separate term</b> — it is an asset on the balance sheet, while licences are not. And an hour of reality is worth a third of an hour of drama in it: a library is what people will still be watching in two years.</p>
 <p>The <code>position</code> multiplier is not decoration either. In a duopoly the market pays not for revenue as such but for who will be setting prices in three years. The loser is cheap even with a good margin — which is precisely why "harvest the margin, do not invest in content" does not work in this game: it produces profit and loses the market.</p>
 <p><b>Revenue and margin are taken over a six-month window, not the last month.</b> The last month can be bought with one decision: crank the price and zero out content and marketing one turn before the end. The business falls apart and the score goes up — measured, that dash was worth +92%. The window closes it.</p>
 <p><b>The lower bound on growth is below zero.</b> A shrinking subscription is valued below one standing still, so "harvest and lose the base" is never free. Valuation works the same way in the delivery game next door.</p>
 <p>A funding round:</p>
-<pre class="doc-pre"><code>round valuation = max(₽1.5B, valuation)
-dilution        = clamp(amount / (round valuation + amount), 0.02, 0.75)
-new stake       = old stake × (1 − dilution)</code></pre>
+<pre class="doc-pre"><code><span class="pl">round valuation = max(₽1.5B, valuation)</span><span class="pl">dilution        = clamp(amount / (round valuation + amount), 0.02, 0.75)</span><span class="pl">new stake       = old stake × (1 − dilution)</span></code></pre>
 <p>The floor under the valuation and the cap on dilution came from measurement too: without them an early round took almost the whole company, and the game was decided by the month the money ran out rather than by the economics.</p>
 <p>The worse things are, the lower the valuation and the more the same money costs. The valuation floor is ₽300M, so a ₽3B cheque at a weak company takes almost everything.</p>
 <p>The final score counts <b>your stake</b>, not the size of the company. "Grow at any cost" produces more subscribers and a smaller result — this is checked by the <code>расти любой ценой невыгодно</code> test in <code>games/cinema/tests/engine.test.mjs</code>.</p>
@@ -465,7 +409,7 @@ new stake       = old stake × (1 − dilution)</code></pre>
 <h2 id="s-41">The cost of what is already built</h2>
 <p>What you have built has a cost of ownership. If the spend were written off once while the accumulated level stayed forever and cost nothing, the "invest in technology" lever would be dishonest: pay once, enjoy the advantage forever. That is not how it works, and two cost lines carry that price.</p>
 <p><b>Upkeep.</b> Every feature built has to be maintained: libraries updated, breakage from other changes fixed, new people taught. The bill arrives every month and does not depend on whether anyone uses the feature:</p>
-<pre class="doc-pre"><code>upkeep = cumulative investment × 1.35% в месяц</code></pre>
+<pre class="doc-pre"><code><span class="pl">upkeep = cumulative investment × 1.35% в месяц</span></code></pre>
 <p>It is computed from the amount invested, not from the level. The level saturates; the maintenance bill does not. So "invest a large sum at once" is not a one-off cost but a permanent obligation.</p>
 <p><b>Infrastructure.</b> Load-driven infrastructure already exists here and is called traffic: <code>cdn = watch hours × cost per hour</code>. It grows with audience loyalty and gets cheaper with technology and encoding — see the watch-hours section.</p>
 <p>The point of splitting these two lines out of "office and administration" is behavioural: the base fixed part is small, while upkeep and traffic grow with the product and the audience. Costs breathe together with the business, and every "invest more" decision carries a tail of future obligations.</p>
@@ -473,12 +417,67 @@ new stake       = old stake × (1 − dilution)</code></pre>
 <h2 id="s-42">The price of a free month</h2>
 <p>A gifted month has two prices, and both are obvious if you look at the cash rather than at the subscriber chart. Without them the best answer would always be the maximum 30 days — and the slider would effectively not exist.</p>
 <p><b>Given-away days are an invoice never sent.</b> Someone who arrives this month watches free for the first <code>trialDays</code> days and pays only for the remainder:</p>
-<pre class="doc-pre"><code>given away = new subscribers × (trialDays / 30) × average price</code></pre>
+<pre class="doc-pre"><code><span class="pl">given away = new subscribers × (trialDays / 30) × average price</span></code></pre>
 <p><b>A long trial brings in more than the people who got a taste.</b> It also brings in the people who came for exactly one free month. They do not leave straight away, but at the first charge — which lands in next month's churn, after they have already been counted in this month's growth. Hence the familiar picture: the subscriber chart climbs beautifully and crumbles a month later.</p>
-<pre class="doc-pre"><code>greed       = clamp((trialDays − 14) / 23, 0, 1)
-fresh share = last month's arrivals / base
-churn += greed × fresh share × 0.55</code></pre>
+<pre class="doc-pre"><code><span class="pl">greed       = clamp((trialDays − 14) / 23, 0, 1)</span><span class="pl">fresh share = last month's arrivals / base</span><span class="pl">churn += greed × fresh share × 0.55</span></code></pre>
 <p>The usual two weeks are the reference point: there the surcharge is exactly zero. The optimum sits right there and falls off on both sides — a short trial loses the people who never got a taste, a long one buys people who leave at the first charge.</p>
   </div>
+  <button class="doc-up" id="doc-up" type="button" hidden
+    aria-label="Back to top and contents">↑</button>
+  <script>
+    // Оглавление: на узком экране свёрнуто, на широком раскрыто (а от 1340
+    // ещё и прижато к левому полю средствами CSS). Активная ссылка
+    // подсвечивается по мере прокрутки.
+    (function () {
+      var toc = document.getElementById('doc-toc');
+      var wide = function () { return matchMedia('(min-width: 700px)').matches; };
+      if (toc) {
+        var sync = function () { toc.open = wide(); };
+        sync();
+        addEventListener('resize', sync);
+        var links = {};
+        Array.prototype.forEach.call(toc.querySelectorAll('a'), function (a) {
+          links[a.getAttribute('href').slice(1)] = a;
+          a.addEventListener('click', function () { if (!wide()) toc.open = false; });
+        });
+        // Активен последний заголовок, который уже проехал верх экрана, —
+        // наблюдатель пересечений оставлял бы список без подсветки везде,
+        // где между заголовками больше одного экрана текста. Здесь это норма.
+        var ids = Object.keys(links);
+        var marked = null;
+        var mark = function () {
+          var active = ids[0];
+          for (var k = 0; k < ids.length; k++) {
+            var h = document.getElementById(ids[k]);
+            if (h && h.getBoundingClientRect().top <= 90) active = ids[k];
+          }
+          if (active === marked) return;
+          if (marked) links[marked].classList.remove('on');
+          links[active].classList.add('on');
+          marked = active;
+          var rail = getComputedStyle(toc).position === 'fixed';
+          if (rail) links[active].scrollIntoView({ block: 'nearest' });
+        };
+        var queued = false;
+        addEventListener('scroll', function () {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(function () { queued = false; mark(); });
+        }, { passive: true });
+        mark();
+      }
+      // Кнопка «наверх»: страница разбора — полсотни экранов, и без неё
+      // к оглавлению возвращаются только листанием.
+      var up = document.getElementById('doc-up');
+      if (!up) return;
+      var toggle = function () { up.hidden = scrollY < 600; };
+      toggle();
+      addEventListener('scroll', toggle, { passive: true });
+      up.addEventListener('click', function () {
+        scrollTo({ top: 0, behavior: 'smooth' });
+        if (toc && !wide()) toc.open = true;
+      });
+    })();
+  </script>
 </body>
 </html>

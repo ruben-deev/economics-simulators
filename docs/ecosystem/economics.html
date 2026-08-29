@@ -22,16 +22,48 @@
       background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
     .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
       padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    /* Формула словами переносится с висячим отступом: продолжение строки
+       видно, что оно продолжение, а не следующая строка формулы. */
+    .doc-pre .pl { display: block; white-space: pre-wrap;
+      padding-left: 2.2em; text-indent: -2.2em; overflow-wrap: break-word; }
+    .doc-pre.is-diagram { white-space: pre; }
     .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
       padding: 1px 5px; font-size: 0.92em; }
     .doc-pre code { background: none; border: none; padding: 0; }
     .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
     .doc table.data { width: 100%; }
-    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+    .doc-toc { margin: 18px 0 6px; padding: 10px 18px 14px; background: var(--panel);
       border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
-    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
-      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
-    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc-toc > summary { list-style: none; cursor: pointer; padding: 4px 0;
+      font-weight: 700; color: var(--muted); text-transform: uppercase;
+      font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc > summary::-webkit-details-marker { display: none; }
+    .doc-toc > summary::after { content: " ▾"; }
+    .doc-toc[open] > summary::after { content: " ▴"; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none;
+      border-left: 2px solid transparent; padding-left: 8px; margin-left: -8px; }
+    .doc-toc a.on { border-left-color: var(--accent); color: var(--text); }
+    @media (min-width: 700px) { .doc-toc[open] { columns: 2; column-gap: 26px; }
+      .doc-toc > summary { column-span: all; } }
+    .doc h2, .doc h3 { scroll-margin-top: 14px; }
+    /* Широкий экран: оглавление уходит на поле слева и остаётся на виду.
+       Порог 1340 — раньше рейка налезала бы на текст. */
+    @media (min-width: 1340px) {
+      .doc-toc[open] { columns: 1; }
+      .doc-toc { position: fixed; top: 18px; left: calc(50% - 656px); width: 210px;
+        max-height: calc(100vh - 36px); overflow-y: auto; margin: 0; z-index: 5; }
+      .doc-toc > summary { cursor: default; }
+      .doc-toc > summary::after, .doc-toc[open] > summary::after { content: ""; }
+    }
+    .doc-up { position: fixed; right: 16px; bottom: 16px; z-index: 6;
+      width: 42px; height: 42px; border-radius: 50%; cursor: pointer;
+      background: var(--panel); color: var(--accent-2); font-size: 18px;
+      border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+    .doc-up:hover { color: var(--text); border-color: var(--accent); }
+    @media (max-width: 640px) {
+      .doc { padding: 20px 14px 80px; }
+      .doc-pre { font-size: 12px; padding: 12px 13px; }
+    }
     .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
   </style>
 </head>
@@ -42,8 +74,8 @@
       <a href="en/economics.html">English version</a>
     </div>
     
-  <nav class="doc-toc">
-    <div class="doc-toc-title">Содержание</div>
+  <details class="doc-toc" id="doc-toc">
+    <summary>Содержание · 17</summary>
     <a href="#s-1">Главная формула</a>
     <a href="#s-2">Топология базы: хаб и спицы</a>
     <a href="#s-3">Кросс-селл против холодного маркетинга</a>
@@ -61,22 +93,21 @@
     <a href="#s-17">Пост-эндгейм: «год конгломерата»</a>
     <a href="#s-18">Самокаты: парк как капитал</a>
     <a href="#s-19">Цена решений (выдержка из замеров)</a>
-  </nav>
+  </details>
     <h1>НОВОГРАД: разбор модели</h1>
 <p>Экосистемный симулятор — «эндгейм» набора. Игрок начинает там, где закончил любую из трёх игр: его компания выиграла свой рынок, рынок насыщен, и расти числом клиентов больше некуда. Ход — месяц, партия — три года.</p>
 <h2 id="s-1">Главная формула</h2>
-<pre class="doc-pre"><code>выручка холдинга = уникальные клиенты × ARPU холдинга</code></pre>
+<pre class="doc-pre"><code><span class="pl">выручка холдинга = уникальные клиенты × ARPU холдинга</span></code></pre>
 <p>Разбор месяца в игре раскладывает изменение выручки ровно на эти два множителя. После насыщения первый множитель почти заморожен — партию решает второй. Это и есть ответ на потолок ёмкости рынка.</p>
 <h2 id="s-2">Топология базы: хаб и спицы</h2>
 <p>Стартовый актив — хаб общей базы. Пересечения считаются между хабом и каждой вертикалью: кросс-селл предлагает клиенту хаба ВТОРОЙ сервис (тройных пересечений в модели нет по построению). Форма экосистемы буквально следует за стартовым активом:</p>
 <ul><li><b>доставка</b> — курьерская логистика: е-ком запускается на 40% дешевле и маржинальнее, но пиковые конфликты стоят еде качества;</li><li><b>стриминг</b> — привычка платить: подписка Plus дешевле в запуске и конвертит лучше, контент свой — лицензия кино не нужна;</li><li><b>билеты</b> — партнёрская сеть: кросс-селл на 20% дешевле, а холодное привлечение вертикалей обходится в 0.7 прежней цены (афиши и кассы города работают и на тех, кто ещё не ваш клиент); партнёрство по билетам уже в кармане. Форма актива — широкий и тонкий: самая большая база города при самой маленькой выручке с человека, потому что билет покупают пару раз в год. 280 тыс. × 90 ₽ = 25 млн/мес против 61 у доставки и 50 у стриминга.</li></ul>
 <h2 id="s-3">Кросс-селл против холодного маркетинга</h2>
-<pre class="doc-pre"><code>приток канала = min(бюджет / цена клиента, пул × охват × качество сервиса)</code></pre>
+<pre class="doc-pre"><code><span class="pl">приток канала = min(бюджет / цена клиента, пул × охват × качество сервиса)</span></code></pre>
 <p>Кросс-селл в разы дешевле холодного, но упирается в ёмкость: пул хаба конечен, а конверсия зависит от качества принимающей вертикали — мёртвый продукт не спасает никакой трафик. Перерасход бюджета сгорает и виден в отчёте. Холодный маркетинг дороже, но масштабируем и приводит новых для холдинга людей. Замер: оптимальный сплит общего бюджета ≈ 20/80.</p>
 <h2 id="s-4">Е-ком: мощность логистики</h2>
 <p>Третья нога — единственная вертикаль с собственным рычагом мощности: склады, машины, слоты доставки.</p>
-<pre class="doc-pre"><code>мощность = бюджет / (бюджет + 6 млн)   → чек ×(1+0.30·L), отток −1.8 п.п.·L,
-                                          маржа +5 п.п.·L, ёмкость кросс-селла ×(1+0.40·L)</code></pre>
+<pre class="doc-pre"><code><span class="pl">мощность = бюджет / (бюджет + 6 млн)   → чек ×(1+0.30·L), отток −1.8 п.п.·L,</span><span class="pl">                                          маржа +5 п.п.·L, ёмкость кросс-селла ×(1+0.40·L)</span></code></pre>
 <p>У актива с собственными курьерами парк общий: мощность, ушедшая в посылки, снимается с пиков стартового сервиса (штраф качества до 10% × доля е-кома в базе). Отсюда развилка: курьерский актив везёт посылки дешевле всех, но платит за это качеством своей дойной коровы.</p>
 <p>Без этого рычага запуск е-кома был бы мёртвой механикой: вклад с клиента (385 ₽ × 34% ≈ 131 ₽) сам по себе не окупает ни фикс, ни размытие фокуса третьей вертикалью. Рычаг логистики и делает вертикаль живой — это видно по парным спускам (доведённая опора без е-кома против опоры с е-комом):</p>
 <div class="doc-tablewrap"><table class="data">
@@ -97,9 +128,7 @@
 <p>Дилемма Amazon Prime: выгоды подписчику стоят примерно столько же, сколько он платит (на массовой цене — больше). Окупается подписка частотой и оттоком, который она режет во всех сервисах сразу. Подписчики приходят только из мульти-клиентов: подписке нужно, что склеивать.</p>
 <h2 id="s-7">Финансовая команда и уровни сложности</h2>
 <p>Единственный рычаг, который управляет не бизнесом, а тем, как бизнес считают и показывают.</p>
-<pre class="doc-pre"><code>сила = бюджет / (бюджет + насыщение),   насыщение = 5% выручки × множитель уровня
-прочие расходы = выручка × (3.0% × множитель уровня − 2.0% × сила)
-условия раунда = оценка × (1 + 0.25 × сила)</code></pre>
+<pre class="doc-pre"><code><span class="pl">сила = бюджет / (бюджет + насыщение),   насыщение = 5% выручки × множитель уровня</span><span class="pl">прочие расходы = выручка × (3.0% × множитель уровня − 2.0% × сила)</span><span class="pl">условия раунда = оценка × (1 + 0.25 × сила)</span></code></pre>
 <p>Слабая финансовая служба стоит денег молча: эквайринг по невыгодной ставке, комиссии, списания, штрафы, неразнесённая административка — строка «прочие расходы» растёт сама, вместе с выручкой. Сильная режет её, лучше упаковывает холдинг к раунду (на счёт это не влияет — оценку считает рынок; влияет на долю, которую вы отдаёте), открывает колонку множителей в разборе оценки и разбирает решения месяца.</p>
 <p>Цена команды считается долей выручки, а не абсолютом: финансовая служба растёт вместе с компанией. Фиксированная цена сделала бы рычаг игрушкой только для крупного холдинга — тонкому билетному активу, у которого выручка самая маленькая из трёх, команду не окупало бы ничто.</p>
 <p>Уровень сложности — настройка ВСЕГО набора: он лежит в общем хранилище сайта и действует во всех четырёх играх сразу (<code>shared/difficulty.js</code>). Финансовая команда есть в каждой из них; числа у игр свои, потому что выручки и маржи разные, а форма механики общая (<code>shared/finance.js</code>).</p>
@@ -180,7 +209,7 @@
 <h2 id="s-15">Сооснователь за долю</h2>
 <p>Единственное событие, где платят не деньгами, а компанией. Операционный директор из компании, прошедшей этот путь, входит сооснователем за <b>14%</b> — и до конца партии снимает <b>25%</b> конгломератного штрафа за расфокус.</p>
 <p>Штраф этот в модели считается так:</p>
-<pre class="doc-pre"><code>расфокус = 0.12 × (вертикалей − 1) × (1 − уровень управляющей компании)</code></pre>
+<pre class="doc-pre"><code><span class="pl">расфокус = 0.12 × (вертикалей − 1) × (1 − уровень управляющей компании)</span></code></pre>
 <p>То есть сооснователь — это прямая замена бюджету управляющей компании: одно и то же лечится либо деньгами каждый месяц, либо долей один раз. Отсюда и устройство решения: оно зависит не от вкуса, а от того, что вы строите.</p>
 <p>Замер (24 кода, событие форсировано на 8-м месяце, обе ветки играются одной политикой):</p>
 <div class="doc-tablewrap"><table class="data">
@@ -214,5 +243,62 @@
 </table></div>
 <p>Числа условные, подобранные для играбельности: игра иллюстрирует механику связей, а не величины.</p>
   </div>
+  <button class="doc-up" id="doc-up" type="button" hidden
+    aria-label="Наверх, к содержанию">↑</button>
+  <script>
+    // Оглавление: на узком экране свёрнуто, на широком раскрыто (а от 1340
+    // ещё и прижато к левому полю средствами CSS). Активная ссылка
+    // подсвечивается по мере прокрутки.
+    (function () {
+      var toc = document.getElementById('doc-toc');
+      var wide = function () { return matchMedia('(min-width: 700px)').matches; };
+      if (toc) {
+        var sync = function () { toc.open = wide(); };
+        sync();
+        addEventListener('resize', sync);
+        var links = {};
+        Array.prototype.forEach.call(toc.querySelectorAll('a'), function (a) {
+          links[a.getAttribute('href').slice(1)] = a;
+          a.addEventListener('click', function () { if (!wide()) toc.open = false; });
+        });
+        // Активен последний заголовок, который уже проехал верх экрана, —
+        // наблюдатель пересечений оставлял бы список без подсветки везде,
+        // где между заголовками больше одного экрана текста. Здесь это норма.
+        var ids = Object.keys(links);
+        var marked = null;
+        var mark = function () {
+          var active = ids[0];
+          for (var k = 0; k < ids.length; k++) {
+            var h = document.getElementById(ids[k]);
+            if (h && h.getBoundingClientRect().top <= 90) active = ids[k];
+          }
+          if (active === marked) return;
+          if (marked) links[marked].classList.remove('on');
+          links[active].classList.add('on');
+          marked = active;
+          var rail = getComputedStyle(toc).position === 'fixed';
+          if (rail) links[active].scrollIntoView({ block: 'nearest' });
+        };
+        var queued = false;
+        addEventListener('scroll', function () {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(function () { queued = false; mark(); });
+        }, { passive: true });
+        mark();
+      }
+      // Кнопка «наверх»: страница разбора — полсотни экранов, и без неё
+      // к оглавлению возвращаются только листанием.
+      var up = document.getElementById('doc-up');
+      if (!up) return;
+      var toggle = function () { up.hidden = scrollY < 600; };
+      toggle();
+      addEventListener('scroll', toggle, { passive: true });
+      up.addEventListener('click', function () {
+        scrollTo({ top: 0, behavior: 'smooth' });
+        if (toc && !wide()) toc.open = true;
+      });
+    })();
+  </script>
 </body>
 </html>
