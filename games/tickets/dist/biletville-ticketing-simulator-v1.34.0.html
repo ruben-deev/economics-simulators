@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.33.9" />
-  <meta name="app-build-date" content="2026-08-28" />
+  <meta name="app-version" content="1.34.0" />
+  <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>БИЛЕТВИЛЬ · ticketing marketplace simulator</title>
@@ -795,6 +795,8 @@ table.data.titles td:first-child { width: 62%; }
   .col-center { order: 1; }
   .col-left { order: 2; }
   .col-right { order: 3; }
+
+}
   /* Без min-width: 0 колонка не может стать уже своего самого широкого
      содержимого — и широкая таблица растягивает всю страницу вместо того,
      чтобы прокручиваться внутри панели. */
@@ -1213,6 +1215,28 @@ table.data.titles td:first-child { width: 62%; }
 }
 details[open] > .lever-group-title::before { transform: rotate(90deg); }
 .lever-group-title:hover { color: var(--fg, #e2e8f0); }
+
+/* Финальный экран: раскрывашки второго плана заметнее обычных — это не
+   сноска, а два раздела, куда игрок пойдёт по своему желанию. */
+.final-more { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+.final-more > summary { font-weight: 700; color: var(--text); }
+
+/* Область попадания там, где её не хватало: режимные кнопки (30 px),
+   заголовки групп рычагов (31 px) и выбор жанра/масштаба. Приём тот же,
+   что выше у вкладок, — визуальный размер не трогаем, растим подложку.
+   Блок стоит последним в файле нарочно: `position: relative` этих кнопок
+   объявлен ниже по тексту и при равной специфичности перебил бы его. */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .policy-seg button, .lever-group-head, .pick button { position: relative; }
+  .policy-seg button::after, .lever-group-head::after, .pick button::after {
+    content: "";
+    position: absolute;
+    inset: -7px -2px;
+  }
+  /* Кнопка хода — единственная, которую растим по-настоящему: по ней бьют
+     каждый ход, и мимо неё промахиваться дороже всего. */
+  #btn-next { min-height: 44px; }
+}
 
 </style>
   <script id="js-flag">
@@ -1930,6 +1954,7 @@ const STRINGS = {
   sidesSupply: { ru: 'Сторона предложения', en: 'Supply side' },
   sidesDemand: { ru: 'Сторона спроса', en: 'Demand side' },
 
+  algoNoneYet: { ru: 'Пока не открыт ни один алгоритм. Первым станет доступен «{name}» — при качестве модели {value}. Качество растёт само от работы сервиса и от команды, отдельно платить за это не нужно.', en: 'No algorithm is available yet. The first to unlock is "{name}", at a model quality of {value}. Quality grows on its own from the service running and from the team; there is nothing extra to pay for it.' },
   algosIntro: { ru: 'Умные механики. Каждая что-то улучшает и что-то ломает — и почти каждая тем сильнее вредит, чем хуже данные.', en: 'The smart mechanics. Each improves something and breaks something — and almost every one hurts more the worse your data is.' },
   algosQuality: { ru: 'Качество алгоритмов {quality} · данные {data} · команда {team}', en: 'Algorithm quality {quality} · data {data} · team {team}' },
   algosLocked: { ru: 'Откроется при качестве {unlock}', en: 'Unlocks at quality {unlock}' },
@@ -2021,7 +2046,8 @@ const STRINGS = {
   totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
   csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
   csvTurn: { ru: 'месяц', en: 'month' },
-  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  finalShareTitle: { ru: 'Поделиться, отправить в таблицу, скачать', en: 'Share, submit to the leaderboard, download' },
+  finalNextTitle: { ru: 'Куда пойти дальше', en: 'Where to go next' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма. В НОВОГРАД этот финал переходит сам — строка нужна, только если продолжать на другом устройстве.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum. NOVOGRAD picks this result up on its own — you only need the string to continue on another device.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
   resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },
@@ -7867,7 +7893,13 @@ let rightTab = 'unit';
 let leversBuilt = false;
 let leversDiff = null;
 let bound = false;
-let openGroups = { take: true, growth: true, infra: false };
+// На узком экране колонка рычагов разворачивается целиком и стоит ПОСЛЕ
+// отчёта и решений — до неё доходят намеренно. Поэтому на телефоне открыта
+// только первая группа: остальные разворачиваются в один тап.
+const narrowScreen = () => typeof window !== 'undefined' && window.innerWidth <= 980;
+let openGroups = narrowScreen()
+  ? { take: true, growth: false, infra: false }
+  : { take: true, growth: true, infra: false };
 let pendingExclusive = null;   // 'accept' | 'decline'
 let pendingCrisisChoice = null;
 
@@ -9417,7 +9449,10 @@ function renderAlgosTab() {
     <p class="funding-note">${t('algosIntro')}</p>
     <p class="funding-note">${t('algosQuality', {
       quality: pct(quality, 0), data: pct(dataLevel(state), 0), team: pct(rndLevel(state), 0) })}</p>
-    ${rows}`;
+    ${ALGORITHMS.some((a) => state.installed?.[a.key] || quality >= a.unlock) ? rows
+      : `<div class="funding-note">${t('algoNoneYet', {
+          name: tx([...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0].name),
+          value: pct([...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0].unlock, 0) })}</div>`}`;
 }
 
 function renderHelpTab() {
@@ -9768,29 +9803,35 @@ function showGameOver() {
     <p><b>${gradeOf(score)}</b></p>
     <p class="quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
-    ${novogradInviteHtml()}
-    ${otherGamesHtml()}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(score)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
-    ${recordsBlockHtml(score)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+        <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(score)}
+    </details>
+
+    <details class="more final-more"><summary>${t('finalNextTitle')}</summary>
+      ${novogradInviteHtml()}
+      ${otherGamesHtml()}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
    { label: t('gameOverCharts') }]);

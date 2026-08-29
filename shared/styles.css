@@ -769,6 +769,8 @@ table.data.titles td:first-child { width: 62%; }
   .col-center { order: 1; }
   .col-left { order: 2; }
   .col-right { order: 3; }
+
+}
   /* Без min-width: 0 колонка не может стать уже своего самого широкого
      содержимого — и широкая таблица растягивает всю страницу вместо того,
      чтобы прокручиваться внутри панели. */
@@ -1187,3 +1189,25 @@ table.data.titles td:first-child { width: 62%; }
 }
 details[open] > .lever-group-title::before { transform: rotate(90deg); }
 .lever-group-title:hover { color: var(--fg, #e2e8f0); }
+
+/* Финальный экран: раскрывашки второго плана заметнее обычных — это не
+   сноска, а два раздела, куда игрок пойдёт по своему желанию. */
+.final-more { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+.final-more > summary { font-weight: 700; color: var(--text); }
+
+/* Область попадания там, где её не хватало: режимные кнопки (30 px),
+   заголовки групп рычагов (31 px) и выбор жанра/масштаба. Приём тот же,
+   что выше у вкладок, — визуальный размер не трогаем, растим подложку.
+   Блок стоит последним в файле нарочно: `position: relative` этих кнопок
+   объявлен ниже по тексту и при равной специфичности перебил бы его. */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .policy-seg button, .lever-group-head, .pick button { position: relative; }
+  .policy-seg button::after, .lever-group-head::after, .pick button::after {
+    content: "";
+    position: absolute;
+    inset: -7px -2px;
+  }
+  /* Кнопка хода — единственная, которую растим по-настоящему: по ней бьют
+     каждый ход, и мимо неё промахиваться дороже всего. */
+  #btn-next { min-height: 44px; }
+}

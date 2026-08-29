@@ -2200,17 +2200,9 @@ function showGameOver(frozen = false) {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
     ${secretHtml}
     ${crownHtml}
     ${backHtml}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
@@ -2218,14 +2210,25 @@ function showGameOver(frozen = false) {
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
-    ${recordsBlockHtml(s)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+        <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(s)}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     // Пост-эндгейм: партия зачтена, счёт заморожен — дальше играют за
