@@ -1008,12 +1008,25 @@ but stalling is more expensive.
 | Crisis | While unresolved | Resolutions |
 |---|---|---|
 | Scandal | churn +1.2 pp per month, awareness decays twice as fast | a campaign (₽70M × months) or wait |
-| Rights holder sues | up to 55% of the rented library frozen + ₽22M/mo | settle (180 + 40 × months) or fight (₽30M/mo) |
+| Rights holder sues | up to 55% of the rented library frozen, ₽22M/mo and churn +0.7 pp per month | settle (180 + 40 × months) or fight (45 + 10 × months, but the court hands 14% of the library to the claimant for good) |
 | Showrunner leaves | the pipeline stalls, project quality falls | beat the offer (₽150M, talent costs rise for good) or rebuild the team (₽45M, lose a month and some quality) |
 | Platform degradation | churn rises, hours fall, bandwidth gets dearer | invest (90 + 30 × months, part lands in your tech stock) or patch it |
 
-Escalation hits a ceiling in the fifth month — after that the crisis stops getting worse,
-but it does not go away on its own either.
+Escalation hits a ceiling in the fifth month, and after eight months the story burns
+itself out: the news cycle runs dry and the crisis lifts without you.
+
+**Waiting is possible — but expensive.** Before the 2026-08 fix an unresolved crisis sat
+on the company until the end of the game, and waiting out a scandal cost three quarters
+of it: measured across the 45 games where a scandal fired, 4.20bn against 16.99bn for
+those who answered. The button looked like an option and was a lost game. The gap is now
+32% — reacting is still far better, but silence no longer ends the run.
+
+The lawsuit's second option did nothing at all: "fight" charged ₽30M a month and never
+closed the case (`resolves: false` with no modifiers), so fighting and ignoring produced
+identical results. It is now a trade: settling is dearer but the library survives;
+fighting is cheaper but 14% of the disputed hours go to the claimant for good. Measured:
+13.48 against 13.58 — the two resolutions land within a percent of each other, and both
+beat doing nothing by 12%.
 
 The key detail: **crises arrive more often the better you are doing** (from 2% a month
 with an empty service to 14% with millions of subscribers). A successful service gets
