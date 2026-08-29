@@ -73,7 +73,13 @@ let rightTab = 'unit';
 let leversBuilt = false;
 let leversDiff = null;
 let bound = false;
-let openGroups = { take: true, growth: true, infra: false };
+// На узком экране колонка рычагов разворачивается целиком и стоит ПОСЛЕ
+// отчёта и решений — до неё доходят намеренно. Поэтому на телефоне открыта
+// только первая группа: остальные разворачиваются в один тап.
+const narrowScreen = () => typeof window !== 'undefined' && window.innerWidth <= 980;
+let openGroups = narrowScreen()
+  ? { take: true, growth: false, infra: false }
+  : { take: true, growth: true, infra: false };
 let pendingExclusive = null;   // 'accept' | 'decline'
 let pendingCrisisChoice = null;
 
@@ -1623,7 +1629,10 @@ function renderAlgosTab() {
     <p class="funding-note">${t('algosIntro')}</p>
     <p class="funding-note">${t('algosQuality', {
       quality: pct(quality, 0), data: pct(dataLevel(state), 0), team: pct(rndLevel(state), 0) })}</p>
-    ${rows}`;
+    ${ALGORITHMS.some((a) => state.installed?.[a.key] || quality >= a.unlock) ? rows
+      : `<div class="funding-note">${t('algoNoneYet', {
+          name: tx([...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0].name),
+          value: pct([...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0].unlock, 0) })}</div>`}`;
 }
 
 function renderHelpTab() {
@@ -1974,29 +1983,35 @@ function showGameOver() {
     <p><b>${gradeOf(score)}</b></p>
     <p class="quip">${t(`gradeQuip${gradeTierOf(score)}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(4e9) })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
-    ${novogradInviteHtml()}
-    ${otherGamesHtml()}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${(score.bankrupt || score.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(score)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
-    ${recordsBlockHtml(score)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+        <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(score)}
+    </details>
+
+    <details class="more final-more"><summary>${t('finalNextTitle')}</summary>
+      ${novogradInviteHtml()}
+      ${otherGamesHtml()}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('overQuestions')}</div>`,
   [{ label: t('overAgain'), primary: true, onClick: restart },
    { label: t('gameOverCharts') }]);

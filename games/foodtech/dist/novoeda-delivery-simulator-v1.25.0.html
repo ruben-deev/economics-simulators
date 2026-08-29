@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.24.14" />
-  <meta name="app-build-date" content="2026-08-28" />
+  <meta name="app-version" content="1.25.0" />
+  <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОЕДА · food delivery economics simulator</title>
@@ -795,6 +795,8 @@ table.data.titles td:first-child { width: 62%; }
   .col-center { order: 1; }
   .col-left { order: 2; }
   .col-right { order: 3; }
+
+}
   /* Без min-width: 0 колонка не может стать уже своего самого широкого
      содержимого — и широкая таблица растягивает всю страницу вместо того,
      чтобы прокручиваться внутри панели. */
@@ -1214,6 +1216,28 @@ table.data.titles td:first-child { width: 62%; }
 details[open] > .lever-group-title::before { transform: rotate(90deg); }
 .lever-group-title:hover { color: var(--fg, #e2e8f0); }
 
+/* Финальный экран: раскрывашки второго плана заметнее обычных — это не
+   сноска, а два раздела, куда игрок пойдёт по своему желанию. */
+.final-more { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+.final-more > summary { font-weight: 700; color: var(--text); }
+
+/* Область попадания там, где её не хватало: режимные кнопки (30 px),
+   заголовки групп рычагов (31 px) и выбор жанра/масштаба. Приём тот же,
+   что выше у вкладок, — визуальный размер не трогаем, растим подложку.
+   Блок стоит последним в файле нарочно: `position: relative` этих кнопок
+   объявлен ниже по тексту и при равной специфичности перебил бы его. */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .policy-seg button, .lever-group-head, .pick button { position: relative; }
+  .policy-seg button::after, .lever-group-head::after, .pick button::after {
+    content: "";
+    position: absolute;
+    inset: -7px -2px;
+  }
+  /* Кнопка хода — единственная, которую растим по-настоящему: по ней бьют
+     каждый ход, и мимо неё промахиваться дороже всего. */
+  #btn-next { min-height: 44px; }
+}
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
@@ -1631,6 +1655,7 @@ const STRINGS = {
   algoDataHint: { ru: 'Накоплено заказов — это обучающая выборка', en: 'Orders completed so far — your training set' },
   algoTeamHint: { ru: 'Накопленные вложения в data science', en: 'Cumulative investment in data science' },
   algoQualityHint: { ru: 'Среднее геометрическое: нужно и то и другое', en: 'Geometric mean: you need both halves' },
+  algoNoneYet: { ru: 'Пока не открыт ни один алгоритм. Первым станет доступен «{name}» — при качестве модели {value}. Качество растёт само от работы сервиса и от команды, отдельно платить за это не нужно.', en: 'No algorithm is available yet. The first to unlock is "{name}", at a model quality of {value}. Quality grows on its own from the service running and from the team; there is nothing extra to pay for it.' },
   algoIntro: {
     ru: 'Качество алгоритмов = √(данные × команда). Модель без данных не обучишь, а данные без команды никто не превратит в решения. Данные копятся только от выполненных заказов.',
     en: 'Algorithm quality = √(data × team). You cannot train a model without data, and nobody turns data into decisions without a team. Data accumulates only from completed orders.',
@@ -2073,7 +2098,8 @@ score = valuation × your stake`,
   totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
   csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
   csvTurn: { ru: 'неделя', en: 'week' },
-  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  finalShareTitle: { ru: 'Поделиться, отправить в таблицу, скачать', en: 'Share, submit to the leaderboard, download' },
+  finalNextTitle: { ru: 'Куда пойти дальше', en: 'Where to go next' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма. В НОВОГРАД этот финал переходит сам — строка нужна, только если продолжать на другом устройстве.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum. NOVOGRAD picks this result up on its own — you only need the string to continue on another device.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
   resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },
@@ -7091,8 +7117,15 @@ function buildLevers() {
     </div>`;
   // Свёрнутость групп помнится на устройстве: продвинутый игрок прячет
   // то, чем не пользуется, и панель остаётся его, а не нашей.
-  let collapsed = [];
-  try { collapsed = JSON.parse(localStorage.getItem('levers-collapsed') || '[]'); } catch { /* приватный режим */ }
+  // На узком экране колонка рычагов разворачивается целиком и стоит ПОСЛЕ
+  // отчёта — до неё доходят намеренно. Поэтому по умолчанию там открыта
+  // только первая группа; выбор игрока, как и раньше, запоминается.
+  const narrow = typeof window !== 'undefined' && window.innerWidth <= 980;
+  let collapsed = narrow ? LEVER_GROUPS.slice(1).map((g) => g.title) : [];
+  try {
+    const saved = localStorage.getItem('levers-collapsed');
+    if (saved !== null) collapsed = JSON.parse(saved);
+  } catch { /* приватный режим */ }
   el('levers').innerHTML = LEVER_GROUPS
     .map((g) => {
       const levers = g.keys.map((k) => byKey.get(k)).filter(Boolean);
@@ -7511,7 +7544,14 @@ function renderAlgos() {
     </div>`;
   }).join('');
 
-  el('algos').innerHTML = head + cards;
+  // Пока не открыт ни один алгоритм, карточки — мёртвое место: игрок видит
+  // шесть блоков, ни один из которых нельзя включить. Показываем шкалы и
+  // одну строку про то, чего ждать.
+  const anyUnlocked = ALGORITHMS.some((a) => state.installed?.[a.key] || q >= a.unlock);
+  const nearest = [...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0];
+  el('algos').innerHTML = anyUnlocked ? head + cards
+    : head + `<div class="funding-note">${t('algoNoneYet', {
+        name: tx(nearest.name), value: pct(nearest.unlock, 0) })}</div>`;
 
   el('algos').querySelectorAll('[data-algo]').forEach((box) => {
     box.addEventListener('change', () => {
@@ -8993,16 +9033,6 @@ function showGameOver() {
     </div>
     <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(5e9), b: money(2.2e9), c: money(0.8e9) })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
-    ${novogradInviteHtml()}
-    ${otherGamesHtml()}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastWeek', {
       orders: compact(r.orders), cm: amount(r.cmPerOrder), profit: money(r.profit),
       share: pct(r.marketShare), time: num(r.avgDeliveryTime),
@@ -9010,16 +9040,32 @@ function showGameOver() {
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
-    ${recordsBlockHtml(s)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+        <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(s)}
+    </details>
+
+    <details class="more final-more"><summary>${t('finalNextTitle')}</summary>
+      ${novogradInviteHtml()}
+      ${otherGamesHtml()}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     { label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },

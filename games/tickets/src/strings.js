@@ -477,6 +477,7 @@ export const STRINGS = {
   sidesSupply: { ru: 'Сторона предложения', en: 'Supply side' },
   sidesDemand: { ru: 'Сторона спроса', en: 'Demand side' },
 
+  algoNoneYet: { ru: 'Пока не открыт ни один алгоритм. Первым станет доступен «{name}» — при качестве модели {value}. Качество растёт само от работы сервиса и от команды, отдельно платить за это не нужно.', en: 'No algorithm is available yet. The first to unlock is "{name}", at a model quality of {value}. Quality grows on its own from the service running and from the team; there is nothing extra to pay for it.' },
   algosIntro: { ru: 'Умные механики. Каждая что-то улучшает и что-то ломает — и почти каждая тем сильнее вредит, чем хуже данные.', en: 'The smart mechanics. Each improves something and breaks something — and almost every one hurts more the worse your data is.' },
   algosQuality: { ru: 'Качество алгоритмов {quality} · данные {data} · команда {team}', en: 'Algorithm quality {quality} · data {data} · team {team}' },
   algosLocked: { ru: 'Откроется при качестве {unlock}', en: 'Unlocks at quality {unlock}' },
@@ -568,7 +569,8 @@ export const STRINGS = {
   totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
   csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
   csvTurn: { ru: 'месяц', en: 'month' },
-  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  finalShareTitle: { ru: 'Поделиться, отправить в таблицу, скачать', en: 'Share, submit to the leaderboard, download' },
+  finalNextTitle: { ru: 'Куда пойти дальше', en: 'Where to go next' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма. В НОВОГРАД этот финал переходит сам — строка нужна, только если продолжать на другом устройстве.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum. NOVOGRAD picks this result up on its own — you only need the string to continue on another device.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
   resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },

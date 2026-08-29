@@ -71,7 +71,14 @@ let pendingCommission = [];       // проекты, запускаемые в �
 let pendingRelease = {};          // id готового проекта -> { campaign, cadence }
 let pendingAnchorRenew = null;    // продлевать ли права на якорную франшизу
 let pendingRaise = false;         // перевести действующую базу на текущий прайс
-let openGroups = { money: true, growth: true, infra: false };
+// На узком экране колонка рычагов разворачивается целиком (2485 px на
+// телефоне против прокрутки внутри панели на десктопе), а стоит она ПОСЛЕ
+// отчёта и решений — то есть до неё доходят намеренно. Поэтому на телефоне
+// открыта только первая группа: остальные разворачиваются в один тап.
+const narrowScreen = () => typeof window !== 'undefined' && window.innerWidth <= 980;
+let openGroups = narrowScreen()
+  ? { money: true, growth: false, infra: false }
+  : { money: true, growth: true, infra: false };
 let openTitles = new Set();   // раскрытые строки в таблице проектов
 let commissionDraft = { genre: 'drama', scale: 'season', segment: null };
 // Совместный проект, предложенный в этом ходу: как и обычный заказ, он
@@ -1483,7 +1490,15 @@ function renderAlgos() {
     </div>`;
   }).join('');
 
-  el('algos').innerHTML = head + cards;
+  // Пока не открыт ни один алгоритм, шесть запертых карточек — это 664 px
+  // мёртвого места на телефоне (замер: первый алгоритм открывается на 6-м
+  // месяце во всех 24 партиях). Показываем шкалы качества и одну строку про
+  // то, чего ждать: сами карточки появятся, когда появится что включать.
+  const anyUnlocked = ALGORITHMS.some((a) => state.installed?.[a.key] || q >= a.unlock);
+  const nearest = [...ALGORITHMS].sort((a, b) => a.unlock - b.unlock)[0];
+  el('algos').innerHTML = anyUnlocked ? head + cards
+    : head + `<div class="funding-note">${t('algoNoneYet', {
+        name: tx(nearest.name), value: pct(nearest.unlock, 0) })}</div>`;
 
   el('algos').querySelectorAll('[data-algo]').forEach((box) => {
     box.addEventListener('change', () => {
@@ -2508,32 +2523,38 @@ function showGameOver() {
       value: money(s.deferred) })}</p>` : ''}
     <p class="quip">${t(`gradeQuip${gradeTier}`)}</p>
     <p class="funding-note">${t('gradeScale', { a: money(8e9), b: money(4.5e9), c: money(1.5e9) })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
-    ${novogradInviteHtml()}
-    ${otherGamesHtml()}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       subs: compact(r.subs), arpu: `${amount(r.arpu)}`,
       churn: pct(r.churnRate, 1), profit: money(r.profit) })}</p>` : ''}
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
     ${returnHtml()}
     ${conglomerateBadgeHtml()}
-    ${recordsBlockHtml(s)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+      <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(s)}
+    </details>
+
+    <details class="more final-more"><summary>${t('finalNextTitle')}</summary>
+      ${novogradInviteHtml()}
+      ${otherGamesHtml()}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>`,
     [{ label: t('gameOverPlayAgain'), primary: true, onClick: () => restart() },
      { label: t('gameOverCharts'), onClick: () => {} }]);

@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.28.0" />
-  <meta name="app-build-date" content="2026-08-28" />
+  <meta name="app-version" content="1.29.0" />
+  <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>НОВОГРАД · ecosystem economics simulator</title>
@@ -795,6 +795,8 @@ table.data.titles td:first-child { width: 62%; }
   .col-center { order: 1; }
   .col-left { order: 2; }
   .col-right { order: 3; }
+
+}
   /* Без min-width: 0 колонка не может стать уже своего самого широкого
      содержимого — и широкая таблица растягивает всю страницу вместо того,
      чтобы прокручиваться внутри панели. */
@@ -1213,6 +1215,28 @@ table.data.titles td:first-child { width: 62%; }
 }
 details[open] > .lever-group-title::before { transform: rotate(90deg); }
 .lever-group-title:hover { color: var(--fg, #e2e8f0); }
+
+/* Финальный экран: раскрывашки второго плана заметнее обычных — это не
+   сноска, а два раздела, куда игрок пойдёт по своему желанию. */
+.final-more { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+.final-more > summary { font-weight: 700; color: var(--text); }
+
+/* Область попадания там, где её не хватало: режимные кнопки (30 px),
+   заголовки групп рычагов (31 px) и выбор жанра/масштаба. Приём тот же,
+   что выше у вкладок, — визуальный размер не трогаем, растим подложку.
+   Блок стоит последним в файле нарочно: `position: relative` этих кнопок
+   объявлен ниже по тексту и при равной специфичности перебил бы его. */
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .policy-seg button, .lever-group-head, .pick button { position: relative; }
+  .policy-seg button::after, .lever-group-head::after, .pick button::after {
+    content: "";
+    position: absolute;
+    inset: -7px -2px;
+  }
+  /* Кнопка хода — единственная, которую растим по-настоящему: по ней бьют
+     каждый ход, и мимо неё промахиваться дороже всего. */
+  #btn-next { min-height: 44px; }
+}
 
 </style>
   <script id="js-flag">
@@ -2591,7 +2615,8 @@ const STRINGS = {
   totalsTitle: { ru: 'Вся партия: куда пришли и ушли деньги', en: 'The whole game: where the money came from and went' },
   csvButton: { ru: 'Скачать CSV', en: 'Download CSV' },
   csvTurn: { ru: 'месяц', en: 'month' },
-  resultTitle: { ru: 'Строка результата', en: 'Result string' },
+  finalShareTitle: { ru: 'Поделиться, отправить в таблицу, скачать', en: 'Share, submit to the leaderboard, download' },
+  finalNextTitle: { ru: 'Куда пойти дальше', en: 'Where to go next' },
   resultNote: { ru: 'Скопируйте и отправьте преподавателю: в строке зашиты код партии, счёт и контрольная сумма.', en: 'Copy it and send it to your teacher: the string carries the game code, the score and a checksum.' },
   resultCopy: { ru: 'Скопировать', en: 'Copy' },
   resultCopied: { ru: 'Строка результата скопирована.', en: 'Result string copied.' },
@@ -10360,17 +10385,9 @@ function showGameOver(frozen = false) {
       a: money(gr.excellent), b: money(gr.solid), c: money(gr.survived),
       asset: tx(assetById(state.assetId).short),
     })}</p>
-    <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
-      <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
-      <div style="flex:1;min-width:160px">
-        <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
-        <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
-      </div>
-    </div>
     ${secretHtml}
     ${crownHtml}
     ${backHtml}
-    ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
     ${r ? `<p class="funding-note">${t('gameOverLastMonth', {
       revenue: money(r.revenue), arpu: amount(r.arpuHolding),
       unique: compact(r.uniqueUsers), multi: compact(r.bothUsers),
@@ -10378,14 +10395,25 @@ function showGameOver(frozen = false) {
     ${(s.bankrupt || s.sold) ? waterfallHtml(state.history.slice(-4)) : ''}
     ${gameTotalsHtml(s)}
     ${debriefHtml()}
-    <h3 style="margin:12px 0 6px">${t('resultTitle')}</h3>
-    <p class="funding-note">${t('resultNote')}</p>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
-      <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
-      <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
-    </div>
-    ${recordsBlockHtml(s)}
+
+    <details class="more final-more"><summary>${t('finalShareTitle')}</summary>
+      <div style="display:flex;gap:12px;align-items:center;margin:10px 0 4px">
+        <img id="share-preview" alt="" style="width:150px;max-width:38%;border-radius:8px;border:1px solid var(--line);cursor:pointer" />
+        <div style="flex:1;min-width:160px">
+          <p class="funding-note" style="margin:0 0 6px">${t('shareNote')}</p>
+          <button class="btn small" id="share-img" type="button">${t('shareBtn')}</button>
+        </div>
+      </div>
+        <p class="funding-note">${t('resultNote')}</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code style="user-select:all;overflow-wrap:anywhere">${line}</code>
+        <button class="btn small" id="copy-result" type="button">${t('resultCopy')}</button>
+        <button class="btn small" id="csv-export" type="button">${t('csvButton')}</button>
+      </div>
+      ${lbEndpoint() ? '<div id="lb-root"></div>' : ''}
+      ${recordsBlockHtml(s)}
+    </details>
+
     <div class="hint-box" style="margin-top:10px">${t('gameOverQuestions')}</div>
   `, [
     // Пост-эндгейм: партия зачтена, счёт заморожен — дальше играют за
