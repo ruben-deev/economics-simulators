@@ -22,16 +22,48 @@
       background: var(--panel); border-radius: 0 8px 8px 0; color: var(--muted); }
     .doc-pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
       padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 14px 0; }
+    /* Формула словами переносится с висячим отступом: продолжение строки
+       видно, что оно продолжение, а не следующая строка формулы. */
+    .doc-pre .pl { display: block; white-space: pre-wrap;
+      padding-left: 2.2em; text-indent: -2.2em; overflow-wrap: break-word; }
+    .doc-pre.is-diagram { white-space: pre; }
     .doc code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
       padding: 1px 5px; font-size: 0.92em; }
     .doc-pre code { background: none; border: none; padding: 0; }
     .doc-tablewrap { overflow-x: auto; margin: 14px 0; }
     .doc table.data { width: 100%; }
-    .doc-toc { margin: 18px 0 6px; padding: 14px 18px; background: var(--panel);
+    .doc-toc { margin: 18px 0 6px; padding: 10px 18px 14px; background: var(--panel);
       border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
-    .doc-toc-title { font-weight: 700; margin-bottom: 8px; color: var(--muted);
-      text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
-    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none; }
+    .doc-toc > summary { list-style: none; cursor: pointer; padding: 4px 0;
+      font-weight: 700; color: var(--muted); text-transform: uppercase;
+      font-size: 11px; letter-spacing: 0.08em; }
+    .doc-toc > summary::-webkit-details-marker { display: none; }
+    .doc-toc > summary::after { content: " ▾"; }
+    .doc-toc[open] > summary::after { content: " ▴"; }
+    .doc-toc a { display: block; padding: 3px 0; color: var(--accent-2); text-decoration: none;
+      border-left: 2px solid transparent; padding-left: 8px; margin-left: -8px; }
+    .doc-toc a.on { border-left-color: var(--accent); color: var(--text); }
+    @media (min-width: 700px) { .doc-toc[open] { columns: 2; column-gap: 26px; }
+      .doc-toc > summary { column-span: all; } }
+    .doc h2, .doc h3 { scroll-margin-top: 14px; }
+    /* Широкий экран: оглавление уходит на поле слева и остаётся на виду.
+       Порог 1340 — раньше рейка налезала бы на текст. */
+    @media (min-width: 1340px) {
+      .doc-toc[open] { columns: 1; }
+      .doc-toc { position: fixed; top: 18px; left: calc(50% - 656px); width: 210px;
+        max-height: calc(100vh - 36px); overflow-y: auto; margin: 0; z-index: 5; }
+      .doc-toc > summary { cursor: default; }
+      .doc-toc > summary::after, .doc-toc[open] > summary::after { content: ""; }
+    }
+    .doc-up { position: fixed; right: 16px; bottom: 16px; z-index: 6;
+      width: 42px; height: 42px; border-radius: 50%; cursor: pointer;
+      background: var(--panel); color: var(--accent-2); font-size: 18px;
+      border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+    .doc-up:hover { color: var(--text); border-color: var(--accent); }
+    @media (max-width: 640px) {
+      .doc { padding: 20px 14px 80px; }
+      .doc-pre { font-size: 12px; padding: 12px 13px; }
+    }
     .doc hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
   </style>
 </head>
@@ -42,8 +74,8 @@
       <a href="../economics.html">Русская версия</a>
     </div>
     
-  <nav class="doc-toc">
-    <div class="doc-toc-title">Contents</div>
+  <details class="doc-toc" id="doc-toc">
+    <summary>Contents · 14</summary>
     <a href="#s-1">1. The overall structure</a>
     <a href="#s-2">2. The city</a>
     <a href="#s-5">2b. Weather</a>
@@ -58,14 +90,14 @@
     <a href="#s-26">9. What the model deliberately simplifies</a>
     <a href="#s-27">The cost of what is already built</a>
     <a href="#s-28">What limits greed</a>
-  </nav>
+  </details>
     <h1>The economic model: formulas and assumptions</h1>
 <p><i><a href="../economics.html">Русская версия</a></i></p>
 <p>This document describes exactly what <code>games/foodtech/src/model/engine.js</code> computes. Every constant that appears in the formulas lives in <code>games/foodtech/src/model/config.js</code> and can be changed by the instructor.</p>
 <p>The time step is <b>one week</b>. All flows (orders, revenue, costs) are weekly; all stocks (customers, couriers, restaurants, cash) are end-of-week values.</p>
 <hr>
 <h2 id="s-1">1. The overall structure</h2>
-<pre class="doc-pre"><code>marketing ──► awareness ──► trial orders ──┐
+<pre class="doc-pre is-diagram"><code>marketing ──► awareness ──► trial orders ──┐
                                            ├──► CUSTOMER BASE (a stock)
           satisfaction ──► churn ──────────┘          │
                                                       ▼
@@ -84,9 +116,9 @@ price, speed, selection, season ────────────►  order f
 <hr>
 <h2 id="s-2">2. The city</h2>
 <p>Six districts, each with its own profile. The average basket depends on district income:</p>
-<pre class="doc-pre"><code>average basket = ₽900 × (income level) ^ 0.7</code></pre>
+<pre class="doc-pre"><code><span class="pl">average basket = ₽900 × (income level) ^ 0.7</span></code></pre>
 <p>The addressable market is smaller than the population: some residents are firmly locked into a competitor.</p>
-<pre class="doc-pre"><code>addressable market = potential × (1 − competitor strength × 0.6)</code></pre>
+<pre class="doc-pre"><code><span class="pl">addressable market = potential × (1 − competitor strength × 0.6)</span></code></pre>
 <p>This is a ceiling on reach. Downtown has a competitor strength of 0.5, so at most 70% of its 130,000 residents can ever be yours, no matter what you spend on marketing. The lesson: market share is limited not only by your budget but by the structure of the market.</p>
 <h3 id="s-3">The far districts: geography is bought with speed</h3>
 <p>The Industrial district (a 6 km leg) and the Suburbs (9 km) are built so that ordinary play loses money on them — and that is by design, not an oversight. The Suburbs' base 38 minutes are already past the 35-minute reference: the district misses the norm before the first traffic jam.</p>
@@ -115,16 +147,11 @@ price, speed, selection, season ────────────►  order f
 <tbody><tr><td>Winter</td><td>49–52, 1–8</td><td>clear, snow, hard frost, ice, storm</td></tr><tr><td>Spring</td><td>9–21</td><td>clear, rain, storm, frost</td></tr><tr><td>Summer</td><td>22–34</td><td>clear, rain, storm, heat</td></tr><tr><td>Autumn</td><td>35–47</td><td>clear, rain, storm, frost</td></tr></tbody>
 </table></div>
 <p>Each weather type sets three numbers: a demand multiplier, a capacity multiplier and an addition to courier churn. The key property is that they point in opposite directions:</p>
-<pre class="doc-pre"><code>storm: demand ×1.30,  capacity ×0.60,  churn +17 pp
-ice:   demand ×1.10,  capacity ×0.56,  churn +21 pp</code></pre>
+<pre class="doc-pre"><code><span class="pl">storm: demand ×1.30,  capacity ×0.60,  churn +17 pp</span><span class="pl">ice:   demand ×1.10,  capacity ×0.56,  churn +21 pp</span></code></pre>
 <p>In a storm, courier utilisation rises from both ends at once: 1.30 / 0.60 = ×2.17. That combination — a demand peak during a capacity trough — is what breaks delivery times in real services, and it is why weather is a system of its own here rather than a random event. An uncovered storm does not pass without a trace either: the couriers who quit are next week's delivery times, and delivery times are customer churn.</p>
 <p><b>The forecast is public.</b> Next week's weather is known to the player in advance: weather reports are available to everyone, and hiding them would be artificial. The point is that hiring this week puts couriers on the road next week, so the forecast is a call to action rather than a hint.</p>
 <p><b>The bad-weather bonus</b> is a promise — and promises cost money:</p>
-<pre class="doc-pre"><code>coverage      = min(1, bonus / ₽80) × (1 − 0.80 × habit)
-pay per order = bonus × 0.4 × (0.35 + 0.65 × severity)
-capacity      = base + (1 − base) × 0.80 × coverage
-churn         = base × (1 − 0.85 × coverage)
-habit′        = habit + (on − habit) × 0.12   — one step per week</code></pre>
+<pre class="doc-pre"><code><span class="pl">coverage      = min(1, bonus / ₽80) × (1 − 0.80 × habit)</span><span class="pl">pay per order = bonus × 0.4 × (0.35 + 0.65 × severity)</span><span class="pl">capacity      = base + (1 − base) × 0.80 × coverage</span><span class="pl">churn         = base × (1 − 0.85 × coverage)</span><span class="pl">habit′        = habit + (on − habit) × 0.12   — one step per week</span></code></pre>
 <p>Two rules make the bonus a decision rather than a setting.</p>
 <p><b>The promise is paid for.</b> A guarantee has an unconditional part (35%): a courier who was promised weather pay receives its base even in a clear week — otherwise it is not a guarantee but a lottery, and it never enters their expected earnings. The unconditional part is also the price of the decision: were the bonus conditional and free in clear weeks, "set ₽80 and forget" would be a free automatic strategy. A permanent bonus is a permanent expense.</p>
 <p><b>Habituation.</b> A bonus that is always on stops being an incentive: habit builds up over roughly eight to ten weeks and cuts the bonus's "freshness" to 20% of its power — in a real storm it no longer brings anyone extra onto the road. A switched-off bonus is forgotten at the same pace. Switching it on with the weather is both cheaper and more effective: on the reference strategy, the policy "bonus only in heavy weather" measures +87% against the best constant (a median of 2.36bn vs 1.26bn over 24 seeds), while playing it backwards — "bonus in clear weeks" — loses 28%. The right timing is rewarded generously and the wrong timing is punished. One important detail: the bonus applies to the current — already announced — weather, so that is what you react to; keying off next week's forecast lags by a turn and is indistinguishable from acting at random.</p>
@@ -133,32 +160,25 @@ habit′        = habit + (on − habit) × 0.12   — one step per week</code><
 <hr>
 <h2 id="s-6">3. Demand</h2>
 <p>A customer's order frequency is a product of multipliers, each equal to 1.0 at the reference point:</p>
-<pre class="doc-pre"><code>frequency = base frequency × Price × √Speed × √Selection × season × weather × events</code></pre>
+<pre class="doc-pre"><code><span class="pl">frequency = base frequency × Price × √Speed × √Selection × season × weather × events</span></code></pre>
 <p><b>Price.</b> The customer sees the full amount: basket + delivery − promo.</p>
-<pre class="doc-pre"><code>Price = ( (basket + 149) / (basket + fee − promo) ) ^ elasticity,   clamped to 0.20…2.50</code></pre>
+<pre class="doc-pre"><code><span class="pl">Price = ( (basket + 149) / (basket + fee − promo) ) ^ elasticity,   clamped to 0.20…2.50</span></code></pre>
 <p>Elasticity differs by district: 0.8 in the Suburbs (the wealthy do not notice) and 2.2 on Campus (students count every rouble). This is the most vivid lesson in the game: the same discount produces a different lift in different districts and an identical hit to margin.</p>
 <p><b>Speed.</b></p>
-<pre class="doc-pre"><code>Speed = (35 min / last week's delivery time) ^ 0.6,   clamped to 0.40…1.30</code></pre>
+<pre class="doc-pre"><code><span class="pl">Speed = (35 min / last week's delivery time) ^ 0.6,   clamped to 0.40…1.30</span></code></pre>
 <p><b>Selection.</b> A saturating function of connected restaurants, normalised so that 80 restaurants give 1.0:</p>
-<pre class="doc-pre"><code>Selection = [ R / (R + 50) ] / [ 80 / 130 ],   clamped to 0…1.35</code></pre>
+<pre class="doc-pre"><code><span class="pl">Selection = [ R / (R + 50) ] / [ 80 / 130 ],   clamped to 0…1.35</span></code></pre>
 <p>At R = 0 the multiplier is zero: with no restaurants there is nothing to order, and no amount of marketing fixes that.</p>
 <p><b>Seasonality.</b> An annual sine wave of ±10% plus a +15% New Year spike.</p>
-<pre class="doc-pre"><code>district demand = district customers × frequency</code></pre>
+<pre class="doc-pre"><code><span class="pl">district demand = district customers × frequency</span></code></pre>
 <hr>
 <h2 id="s-7">4. Supply: couriers</h2>
-<pre class="doc-pre"><code>orders per courier = 105 × (1 + 0.35 × tech level)
-                         × (3.5 km / average leg) ^ 0.45
-                         × morale
-                         × batching effect (see section 7b)
-                         × weather</code></pre>
+<pre class="doc-pre"><code><span class="pl">orders per courier = 105 × (1 + 0.35 × tech level)</span><span class="pl">                         × (3.5 km / average leg) ^ 0.45</span><span class="pl">                         × morale</span><span class="pl">                         × batching effect (see section 7b)</span><span class="pl">                         × weather</span></code></pre>
 <p>Morale is a lagged indicator: <code>clamp(0.85 + 0.15 × earnings/market, 0.75, 1.08)</code>. An underpaid courier does not quit instantly — they simply work at half effort and take orders from a competitor (multi-apping).</p>
-<pre class="doc-pre"><code>capacity            = couriers × orders per courier
-district capacity   = capacity × district share (see section 7b)
-district utilisation = district demand / district capacity
-delivered           = min(district demand, district capacity)</code></pre>
+<pre class="doc-pre"><code><span class="pl">capacity            = couriers × orders per courier</span><span class="pl">district capacity   = capacity × district share (see section 7b)</span><span class="pl">district utilisation = district demand / district capacity</span><span class="pl">delivered           = min(district demand, district capacity)</span></code></pre>
 <p>Without the allocation algorithm, capacity is split in proportion to demand, so utilisation is identical everywhere and equal to the citywide figure.</p>
 <p>Delivery time grows cubically with utilisation — this is a queue model:</p>
-<pre class="doc-pre"><code>time = base × (1 + 0.85 × min(utilisation, 2.2)³) × (1 − 0.12 × tech)</code></pre>
+<pre class="doc-pre"><code><span class="pl">time = base × (1 + 0.85 × min(utilisation, 2.2)³) × (1 − 0.12 × tech)</span></code></pre>
 <div class="doc-tablewrap"><table class="data">
 <thead><tr><th>Utilisation</th><th>Time multiplier</th></tr></thead>
 <tbody><tr><td>50%</td><td>1.11</td></tr><tr><td>70%</td><td>1.29</td></tr><tr><td>85%</td><td>1.52</td></tr><tr><td>100%</td><td>1.85</td></tr><tr><td>120%</td><td>2.47</td></tr><tr><td>150%</td><td>3.87</td></tr></tbody>
@@ -166,68 +186,37 @@ delivered           = min(district demand, district capacity)</code></pre>
 <p>The practical conclusion students usually reach on their own: above 90% utilisation this is no longer arithmetic but an avalanche. Optimal utilisation is lower than it looks — delivery speed is the dominant retention driver, so spare capacity often pays for itself. Two things hold it back: courier upkeep (₽2,200/wk per person) and the fact that an idle courier earns little and leaves.</p>
 <h3 id="s-8">The labour market</h3>
 <p>A candidate judges expected, not actual earnings: they see the rate and assume they can fill at least 75% of a shift.</p>
-<pre class="doc-pre"><code>expected earnings = rate × 0.75 × orders per courier
-attractiveness    = expected earnings / ₽14,000 (the market alternative)
-
-applications = 400 × clamp((attractiveness − 0.9) / 0.6, 0, 1.4) × (1 + 0.6 × awareness)</code></pre>
+<pre class="doc-pre"><code><span class="pl">expected earnings = rate × 0.75 × orders per courier</span><span class="pl">attractiveness    = expected earnings / ₽14,000 (the market alternative)</span><span class="pl">&nbsp;</span><span class="pl">applications = 400 × clamp((attractiveness − 0.9) / 0.6, 0, 1.4) × (1 + 0.6 × awareness)</span></code></pre>
 <p>Below the threshold there are simply no applicants: a rate below market means nobody comes out for a shift. Hiring is capped by applications, and each hire costs ₽8,000 up front (screening, training, equipment).</p>
 <p>Churn is computed from <b>actual</b> earnings — idle time annoys a courier as much as a low rate. Note the 1.15 threshold: it is not enough for a courier to earn "the market rate", they need a premium for the instability.</p>
-<pre class="doc-pre"><code>churn = 0.05 + max(0, 1.15 − actual earnings/market) × 0.55
-            + max(0, utilisation − 0.9) × 0.35
-            + weather</code></pre>
+<pre class="doc-pre"><code><span class="pl">churn = 0.05 + max(0, 1.15 − actual earnings/market) × 0.55</span><span class="pl">            + max(0, utilisation − 0.9) × 0.35</span><span class="pl">            + weather</span></code></pre>
 <hr>
 <h2 id="s-9">5. Supply: restaurants</h2>
-<pre class="doc-pre"><code>viability      = clamp((0.30 − commission) / 0.12, 0, 1)
-attractiveness = (0.35 + 0.65 × √(orders per restaurant / 45))
-                 × (0.20 / commission) ^ 0.8
-                 × (0.25 + 0.75 × viability)
-sales power    = 0.35 × (sales budget / 150,000) ^ 0.6          (capped at 0.8)
-signed up      = remaining pool × min(0.4, sales power × attractiveness × 0.5)
-exodus         = max(0, commission − 0.30) / 0.12
-churn          = 0.015 + max(0, 1 − attractiveness) × 0.12 + exodus × 0.30</code></pre>
+<pre class="doc-pre"><code><span class="pl">viability      = clamp((0.30 − commission) / 0.12, 0, 1)</span><span class="pl">attractiveness = (0.35 + 0.65 × √(orders per restaurant / 45))</span><span class="pl">                 × (0.20 / commission) ^ 0.8</span><span class="pl">                 × (0.25 + 0.75 × viability)</span><span class="pl">sales power    = 0.35 × (sales budget / 150,000) ^ 0.6          (capped at 0.8)</span><span class="pl">signed up      = remaining pool × min(0.4, sales power × attractiveness × 0.5)</span><span class="pl">exodus         = max(0, commission − 0.30) / 0.12</span><span class="pl">churn          = 0.015 + max(0, 1 − attractiveness) × 0.12 + exodus × 0.30</span></code></pre>
 <p>The 0.35 term represents pioneers: some restaurants join even at zero order flow, otherwise a marketplace could never be started at all (the classic chicken-and-egg problem).</p>
 <p>The viability multiplier is a hard ceiling on commission. A restaurant has its own economics: above roughly 30% delivery is loss-making for them at any volume, and no amount of order flow compensates. The commission restaurants perceive is lowered by the flexible-rate algorithm.</p>
 <p>The exodus term was added after measurement. Viability hits zero exactly at the 30% mark while the slider runs to 40 — so the last quarter of the range came free: the punishment had already ended and the take kept growing linearly. The right answer was pinned to the top of the slider, which means there was no lever. Now, past the mark a restaurant does not merely grow less happy — it leaves, and the deeper past the mark, the faster.</p>
 <hr>
 <h2 id="s-10">6. Customers: stock and flows</h2>
 <p><b>Awareness</b> is a cumulative stock, not a one-off advertising effect:</p>
-<pre class="doc-pre"><code>gain       = 0.30 × (spend per potential customer / ₽12) ^ 0.55     (capped at 0.35)
-awareness += (1 − awareness) × gain − awareness × 0.05</code></pre>
+<pre class="doc-pre"><code><span class="pl">gain       = 0.30 × (spend per potential customer / ₽12) ^ 0.55     (capped at 0.35)</span><span class="pl">awareness += (1 − awareness) × gain − awareness × 0.05</span></code></pre>
 <p>The 0.55 exponent is diminishing returns: doubling the budget adds about 46% to the gain, not 100%. Subtracting 5% is forgetting: stop spending and awareness slides back down.</p>
 <p><b>Satisfaction</b> is a weighted assessment of the experience:</p>
-<pre class="doc-pre"><code>satisfaction = 0.35 × Speed + 0.25 × Selection + 0.25 × Price
-             + 0.15 × (1 − 2 × share of undelivered orders in the district)
-             − algorithm penalties (surge, targeting)</code></pre>
+<pre class="doc-pre"><code><span class="pl">satisfaction = 0.35 × Speed + 0.25 × Selection + 0.25 × Price</span><span class="pl">             + 0.15 × (1 − 2 × share of undelivered orders in the district)</span><span class="pl">             − algorithm penalties (surge, targeting)</span></code></pre>
 <p>Speed carries the most weight — in food delivery it genuinely is the primary retention factor.</p>
 <p><b>Customer flows:</b></p>
-<pre class="doc-pre"><code>trial orders = (addressable market − customers) × awareness × 0.05
-               × satisfaction × Selection
-word of mouth = customers × 0.02 × max(0, satisfaction − 1)
-churn        = customers × (0.07 + max(0, 1 − satisfaction) × 0.30
-                            + competitor strength × 0.012)
-
-customers(t+1) = customers(t) − churn + trials + word of mouth</code></pre>
+<pre class="doc-pre"><code><span class="pl">trial orders = (addressable market − customers) × awareness × 0.05</span><span class="pl">               × satisfaction × Selection</span><span class="pl">word of mouth = customers × 0.02 × max(0, satisfaction − 1)</span><span class="pl">churn        = customers × (0.07 + max(0, 1 − satisfaction) × 0.30</span><span class="pl">                            + competitor strength × 0.012)</span><span class="pl">&nbsp;</span><span class="pl">customers(t+1) = customers(t) − churn + trials + word of mouth</span></code></pre>
 <p>A base churn of 7% a week means that even with perfect service a customer lasts about 14 weeks. A customer who is bought but not retained disappears within a quarter — which is precisely why marketing without service quality is a subscription to losses.</p>
 <hr>
 <h2 id="s-11">7. Money</h2>
 <h3 id="s-12">The economics of one order</h3>
-<pre class="doc-pre"><code>service revenue = basket × commission + delivery fee
-variable costs  = courier pay + promo + payment processing (1.8% of what the customer pays)
-                  + support (₽14, reduced by up to ₽8 through technology)
-contribution    = revenue − variable costs</code></pre>
+<pre class="doc-pre"><code><span class="pl">service revenue = basket × commission + delivery fee</span><span class="pl">variable costs  = courier pay + promo + payment processing (1.8% of what the customer pays)</span><span class="pl">                  + support (₽14, reduced by up to ₽8 through technology)</span><span class="pl">contribution    = revenue − variable costs</span></code></pre>
 <p>Take rate is the share of the basket the service keeps. In the game it usually lands at 30–40%, above the real-world 20–30%: the model is slightly generous so that reaching profit is visible within 52 weeks.</p>
 <h3 id="s-13">The weekly P&amp;L</h3>
-<pre class="doc-pre"><code>GMV              = Σ orders × district basket
-revenue          = commission + delivery fees
-contribution     = revenue − variable costs
-fixed costs      = district running costs + office (₽900K + ₽2,200 × couriers)
-                   + marketing + sales + technology + data science
-operating profit = contribution − fixed costs
-one-off costs    = district launches + hiring + algorithm rollouts + event costs
-cash(t+1)        = cash(t) + profit − one-off costs</code></pre>
+<pre class="doc-pre"><code><span class="pl">GMV              = Σ orders × district basket</span><span class="pl">revenue          = commission + delivery fees</span><span class="pl">contribution     = revenue − variable costs</span><span class="pl">fixed costs      = district running costs + office (₽900K + ₽2,200 × couriers)</span><span class="pl">                   + marketing + sales + technology + data science</span><span class="pl">operating profit = contribution − fixed costs</span><span class="pl">one-off costs    = district launches + hiring + algorithm rollouts + event costs</span><span class="pl">cash(t+1)        = cash(t) + profit − one-off costs</span></code></pre>
 <p>Cash below zero is bankruptcy and the game ends. A company dies of an empty account, not of a loss: these are different things, and the game lets you feel the difference.</p>
 <p><b>Break-even:</b></p>
-<pre class="doc-pre"><code>orders per week to break even = fixed costs / contribution per order</code></pre>
+<pre class="doc-pre"><code><span class="pl">orders per week to break even = fixed costs / contribution per order</span></code></pre>
 <p>If contribution per order is negative, break-even does not exist at any volume. That is the first thing to check whenever "we will grow into profitability" comes up.</p>
 <h3 id="s-14">Event decisions are priced by your size</h3>
 <p>Some weekly events demand a choice, and the expensive options are priced per head: paying off a courier strike costs ₽2,500 × your fleet, a promo blast costs ₽200 × your customer base, insurance ₽3,000 × headcount (and the fine for waiting out the law, ₽8,000 × the fleet you have on the day it lands). A hundred couriers make the strike payment a quarter of a million; fifteen hundred make it nearly four. So events have no memorised right answer: measured across three company sizes, the profitable option shifts with the state. Generosity is cheap for the small and dear for the large; the big chain's discounted commission follows the same logic in a different currency — your listings: the chain pays 10% only on its own orders, and its share of your volume is larger the fewer other restaurants you have. A big marketplace barely notices the discount; in a small one the chain is a third of the shopfront — measured, accepting wins in 23 cases out of 72: the choice is alive and depends on how much the chain dominates your listings.</p>
@@ -236,59 +225,38 @@ cash(t+1)        = cash(t) + profit − one-off costs</code></pre>
 <p>An ordinary lever sets a <b>number</b>: a delivery fee of ₽149 — for every customer, at every hour, in any weather. An algorithm sets a <b>rule</b>: price = f(utilisation), discount = f(customer), headcount = f(forecast). A rule can be different in different circumstances, so it can improve both ends of a trade-off that a single number cannot resolve.</p>
 <p>That is what second-order optimisation means: you optimise not the value of a parameter but the function that chooses the value.</p>
 <h3 id="s-16">Algorithm quality</h3>
-<pre class="doc-pre"><code>data    = cumulative orders / (orders + 400,000)
-team    = data science spend / (spend + ₽25M)
-quality = √(data × team)</code></pre>
+<pre class="doc-pre"><code><span class="pl">data    = cumulative orders / (orders + 400,000)</span><span class="pl">team    = data science spend / (spend + ₽25M)</span><span class="pl">quality = √(data × team)</span></code></pre>
 <p>A geometric mean, not an arithmetic one: if either factor is zero, quality is zero. You cannot train a model without data, and nobody turns data into decisions without a team. Hence the natural order of operations — volume first, algorithms second. Data science bought before the orders exist is simply a cost line.</p>
 <p>Each algorithm requires a minimum quality to become available and a one-off rollout payment. Once live, it is tuned with a slider.</p>
 <h3 id="s-17">Order batching</h3>
-<pre class="doc-pre"><code>orders per courier ×= 1 + 0.60 × aggressiveness × quality
-delivery time      ×= 1 + 0.16 × aggressiveness × (1 − 0.6 × quality)
-rate per order     ×= 1 − 0.20 × aggressiveness × quality</code></pre>
+<pre class="doc-pre"><code><span class="pl">orders per courier ×= 1 + 0.60 × aggressiveness × quality</span><span class="pl">delivery time      ×= 1 + 0.16 × aggressiveness × (1 − 0.6 × quality)</span><span class="pl">rate per order     ×= 1 − 0.20 × aggressiveness × quality</span></code></pre>
 <p>A second address on the way costs the platform less than the first, so the rate for an individual order in a batch is lower — while the courier's weekly earnings rise, because they complete more orders. The price is time: an order waits for a companion and travels a chain. The worse the batching algorithm, the more time suffers for the same gain.</p>
 <h3 id="s-18">Targeted discounts</h3>
-<pre class="doc-pre"><code>cost per order   = promo × reach
-leverage         = 2.5 × (0.4 + 0.6 × precision)
-effect on demand = min(promo × (0.4 + 0.6 × precision), cost per order × leverage)
-satisfaction penalty = (1 − reach)² × (1 − precision) × 0.35 × min(1, promo/50)</code></pre>
+<pre class="doc-pre"><code><span class="pl">cost per order   = promo × reach</span><span class="pl">leverage         = 2.5 × (0.4 + 0.6 × precision)</span><span class="pl">effect on demand = min(promo × (0.4 + 0.6 × precision), cost per order × leverage)</span><span class="pl">satisfaction penalty = (1 − reach)² × (1 − precision) × 0.35 × min(1, promo/50)</span></code></pre>
 <p>At 40% reach and 0.8 precision you pay 0.4 of the promo and get an effect of 0.88 — the same lift in demand for half the money. This is price discrimination in its purest form.</p>
 <p><b>Why the second term — leverage — exists.</b> Without it, at a narrow reach a targeted discount would be almost free: you pay for a twentieth of the orders while demand grows for all of them — and the discount slider would go to its stop under every other setting. Leverage closes that hole: the effect cannot exceed what you paid by more than 2.5× (and only with a perfect model), so the discount has an interior optimum.</p>
 <p>Three constraints stop you from shrinking reach to nothing: a ceiling on the effect, the tie between effect and money actually spent, and a quadratic penalty for perceived unfairness. The optimum sits inside the range.</p>
 <h3 id="s-19">Surge pricing</h3>
-<pre class="doc-pre"><code>premium        = strength × clamp((utilisation − 0.7) / 0.6, 0, 1)
-delivery fee  ×= 1 + 0.35 × premium
-demand        ×= 1 − 0.10 × premium      (some orders shift or are abandoned)
-delivery time ×= 1 − 0.12 × premium × quality
-satisfaction penalty = strength^1.5 × (0.03 + 0.35 × premium) × (1 − 0.5 × quality)</code></pre>
+<pre class="doc-pre"><code><span class="pl">premium        = strength × clamp((utilisation − 0.7) / 0.6, 0, 1)</span><span class="pl">delivery fee  ×= 1 + 0.35 × premium</span><span class="pl">demand        ×= 1 − 0.10 × premium      (some orders shift or are abandoned)</span><span class="pl">delivery time ×= 1 − 0.12 × premium × quality</span><span class="pl">satisfaction penalty = strength^1.5 × (0.03 + 0.35 × premium) × (1 − 0.5 × quality)</span></code></pre>
 <p>The premium only appears above 70% utilisation. Surge earns twice: directly, through a higher price at peak, and indirectly, by flattening the peak and speeding delivery up for everyone. It pays for this in customer irritation, and the penalty grows faster than the premium — which is why maxing out the slider is a losing move.</p>
 <h3 id="s-20">Smart courier allocation</h3>
-<pre class="doc-pre"><code>district weight   = demand × (1 + 2.5 × skew × quality × (district contribution / average − 1))
-district capacity = total capacity × weight / Σ weights</code></pre>
+<pre class="doc-pre"><code><span class="pl">district weight   = demand × (1 + 2.5 × skew × quality × (district contribution / average − 1))</span><span class="pl">district capacity = total capacity × weight / Σ weights</span></code></pre>
 <p>Capacity is committed to a district: spare couriers in one district do not rescue the one next door, they simply idle. Without the algorithm, weights equal demand and utilisation is identical everywhere. With it, the profitable district gets more couriers and the rest get fewer, where delivery times and churn both rise.</p>
 <p>An important property: with surplus capacity the algorithm can only do harm. It is useful precisely when couriers are short — that is, at the least convenient moment.</p>
 <h3 id="s-21">Flexible commission</h3>
-<pre class="doc-pre"><code>commission for revenue          = rate × (1 − 0.06 × spread)
-commission as restaurants see it = rate × (1 − 0.35 × spread × quality)</code></pre>
+<pre class="doc-pre"><code><span class="pl">commission for revenue          = rate × (1 − 0.06 × spread)</span><span class="pl">commission as restaurants see it = rate × (1 − 0.35 × spread × quality)</span></code></pre>
 <p>Large, in-demand partners get a preferential rate and the rest pay more. Average revenue falls slightly while the perceived rate falls considerably, so the algorithm lets you hold a higher rate card without losing partners. This is segmentation instead of a single price — the same idea as targeted discounts, applied to the other side of the marketplace.</p>
 <h3 id="s-22">Demand forecast and auto-hiring</h3>
-<pre class="doc-pre"><code>forecast = demand × growth rate × weather shift × (1 + error),   error ~ ±0.30 × (1 − quality)
-target headcount = forecast / orders per courier / target utilisation</code></pre>
+<pre class="doc-pre"><code><span class="pl">forecast = demand × growth rate × weather shift × (1 + error),   error ~ ±0.30 × (1 − quality)</span><span class="pl">target headcount = forecast / orders per courier / target utilisation</span></code></pre>
 <p>The headcount slider stops being used. You no longer choose a number of couriers, you choose a <b>policy</b>: the target utilisation. Low utilisation means fast delivery and an expensive roster; high utilisation means savings and a risk of missing your promises. The forecast accounts for next week's weather, which is exactly when the hires you make today go out.</p>
 <h3 id="s-23">The counterfactual breakdown</h3>
 <p>The game answers the question "what did this algorithm actually earn" honestly: the previous week is re-simulated with the algorithm switched off and the difference is displayed in the interface. In a real company that answer costs weeks of A/B testing — and frequently turns out to be zero.</p>
 <hr>
 <h2 id="s-24">8. Valuation and funding rounds</h2>
-<pre class="doc-pre"><code>revenue  = average of the last 8 weeks × 52
-growth   = orders over the last 4 weeks / orders over the previous 4
-margin   = profit over 8 weeks / revenue over the same 8 weeks
-multiple = 2.0 + 5 × clamp(growth − 1, −0.5, 1)
-               + 4 × max(0, margin/0.25) + 1.5 × min(0, margin/0.25)
-valuation = annual revenue × multiple     (never below ₽40M)</code></pre>
+<pre class="doc-pre"><code><span class="pl">revenue  = average of the last 8 weeks × 52</span><span class="pl">growth   = orders over the last 4 weeks / orders over the previous 4</span><span class="pl">margin   = profit over 8 weeks / revenue over the same 8 weeks</span><span class="pl">multiple = 2.0 + 5 × clamp(growth − 1, −0.5, 1)</span><span class="pl">               + 4 × max(0, margin/0.25) + 1.5 × min(0, margin/0.25)</span><span class="pl">valuation = annual revenue × multiple     (never below ₽40M)</span></code></pre>
 <p><b>Why a window and not the last week.</b> Revenue and margin taken from a single last turn can be bought with one decision: raise the fee and zero out every investment one turn before the end. The business falls apart and the score goes up. Measured on the sibling games, that dash was worth +92% and +58%. An eight-week window closes it — the last week weighs no more than any other in it. Growth uses its own, shorter window: a one-turn dash cannot buy it anyway, and eight-against-eight would need history that does not exist in the first third of the game.</p>
 <p>A funding round:</p>
-<pre class="doc-pre"><code>round valuation = max(₽250M, valuation)
-dilution        = clamp(round size / (round valuation + round size), 0.02, 0.75)
-your stake     ×= (1 − dilution)</code></pre>
+<pre class="doc-pre"><code><span class="pl">round valuation = max(₽250M, valuation)</span><span class="pl">dilution        = clamp(round size / (round valuation + round size), 0.02, 0.75)</span><span class="pl">your stake     ×= (1 − dilution)</span></code></pre>
 <p><b>The floor under the valuation and the cap on dilution</b> are not decoration. Without them a round in week four — when the company is worth pennies by the formula — took three quarters of it, and the game was decided by the week the money ran out rather than by the economics. Measured: the same company at the same valuation left the founder with 84% or 20% depending on which week they had to go for money.</p>
 <p>The final score is <b>(valuation + cash in the till) × your stake</b>. The cash belongs to the shareholders: a rouble unspent by the finale is worth a rouble, and a rouble spent has to come back as valuation growth — without the cash term, one-off costs late in the game would be free, including the price of event decisions. Raising as much money as possible is therefore not a strategy: every round at a low valuation costs you a piece of the company. Early money is the most expensive money there is.</p>
 <hr>
@@ -308,7 +276,7 @@ your stake     ×= (1 − dilution)</code></pre>
 <h2 id="s-27">The cost of what is already built</h2>
 <p>What you have built has a cost of ownership. If the spend were written off once while the accumulated level stayed forever and cost nothing, the "invest in technology" lever would be dishonest: pay once, enjoy the advantage forever. That is not how it works, and two cost lines carry that price.</p>
 <p><b>Upkeep.</b> Every feature built has to be maintained: libraries updated, breakage from other changes fixed, new people taught. The bill arrives every week and does not depend on whether anyone uses the feature:</p>
-<pre class="doc-pre"><code>upkeep = cumulative investment × 0.34% в неделю</code></pre>
+<pre class="doc-pre"><code><span class="pl">upkeep = cumulative investment × 0.34% в неделю</span></code></pre>
 <p>It is computed from the amount invested, not from the level. The level saturates; the maintenance bill does not. So "invest a large sum at once" is not a one-off cost but a permanent obligation.</p>
 <p><b>Infrastructure.</b> Servers grow not from your decision but from orders: <code>servers = orders × ₽1.9 × (1 − 0.35 × tech level)</code>. It is the one line that gets more expensive exactly when things go well — and the one technology pays back directly.</p>
 <p>The point of splitting these two lines out of "office and administration" is behavioural: the base fixed part is small, while upkeep and servers grow with the product and the load. Costs breathe together with the business, and every "invest more" decision carries a tail of future obligations.</p>
@@ -316,17 +284,71 @@ your stake     ×= (1 − dilution)</code></pre>
 <h2 id="s-28">What limits greed</h2>
 <p>Three mechanisms that stop you from maxing out the sliders for free.</p>
 <p><b>The delivery fee is more visible than the same money inside the basket.</b> A hundred roubles spread across the price of a pizza passes unnoticed; the same hundred roubles on a separate "delivery" line stops the order — you seem to get no food for it. In the perceived price the fee carries a weight of 2.5:</p>
-<pre class="doc-pre"><code>perceived price = basket + (delivery fee − promo) × 2.5
-reference       = basket + 149 × 2.5</code></pre>
+<pre class="doc-pre"><code><span class="pl">perceived price = basket + (delivery fee − promo) × 2.5</span><span class="pl">reference       = basket + 149 × 2.5</span></code></pre>
 <p>At ₽149 the multiplier does nothing: only the deviation from the reference matters. It is what makes the delivery fee a real decision: without the 2.5 weight, raising the price would be nearly free — frequency would fall smoothly, margin would rise faster, and the top of the slider would always be the best move.</p>
 <p><b>A commission above the usual one ends up in the menu price.</b> A restaurant does not work at a loss: everything you take above 20% goes into the menu on your own storefront. The customer pays in the end — and sees it on the bill, not in the contract:</p>
-<pre class="doc-pre"><code>markup = 1 + clamp(commission − 20%, 0, 25%) × 0.6</code></pre>
+<pre class="doc-pre"><code><span class="pl">markup = 1 + clamp(commission − 20%, 0, 25%) × 0.6</span></code></pre>
 <p><b>The rival is next door, and its price does not follow yours.</b> While you charge what the market charges, the next two coefficients are exactly zero. Beyond that they grow with your premium:</p>
-<pre class="doc-pre"><code>premium = clamp(1 / price factor − 1, 0, 1.5)
-leaving = rival strength × premium × 0.32     (added to weekly churn)
-winning = inflow / (1 + rival strength × premium × 1.8)</code></pre>
+<pre class="doc-pre"><code><span class="pl">premium = clamp(1 / price factor − 1, 0, 1.5)</span><span class="pl">leaving = rival strength × premium × 0.32     (added to weekly churn)</span><span class="pl">winning = inflow / (1 + rival strength × premium × 1.8)</span></code></pre>
 <p>Order frequency falls smoothly; leaving for the rival is a lost customer, and winning one back costs more than holding on would have.</p>
 <p><b>And finally: a shrinking business earns a lower multiple.</b> The growth term in shrinkage counts honestly: <code>growth − 1</code> is clamped to −0.5…1, so a company losing customers every week is valued below a flat one — shrinking a business is never free.</p>
   </div>
+  <button class="doc-up" id="doc-up" type="button" hidden
+    aria-label="Back to top and contents">↑</button>
+  <script>
+    // Оглавление: на узком экране свёрнуто, на широком раскрыто (а от 1340
+    // ещё и прижато к левому полю средствами CSS). Активная ссылка
+    // подсвечивается по мере прокрутки.
+    (function () {
+      var toc = document.getElementById('doc-toc');
+      var wide = function () { return matchMedia('(min-width: 700px)').matches; };
+      if (toc) {
+        var sync = function () { toc.open = wide(); };
+        sync();
+        addEventListener('resize', sync);
+        var links = {};
+        Array.prototype.forEach.call(toc.querySelectorAll('a'), function (a) {
+          links[a.getAttribute('href').slice(1)] = a;
+          a.addEventListener('click', function () { if (!wide()) toc.open = false; });
+        });
+        // Активен последний заголовок, который уже проехал верх экрана, —
+        // наблюдатель пересечений оставлял бы список без подсветки везде,
+        // где между заголовками больше одного экрана текста. Здесь это норма.
+        var ids = Object.keys(links);
+        var marked = null;
+        var mark = function () {
+          var active = ids[0];
+          for (var k = 0; k < ids.length; k++) {
+            var h = document.getElementById(ids[k]);
+            if (h && h.getBoundingClientRect().top <= 90) active = ids[k];
+          }
+          if (active === marked) return;
+          if (marked) links[marked].classList.remove('on');
+          links[active].classList.add('on');
+          marked = active;
+          var rail = getComputedStyle(toc).position === 'fixed';
+          if (rail) links[active].scrollIntoView({ block: 'nearest' });
+        };
+        var queued = false;
+        addEventListener('scroll', function () {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(function () { queued = false; mark(); });
+        }, { passive: true });
+        mark();
+      }
+      // Кнопка «наверх»: страница разбора — полсотни экранов, и без неё
+      // к оглавлению возвращаются только листанием.
+      var up = document.getElementById('doc-up');
+      if (!up) return;
+      var toggle = function () { up.hidden = scrollY < 600; };
+      toggle();
+      addEventListener('scroll', toggle, { passive: true });
+      up.addEventListener('click', function () {
+        scrollTo({ top: 0, behavior: 'smooth' });
+        if (toc && !wide()) toc.open = true;
+      });
+    })();
+  </script>
 </body>
 </html>
