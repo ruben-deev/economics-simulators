@@ -56,6 +56,18 @@ export const CONFIG = {
   originalLeadMonths: 6,      // сколько месяцев проект едет до премьеры
   freshDecay: 0.22,           // как быстро новинка перестаёт быть новинкой
   licenseFreshShare: 0.10,    // какая доля закупленных часов воспринимается как новинка
+
+
+  // Рекомендации достают контент с полки — значит, их польза упирается в то,
+  // что на полке лежит. Прежний ровный множитель одинаково поднимал и каталог
+  // в тысячу часов, и пустую афишу, чем противоречил собственному уроку
+  // алгоритма. Теперь лифт пропорционален глубине: на опорной глубине он
+  // равен прежнему, на тонкой полке почти исчезает, на глубокой — удваивается.
+  appealDepthExp: 0.6,        // показатель глубины в ценности каталога
+  appealFreshExp: 0.5,        // показатель свежести там же
+  boredomCoef: 0.055,         // во что обходится пустая афиша
+  recoRefDepth: 0.50,         // глубина, на которой лифт равен прежнему
+  recoLiftMax: 0.35,          // сила лифта на опорной глубине
   // Каталог, при котором множитель выбора равен 1.0. Опущен с 9 000: прежняя
   // планка стояла выше всего, что можно построить за партию собственными
   // силами, поэтому глубина ни разу не насыщалась и следующий закупленный час
@@ -805,8 +817,8 @@ export const ALGORITHMS = [
       en: 'The home screen is assembled for each viewer instead of being the same for everyone.',
     },
     tradeoff: {
-      ru: 'Часы просмотра и удержание растут. Но чем агрессивнее персонализация при слабой модели, тем уже пузырь: зритель перестаёт видеть каталог и считает, что смотреть нечего.',
-      en: 'Watch hours and retention both rise. But the more aggressive the personalisation with a weak model, the tighter the bubble: viewers stop seeing the catalogue and conclude there is nothing to watch.',
+      ru: 'Часы просмотра и удержание растут — но ровно настолько, насколько есть что доставать: на тонкой полке лента не окупает даже установки. Плюс чем агрессивнее персонализация при слабой модели, тем уже пузырь: зритель перестаёт видеть каталог и считает, что смотреть нечего.',
+      en: 'Watch hours and retention both rise — but only as far as there is something to dig out: on a thin shelf the feed does not even pay for its installation. And the more aggressive the personalisation with a weak model, the tighter the bubble: viewers stop seeing the catalogue and conclude there is nothing to watch.',
     },
     lesson: {
       ru: 'Рекомендации увеличивают потребление того, что уже есть. Они не заменяют контент — они лишь достают его с полки.',

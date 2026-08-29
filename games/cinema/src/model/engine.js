@@ -716,7 +716,12 @@ export function step(prevState, input = {}) {
   // ползунка всегда есть безопасное положение, и оно тем правее, чем лучше
   // модель: осторожная лента помогает даже на слабых данных, агрессивная
   // на них же схлопывает каталог в десяток одинаковых карточек.
-  const recoLift = 1 + 0.35 * recoStrength * quality;
+  // Лифт рекомендаций упирается в саму полку: доставать нечего, если на ней
+  // ничего нет. Ровный множитель противоречил уроку алгоритма — «они лишь
+  // достают контент с полки» — и одинаково поднимал каталог в тысячу часов
+  // и пустую афишу. На опорной глубине лифт равен прежнему.
+  const shelfReach = clamp(depth / CONFIG.recoRefDepth, 0.15, 2.2);
+  const recoLift = 1 + CONFIG.recoLiftMax * recoStrength * quality * shelfReach;
   const bubble = 1 - 0.30 * recoStrength ** 2 * (1 - quality);
   const perceivedDepth = depth * recoLift * bubble;
 
@@ -875,8 +880,8 @@ export function step(prevState, input = {}) {
 
     // Ценность каталога для сегмента: глубина и свежесть весят по-разному
     const appeal = clamp(
-      Math.pow(Math.max(0.05, perceivedDepth), def.depthWeight * 0.6)
-      * Math.pow(Math.max(0.05, freshness), def.freshnessWeight * 0.5),
+      Math.pow(Math.max(0.05, perceivedDepth), def.depthWeight * CONFIG.appealDepthExp)
+      * Math.pow(Math.max(0.05, freshness), def.freshnessWeight * CONFIG.appealFreshExp),
       0, 2.2
     );
 
@@ -949,8 +954,8 @@ export function step(prevState, input = {}) {
     const rivalSide = {
       priceFactor: clamp(Math.pow(refPrice / Math.max(30, rivalEntry), def.elasticity), 0.15, 2.6),
       appeal: clamp(
-        Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
-        * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
+        Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * CONFIG.appealDepthExp)
+        * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * CONFIG.appealFreshExp), 0, 2.2),
       adPenalty: clamp(1 - 0.16 * rivalPain * 0.45, 0.35, 1),
       awareness: riv.awareness,
       buzz: riv.buzz,
@@ -1024,7 +1029,7 @@ export function step(prevState, input = {}) {
       - rivalSegSubs * clamp(CONFIG.baseChurn * def.loyalty * 1.15, 0.005, 0.5));
 
     // Отток: скучный каталог, дорогая подписка, назойливая реклама, чужая премьера
-    const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * 0.055;
+    const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * CONFIG.boredomCoef;
     const priceAnger = Math.max(0, 1 - paidFactor) * 0.045;
     const adAnger = (1 - adPenalty) * 0.11;
     const techAnnoyance = Math.max(0, 1 - decisions.bitrate / CONFIG.refBitrate) * 0.03

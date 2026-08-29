@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.35.0" />
+  <meta name="app-version" content="1.36.0" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -3788,6 +3788,18 @@ const CONFIG = {
   originalLeadMonths: 6,      // сколько месяцев проект едет до премьеры
   freshDecay: 0.22,           // как быстро новинка перестаёт быть новинкой
   licenseFreshShare: 0.10,    // какая доля закупленных часов воспринимается как новинка
+
+
+  // Рекомендации достают контент с полки — значит, их польза упирается в то,
+  // что на полке лежит. Прежний ровный множитель одинаково поднимал и каталог
+  // в тысячу часов, и пустую афишу, чем противоречил собственному уроку
+  // алгоритма. Теперь лифт пропорционален глубине: на опорной глубине он
+  // равен прежнему, на тонкой полке почти исчезает, на глубокой — удваивается.
+  appealDepthExp: 0.6,        // показатель глубины в ценности каталога
+  appealFreshExp: 0.5,        // показатель свежести там же
+  boredomCoef: 0.055,         // во что обходится пустая афиша
+  recoRefDepth: 0.50,         // глубина, на которой лифт равен прежнему
+  recoLiftMax: 0.35,          // сила лифта на опорной глубине
   // Каталог, при котором множитель выбора равен 1.0. Опущен с 9 000: прежняя
   // планка стояла выше всего, что можно построить за партию собственными
   // силами, поэтому глубина ни разу не насыщалась и следующий закупленный час
@@ -4537,8 +4549,8 @@ const ALGORITHMS = [
       en: 'The home screen is assembled for each viewer instead of being the same for everyone.',
     },
     tradeoff: {
-      ru: 'Часы просмотра и удержание растут. Но чем агрессивнее персонализация при слабой модели, тем уже пузырь: зритель перестаёт видеть каталог и считает, что смотреть нечего.',
-      en: 'Watch hours and retention both rise. But the more aggressive the personalisation with a weak model, the tighter the bubble: viewers stop seeing the catalogue and conclude there is nothing to watch.',
+      ru: 'Часы просмотра и удержание растут — но ровно настолько, насколько есть что доставать: на тонкой полке лента не окупает даже установки. Плюс чем агрессивнее персонализация при слабой модели, тем уже пузырь: зритель перестаёт видеть каталог и считает, что смотреть нечего.',
+      en: 'Watch hours and retention both rise — but only as far as there is something to dig out: on a thin shelf the feed does not even pay for its installation. And the more aggressive the personalisation with a weak model, the tighter the bubble: viewers stop seeing the catalogue and conclude there is nothing to watch.',
     },
     lesson: {
       ru: 'Рекомендации увеличивают потребление того, что уже есть. Они не заменяют контент — они лишь достают его с полки.',
@@ -6856,7 +6868,12 @@ function step(prevState, input = {}) {
   // ползунка всегда есть безопасное положение, и оно тем правее, чем лучше
   // модель: осторожная лента помогает даже на слабых данных, агрессивная
   // на них же схлопывает каталог в десяток одинаковых карточек.
-  const recoLift = 1 + 0.35 * recoStrength * quality;
+  // Лифт рекомендаций упирается в саму полку: доставать нечего, если на ней
+  // ничего нет. Ровный множитель противоречил уроку алгоритма — «они лишь
+  // достают контент с полки» — и одинаково поднимал каталог в тысячу часов
+  // и пустую афишу. На опорной глубине лифт равен прежнему.
+  const shelfReach = clamp(depth / CONFIG.recoRefDepth, 0.15, 2.2);
+  const recoLift = 1 + CONFIG.recoLiftMax * recoStrength * quality * shelfReach;
   const bubble = 1 - 0.30 * recoStrength ** 2 * (1 - quality);
   const perceivedDepth = depth * recoLift * bubble;
 
@@ -7015,8 +7032,8 @@ function step(prevState, input = {}) {
 
     // Ценность каталога для сегмента: глубина и свежесть весят по-разному
     const appeal = clamp(
-      Math.pow(Math.max(0.05, perceivedDepth), def.depthWeight * 0.6)
-      * Math.pow(Math.max(0.05, freshness), def.freshnessWeight * 0.5),
+      Math.pow(Math.max(0.05, perceivedDepth), def.depthWeight * CONFIG.appealDepthExp)
+      * Math.pow(Math.max(0.05, freshness), def.freshnessWeight * CONFIG.appealFreshExp),
       0, 2.2
     );
 
@@ -7089,8 +7106,8 @@ function step(prevState, input = {}) {
     const rivalSide = {
       priceFactor: clamp(Math.pow(refPrice / Math.max(30, rivalEntry), def.elasticity), 0.15, 2.6),
       appeal: clamp(
-        Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * 0.6)
-        * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * 0.5), 0, 2.2),
+        Math.pow(Math.max(0.05, rivalDepth), def.depthWeight * CONFIG.appealDepthExp)
+        * Math.pow(Math.max(0.05, rivalFreshness), def.freshnessWeight * CONFIG.appealFreshExp), 0, 2.2),
       adPenalty: clamp(1 - 0.16 * rivalPain * 0.45, 0.35, 1),
       awareness: riv.awareness,
       buzz: riv.buzz,
@@ -7164,7 +7181,7 @@ function step(prevState, input = {}) {
       - rivalSegSubs * clamp(CONFIG.baseChurn * def.loyalty * 1.15, 0.005, 0.5));
 
     // Отток: скучный каталог, дорогая подписка, назойливая реклама, чужая премьера
-    const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * 0.055;
+    const boredom = Math.max(0, 1 - freshness) * def.freshnessWeight * CONFIG.boredomCoef;
     const priceAnger = Math.max(0, 1 - paidFactor) * 0.045;
     const adAnger = (1 - adPenalty) * 0.11;
     const techAnnoyance = Math.max(0, 1 - decisions.bitrate / CONFIG.refBitrate) * 0.03
