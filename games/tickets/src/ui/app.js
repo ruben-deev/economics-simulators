@@ -159,7 +159,9 @@ function toast(text) {
   const root = el('modal-root');
   const node = document.createElement('div');
   node.className = 'alert good';
-  node.style.cssText = 'position:fixed;right:18px;bottom:80px;z-index:60;max-width:340px;background:#0f2018';
+  // На телефоне нижний ряд кнопок закреплён у края экрана: тост держится
+  // над полосой (общий класс в shared/styles.css).
+  node.className += ' toast-fixed';
   node.textContent = text;
   root.appendChild(node);
   setTimeout(() => node.remove(), 3500);
