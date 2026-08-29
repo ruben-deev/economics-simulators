@@ -1303,7 +1303,8 @@ export function step(prevState, input = {}) {
   let adHours = 0;
   for (const p of perSegment) {
     const segHours = p.subs * CONFIG.baseHoursPerSub * p.def.baseHours
-      * season * Math.pow(Math.max(0.1, perceivedDepth), 0.35)
+      * season * Math.pow(Math.max(0.1, perceivedDepth),
+        p.def.depthWeight * CONFIG.hoursDepthExp)
       * (1 + 0.22 * recoStrength * quality)
       * rival.hoursMult * (mods.hoursMult ?? 1) * (crisisMods.hoursMult ?? 1);
     p.hours = segHours;

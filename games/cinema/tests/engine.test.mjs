@@ -1883,6 +1883,37 @@ test('когорты: разрыв по стажу свой у каждого с
   assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
 });
 
+test('глубокая полка кормит часами того, кому полка важна', async () => {
+  const { createInitialState, step, raise } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Ровный показатель глубины в часах раздавал их поровну: киноману, которому
+  // полка нужна, и подростку, которому всё равно. Главный канал выручки не
+  // различал аудиторию — и любая ставка на широту каталога размазывалась.
+  const run = (licensing) => {
+    const d = { ...DEFAULT_DECISIONS, licensing, brandMarketing: 120e6, rnd: 40e6 };
+    let s = createInitialState('полка-и-часы', 'normal');
+    let raises = 0;
+    for (let i = 0; i < 20 && !s.over; i++) {
+      if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+        s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+      }
+      s = step(s, { decisions: d, eventChoice: 0 }).state;
+    }
+    const r = s.history.at(-1);
+    return Object.fromEntries(r.segments.map((x) => [x.id, x.hours / Math.max(1, x.subs)]));
+  };
+  const thin = run(80e6);
+  const deep = run(800e6);
+  const gain = (id) => deep[id] / thin[id];
+  assert.ok(gain('cinephile') > gain('family'),
+    `киноман отзывчивее семьи: ${gain('cinephile')} против ${gain('family')}`);
+  assert.ok(gain('family') > gain('mass'),
+    `семья отзывчивее массового: ${gain('family')} против ${gain('mass')}`);
+  assert.ok(gain('mass') > 1, 'но полка добавляет часы всем');
+  assert.ok(gain('cinephile') > gain('youth') * 1.25,
+    `а молодёжи полка почти безразлична: ${gain('cinephile')} против ${gain('youth')}`);
+});
+
 test('рекомендации достают с полки: на тонкой доставать нечего', async () => {
   const { createInitialState, step, raise } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');

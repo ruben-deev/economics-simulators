@@ -664,13 +664,33 @@ for their watching all along and taught them not to pay.
 
 ```
 hours(segment) = subscribers × baseHoursPerSub × baseHours(segment) × season
-                 × depth^0.35 × (1 + 0.22 × recommendations × quality)
+                 × depth^(depth weight × 0.489)
+                 × (1 + 0.22 × recommendations × quality)
                  × rival_lineup
 
 per_hour = cdnCostPerHour × (bitrate / refBitrate) × (1 − 0.30 × tech_level)
            × (1 − encoding_saving)
 bandwidth = hours × per_hour
 ```
+
+**The depth exponent differs by segment.** It used to be flat (0.35), so a deep shelf
+handed out hours evenly — to the cinephile who needs it and to the teenager who does not
+care. The 0.489 multiplier normalises against the potential-weighted mean depth weight
+(0.7156): at that mean the exponent equals the old 0.35, so the overall level is inherited
+rather than set afresh.
+
+Measured on 15 codes over 24 months, licensing at 100m versus 800m — hours per subscriber:
+
+| segment | exponent | 100m | 800m | growth |
+|---|---|---|---|---|
+| cinephiles | 0.782 | 16.65 h | 28.46 h | **×1.71** |
+| families | 0.513 | 21.44 h | 30.41 h | ×1.42 |
+| mainstream | 0.220 | 23.36 h | 27.27 h | ×1.17 |
+| young viewers | 0.196 | 19.37 h | 22.25 h | ×1.15 |
+
+Note the first column of values: on a thin shelf the cinephile watches **the least of
+anyone**, even though their `baseHours` is the highest in the set (1.35). An empty shelf
+starves precisely the viewer most willing to watch.
 
 This is the **only large variable cost line** of a subscription business — and it grows
 with the loyalty of the audience. Families watch one and a half times as much as the
@@ -1048,11 +1068,11 @@ Measured on 24 codes, steady policy, feed on versus off at identical data-team s
 
 | licensing | depth | no feed | with feed | what the feed does |
 |---|---|---|---|---|
-| 100m | 0.290 | 2.34bn | 2.09bn | ×0.90 |
-| 250m | 0.391 | 2.99bn | 2.74bn | ×0.92 |
-| 400m | 0.441 | 4.26bn | 4.00bn | ×0.94 |
-| 600m | 0.488 | 1.57bn | 1.54bn | ×0.98 |
-| 800m | 0.522 | 2.04bn | 2.32bn | **×1.14** |
+| 100m | 0.290 | 2.44bn | 2.16bn | ×0.89 |
+| 250m | 0.391 | 3.05bn | 2.83bn | ×0.93 |
+| 400m | 0.441 | 4.37bn | 4.11bn | ×0.94 |
+| 600m | 0.488 | 1.66bn | 1.59bn | ×0.96 |
+| 800m | 0.522 | 2.12bn | 2.42bn | **×1.14** |
 
 The lesson is not "algorithms work" but "an algorithm is a multiplier on an asset you may
 not have". The first four rows are money spent for nothing.
