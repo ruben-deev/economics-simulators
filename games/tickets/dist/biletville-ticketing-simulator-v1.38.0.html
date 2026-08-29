@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.37.0" />
+  <meta name="app-version" content="1.38.0" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -7924,8 +7924,12 @@ const SAVE_KEY = 'biletville-save-v1';
 const RECORDS_KEY = 'biletville-records';
 const GAME_TAG = 'БИЛЕТВИЛЬ';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
-// не читается — см. load().
-const BUILD = 'tickets-1';
+// не читается — см. load(). Поднято при снятии рычага «финансовая команда»
+// (аудит 2026-08): игрок за неё больше не платит, а ставка «прочих расходов»
+// зафиксирована — опоры сдвинулись на 1.5–11%. Партия, начатая на прежней
+// экономике, доигрывалась бы по новой: и график, и запись в таблицу
+// рекордов получились бы из двух разных игр.
+const BUILD = 'tickets-2';
 // Версию проставляет сборщик. У модульной версии метки нет — значит это
 // исходники, а не раздаваемый файл.
 const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content ?? 'dev';
