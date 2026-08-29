@@ -560,8 +560,11 @@ the point: the newcomer came for the premiere, while for the veteran a premiere
 is nothing new.
 
 ```
-newcomer rate = churn − buzz × 0.030 × 1.55 + hangover × 0.018 × freshness weight × 1.45
-veteran rate  = churn − buzz × 0.030 × 0.88 + hangover × 0.018 × freshness weight × 0.90
+buzz holds    = buzz × 0.030 × freshness weight / 1.09
+hangover hits = hangover × 0.018 × freshness weight
+
+newcomer rate = churn − buzz holds × 1.55 + hangover hits × 1.45
+veteran rate  = churn − buzz holds × 0.88 + hangover hits × 0.90
                       − clamp(depth − 0.45, −0.20, 0.90) × depth weight × 0.018
 ```
 
@@ -574,10 +577,27 @@ takes 7.6 pp of churn off newcomers and only 2.3 pp off veterans; a hangover of
 
 The shelf is the exception: that is real retention, not redistribution, and only
 for the mature base. Depth promises a newcomer nothing — they have not reached
-the second row yet. Its strength scales with the segment's depth weight, so a
-sixfold shelf takes noticeably more off cinephiles than off young viewers, and
-across the whole base it removes 0.9 pp from veterans against 0.05 pp from
-newcomers.
+the second row yet. Across the whole base a sixfold shelf removes 0.9 pp from
+veterans against 0.05 pp from newcomers.
+
+**Every lever pulls with a different force in every segment.** Premiere and
+hangover are weighted by the freshness weight, the shelf by the depth weight.
+Measured at month 18, on the segment's churn as a whole:
+
+| segment | churn | premiere holds | hangover hits | shelf holds |
+|---|---|---|---|---|
+| mainstream | 10.3% | −3.9 pp | +2.5 pp | −0.5 pp |
+| cinephiles | 8.6% | −2.1 pp | +1.3 pp | −1.3 pp |
+| families | 8.6% | −2.6 pp | +1.7 pp | −1.0 pp |
+| young viewers | 12.3% | −4.5 pp | +2.9 pp | −0.4 pp |
+
+That is a fork in strategy, not just a set of different numbers. For a cinephile
+the shelf is worth two thirds of a premiere — you can hold them by buying
+library. For young viewers the shelf is worth a tenth of a premiere: only the
+next hit keeps them, and once it is over they leave twice as readily as any other
+segment. The 1.09 divisor in `buzz holds` is the potential-weighted mean of the
+freshness weights: without it the change would simply be a blanket strengthening
+of premieres, and the point here is the difference between segments.
 
 Someone who signed up this month has not settled in: they are still trying the
 service, comparing, and leaving is easy. Someone six months in has folded you

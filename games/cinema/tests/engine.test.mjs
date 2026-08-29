@@ -1883,6 +1883,43 @@ test('когорты: разрыв по стажу свой у каждого с
   assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
 });
 
+test('сегменты: премьера держит молодёжь, полка — киноманов', async () => {
+  const { createInitialState, step, raise } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Одна ставка премьеры на все сегменты означала бы, что киноман держится
+  // за громкий блокбастер так же, как подросток. Проверяем, что чувствительность
+  // развели: молодёжь живёт премьерами, киноманы — полкой.
+  let s = createInitialState('сегменты-драйверы', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 400e6, brandMarketing: 120e6, studioSlots: 2 };
+  let raises = 0;
+  for (let i = 0; i < 16 && !s.over; i++) {
+    if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+      s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+    }
+    s = step(s, { decisions: d, eventChoice: 0 }).state;
+  }
+  const fork = (mut) => {
+    const st = structuredClone(s);
+    mut(st);
+    const r = step(st, { decisions: d, eventChoice: 0 }).report;
+    return Object.fromEntries(r.segments.map((x) => [x.id, x.churnRate]));
+  };
+  const base = fork(() => {});
+  const loud = fork((st) => { st.lastBuzz = 1; });
+  const deep = fork((st) => {
+    st.catalogLicensed *= 6; st.catalogOriginal *= 6;
+    for (const g of Object.keys(st.originalsByGenre ?? {})) st.originalsByGenre[g] *= 6;
+  });
+  const byPremiere = (id) => base[id] - loud[id];
+  const byShelf = (id) => base[id] - deep[id];
+  assert.ok(byPremiere('youth') > byPremiere('cinephile') * 1.5,
+    `премьера держит молодёжь сильнее киномана: ${byPremiere('youth')} против ${byPremiere('cinephile')}`);
+  assert.ok(byShelf('cinephile') > byShelf('youth') * 1.5,
+    `а полка — наоборот: ${byShelf('cinephile')} против ${byShelf('youth')}`);
+  assert.ok(byPremiere('mass') > byPremiere('family'),
+    `массовый гонится за премьерой охотнее семьи: ${byPremiere('mass')} против ${byPremiere('family')}`);
+});
+
 test('когорты: премьеру любит новичок, полку — ветеран', async () => {
   const { createInitialState, step } = await import('../src/model/engine.js');
   const { DEFAULT_DECISIONS } = await import('../src/model/config.js');

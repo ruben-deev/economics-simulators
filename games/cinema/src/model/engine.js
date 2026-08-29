@@ -1043,7 +1043,7 @@ export function step(prevState, input = {}) {
       + hangover * 0.018 * def.freshnessWeight
       + anchorChurnAdd * def.freshnessWeight
       + sharingAngerNow * 0.012
-      - buzz * 0.030
+      - buzz * 0.030 * def.freshnessWeight / CONFIG.buzzHoldRefWeight
       - weeklyHold,
       0.005, 0.5);
     const savedShare = winbackPower * 0.45;
@@ -1086,7 +1086,7 @@ export function step(prevState, input = {}) {
     // опорной доле новичков суммарная сила премьеры та же, что и раньше:
     // это перераспределение, а не утяжеление.
     const mateShare = (kYoung) => (1 - ref * kYoung) / (1 - ref);
-    const buzzHold = buzz * 0.030;
+    const buzzHold = buzz * 0.030 * def.freshnessWeight / CONFIG.buzzHoldRefWeight;
     const hangHit = hangover * 0.018 * def.freshnessWeight;
     const dBuzz = (k) => -buzzHold * (k - 1);
     const dHang = (k) => hangHit * (k - 1);

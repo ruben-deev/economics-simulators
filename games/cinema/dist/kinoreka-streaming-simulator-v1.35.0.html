@@ -3878,6 +3878,14 @@ const CONFIG = {
   // нормировки: при опорной доле новичков смесь даёт ровно ту же силу
   // премьеры, что и раньше. То есть шум и похмелье перераспределяются
   // между когортами, а не утяжеляют модель.
+  // Сила премьеры тоже не одна на всех. Похмелье и скука от старого каталога
+  // уже взвешены на вес_свежести сегмента, а сам шум премьеры до этого шёл
+  // ровной ставкой — и киноман держался за громкий блокбастер так же, как
+  // подросток. Тот же вес, что у похмелья: премьера — событие про новизну,
+  // и кто гонится за новизной, тот и остаётся ради неё, и уходит, досмотрев.
+  // Делитель — средний вес по потенциалу сегментов: без него правка была бы
+  // просто общим усилением премьеры, а речь о разнице между сегментами.
+  buzzHoldRefWeight: 1.09,
   cohortBuzzYoung: 1.55,      // во сколько раз сильнее шум премьеры держит новичка
   cohortHangoverYoung: 1.45,  // во сколько раз сильнее по нему бьёт похмелье
   // А это уже не перераспределение: глубокая полка действительно снижает
@@ -7175,7 +7183,7 @@ function step(prevState, input = {}) {
       + hangover * 0.018 * def.freshnessWeight
       + anchorChurnAdd * def.freshnessWeight
       + sharingAngerNow * 0.012
-      - buzz * 0.030
+      - buzz * 0.030 * def.freshnessWeight / CONFIG.buzzHoldRefWeight
       - weeklyHold,
       0.005, 0.5);
     const savedShare = winbackPower * 0.45;
@@ -7218,7 +7226,7 @@ function step(prevState, input = {}) {
     // опорной доле новичков суммарная сила премьеры та же, что и раньше:
     // это перераспределение, а не утяжеление.
     const mateShare = (kYoung) => (1 - ref * kYoung) / (1 - ref);
-    const buzzHold = buzz * 0.030;
+    const buzzHold = buzz * 0.030 * def.freshnessWeight / CONFIG.buzzHoldRefWeight;
     const hangHit = hangover * 0.018 * def.freshnessWeight;
     const dBuzz = (k) => -buzzHold * (k - 1);
     const dHang = (k) => hangHit * (k - 1);
