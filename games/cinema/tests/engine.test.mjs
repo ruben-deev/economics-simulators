@@ -1883,6 +1883,63 @@ test('когорты: разрыв по стажу свой у каждого с
   assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
 });
 
+test('оценка не покупается тишиной перед финалом', async () => {
+  const { createInitialState, step, raise, finalScore } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Подготовка к выходу — реальная практика, и маржа от неё действительно
+  // растёт. Но покупатель нормализует заработок к привычному уровню вложений,
+  // иначе выгоднее бросить бизнес, чем строить: до правки тишина с 30-го
+  // месяца поднимала итог в 2.26 раза.
+  const play = (quietFrom) => {
+    const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 80e6,
+      studioSlots: 1, trialDays: 12 };
+    let s = createInitialState('тишина-перед-финалом', 'normal');
+    let raises = 0;
+    for (let i = 0; i < CONFIG.monthsTotal && !s.over; i++) {
+      if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+        s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+      }
+      const quiet = s.month + 1 > quietFrom;
+      s = step(s, {
+        decisions: quiet ? { ...d, licensing: 0, brandMarketing: 0 } : d,
+        eventChoice: 0,
+      }).state;
+    }
+    return finalScore(s);
+  };
+  const built = play(CONFIG.monthsTotal);
+  const coasted = play(30);
+  assert.ok(coasted.valuation < built.valuation,
+    `свернувшая вложения компания оценивается дешевле: ${coasted.valuation} против ${built.valuation}`);
+  assert.ok(coasted.equityValue < built.equityValue * 1.35,
+    `и тишина не удваивает итог: ${coasted.equityValue} против ${built.equityValue}`);
+});
+
+test('пробный период: у длины есть внутренний оптимум, а не упор', async () => {
+  const { createInitialState, step, raise, finalScore } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Надбавка за жадность раньше начиналась ровно на опорных четырнадцати днях,
+  // и весь участок ниже был выигрышем без обратной стороны.
+  const play = (trialDays) => {
+    const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 80e6, trialDays };
+    let s = createInitialState('длина-триала', 'normal');
+    let raises = 0;
+    for (let i = 0; i < CONFIG.monthsTotal && !s.over; i++) {
+      if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+        s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+      }
+      s = step(s, { decisions: d, eventChoice: 0 }).state;
+    }
+    const f = finalScore(s);
+    return f.bankrupt ? 0 : f.equityValue;
+  };
+  const short = play(3);
+  const mid = play(12);
+  const long = play(30);
+  assert.ok(mid > short, `середина лучше слишком короткого: ${mid} против ${short}`);
+  assert.ok(mid > long, `и лучше слишком длинного: ${mid} против ${long}`);
+});
+
 test('глубокая полка кормит часами того, кому полка важна', async () => {
   const { createInitialState, step, raise } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
