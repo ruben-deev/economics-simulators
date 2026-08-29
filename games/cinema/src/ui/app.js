@@ -2320,6 +2320,17 @@ function modal(html, actions = []) {
   });
 }
 
+// Высота нижней полосы кнопок — в переменную CSS. Полоса бывает в одну
+// строку и в две (кнопка хода забирает свою), а всплывающее сообщение
+// должно вставать над ней, а не поверх содержимого. Считаем при загрузке,
+// при смене размера и после каждой перерисовки шапки.
+function measureBar() {
+  const bar = document.querySelector('.topbar-actions');
+  if (!bar) return;
+  const h = Math.round(bar.getBoundingClientRect().height);
+  if (h > 0) document.documentElement.style.setProperty('--bar-h', `${h}px`);
+}
+
 function toast(text) {
   const root = el('modal-root');
   const node = document.createElement('div');
@@ -2816,6 +2827,7 @@ function renderChrome() {
 }
 
 function renderAll() {
+  measureBar();
   // Уровень сложности меняет состав рычагов (на лёгком финансовой команды
   // нет — она уже оплачена), поэтому смена уровня пересобирает панель
   const inertNow = [...inertKeys()].sort().join(',');
@@ -2999,3 +3011,6 @@ function exportCsv() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
+
+addEventListener('resize', measureBar);
+measureBar();
