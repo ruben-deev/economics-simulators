@@ -43,10 +43,10 @@
 Ставить ничего не нужно.
 
 Для раздачи студентам офлайн скачайте одиночный файл:
-[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.27.1.html) ·
-[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.43.1.html) ·
-[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.36.1.html) ·
-[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.31.1.html).
+[доставка](https://ruben-deev.github.io/economics-simulators/games/foodtech/dist/novoeda-delivery-simulator-v1.27.2.html) ·
+[кинотеатр](https://ruben-deev.github.io/economics-simulators/games/cinema/dist/kinoreka-streaming-simulator-v1.43.2.html) ·
+[билетный сервис](https://ruben-deev.github.io/economics-simulators/games/tickets/dist/biletville-ticketing-simulator-v1.36.2.html) ·
+[экосистема](https://ruben-deev.github.io/economics-simulators/games/ecosystem/dist/novograd-ecosystem-simulator-v1.31.2.html).
 Это самодостаточные HTML: открываются двойным кликом и работают без сети.
 
 **Преподавателю** удобнее готовый пакет одним архивом — игра, заметки к занятию
@@ -392,7 +392,7 @@ games/<игра>/
   src/model/…                   остальные модули мира: спрос, цены, партнёры — по игре
   src/ui/app.js                 интерфейс: рычаги, графики, отчёты
   tests/*.test.mjs              тесты модели и перевода
-  dist/kinoreka-streaming-simulator-v1.43.1.html
+  dist/kinoreka-streaming-simulator-v1.43.2.html
                                 собранная офлайн-версия (имя — в build.manifest.js)
 docs/<игра>/                    разбор формул и заметки для занятия (RU + en/)
 ```
