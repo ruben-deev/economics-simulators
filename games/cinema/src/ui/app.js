@@ -35,6 +35,7 @@ import {
   taggedGame,
 } from '../../../../shared/difficulty.js';
 import { policyHtml, syncPolicy, renderBudgetBar } from '../../../../shared/controls.js';
+import { mountScrollTop, relabelScrollTop } from '../../../../shared/scrolltop.js';
 import { STRINGS } from '../strings.js';
 
 const SAVE_KEY = 'kinoreka-save-v1';
@@ -2867,6 +2868,7 @@ function renderAll() {
 
 function switchLang() {
   setLang(getLang() === 'ru' ? 'en' : 'ru');
+  relabelScrollTop();
   leversBuilt = false;
   leversInert = null;
   renderAll();
@@ -3016,3 +3018,4 @@ function exportCsv() {
 
 addEventListener('resize', measureBar);
 measureBar();
+mountScrollTop();

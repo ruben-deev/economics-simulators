@@ -3,7 +3,7 @@
 
 export default {
   name: 'tickets',
-  version: '1.36.2',
+  version: '1.37.0',
   title: 'БИЛЕТВИЛЬ · ticketing marketplace simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
@@ -39,6 +39,7 @@ export default {
     '../../shared/format.js',
     '../../shared/tables.js',
   '../../shared/sliders.js',
+  '../../shared/scrolltop.js',
     '../../shared/charts.js',
     '../../shared/challenge.js',
     '../../shared/metrics.js',
