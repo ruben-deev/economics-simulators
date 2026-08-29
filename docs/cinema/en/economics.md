@@ -1171,7 +1171,7 @@ under-invest = max(0, (content+marketing)/revenue over the whole game
                       − the same over the last 6 months)
 margin      = raw margin − under-invest
 multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
-library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45
+library     = Σ(genre_hours × genre_value) × originalCostPerHour × 1.1
 position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
 valuation   = (run-rate × multiple + library) × position
 final score = (valuation + cash in the till) × your stake
@@ -1198,7 +1198,16 @@ possible and still worth doing, but it is +14% rather than a doubling, and the v
 honestly falls while you do it (3.7bn against 4.2).
 
 Your own library enters the valuation as a **separate term** — it is an asset on the
-balance sheet, while licences are not. And an hour of reality is worth a third of an hour
+balance sheet, while licences are not. The recovery share was raised from 0.45 to 1.1 in
+the 2026-08 audit: at the old figure half the production money simply burned, and the
+studio anchor stood at a third of the others — 1.85bn against 4.94 and 4.85. A finished
+show you own stays an asset; studios are valued on their libraries. Production now
+returns roughly what went into it, no more. The weight of an owned hour in catalogue
+depth went up with it (9 to 16): per rouble the studio was buying 2.6–7.7× less depth
+than licensing, leaving production dominated on the main channel.
+
+After these fixes the three anchor strategies converged: the spread between them was
+2.9×, now 1.9× (5.86 / 6.26 / 3.36bn). And an hour of reality is worth a third of an hour
 of drama in it: a library is what people will still be watching in two years.
 
 The `position` multiplier is not decoration either. In a duopoly the market pays not for
