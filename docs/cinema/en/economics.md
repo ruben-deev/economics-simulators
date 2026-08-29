@@ -1166,7 +1166,10 @@ approximately than not at all.
 ```
 run-rate    = average revenue over 6 months × 12
 growth      = subscribers over 3 months / subscribers over the previous 3 months
-margin      = profit over 6 months / revenue over the same 6 months
+raw margin  = profit over 6 months / revenue over the same 6 months
+under-invest = max(0, (content+marketing)/revenue over the whole game
+                      − the same over the last 6 months)
+margin      = raw margin − under-invest
 multiple    = clamp(2.2 + 6 × clamp(growth, −0.5, 1) + 2.5 × margin⁺ + 1.5 × margin⁻, 0.5, 12)
 library     = Σ(genre_hours × genre_value) × originalCostPerHour × 0.45
 position    = clamp(0.45 + 1.15 × duopoly_share, 0.45, 1.6)
@@ -1178,6 +1181,21 @@ The cash in the till belongs to the shareholders: a rouble unspent by the finale
 worth a rouble, and a rouble spent has to come back as valuation growth. Without the
 cash term, one-off costs late in the game would be free — including the price of
 event decisions.
+
+**The window did not close a drift as long as the window itself.** Cutting licensing
+and marketing six months before the end is exactly the window's length, and the
+measurement returned 38.6bn against 17.1bn for the same policy without the cut:
+**abandoning the business paid better than building it**. Dressing a company up for an
+exit is a real practice, and margin genuinely does rise. But that is precisely what a
+buyer looks at: before a deal, earnings are **normalised** to the level of investment at
+which the business does not shrink — that is the `under-invest` line.
+
+The norm is taken over the whole game, and as shares of revenue rather than in roubles.
+So somebody who was always frugal loses nothing, and a business that grew is not
+penalised for the same licensing budget becoming a smaller share of revenue. After the
+fix the same quiet ending returns 19.4bn against 17.0 — preparing for an exit is still
+possible and still worth doing, but it is +14% rather than a doubling, and the valuation
+honestly falls while you do it (3.7bn against 4.2).
 
 Your own library enters the valuation as a **separate term** — it is an asset on the
 balance sheet, while licences are not. And an hour of reality is worth a third of an hour
@@ -1289,12 +1307,28 @@ already been counted in this month's growth. Hence the familiar picture: the
 subscriber chart climbs beautifully and crumbles a month later.
 
 ```
-greed       = clamp((trialDays − 14) / 23, 0, 1)
+greed       = clamp((trialDays / 30)², 0, 1)
 fresh share = last month's arrivals / base
 churn += greed × fresh share × 0.55
+
+triallists also cost bandwidth: those who never reach a
+payment watch for the fraction of a month equal to the trial
+length, and you pay for every hour of it
 ```
 
-The usual two weeks are the reference point: there the surcharge is exactly zero.
-The optimum sits right there and falls off on both sides — a short
-trial loses the people who never got a taste, a long one buys people who leave at
-the first charge.
+The surcharge grows quadratically with the length itself, not with the deviation
+from a reference point. On a three-day trial almost nobody is hunting for a free
+month; a thirty-day one lets someone finish a whole season and leave.
+
+Before the 2026-08 fix the kink sat exactly at fourteen days, and everything below
+it was gain with no downside: measured on 120 codes, seven days returned 5.2bn
+against 11.1bn at fourteen — and the answer "fourteen" did not depend on price, ad
+load, licensing or the number of studio slots. A lever with the same answer in
+every game is not a decision but a hidden constant.
+
+The optimum now depends on what you are building: 7 days on thin licensing, 10 on
+ordinary, 14 at a high price or with strong annual plans, 18 at a premium price.
+The peak is flat — between 12 and 18 the difference is within a tenth — and it
+falls off on both sides: a short trial loses the people who never got a taste, a
+long one buys people who leave at the first charge and pays for their bandwidth
+the whole time.
