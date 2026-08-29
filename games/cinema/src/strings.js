@@ -58,6 +58,7 @@ export const STRINGS = {
   btnRestart: { ru: 'Заново', en: 'Restart' },
   btnRestartTitle: { ru: 'Начать заново. Город сделает вид, что ничего не было.', en: 'Start over. The city will pretend nothing happened.' },
   btnHelpTitle: { ru: 'Как играть', en: 'How to play' },
+  btnAnswerEvent: { ru: '⚡ Ответить на событие', en: '⚡ Answer the event' },
   btnNext: { ru: 'Прожить месяц {month} →', en: 'Run month {month} →' },
   btnResults: { ru: 'Итоги партии', en: 'Final results' },
   langToggle: { ru: 'EN', en: 'RU' },
