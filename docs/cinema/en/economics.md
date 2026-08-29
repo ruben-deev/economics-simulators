@@ -1031,17 +1031,38 @@ so algorithms arrive later the smaller your audience is.
 ### Recommendations: why the slider has a safe setting
 
 ```
-lift            = 1 + 0.35 × strength × quality
-bubble          = 1 − 0.30 × strength² × (1 − quality)
-perceived_depth = depth × lift × bubble
+something to dig = clamp(depth / 0.50, 0.15, 2.2)
+lift             = 1 + 0.35 × strength × quality × something to dig
+bubble           = 1 − 0.30 × strength² × (1 − quality)
+perceived_depth  = depth × lift × bubble
 ```
 
-The benefit is linear in personalisation strength; the harm is **quadratic**. So the
-optimal strength is always interior and moves right as the model improves: a cautious feed
-helps even on weak data, while an aggressive one on the same data collapses the catalogue
-into a dozen identical cards. That is the central lesson about "smart algorithms": the
-question is not whether to switch it on but how hard to push — and the answer depends on
-how much you know.
+**The lift is capped by the shelf itself.** Recommendations create nothing — they dig out
+what is already on the shelf. On a thin shelf there is nothing to dig for, and the feed
+does not even pay for its installation; on a deep one it is what decides whether a second
+row exists for the viewer at all. Before the 2026-08 fix the multiplier was flat and lifted
+a thousand-hour catalogue and an empty billboard alike, contradicting the algorithm's own
+stated lesson.
+
+Measured on 24 codes, steady policy, feed on versus off at identical data-team spend:
+
+| licensing | depth | no feed | with feed | what the feed does |
+|---|---|---|---|---|
+| 100m | 0.290 | 2.34bn | 2.09bn | ×0.90 |
+| 250m | 0.391 | 2.99bn | 2.74bn | ×0.92 |
+| 400m | 0.441 | 4.26bn | 4.00bn | ×0.94 |
+| 600m | 0.488 | 1.57bn | 1.54bn | ×0.98 |
+| 800m | 0.522 | 2.04bn | 2.32bn | **×1.14** |
+
+The lesson is not "algorithms work" but "an algorithm is a multiplier on an asset you may
+not have". The first four rows are money spent for nothing.
+
+The second constraint: the benefit is linear in personalisation strength while the harm is
+**quadratic**. So the optimal strength is always interior and moves right as the model
+improves: a cautious feed helps even on weak data, while an aggressive one on the same data
+collapses the catalogue into a dozen identical cards. The question is not whether to switch
+it on but how hard to push — and the answer depends both on how much you know and on what
+is sitting on your shelf.
 
 ### Counterfactual analysis
 

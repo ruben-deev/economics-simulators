@@ -1883,6 +1883,36 @@ test('когорты: разрыв по стажу свой у каждого с
   assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
 });
 
+test('рекомендации достают с полки: на тонкой доставать нечего', async () => {
+  const { createInitialState, step, raise } = await import('../src/model/engine.js');
+  const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Урок самого алгоритма — «они лишь достают контент с полки» — до правки
+  // не был выражен в коде: подъём был ровным множителем и одинаково поднимал
+  // тысячу часов каталога и пустую афишу.
+  const run = (licensing) => {
+    const d = { ...DEFAULT_DECISIONS, licensing, brandMarketing: 100e6, rnd: 90e6,
+      algoOn: { ...DEFAULT_DECISIONS.algoOn, recommendations: true },
+      algoParam: { ...DEFAULT_DECISIONS.algoParam, recommendations: 0.7 } };
+    let s = createInitialState('лента-и-полка', 'normal');
+    let raises = 0;
+    for (let i = 0; i < 20 && !s.over; i++) {
+      if (s.cash < 800e6 && raises < CONFIG.fundingOptions.length) {
+        s = raise(s, CONFIG.fundingOptions[raises]).state; raises += 1;
+      }
+      s = step(s, { decisions: d, eventChoice: 0,
+        install: s.installed?.recommendations ? [] : ['recommendations'] }).state;
+    }
+    const r = s.history.at(-1);
+    return { depth: r.depth, lift: r.perceivedDepth / r.depth };
+  };
+  const thin = run(60e6);
+  const deep = run(800e6);
+  assert.ok(deep.depth > thin.depth * 1.4, `полка действительно разная: ${thin.depth} и ${deep.depth}`);
+  assert.ok(deep.lift > thin.lift * 1.15,
+    `на глубокой полке лента поднимает сильнее: ${thin.lift} против ${deep.lift}`);
+  assert.ok(thin.lift < deep.lift, 'подъём растёт вместе с полкой, а не задан константой');
+});
+
 test('сегменты: премьера держит молодёжь, полка — киноманов', async () => {
   const { createInitialState, step, raise } = await import('../src/model/engine.js');
   const { CONFIG, DEFAULT_DECISIONS } = await import('../src/model/config.js');
