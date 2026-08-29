@@ -3,7 +3,7 @@
 
 export default {
   name: 'cinema',
-  version: '1.43.2',
+  version: '1.44.0',
   title: 'КИНОРЕКА · streaming economics simulator',
   html: 'index.html',
   // Имя понятное в папке «Загрузки»: game.html там превращается в game-7.html
@@ -39,6 +39,7 @@ export default {
     '../../shared/format.js',
     '../../shared/tables.js',
   '../../shared/sliders.js',
+  '../../shared/scrolltop.js',
     '../../shared/charts.js',
     '../../shared/challenge.js',
     '../../shared/metrics.js',

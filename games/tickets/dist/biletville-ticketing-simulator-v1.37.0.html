@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.36.2" />
+  <meta name="app-version" content="1.37.0" />
   <meta name="app-build-date" content="2026-08-29" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -902,7 +902,11 @@ table.data.titles td:first-child { width: 62%; }
      полоса становится шире экрана, браузер отдаляет страницу целиком, и
      закреплённая полоса уезжает за нижний край. */
   .topbar-actions { flex-wrap: wrap; }
-  .topbar-actions .btn { padding: 10px 10px; min-width: 0; flex-shrink: 1; }
+  /* Ужиматься можно, но не до полоски: 40 px — минимум, в который попадает
+     палец. Прежний min-width: 0 глушил правило из блока ≤560px, и «?»
+     съезжал до 30 px. Полоса переносится по строкам, так что пола ширины
+     ей хватает без выезда за экран. */
+  .topbar-actions .btn { padding: 10px 10px; min-width: 40px; flex-shrink: 1; }
   /* Кнопка хода забирает отдельную строку: вчетвером они в ширину телефона
      не помещаются, а полоса шире экрана заставляет браузер отдалить страницу
      целиком — и тогда она же уезжает за нижний край. */
@@ -1286,6 +1290,11 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
   }
 }
 
+/* Кнопка «наверх» — служебная, как «?» и «Заново»: стрелка узкая, и
+   растягивать её на ширину соседей незачем. */
+.btn-up-slot { font-size: 15px; line-height: 1.15; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
 /* Пол кегля. Одиннадцать пикселей — это предел, за которым подпись перестают
    читать и начинают угадывать; замер насчитал 121–158 таких узлов на страницу.
    Двенадцать читаются, а места занимают почти столько же. */
@@ -1364,6 +1373,7 @@ table.data .cell-sub, .brand-sub, .kpi .k-label, .kpi .k-delta,
     <div class="topbar-actions">
       <a id="btn-home" class="btn ghost" hidden></a>
       <button id="btn-top" class="btn ghost" hidden>🏆</button>
+      <button id="btn-up" class="btn ghost btn-up-slot" type="button">↑</button>
       <button id="btn-lang" class="btn ghost"></button>
       <button id="btn-help" class="btn ghost">?</button>
       <button id="btn-restart" class="btn ghost"></button>
@@ -7144,6 +7154,50 @@ function watchSliders(root = document) {
 }
 
 
+// ===== ../../shared/scrolltop.js ===================================
+// ============================================================================
+// Кнопка «наверх».
+//
+// Экран хода на телефоне — это несколько экранов прокрутки: итоги месяца,
+// рынок вокруг, релизы, потом вся левая колонка с рычагами. Показатели
+// компании (деньги, подписчики, месяц) живут в шапке, а шапка на телефоне
+// НЕ липкая: она занимает пол-экрана, держать её сверху нельзя. Значит,
+// свериться с деньгами посреди решения можно было только долгой прокруткой
+// большим пальцем. На десктопе шапка липкая, и там кнопка нужна меньше —
+// но и мешает она там нулю: это ещё одна кнопка в ряду служебных.
+//
+// Кнопка живёт В ПОЛОСЕ КНОПОК, а не висит поверх страницы. Плавающий
+// кружок в углу пробовался первым и на телефоне ложился прямо на варианты
+// рычага («Предложить второй дом»): полоса кнопок на телефоне закреплена
+// внизу, места в ней хватает, и там кнопка не перекрывает ничего.
+// Скрывать её на верху страницы тоже не стали: соседние кнопки при
+// прокрутке разъезжались бы вбок, а «Заново» рядом с «наверх» — не та
+// пара, где стоит двигать цели под пальцем.
+// ============================================================================
+
+const LABEL = { ru: 'Наверх, к показателям', en: 'Back to top' };
+
+let up = null;
+
+/** Переименовать после смены языка. Без кнопки — ничего не делает. */
+function relabelScrollTop() {
+  if (up) up.title = up.ariaLabel = LABEL[getLang()] ?? LABEL.ru;
+}
+
+function mountScrollTop() {
+  up = document.getElementById('btn-up');
+  if (!up) return;
+  relabelScrollTop();
+  up.addEventListener('click', () => {
+    scrollTo({ top: 0, behavior: 'smooth' });
+    // Возврат фокуса в начало страницы: иначе клавиатура и скринридер
+    // остаются там, откуда прокрутили, и Tab продолжает с середины.
+    const first = document.querySelector('header a:not([hidden]), header button:not([hidden])');
+    if (first) first.focus({ preventScroll: true });
+  });
+}
+
+
 // ===== ../../shared/charts.js ======================================
 // Минималистичные графики на canvas — без внешних библиотек,
 // чтобы игра открывалась одним файлом и работала офлайн.
@@ -10037,6 +10091,7 @@ function renderAll() {
 
 function switchLang() {
   setLang(getLang() === 'ru' ? 'en' : 'ru');
+  relabelScrollTop();
   leversBuilt = false;
   renderAll();
 }
@@ -10190,6 +10245,7 @@ function exportCsv() {
 
 addEventListener('resize', measureBar);
 measureBar();
+mountScrollTop();
 
 
 init();

@@ -34,6 +34,7 @@ import { money, moneyExact, num, pct, signedPct, growth, compact, axisNum, amoun
 import { t, tx, getLang, setLang, detectLang, setStrings } from '../../../../shared/i18n.js';
 import { watchTables } from '../../../../shared/tables.js';
 import { watchSliders } from '../../../../shared/sliders.js';
+import { mountScrollTop, relabelScrollTop } from '../../../../shared/scrolltop.js';
 import { resultString, addRecord, loadRecords, bestRecord } from '../../../../shared/records.js';
 import { lbMount, lbEndpoint } from '../../../../shared/leaderboard.js';
 import { STRINGS } from '../strings.js';
@@ -2613,6 +2614,7 @@ function renderAll() {
 
 function switchLang() {
   setLang(getLang() === 'ru' ? 'en' : 'ru');
+  relabelScrollTop();
   leversBuilt = false;   // подписи рычагов меняются вместе с языком
   renderAll();
 }
@@ -2753,3 +2755,4 @@ function exportCsv() {
 
 addEventListener('resize', measureBar);
 measureBar();
+mountScrollTop();
