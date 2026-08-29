@@ -42,7 +42,7 @@ const RECORDS_KEY = 'kinoreka-records';
 const GAME_TAG = 'КИНОРЕКА';
 // Метка сборки: меняется вместе с полями модели. Сохранение с чужой меткой
 // не читается — см. load().
-const BUILD = 'cinema-4';
+const BUILD = 'cinema-5';
 // Версию проставляет сборщик. У модульной версии метки нет — значит это
 // исходники, а не раздаваемый файл. Нужна, чтобы на вопрос «какая у вас
 // сборка» был ответ, а не догадки.
@@ -2086,7 +2086,9 @@ function renderSegmentsTab() {
       <thead><tr><th>${t('colSegment')}</th><th>${t('colSubs')}</th><th>${t('colSegDelta')}</th><th>${t('colAdShare')}</th><th>${t('colChurn')}</th><th>${t('colArpu')}</th></tr></thead>
       <tbody>${r.segments.map((s) => `<tr>
         <td>${name(s)}</td><td>${compact(s.subs)}</td>${deltaCell(s)}<td>${pct(s.ads / Math.max(1, s.subs), 0)}</td>
-        <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}</td>
+        <td class="${s.churnRate <= 0.06 ? 'pos' : 'neg'}">${pct(s.churnRate, 1)}
+          <span class="cell-sub">${t('churnByTenure', {
+            mature: pct(s.churnMature ?? 0, 1), young: pct(s.churnYoung ?? 0, 1) })}</span></td>
         <td>${amount(s.arpu)}</td></tr>`).join('')}</tbody>
     </table></div>
     <div style="overflow-x:auto;margin-top:10px"><table class="data">
@@ -2097,6 +2099,7 @@ function renderSegmentsTab() {
         <td class="${s.appeal >= 1 ? 'pos' : 'neg'}">${s.appeal.toFixed(2)}</td>
         <td class="${s.adPenalty >= 0.95 ? 'pos' : 'neg'}">${s.adPenalty.toFixed(2)}</td></tr>`).join('')}</tbody>
     </table></div>
+    <p class="funding-note">${t('tenureNote')}</p>
     <p class="funding-note">${t('factorsNote')}</p>
     <p class="funding-note">${t('segmentsNote')}</p>`;
 }

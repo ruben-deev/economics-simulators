@@ -1860,9 +1860,58 @@ test('когорты: новичок уходит заметно охотнее 
   assert.ok(r.churnYoungAvg > r.churnMatureAvg,
     `новички текут сильнее: ${r.churnYoungAvg} vs ${r.churnMatureAvg}`);
   const ratio = r.churnYoungAvg / r.churnMatureAvg;
-  const expected = CONFIG.cohortYoungChurn / CONFIG.cohortMatureChurn;
-  assert.ok(Math.abs(ratio - expected) < 0.15, `соотношение по конфигу: ${ratio} vs ${expected}`);
+  assert.ok(ratio > 1.2 && ratio < 2.6, `разрыв в разумных пределах: ${ratio}`);
   assert.ok(r.youngShare > 0 && r.youngShare <= 1, 'доля новичков в пределах [0,1]');
+});
+
+test('когорты: разрыв по стажу свой у каждого сегмента', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  // Одна ставка на всех прятала бы главное: у киномана привычка копится,
+  // и выдержанный киноман держится втрое крепче нового, а у молодёжи стажа
+  // будто и нет — уходят за следующим хитом хоть на первом месяце, хоть на
+  // тридцатом. Проверяем, что порядок сегментов по разрыву именно такой.
+  let s = createInitialState('разрыв-сегментов', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 250e6, brandMarketing: 80e6 };
+  for (let i = 0; i < 6; i++) s = step(s, { decisions: d, eventChoice: 0 }).state;
+  const seg = Object.fromEntries(s.history.at(-1).segments.map((x) => [x.id, x]));
+  const spread = (id) => seg[id].churnYoung / seg[id].churnMature;
+  assert.ok(spread('cinephile') > spread('mass'),
+    `у киномана разрыв шире, чем у массового: ${spread('cinephile')} vs ${spread('mass')}`);
+  assert.ok(spread('mass') > spread('youth'),
+    `а у молодёжи самый узкий: ${spread('mass')} vs ${spread('youth')}`);
+  assert.ok(spread('youth') > 1, 'но новичок везде уходит охотнее ветерана');
+});
+
+test('когорты: премьеру любит новичок, полку — ветеран', async () => {
+  const { createInitialState, step } = await import('../src/model/engine.js');
+  const { DEFAULT_DECISIONS } = await import('../src/model/config.js');
+  let s = createInitialState('когорты-драйверы', 'normal');
+  const d = { ...DEFAULT_DECISIONS, licensing: 300e6, brandMarketing: 90e6 };
+  for (let i = 0; i < 12; i++) s = step(s, { decisions: d, eventChoice: 0 }).state;
+  const fork = (mut) => {
+    const st = structuredClone(s);
+    mut(st);
+    return step(st, { decisions: d, eventChoice: 0 }).report;
+  };
+  const base = fork(() => {});
+  // Шум премьеры держит новичка сильнее: он ради неё и пришёл.
+  const loud = fork((st) => { st.lastBuzz = 1; });
+  const heldYoung = base.churnYoungAvg - loud.churnYoungAvg;
+  const heldMature = base.churnMatureAvg - loud.churnMatureAvg;
+  assert.ok(heldYoung > heldMature * 1.5,
+    `премьера держит новичка сильнее: ${heldYoung} против ${heldMature}`);
+  // Полка держит ветерана — а новичку почти ничего не обещает: он ещё не
+  // дошёл до второго ряда. Долю своего контента при этом не трогаем.
+  const deep = fork((st) => {
+    st.catalogLicensed *= 6; st.catalogOriginal *= 6;
+    for (const g of Object.keys(st.originalsByGenre ?? {})) st.originalsByGenre[g] *= 6;
+  });
+  const shelfMature = base.churnMatureAvg - deep.churnMatureAvg;
+  const shelfYoung = base.churnYoungAvg - deep.churnYoungAvg;
+  assert.ok(shelfMature > 0.002, `глубокая полка снимает отток с ветерана: ${shelfMature}`);
+  assert.ok(shelfMature > shelfYoung * 3,
+    `и почти не трогает новичка: ветеран ${shelfMature}, новичок ${shelfYoung}`);
 });
 
 test('когорты: подкачка новых поднимает долю новичков и средний отток', async () => {

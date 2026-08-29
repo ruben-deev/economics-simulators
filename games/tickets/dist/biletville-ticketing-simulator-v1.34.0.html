@@ -1249,6 +1249,12 @@ details[open] > .lever-group-title::before { transform: rotate(90deg); }
   #btn-next { min-height: 44px; }
 }
 
+/* Вторая строка в ячейке таблицы: разбивка того же числа — не новая колонка,
+   а уточнение под ней. Появилась для оттока по стажу: две когорты под общей
+   ставкой читаются, а третья колонка таблицу бы распёрла. */
+table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
+  font-variant-numeric: tabular-nums; margin-top: 1px; }
+
 </style>
   <script id="js-flag">
     // Метка «скрипты работают». Ставится до всего остального: если страницу
