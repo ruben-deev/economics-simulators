@@ -167,8 +167,8 @@ export const EVENTS = [
     id: 'cofounder', weight: 6, minMonth: 6, once: true,
     title: { ru: 'Сооснователь за долю', en: 'A co-founder for a stake' },
     text: {
-      ru: 'К вам приходит операционный директор из компании, которая прошла этот путь до вас. Готов войти сооснователем и забрать одну вертикаль под себя — вести её руками, а не советами. Не за зарплату, а за 8% компании.',
-      en: 'A COO from a company that has already walked this road comes to you. They are ready to join as a co-founder and take one vertical off your hands — running it themselves, not advising on it. Not for a salary, but for 8% of the company.',
+      ru: 'К вам приходит операционный директор из компании, которая прошла этот путь до вас. Готов войти сооснователем и тянуть на себе управление объёмом в целую вертикаль — руками, а не советами. Не за зарплату, а за 8% компании.',
+      en: 'A COO from a company that has already walked this road comes to you. They are ready to join as a co-founder and carry a whole vertical\'s worth of management themselves — hands-on, not advisory. Not for a salary, but for 8% of the company.',
     },
     lesson: {
       ru: 'Доля отдаётся один раз и навсегда, а стоит она процента от всего, что вы построите потом. Партнёр и управляющая компания лечат одно и то же — расфокус, но платите вы за них по-разному: за одного долей, за другую деньгами помесячно. Поэтому берут кого-то одного, и только если вертикалей действительно несколько: на одной платить за расфокус нечем.',
@@ -212,8 +212,8 @@ export const EVENTS = [
       {
         label: { ru: 'Взять сооснователя (8% компании)', en: 'Take the co-founder (8% of the company)' },
         detail: {
-          ru: 'Он забирает одну вертикаль под себя: конгломератный штраф до конца партии считается так, будто вертикалей на одну меньше. Доля уходит сразу — и из итоговой оценки тоже.',
-          en: 'They take one vertical off your hands: for the rest of the game the conglomerate penalty is counted as if you ran one vertical fewer. The stake leaves immediately — and out of the final valuation too.',
+          ru: 'Все сервисы и все рычаги остаются вашими — забирает он не бизнес, а управленческую нагрузку, и не какой-то одной вертикали, а объёмом в целую. Конгломератный штраф до конца партии считается так, будто вертикалей на одну меньше. Доля уходит сразу — и из итоговой оценки тоже.',
+          en: 'Every service and every lever stays yours — what they take is not a business but a management load, and not that of some particular vertical but a whole vertical\'s worth. For the rest of the game the conglomerate penalty is counted as if you ran one vertical fewer. The stake leaves immediately — and out of the final valuation too.',
         },
         effects: { cofounder: true },
       },
