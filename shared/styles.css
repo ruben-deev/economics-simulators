@@ -1292,9 +1292,27 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
 .seed-fold .seed-change { color: var(--accent-2); font-size: 12px; white-space: nowrap; }
 .seed-fold[open] .seed-change { display: none; }
 
-/* Кнопка «наверх» — служебная, как «?» и «Заново»: стрелка узкая, и
-   растягивать её на ширину соседей незачем. */
-.btn-up-slot { font-size: 15px; line-height: 1.15; }
+/* Кнопка «наверх»: круглая, 56 px, правый нижний угол — то место и тот
+   размер, которых её и ждут на телефоне. В полосе кнопок она стояла рядом
+   с «Заново» (промах стоит партии), была узкой и в нестандартном месте.
+   Появляется после прокрутки на три четверти экрана — наверху её нет. */
+.btn-up {
+  position: fixed; right: 16px; z-index: 40;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; line-height: 1; cursor: pointer;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(2, 6, 16, 0.55);
+}
+.btn-up[hidden] { display: none; }
+.btn-up:hover { border-color: var(--accent); }
+.btn-up:active { transform: translateY(1px); }
+@media (max-width: 980px) {
+  /* Над закреплённой полосой кнопок хода: её высоту меряет сам интерфейс. */
+  .btn-up { bottom: calc(var(--bar-h, 96px) + 14px + env(safe-area-inset-bottom)); }
+}
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 /* Пол кегля. Одиннадцать пикселей — это предел, за которым подпись перестают

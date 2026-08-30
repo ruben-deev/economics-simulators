@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.35.2" />
+  <meta name="app-version" content="1.36.0" />
   <meta name="app-build-date" content="2026-08-30" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1318,9 +1318,27 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
 .seed-fold .seed-change { color: var(--accent-2); font-size: 12px; white-space: nowrap; }
 .seed-fold[open] .seed-change { display: none; }
 
-/* Кнопка «наверх» — служебная, как «?» и «Заново»: стрелка узкая, и
-   растягивать её на ширину соседей незачем. */
-.btn-up-slot { font-size: 15px; line-height: 1.15; }
+/* Кнопка «наверх»: круглая, 56 px, правый нижний угол — то место и тот
+   размер, которых её и ждут на телефоне. В полосе кнопок она стояла рядом
+   с «Заново» (промах стоит партии), была узкой и в нестандартном месте.
+   Появляется после прокрутки на три четверти экрана — наверху её нет. */
+.btn-up {
+  position: fixed; right: 16px; z-index: 40;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; line-height: 1; cursor: pointer;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(2, 6, 16, 0.55);
+}
+.btn-up[hidden] { display: none; }
+.btn-up:hover { border-color: var(--accent); }
+.btn-up:active { transform: translateY(1px); }
+@media (max-width: 980px) {
+  /* Над закреплённой полосой кнопок хода: её высоту меряет сам интерфейс. */
+  .btn-up { bottom: calc(var(--bar-h, 96px) + 14px + env(safe-area-inset-bottom)); }
+}
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 /* Пол кегля. Одиннадцать пикселей — это предел, за которым подпись перестают
@@ -1401,7 +1419,6 @@ table.data .cell-sub, .brand-sub, .kpi .k-label, .kpi .k-delta,
     <div class="topbar-actions">
       <a id="btn-home" class="btn ghost" hidden></a>
       <button id="btn-top" class="btn ghost" hidden>🏆</button>
-      <button id="btn-up" class="btn ghost btn-up-slot" type="button">↑</button>
       <button id="btn-lang" class="btn ghost"></button>
       <button id="btn-help" class="btn ghost">?</button>
       <button id="btn-restart" class="btn ghost"></button>
@@ -7572,18 +7589,17 @@ function watchSliders(root = document) {
 // Экран хода на телефоне — это несколько экранов прокрутки: итоги месяца,
 // рынок вокруг, релизы, потом вся левая колонка с рычагами. Показатели
 // компании (деньги, подписчики, месяц) живут в шапке, а шапка на телефоне
-// НЕ липкая: она занимает пол-экрана, держать её сверху нельзя. Значит,
-// свериться с деньгами посреди решения можно было только долгой прокруткой
-// большим пальцем. На десктопе шапка липкая, и там кнопка нужна меньше —
-// но и мешает она там нулю: это ещё одна кнопка в ряду служебных.
+// НЕ липкая: она занимает пол-экрана, держать её сверху нельзя.
 //
-// Кнопка живёт В ПОЛОСЕ КНОПОК, а не висит поверх страницы. Плавающий
-// кружок в углу пробовался первым и на телефоне ложился прямо на варианты
-// рычага («Предложить второй дом»): полоса кнопок на телефоне закреплена
-// внизу, места в ней хватает, и там кнопка не перекрывает ничего.
-// Скрывать её на верху страницы тоже не стали: соседние кнопки при
-// прокрутке разъезжались бы вбок, а «Заново» рядом с «наверх» — не та
-// пара, где стоит двигать цели под пальцем.
+// Где кнопка стоит и почему именно там — история из трёх попыток:
+//   1. Плавающий кружок 44 px в углу — ложился на варианты рычага.
+//   2. Кнопка в полосе рядом с «Заново» — соседство скверное (промах по
+//      «Заново» стоит партии), место нестандартное, а сама стрелка узкая.
+//   3. Плавающая круглая кнопка 56 px, как её ждут на телефоне: правый
+//      нижний угол над закреплённой полосой, появляется только после
+//      прокрутки на экран и исчезает наверху. Перекрытие содержимого у
+//      такой кнопки есть всегда — зато она видна ровно тогда, когда нужна,
+//      и не соседствует ни с чем разрушительным.
 // ============================================================================
 
 const LABEL = { ru: 'Наверх, к показателям', en: 'Back to top' };
@@ -7596,9 +7612,21 @@ function relabelScrollTop() {
 }
 
 function mountScrollTop() {
-  up = document.getElementById('btn-up');
-  if (!up) return;
+  if (up) return;
+  up = document.createElement('button');
+  up.id = 'btn-up';
+  up.className = 'btn-up';
+  up.type = 'button';
+  up.hidden = true;
+  up.textContent = '↑';
   relabelScrollTop();
+  document.body.appendChild(up);
+
+  // Порог — экран прокрутки: выше кнопка не нужна, а место она занимает.
+  const toggle = () => { up.hidden = scrollY < innerHeight * 0.75; };
+  toggle();
+  addEventListener('scroll', toggle, { passive: true });
+  addEventListener('resize', toggle);
   up.addEventListener('click', () => {
     scrollTo({ top: 0, behavior: 'smooth' });
     // Возврат фокуса в начало страницы: иначе клавиатура и скринридер
@@ -10620,11 +10648,18 @@ function showGameOver(frozen = false) {
 
 // Приветственный экран: куда человек попал, выбор стартового актива
 // («класс персонажа») и наследие из трёх игр набора.
+// Код партии живёт в модуле, а не в замыкании showWelcome: поле для него
+// стоит в «Подробнее», то есть в другой модалке, и писать в него нужно
+// оттуда. На первом экране кода нет вовсе — им пользуется меньшинство.
+let seedWanted = null;
+
 function showWelcome() {
   // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
   // ссылка приносит код партии сама, поле можно не заполнять.
   // Ссылка важнее приглашения; без неё новая партия предлагает город недели
-  let seedWanted = urlGameCode() || weeklySeedToPlay('НОВОГРАД');
+  // Только при первом показе: из справки сюда возвращаются кнопкой «ОК»,
+  // и переприсваивание стирало бы код, который человек только что ввёл.
+  if (seedWanted === null) seedWanted = urlGameCode() || weeklySeedToPlay('НОВОГРАД');
   let assetWanted = state.assetId;
   const best = bestRecord(RECORDS_KEY);
   const unlocks = legacyUnlocks();
@@ -10744,35 +10779,12 @@ function showWelcome() {
       </details>
     </div>
     ${carryHtml}
-    <details class="more seed-fold">
-      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change">${t('seedChange')}</span></summary>
-      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
-        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-      <p class="funding-note">${t('seedNote')}</p>
-      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
-    </details>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
-  [{ label: t('welcomeMore'), onClick: showHelp },
+  [{ label: t('welcomeMore'), onClick: () => showHelp(true) },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
-  const seedField = el('modal-root').querySelector('#seed-input');
-  // Код виден в заголовке ката, чтобы под катом не оказалось действующей
-  // настройки: поле спрятано, но подставленный код недели или код из ссылки
-  // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
-  // код приходит из ?code= и в innerHTML ему делать нечего.
-  const seedSummary = el('modal-root').querySelector('.seed-name');
-  const syncSummary = () => {
-    if (!seedSummary) return;
-    const v = seedWanted.trim();
-    seedSummary.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
-  };
-  syncSummary();
-  if (seedField) {
-    seedField.value = seedWanted;
-    seedField.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); syncSummary(); });
-  }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
   // так же, как кнопки нижнего ряда.
@@ -10814,12 +10826,50 @@ function showWelcome() {
   });
 }
 
-function showHelp() {
+// Поле кода партии стоит здесь, а не на первом экране: им пользуется
+// меньшинство, а место на первом экране дорогое. Правится только до первого
+// хода — после него код уже отработал: мир построен, менять его нечем.
+function seedFieldHtml() {
+  return `<details class="more seed-fold">
+      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change" aria-hidden="true">${t('seedChange')}</span></summary>
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
+        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+      <p class="funding-note">${t('seedNote')}</p>
+      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    </details>`;
+}
+
+// Код виден в заголовке ката, чтобы под катом не оказалось действующей
+// настройки: поле спрятано, но подставленный код недели или код из ссылки
+// должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
+// код приходит из ?code= и в innerHTML ему делать нечего.
+function wireSeedField() {
+  const field = el('modal-root').querySelector('#seed-input');
+  const name = el('modal-root').querySelector('.seed-name');
+  const sync = () => {
+    if (!name) return;
+    const v = seedWanted.trim();
+    name.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
+  };
+  sync();
+  if (field) {
+    field.value = seedWanted;
+    field.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); sync(); });
+  }
+}
+
+function showHelp(fromWelcome = false) {
+  const fresh = !state.history.length;
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
-    + `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`
+    + (fresh ? seedFieldHtml() : `<p class="funding-note">${t('helpSeed', { seed: state.seed })}</p>`)
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION, date: APP_BUILD_DATE })}</p>`,
-    [{ label: t('helpModalOk'), primary: true }]);
+    [{ label: t('helpModalOk'), primary: true,
+        // Из первого экрана справка открывается кнопкой «Подробнее» и
+        // подменяет его собой. Без возврата человек, зашедший прочитать
+        // подробности, терял кнопку «Начать» и не понимал, куда она делась.
+        onClick: fromWelcome ? showWelcome : undefined }]);
+  if (fresh) wireSeedField();
 }
 
 // ----------------------------------------------------------------------------

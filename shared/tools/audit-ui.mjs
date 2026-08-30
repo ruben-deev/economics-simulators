@@ -99,9 +99,18 @@ for (const g of GAMES) {
       await page.evaluate((l) => localStorage.setItem('game-lang', l), lang);
       await page.reload();
       await page.waitForTimeout(350);
-      for (let k = 0; k < 3; k++) {
+      // Первый экран закрывается кнопкой «Начать», а не нижним рядом: там
+      // стоит «Подробнее», и она открывает справку, из которой возвращаются
+      // обратно на первый экран. Прежний сценарий жал нижнюю кнопку трижды и
+      // ходил по кругу welcome → справка → welcome: партия не начиналась, а
+      // аудит списывал это на «пустые панели» в графике.
+      for (let k = 0; k < 4; k++) {
+        const start = page.locator('#welcome-start');
+        if (await start.count()) { await start.click({ timeout: 500 }).catch(() => {}); await page.waitForTimeout(80); continue; }
         const btn = page.locator('#modal-root [data-act="0"]').first();
-        if (await btn.count()) { await btn.click({ timeout: 500 }).catch(() => {}); await page.waitForTimeout(80); }
+        if (!(await btn.count())) break;
+        await btn.click({ timeout: 500 }).catch(() => {});
+        await page.waitForTimeout(80);
       }
       await g.warm(page);
       for (let i = 0; i < g.turns; i++) {
