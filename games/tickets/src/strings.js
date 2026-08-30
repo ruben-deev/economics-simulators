@@ -579,6 +579,7 @@ export const STRINGS = {
   recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
+  seedFold: { ru: 'Код партии', en: 'Game code' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedWeeklyNote: { ru: 'Подставлен город недели — общий для всех, кто начнёт партию на этой неделе: одинаковый город делает сравнение честным. Хотите случайный — просто сотрите код.', en: 'The city of the week is filled in — shared by everyone starting a game this week: an identical city keeps the comparison fair. Want a random one? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },

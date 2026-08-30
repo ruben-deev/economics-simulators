@@ -2,8 +2,8 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.44.0" />
-  <meta name="app-build-date" content="2026-08-29" />
+  <meta name="app-version" content="1.45.0" />
+  <meta name="app-build-date" content="2026-08-30" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
   <title>КИНОРЕКА · streaming economics simulator</title>
@@ -2349,6 +2349,7 @@ score = valuation × your stake`,
   recordsOutcomeSold: { ru: 'продана', en: 'sold' },
   recordsYou: { ru: '← эта партия', en: '← this game' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
+  seedFold: { ru: 'Код партии', en: 'Game code' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedWeeklyNote: { ru: 'Подставлен город недели — общий для всех, кто начнёт партию на этой неделе: одинаковый город делает сравнение честным. Хотите случайный — просто сотрите код.', en: 'The city of the week is filled in — shared by everyone starting a game this week: an identical city keeps the comparison fair. Want a random one? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый рынок у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same market. Empty means random.' },
@@ -8902,10 +8903,20 @@ function challengeCode(now = new Date()) {
   return `${year}-w${String(week).padStart(2, '0')}`;
 }
 
+// Код партии — это буквы, цифры, пробел и дефис: «урок-7б», «2026-w35».
+// Всё остальное вырезается. Причина не косметическая: код приходит из
+// ?code= в ссылке, попадает в сид мира, а оттуда — в справку («ваш код
+// партии») и в таблицу рекордов, где подставляется в разметку. Замер:
+// ссылка с ?code=<img src=x onerror=…> выполняла скрипт при открытии
+// справки. Чистим на входе, чтобы не гоняться за каждым местом вывода.
+function safeGameCode(raw) {
+  return String(raw ?? '').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().slice(0, 64);
+}
+
 /** Код партии из ссылки (?code=…) — пустая строка, если его нет. */
 function urlGameCode() {
   try {
-    return (new URLSearchParams(window.location.search).get('code') || '').trim().slice(0, 64);
+    return safeGameCode(new URLSearchParams(window.location.search).get('code') || '');
   } catch {
     return '';
   }
@@ -9512,6 +9523,10 @@ function load() {
     // а причина невидима. Лучше начать месяц заново, чем не начать вовсе.
     if (!saved || saved.build !== BUILD) return null;
     const s = saved.state;
+    // Сид мог быть записан до чистки кодов, а он идёт в разметку справки и
+    // таблицы рекордов. Чистим и здесь; если после чистки не осталось ничего,
+    // мир всё равно нужен — берём код недели, он всегда валиден.
+    if (s && typeof s.seed === 'string') s.seed = safeGameCode(s.seed) || challengeCode();
     return s && s.segments && Array.isArray(s.history) ? s : null;
   } catch { return null; }
 }
@@ -12073,12 +12088,13 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
-    <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
-      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
-        style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-    </label>
-    <p class="funding-note">${t('seedNote')}</p>
-    ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    <details class="more seed-fold">
+      <summary id="seed-summary">${t('seedLabel')}</summary>
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
+        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+      <p class="funding-note">${t('seedNote')}</p>
+      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    </details>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeMore'), onClick: showHelp },
@@ -12087,9 +12103,20 @@ function showWelcome() {
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
   const seedField = el('modal-root').querySelector('#seed-input');
+  // Код виден в заголовке ката, чтобы под катом не оказалось действующей
+  // настройки: поле спрятано, но подставленный код недели или код из ссылки
+  // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
+  // код приходит из ?code= и в innerHTML ему делать нечего.
+  const seedSummary = el('modal-root').querySelector('#seed-summary');
+  const syncSummary = () => {
+    if (!seedSummary) return;
+    const v = seedWanted.trim();
+    seedSummary.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
+  };
+  syncSummary();
   if (seedField) {
     seedField.value = seedWanted;
-    seedField.addEventListener('input', (e) => { seedWanted = e.target.value; });
+    seedField.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); syncSummary(); });
   }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
