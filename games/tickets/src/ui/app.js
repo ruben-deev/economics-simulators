@@ -175,15 +175,26 @@ function measureBar() {
   if (h > 0) document.documentElement.style.setProperty('--bar-h', `${h}px`);
 }
 
+// Сообщения складываются в стопку, а не печатаются друг поверх друга.
+// Раньше каждый тост был отдельным position: fixed с одним и тем же bottom,
+// и два подряд («сначала выберите решение» и «партия сохранена») ложились
+// в одну точку — читались обе строки сразу и ни одна до конца. Стопка живёт
+// вне #modal-root: модалка чистит себе разметку целиком, вместе с тостами.
+function toastStack() {
+  let stack = document.getElementById('toast-stack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'toast-stack';
+    stack.className = 'toast-stack';
+    document.body.appendChild(stack);
+  }
+  return stack;
+}
 function toast(text) {
-  const root = el('modal-root');
   const node = document.createElement('div');
   node.className = 'alert good';
-  // На телефоне нижний ряд кнопок закреплён у края экрана: тост держится
-  // над полосой (общий класс в shared/styles.css).
-  node.className += ' toast-fixed';
   node.textContent = text;
-  root.appendChild(node);
+  toastStack().appendChild(node);
   setTimeout(() => node.remove(), 3500);
 }
 

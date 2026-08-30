@@ -23,8 +23,14 @@ const GAMES = [
     cushion: 60e6, minTurn: (C) => C.minWeekForFunding, turnOf: (s) => s.week },
   { name: 'НОВОГРАД', dir: 'ecosystem', turns: (C) => C.monthsTotal, forceAt: [8, 16, 26],
     policies: {
-      'одна вертикаль': (C, cfg) => () => ({ ...cfg.DEFAULT_DECISIONS, verticals: [], foodTake: 1.06, foodOps: 5e6, foodMarketing: 3e6, finance: 3e6 }),
-      экосистема: (C, cfg) => (s) => ({ ...cfg.DEFAULT_DECISIONS, verticals: ['taxi', ...(s.month + 1 >= 12 ? ['ecom'] : []), ...(s.taxi.on && s.month + 1 >= 8 ? ['plus'] : [])], foodOps: 4e6, foodMarketing: 2e6, crossSell: 5e6, mgmt: 8e6, taxiSupply: 9e6, taxiMarketing: 14e6, ecomOps: 2e6, ecomMarketing: 6e6, ecomLogistics: 3e6, finance: 3e6 }),
+      'одна вертикаль': (C, cfg) => () => ({ ...cfg.DEFAULT_DECISIONS, verticals: [], foodTake: 1.06, foodOps: 5e6, foodMarketing: 3e6 }),
+      экосистема: (C, cfg) => (s) => ({ ...cfg.DEFAULT_DECISIONS, verticals: ['taxi', ...(s.month + 1 >= 12 ? ['ecom'] : []), ...(s.taxi.on && s.month + 1 >= 8 ? ['plus'] : [])], foodOps: 4e6, foodMarketing: 2e6, crossSell: 5e6, mgmt: 8e6, taxiSupply: 9e6, taxiMarketing: 14e6, ecomOps: 2e6, ecomMarketing: 6e6, ecomLogistics: 3e6 }),
+      // Третья политика отличается от второй ровно одним числом — управляющей
+      // компанией. Без неё аудит не видел половину развилок: «сооснователь»
+      // выкупает тот же расфокус, что и УК, и при mgmt: 8e6 отказ побеждает
+      // ВСЕГДА — не потому, что выбора нет, а потому, что смотрели одну
+      // колонку. Событие имеет право зависеть от того, как игрок тратит.
+      'экосистема, скупая УК': (C, cfg) => (s) => ({ ...cfg.DEFAULT_DECISIONS, verticals: ['taxi', ...(s.month + 1 >= 12 ? ['ecom'] : []), ...(s.taxi.on && s.month + 1 >= 8 ? ['plus'] : [])], foodOps: 4e6, foodMarketing: 2e6, crossSell: 5e6, mgmt: 0, taxiSupply: 9e6, taxiMarketing: 14e6, ecomOps: 2e6, ecomMarketing: 6e6, ecomLogistics: 3e6 }),
     },
     // Контекстные ворота событий. Форсировать «перемирие» без войны или штраф
     // на пустой парк — то же самое, что форсировать событие раньше срока:

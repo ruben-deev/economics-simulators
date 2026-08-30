@@ -49,7 +49,7 @@ export const ANCHORS = {
     buyerFee: 0.05, orgCommission: 0.10, marketing: 60e6, managers: 35,
     onboarding: 20e6, platform: ['club', 'theatre', 'sport', 'concert'],
     product: 30e6, support: 10e6, capacityTech: 10e6, platformDev: 20e6,
-    platformRate: 0.035, platformFee: 60_000, finance: 3e6,
+    platformRate: 0.035, platformFee: 60_000,
   },
 };
 
@@ -74,7 +74,6 @@ export function play(P, seed, difficulty = 'normal') {
         support: P.support, capacityTech: P.capacityTech,
         platformRate: P.platformRate ?? DEFAULT_DECISIONS.platformRate,
         platformFee: P.platformFee ?? DEFAULT_DECISIONS.platformFee,
-        finance: P.finance ?? 0,
         platformFor: platformFor(P.platform),
       },
       eventChoice: 0,
