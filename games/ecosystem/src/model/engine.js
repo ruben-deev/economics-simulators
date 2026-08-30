@@ -240,8 +240,13 @@ export function verticalsCount(state) {
 export function focusPenalty(state, decisions) {
   const n = verticalsCount(state)
     + (scooterFleet(state) > 0 ? CONFIG.scooters.focusWeight : 0);
-  const relief = state.flags?.cofounder ? (1 - CONFIG.cofounder.focusRelief) : 1;
-  return CONFIG.focusPenaltyPerVertical * (n - 1) * (1 - mgmtLevel(decisions)) * relief;
+  // Сооснователь ведёт одну вертикаль руками: штраф считается так, будто их
+  // на одну меньше. Это слот, а не доля штрафа — и в этом весь смысл правки.
+  // Управляющая компания режет ПРОЦЕНТ штрафа за деньги; долю партнёр
+  // продавал бы то же самое впятеро дороже, и выбора не получалось.
+  const slots = Math.max(0, n - 1
+    - (state.flags?.cofounder ? CONFIG.cofounder.focusSlot : 0));
+  return CONFIG.focusPenaltyPerVertical * slots * (1 - mgmtLevel(decisions));
 }
 
 export function foodQuality(state, decisions) {

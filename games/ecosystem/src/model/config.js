@@ -33,14 +33,22 @@ export const CONFIG = {
   // выкупает этот штраф, но не бесплатно.
   focusPenaltyPerVertical: 0.12,
   // Сооснователь: сильный операционный партнёр за долю. Он не приносит денег
-  // и не двигает спрос — он снимает часть конгломератного штрафа, то есть
-  // цену расфокуса. Поэтому решение считается: доля отдаётся сразу и навсегда,
-  // а отдача есть только у того, кто действительно держит несколько вертикалей.
-  // Цена и сила подобраны замером так, чтобы решение зависело от стратегии, а
-  // не было бесплатным: на полной экосистеме со скупой управляющей компанией
-  // сооснователь даёт +6%, на одной вертикали отнимает 11% — там платить за
-  // расфокус просто не из чего.
-  cofounder: { equity: 0.14, focusRelief: 0.25 },
+  // и не двигает спрос — он ВЕДЁТ ОДНУ ВЕРТИКАЛЬ РУКАМИ, то есть снимает
+  // ровно один слот конгломератного штрафа (focusSlot), а не его долю.
+  //
+  // Так было не всегда. До августа 2026 он снимал четверть остатка штрафа —
+  // то же самое, что покупает управляющая компания, только доля стоила 14%
+  // итога навсегда (≈1.4 млрд), а УК выкупает 57% штрафа за 288 млн за всю
+  // партию. Замер показал ровно то, что и должен был: отказ побеждал на всех
+  // уровнях УК без исключения, 72/72. Решения не было.
+  //
+  // Слот деньгами не покупается: УК режет процент, но вертикаль не ведёт.
+  // Цена снижена до 8%. Замер после правки (медиана «взять vs отказать»):
+  //   одна вертикаль — −8% при любой УК (платить за расфокус нечем);
+  //   две-три вертикали — +7…+10% при нулевой УК, около нуля при 4 млн,
+  //   −2…−4% при 8–16 млн. Перелом стоит на оптимуме УК: партнёр ИЛИ
+  //   управляющая компания, и это теперь настоящая развилка.
+  cofounder: { equity: 0.08, focusSlot: 1 },
   mgmtSaturation: 6_000_000,   // ₽/мес управляющей компании для «половины» эффекта
   // Партнёрская сеть билетного старта удешевляет холодное привлечение
   // вертикалей: точка насыщения маркетинга умножается на это число
@@ -695,8 +703,8 @@ export const LEVERS = [
     unit: { ru: '₽/мес', en: '$/mo' },
     min: 0, max: 15_000_000, step: 500_000, def: 0,
     tip: {
-      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение, ещё четверть остатка снимает сооснователь. Пока вертикаль одна, команда почти не нужна. И это не бесплатное лекарство: деньги на управление конкурируют с бюджетами самих сервисов и с запасом кассы. На контрольных партиях оптимум умеренный — при двух сервисах около 6–8 млн, при трёх около 4–6: чем больше вертикалей, тем нужнее каждый рубль в них самих. Перелив опаснее всего как раз при двух сервисах: за 12 млн итог падает на пятую часть — вы платите за штраф больше, чем он стоит; при трёх лишние деньги почти ничего не меняют.',
-      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here, and a co-founder removes another quarter of the rest. With a single vertical you barely need it. And it is not a free cure: management money competes with the services\' own budgets and with your cash buffer. On control runs the optimum is modest — around $60–80K/mo with two services, $40–60K with three: the more verticals you run, the more every dollar is needed inside them. Overspending hurts most with exactly two services: at $120K the result drops by a fifth — you pay more than the penalty costs; with three, extra money barely changes anything.',
+      ru: 'Каждая новая вертикаль размывает фокус менеджмента — исполнение проседает во ВСЕХ сервисах сразу. Управляющая компания выкупает большую часть штрафа, но не весь: у денег здесь насыщение. Сооснователь лечит то же самое иначе — забирает вертикаль себе, но берёт долю навсегда; кого-то одного, не обоих. Пока вертикаль одна, команда почти не нужна. И это не бесплатное лекарство: деньги на управление конкурируют с бюджетами самих сервисов и с запасом кассы. На контрольных партиях оптимум умеренный — при двух сервисах около 6–8 млн, при трёх около 4–6: чем больше вертикалей, тем нужнее каждый рубль в них самих. Перелив опаснее всего как раз при двух сервисах: за 12 млн итог падает на пятую часть — вы платите за штраф больше, чем он стоит; при трёх лишние деньги почти ничего не меняют.',
+      en: 'Every added vertical dilutes management focus — execution sags across ALL services at once. A management company buys back most of the penalty, but never all of it: money saturates here. A co-founder cures the same thing differently — they take a vertical off your hands, but the stake is forever; you take one or the other, not both. With a single vertical you barely need it. And it is not a free cure: management money competes with the services\' own budgets and with your cash buffer. On control runs the optimum is modest — around $60–80K/mo with two services, $40–60K with three: the more verticals you run, the more every dollar is needed inside them. Overspending hurts most with exactly two services: at $120K the result drops by a fifth — you pay more than the penalty costs; with three, extra money barely changes anything.',
     },
   },
   {

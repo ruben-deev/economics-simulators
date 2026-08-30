@@ -167,12 +167,12 @@ export const EVENTS = [
     id: 'cofounder', weight: 6, minMonth: 6, once: true,
     title: { ru: 'Сооснователь за долю', en: 'A co-founder for a stake' },
     text: {
-      ru: 'К вам приходит операционный директор из компании, которая прошла этот путь до вас. Готов войти сооснователем и вести вертикали руками — но не за зарплату, а за 14% компании.',
-      en: 'A COO from a company that has already walked this road comes to you. They are ready to join as a co-founder and run the verticals hands-on — not for a salary, but for 14% of the company.',
+      ru: 'К вам приходит операционный директор из компании, которая прошла этот путь до вас. Готов войти сооснователем и забрать одну вертикаль под себя — вести её руками, а не советами. Не за зарплату, а за 8% компании.',
+      en: 'A COO from a company that has already walked this road comes to you. They are ready to join as a co-founder and take one vertical off your hands — running it themselves, not advising on it. Not for a salary, but for 8% of the company.',
     },
     lesson: {
-      ru: 'Доля отдаётся один раз и навсегда, а стоит она процента от всего, что вы построите потом. Сильный партнёр окупается только там, где расфокус реально дорог: на одной вертикали платить нечем.',
-      en: 'A stake is given once and forever, and it costs a percentage of everything you build afterwards. A strong partner pays off only where the loss of focus is genuinely expensive: with a single vertical there is nothing to pay for.',
+      ru: 'Доля отдаётся один раз и навсегда, а стоит она процента от всего, что вы построите потом. Партнёр и управляющая компания лечат одно и то же — расфокус, но платите вы за них по-разному: за одного долей, за другую деньгами помесячно. Поэтому берут кого-то одного, и только если вертикалей действительно несколько: на одной платить за расфокус нечем.',
+      en: 'A stake is given once and forever, and it costs a percentage of everything you build afterwards. A partner and a management company cure the same thing — the loss of focus — but you pay for them differently: one in equity, the other in cash every month. So you take one or the other, and only if you genuinely run several verticals: with a single one there is nothing to pay for.',
     },
     // «Ничего не менять» стоит первым намеренно: доля отдаётся навсегда, и этот
     // вариант не должен оказываться тем, что нажимают не глядя. Что он одет в
@@ -202,18 +202,18 @@ export const EVENTS = [
         // же ответ, что был здесь всегда (сравнимость мировой таблицы
         // священна), различие чисто сюжетное.
         secret: true,
-        label: { ru: 'Взять сооснователем нейросеть «СКРЕПКА»', en: 'Take the PAPERCLIP AI on as a co-founder' },
+        label: { ru: 'Отказаться (и взять в сооснователи нейросеть «СКРЕПКА»)', en: 'Decline (and take the PAPERCLIP AI on as a co-founder)' },
         detail: {
-          ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком: вся компания ваша, а расфокус придётся оплачивать управляющей компанией — деньгами, а не долей.',
-          en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder: the whole company stays yours, and the loss of focus has to be paid for with the management budget — in cash, not equity.',
+          ru: 'Доли не просит, зарплаты не просит, живёт в серверной. Вы остаётесь единственным основателем-человеком: вся компания ваша, а расфокус придётся выкупать управляющей компанией — деньгами, помесячно, а не долей.',
+          en: 'Asks for no stake, no salary, lives in the server room. You remain the only human founder: the whole company stays yours, and the loss of focus has to be bought back with the management company — in cash, every month, not in equity.',
         },
         effects: {},
       },
       {
-        label: { ru: 'Взять сооснователя (14% компании)', en: 'Take the co-founder (14% of the company)' },
+        label: { ru: 'Взять сооснователя (8% компании)', en: 'Take the co-founder (8% of the company)' },
         detail: {
-          ru: 'Конгломератный штраф за расфокус падает на четверть до конца партии. Доля уходит сразу — и из итоговой оценки тоже.',
-          en: 'The conglomerate focus penalty drops by a quarter for the rest of the game. The stake leaves immediately — and out of the final valuation too.',
+          ru: 'Он забирает одну вертикаль под себя: конгломератный штраф до конца партии считается так, будто вертикалей на одну меньше. Доля уходит сразу — и из итоговой оценки тоже.',
+          en: 'They take one vertical off your hands: for the rest of the game the conglomerate penalty is counted as if you ran one vertical fewer. The stake leaves immediately — and out of the final valuation too.',
         },
         effects: { cofounder: true },
       },
