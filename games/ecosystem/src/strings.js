@@ -908,6 +908,7 @@ export const STRINGS = {
   footNumbers: { ru: 'Числа в модели условные, не отраслевые бенчмарки: игра иллюстрирует механику связей, а не величины.', en: 'The numbers in the model are notional, not industry benchmarks: the game illustrates the mechanics of the relationships, not the magnitudes.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedFold: { ru: 'Код партии', en: 'Game code' },
+  seedChange: { ru: 'изменить', en: 'change' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedWeeklyNote: { ru: 'Подставлен город недели — общий для всех, кто начнёт партию на этой неделе: одинаковый город делает сравнение честным. Хотите случайный — просто сотрите код.', en: 'The city of the week is filled in — shared by everyone starting a game this week: an identical city keeps the comparison fair. Want a random one? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
