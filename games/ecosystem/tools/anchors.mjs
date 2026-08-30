@@ -17,7 +17,7 @@ export const ANCHORS = {
   'только хаб': (s) => ({
     ...DEFAULT_DECISIONS,
     verticals: [],
-    foodTake: 1.06, foodOps: 5e6, foodMarketing: 3e6, finance: 3e6,
+    foodTake: 1.06, foodOps: 5e6, foodMarketing: 3e6,
   }),
   // Вторая нога: такси с первого месяца, е-кома нет
   'хаб и такси': (s) => ({
@@ -25,7 +25,7 @@ export const ANCHORS = {
     verticals: ['taxi'],
     foodTake: 1, foodOps: 4e6, foodMarketing: 2e6,
     crossSell: s.taxi.on ? 5e6 : 0, mgmt: s.taxi.on ? 8e6 : 0,
-    taxiSupply: 9e6, taxiMarketing: 12e6, finance: 3e6,
+    taxiSupply: 9e6, taxiMarketing: 12e6,
   }),
   // Полная экосистема: такси, е-ком, Plus и партнёрства
   экосистема: (s) => ({
@@ -37,7 +37,7 @@ export const ANCHORS = {
     crossSell: s.ecom.on ? 6e6 : 3e6, mgmt: s.ecom.on ? 11e6 : 8e6,
     taxiSupply: 9e6, taxiMarketing: 14e6,
     ecomOps: 2e6, ecomMarketing: 6e6, ecomLogistics: 3e6,
-    plusPrice: 299, finance: 3e6,
+    plusPrice: 299,
   }),
 };
 
