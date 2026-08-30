@@ -1106,6 +1106,16 @@ function renderSlate() {
         }
         return `<div class="funding-note">${parts.join(' ')}</div>`;
       })()}
+      ${(() => {
+        // Индекс таланта показывается здесь, а не плиткой в итогах месяца:
+        // безразмерное «×1.95» выглядело показателем, которым надо управлять,
+        // а управлять им нельзя — он растёт от вашей же базы. Зато в момент
+        // заказа то же число становится решением: видно, во что обошёлся рост
+        // и что цена фиксируется прямо сейчас.
+        const base = projectPrice(commissionDraft.genre, commissionDraft.scale, 1);
+        return price > base * 1.15
+          ? `<div class="funding-note">${t('slateTalent', { base: money(base) })}</div>` : '';
+      })()}
       <div class="commission-foot">
         <span>${t('slatePrice', { price: money(price), months: scaleById(commissionDraft.scale).months })}</span>
         <button class="btn primary" id="btn-commission" ${free > 0 && affordable ? '' : 'disabled'}>
@@ -1803,8 +1813,23 @@ function renderReport() {
   }
   if (r.netSwitch < -1000) alerts.push(['bad', t('alertLosingSubs', { count: compact(-r.netSwitch) }), 'panel:rival']);
   else if (r.netSwitch > 1000) alerts.push(['good', t('alertWinningSubs', { count: compact(r.netSwitch) })]);
-  if (r.licenseIndex > 1.5) alerts.push(['warn', t('alertLicenseWar', { index: r.licenseIndex.toFixed(2) }), 'lever:licensing']);
-  if (r.talentIndex > 2) alerts.push(['warn', t('alertTalentCost', { index: r.talentIndex.toFixed(2) }), 'panel:slate']);
+  if (r.licenseIndex > 1.5) {
+    // В часах, а не в разах: «×1.6» — это то же безразмерное число, которое
+    // мы убрали из итогов месяца, и в предупреждении оно так же нечитаемо.
+    const budget = state.decisions.licensing;
+    alerts.push(['warn', t('alertLicenseWar', {
+      hours: num(budget / (CONFIG.licenseCostPerHour * r.licenseIndex)),
+      base: num(budget / CONFIG.licenseCostPerHour),
+    }), 'lever:licensing']);
+  }
+  // Порог 1.5, а не 2: на двойке позади уже больше половины удорожания, и
+  // главный ход против него — набрать полку авансом — становится поздним.
+  if (r.talentIndex > 1.5) {
+    alerts.push(['warn', t('alertTalentCost', {
+      price: money(r.projectPrices.drama.season),
+      base: money(r.projectPrices.drama.season / r.talentIndex),
+    }), 'panel:slate']);
+  }
   if (r.rivalJustRaised) alerts.push(['warn', t('alertRivalRaised'), 'panel:rival']);
   if (!r.rivalAlive) alerts.unshift(['good', t('alertRivalDead')]);
   // Больше пяти строк разбора никто не читает: важное тонет в подробностях.
@@ -1868,8 +1893,6 @@ function renderReport() {
           t('statSwitchSub', { inn: compact(r.switchedIn), out: compact(r.switchedOut) })) : ''}
       ${r.subs > 0 ? stat(t('statPriceGap'), `${amount(state.decisions.priceNew)} / ${amount(r.lockedPrice)}`,
         t('statPriceGapSub', { gap: pct(r.priceGap, 0), annual: compact(r.annualSubs) })) : ''}
-      ${stat(t('statPrices'), `×${r.licenseIndex.toFixed(2)} / ×${r.talentIndex.toFixed(2)}`,
-        t('statPricesSub', { project: money(r.projectPrices.drama.season) }))}
     </div>
     ${premiereNote}${startedNote}${installNote}
     ${driversHtml}${alertsHtml}${eventNote}
@@ -2187,6 +2210,7 @@ function renderHelpTab() {
     <p>${t('helpContentScales')}</p>
     <ul>${SCALES.map((sc) => `<li><b>${tx(sc.name)}</b> · ${sc.months} ${t('unitMonthsShort')}. ${tx(sc.hint)}</li>`).join('')}</ul>
     <p>${t('helpContentLicense')}</p>
+    <p>${t('helpContentTalent')}</p>
     <h4>${t('helpMoneyTitle')}</h4><p>${t('helpMoneyText')}</p>
     <h4>${t('helpChurnTitle')}</h4>
     <ul>

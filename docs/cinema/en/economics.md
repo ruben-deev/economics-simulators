@@ -915,8 +915,19 @@ talent_index = 1 + 0.95 × (subscribers / 4M)^0.7
 ```
 
 This is exactly why a hit's cost grows faster than its audience: stars charge a
-successful service differently. By the end of a good game a project costs twice what it
-did at the start.
+successful service differently. The ratio is clamped at 4, so the index tops out at
+×3.51 at 16M subscribers; only the showrunner penalty (+0.12, permanent, for
+outbidding a rival offer) can sit on top of that.
+
+**The price is locked when you commission.** `totalCost` is written into the project
+at launch and then charged in equal monthly instalments — a project started on a small
+base is finished at the old price, however much the service grows meanwhile. There is
+no lever against this inflation in the model, and none is intended: it is the price of
+winning. There are three ways around it — stock the shelf in advance while the index is
+low; move towards licences (their index comes from market bidding, not from your size);
+and towards cheap hours (reality at ×0.55 against a blockbuster's ×2.45). Co-production
+uses the same index, but you pay half the budget of a 1.8× project — 0.9 of an ordinary
+season for 1.6× the hours.
 
 ### 6a-2. The third act: the rights cliff and the rival's last push
 
