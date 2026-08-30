@@ -2108,13 +2108,20 @@ function restart() {
 // Показывается один раз — при первом запуске и после «начать заново».
 // Игру часто открывают по присланной ссылке, без единого слова контекста,
 // и без этого экрана первое, что видит человек, — двенадцать ползунков.
+// Код партии живёт в модуле, а не в замыкании showWelcome: поле для него
+// стоит в «Подробнее», то есть в другой модалке, и писать в него нужно
+// оттуда. На первом экране кода нет вовсе — им пользуется меньшинство.
+let seedWanted = null;
+
 function showWelcome() {
   // Код партии = сид мира. Поле читается через замыкание: модалка стирает
   // свой DOM до вызова onClick, так что к моменту нажатия input уже мёртв.
   // Код из ссылки (?code=…): челлендж недели и «один город на группу» —
   // ссылка приносит код партии сама, поле можно не заполнять.
   // Ссылка важнее приглашения; без неё новая партия предлагает город недели
-  let seedWanted = urlGameCode() || weeklySeedToPlay('БИЛЕТВИЛЬ');
+  // Только при первом показе: из справки сюда возвращаются кнопкой «ОК»,
+  // и переприсваивание стирало бы код, который человек только что ввёл.
+  if (seedWanted === null) seedWanted = urlGameCode() || weeklySeedToPlay('БИЛЕТВИЛЬ');
   const best = bestRecord(RECORDS_KEY);
   const startGame = () => {
     track('game_start');
@@ -2132,36 +2139,13 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
-    <details class="more seed-fold">
-      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change">${t('seedChange')}</span></summary>
-      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
-        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-      <p class="funding-note">${t('seedNote')}</p>
-      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
-    </details>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
-  [{ label: t('welcomeMore'), onClick: showHelp },
+  [{ label: t('welcomeMore'), onClick: () => showHelp(true) },
    // Переключатель языка в шапке накрыт модалкой, а именно здесь язык и важен:
    // человек читает первый экран не на своём языке и переключить не может.
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
-  const seedField = el('modal-root').querySelector('#seed-input');
-  // Код виден в заголовке ката, чтобы под катом не оказалось действующей
-  // настройки: поле спрятано, но подставленный код недели или код из ссылки
-  // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
-  // код приходит из ?code= и в innerHTML ему делать нечего.
-  const seedSummary = el('modal-root').querySelector('.seed-name');
-  const syncSummary = () => {
-    if (!seedSummary) return;
-    const v = seedWanted.trim();
-    seedSummary.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
-  };
-  syncSummary();
-  if (seedField) {
-    seedField.value = seedWanted;
-    seedField.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); syncSummary(); });
-  }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку
   // так же, как кнопки нижнего ряда.
@@ -2171,12 +2155,50 @@ function showWelcome() {
   });
 }
 
-function showHelp() {
+// Поле кода партии стоит здесь, а не на первом экране: им пользуется
+// меньшинство, а место на первом экране дорогое. Правится только до первого
+// хода — после него код уже отработал: мир построен, менять его нечем.
+function seedFieldHtml() {
+  return `<details class="more seed-fold">
+      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change" aria-hidden="true">${t('seedChange')}</span></summary>
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
+        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+      <p class="funding-note">${t('seedNote')}</p>
+      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    </details>`;
+}
+
+// Код виден в заголовке ката, чтобы под катом не оказалось действующей
+// настройки: поле спрятано, но подставленный код недели или код из ссылки
+// должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
+// код приходит из ?code= и в innerHTML ему делать нечего.
+function wireSeedField() {
+  const field = el('modal-root').querySelector('#seed-input');
+  const name = el('modal-root').querySelector('.seed-name');
+  const sync = () => {
+    if (!name) return;
+    const v = seedWanted.trim();
+    name.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
+  };
+  sync();
+  if (field) {
+    field.value = seedWanted;
+    field.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); sync(); });
+  }
+}
+
+function showHelp(fromWelcome = false) {
+  const fresh = !state.history.length;
   modal(`<h2>${t('helpModalTitle')}</h2>${renderHelpTab()}`
-    + `<p class="funding-note">${t('helpSeedCode', { seed: state.seed })}</p>`
+    + (fresh ? seedFieldHtml() : `<p class="funding-note">${t('helpSeedCode', { seed: state.seed })}</p>`)
     + `<p class="funding-note">${t('helpAuthor')} ${APP_VERSION === 'dev'
         ? t('helpVersionDev') : t('helpVersion', { version: APP_VERSION, date: APP_BUILD_DATE })}</p>`,
-  [{ label: t('helpModalOk'), primary: true }]);
+  [{ label: t('helpModalOk'), primary: true,
+      // Из первого экрана справка открывается кнопкой «Подробнее» и
+      // подменяет его собой. Без возврата человек, зашедший прочитать
+      // подробности, терял кнопку «Начать» и не понимал, куда она делась.
+      onClick: fromWelcome ? showWelcome : undefined }]);
+  if (fresh) wireSeedField();
 }
 
 // ----------------------------------------------------------------------------
