@@ -9,7 +9,7 @@ import { CONFIG, DISTRICTS, CITIES, LEVERS, ALGORITHMS, VERDICT } from '../model
 import { WEATHER, weatherEffect, seasonOf } from '../model/weather.js';
 import { eventById } from '../model/events.js';
 import { drawShareCard, buildCardMarks, shareCardImage } from '../../../../shared/sharecard.js';
-import { urlGameCode, challengeCode, weeklySeedToPlay, markWeeklyPlayed } from '../../../../shared/challenge.js';
+import { safeGameCode, urlGameCode, challengeCode, weeklySeedToPlay, markWeeklyPlayed } from '../../../../shared/challenge.js';
 import { markMilestone } from '../../../../shared/metrics.js';
 import {
   createInitialState, step, explain, unitEconomics, valuation,
@@ -86,6 +86,10 @@ function load() {
     // а причина невидима. Лучше начать неделю заново, чем не начать вовсе.
     if (!saved || saved.build !== BUILD) return null;
     const s = saved.state;
+    // Сид мог быть записан до чистки кодов, а он идёт в разметку справки и
+    // таблицы рекордов. Чистим и здесь; если после чистки не осталось ничего,
+    // мир всё равно нужен — берём код недели, он всегда валиден.
+    if (s && typeof s.seed === 'string') s.seed = safeGameCode(s.seed) || challengeCode();
     return s && s.districts && Array.isArray(s.history) ? s : null;
   } catch { return null; }
 }
@@ -2371,12 +2375,13 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeGoal')}</p>
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
-    <label class="funding-note" style="display:block;margin-top:8px">${t('seedLabel')}
-      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}"
-        style="display:block;width:100%;margin-top:4px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
-    </label>
-    <p class="funding-note">${t('seedNote')}</p>
-    ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    <details class="more seed-fold">
+      <summary id="seed-summary">${t('seedLabel')}</summary>
+      <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
+        style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
+      <p class="funding-note">${t('seedNote')}</p>
+      ${seedWanted === challengeCode() ? `<p class="funding-note">🏆 ${t('seedWeeklyNote')}</p>` : ''}
+    </details>
     ${best ? `<p class="funding-note">${t('welcomeBest', { score: money(best.score) })}</p>` : ''}
     <p class="funding-note numbers-note">${t('welcomeNumbers')}</p>`,
   [{ label: t('welcomeMore'), onClick: showHelp },
@@ -2385,9 +2390,20 @@ function showWelcome() {
    { label: getLang() === 'ru' ? 'English' : 'Русский',
      onClick: () => { switchLang(); showWelcome(); } }]);
   const seedField = el('modal-root').querySelector('#seed-input');
+  // Код виден в заголовке ката, чтобы под катом не оказалось действующей
+  // настройки: поле спрятано, но подставленный код недели или код из ссылки
+  // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
+  // код приходит из ?code= и в innerHTML ему делать нечего.
+  const seedSummary = el('modal-root').querySelector('#seed-summary');
+  const syncSummary = () => {
+    if (!seedSummary) return;
+    const v = seedWanted.trim();
+    seedSummary.textContent = v ? `${t('seedFold')}: ${v}` : t('seedLabel');
+  };
+  syncSummary();
   if (seedField) {
     seedField.value = seedWanted;
-    seedField.addEventListener('input', (e) => { seedWanted = e.target.value; });
+    seedField.addEventListener('input', (e) => { seedWanted = safeGameCode(e.target.value); syncSummary(); });
   }
   // Единственная кнопка старта — крупная, сразу под первым абзацем:
   // на телефоне нижний ряд кнопок уезжал за экран. Закрывает модалку

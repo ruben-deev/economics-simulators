@@ -21,10 +21,20 @@ export function challengeCode(now = new Date()) {
   return `${year}-w${String(week).padStart(2, '0')}`;
 }
 
+// Код партии — это буквы, цифры, пробел и дефис: «урок-7б», «2026-w35».
+// Всё остальное вырезается. Причина не косметическая: код приходит из
+// ?code= в ссылке, попадает в сид мира, а оттуда — в справку («ваш код
+// партии») и в таблицу рекордов, где подставляется в разметку. Замер:
+// ссылка с ?code=<img src=x onerror=…> выполняла скрипт при открытии
+// справки. Чистим на входе, чтобы не гоняться за каждым местом вывода.
+export function safeGameCode(raw) {
+  return String(raw ?? '').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().slice(0, 64);
+}
+
 /** Код партии из ссылки (?code=…) — пустая строка, если его нет. */
 export function urlGameCode() {
   try {
-    return (new URLSearchParams(window.location.search).get('code') || '').trim().slice(0, 64);
+    return safeGameCode(new URLSearchParams(window.location.search).get('code') || '');
   } catch {
     return '';
   }
