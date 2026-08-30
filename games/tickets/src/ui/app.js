@@ -2133,7 +2133,7 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
     <details class="more seed-fold">
-      <summary id="seed-summary">${t('seedLabel')}</summary>
+      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change">${t('seedChange')}</span></summary>
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
         style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
       <p class="funding-note">${t('seedNote')}</p>
@@ -2151,7 +2151,7 @@ function showWelcome() {
   // настройки: поле спрятано, но подставленный код недели или код из ссылки
   // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
   // код приходит из ?code= и в innerHTML ему делать нечего.
-  const seedSummary = el('modal-root').querySelector('#seed-summary');
+  const seedSummary = el('modal-root').querySelector('.seed-name');
   const syncSummary = () => {
     if (!seedSummary) return;
     const v = seedWanted.trim();

@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="app-version" content="1.30.1" />
+  <meta name="app-version" content="1.30.2" />
   <meta name="app-build-date" content="2026-08-30" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="Ruben Deev" />
@@ -1297,6 +1297,27 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
   }
 }
 
+/* Кат «код партии» на первом экране. Обычный .more здесь не годится:
+   у него заголовок — 11-пиксельная серая строка, а тут это ЕДИНСТВЕННЫЙ
+   путь к настоящему полю ввода. В таком виде строка читалась как мёртвая
+   подпись и не бралась пальцем: 13 px по высоте при норме тач-цели 40.
+   Делаем из неё то, чем она является, — орган управления. */
+.seed-fold > summary {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 8px 12px; margin-top: 4px;
+  border: 1px dashed var(--line); border-radius: 9px;
+  background: var(--panel-2); color: var(--text);
+  font-size: 13px; cursor: pointer; list-style: none;
+}
+.seed-fold > summary::-webkit-details-marker { display: none; }
+.seed-fold > summary::before { content: '▸'; font-size: 10px; color: var(--muted); }
+.seed-fold[open] > summary::before { content: '▾'; }
+.seed-fold > summary:hover { border-color: var(--accent); }
+.seed-fold .seed-name { flex: 1; min-width: 0; }
+/* «изменить» справа: подпись, которая договаривает, что строка нажимается */
+.seed-fold .seed-change { color: var(--accent-2); font-size: 12px; white-space: nowrap; }
+.seed-fold[open] .seed-change { display: none; }
+
 /* Кнопка «наверх» — служебная, как «?» и «Заново»: стрелка узкая, и
    растягивать её на ширину соседей незачем. */
 .btn-up-slot { font-size: 15px; line-height: 1.15; }
@@ -2218,6 +2239,7 @@ score = valuation × your stake`,
   recordsRank: { ru: 'Эта партия — {rank}-я из {total} сыгранных на устройстве.', en: 'This game ranks {rank} of {total} played on this device.' },
   seedLabel: { ru: 'Код партии (необязательно)', en: 'Game code (optional)' },
   seedFold: { ru: 'Код партии', en: 'Game code' },
+  seedChange: { ru: 'изменить', en: 'change' },
   seedPlaceholder: { ru: 'например, урок-7б', en: 'e.g. class-7b' },
   seedWeeklyNote: { ru: 'Подставлен город недели — общий для всех, кто начнёт партию на этой неделе: одинаковый город делает сравнение честным. Хотите случайный — просто сотрите код.', en: 'The city of the week is filled in — shared by everyone starting a game this week: an identical city keeps the comparison fair. Want a random one? Just clear the code.' },
   seedNote: { ru: 'Одинаковый код — одинаковый город у всех, кто его ввёл. Пустое поле — случайный.', en: 'The same code gives everyone the same city. Empty means random.' },
@@ -9327,7 +9349,7 @@ function showWelcome() {
     <p class="funding-note">${t('welcomeHint')}</p>
     ${returnHtml()}
     <details class="more seed-fold">
-      <summary id="seed-summary">${t('seedLabel')}</summary>
+      <summary id="seed-summary"><span class="seed-name">${t('seedLabel')}</span><span class="seed-change">${t('seedChange')}</span></summary>
       <input id="seed-input" type="text" placeholder="${t('seedPlaceholder')}" aria-label="${t('seedLabel')}"
         style="display:block;width:100%;margin-top:6px;padding:7px 9px;background:transparent;border:1px solid var(--line);border-radius:6px;color:inherit;font:inherit">
       <p class="funding-note">${t('seedNote')}</p>
@@ -9345,7 +9367,7 @@ function showWelcome() {
   // настройки: поле спрятано, но подставленный код недели или код из ссылки
   // должен читаться, не раскрывая ничего. Пишем textContent, а не в разметку:
   // код приходит из ?code= и в innerHTML ему делать нечего.
-  const seedSummary = el('modal-root').querySelector('#seed-summary');
+  const seedSummary = el('modal-root').querySelector('.seed-name');
   const syncSummary = () => {
     if (!seedSummary) return;
     const v = seedWanted.trim();

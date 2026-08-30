@@ -1271,6 +1271,27 @@ table.data .cell-sub { display: block; color: var(--muted); font-size: 11px;
   }
 }
 
+/* Кат «код партии» на первом экране. Обычный .more здесь не годится:
+   у него заголовок — 11-пиксельная серая строка, а тут это ЕДИНСТВЕННЫЙ
+   путь к настоящему полю ввода. В таком виде строка читалась как мёртвая
+   подпись и не бралась пальцем: 13 px по высоте при норме тач-цели 40.
+   Делаем из неё то, чем она является, — орган управления. */
+.seed-fold > summary {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 8px 12px; margin-top: 4px;
+  border: 1px dashed var(--line); border-radius: 9px;
+  background: var(--panel-2); color: var(--text);
+  font-size: 13px; cursor: pointer; list-style: none;
+}
+.seed-fold > summary::-webkit-details-marker { display: none; }
+.seed-fold > summary::before { content: '▸'; font-size: 10px; color: var(--muted); }
+.seed-fold[open] > summary::before { content: '▾'; }
+.seed-fold > summary:hover { border-color: var(--accent); }
+.seed-fold .seed-name { flex: 1; min-width: 0; }
+/* «изменить» справа: подпись, которая договаривает, что строка нажимается */
+.seed-fold .seed-change { color: var(--accent-2); font-size: 12px; white-space: nowrap; }
+.seed-fold[open] .seed-change { display: none; }
+
 /* Кнопка «наверх» — служебная, как «?» и «Заново»: стрелка узкая, и
    растягивать её на ширину соседей незачем. */
 .btn-up-slot { font-size: 15px; line-height: 1.15; }
