@@ -137,6 +137,7 @@ export const STRINGS = {
   slateNoSlots: { ru: 'Нет свободных слотов', en: 'No free slots' },
   slateNoCash: { ru: 'Не хватает кассы', en: 'Not enough cash' },
   slatePrice: { ru: 'Стоимость {price}, платится равными долями {months} месяцев', en: 'Costs {price}, paid in equal instalments over {months} months' },
+  slateTalent: { ru: 'На старте партии этот проект стоил бы {base} — звёзды дорожают вместе с вашей базой. Цена фиксируется в момент заказа: начатый проект доснимается по сегодняшней, сколько бы вы ни выросли за это время.', en: 'At the start of the game this project would have cost {base} — stars get dearer as your base grows. The price is locked when you commission it: a project already under way is finished at today\u2019s price, however much you grow meanwhile.' },
   jointTitle: { ru: 'Совместный мегахит с конкурентом', en: 'A joint mega-hit with your rival' },
   moreWhy: { ru: 'зачем это', en: 'why this matters' },
   moreHow: { ru: 'Как это устроено', en: 'How it works' },
@@ -270,8 +271,6 @@ export const STRINGS = {
   // --- Новые показатели месяца ---
   statSwitch: { ru: 'Переток', en: 'Switching' },
   statSwitchSub: { ru: 'пришло {inn} · ушло {out}', en: '{inn} in · {out} out' },
-  statPrices: { ru: 'Права / талант', en: 'Rights / talent' },
-  statPricesSub: { ru: 'проект стоит {project}', en: 'a project costs {project}' },
   kpiShare: { ru: 'Доля рынка', en: 'Market share' },
   kpiShareSub: { ru: 'у конкурента {them}', en: 'rival has {them}' },
 
@@ -284,8 +283,8 @@ export const STRINGS = {
   alertCrisisResolved: { ru: '«{name}» — решено за {cost}.', en: '“{name}” resolved for {cost}.' },
   alertLosingSubs: { ru: 'К конкуренту ушло {count} подписчиков. Люди не отказались от подписки — они выбрали другую.', en: '{count} subscribers went to the rival. They did not give up on streaming — they chose someone else.' },
   alertWinningSubs: { ru: 'От конкурента пришло {count} подписчиков: ваш сервис сейчас выглядит лучше.', en: '{count} subscribers came over from the rival: your service looks better right now.' },
-  alertLicenseWar: { ru: 'Права подорожали в {index} раза: вы с конкурентом торгуетесь за один и тот же контент. Тот же бюджет покупает меньше часов.', en: 'Rights are {index}× more expensive: you and the rival are bidding for the same content. The same budget buys fewer hours.' },
-  alertTalentCost: { ru: 'Талант подорожал в {index} раза. Успешному сервису звёзды выставляют другой счёт — себестоимость хита растёт быстрее его аудитории.', en: 'Talent is {index}× more expensive. Stars charge a successful service differently — a hit\u2019s cost grows faster than its audience.' },
+  alertLicenseWar: { ru: 'Права подорожали: тот же бюджет купит {hours} часов вместо {base}. Вы с конкурентом торгуетесь за один и тот же контент — сбить цену в одиночку нельзя, можно только выйти из торгов.', en: 'Rights have got dearer: the same budget now buys {hours} hours instead of {base}. You and the rival are bidding for the same content — you cannot talk the price down alone, only walk away from the auction.' },
+  alertTalentCost: { ru: 'Съёмки подорожали: сезон стоит {price} вместо {base} на старте. Звёзды выставляют успешному сервису другой счёт, и дальше будет дороже. Цена фиксируется в момент заказа — что запустите сейчас, доснимется по сегодняшней. Дешевле выходят лицензии, копродукция и реалити.', en: 'Production has got dearer: a season costs {price} against {base} at the start. Stars charge a successful service differently, and it only goes up. The price is locked when you commission — whatever you start now is finished at today\u2019s price. Licences, co-production and reality shows come cheaper.' },
   alertRivalRaised: { ru: 'Конкурент привлёк раунд. Ждите роста его бюджетов.', en: 'The rival has raised a round. Expect their budgets to grow.' },
   alertRivalDead: { ru: 'Конкурент обанкротился. Его база расходится по рынку — это ваш шанс забрать её.', en: 'The rival has gone bust. Their base is dispersing — this is your chance to take it.' },
 
@@ -641,6 +640,10 @@ freshness = √(new releases / reference), a release ages out in ~4 months`,
   helpContentLicense: {
     ru: 'И третья развилка — своё против лицензий: лицензионный час приходит сразу, но истекает по 4.5% в месяц и почти не даёт глубины; час оригинала в разы «глубже», не истекает никогда и остаётся активом. Синяя и золотая полки на схеме каталога — ровно про это.',
     en: 'The third fork is originals versus licences: a licensed hour arrives instantly but expires at 4.5% a month and adds almost no depth; an original hour is several times “deeper”, never expires and stays an asset. The blue and gold shelves on the catalogue diagram are exactly this.',
+  },
+  helpContentTalent: {
+    ru: 'И то, о чём в интерфейсе нигде не написано числом: <b>съёмки дорожают вместе с вашим успехом</b>. Чем крупнее база, тем дороже звёзды — сезон, который на старте стоил бы 310 млн ₽, у сервиса с восемью миллионами подписчиков стоит под 790. Управлять этим напрямую нельзя, это цена победы. Но <b>цена фиксируется в момент заказа</b>: проект, запущенный на маленькой базе, доснимается по старой цене, сколько бы вы ни выросли за эти месяцы. Поэтому полка, набранная авансом, — это не запасливость, а страховка. Дешевле выходят лицензии (у них своя цена, от торгов на рынке, а не от вашего размера), копродукция с конкурентом и реалити: час реалити стоит ×0.55 против ×2.45 у блокбастера.',
+    en: 'And the thing no number in the interface tells you: <b>production gets dearer as you succeed</b>. The bigger your base, the more stars charge — a season that would have cost $3.1M at the start costs nearly $7.9M for a service with eight million subscribers. You cannot manage this directly; it is the price of winning. But <b>the price is locked when you commission</b>: a project started on a small base is finished at the old price, however much you grow in those months. So a shelf stocked in advance is insurance, not hoarding. Cheaper routes: licences (priced by market bidding, not by your size), co-production with the rival, and reality shows — a reality hour costs ×0.55 against ×2.45 for a blockbuster.',
   },
   helpCatalogText: { ru: 'Час собственной премьеры удерживает как несколько часов библиотеки, но стоит в полсотни раз дороже. Ни одна из крайностей не работает: на одних лицензиях нечем удерживать, на одних оригиналах нечего смотреть.', en: 'An hour of your own premiere retains like several hours of library, but costs fifty times more. Neither extreme works: licences alone give you nothing to hold people with, originals alone give them nothing to watch.' },
   helpMoneyTitle: { ru: 'Почему трафик — главное', en: 'Why bandwidth is the thing to watch' },
